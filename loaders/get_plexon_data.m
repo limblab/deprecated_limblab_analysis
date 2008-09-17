@@ -9,6 +9,8 @@ function out_struct = get_plexon_data(varargin)
 %       VERBOSE - 1 => prints status info
 %                 0 => prints nothing
 %
+% NOTE: Throws out first full second and last full second rounded up.
+%
 % Data structure format follows (actual field names are lowercase):
 %
 % OUT_STRUCT
@@ -42,6 +44,10 @@ function out_struct = get_plexon_data(varargin)
 %     +-- DATETIME
 %     +-- DURATION
 
+    % Add paths - take them back out at the end
+    addpath ./core_files
+    addpath ./event_decoders
+
     % make sure LaTeX is turned off and save the old state so we can turn
     % it back on at the end
     defaulttextinterpreter = get(0, 'defaulttextinterpreter'); 
@@ -74,10 +80,17 @@ function out_struct = get_plexon_data(varargin)
     out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration);
 
     % Extract data from plxfile
-    out_struct.units = get_units(filename, verbose);
+    %out_struct.units = get_units(filename, verbose);
     out_struct.raw = get_raw(filename, verbose);
     
 %% Calculated Data
+
+    start_time = 1.0;
+    last_enc_time = out_struct.raw.enc(end,1);
+    last_analog_time = out_struct.raw.analog.ts{1} + ...
+        length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
+    stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
+    analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
 
     % Position
     if (verbose == 1)
@@ -86,12 +99,19 @@ function out_struct = get_plexon_data(varargin)
     end
 
     l1 = 24.0; l2 = 23.5;
-        
-    x = - l1 * sin( out_struct.raw.enc(:,2) * 2 * pi / 18000 ) ...
-        + l2 * cos( -out_struct.raw.enc(:,3) * 2 * pi / 18000 );
-    y = - l1 * cos( out_struct.raw.enc(:,2) * 2 * pi / 18000 ) ...
-        - l2 * sin( -out_struct.raw.enc(:,3) * 2 * pi / 18000 );
-    out_struct.pos = [out_struct.raw.enc(:,1) x y];
+    th_t = out_struct.raw.enc(:,1); % encoder time stamps
+
+    th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
+    th_1 = interp1(th_t, th_1, analog_time_base);
+    
+    th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
+    th_2 = interp1(th_t, th_2, analog_time_base);
+    
+    % convert to x and y
+    x = - l1 * sin( th_1 ) + l2 * cos( -th_2 );
+    y = - l1 * cos( th_1 ) - l2 * sin( -th_2 );
+    
+    out_struct.pos = [analog_time_base' x' y'];
 
     % Force
     if (verbose == 1)
@@ -103,23 +123,23 @@ function out_struct = get_plexon_data(varargin)
              -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
     rotcal = [0.8540 -0.5202; 0.5202 0.8540];
     
-    raw_force = [];
+    raw_force = zeros(length(analog_time_base), 6);
     for c = 1:6
         channame = sprintf('ForceHandle%d', c);
         a_data = get_analog_signal(out_struct, channame);
-        raw_force = [raw_force a_data(:,2)];
+        a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
+        raw_force(:,c) = a_data';
     end
     
     out_struct.force = raw_force * fhcal * rotcal;
     out_struct.force(:,2) = -out_struct.force(:,2);    
-    th = interp1(out_struct.raw.enc(:,1), -out_struct.raw.enc(:,3)*2*pi/18000, a_data(:,1));
     for p = 1:size(out_struct.force, 1)
-        r = [cos(th(p)) sin(th(p)); -sin(th(p)) cos(th(p))];
+        r = [cos(th_1(p)) sin(-th_1(p)); -sin(-th_1(p)) cos(-th_1(p))];
         out_struct.force(p,:) = out_struct.force(p,:) * r;
     end
     
-    out_struct.force = [a_data(:,1) out_struct.force]; % add timestamps
-
+    out_struct.force = [analog_time_base' out_struct.force];
+    
     % Words
     out_struct.words = get_words(out_struct.raw.events.timestamps);
     
@@ -154,6 +174,9 @@ function out_struct = get_plexon_data(varargin)
         close(h);
     end
 
+    rmpath ./core_files
+    rmpath ./event_decoders
+    
 %% Subroutines
 
     % get_units
