@@ -35,6 +35,8 @@ function out_struct = get_plexon_data(varargin)
 % |       +-- TIMESTAMPS - event timestamps 
 % |                        {[e1_1 e1_2 ... ] [e2_1 ... ] ...}
 % +-- POS    - Position signal: [t1 x1 y1; t2 x2 y2; ... ]
+% +-- VEL    - Velocity signal: as for position
+% +-- ACC    - Acceleration signal: as for position
 % +-- FORCE  - Force signal: [t1 x1 y1; t2 x2 y2; ... ]
 % +-- WORDS  - Words: [ts1 word1, ts2 word2 ... ]
 % +-- KEYBOARD_EVENTS - Keybord events: [t1 key1, t2 key2 ... ]
@@ -80,7 +82,7 @@ function out_struct = get_plexon_data(varargin)
     out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration);
 
     % Extract data from plxfile
-    %out_struct.units = get_units(filename, verbose);
+    out_struct.units = get_units(filename, verbose);
     out_struct.raw = get_raw(filename, verbose);
     
 %% Calculated Data
@@ -102,17 +104,32 @@ function out_struct = get_plexon_data(varargin)
     th_t = out_struct.raw.enc(:,1); % encoder time stamps
 
     th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
-    th_1 = interp1(th_t, th_1, analog_time_base);
-    
     th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-    th_2 = interp1(th_t, th_2, analog_time_base);
-    
+    th_1_adj = interp1(th_t, th_1, analog_time_base); % used to calculate force
+
     % convert to x and y
     x = - l1 * sin( th_1 ) + l2 * cos( -th_2 );
     y = - l1 * cos( th_1 ) - l2 * sin( -th_2 );
     
+    % get derivatives
+    dx = diff( smooth(x, 21, 'loess') );
+    dy = diff( smooth(y, 21, 'loess') );
+    ddx = diff( smooth(dx, 21, 'loess') );
+    ddy = diff( smooth(dy, 21, 'loess') );
+
+    % write into structure
+    x = interp1(th_t, x, analog_time_base);
+    y = interp1(th_t, y, analog_time_base);    
     out_struct.pos = [analog_time_base' x' y'];
 
+    dx = interp1(th_t(2:end)-.5/adfreq, dx, analog_time_base); % shift by a half sample
+    dy = interp1(th_t(2:end)-.5/adfreq, dy, analog_time_base);
+    out_struct.vel = [analog_time_base' dx' dy'];
+    
+    ddx = interp1(th_t(2:end-1), ddx, analog_time_base);
+    ddy = interp1(th_t(2:end-1), ddy, analog_time_base);
+    out_struct.acc = [analog_time_base' ddx' ddy'];
+    
     % Force
     if (verbose == 1)
         progress = progress + .05;
@@ -134,7 +151,7 @@ function out_struct = get_plexon_data(varargin)
     out_struct.force = raw_force * fhcal * rotcal;
     out_struct.force(:,2) = -out_struct.force(:,2);    
     for p = 1:size(out_struct.force, 1)
-        r = [cos(th_1(p)) sin(-th_1(p)); -sin(-th_1(p)) cos(-th_1(p))];
+        r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
         out_struct.force(p,:) = out_struct.force(p,:) * r;
     end
     

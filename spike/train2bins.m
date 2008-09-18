@@ -13,8 +13,8 @@ function [ d, t ] = train2bins( s, b )
 %       d = [   2   0   1   1 ]
 %       t = [ 0.0 0.5 1.0 1.5 ]
 
-lastbin = b * floor(s(length(s))/b); % get last timestamp
 if isscalar(b)
+    lastbin = b * floor(s(end)/b); % get last timestamp
     t = 0:b:lastbin;
 else
     t = b;

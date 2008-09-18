@@ -9,7 +9,7 @@ use strict;
 
 ### HACK
 #my $filename = "../fitz_robot067_bdf.mat";
-my $filename = "../Arthur_S1_003.mat";
+my $filename = "../data_cache/Arthur_S1_012.mat";
 
 #my $filename = $1;
 if (! -f $filename) {
@@ -30,9 +30,8 @@ my $matlab = <<HERE;
 addpath 'lib';
 addpath 'spike';
 file_name = '$filename';
-struct = open('$filename');
-data = struct.out;
-rand_walk(data);
+open('$filename');
+rand_walk_cl(data);
 exit;
 HERE
 
