@@ -1,4 +1,4 @@
-function [peak peak_width good_cell pref_dir baseline pref_dir_peak] = rand_walk(varargin)
+function [peak peak_width good_cell pref_dir baseline pref_dir_peak] = rand_walk_cl(varargin)
 % RAND_WALK( DATA, CHANNEL, UNIT ) - runs RW analytics
 %   DATA    - a BDF structure
 %   CHANNEL - the channel of the unit to run analytics on
@@ -6,6 +6,10 @@ function [peak peak_width good_cell pref_dir baseline pref_dir_peak] = rand_walk
 %
 % RAND_WALK( DATA )
 %   Does as above but for each unit in the BDF structure
+
+addpath ./lib
+addpath ./spike
+addpath ./bdf
 
 if nargin == 1
     run_all_units(varargin{1}, 1);
@@ -19,35 +23,24 @@ else
 end
 
 s = get_unit(data, channel, unit);
+b = train2bins(s, data.vel(1,1):.001:data.vel(end,1)); % 1ms bins
 
-x = data.pos(:,2);
-y = data.pos(:,3);
-
-dx = smooth(diff(x), 21);
-dy = smooth(diff(y), 21);
-
-dx = dx / .001; 
-dy = dy / .001; 
-
-end_mi = floor(s(end));
-
-b = train2bins(s, .001); % 1ms bins
-b = b(1000:end); % drop points before begin mi
-v = [interp1(data.pos(1:end-1,1),dx,1:.001:end_mi)' interp1(data.pos(1:end-1,1),dy,1:.001:end_mi)'];
-
-if (length(b) > length(v))
-    b = b(1:size(v));
-else
-    v = v(1:length(b),:);
-end
-
-d = tmi(b, v, -1000:10:1000);
+d_v = tmi(b, data.vel(:,2:3), -1000:10:1000);
+d_f = tmi(b, data.force(:,2:3), -1000:10:1000);
 t = -1000:10:1000;
 t = t.*0.001;
+
 figure;
-subplot(2,2,1),plot(t,d);
+%subplot(2,2,1),plot(t,d_v,'k-',t,d_f,'r-');
+plot(t,d_v,'k-',t,d_f,'r-');
 xlabel('Delay (s)');
 ylabel('Mutual Information (bits)');
+legend('Velocity','Force');
+
+
+rmpath ./lib
+rmpath ./spike
+return
 
 % MI peak analysis
 [peak peak_width good_cell] = peak_analysis(d);
@@ -107,6 +100,10 @@ pref_dir_peak = cor;
 
 suptitle(sprintf('%d-%d',channel,unit));
 
+rmpath ./lib
+rmpath ./spike
+rmpath ./bdf
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % sub functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -162,7 +159,8 @@ function run_all_units(data, verbose)
     M = zeros(size(list,1), 8);
 
     for j = 1:size(list,1);
-        [pk wd gs pd bl pd_pk] = rand_walk(data, list(j,1), list(j,2));
+        %[pk wd gs pd bl pd_pk] = rand_walk(data, list(j,1), list(j,2));
+        rand_walk_cl(data, list(j,1), list(j,2));
 
         % write figure to ps
         set(gcf, 'PaperPosition', [1.25 2.5 6 6]);
@@ -170,7 +168,7 @@ function run_all_units(data, verbose)
         close(gcf);
         
         % add important data to M
-        M(j,:) = [list(j,1) list(j,2) pk wd gs pd bl pd_pk];
+        %M(j,:) = [list(j,1) list(j,2) pk wd gs pd bl pd_pk];
         
         % status bar
         if verbose
@@ -186,7 +184,7 @@ function run_all_units(data, verbose)
     end
     
     % write M to file
-    csvwrite('tmp/summary.txt', M);
+    %csvwrite('tmp/summary.txt', M);
     
 end % function run_all_units(data)
 
