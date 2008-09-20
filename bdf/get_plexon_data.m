@@ -82,7 +82,7 @@ function out_struct = get_plexon_data(varargin)
     out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration);
 
     % Extract data from plxfile
-    out_struct.units = get_units(filename, verbose);
+    %out_struct.units = get_units(filename, verbose);
     out_struct.raw = get_raw(filename, verbose);
     
 %% Calculated Data
@@ -103,33 +103,58 @@ function out_struct = get_plexon_data(varargin)
     l1 = 24.0; l2 = 23.5;
     th_t = out_struct.raw.enc(:,1); % encoder time stamps
 
+%     th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
+%     th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
+%     th_1_adj = interp1(th_t, th_1, analog_time_base); % used to calculate force
+% 
+%     % convert to x and y
+%     x = - l1 * sin( th_1 ) + l2 * cos( -th_2 );
+%     y = - l1 * cos( th_1 ) - l2 * sin( -th_2 );
+%     
+%     % get derivatives
+%     dx = diff( smooth(x, 21) ) .* adfreq;
+%     dy = diff( smooth(y, 21) ) .* adfreq;
+%     ddx = diff( smooth(dx, 21) ) .* adfreq;
+%     ddy = diff( smooth(dy, 21) ) .* adfreq;
+% 
+%     % write into structure
+%     x = interp1(th_t, x, analog_time_base);
+%     y = interp1(th_t, y, analog_time_base);    
+%     out_struct.pos = [analog_time_base' x' y'];
+% 
+%     dx = interp1(th_t(2:end)-.5/adfreq, dx, analog_time_base); % shift by a half sample
+%     dy = interp1(th_t(2:end)-.5/adfreq, dy, analog_time_base);
+%     out_struct.vel = [analog_time_base' dx' dy'];
+%     
+%     ddx = interp1(th_t(2:end-1), ddx, analog_time_base);
+%     ddy = interp1(th_t(2:end-1), ddy, analog_time_base);
+%     out_struct.acc = [analog_time_base' ddx' ddy'];
+    
     th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
     th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-    th_1_adj = interp1(th_t, th_1, analog_time_base); % used to calculate force
+    th_1_adj = interp1(th_t, smooth(th_1,21), analog_time_base); 
+    th_2_adj = interp1(th_t, smooth(th_2,21), analog_time_base); 
 
     % convert to x and y
-    x = - l1 * sin( th_1 ) + l2 * cos( -th_2 );
-    y = - l1 * cos( th_1 ) - l2 * sin( -th_2 );
+    x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
+    y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
     
     % get derivatives
-    dx = diff( smooth(x, 21, 'loess') );
-    dy = diff( smooth(y, 21, 'loess') );
-    ddx = diff( smooth(dx, 21, 'loess') );
-    ddy = diff( smooth(dy, 21, 'loess') );
+    %dx = diff( smooth(x, 21, 'rloess') ) .* adfreq;
+    %dy = diff( smooth(y, 21, 'rloess') ) .* adfreq;
+    dx = diff( smooth(x, 21) ) .* adfreq;
+    dy = diff( smooth(y, 21) ) .* adfreq;
+    dx = [0 dx']; dy = [0 dy'];
 
+    ddx = diff( smooth(dx, 21) ) .* adfreq;
+    ddy = diff( smooth(dy, 21) ) .* adfreq;
+    ddx = [0 ddx']; ddy = [0 ddy'];
+    
     % write into structure
-    x = interp1(th_t, x, analog_time_base);
-    y = interp1(th_t, y, analog_time_base);    
-    out_struct.pos = [analog_time_base' x' y'];
-
-    dx = interp1(th_t(2:end)-.5/adfreq, dx, analog_time_base); % shift by a half sample
-    dy = interp1(th_t(2:end)-.5/adfreq, dy, analog_time_base);
-    out_struct.vel = [analog_time_base' dx' dy'];
-    
-    ddx = interp1(th_t(2:end-1), ddx, analog_time_base);
-    ddy = interp1(th_t(2:end-1), ddy, analog_time_base);
+    out_struct.pos = [analog_time_base'   x'   y'];
+    out_struct.vel = [analog_time_base'  dx'  dy'];
     out_struct.acc = [analog_time_base' ddx' ddy'];
-    
+
     % Force
     if (verbose == 1)
         progress = progress + .05;
@@ -140,10 +165,12 @@ function out_struct = get_plexon_data(varargin)
              -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
     rotcal = [0.8540 -0.5202; 0.5202 0.8540];
     
+    [b,a] = butter(4, 20/adfreq);
     raw_force = zeros(length(analog_time_base), 6);
     for c = 1:6
         channame = sprintf('ForceHandle%d', c);
         a_data = get_analog_signal(out_struct, channame);
+        a_data = filtfilt(b, a, a_data);
         a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
         raw_force(:,c) = a_data';
     end
