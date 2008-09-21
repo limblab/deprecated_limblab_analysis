@@ -82,7 +82,7 @@ function out_struct = get_plexon_data(varargin)
     out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration);
 
     % Extract data from plxfile
-    %out_struct.units = get_units(filename, verbose);
+    out_struct.units = get_units(filename, verbose);
     out_struct.raw = get_raw(filename, verbose);
     
 %% Calculated Data
@@ -102,54 +102,25 @@ function out_struct = get_plexon_data(varargin)
 
     l1 = 24.0; l2 = 23.5;
     th_t = out_struct.raw.enc(:,1); % encoder time stamps
-
-%     th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
-%     th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-%     th_1_adj = interp1(th_t, th_1, analog_time_base); % used to calculate force
-% 
-%     % convert to x and y
-%     x = - l1 * sin( th_1 ) + l2 * cos( -th_2 );
-%     y = - l1 * cos( th_1 ) - l2 * sin( -th_2 );
-%     
-%     % get derivatives
-%     dx = diff( smooth(x, 21) ) .* adfreq;
-%     dy = diff( smooth(y, 21) ) .* adfreq;
-%     ddx = diff( smooth(dx, 21) ) .* adfreq;
-%     ddy = diff( smooth(dy, 21) ) .* adfreq;
-% 
-%     % write into structure
-%     x = interp1(th_t, x, analog_time_base);
-%     y = interp1(th_t, y, analog_time_base);    
-%     out_struct.pos = [analog_time_base' x' y'];
-% 
-%     dx = interp1(th_t(2:end)-.5/adfreq, dx, analog_time_base); % shift by a half sample
-%     dy = interp1(th_t(2:end)-.5/adfreq, dy, analog_time_base);
-%     out_struct.vel = [analog_time_base' dx' dy'];
-%     
-%     ddx = interp1(th_t(2:end-1), ddx, analog_time_base);
-%     ddy = interp1(th_t(2:end-1), ddy, analog_time_base);
-%     out_struct.acc = [analog_time_base' ddx' ddy'];
     
+    [b,a] = butter(8, 100/adfreq);
+
     th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
     th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-    th_1_adj = interp1(th_t, smooth(th_1,21), analog_time_base); 
-    th_2_adj = interp1(th_t, smooth(th_2,21), analog_time_base); 
+    th_1_adj = interp1(th_t, filtfilt(b, a, th_1), analog_time_base); 
+    th_2_adj = interp1(th_t, filtfilt(b, a, th_2), analog_time_base); 
 
     % convert to x and y
     x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
     y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
     
     % get derivatives
-    %dx = diff( smooth(x, 21, 'rloess') ) .* adfreq;
-    %dy = diff( smooth(y, 21, 'rloess') ) .* adfreq;
-    dx = diff( smooth(x, 21) ) .* adfreq;
-    dy = diff( smooth(y, 21) ) .* adfreq;
-    dx = [0 dx']; dy = [0 dy'];
-
-    ddx = diff( smooth(dx, 21) ) .* adfreq;
-    ddy = diff( smooth(dy, 21) ) .* adfreq;
-    ddx = [0 ddx']; ddy = [0 ddy'];
+    dx = kin_diff(x);
+    dy = kin_diff(y);
     
+    ddx = kin_diff(dx);
+    ddy = kin_diff(dy);
+
     % write into structure
     out_struct.pos = [analog_time_base'   x'   y'];
     out_struct.vel = [analog_time_base'  dx'  dy'];
@@ -175,7 +146,9 @@ function out_struct = get_plexon_data(varargin)
         raw_force(:,c) = a_data';
     end
     
-    out_struct.force = raw_force * fhcal * rotcal;
+    force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+    force_offsets = repmat(force_offsets, length(raw_force), 1);
+    out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
     out_struct.force(:,2) = -out_struct.force(:,2);    
     for p = 1:size(out_struct.force, 1)
         r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
@@ -317,6 +290,16 @@ function out_struct = get_plexon_data(varargin)
             end
             raw.events.timestamps{i-2} = ts;
         end
+    end
+
+    % diferentiater function for kinematic signals
+    % should differentiate, LP filter at 100Hz and add a zero to adjust for
+    % themporal shift
+    function dx = kin_diff(x) 
+        [b, a] = butter(8, 100/adfreq);
+        dx = diff(x) .* adfreq;
+        dx = filtfilt(b,a,dx);
+        dx = [0 dx];
     end
 
 end % close outermost function

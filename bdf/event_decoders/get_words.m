@@ -22,10 +22,10 @@ function words = get_words(time_stamp_events)
 % any channel.
 time_stamps = [];
 bits = [];
-for i = 1:8 %3:10
+for i = 1:8
     bit_time_stamps = time_stamp_events{i};% - 25e-6 * (i-1);
     time_stamps = [time_stamps; bit_time_stamps];
-    bits = [bits; (i-3) * ones(length(bit_time_stamps), 1)];
+    bits = [bits; (i-1) * ones(length(bit_time_stamps), 1)];
 end
 events = [time_stamps bits];
 events = sortrows(events);
