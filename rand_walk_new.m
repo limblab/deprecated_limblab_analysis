@@ -1,5 +1,5 @@
 %function [peak peak_width good_cell pref_dir baseline pref_dir_peak mdl] = rand_walk(varargin)
-function [baseline curve] = rand_walk(varargin)
+function out = rand_walk(varargin)
 % RAND_WALK( DATA, CHANNEL, UNIT ) - runs RW analytics
 %   DATA    - a BDF structure
 %   CHANNEL - the channel of the unit to run analytics on
@@ -7,10 +7,10 @@ function [baseline curve] = rand_walk(varargin)
 %
 % RAND_WALK( DATA )
 %   Does as above but for each unit in the BDF structure
-
-addpath ./lib
-addpath ./spike
-addpath ./bdf
+%
+% OUT = RAND_WALK( DATA ) - returns a matrix with a row for each cell
+%   containing the following:
+%       Channel, Unit, MIPeak, Baseline, PD, PDgain, SpeedGain
 
 if nargin == 1
     run_all_units(varargin{1}, 1);
@@ -24,7 +24,6 @@ else
 end
 
 s = get_unit(data, channel, unit);
-b = train2bins(s, data.vel(1,1):.001:data.vel(end,1)); % 1ms bins
 
 end_mi = floor(s(end));
 
@@ -44,18 +43,10 @@ d = tmi(b, v, -1000:10:1000);
 
 t = -1000:10:1000;
 t = t.*0.001;
-
 figure;
-%subplot(2,2,1),plot(t,d_v,'k-',t,d_f,'r-');
-plot(t,d_v,'k-',t,d_f,'r-');
+subplot(2,2,1),plot(t,d);
 xlabel('Delay (s)');
 ylabel('Mutual Information (bits)');
-legend('Velocity','Force');
-
-
-rmpath ./lib
-rmpath ./spike
-return
 
 % MI peak analysis
 [peak peak_width good_cell] = peak_analysis(d);
@@ -75,25 +66,24 @@ else
 end
 
 % spike scatter plot
-subplot(2,2,2),plot(dx(b==1), dy(b==1), 'k.');
-%subplot(2,2,2),plot(data.vel(b==1,2), data.vel(b==1,3), 'k.')
+%subplot(2,2,2),plot(dx(b==1), dy(b==1), 'k.');
+subplot(2,2,2),plot(data.vel(b==1,2), data.vel(b==1,3), 'k.')
 xlabel('X velocity (cm/s)');
 ylabel('Y velocity (cm/s)');
 
-cors = zeros(256,3);
-theta = 0:pi/128:pi*255/128;
-for i = 1:256    
+steps = 64;
+cors = zeros(steps,3);
+theta = 0:pi/(steps/2):pi*(steps-1)/(steps/2);
+for i = 1:steps    
     mdl = bayes_regression(theta(i));
     conf = confint(mdl);
     cors(i,:) = [mdl.m conf(1,2) conf(2,2)];    
 end
 
 tuning = cors(:,1);
-subplot(2,2,3),plot(theta, tuning, 'kx');
+subplot(2,2,3),shadedplot([theta 2*pi], [cors(:,2)' cors(1,2)], [cors(:,3)' cors(1,3)],[.7 .7 .7],[0 0 0]);
 hold on;
-
-subplot(2,2,3),plot(theta, cors(:,2), 'k--');
-subplot(2,2,3),plot(theta, cors(:,3), 'k--');
+subplot(2,2,3),plot(theta, tuning, 'kx');
 
 g = fittype('a*cos(x-b)+c', 'indep', 'x');
 f = fitoptions('method', 'NonlinearLeastSquares', ...
@@ -117,14 +107,16 @@ subplot(2,2,4),plot(X, N, 'b-', X, P/20, 'ko', X, N2, 'r-', X, mdl(X)/20, 'k--')
 xlabel('speed (cm/s)');
 ylabel('Probability');
 
+if good_cell == 1
+    out = [channel, unit, peak, baseline, curve.b, curve.a, curve.c];
+else 
+    out = [channel, unit, NaN, NaN, NaN, NaN, NaN];
+end
+
 %pref_dir = theta(peak_th);
 %pref_dir_peak = cor;
 
 %suptitle(sprintf('%d-%d',channel,unit));
-
-rmpath ./lib
-rmpath ./spike
-rmpath ./bdf
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % sub functions follow
@@ -174,21 +166,17 @@ function run_all_units(data, verbose)
     end
     
     list = unit_list(data);
-
-    % M will hold data about the cell that should go in the table
-    M = zeros(size(list,1), 8);
-
+    
+    tmp_out = [];
+    tic
     for j = 1:size(list,1);
-        %[pk wd gs pd bl pd_pk] = rand_walk(data, list(j,1), list(j,2));
-        rand_walk_cl(data, list(j,1), list(j,2));
-
+        res = rand_walk_new(data, list(j,1), list(j,2));
+        tmp_out = [tmp_out;res];
+        
         % write figure to ps
         set(gcf, 'PaperPosition', [1.25 2.5 6 6]);
         print('-r600', '-dpsc2', sprintf('tmp/fig%d', j));
         close(gcf);
-        
-        % add important data to M
-        %M(j,:) = [list(j,1) list(j,2) pk wd gs pd bl pd_pk];
         
         % status bar
         if verbose
@@ -201,11 +189,11 @@ function run_all_units(data, verbose)
         if limit == 0
             break;
         end
+        
+        toc
     end
-    
-    % write M to file
-    %csvwrite('tmp/summary.txt', M);
-    
+
+    out = tmp_out;
 end % function run_all_units(data)
 
 end % global close
