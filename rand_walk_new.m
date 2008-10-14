@@ -1,5 +1,5 @@
 %function [peak peak_width good_cell pref_dir baseline pref_dir_peak mdl] = rand_walk(varargin)
-function out = rand_walk(varargin)
+function [tuning gof peakness] = rand_walk_new(varargin)
 % RAND_WALK( DATA, CHANNEL, UNIT ) - runs RW analytics
 %   DATA    - a BDF structure
 %   CHANNEL - the channel of the unit to run analytics on
@@ -11,6 +11,15 @@ function out = rand_walk(varargin)
 % OUT = RAND_WALK( DATA ) - returns a matrix with a row for each cell
 %   containing the following:
 %       Channel, Unit, MIPeak, Baseline, PD, PDgain, SpeedGain
+%
+% [OUT, GOF] = RAND_WALK( DATA ) - GOF returns a list of N rows and three
+%   columns with the three columns being sse of the cosine model, sse of a
+%   constant, and sse of zero as a model of the tuning curve
+%
+% [OUT, GOF, PEAKNESS] = RAND_WALK( DATA ) - PEAKNESS returns a measure of
+%   how strong the peak in MI is.  Specifically it is the ratio of the
+%   variance of the LP filtered MI curve to the variance of the HP filtered
+%   MI curve.  A peakness > 5 indicates a "good cell".
 
 if nargin == 1
     run_all_units(varargin{1}, 1);
@@ -25,7 +34,7 @@ end
 
 s = get_unit(data, channel, unit);
 
-end_mi = floor(s(end));
+%end_mi = floor(s(end));
 
 b = train2bins(s, .001); % 1ms bins
 b = b(1000:end); % drop points before begin mi
@@ -49,7 +58,7 @@ xlabel('Delay (s)');
 ylabel('Mutual Information (bits)');
 
 % MI peak analysis
-[peak peak_width good_cell] = peak_analysis(d);
+[peak peak_width good_cell peakness] = peak_analysis(d);
 
 % recalculate spike train adjusting for offset
 b = train2bins(s - peak, .001); % 1ms bins
@@ -90,7 +99,8 @@ f = fitoptions('method', 'NonlinearLeastSquares', ...
     'StartPoint',[1 pi 0], ...
     'Lower', [0 0 -1000], ...
     'Upper', [1000 2*pi 1000]);
-curve = fit(theta', tuning, g, f);
+[curve, fgof] = fit(theta', tuning, g, f);
+gof = [fgof.sse sum((tuning' - mean(tuning)).^2) sum(tuning.^2)];
 
 subplot(2,2,3),plot(theta, curve(theta), 'r-');
 subplot(2,2,3),plot_scale = axis;
@@ -108,9 +118,9 @@ xlabel('speed (cm/s)');
 ylabel('Probability');
 
 if good_cell == 1
-    out = [channel, unit, peak, baseline, curve.b, curve.a, curve.c];
+    tuning = [channel, unit, peak, baseline, curve.b, curve.a, curve.c];
 else 
-    out = [channel, unit, NaN, NaN, NaN, NaN, NaN];
+    tuning = [channel, unit, NaN, NaN, NaN, NaN, NaN];
 end
 
 %pref_dir = theta(peak_th);
@@ -122,7 +132,7 @@ end
 % sub functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [peak, width, good_peak] = peak_analysis(d)
+function [peak, width, good_peak, peakness] = peak_analysis(d)
     sd = smooth(d, 21)';
     dd = d - sd;
     if var(sd) > var(dd)*5
@@ -135,6 +145,7 @@ function [peak, width, good_peak] = peak_analysis(d)
         width = 0;
     end
     peak = t(sd==max(sd));
+    peakness = var(sd) / var(dd);
 end
 
 function [mdl, X, N, N2, P] = bayes_regression(th)
@@ -167,11 +178,15 @@ function run_all_units(data, verbose)
     
     list = unit_list(data);
     
-    tmp_out = [];
+    tmp_tuning = [];
+    tmp_gof = [];
+    tmp_peakness = [];
     tic
     for j = 1:size(list,1);
-        res = rand_walk_new(data, list(j,1), list(j,2));
-        tmp_out = [tmp_out;res];
+        [res res_g res_p] = rand_walk_new(data, list(j,1), list(j,2));
+        tmp_tuning = [tmp_tuning; res];         %#ok<AGROW>
+        tmp_gof = [tmp_gof; res_g];             %#ok<AGROW>
+        tmp_peakness = [tmp_peakness; res_p];   %#ok<AGROW>
         
         % write figure to ps
         set(gcf, 'PaperPosition', [1.25 2.5 6 6]);
@@ -193,7 +208,9 @@ function run_all_units(data, verbose)
         toc
     end
 
-    out = tmp_out;
+    tuning = tmp_tuning;
+    gof = tmp_gof;
+    peakness = tmp_peakness;
 end % function run_all_units(data)
 
 end % global close
