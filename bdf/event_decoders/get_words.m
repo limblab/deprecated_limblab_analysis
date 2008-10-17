@@ -32,7 +32,7 @@ events = sortrows(events);
 
 
 % group into frames
-frame_indices = find(diff(events(:,1)) > .0005) + 1;
+frame_indices = find(diff(events(:,1)) > .0002) + 1;
 frame_lengths = diff(frame_indices);
 frame_indices = frame_indices(1:length(frame_indices)-1); % drop last index to keep lists same length
 
