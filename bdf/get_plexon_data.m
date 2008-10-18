@@ -30,15 +30,20 @@ function out_struct = get_plexon_data(varargin)
 % |   |   +-- TS       - Start times of analog channels
 % |   |   +-- DATA     - Raw analog data: [t1 ch1_1 ch2_1 ... chn_1;
 % |   |                                    t2 ch1_2 ch2_2 ... chn_2; ... ]
-% |   +-- EVENTS - contains the events structure exactly as it is removed
-% |       |        from the plx file (not strobed words)
-% |       +-- TIMESTAMPS - event timestamps 
+% |   +-- EVENTS - Contains the events structure exactly as it is removed
+% |   |   |        from the plx file (not strobed words)
+% |   |   +-- TIMESTAMPS - event timestamps 
+% |   +-- WORDS - Not really a raw value, but an intermediate one.  This
+% |               contains the words before they have been split into event
+% |               codes and databursts
 % |                        {[e1_1 e1_2 ... ] [e2_1 ... ] ...}
 % +-- POS    - Position signal: [t1 x1 y1; t2 x2 y2; ... ]
 % +-- VEL    - Velocity signal: as for position
 % +-- ACC    - Acceleration signal: as for position
 % +-- FORCE  - Force signal: [t1 x1 y1; t2 x2 y2; ... ]
 % +-- WORDS  - Words: [ts1 word1, ts2 word2 ... ]
+% +-- DATABURSTS - Data blocks: {ts1 [byte1_1 byte1_2 ...], 
+%                                ts2 [byte2_1 byte2_2 ...], ... }
 % +-- KEYBOARD_EVENTS - Keybord events: [t1 key1, t2 key2 ... ]
 % +-- META   - Metadata
 %     |
@@ -158,7 +163,8 @@ function out_struct = get_plexon_data(varargin)
     out_struct.force = [analog_time_base' out_struct.force];
     
     % Words
-    out_struct.words = get_words(out_struct.raw.events.timestamps);
+    out_struct.raw.words = get_words(out_struct.raw.events.timestamps);
+    [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
     
     % Keyboard Events
     out_struct.keyboard_events = [];
