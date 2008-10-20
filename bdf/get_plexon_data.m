@@ -51,6 +51,8 @@ function out_struct = get_plexon_data(varargin)
 %     +-- DATETIME
 %     +-- DURATION
 
+% $Id$
+
     % Add paths - take them back out at the end
     addpath ./core_files
     addpath ./event_decoders

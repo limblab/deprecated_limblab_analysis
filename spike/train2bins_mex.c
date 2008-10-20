@@ -2,6 +2,8 @@
  * =============================================================
  * train2bins.c
  *
+ * $Id$
+ *
  * called as [ d, t ] = train2bins( S, B ) where:
  * S is a vector
  * B is a vector (list of timestamps)

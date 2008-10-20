@@ -4,6 +4,8 @@ function d = tmi( spikes, hand, bins )
 %   Peak > 0 means hand leads spikes
 %
 
+% $Id$
+
 d = zeros(1,length(bins));
 j = 1;
 

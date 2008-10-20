@@ -1,5 +1,7 @@
 function out = find_active_regions(bdf)
 
+% $Id$
+
 hits = bdf.words( bdf.words(:,2)==49 | bdf.words(:,2)==32 , 1);
 hits = [0; hits];
 

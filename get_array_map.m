@@ -6,6 +6,8 @@ function grid = get_array_map(units, map)
 %       numbers of the various electrodes
 %
 
+% $Id$
+
 grid = zeros(size(map));
 
 for i = 1:length(units);

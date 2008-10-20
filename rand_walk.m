@@ -8,6 +8,8 @@ function [baseline curve] = rand_walk(varargin)
 % RAND_WALK( DATA )
 %   Does as above but for each unit in the BDF structure
 
+% $Id$
+
 addpath ./lib
 addpath ./spike
 addpath ./bdf

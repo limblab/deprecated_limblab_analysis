@@ -7,6 +7,8 @@ function f = bytes2float(varargin)
 %   F = BYTES2FLOAT( B, ENDIAN ) Does the same for the specified byte
 %   order.  ENDIAN must take one of the values 'big' or 'little'
 
+% $Id$
+
 b = varargin{1};
 if nargin > 1
     e = varargin{2};

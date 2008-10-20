@@ -1,5 +1,7 @@
 function [vel_hat, b] = predict_from_tuning(bdf, tuning)
 
+% $Id$
+
 % Extract velocity and speed
 v = bdf.vel(:,2:3);
 s = sqrt( v(:,1).^2 + v(:,2).^2 );

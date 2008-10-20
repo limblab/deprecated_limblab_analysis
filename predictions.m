@@ -1,5 +1,7 @@
 function out = predictions(bdf, signal, cells, folds)
 
+% $Id$
+
 addpath mimo
 addpath spike
 addpath bdf

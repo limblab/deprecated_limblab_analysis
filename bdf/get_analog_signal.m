@@ -6,6 +6,8 @@ function analog_data = get_analog_signal(data, name)
 %   the second column is the datapoints
 %
 
+% $Id$
+
 achan_index = find(strcmp(data.raw.analog.channels, name));
 
 a = data.raw.analog.data{achan_index};

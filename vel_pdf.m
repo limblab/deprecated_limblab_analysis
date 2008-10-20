@@ -1,5 +1,7 @@
 function [pdf x y] = vel_pdf(vel)
 
+% $Id$
+
 k_width = 10; % sigma of gaussian kernel
 
 [x y] = meshgrid(-50:2.5:50, -50:2.5:50);

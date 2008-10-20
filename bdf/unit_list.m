@@ -4,6 +4,8 @@ function list = unit_list(data)
 %   the channel number (column 1) and sort code (column 2) of every unit
 %   that has >0 spikes in BDF structure DATA.
 
+% $Id$
+
 L = size(data.units, 2);
 list = [];
 

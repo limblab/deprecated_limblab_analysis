@@ -2,6 +2,8 @@
  * =============================================================
  * mi.c
  *
+ * $Id$
+ *
  * called as i=mi(X,Y) where:
  * X is a vector
  * Y is a matix 

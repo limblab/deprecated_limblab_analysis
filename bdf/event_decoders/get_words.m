@@ -18,6 +18,8 @@ function words = get_words(time_stamp_events)
 %       LSB first (cell 1).  Time stamps are those samples where that
 %       particular bit was set to TRUE.
 
+% $Id$
+
 % First, we need to get all of the time stamps where an event happened on
 % any channel.
 time_stamps = [];

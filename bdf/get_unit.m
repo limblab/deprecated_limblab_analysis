@@ -8,6 +8,8 @@ function s = get_unit( data, channel, unit )
 %   however, if the unit is defined but contains no spikes, it will return
 %   a null list with no error.
 
+% $Id$
+
 unit_num = -1;
 num_units = size(data.units, 2);
 
