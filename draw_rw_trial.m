@@ -7,6 +7,8 @@ function draw_rw_trial(bdf, trial_num, target_size)
 %   specified size and circles are placed where targets were hit and to 
 %   indicate the beginning and end of the of the trial
 
+% $Id$
+
 addpath lib
 
 if trial_num > size(bdf.databursts, 1) || trial_num <= 0
@@ -41,7 +43,7 @@ target_hit_times = target_hit_times( target_hit_times > start_time & target_hit_
 [trash, target_hit_idx] = min( abs(repmat(bdf.pos(:,1),1,size(target_hit_times,1)) - repmat(target_hit_times',size(bdf.pos,1),1)) );
 
 % Adjust position signal for offset
-offset = [1.5, -34];
+offset = [2, -33.5];
 pos = bdf.pos(:,2:3) - repmat(offset, length(bdf.pos), 1);
 
 bytes = bdf.databursts{trial_num, 2};
@@ -59,7 +61,15 @@ plot(pos(start_idx,1),         pos(start_idx,2),         'go'); % Start position
 plot(pos(end_idx,1),           pos(end_idx,2),           'ro'); % End position
 plot(pos(target_hit_idx,1),    pos(target_hit_idx,2),    'ko'); % Target positions
 
-plot(target_coords(:,1), target_coords(:,2), 'kx');
+% Draw targets
+d = target_size / 2;
+for i = 1:size(target_coords, 1)
+    tx = target_coords(i,1);
+    ty = target_coords(i,2);
+    x = [tx-d, tx+d, tx+d, tx-d, tx-d];
+    y = [ty+d, ty+d, ty-d, ty-d, ty+d];
+    plot(x, y);
+end
 
 rmpath lib
 
