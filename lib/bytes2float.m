@@ -48,3 +48,4 @@ mantisa = mantisa + 2^23 * ~(exponent == -127 & mantisa == 0);
 mantisa = mantisa / 2^23;
 
 f = signs .* 2.^exponent .* mantisa;
+
