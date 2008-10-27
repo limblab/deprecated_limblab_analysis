@@ -23,25 +23,25 @@ g = g(start_idx:stop_idx);
 dg = dg(start_idx:stop_idx);
 t = g_time(start_idx:stop_idx);
 
-% normalize values
-ag = (g - mean(g)) / sqrt(var(g));
-adg = (dg - mean(dg)) / sqrt(var(dg));
-
-%plot(ag, adg)
-
 % get units
 s = get_unit(bdf, chan, unit);
 b = train2bins(s, t);
 b(1) = 0; % cover a bug in train2bins
+g_spike = g(b == 1);
 
-%d = tmi(b, [ag adg], -1000:10:1000);
-%plot(-1000:10:1000, d);
+gmax = max(g);
+gmin = min(g);
+gstep = (gmax - gmin) / 8;
+gbins = gmin-gstep:gstep:gmax+gstep;
 
-[c1, lags] = xcorr(g, b);
-c2 = xcorr(dg, b);
+n = hist(g, gbins);
+ns = hist(g_spike, gbins);
 
-plot(lags, c1,'b-', lags, c2, 'r-');
-%plot(b)
+rate = 1000 * ns ./ n;
+rate_err = 1000 * sqrt(ns) ./ n;
+
+figure; errorbar(gbins(2:end-1), rate(2:end-1), rate_err(2:end-1), 'bo-');
+title(sprintf('Unit: %d-%d', chan, unit));
 
 % cleanup
 rmpath ../spike
