@@ -50,6 +50,8 @@ function out_struct = get_plexon_data(varargin)
 %     +-- FILENAME
 %     +-- DATETIME
 %     +-- DURATION
+%     +-- BDF_INFO - contains information about the version of
+%                    get_plexon_data used to create the BDF
 
 % $Id$
 
@@ -78,15 +80,16 @@ function out_struct = get_plexon_data(varargin)
         h = waitbar(0, sprintf('Opening: %s', filename));
     end
 
-%% Data From PLX File
-    
+%% Data From PLX File    
+
     % Get MetaData
     [tscounts, wfcounts, evcounts] = plx_info(filename,1);
     [OpenedFileName, Version, Freq, Comment, Trodalness, NPW, PreThresh, ...
         SpikePeakV, SpikeADResBits, SlowPeakV, SlowADResBits, Duration, ...
         DateTime] = plx_information(filename);
     
-    out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration);
+    out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration, ...
+        'bdf_info', '$Id$');
 
     % Extract data from plxfile
     out_struct.units = get_units(filename, verbose);
