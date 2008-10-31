@@ -1,4 +1,4 @@
-function analyze_joint(bdf, chan, unit, start, stop)
+function [f, p] = analyze_joint(bdf, chan, unit, start, stop)
 % ANALYZE_JOINT - Performs joint level analysis based on goniometer signals
 %   ANALYZE_JOINT(BDF, CHAN, UNIT, START, STOP) performs joint level
 %   analysis on the specified channel and unit between START and STOP
@@ -7,6 +7,7 @@ function analyze_joint(bdf, chan, unit, start, stop)
 
 addpath ../spike
 addpath ../bdf
+addpath ../lib
 
 % for now we are going to use GoniometerX
 g_chan = find(strcmp('GoniometerY', bdf.raw.analog.channels));
@@ -27,22 +28,26 @@ t = g_time(start_idx:stop_idx);
 s = get_unit(bdf, chan, unit);
 b = train2bins(s, t);
 b(1) = 0; % cover a bug in train2bins
-g_spike = g(b == 1);
 
-gmax = max(g);
-gmin = min(g);
-gstep = (gmax - gmin) / 8;
-gbins = gmin-gstep:gstep:gmax+gstep;
+[means, bins, errors, ns, ts] = plot_posterior(g, b);
+%subplot(2,2,1), plot_posterior(g, b);
+%subplot(2,2,2), plot_posterior(dg, b);
+%subplot(2,2,3), plot(t,g,'r-',t,b,'k-');
+%subplot(2,2,4), plot(t,dg,'r-',t,b,'k-');
 
-n = hist(g, gbins);
-ns = hist(g_spike, gbins);
+suptitle(sprintf('Unit: %d-%d', chan, unit));
 
-rate = 1000 * ns ./ n;
-rate_err = 1000 * sqrt(ns) ./ n;
+% get modified f-statistic on tuning curve
+f = var(means) / mean(errors);
 
-figure; errorbar(gbins(2:end-1), rate(2:end-1), rate_err(2:end-1), 'bo-');
-title(sprintf('Unit: %d-%d', chan, unit));
+% get probability of this much varience under null hypothesis
+ps = binocdf( ns, ts, sum(ns) / sum(ts) );
+ps(ps > .5) = 1 - ps(ps > .5);
+ps = 2*ps;
+p = prod(ps);
 
 % cleanup
 rmpath ../spike
 rmpath ../bdf
+rmpath ../lib
+
