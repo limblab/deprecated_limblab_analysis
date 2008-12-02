@@ -21,7 +21,7 @@ if nargout > 1
     db_list = words( words(:,2) >= min_db_val & words(:,2) <= max_db_val, :);
     
     % Find datablock frames
-    frame_idx = find( diff(db_list(:,1)) > .003 ) + 1;
+    frame_idx = find( diff(db_list(:,1)) > .005 ) + 1;
     frame_idx = [1; frame_idx];
     
     datablocks = cell(length(frame_idx), 2);
