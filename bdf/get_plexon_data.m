@@ -92,84 +92,111 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
-    out_struct.units = get_units(filename, verbose);
+    %out_struct.units = get_units(filename, verbose);
     out_struct.raw = get_raw(filename, verbose);
     
 %% Calculated Data
 
-    start_time = 1.0;
-    last_enc_time = out_struct.raw.enc(end,1);
-    last_analog_time = out_struct.raw.analog.ts{1} + ...
-        length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
-    stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
-    analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
-
-    % Position
-    if (verbose == 1)
-        progress = progress + .05;
-        waitbar(progress, h, sprintf('Opening: %s\nget position', filename));
-    end
-
-    l1 = 24.0; l2 = 23.5;
-    th_t = out_struct.raw.enc(:,1); % encoder time stamps
-    
-    [b,a] = butter(8, 100/adfreq);
-
-    th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
-    th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-    th_1_adj = interp1(th_t, filtfilt(b, a, th_1), analog_time_base); 
-    th_2_adj = interp1(th_t, filtfilt(b, a, th_2), analog_time_base); 
-
-    % convert to x and y
-    x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
-    y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
-    
-    % get derivatives
-    dx = kin_diff(x);
-    dy = kin_diff(y);
-    
-    ddx = kin_diff(dx);
-    ddy = kin_diff(dy);
-
-    % write into structure
-    out_struct.pos = [analog_time_base'   x'   y'];
-    out_struct.vel = [analog_time_base'  dx'  dy'];
-    out_struct.acc = [analog_time_base' ddx' ddy'];
-
-    % Force
-    if (verbose == 1)
-        progress = progress + .05;
-        waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
-    end
-    
-    fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
-             -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
-    rotcal = [0.8540 -0.5202; 0.5202 0.8540];
-    
-    [b,a] = butter(4, 20/adfreq);
-    raw_force = zeros(length(analog_time_base), 6);
-    for c = 1:6
-        channame = sprintf('ForceHandle%d', c);
-        a_data = get_analog_signal(out_struct, channame);
-        a_data = filtfilt(b, a, a_data);
-        a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
-        raw_force(:,c) = a_data';
-    end
-    
-    force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
-    force_offsets = repmat(force_offsets, length(raw_force), 1);
-    out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
-    out_struct.force(:,2) = -out_struct.force(:,2);    
-    for p = 1:size(out_struct.force, 1)
-        r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
-        out_struct.force(p,:) = out_struct.force(p,:) * r;
-    end
-    
-    out_struct.force = [analog_time_base' out_struct.force];
-    
     % Words
     out_struct.raw.words = get_words(out_struct.raw.events.timestamps);
     [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
+
+    % figure out which behavior is running
+    start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
+    start_trial_code = start_trial_words(1);
+    if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+        error('Not all trials are the same type');
+    end
+    
+    if start_trial_code == hex2dec('17')
+        wrist_flexion_task = 1;
+    elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
+        robot_task = 1;
+    end
+    
+    start_time = 1.0;
+    last_analog_time = out_struct.raw.analog.ts{1} + ...
+        length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
+    if robot_task
+        last_enc_time = out_struct.raw.enc(end,1);
+        stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
+    end
+    analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
+
+    if robot_task
+        % Position
+        if (verbose == 1)
+            progress = progress + .05;
+            waitbar(progress, h, sprintf('Opening: %s\nget position', filename));
+        end
+
+        l1 = 24.0; l2 = 23.5;
+        th_t = out_struct.raw.enc(:,1); % encoder time stamps
+
+        [b,a] = butter(8, 100/adfreq);
+
+        th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
+        th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
+        th_1_adj = interp1(th_t, filtfilt(b, a, th_1), analog_time_base); 
+        th_2_adj = interp1(th_t, filtfilt(b, a, th_2), analog_time_base); 
+
+        % convert to x and y
+        x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
+        y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
+
+        % get derivatives
+        dx = kin_diff(x);
+        dy = kin_diff(y);
+
+        ddx = kin_diff(dx);
+        ddy = kin_diff(dy);
+
+        % write into structure
+        out_struct.pos = [analog_time_base'   x'   y'];
+        out_struct.vel = [analog_time_base'  dx'  dy'];
+        out_struct.acc = [analog_time_base' ddx' ddy'];
+
+        % Force
+        if (verbose == 1)
+            progress = progress + .05;
+            waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
+        end
+
+        fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
+                 -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
+        rotcal = [0.8540 -0.5202; 0.5202 0.8540];
+
+        [b,a] = butter(4, 20/adfreq);
+        raw_force = zeros(length(analog_time_base), 6);
+        for c = 1:6
+            channame = sprintf('ForceHandle%d', c);
+            a_data = get_analog_signal(out_struct, channame);
+            a_data = filtfilt(b, a, a_data);
+            a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
+            raw_force(:,c) = a_data';
+        end
+
+        force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+        force_offsets = repmat(force_offsets, length(raw_force), 1);
+        out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
+        out_struct.force(:,2) = -out_struct.force(:,2);    
+        for p = 1:size(out_struct.force, 1)
+            r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
+            out_struct.force(p,:) = out_struct.force(p,:) * r;
+        end
+    elseif wrist_flexion_task
+
+    end
+    
+    out_struct.force = [analog_time_base' out_struct.force];
+       
+    % EMGs
+    emg_channels = find( strncmp(bdf.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
+    if ~isempty(emg_channels)
+        % extract emg channel data here
+        
+        % out_struct.emg = ...
+    end
     
     % Keyboard Events
     out_struct.keyboard_events = [];
@@ -284,9 +311,13 @@ function out_struct = get_plexon_data(varargin)
         end
         
         % get strobed events and values
-        [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
-        raw.enc = get_encoder([strobe_ts strobe_value]);
-        
+        try
+            [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
+            raw.enc = get_encoder([strobe_ts strobe_value]);
+        catch
+            
+        end
+            
         % Get individual events
         for i = 3:10
             if (verbose == 1)

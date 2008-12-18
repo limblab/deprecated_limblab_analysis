@@ -19,6 +19,11 @@ filtered_words = words( words(:,2) < min_db_val, :);
 if nargout > 1
     % Get datablock words
     db_list = words( words(:,2) >= min_db_val & words(:,2) <= max_db_val, :);
+    if isempty(db_list)
+        filtered_words = words;
+        datablocks = [];
+        return
+    end    
     
     % Find datablock frames
     frame_idx = find( diff(db_list(:,1)) > .005 ) + 1;
