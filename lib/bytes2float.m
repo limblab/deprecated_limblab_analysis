@@ -27,7 +27,7 @@ if mod(length(b), 4) ~= 0
     error('B must have a length that is an integer multiple of 4')
 end
 
-if any(b>256) || any(b<0)
+if any(b>255) || any(b<0)
     error('B must contain only integer values between 0 and 255')
 end
 
