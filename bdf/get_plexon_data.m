@@ -15,7 +15,7 @@ function out_struct = get_plexon_data(varargin)
 %
 % OUT_STRUCT
 % |
-% +-- UNITS   - Contins data on neurons and their firing
+% +-- UNITS   - Contains data on neurons and their firing
 % |   |
 % |   +-- ID  - List of units in the form {[chan1 unit1] [chan2 unit2] ... }
 % |   +-- TS  - List of spike timestamps for each unit in the form:
@@ -43,8 +43,12 @@ function out_struct = get_plexon_data(varargin)
 % +-- FORCE  - Force signal: [t1 x1 y1; t2 x2 y2; ... ]
 % +-- WORDS  - Words: [ts1 word1, ts2 word2 ... ]
 % +-- DATABURSTS - Data blocks: {ts1 [byte1_1 byte1_2 ...], 
-%                                ts2 [byte2_1 byte2_2 ...], ... }
+% |                              ts2 [byte2_1 byte2_2 ...], ... }
 % +-- KEYBOARD_EVENTS - Keybord events: [t1 key1, t2 key2 ... ]
+% +-- EMG
+% |   |
+% |   +-- DATA     - EMG signals: [t1 emg1 emg2 ... emgN; t2 emg1 emg2 ... emgN; ... ]
+% |   +-- EMGNAMES - Names of emg signals: {'EMG_muscle1', 'EMG_muscle2',...}  
 % +-- META   - Metadata
 %     |
 %     +-- FILENAME
@@ -92,7 +96,7 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
-    %out_struct.units = get_units(filename, verbose);
+    out_struct.units = get_units(filename, verbose);
     out_struct.raw = get_raw(filename, verbose);
     
 %% Calculated Data
@@ -108,10 +112,15 @@ function out_struct = get_plexon_data(varargin)
         error('Not all trials are the same type');
     end
     
+    robot_task = 0;
+    wrist_flexion_task =0;
+    
     if start_trial_code == hex2dec('17')
         wrist_flexion_task = 1;
     elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
         robot_task = 1;
+    else
+        error('Unknown behavior task');
     end
     
     start_time = 1.0;
@@ -120,9 +129,13 @@ function out_struct = get_plexon_data(varargin)
     if robot_task
         last_enc_time = out_struct.raw.enc(end,1);
         stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
+    elseif wrist_flexion_task
+        stop_time = floor(last_analog_time)-1;
     end
-    analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
 
+    analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
+    
+    %Position and Force for Robot Task
     if robot_task
         % Position
         if (verbose == 1)
@@ -184,18 +197,65 @@ function out_struct = get_plexon_data(varargin)
             r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
             out_struct.force(p,:) = out_struct.force(p,:) * r;
         end
+        
+        out_struct.force = [analog_time_base' out_struct.force];
+        
+    % Force (Cursor Pos) for Wrist Flexion task    
     elseif wrist_flexion_task
+    
+        force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %ok<EFIND>
+        if ~isempty(force_channels)
+            % Getting Force
+            if (verbose == 1)
+                progress = progress + .05;
+                waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
+            end
+
+            % extract force data for WF task here
+            [b,a] = butter(4, 20/adfreq); % lowpass at 10 Hz
+            force_x = get_analog_signal(out_struct, 'Force_x');
+            force_x = filtfilt(b,a,force_x);
+            force_x = interp1( force_x(:,1), force_x(:,2), analog_time_base);
+            force_y = get_analog_signal(out_struct, 'Force_y');
+            force_y = filtfilt(b,a,force_y);
+            force_y = interp1( force_y(:,1), force_y(:,2), analog_time_base);
+            out_struct.force = [analog_time_base' force_x' force_y'];
+        else
+            disp('No force signal found because no channel named ''Force_*''');
+            out_struct.force = [];
+        end
 
     end
     
-    out_struct.force = [analog_time_base' out_struct.force];
-       
     % EMGs
-    emg_channels = find( strncmp(bdf.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
+    emg_channels = find( strncmp(out_struct.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
     if ~isempty(emg_channels)
+        if (verbose == 1)
+            progress = progress + .05;
+            waitbar(progress, h, sprintf('Opening: %s\nget EMGs', filename));
+        end
+              
         % extract emg channel data here
+   
+        out_struct.emg.emgnames = out_struct.raw.analog.channels(emg_channels);
         
-        % out_struct.emg = ...
+        highpassfreq = 50; %50Hz
+        lowpassfreq = 5; %10Hz
+        
+        [bh,ah] = butter(4, highpassfreq*2/adfreq, 'high');
+        [bl,al] = butter(4, lowpassfreq*2/adfreq, 'low');
+        raw_emg = zeros(length(analog_time_base), length(emg_channels));
+        for e = 1:(length(emg_channels))
+            e_data = get_analog_signal(out_struct, out_struct.emg.emgnames(e));
+%            e_data(:,2) = filtfilt(bh,ah,e_data(:,2)); % highpass at 50 Hz
+%            e_data(:,2) = abs(e_data(:,2)); %rectify
+%            e_data(:,2) = filtfilt(bl,al,e_data(:,2)); %lowpass at 10 Hz
+            e_data = interp1( e_data(:,1), e_data(:,2), analog_time_base);
+            raw_emg(:,e) = e_data';
+        end
+        out_struct.emg.data = [analog_time_base' raw_emg];
+    else
+        disp('No EMG signal found because no channel named ''EMG_*''');
     end
     
     % Keyboard Events
@@ -228,10 +288,19 @@ function out_struct = get_plexon_data(varargin)
     if (verbose == 1)
         close(h);
     end
+    
+    wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
+
+    if(strcmp('Yes',wanttosave))
+        savestruct(out_struct);
+    else
+        disp('The structure was not saved!')
+    end
 
     rmpath ./core_files
     rmpath ./event_decoders
-    
+      
+
 %% Subroutines
 
     % get_units
@@ -307,7 +376,7 @@ function out_struct = get_plexon_data(varargin)
         raw.analog.adfreq = adfreq;
         raw.analog.ts = tmp_ts;
         for i = 1:length(tmp_channels)
-            raw.analog.data{i} = tmp_data{i} / 409.3;
+            raw.analog.data{i} = tmp_data{i} / 409.3; % scaling factor to convert a/d units to mV
         end
         
         % get strobed events and values
@@ -336,7 +405,7 @@ function out_struct = get_plexon_data(varargin)
 
     % diferentiater function for kinematic signals
     % should differentiate, LP filter at 100Hz and add a zero to adjust for
-    % themporal shift
+    % temporal shift
     function dx = kin_diff(x) 
         [b, a] = butter(8, 100/adfreq);
         dx = diff(x) .* adfreq;
@@ -344,4 +413,26 @@ function out_struct = get_plexon_data(varargin)
         dx = [0 dx];
     end
 
+
+    % save matfile
+    function savestruct(out_struct)
+    
+        matfilename = out_struct.meta.filename;
+        matfilename = strrep(matfilename,'.plx','.mat');  %change '.plx' for '.mat'
+        
+        [FileName,PathName] = uiputfile( matfilename, 'Save mat file');
+        
+        fullfilename = fullfile(PathName, FileName);
+        
+        if isequal(FileName,0) || isequal(PathName,0)
+            disp('The structure was not saved!')
+        else
+            save(fullfilename, 'out_struct');
+            disp(['File: ', fullfile(PathName, FileName),' saved successfully'])
+        end
+    end
+
 end % close outermost function
+    
+    
+    
