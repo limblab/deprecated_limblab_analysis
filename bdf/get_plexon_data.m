@@ -287,15 +287,16 @@ function out_struct = get_plexon_data(varargin)
     
     if (verbose == 1)
         close(h);
+        wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
+    
+        if(strcmp('Yes',wanttosave))
+            savestruct(out_struct);
+        else
+            disp('The structure was not saved!')
+        end
     end
     
-    wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
 
-    if(strcmp('Yes',wanttosave))
-        savestruct(out_struct);
-    else
-        disp('The structure was not saved!')
-    end
 
     rmpath ./core_files
     rmpath ./event_decoders
