@@ -106,34 +106,40 @@ function out_struct = get_plexon_data(varargin)
     [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
 
     % figure out which behavior is running
-    start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
-    start_trial_code = start_trial_words(1);
-    if ~isempty(find(start_trial_words ~= start_trial_code, 1))
-        error('Not all trials are the same type');
-    end
-    
     robot_task = 0;
     wrist_flexion_task =0;
+    start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
+    if ~isempty(start_trial_words)
+        start_trial_code = start_trial_words(1);
+        if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+            error('Not all trials are the same type');
+        end
     
-    if start_trial_code == hex2dec('17')
-        wrist_flexion_task = 1;
-    elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
-        robot_task = 1;
-    else
-        error('Unknown behavior task');
-    end
-    
-    start_time = 1.0;
-    last_analog_time = out_struct.raw.analog.ts{1} + ...
-        length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
-    if robot_task
-        last_enc_time = out_struct.raw.enc(end,1);
-        stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
-    elseif wrist_flexion_task
-        stop_time = floor(last_analog_time)-1;
+        if start_trial_code == hex2dec('17')
+            wrist_flexion_task = 1;
+        elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
+            robot_task = 1;
+        else
+            error('Unknown behavior task');
+        end
     end
 
-    analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
+    % Compile analog data
+    if isfield(out_struct.raw, 'analog')
+        start_time = 1.0;
+        last_analog_time = out_struct.raw.analog.ts{1} + ...
+            length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
+        if robot_task
+            last_enc_time = out_struct.raw.enc(end,1);
+            stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
+        elseif wrist_flexion_task
+            stop_time = floor(last_analog_time)-1;
+        else
+            stop_time = floor(last_analog_time)-1;
+        end
+
+        analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
+    end
     
     %Position and Force for Robot Task
     if robot_task
@@ -200,10 +206,10 @@ function out_struct = get_plexon_data(varargin)
         
         out_struct.force = [analog_time_base' out_struct.force];
         
-    % Force (Cursor Pos) for Wrist Flexion task    
     elseif wrist_flexion_task
-    
-        force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %ok<EFIND>
+        % Force (Cursor Pos) for Wrist Flexion task    
+        
+        force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %#ok<EFIND>
         if ~isempty(force_channels)
             % Getting Force
             if (verbose == 1)
@@ -247,9 +253,9 @@ function out_struct = get_plexon_data(varargin)
         raw_emg = zeros(length(analog_time_base), length(emg_channels));
         for e = 1:(length(emg_channels))
             e_data = get_analog_signal(out_struct, out_struct.emg.emgnames(e));
-%            e_data(:,2) = filtfilt(bh,ah,e_data(:,2)); % highpass at 50 Hz
-%            e_data(:,2) = abs(e_data(:,2)); %rectify
-%            e_data(:,2) = filtfilt(bl,al,e_data(:,2)); %lowpass at 10 Hz
+            %e_data(:,2) = filtfilt(bh,ah,e_data(:,2)); % highpass at 50 Hz
+            %e_data(:,2) = abs(e_data(:,2)); %rectify
+            %e_data(:,2) = filtfilt(bl,al,e_data(:,2)); %lowpass at 10 Hz
             e_data = interp1( e_data(:,1), e_data(:,2), analog_time_base);
             raw_emg(:,e) = e_data';
         end
@@ -284,7 +290,6 @@ function out_struct = get_plexon_data(varargin)
     end
     
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
-    
     if (verbose == 1)
         close(h);
         wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
@@ -296,8 +301,6 @@ function out_struct = get_plexon_data(varargin)
         end
     end
     
-
-
     rmpath ./core_files
     rmpath ./event_decoders
       
@@ -344,9 +347,9 @@ function out_struct = get_plexon_data(varargin)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function raw = get_raw(filename, verbose)
     	% list of channels that we care about
-        [tscounts, wfcounts, evcounts] = plx_info(filename,1);
+        [tscounts, wfcounts, evcounts] = plx_info(filename,1); %#ok<SETNU>
         chans_with_data = sum(evcounts(300:363) > 0);
-        [n, chan_list] = plx_adchan_names(filename);
+        [n, chan_list] = plx_adchan_names(filename); %#ok<SETNU>
         
         chan_count = 1;
         for i = 0:63             
@@ -385,7 +388,8 @@ function out_struct = get_plexon_data(varargin)
             [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
             raw.enc = get_encoder([strobe_ts strobe_value]);
         catch
-            
+            er = lasterror;
+            disp(er.message);
         end
             
         % Get individual events

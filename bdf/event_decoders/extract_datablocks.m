@@ -20,7 +20,6 @@ if nargout > 1
     % Get datablock words
     db_list = words( words(:,2) >= min_db_val & words(:,2) <= max_db_val, :);
     if isempty(db_list)
-        filtered_words = words;
         datablocks = [];
         return
     end    
@@ -30,7 +29,7 @@ if nargout > 1
     frame_idx = [1; frame_idx];
     
     datablocks = cell(length(frame_idx), 2);
-    for i = 1:length(frame_idx)
+    for i = 1:length(frame_idx)-1
         idx = frame_idx(i);
         datablocks{i,1} = db_list(idx,1);
         num_bytes = (db_list(idx, 2) - min_db_val) + 16*(db_list(idx+1, 2) - min_db_val);
