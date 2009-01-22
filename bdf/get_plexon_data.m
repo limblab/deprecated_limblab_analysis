@@ -380,7 +380,7 @@ function out_struct = get_plexon_data(varargin)
         raw.analog.adfreq = adfreq;
         raw.analog.ts = tmp_ts;
         for i = 1:length(tmp_channels)
-            raw.analog.data{i} = tmp_data{i} / 409.3; % scaling factor to convert a/d units to mV
+            raw.analog.data{i} = tmp_data{i} / 409.3; % scaling factor to convert a/d units to Volts
         end
         
         % get strobed events and values
