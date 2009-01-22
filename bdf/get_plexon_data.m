@@ -60,7 +60,8 @@ function out_struct = get_plexon_data(varargin)
 % $Id$
 
     % Add paths - take them back out at the end
-    addpath ./core_files
+    addpath ./lib_plx
+    addpath ./lib_plx/core_files
     addpath ./event_decoders
 
     % make sure LaTeX is turned off and save the old state so we can turn
@@ -82,6 +83,8 @@ function out_struct = get_plexon_data(varargin)
     progress = 0;
     if (verbose == 1)
         h = waitbar(0, sprintf('Opening: %s', filename));
+    else
+        h = 0;
     end
 
 %% Data From PLX File    
@@ -96,8 +99,8 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
-    out_struct.units = get_units(filename, verbose);
-    out_struct.raw = get_raw(filename, verbose);
+    out_struct.units = get_units_plx(filename, verbose);
+    out_struct.raw = get_raw_plx(filename, verbose);
     
 %% Calculated Data
 
@@ -301,112 +304,12 @@ function out_struct = get_plexon_data(varargin)
         end
     end
     
-    rmpath ./core_files
+    rmpath ./lib_plx
+    rmpath ./lib_plx/core_files
     rmpath ./event_decoders
       
 
 %% Subroutines
-
-    % get_units
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function units = get_units(filename, verbose) 
-        % Get general info needed for events and units
-        tscounts = plx_info(filename, 1);
-        [max_num_units num_channels] = size(tscounts);
-
-        %
-        % Get Units 
-        %
-        num_total_units = sum(sum(tscounts > 0));
-        ids = cell(1, num_total_units);
-        tss = cell(1, num_total_units);
-        unit_counter = 1;
-
-        for chan = 1:num_channels-1
-            if (verbose == 1)
-                progress = progress + .3/num_channels;
-                waitbar(progress, h, sprintf('Opening: %s\nget units (%d)', filename, chan));
-            end
-            for unit = 1:max_num_units-1
-                % only create a unit if it has spikes
-                if (tscounts(unit+1, chan+1) > 0)
-                    [n, ts] = plx_ts(filename, chan, unit);
-
-                    ids{unit_counter} = [chan unit];
-                    tss{unit_counter} = ts;
-
-                    unit_counter = unit_counter + 1;
-                end
-            end
-        end
-
-        units = struct('id', ids, 'ts', tss); 
-    end
-
-    % get_raw
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function raw = get_raw(filename, verbose)
-    	% list of channels that we care about
-        [tscounts, wfcounts, evcounts] = plx_info(filename,1); %#ok<SETNU>
-        chans_with_data = sum(evcounts(300:363) > 0);
-        [n, chan_list] = plx_adchan_names(filename); %#ok<SETNU>
-        
-        chan_count = 1;
-        for i = 0:63             
-            if evcounts(300+i) > 0 
-                [adfreq, n, ts, fn, ad] = plx_ad(filename, i);
- 
-                if chans_with_data == size(chan_list, 1)
-                    channame = chan_list(chan_count, :);
-                else
-                    channame = chan_list(i+1, :);
-                end
-                channame = deblank(channame);
-                tmp_channels{chan_count} = channame;
-                    
-                tmp_data{chan_count} = ad;
-                tmp_ts{chan_count} = ts;
-                                 
-                chan_count = chan_count + 1;
-            end           
-            
-            if (verbose == 1)
-                progress = progress + .3/64;
-                waitbar(progress, h, sprintf('Opening: %s\nget analog (%d of %d)', filename, i+1, 64));
-            end
-        end
-
-        raw.analog.channels = tmp_channels;
-        raw.analog.adfreq = adfreq;
-        raw.analog.ts = tmp_ts;
-        for i = 1:length(tmp_channels)
-            raw.analog.data{i} = tmp_data{i} / 409.3; % scaling factor to convert a/d units to Volts
-        end
-        
-        % get strobed events and values
-        try
-            [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
-            raw.enc = get_encoder([strobe_ts strobe_value]);
-        catch
-            er = lasterror;
-            disp(er.message);
-        end
-            
-        % Get individual events
-        for i = 3:10
-            if (verbose == 1)
-                progress = progress + .2/8;
-                waitbar(progress, h, sprintf('Opening: %s\nget events', filename));
-            end
-            
-            try
-                [n, ts] = plx_event_ts(filename, i);
-            catch
-                ts = [];
-            end
-            raw.events.timestamps{i-2} = ts;
-        end
-    end
 
     % diferentiater function for kinematic signals
     % should differentiate, LP filter at 100Hz and add a zero to adjust for
@@ -417,7 +320,6 @@ function out_struct = get_plexon_data(varargin)
         dx = filtfilt(b,a,dx);
         dx = [0 dx];
     end
-
 
     % save matfile
     function savestruct(out_struct)
