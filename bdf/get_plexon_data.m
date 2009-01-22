@@ -101,8 +101,12 @@ function out_struct = get_plexon_data(varargin)
     % Extract data from plxfile
     out_struct.units = get_units_plx(filename, verbose);
     out_struct.raw = get_raw_plx(filename, verbose);
+    out_struct.keyboard_events = get_keyboard_plx(filename, verbose);
     
 %% Calculated Data
+
+    % Analog sample rate (local copy)
+    adfreq = out_struct.raw.analog.adfreq;
 
     % Words
     out_struct.raw.words = get_words(out_struct.raw.events.timestamps);
@@ -155,7 +159,7 @@ function out_struct = get_plexon_data(varargin)
         l1 = 24.0; l2 = 23.5;
         th_t = out_struct.raw.enc(:,1); % encoder time stamps
 
-        [b,a] = butter(8, 100/adfreq);
+        [b,a] = butter(8, 100/out_struct.raw.analog.adfreq);
 
         th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
         th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
@@ -266,28 +270,7 @@ function out_struct = get_plexon_data(varargin)
     else
         disp('No EMG signal found because no channel named ''EMG_*''');
     end
-    
-    % Keyboard Events
-    out_struct.keyboard_events = [];
-    for k = 1:9
-        if (verbose == 1)
-            progress = progress + .1/9;
-            waitbar(progress, h, sprintf('Opening: %s\nget keyboard events', filename));
-        end
-        
-        event_index = 100 + k;
-        try 
-            [n, ts] = plx_event_ts(filename, event_index);
-        catch
-            ts = [];
-        end
-        for evt = 1:length(ts)
-            out_struct.keyboard_events = ...
-                [out_struct.keyboard_events; ...
-                ts(evt) k];
-        end
-    end
-        
+            
     if ~isempty(out_struct.keyboard_events)
         out_struct.keyboard_events = sortrows( out_struct.keyboard_events, [1 2] );
     end

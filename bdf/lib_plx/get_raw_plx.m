@@ -1,6 +1,6 @@
 function raw = get_raw_plx(filename, verbose)
-% GET_UNITS_PLX extracts the units from the named plx file
-%   UNITS = GET_RAW_PLX(FILENAME, VERBOSE) returns the bdf.raw 
+% GET_RAW_PLX extracts the units from the named plx file
+%   RAW = GET_RAW_PLX(FILENAME, VERBOSE) returns the bdf.raw 
 %       structure from the named plx file.  If a progress bar is desired
 %       the handle to the waitbar is passed as VERBOSE.  To not display a 
 %       progress bar, pass 0.
@@ -67,5 +67,5 @@ function raw = get_raw_plx(filename, verbose)
         end
         raw.events.timestamps{i-2} = ts;
     end
-    
+      
 end
