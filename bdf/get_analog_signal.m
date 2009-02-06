@@ -11,6 +11,6 @@ function analog_data = get_analog_signal(data, name)
 achan_index = find(strcmp(data.raw.analog.channels, name));
 
 a = data.raw.analog.data{achan_index};
-t = (0:length(a)-1)' / data.raw.analog.adfreq + data.raw.analog.ts{achan_index};
+t = (0:length(a)-1)' / data.raw.analog.adfreq(achan_index) + data.raw.analog.ts{achan_index};
 
 analog_data = [t a];

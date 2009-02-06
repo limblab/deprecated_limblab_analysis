@@ -134,8 +134,8 @@ function out_struct = get_cerebus_data(varargin)
         [nsresult,cont_count,analog_data] = ns_GetAnalogData(hfile, analog_list(i), 1, EntityInfo(analog_list(i)).ItemCount);
         out_struct.raw.analog.channels(i) = {EntityInfo(i).EntityLabel};
         out_struct.raw.analog.adfreq(i) = analog_info.SampleRate;
-        out_struct.raw.analog.data(i) = {analog_data};
         out_struct.raw.analog.ts(i) = {0}; % Start time: Unimplemented in Neuroshare; Assumed to be 0.
+        out_struct.raw.analog.data(i) = {analog_data};
     end
     
     % The event API is severely lacking... only returning one datapoint for
@@ -143,13 +143,17 @@ function out_struct = get_cerebus_data(varargin)
     event_list = find([EntityInfo.EntityType] == 1);
     for i = 1:1:length(event_list),
         % [nsresult,event_info] = ns_GetEventInfo(hfile, event_list(i));
-        for j = 1:1:length(EntityInfo(event_list(i)).ItemCount),
+        for j = 1:1:EntityInfo(event_list(i)).ItemCount,
             [nsresult,event_ts,event_data,event_datasize] = ns_GetEventData(hfile,event_list(i),j);
             out_struct.raw.words(j,:) = [event_ts, event_data];
         end
     end
+    
 %% Calculated Data
-
+    
+    % we never have any keyboard events for cerebus.
+    out_struct.keyboard_events = [];
+    
     % Analog sample rate (local copy)
     adfreq = out_struct.raw.analog.adfreq;
 
@@ -330,8 +334,7 @@ function out_struct = get_cerebus_data(varargin)
         end
     end
     
-    rmpath ./lib_plx
-    rmpath ./lib_plx/core_files
+    rmpath ./lib_cb
     rmpath ./event_decoders
       
 

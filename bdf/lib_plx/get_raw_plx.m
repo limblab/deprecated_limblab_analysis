@@ -38,10 +38,10 @@ function raw = get_raw_plx(filename, verbose)
     end
 
     raw.analog.channels = tmp_channels;
-    raw.analog.adfreq = adfreq;
     raw.analog.ts = tmp_ts;
     for i = 1:length(tmp_channels)
         raw.analog.data{i} = tmp_data{i} / 409.3; % scaling factor to convert a/d units to Volts
+        raw.analog.adfreq(i) = adfreq; % This will always be the same for Plexon, but not necessarily for Cerebus
     end
 
     % get strobed events and values
