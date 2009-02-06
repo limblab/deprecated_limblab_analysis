@@ -133,28 +133,31 @@ function out_struct = get_cerebus_data(varargin)
         [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list(i));
         [nsresult,cont_count,analog_data] = ns_GetAnalogData(hfile, analog_list(i), 1, EntityInfo(analog_list(i)).ItemCount);
         out_struct.raw.analog.channels(i) = {EntityInfo(i).EntityLabel};
-        out_struct.raw.analog.adfreq(i) = {analog_info.SampleRate};
+        out_struct.raw.analog.adfreq(i) = analog_info.SampleRate;
         out_struct.raw.analog.data(i) = {analog_data};
+        out_struct.raw.analog.ts(i) = {0}; % Start time: Unimplemented in Neuroshare; Assumed to be 0.
     end
     
     % The event API is severely lacking... only returning one datapoint for
-    % each ns_GetEntityInfo() function call. In addition, the event parsing
-    % will need to change considerably between Plexon and Cerebus.
-    
-    % out_struct.keyboard_events = get_keyboard_plx(filename, verbose);
-    
+    % each ns_GetEntityInfo() function call. Grumble grumble...
+    event_list = find([EntityInfo.EntityType] == 1);
+    for i = 1:1:length(event_list),
+        % [nsresult,event_info] = ns_GetEventInfo(hfile, event_list(i));
+        for j = 1:1:length(EntityInfo(event_list(i)).ItemCount),
+            [nsresult,event_ts,event_data,event_datasize] = ns_GetEventData(hfile,event_list(i),j);
+            out_struct.raw.words(j,:) = [event_ts, event_data];
+        end
+    end
 %% Calculated Data
 
     % Analog sample rate (local copy)
     adfreq = out_struct.raw.analog.adfreq;
 
-    % Words
-    out_struct.raw.words = get_words(out_struct.raw.events.timestamps);
-    [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
-
     % figure out which behavior is running
     robot_task = 0;
     wrist_flexion_task =0;
+    
+    [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
     start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
     if ~isempty(start_trial_words)
         start_trial_code = start_trial_words(1);
@@ -175,7 +178,7 @@ function out_struct = get_cerebus_data(varargin)
     if isfield(out_struct.raw, 'analog')
         start_time = 1.0;
         last_analog_time = out_struct.raw.analog.ts{1} + ...
-            length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
+            length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq(1);
         if robot_task
             last_enc_time = out_struct.raw.enc(end,1);
             stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
@@ -185,7 +188,7 @@ function out_struct = get_cerebus_data(varargin)
             stop_time = floor(last_analog_time)-1;
         end
 
-        analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
+        analog_time_base = start_time:1/out_struct.raw.analog.adfreq(1):stop_time;
     end
     
     %Position and Force for Robot Task
