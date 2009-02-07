@@ -120,64 +120,74 @@ function out_struct = get_cerebus_data(varargin)
     
     % the units
     unit_list = find([EntityInfo.EntityType] == 4);
+    [nsresult,neural_info] = ns_GetNeuralInfo(hfile, unit_list);
+    % This throws a warning that some indeces [sic] don't exist... we
+    % cannot pass a unique upper bound for each unit, so we end up
+    % requesting more data than are available for most channels.
+    [nsresult,neural_data] = ns_GetNeuralData(hfile, unit_list, 1, max([EntityInfo(unit_list).ItemCount]));
     for i = 1:1:length(unit_list),
-        [nsresult,neural_info] = ns_GetNeuralInfo(hfile, unit_list(i));
-        [nsresult,neural_data] = ns_GetNeuralData(hfile, unit_list(i), 1, EntityInfo(unit_list(i)).ItemCount);
-        out_struct.units(i) = struct('id', [neural_info.SourceEntityID neural_info.SourceUnitID], ...
-                                     'ts', neural_data);
+        out_struct.units(i) = struct('id', [neural_info(i).SourceEntityID neural_info(i).SourceUnitID], ...
+                                     'ts', neural_data(:,i));
     end
     
     % The raw data analog data
     analog_list = find([EntityInfo.EntityType] == 2);
+    [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list);
     for i = 1:1:length(analog_list),
-        [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list(i));
+        % Note that this is often a lot of data; grabbing it all at once
+        % yeilds too large a contiguous block on most machines, resulting
+        % in an out of memory error. Also: this takes a really long time.
         [nsresult,cont_count,analog_data] = ns_GetAnalogData(hfile, analog_list(i), 1, EntityInfo(analog_list(i)).ItemCount);
+        if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
+            warning('Channel %d may not contain contiguous data',i)
+        end
         out_struct.raw.analog.channels(i) = {EntityInfo(i).EntityLabel};
-        out_struct.raw.analog.adfreq(i) = analog_info.SampleRate;
+        out_struct.raw.analog.adfreq(i) = analog_info(i).SampleRate;
         out_struct.raw.analog.ts(i) = {0}; % Start time: Unimplemented in Neuroshare; Assumed to be 0.
         out_struct.raw.analog.data(i) = {analog_data};
     end
     
-    % The event API is severely lacking... only returning one datapoint for
-    % each ns_GetEntityInfo() function call. Grumble grumble...
+    % grab the events
     event_list = find([EntityInfo.EntityType] == 1);
     for i = 1:1:length(event_list),
-        % [nsresult,event_info] = ns_GetEventInfo(hfile, event_list(i));
-        for j = 1:1:EntityInfo(event_list(i)).ItemCount,
-            [nsresult,event_ts,event_data,event_datasize] = ns_GetEventData(hfile,event_list(i),j);
-            out_struct.raw.words(j,:) = [event_ts, event_data];
+        [nsresult,event_ts,event_data,event_datasize] = ns_GetEventData(hfile,event_list(i),1:EntityInfo(event_list(i)).ItemCount);
+        if (event_list(i) == 145)
+            % we have the digin serial line that contains words
+            out_struct.raw.words = [event_ts, event_data];
+        else
+            % something else; kludge it into events
+            out_struct.raw.events{i} = [event_ts, event_data];
         end
     end
     
 %% Calculated Data
     
-    % we never have any keyboard events for cerebus.
-    out_struct.keyboard_events = [];
-    
     % Analog sample rate (local copy)
     adfreq = out_struct.raw.analog.adfreq;
 
-    % figure out which behavior is running
-    robot_task = 0;
-    wrist_flexion_task =0;
-    
-    [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
-    start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
-    if ~isempty(start_trial_words)
-        start_trial_code = start_trial_words(1);
-        if ~isempty(find(start_trial_words ~= start_trial_code, 1))
-            error('Not all trials are the same type');
-        end
-    
-        if start_trial_code == hex2dec('17')
-            wrist_flexion_task = 1;
-        elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
-            robot_task = 1;
-        else
-            error('Unknown behavior task');
+    % figure out which behavior is running if words are available
+    if (isfield(out_struct.raw,'words') && ~isempty(out_struct.raw.words))
+        robot_task = 0;
+        wrist_flexion_task =0;
+
+        [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
+        start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
+        if ~isempty(start_trial_words)
+            start_trial_code = start_trial_words(1);
+            if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+                error('Not all trials are the same type');
+            end
+
+            if start_trial_code == hex2dec('17')
+                wrist_flexion_task = 1;
+            elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
+                robot_task = 1;
+            else
+                error('Unknown behavior task');
+            end
         end
     end
-
+    
     % Compile analog data
     if isfield(out_struct.raw, 'analog')
         start_time = 1.0;
@@ -196,7 +206,7 @@ function out_struct = get_cerebus_data(varargin)
     end
     
     %Position and Force for Robot Task
-    if robot_task
+    if (isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc))
         % Position
         if (verbose == 1)
             progress = progress + .05;
@@ -228,8 +238,11 @@ function out_struct = get_cerebus_data(varargin)
         out_struct.pos = [analog_time_base'   x'   y'];
         out_struct.vel = [analog_time_base'  dx'  dy'];
         out_struct.acc = [analog_time_base' ddx' ddy'];
-
-        % Force
+    end
+    
+    % Force Handle Analog Signals
+    force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) );
+    if (~isempty(force_channels))
         if (verbose == 1)
             progress = progress + .05;
             waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
@@ -259,32 +272,32 @@ function out_struct = get_cerebus_data(varargin)
         end
         
         out_struct.force = [analog_time_base' out_struct.force];
-        
-    elseif wrist_flexion_task
-        % Force (Cursor Pos) for Wrist Flexion task    
-        
-        force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %#ok<EFIND>
-        if ~isempty(force_channels)
-            % Getting Force
-            if (verbose == 1)
-                progress = progress + .05;
-                waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
-            end
+    else
+        disp('No force handle signals found because no channel named ''ForceHandle*''');
+    end
 
-            % extract force data for WF task here
-            [b,a] = butter(4, 20/adfreq); % lowpass at 10 Hz
-            force_x = get_analog_signal(out_struct, 'Force_x');
-            force_x = filtfilt(b,a,force_x);
-            force_x = interp1( force_x(:,1), force_x(:,2), analog_time_base);
-            force_y = get_analog_signal(out_struct, 'Force_y');
-            force_y = filtfilt(b,a,force_y);
-            force_y = interp1( force_y(:,1), force_y(:,2), analog_time_base);
-            out_struct.force = [analog_time_base' force_x' force_y'];
-        else
-            disp('No force signal found because no channel named ''Force_*''');
-            out_struct.force = [];
+    % Force (Cursor Pos) for Wrist Flexion task
+    
+    force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %#ok<EFIND>
+    if ~isempty(force_channels)
+        % Getting Force
+        if (verbose == 1)
+            progress = progress + .05;
+            waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
         end
 
+        % extract force data for WF task here
+        [b,a] = butter(4, 20/adfreq); % lowpass at 10 Hz
+        force_x = get_analog_signal(out_struct, 'Force_x');
+        force_x = filtfilt(b,a,force_x);
+        force_x = interp1( force_x(:,1), force_x(:,2), analog_time_base);
+        force_y = get_analog_signal(out_struct, 'Force_y');
+        force_y = filtfilt(b,a,force_y);
+        force_y = interp1( force_y(:,1), force_y(:,2), analog_time_base);
+        out_struct.force = [analog_time_base' force_x' force_y'];
+    else
+        disp('No force signal found because no channel named ''Force_*''');
+        out_struct.force = [];
     end
     
     % EMGs
@@ -318,7 +331,7 @@ function out_struct = get_cerebus_data(varargin)
         disp('No EMG signal found because no channel named ''EMG_*''');
     end
             
-    if ~isempty(out_struct.keyboard_events)
+    if (isfield(out_struct,'keyboard_events') && ~isempty(out_struct.keyboard_events))
         out_struct.keyboard_events = sortrows( out_struct.keyboard_events, [1 2] );
     end
     
@@ -369,6 +382,3 @@ function out_struct = get_cerebus_data(varargin)
     end
 
 end % close outermost function
-    
-    
-    
