@@ -106,6 +106,12 @@ function out_struct = get_plexon_data(varargin)
 %% Calculated Data
 
     % Analog sample rate (local copy)
+    %
+    % Note that here we use the adfreq of the first analog channel and
+    % assueme that it is the same for all channels.  On Plexon, this is a
+    % contraint imposed by hardware; however if this code is reused in a
+    % different context the assmumption may not hold and could give rise to
+    % errors.
     adfreq = out_struct.raw.analog.adfreq(1);
 
     % Words

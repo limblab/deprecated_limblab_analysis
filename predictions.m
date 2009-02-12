@@ -18,7 +18,7 @@ else
     error('Unknown signal requested');
 end
 
-if size(cells) == [0 0];
+if isempty(cells);
     cells = unit_list(bdf);
 end
 
