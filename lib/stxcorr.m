@@ -45,8 +45,8 @@ if (~isscalar(max_offset))
 end
 
 % get window start and stop times
-num_windows = floor(length(x) / (window_size-overlap));
-starts = (0:num_windows-1) .* (window_size - overlap);
+num_windows = floor(length(x) / (window_size-overlap)) - 1;
+starts = (0:num_windows-1) .* (window_size - overlap) + 1;
 stops = starts + window_size;
 centers = (starts + stops) ./ 2;
 
@@ -60,11 +60,16 @@ for i = 1:num_windows
     c_win_roi = c_win(window_size-max_offset:window_size+max_offset);
         
     peak = find(c_win_roi == max(c_win_roi), 1, 'first');
-    c(i) = c_win_roi(peak);
-    lag(i) = peak - max_offset;
+    if isscalar(peak)
+        c(i) = c_win_roi(peak);      
+        lag(i) = peak - max_offset;
+    else
+        c(i) = 0;
+        lag(i) = NaN;
+    end
 end
 
-% dummy outputs for debugging
+% asign remaining output
 t = centers;
 
 

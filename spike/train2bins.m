@@ -31,4 +31,10 @@ end
 %    d(i) = sum(sum( s>t(i) & s<=t(i)+b ));
 %end
 
-d = train2bins_mex(s,t);
+if isempty(s)
+    % return an empty train rather than crashing if there are no spikes
+    d = zeros(size(t));
+else
+    d = train2bins_mex(s,t);
+end
+
