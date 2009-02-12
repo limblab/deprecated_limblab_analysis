@@ -106,7 +106,7 @@ function out_struct = get_plexon_data(varargin)
 %% Calculated Data
 
     % Analog sample rate (local copy)
-    adfreq = out_struct.raw.analog.adfreq;
+    adfreq = out_struct.raw.analog.adfreq(1);
 
     % Words
     out_struct.raw.words = get_words(out_struct.raw.events.timestamps);
@@ -135,7 +135,7 @@ function out_struct = get_plexon_data(varargin)
     if isfield(out_struct.raw, 'analog')
         start_time = 1.0;
         last_analog_time = out_struct.raw.analog.ts{1} + ...
-            length(out_struct.raw.analog.data{1}) / out_struct.raw.analog.adfreq;
+            length(out_struct.raw.analog.data{1}) / adfreq;
         if robot_task
             last_enc_time = out_struct.raw.enc(end,1);
             stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
@@ -145,7 +145,7 @@ function out_struct = get_plexon_data(varargin)
             stop_time = floor(last_analog_time)-1;
         end
 
-        analog_time_base = start_time:1/out_struct.raw.analog.adfreq:stop_time;
+        analog_time_base = start_time:1/adfreq:stop_time;
     end
     
     %Position and Force for Robot Task
@@ -159,7 +159,7 @@ function out_struct = get_plexon_data(varargin)
         l1 = 24.0; l2 = 23.5;
         th_t = out_struct.raw.enc(:,1); % encoder time stamps
 
-        [b,a] = butter(8, 100/out_struct.raw.analog.adfreq);
+        [b,a] = butter(8, 100/adfreq);
 
         th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
         th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
