@@ -107,7 +107,10 @@ function out_struct = get_cerebus_data(varargin)
 
         out_struct.raw.analog.channels = {EntityInfo(analog_list).EntityLabel};
         out_struct.raw.analog.adfreq = [analog_info(:).SampleRate];
-        out_struct.raw.analog.ts(1:length(analog_list)) = {0}; % Start time: Unimplemented in Neuroshare; Assumed to be 0.
+        % The start time of each channel.  Note that this NS library
+        % function ns_GetTimeByIndex simply multiplies the index by the 
+        % ADResolution... so it will always be zero.
+        out_struct.raw.analog.ts(1:length(analog_list)) = {0};
         for i = length(analog_list):-1:1
             % Note that this is often a lot of data; grabbing it all at once
             % yeilds too large a contiguous block on most machines, resulting
@@ -130,7 +133,7 @@ function out_struct = get_cerebus_data(varargin)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
         end
         for i = length(event_list):-1:1
-            [nsresult,event_ts,event_data,event_datasize] = ns_GetEventData(hfile,event_list(i),1:EntityInfo(event_list(i)).ItemCount);
+            [nsresult,event_ts,event_data] = ns_GetEventData(hfile,event_list(i),1:EntityInfo(event_list(i)).ItemCount);
             if (event_list(i) == 145)
                 % we have the digin serial line
                 % The input cable for this is currently bugged: Bits 0 and 8
@@ -161,8 +164,10 @@ function out_struct = get_cerebus_data(varargin)
     end
 
     ns_CloseFile(hfile);
+    
     rmpath ./lib_cb
     rmpath ./event_decoders
+    
     if (verbose == 1)
         close(h);
     end
