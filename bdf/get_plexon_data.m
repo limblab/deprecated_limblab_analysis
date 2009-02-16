@@ -103,6 +103,13 @@ function out_struct = get_plexon_data(varargin)
     out_struct.raw = get_raw_plx(filename, verbose);
     out_struct.keyboard_events = get_keyboard_plx(filename, verbose);
     
+%% Clean up
+    set(0, 'defaulttextinterpreter', defaulttextinterpreter);
+    
+    rmpath ./lib_plx
+    rmpath ./lib_plx/core_files
+    rmpath ./event_decoders
+    
 %% Extract data from the raw struct
     
     out_struct = calc_from_raw(out_struct,verbose);

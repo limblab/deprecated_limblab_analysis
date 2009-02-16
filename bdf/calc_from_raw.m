@@ -8,6 +8,11 @@ function out_struct = calc_from_raw(varargin)
 
     addpath ./event_decoders
     
+    % make sure LaTeX is turned off and save the old state so we can turn
+    % it back on at the end
+    defaulttextinterpreter = get(0, 'defaulttextinterpreter'); 
+    set(0, 'defaulttextinterpreter', 'none');
+    
     % Parse arguments
     if (nargin == 1)
         out_struct = varargin{1};
@@ -218,6 +223,7 @@ function out_struct = calc_from_raw(varargin)
         out_struct.keyboard_events = sortrows( out_struct.keyboard_events, [1 2] );
     end
     
+%% Clean up
     if (verbose == 1)
         close(h);
         wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
@@ -230,6 +236,8 @@ function out_struct = calc_from_raw(varargin)
     end
 
     rmpath ./event_decoders
+    
+    set(0, 'defaulttextinterpreter', defaulttextinterpreter);
       
 
 %% Subroutines

@@ -15,7 +15,12 @@ function out_struct = get_cerebus_data(varargin)
     % Add paths - take them back out at the end
     addpath ./lib_cb
     addpath ./event_decoders
-
+    
+    % make sure LaTeX is turned off and save the old state so we can turn
+    % it back on at the end
+    defaulttextinterpreter = get(0, 'defaulttextinterpreter'); 
+    set(0, 'defaulttextinterpreter', 'none');
+    
     % Parse arguments
     if (nargin == 1)
         filename   = varargin{1};
@@ -152,18 +157,22 @@ function out_struct = get_cerebus_data(varargin)
             else
                 % something else; kludge it into events
                 out_struct.raw.events{i} = struct(...
-                    'event_name', EntityInfo(analog_list).EntityLabel,...
+                    'event_name', [EntityInfo(analog_list).EntityLabel],...
                     'event_id', event_list(i),...
                     'event_data',[event_ts, event_data]);
             end
         end
     end
 
+
+%% Clean up
     if (verbose == 1)
         waitbar(1,h,sprintf('Opening: %s\nCleaning Up...', filename));
     end
 
     ns_CloseFile(hfile);
+
+    set(0, 'defaulttextinterpreter', defaulttextinterpreter);
     
     rmpath ./lib_cb
     rmpath ./event_decoders
@@ -171,6 +180,8 @@ function out_struct = get_cerebus_data(varargin)
     if (verbose == 1)
         close(h);
     end
+    
+    
     
 %% Extract data from the raw struct
     
