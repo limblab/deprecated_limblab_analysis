@@ -9,7 +9,7 @@ function out_struct = get_cerebus_data(varargin)
 %       VERBOSE - 1 => prints status info
 %                 0 => prints nothing (default)
 
-% $Id:$
+% $Id$
 
 %% Initial setup
     % Add paths - take them back out at the end
@@ -58,7 +58,7 @@ function out_struct = get_cerebus_data(varargin)
         ' ' int2str(FileInfo.Time_Hour) ':' int2str(FileInfo.Time_Min) ':' int2str(FileInfo.Time_Sec) '.' int2str(FileInfo.Time_MilliSec)];
 
     out_struct.meta = struct('filename', filename, 'datetime', DateTime,'duration', FileInfo.TimeSpan, ...
-        'bdf_info', '$Id: get_plexon_data.m 32 2009-01-22 22:15:09Z brian $');
+        'bdf_info', '$Id$');
 
 %% Extract data
 
@@ -171,3 +171,9 @@ function out_struct = get_cerebus_data(varargin)
     if (verbose == 1)
         close(h);
     end
+    
+%% Extract data from the raw struct
+    
+    out_struct = calc_from_raw(out_struct,verbose);
+
+end
