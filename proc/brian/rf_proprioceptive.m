@@ -13,6 +13,9 @@ idx = (1:stop_time*1000);
 x = bdf.raw.analog.data{x_chan_id}(idx);
 y = bdf.raw.analog.data{y_chan_id}(idx);
 
+dx = [0; diff(x)];
+dy = [0; diff(y)];
+
 for i = 1:length(bdf.units)
     disp(sprintf('i = %d of %d', i, length(bdf.units)));
     
@@ -21,12 +24,15 @@ for i = 1:length(bdf.units)
     s = s( s < stop_time );
     
     b = train2bins(s, 0.001:0.001:stop_time)';
-    [r_x]    = stxcorr(x, b, 30000, 15000, 300);
-    [r_y, c] = stxcorr(y, b, 30000, 15000, 300);
+    [r_x]     = stxcorr(x,  b, 30000, 15000, 300);
+    [r_y,c]     = stxcorr(y,  b, 30000, 15000, 300);
+    %[r_dx]    = stxcorr(dx, b, 30000, 15000, 300);
+    %[r_dy, c] = stxcorr(dy, b, 30000, 15000, 300);
     c = c./1000;
     
     figure;
     plot(c,r_x,'b-',c,r_y,'r-');
+    %plot(c,r_x,'b-',c,r_y,'r-',c,r_dx,'b--',c,r_dy,'r--');
     title(sprintf('Unit %d-%d', bdf.units(i).id(1), bdf.units(i).id(2)));    
 end
 

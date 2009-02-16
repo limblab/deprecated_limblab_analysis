@@ -5,20 +5,20 @@
 %%% Method One:
 %%% Take the short time xcorr between the tapping and spikes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% touches = debounce(bdf.raw.events.timestamps{7},.1);
-% touches = train2bins(touches, 0:0.001:1700);
-% 
-% for i = 1:length(bdf.units)
-%     disp(sprintf('i = %d of %d', i, length(bdf.units)));
-%     
-%     b = train2bins(bdf.units(i).ts, 0:0.001:1700);
-%     [r, c] = stxcorr(touches, b, 10000, 5000, 300);
-%     c = c./1000;
-%     
-%     figure;
-%     plot(c,r);
-%     title(sprintf('Unit %d-%d', bdf.units(i).id(1), bdf.units(i).id(2)));    
-% end
+touches = debounce(bdf.raw.events.timestamps{7},.1);
+touches = train2bins(touches, 0:0.001:1700);
+
+for i = 1:length(bdf.units)
+    disp(sprintf('i = %d of %d', i, length(bdf.units)));
+    
+    b = train2bins(bdf.units(i).ts, 0:0.001:1700);
+    [r, c] = stxcorr(touches, b, 10000, 5000, 200);
+    c = c./1000;
+    
+    figure;
+    plot(c,r);
+    title(sprintf('Unit %d-%d', bdf.units(i).id(1), bdf.units(i).id(2)));    
+end
 
 
 %%%
@@ -54,13 +54,13 @@
 %%% Method three:
 %%% Just display all the rasters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for cell = 1:length(bdf.units)
-    figure;
-    raster(bdf.units(cell).ts, touches, -.05, .05);
-    title(sprintf('Unit %d-%d', bdf.units(cell).id(1), bdf.units(cell).id(2)));
-    xlabel('time (0 is contact)')
-    ylabel('taps')
-end
+% for cell = 1:length(bdf.units)
+%     figure;
+%     raster(bdf.units(cell).ts, touches, -.05, .05);
+%     title(sprintf('Unit %d-%d', bdf.units(cell).id(1), bdf.units(cell).id(2)));
+%     xlabel('time (0 is contact)')
+%     ylabel('taps')
+% end
     
     
     

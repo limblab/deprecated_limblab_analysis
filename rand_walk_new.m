@@ -192,7 +192,7 @@ function run_all_units(data, verbose)
         
         % write figure to ps
         set(gcf, 'PaperPosition', [1.25 2.5 6 6]);
-        %print('-r600', '-dpsc2', sprintf('tmp/fig%d', j));
+        print('-r600', '-dpsc2', sprintf('tmp/fig%d', j));
         close(gcf);
         
         % status bar
