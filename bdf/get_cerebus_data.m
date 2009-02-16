@@ -45,18 +45,21 @@ function out_struct = get_cerebus_data(varargin)
     % TODO: MAKE PATH DYNAMIC
     [nsresult] = ns_SetLibrary('lib_cb/nsNEVLibrary.dll');
     if (nsresult ~= 0)
+        close(h);
         error('Error opening library!');
     end
 
     % Load the file
     [nsresult, hfile] = ns_OpenFile(filename);
     if (nsresult ~= 0)
+        close(h);
         error('Error opening file!');
     end
 
     % Get general file info (EntityCount, TimeStampResolution and TimeSpan)
     [nsresult, FileInfo] = ns_GetFileInfo(hfile);
     if (nsresult ~= 0)
+        close(h);
         error('Data file information did not load!');
     end
     DateTime = [int2str(FileInfo.Time_Month) '/' int2str(FileInfo.Time_Day) '/' int2str(FileInfo.Time_Year) ...
@@ -157,7 +160,7 @@ function out_struct = get_cerebus_data(varargin)
             else
                 % something else; kludge it into events
                 out_struct.raw.events{i} = struct(...
-                    'event_name', [EntityInfo(analog_list).EntityLabel],...
+                    'event_name', EntityInfo(event_list(i)).EntityLabel,...
                     'event_id', event_list(i),...
                     'event_data',[event_ts, event_data]);
             end

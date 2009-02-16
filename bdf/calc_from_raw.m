@@ -41,23 +41,25 @@ function out_struct = calc_from_raw(varargin)
     wrist_flexion_task =0;
     % figure out which behavior is running if words are available
     if (isfield(out_struct.raw,'words') && ~isempty(out_struct.raw.words))
-
+        
         [out_struct.words, out_struct.databursts] = extract_datablocks(out_struct.raw.words);
         start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
         if ~isempty(start_trial_words)
             start_trial_code = start_trial_words(1);
             if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+                close(h);
                 error('BDF:inconsistentBehaviors','Not all trials are the same type');
             end
-            
+
             if start_trial_code == hex2dec('17')
                 wrist_flexion_task = 1;
             elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
                 robot_task = 1;
             else
-                error('BDF:unkownTask','Unknown behavior task');
+                close(h);
+                error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
             end
-            
+
         end
     else
         warning('BDF:noWords','No WORDs are present');
@@ -115,6 +117,7 @@ function out_struct = calc_from_raw(varargin)
         out_struct.acc = [analog_time_base' ddx' ddy'];
     else
         if robot_task
+            close(h);
             error('BDF:noPositionSignal','No position signal present');
         end
     end
@@ -178,6 +181,7 @@ function out_struct = calc_from_raw(varargin)
         out_struct.force = [analog_time_base' force_x' force_y'];
     else
         if wrist_flexion_task
+            close(h);
             error('BDF:noForceSignal','No force signal found because no channel named ''Force_*''');
         end
     end
@@ -192,10 +196,11 @@ function out_struct = calc_from_raw(varargin)
         
         % ensure all emg channels have the same frequency
         if ~all(out_struct.raw.analog.adfreq(emg_channels) == ...
-                my_bdf.raw.analog.adfreq(emg_channels(1)))
+                out_struct.raw.analog.adfreq(emg_channels(1)))
+            close(h);
             error('BDF:unequalEmgFreqs','Not all EMG channels have the same frequency');
         end
-        emg_freq = my_bdf.raw.analog.adfreq(emg_channels(1));
+        emg_freq = out_struct.raw.analog.adfreq(emg_channels(1));
         emg_time_base = start_time:1/emg_freq:stop_time;
         % extract emg channel data here
         out_struct.emg.emgnames = out_struct.raw.analog.channels(emg_channels);
