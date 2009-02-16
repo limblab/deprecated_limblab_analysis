@@ -2,7 +2,7 @@ function out_struct = calc_from_raw(varargin)
 % CALC_FROM_RAW populates the commonly used intermediate values within a
 % BDF, using bdf.raw as the inputs for the calculation.
 
-% $Id:$
+% $Id$
 
 %% Initial setup
 
@@ -55,11 +55,11 @@ function out_struct = calc_from_raw(varargin)
             
         end
     else
-        error('BDF:noWords','No WORDs are present');
+        warning('BDF:noWords','No WORDs are present');
     end
     
     % Compile analog data
-    if isfield(out_struct.raw, 'analog')
+    if isfield(out_struct.raw, 'analog') && ~isempty(out_struct.raw.analog)
         start_time = 1.0;
         last_analog_time = min([out_struct.raw.analog.ts{:}] + ...
             cellfun('length',out_struct.raw.analog.data) / out_struct.raw.analog.adfreq);
@@ -70,7 +70,7 @@ function out_struct = calc_from_raw(varargin)
             stop_time = floor(last_analog_time)-1;
         end
         
-        % Note: This now uses the time base of the highest frequency analog
+        % Note: This uses the time base of the highest frequency analog
         % signal as the time base for interpolated signals like position
         analog_time_base = start_time:1/adfreq:stop_time;
     end
@@ -119,7 +119,7 @@ function out_struct = calc_from_raw(varargin)
     if (~isempty(force_channels))
         if (verbose == 1)
             progress = progress + .05;
-            waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
+            waitbar(progress, h, sprintf('Aggregating data...\nget force'));
         end
 
         fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
@@ -159,7 +159,7 @@ function out_struct = calc_from_raw(varargin)
         % Getting Force
         if (verbose == 1)
             progress = progress + .05;
-            waitbar(progress, h, sprintf('Opening: %s\nget force', filename));
+            waitbar(progress, h, sprintf('Aggregating data...\nget force'));
         end
 
         % extract force data for WF task here
@@ -182,7 +182,7 @@ function out_struct = calc_from_raw(varargin)
     if ~isempty(emg_channels)
         if (verbose == 1)
             progress = progress + .05;
-            waitbar(progress, h, sprintf('Opening: %s\nget EMGs', filename));
+            waitbar(progress, h, sprintf('Aggregating data...\nget EMGs'));
         end
         
         % ensure all emg channels have the same frequency
