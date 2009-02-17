@@ -67,5 +67,7 @@ function raw = get_raw_plx(filename, verbose)
         end
         raw.events.timestamps{i-2} = ts;
     end
-      
+    
+    raw.words = get_words(raw.events.timestamps);
+    
 end
