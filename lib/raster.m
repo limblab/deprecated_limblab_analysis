@@ -1,4 +1,4 @@
-function [table, all] = raster(spikes, events, start, stop, h)
+function [table, all] = raster(spikes, events, start, stop, varargin)
 % RASTER displays a raster plot of the spike data synchronized to an event
 %   RASTER(SPIKES, EVENTS, START, STOP) displays the raster plot of the
 %   specified spike train SPIKES centered about the time of EVENTS.  Given
@@ -9,7 +9,8 @@ function [table, all] = raster(spikes, events, start, stop, h)
 %       RASTER(SPIKES, EVENTS, -.25 1.25) will draw a raster plot from .25
 %       seconds before the event to 1.25 seconds after.
 %
-%   RASTER(..., H) will not open a new figure window but will instead 
+%   RASTER(..., H) will not open a new figure window but will instead plot
+%   the rester in the axis handle H.
 %
 %   TABLE = RASTER( ... ) will return the set of time stamps of the spikes
 %   aligned to each event.
@@ -19,6 +20,12 @@ function [table, all] = raster(spikes, events, start, stop, h)
 %   to feed into a bining routine so the firing rate can be plotted.
 
 % $Id$
+
+if nargin > 4
+    H = varargin{1};
+else
+    H = figure;    
+end
 
 num_trials = length(events);
 
@@ -30,7 +37,9 @@ for i = 1:num_trials
     table{i} = table{i} - events(i);
 end
 
-figure;
+if H == -1
+end
+
 hold on;
 for i = 1:num_trials
     plot(table{i}, i*ones(length(table{i})), 'k.')
