@@ -39,6 +39,7 @@ function out_struct = calc_from_raw(varargin)
     
     robot_task = 0;
     wrist_flexion_task =0;
+    ball_drop_task = 0;
     % figure out which behavior is running if words are available
     if (isfield(out_struct.raw,'words') && ~isempty(out_struct.raw.words))
         
@@ -55,6 +56,8 @@ function out_struct = calc_from_raw(varargin)
                 wrist_flexion_task = 1;
             elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
                 robot_task = 1;
+            elseif start_trial_code == hex2dec('19')
+                ball_drop_task = 1;
             else
                 close(h);
                 error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
@@ -261,7 +264,7 @@ function out_struct = calc_from_raw(varargin)
     function savestruct(out_struct)
     
         matfilename = out_struct.meta.filename;
-        matfilename = strrep(matfilename,'.plx','.mat');  %change '.plx' for '.mat'
+        matfilename = strrep(matfilename,'.nev','.mat');  %change '.nev' for '.mat'
         
         [FileName,PathName] = uiputfile( matfilename, 'Save mat file');
         
