@@ -1,19 +1,22 @@
 % load multiple files and draw center out perturbation rasters
 
-load '../../../data_cache/Arthur_S1_006-1of10.mat';
-units = unit_list(bdf);
-clear bdf;
+%load '../../../data_cache/Arthur_S1_006-1of10.mat';
+%units = unit_list(bdf);
+%clear bdf;
 
-for cell_idx = 1:length(units);
-    chan = units(cell_idx,1);
-    cell = units(cell_idx,2);
+%for cell_idx = 1:length(units);
+%    chan = units(cell_idx,1);
+%    cell = units(cell_idx,2);
+
+    chan = 73;
+    unit = 1;
 
     filename = '../../../data_cache/Arthur_S1_006-1of10.mat';
     load(filename);
 
     % get unit index
-    %ul = unit_list(bdf);
-    %cell_idx = find(ul(:,1) == chan & ul(:,2) == cell);
+    ul = unit_list(bdf);
+    cell_idx = find(ul(:,1) == chan & ul(:,2) == unit);
 
     spikes = [];
     words = [];
@@ -58,7 +61,7 @@ for cell_idx = 1:length(units);
         axis([-.5, 1.5, 0, 10]);
         pasive_tuning(dir+1) = sum(all > 0 & all < .1)/length(bump);
     end
-    suptitle(sprintf('Passive %d-%d', chan, cell));
+    suptitle(sprintf('Passive %d-%d', chan, unit));
 
     %%% Active
     word_reward = hex2dec('20');
@@ -76,8 +79,8 @@ for cell_idx = 1:length(units);
 
     % get reach directions
     word_ot_base = hex2dec('40');
-    ot_word_times = words(find(words(:,2) >= word_ot_base & words(:,2) <= word_ot_base+5), 1);
-    ot_word_words = words(find(words(:,2) >= word_ot_base & words(:,2) <= word_ot_base+5), 2);
+    ot_word_times = words(words(:,2) >= word_ot_base & words(:,2) <= word_ot_base+5, 1);
+    ot_word_words = words(words(:,2) >= word_ot_base & words(:,2) <= word_ot_base+5, 2);
     reaches = [reaches zeros(length(reaches), 1)];
     for i = 2:length(reaches)
         last_ot_idx = find(ot_word_times < reaches(i), 1, 'last');
@@ -94,7 +97,7 @@ for cell_idx = 1:length(units);
         axis([-.5, 1.5, 0, 10]);
         active_tuning(dir+1) = sum(all > 0 & all < 1.25)/length(go);
     end
-    suptitle(sprintf('Active %d-%d', chan, cell));
+    suptitle(sprintf('Active %d-%d', chan, unit));
 
     %%% Polar plot
     pasive_tuning = [pasive_tuning pasive_tuning(1)] ./ .1;
@@ -103,18 +106,24 @@ for cell_idx = 1:length(units);
 
     figure;
     polar(theta, pasive_tuning, 'b-');
-    title(sprintf('Passive %d-%d', chan, cell));
+    title(sprintf('Passive %d-%d', chan, unit));
 
     figure;
     polar(theta, active_tuning, 'r-');
-    title(sprintf('Active %d-%d', chan, cell));
+    title(sprintf('Active %d-%d', chan, unit));
 
     % Final analysis
 
     x = active_tuning(1:6).*cos(theta(1:6));
     y = active_tuning(1:6).*sin(theta(1:6));
 
-    %pd = atan2(sum(x), sum(y))
-end
+    pd_active = atan2(sum(x), sum(y))
+    
+    x = pasive_tuning(1:6).*cos(theta(1:6));
+    y = pasive_tuning(1:6).*sin(theta(1:6));
+
+    pd_passive = atan2(sum(x), sum(y))
+    
+%end
 
 
