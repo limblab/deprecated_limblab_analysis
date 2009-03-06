@@ -1,4 +1,3 @@
-%function [peak peak_width good_cell pref_dir baseline pref_dir_peak mdl] = rand_walk(varargin)
 function [tuning gof peakness] = rand_walk_new(varargin)
 % RAND_WALK( DATA, CHANNEL, UNIT ) - runs RW analytics
 %   DATA    - a BDF structure

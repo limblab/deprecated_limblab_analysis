@@ -90,18 +90,21 @@
     % generate plots
     figure;
     active_tuning = zeros(1,6);
+    active_fr = zeros(21,6);
+    t = -.5:.1:1.5;
     for dir = 0:5
         go = reaches(reaches(:,2) == word_ot_base+dir, 1);
         H = subplot(2,3,dir+1);
         [table, all] = raster(spikes, go, -.5, 1.5, H);
         axis([-.5, 1.5, 0, 10]);
-        active_tuning(dir+1) = sum(all > 0 & all < 1.25)/length(go);
+        active_tuning(dir+1) = sum(all > .1 & all < .4)/length(go);
+        active_fr(:, dir+1) = histc(all, t);
     end
     suptitle(sprintf('Active %d-%d', chan, unit));
 
     %%% Polar plot
     pasive_tuning = [pasive_tuning pasive_tuning(1)] ./ .1;
-    active_tuning = [active_tuning active_tuning(1)] ./ 1.25;
+    active_tuning = [active_tuning active_tuning(1)] ./ .3;
     theta = 0:pi/3:2*pi;
 
     figure;
