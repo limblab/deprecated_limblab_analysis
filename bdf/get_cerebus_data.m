@@ -74,15 +74,17 @@ function out_struct = get_cerebus_data(varargin)
     [nsresult, EntityInfo] = ns_GetEntityInfo(hfile, 1:FileInfo.EntityCount);
     unit_list    = find([EntityInfo.EntityType] == 4);
     % segment_list = find([EntityInfo.EntityType] == 3);
-    analog_list  = find([EntityInfo.EntityType] == 2);
+    emg_list     = find([EntityInfo.EntityType] == 2 & strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
+    analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
     event_list   = find([EntityInfo.EntityType] == 1);
 
     if verbose == 1
         unit_list_item_count   = sum([EntityInfo(unit_list).ItemCount]);
         analog_list_item_count = sum([EntityInfo(analog_list).ItemCount]);
+        emg_list_item_count    = sum([EntityInfo(emg_list).ItemCount]);
         event_list_item_count  = sum([EntityInfo(event_list).ItemCount]);
         % segment_list_item_count = sum([EntityInfo(segment_list).ItemCount]);
-        relevant_entity_count = unit_list_item_count + ...
+        relevant_entity_count = unit_list_item_count + emg_list_item_count+...
             analog_list_item_count + event_list_item_count;
         entity_extraction_weight = 0.9;
     end
@@ -106,13 +108,13 @@ function out_struct = get_cerebus_data(varargin)
         end
     end
 
-    % The raw data analog data
+    % The raw data analog data (other than emgs)
     if ~isempty(analog_list)
         if (verbose == 1)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
         end
         [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list);
-
+  
         out_struct.raw.analog.channels = {EntityInfo(analog_list).EntityLabel};
         out_struct.raw.analog.adfreq = [analog_info(:).SampleRate];
         % The start time of each channel.  Note that this NS library
@@ -131,10 +133,56 @@ function out_struct = get_cerebus_data(varargin)
             if (verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
+
             end
         end
+    else
+        %build default analog fields anyways
+        out_struct.raw.analog.channels = [];
+        out_struct.raw.analog.adfreq = [];
+        out_struct.raw.analog.ts = [];
+        out_struct.raw.analog.data = [];
     end
 
+    % the emgs
+    if ~isempty(emg_list)
+        if (verbose == 1)
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
+        end
+    
+        [nsresult,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
+        out_struct.emg.emgnames = {EntityInfo(emg_list).EntityLabel};
+        % ensure all emg channels have the same frequency
+        if ~all( [emg_info.SampleRate] == emg_info(1).SampleRate)
+            close(h);
+            error('BDF:unequalEmgFreqs','Not all EMG channels have the same frequency');
+        end
+
+        emgfreq = [emg_info(1).SampleRate];
+        out_struct.emg.emgfreq = emgfreq;
+        % The start time of each channel.  Note that this NS library
+        % function ns_GetTimeByIndex simply multiplies the index by the 
+        % ADResolution... so it will always be zero.
+%        out_struct.raw.analog.ts(1:length(analog_list)) = {0};
+        for i = length(emg_list):-1:1
+            % Note that this is often a lot of data; grabbing it all at once
+            % yeilds too large a contiguous block on most machines, resulting
+            % in an out of memory error. Also: this takes a really long time.
+            [nsresult,cont_count,emg_data] = ns_GetAnalogData(hfile, emg_list(i), 1, EntityInfo(emg_list(i)).ItemCount);
+            if (cont_count ~= EntityInfo(emg_list(i)).ItemCount)
+                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
+            end
+            out_struct.emg.data(:,i+1) = emg_data;
+            if (verbose == 1)
+                progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
+                waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
+            end
+        end
+        out_struct.emg.data(:,1) = 0:1/emgfreq:(length(emg_data)-1)/emgfreq;
+        clear emg_data emgfreq;
+    end
+        
+        
     % grab the events
     if ~isempty(event_list)
         if (verbose == 1)
@@ -187,7 +235,7 @@ function out_struct = get_cerebus_data(varargin)
     
     
 %% Extract data from the raw struct
-    
+
     out_struct = calc_from_raw(out_struct,verbose);
 
 end

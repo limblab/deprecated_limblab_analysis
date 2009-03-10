@@ -33,10 +33,7 @@ function out_struct = calc_from_raw(varargin)
 
 
 %% Calculated Data
-    
-    % The highest analog sample rate (local copy)
-    adfreq = max(out_struct.raw.analog.adfreq);
-    
+  
     robot_task = 0;
     wrist_flexion_task =0;
     ball_drop_task = 0;
@@ -69,7 +66,11 @@ function out_struct = calc_from_raw(varargin)
     end
     
     % Compile analog data
-    if isfield(out_struct.raw, 'analog') && ~isempty(out_struct.raw.analog)
+    if isfield(out_struct.raw, 'analog') && ~isempty(out_struct.raw.analog.data)
+            
+        % The highest analog sample rate (local copy)
+        adfreq = max(out_struct.raw.analog.adfreq);
+        
         start_time = 1.0;
         last_analog_time = min([out_struct.raw.analog.ts{:}] + ...
             cellfun('length',out_struct.raw.analog.data) / out_struct.raw.analog.adfreq);
@@ -82,7 +83,7 @@ function out_struct = calc_from_raw(varargin)
         
         % Note: This uses the time base of the highest frequency analog
         % signal as the time base for interpolated signals like position
-        analog_time_base = start_time:1/adfreq:stop_time;
+        analog_time_base = start_time:1/adfreq:stop_time;        
     end
     
     %Position and Force for Robot Task
@@ -126,7 +127,7 @@ function out_struct = calc_from_raw(varargin)
     end
     
     % Force Handle Analog Signals
-    force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) );
+    force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
     if (~isempty(force_channels))
         if (verbose == 1)
             progress = progress + .05;
@@ -164,7 +165,6 @@ function out_struct = calc_from_raw(varargin)
     end
 
     % Force (Cursor Pos) for Wrist Flexion task
-    
     force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %#ok<EFIND>
     if ~isempty(force_channels)
         % Getting Force
@@ -190,58 +190,54 @@ function out_struct = calc_from_raw(varargin)
     end
     
     % EMGs
-    emg_channels = find( strncmp(out_struct.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
-    if ~isempty(emg_channels)
-        if (verbose == 1)
-            progress = progress + .05;
-            waitbar(progress, h, sprintf('Aggregating data...\nget EMGs'));
-        end
-        
-        % ensure all emg channels have the same frequency
-        if ~all(out_struct.raw.analog.adfreq(emg_channels) == ...
-                out_struct.raw.analog.adfreq(emg_channels(1)))
-            close(h);
-            error('BDF:unequalEmgFreqs','Not all EMG channels have the same frequency');
-        end
-        emg_freq = out_struct.raw.analog.adfreq(emg_channels(1));
-        emg_time_base = start_time:1/emg_freq:stop_time;
-        % extract emg channel data here
-        out_struct.emg.emgnames = out_struct.raw.analog.channels(emg_channels);
-        
-        % Filtering
-        % highpassfreq = 50; %50Hz
-        % lowpassfreq = 5; %10Hz
-        % [bh,ah] = butter(4, highpassfreq*2/emg_freq, 'high');
-        % [bl,al] = butter(4, lowpassfreq*2/emg_freq, 'low');
-        raw_emg = zeros(length(emg_time_base), length(emg_channels));
-        for e = 1:(length(emg_channels))
-            e_data = get_analog_signal(out_struct, out_struct.emg.emgnames(e));
-            % e_data(:,2) = filtfilt(bh,ah,e_data(:,2)); % highpass at 50 Hz
-            % e_data(:,2) = abs(e_data(:,2)); %rectify
-            % e_data(:,2) = filtfilt(bl,al,e_data(:,2)); %lowpass at 10 Hz
-            e_data = interp1( e_data(:,1), e_data(:,2), emg_time_base);
-            raw_emg(:,e) = e_data';
-        end
-        out_struct.emg.data = [emg_time_base' raw_emg];
-    else
-        warning('BDF:noEmgSignal','No EMG signal found because no channel named ''EMG_*''');
-    end
+%     emg_channels = find( strncmp(out_struct.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
+%     if ~isempty(emg_channels)
+%         if (verbose == 1)
+%             progress = progress + .05;
+%             waitbar(progress, h, sprintf('Aggregating data...\nget EMGs'));
+%         end
+%         
+%         % ensure all emg channels have the same frequency
+%         if ~all(out_struct.raw.analog.adfreq(emg_channels) == ...
+%                 out_struct.raw.analog.adfreq(emg_channels(1)))
+%             close(h);
+%             error('BDF:unequalEmgFreqs','Not all EMG channels have the same frequency');
+%         end
+%         emg_freq = out_struct.raw.analog.adfreq(emg_channels(1));
+%         emg_time_base = start_time:1/emg_freq:stop_time;
+%         % extract emg channel data here
+%         out_struct.emg.emgnames = out_struct.raw.analog.channels(emg_channels);
+%         out_struct.emg.data(:,1) = emg_time_base';
+%         
+%         raw_emg = zeros(length(emg_time_base), length(emg_channels));
+%         for e = 1:(length(emg_channels))
+%             e_data = get_analog_signal(out_struct, out_struct.emg.emgnames(e));
+%             % e_data(:,2) = filtfilt(bh,ah,e_data(:,2)); % highpass at 50 Hz
+%             % e_data(:,2) = abs(e_data(:,2)); %rectify
+%             % e_data(:,2) = filtfilt(bl,al,e_data(:,2)); %lowpass at 10 Hz
+%             e_data = interp1( e_data(:,1), e_data(:,2), emg_time_base);
+%             raw_emg(:,e) = e_data';
+%         end
+%         out_struct.emg.data = [emg_time_base' raw_emg];
+%     else
+%         warning('BDF:noEmgSignal','No EMG signal found because no channel named ''EMG_*''');
+%     end
             
     if (isfield(out_struct,'keyboard_events') && ~isempty(out_struct.keyboard_events))
         out_struct.keyboard_events = sortrows( out_struct.keyboard_events, [1 2] );
     end
     
 %% Clean up
-    if (verbose == 1)
-        close(h);
-        wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
-    
-        if(strcmp('Yes',wanttosave))
-            savestruct(out_struct);
-        else
-            disp('The structure was not saved!')
-        end
-    end
+     if (verbose == 1)
+         close(h);
+%         wanttosave = questdlg('Do you want to save the output structure?','Save mat file'); 
+%     
+%         if(strcmp('Yes',wanttosave))
+%             savestruct(out_struct);
+%         else
+%             disp('The structure was not saved!')
+%         end
+     end
 
     rmpath ./event_decoders
     
@@ -265,16 +261,15 @@ function out_struct = calc_from_raw(varargin)
     
         matfilename = out_struct.meta.filename;
         matfilename = strrep(matfilename,'.nev','.mat');  %change '.nev' for '.mat'
-        
+
         [FileName,PathName] = uiputfile( matfilename, 'Save mat file');
-        
         fullfilename = fullfile(PathName, FileName);
-        
+
         if isequal(FileName,0) || isequal(PathName,0)
             disp('The structure was not saved!')
         else
             save(fullfilename, 'out_struct');
-            disp(['File: ', fullfile(PathName, FileName),' saved successfully'])
+            disp(['File: ', fullfilename,' saved successfully']);
         end
     end
 
