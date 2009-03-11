@@ -81,7 +81,7 @@ function [filter, PredData]=BuildModel(binnedData)
 
     %% 1- Predict EMGs
     fs=1; numsides=1;
-    [PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
+    [PredictedEMGs,spikeDataNew,ActualEMGsNew]=PREDMIMO3(Inputs,H,numsides,fs,Outputs);
 
     %%%Find a Wiener Cascade Nonlinearity
     %PolynomialOrder=input('What order of Wiener Polynomial?  ');

@@ -1,83 +1,81 @@
 function BMIDataAnalyzer()
-    %GUI that process and plot data for Neural FES systems
-    %
-    %First, the API asks you to provide the base folder of the data to
-    %analyse. This folder (refered to as dataPath below, must contain the
-    %following subfolders (with exact names) :
-    %
-    %  dataPath +
-    %           |
-    %           - BDFStructs\   subfolder for storing BDF structure files
-    %           |
-    %           - BinnedData\   subfolder for storing binned spike and emg
-    %           |               data structures
-    %           - CerebusData\  subfolder for storing .nev and .nsx data
-    %           |               from Cerebus
-    %           - NeuronIDfiles\for future use, to store files specifying
-    %           |               units to use for model building
-    %           - OLPreds\      for storing off-line EMG predictions
-    %           |
-    %           - RTPreds\      for storing real-time EMG predictions
-    %           |
-    %           - SavedFilters\ for storing the models
-    %
-    % Notes:
-    % 
-    %   (1)    RTPreds are provided by NLMS in .txt format. Before they can be of any use for
-    %   this application, they must be saved as .mat file and saved in a
-    %   variable named RTPredData. Also the ts have to be converted to
-    %   seconds.
-    %       e.g. - clic & drag .txt file in matlab workspace window
-    %            - set number of header lines to 9 to actually see the data
-    %               in the preview window. ->finish
-    %            >> RTPredData = data;
-    %            >> RTPredData(:,1) = data(:,1)/30000; % convert ts to seconds (for sample rate of 30kHz)
-    %            - save the variable as a .mat file in the RTPreds\ folder.
-    %
-    %
-    %   (2)     Models saved in SavedFilters with this application have yet
-    %   to be modified before they cand be used by NLMS. This application
-    %   saves a structure whereas NLMS (as of 03-10-09) needs to be provided with a .mat
-    %   file with variables (this is supposed to change in the future.
-    %       e.g. >> load([path 'Theo_03-06-09_001_filter.mat']);
-    %            >> H = filter.H;
-    %            >> P = filter.P;
-    %            >> neuronIDs = filter.neuronIDs;
-    %            - save H, P and neuronIDs in a .mat file to be loaded with NLMS
-    %
-    %   (3)     The LOAD buttons subroutines don't actually load the files.
-    %   They just provide the user with a mean of specifying file paths and
-    %   names that (s)he wants to process. The data files are loaded each
-    %   time an action on them is required. That slows all the processes a
-    %   little, but I thought Matlab would run out of memory less often
-    %   this way
-    %
-    %   (4) Bugs:
-    %       -Out of Memory error occurs when binning data files. In my
-    %           case, I found that with 12 EMGS and >100 spike units, I can
-    %           bin files up to 23 mins long, but Matlab crashes for longer
-    %           files.
-    %
-    %       -Segmentation Fault error occurs from time to time, especially
-    %           when binning data right after having converted a .nev file
-    %           to BDF. Again, this is a problem with Matlab, not my code.
-    %   
-    %       + For both these error and for most others, restarting Matlab
-    %       will solve the problems.
-    %
-    %
+%GUI that process and plot data for Neural FES systems
+%
+%First, the API asks you to provide the base folder of the data to
+%analyse. This folder (refered to as dataPath below, must contain the
+%following subfolders (with exact names) :
+%
+%  dataPath +
+%           |
+%           - BDFStructs\   subfolder for storing BDF structure files
+%           |
+%           - BinnedData\   subfolder for storing binned spike and emg
+%           |               data structures
+%           - CerebusData\  subfolder for storing .nev and .nsx data
+%           |               from Cerebus
+%           - NeuronIDfiles\for future use, to store files specifying
+%           |               units to use for model building
+%           - OLPreds\      for storing off-line EMG predictions
+%           |
+%           - RTPreds\      for storing real-time EMG predictions
+%           |
+%           - SavedFilters\ for storing the models
+%
+% Notes:
+% 
+%   (1)    RTPreds are provided by NLMS in .txt format. Before they can be of any use for
+%   this application, they must be saved as .mat file and saved in a
+%   variable named RTPredData. Also the ts have to be converted to
+%   seconds.
+%       e.g. - clic & drag .txt file in matlab workspace window
+%            - set number of header lines to 9 to actually see the data
+%               in the preview window. ->finish
+%            >> RTPredData = data;
+%            >> RTPredData(:,1) = data(:,1)/30000; % convert ts to seconds (for sample rate of 30kHz)
+%            - save the variable as a .mat file in the RTPreds\ folder.
+%
+%
+%   (2)     Models saved in SavedFilters with this application have yet
+%   to be modified before they cand be used by NLMS. This application
+%   saves a structure whereas NLMS (as of 03-10-09) needs to be provided with a .mat
+%   file with variables (this is supposed to change in the future.
+%       e.g. >> load([path 'Theo_03-06-09_001_filter.mat']);
+%            >> H = filter.H;
+%            >> P = filter.P;
+%            >> neuronIDs = filter.neuronIDs;
+%            - save H, P and neuronIDs in a .mat file to be loaded with NLMS
+%
+%   (3)     The LOAD buttons subroutines don't actually load the files.
+%   They just provide the user with a mean of specifying file paths and
+%   names that (s)he wants to process. The data files are loaded each
+%   time an action on them is required. That slows all the processes a
+%   little, but I thought Matlab would run out of memory less often
+%   this way
+%
+%   (4) Bugs:
+%       -Out of Memory error occurs when binning data files. In my
+%           case, I found that with 12 EMGS and >100 spike units, I can
+%           bin files up to 23 mins long, but Matlab crashes for longer
+%           files.
+%
+%       -Segmentation Fault error occurs from time to time, especially
+%           when binning data right after having converted a .nev file
+%           to BDF. Again, this is a problem with Matlab, not my code.
+%   
+%       + For both these error and for most others, restarting Matlab
+%       will solve the problems.
+%
+% $Id: BMIDataAnalyzer.m 1 2009-03-10 11:58:46Z chris $
     
     
     
-%% Loading the Filter and Data Structure
+%% Globals
     
     dataPath = 'C:\Monkey\Theo\Data\';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
     
-%     BDFPath = 'C:\Monkey\Theo\Data\BDFStructs\';
-%     filterPath = 'C:\Monkey\Theo\Data\SavedFilters\';
-%     binnedDataPath = 'C:\Monkey\Theo\Data\BinnedData\';
- 
+    addpath ../
+    
     %Global Variables
     CB_FileName = 0;
     CB_FullFileName = 0;
@@ -361,7 +359,7 @@ function BMIDataAnalyzer()
             set(OLPred_R2VsActButton,'Enable','on');
 
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
-                                      'normalized','Position',[0 .65 1 0.2]);
+                                      'normalized','Position',[0 .65 1 0.4]);
         end
         
         
@@ -450,7 +448,7 @@ function BMIDataAnalyzer()
 
     function RTPred_R2VsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDatastruct(Bin_FullFileName,'binned');
+        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
         PredData = LoadDataStruct(RTPred_FullFileName,'RTpred');
         plotflag = 0;
         disp('Done. Processing R2 calculations...');

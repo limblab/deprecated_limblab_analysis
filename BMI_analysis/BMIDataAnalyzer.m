@@ -448,7 +448,7 @@ function BMIDataAnalyzer()
 
     function RTPred_R2VsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDatastruct(Bin_FullFileName,'binned');
+        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
         PredData = LoadDataStruct(RTPred_FullFileName,'RTpred');
         plotflag = 0;
         disp('Done. Processing R2 calculations...');
@@ -457,7 +457,7 @@ function BMIDataAnalyzer()
 
     function RTPred_PlotVsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDatastruct(Bin_FullFileName,'binned');
+        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
         PredData = LoadDataStruct(RTPred_FullFileName,'RTpred');
         plotflag = 1;
         disp('Done. Calculating R2 and plotting...');
