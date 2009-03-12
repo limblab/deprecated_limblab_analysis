@@ -121,7 +121,8 @@ function BMIDataAnalyzer()
     %Callbacks
     function CB_LoadButton_Callback(obj,event)
        
-        [CB_FileName, PathName] = uigetfile([dataPath '\CerebusData\*.nev'], 'Open Cerebus Data File');
+        [CB_FileName, PathName] = uigetfile( { [dataPath '\CerebusData\*.nev']},...
+                                               'Open Cerebus Data File' );
         
         if isequal(CB_FileName,0) || isequal(PathName,0)
           %  CB_FileName = 'User Cancelled File Loading';
@@ -144,7 +145,11 @@ function BMIDataAnalyzer()
         disp('Done.');
         
         disp('Saving BDF struct...');
-        BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
+        if strcmp(CB_FileName(end-3:end),'.nev')
+            BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
+        elseif strcmp(CB_FileName(end-3:end-1),'.ns')
+            BDF_FileName = [CB_FileName(1:end-4) '.mat'];
+        end
         [BDF_FileName, PathName] = saveDataStruct(out_struct,dataPath,BDF_FileName,'bdf');
 
         if isequal(BDF_FileName,0) || isequal(PathName,0)
