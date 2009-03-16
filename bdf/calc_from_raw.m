@@ -94,6 +94,16 @@ function out_struct = calc_from_raw(varargin)
             waitbar(progress, h, sprintf('Aggregating data...\nget position'));
         end
 
+        if ~exist('adfreq','var')
+            % There was no analog data, so we need a default timebase for
+            % the encoder
+            adfreq = 1000; %Arbitrarily 1KHz
+            start_time = 1.0;
+            last_enc_time = out_struct.raw.enc(end,1);
+            stop_time = floor(last_enc_time) - 1;
+            analog_time_base = start_time:1/adfreq:stop_time;
+        end
+        
         l1 = 24.0; l2 = 23.5;
         th_t = out_struct.raw.enc(:,1); % encoder time stamps
 

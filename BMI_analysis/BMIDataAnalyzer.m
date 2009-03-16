@@ -311,7 +311,7 @@ function BMIDataAnalyzer()
             set(OLPred_R2VsActButton,'Enable','on');
 
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
-                                      'normalized','Position',[0 .65 1 0.2]);
+                                      'normalized','Position',[0 .65 1 0.38]);
         end
         
     end
@@ -364,7 +364,7 @@ function BMIDataAnalyzer()
             set(OLPred_R2VsActButton,'Enable','on');
 
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
-                                      'normalized','Position',[0 .65 1 0.4]);
+                                      'normalized','Position',[0 .65 1 0.38]);
         end
         
         

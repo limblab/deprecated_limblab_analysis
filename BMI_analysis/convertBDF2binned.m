@@ -123,9 +123,9 @@ function binnedData = convertBDF2binned(varargin)
     [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
     [bl,al] = butter(4, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
     tempEMGs = datastruct.emg.data(starttime*emgsamplerate+1:stoptime*emgsamplerate,2:numEMGs+1); % *500; % Convert to mV
-    tempEMGs = filter(bh,ah,tempEMGs); %highpass filter
+    tempEMGs = filtfilt(bh,ah,tempEMGs); %highpass filter
     tempEMGs = abs(tempEMGs); %rectify
-    tempEMGs = filter(bl,al,tempEMGs); %lowpass filter
+    tempEMGs = filtfilt(bl,al,tempEMGs); %lowpass filter
     for i=1:numEMGs
         %remove offset
 %            tempEMGs(:,i)=tempEMGs(:,i)-min(tempEMGs(:,i)); %remove offset

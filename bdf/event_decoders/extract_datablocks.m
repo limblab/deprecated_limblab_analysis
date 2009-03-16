@@ -25,7 +25,8 @@ if nargout > 1
     end    
     
     % Find datablock frames
-    frame_idx = find( diff(db_list(:,1)) > .005 ) + 1;
+%     frame_idx = find( diff(db_list(:,1)) > .005 ) + 1;
+    frame_idx = find( diff(db_list(:,1)) > .01 ) + 1; % For some reason, there is up to 5 ms between some of the bytes in WF
     frame_idx = [1; frame_idx];
     
     datablocks = cell(length(frame_idx), 2);
