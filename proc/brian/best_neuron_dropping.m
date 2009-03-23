@@ -3,34 +3,51 @@
 % Cycles through several iterations of predictions.m dropping neurons and
 % measuring the resulting VAF 
 
-iterations = 10;
-max_dropped = 35;
+%max_dropped = 35;
+max_dropped = 2;
 
 units = unit_list(bdf);
-%units = [1 1;1 2; 1 3; 1 4];
+%units = [1 1; 1 2; 2 1; 4 1];
 
 means = zeros(1,max_dropped+1);
 vars = zeros(1,max_dropped+1);
+dropped_units = zeros(max_dropped,2);
 
-for num_dropped_neurons = 0:max_dropped
+for num_dropped_neurons = 1:max_dropped
     disp(sprintf('\n\nDropping %d Neurons\n------------------------', num_dropped_neurons));
     
-    vafs = zeros(iterations,1);
+    vafs = zeros(size(units,1),1);
     
-    for iteration = 1:iterations
+    best_mean = Inf;
+    best_var = 0;
+    dropped_row = -1;
+    
+    for iteration = 1:5 %1:size(units,1)
         disp(sprintf('Iteration: %d', iteration));
         
-        % Generate random unit list with num_dropped_neurons removed
-        kept_units = units;
-        for i = 0:num_dropped_neurons-1
-            drop_row = ceil(rand()*size(kept_units,1));
-            kept_units = kept_units(1:size(kept_units,1) ~= drop_row, :);
-        end
+        cur_units = units(1:size(units,1) ~= iteration, :);
         
-        vaf = predictions(bdf, 'pos', kept_units, 10);
-        vafs(iteration) = mean(vaf(1:end-1,1));
+        vafs = predictions(bdf, 'pos', cur_units, 10);
+        mean_vaf = mean(vafs(1:end-1,1));
+        var_vaf = var(vafs(1:end-1,1));
+        
+        if mean_vaf < best_mean
+            best_mean = mean_vaf;
+            best_var = var_vaf;
+            dropped_row = iteration;
+        end
+            
     end
+
+    dropped_units(num_dropped_neurons, :) = units(dropped_row,:);
+    units = units(1:size(units,1) ~= dropped_row, :);
     
-    means(num_dropped_neurons + 1) = mean(vafs);
-    vars(num_dropped_neurons + 1) = var(vafs);
+    means(num_dropped_neurons + 1) = best_mean;
+    vars(num_dropped_neurons + 1) = best_var;
+    
+    filename = sprintf('intermediate_%d.mat', iteration);
+    save(filename, 'means', 'vars');
 end
+
+
+

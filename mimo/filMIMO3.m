@@ -52,8 +52,8 @@ elseif (nargin ~=5) disp('Wrong number of inputs');return;end
 	    PHI(:,i+(j-1)*numio)=[R(j+(i-1)*numio,numlags:-1:2)';
 		                      R(i+(j-1)*numio,:)'];
 	 end
-   end
-PHI;
+  end
+
   if numsides == 1
     Nxxr=numlags:2*numlags-1;
     Nxxc=numlags:-1:1;
@@ -63,8 +63,8 @@ PHI;
     Nxxc=numlags:-1:2;
 	Nxy=numlags/2+1:3*numlags/2 -1;
 	numlags=numlags-1;
-   end
-numlags
+  end
+
 %Solve matrix equations to identify filters
 
 %NOTE: this solution to the matrix equations  works, but may not be 
@@ -72,17 +72,15 @@ numlags
 %      organization of the submatrices is not exploited.  This could
 %      be further investigated by an ambitious researcher.
 
-  PX=zeros(cX*numlags,cX*numlags);
-  for i=1:cX
-     for j=1:cX
-	    cidx=1+(i-1)*numlags:i*numlags;
-		ridx=1+(j-1)*numlags:j*numlags;
-	    PX(ridx,cidx)=toeplitz(PHI(Nxxc,i+(j-1)*numio),PHI(Nxxr,i+(j-1)*numio));
-	 end
-  end 
-PX;
-disp('Determinant of PX')
-det(PX)
+PX=zeros(cX*numlags,cX*numlags);
+for i=1:cX
+	for j=1:cX
+        cidx=1+(i-1)*numlags:i*numlags;
+        ridx=1+(j-1)*numlags:j*numlags;
+        PX(ridx,cidx)=toeplitz(PHI(Nxxc,i+(j-1)*numio),PHI(Nxxr,i+(j-1)*numio));
+    end
+end
+
   
   PXY=zeros(cX*numlags,cY);
   for i=1:cX							%input loop
@@ -92,7 +90,7 @@ det(PX)
 	    PXY(ridx,cidx)=PHI(Nxy,i+(j-1)*numio);
       end
    end	
-PXY;
+
    H=fs*(PX\PXY);
    %H=fs*(PX)^-1*PXY;
    
