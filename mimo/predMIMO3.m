@@ -37,7 +37,7 @@ Y=zeros(numpts,Ny);
 
 for i=1:Ny
    for j=1:Nx
-      Y(:,i)=Y(:,i)+FILTER22(H(1+(j-1)*fillen:j*fillen,i),X(:,j),numsides)/fs;
+      Y(:,i)=Y(:,i)+filter22(H(1+(j-1)*fillen:j*fillen,i),X(:,j),numsides)/fs;
 	end
 end
 
