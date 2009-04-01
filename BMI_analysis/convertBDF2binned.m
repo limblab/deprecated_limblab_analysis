@@ -186,11 +186,11 @@ function binnedData = convertBDF2binned(varargin)
     for unit = 1:numusableunits
 
         %get all the binned data 
-        %[binneddata t]=train2bins(datastruct.units(units_to_use(unit)).ts,binsize);
-        [binneddata]=train2bins(datastruct.units(units_to_use(unit)).ts,timeframe);
+        [binneddata t]=train2bins(datastruct.units(units_to_use(unit)).ts,binsize);
+        %[binneddata]=train2bins(datastruct.units(units_to_use(unit)).ts,timeframe);
 
         %extract only the bins that fall in the desired time range
-        %binneddata = binneddata(t>=starttime & t<stoptime);
+        binneddata = binneddata(t>=starttime & t<stoptime);
         
         %if a unit had no spikes in the last second or more, we need to append zeros
         %to keep all the data vector the same length

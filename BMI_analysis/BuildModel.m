@@ -59,9 +59,6 @@ function [filter, PredData]=BuildModel(binnedData)
     %numlags=10;     %%%Designate the length of the filters/number of time lags
     numsides=1;     %%%For a one-sided or causal filter
 
-    binsize=1/desiredfiringrate;
-    %timelimit=input('Enter amount of time (in minutes) to use in filter estimation ');
-
     %numberbins=timelimit*60/binsize;
     numberbins = length(timeframe);
 
