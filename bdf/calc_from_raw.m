@@ -136,6 +136,7 @@ function out_struct = calc_from_raw(varargin)
         end
     end
     
+    
     % Force Handle Analog Signals
     force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
     if (~isempty(force_channels))

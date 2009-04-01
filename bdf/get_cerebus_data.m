@@ -203,6 +203,9 @@ function out_struct = get_cerebus_data(varargin)
                 out_struct.raw.words = all_words(logical(all_words(:,2)),:);
 
                 % and encoder data
+                %all_enc = [event_ts, bitand(hex2dec('FE'),event_data) + bitget(event_data,1)];
+                tmp_enc = mod(event_data,256) - mod(event_data,2);
+                tmp_enc = tmp_enc + bitget(event_data(
                 all_enc = [event_ts, bitand(hex2dec('FE'),event_data) + bitget(event_data,1)];
                 out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
             else

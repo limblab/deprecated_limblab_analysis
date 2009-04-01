@@ -77,4 +77,19 @@ function raw = get_raw_plx(filename, verbose)
     
     raw.words = get_words(raw.events.timestamps);
     
+    % Kludge for NEV data loaded into offline sorter
+    if max(strobe_value) > 255
+        raw.nev2plx = 1; % flag for later
+        
+        strobe_value(strobe_value < 0) = strobe_value(strobe_value < 0) + 65536;
+        pos = mod(strobe_value,256) - mod(strobe_value,2);
+        pos = pos + bitget(strobe_value,9);
+        raw.enc = get_encoder([strobe_ts pos]);
+        
+        words = strobe_value - mod(strobe_value,512);
+        words = words / 256 + bitget(strobe_value(:,1),1);
+        tmp_words = [strobe_ts, words];
+        tmp_words = tmp_words( [false; diff(words)~=0] , : );
+        raw.words = tmp_words(tmp_words(:,2) ~= 0, :);         
+    end
 end

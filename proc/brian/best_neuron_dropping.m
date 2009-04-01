@@ -3,8 +3,8 @@
 % Cycles through several iterations of predictions.m dropping neurons and
 % measuring the resulting VAF 
 
-%max_dropped = 35;
-max_dropped = 2;
+max_dropped = 40;
+%max_dropped = 2;
 
 units = unit_list(bdf);
 %units = [1 1; 1 2; 2 1; 4 1];
@@ -18,11 +18,11 @@ for num_dropped_neurons = 1:max_dropped
     
     vafs = zeros(size(units,1),1);
     
-    best_mean = Inf;
+    best_mean = -Inf;
     best_var = 0;
     dropped_row = -1;
     
-    for iteration = 1:5 %1:size(units,1)
+    for iteration = 1:size(units,1)
         disp(sprintf('Iteration: %d', iteration));
         
         cur_units = units(1:size(units,1) ~= iteration, :);
@@ -31,7 +31,7 @@ for num_dropped_neurons = 1:max_dropped
         mean_vaf = mean(vafs(1:end-1,1));
         var_vaf = var(vafs(1:end-1,1));
         
-        if mean_vaf < best_mean
+        if mean_vaf > best_mean
             best_mean = mean_vaf;
             best_var = var_vaf;
             dropped_row = iteration;
@@ -45,7 +45,7 @@ for num_dropped_neurons = 1:max_dropped
     means(num_dropped_neurons + 1) = best_mean;
     vars(num_dropped_neurons + 1) = best_var;
     
-    filename = sprintf('intermediate_%d.mat', iteration);
+    filename = sprintf('intermediate_%d.mat', num_dropped_neurons);
     save(filename, 'means', 'vars');
 end
 
