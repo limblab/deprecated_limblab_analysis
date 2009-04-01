@@ -26,7 +26,7 @@ function plotBDF(datastructname)
     Force_to_plot = [];
     Words_to_plot = [];
     KEvents_to_plot = [];
-    LPfreq = 5.0;
+    LPfreq = 10.0;
     ploth = [];
     
 %% Creating UI
@@ -55,7 +55,7 @@ if isfield(datastruct, 'emg')
                             'Units','normalized','Position',position,'Callback',{@EMG_chbx_Callback,i});
     end
 
-    EMG_lpfilt_tb = uicontrol('Parent',EMGpanel,'Style','popupmenu', 'String', '5|8|10|15|20',...
+    EMG_lpfilt_tb = uicontrol('Parent',EMGpanel,'Style','popupmenu', 'String', '10|Raw|5|15|20',...
                                 'Min', 1, 'Max',1, 'Units', 'normalized', 'Position', [.1 .05 .3 .05],...
                                 'BackgroundColor','w','Callback',@LPfreq_callback);
     % Filter popup menu label                        
@@ -81,8 +81,8 @@ if isfield(datastruct,'words')
 %    WordsValues= [   23  ;   49   ;   50  ;   32   ;   33  ;  34  ];%   >240  ];
 
 %%%%%%Words used in the Ball Drop Task
-    WordsNames = { 'Start' 'Touch Pad' 'Go Cue' 'Catch' 'Pick up' 'Reward' 'Abort' 'Fail' 'Incomplete'};
-    WordsValues= [   25   ;     48    ;   49   ;   50  ;    144  ;   32   ;   33  ;  34  ;     35     ];
+    WordsNames = { 'Start' 'Touch Pad' 'Go Cue' 'Catch' 'Pick up' 'Reward' 'Abort' 'Fail' 'Incomplete' 'Empty Rack'};
+    WordsValues= [   25   ;     48    ;   49   ;   50  ;    144  ;   32   ;   33  ;  34  ;     35     ;     36      ];
 
     numWords = length(WordsNames);
     
@@ -158,17 +158,17 @@ end
         val = get(hObject,'Value');
         switch val
             case 1
-                LPfreq = 5.0;
-            case 2
-                LPfreq = 8.0;
-            case 3
                 LPfreq = 10.0;
+            case 2
+                LPfreq = 0;
+            case 3
+                LPfreq = 5.0;
             case 4
                 LPfreq = 15.0;
             case 5
                 LPfreq = 20.0;
             otherwise
-                LPfreq = 1000;
+                LPfreq = 2000;
         end
     end
                 
@@ -334,23 +334,26 @@ end
 
     function FilteredEMGs = FiltEMGs()
         
-        highpassfreq = 50; %50Hz
-        lowpassfreq = LPfreq; %5-20Hz
-        emgfreq = datastruct.emg.emgfreq(1);
-        
-        [bh,ah] = butter(4, highpassfreq*2/emgfreq, 'high');
-        [bl,al] = butter(4, lowpassfreq*2/emgfreq, 'low');
-        
         tempEMGs = datastruct.emg.data(:,EMGs_to_plot+1);
-        tempEMGs = filtfilt(bh,ah,tempEMGs); %highpass at 50 Hz
-        tempEMGs = abs(tempEMGs); %rectify
-        tempEMGs = filtfilt(bl,al,tempEMGs); %lowpass at user selected freq
-%        tempEMGs = filter(bl,al,tempEMGs); 
         
-%         for i=1:length(EMGs_to_plot)
-%             tempEMGs(:,i)=tempEMGs(:,i)-min(tempEMGs(:,i)); %remove offset
-%         end
-        
+        if LPfreq % No filtering necessary if user selected 'Raw' (which sets LP to 0.0)
+            highpassfreq = 50; %50Hz
+            lowpassfreq = LPfreq; %5-20Hz
+            emgfreq = datastruct.emg.emgfreq(1);
+
+            [bh,ah] = butter(4, highpassfreq*2/emgfreq, 'high');
+            [bl,al] = butter(4, lowpassfreq*2/emgfreq, 'low');
+
+            tempEMGs = filtfilt(bh,ah,tempEMGs); %highpass at 50 Hz
+            tempEMGs = abs(tempEMGs); %rectify
+            tempEMGs = filtfilt(bl,al,tempEMGs); %lowpass at user selected freq
+    %        tempEMGs = filter(bl,al,tempEMGs); 
+
+    %         for i=1:length(EMGs_to_plot)
+    %             tempEMGs(:,i)=tempEMGs(:,i)-min(tempEMGs(:,i)); %remove offset
+    %         end
+        end
+    
         FilteredEMGs = tempEMGs;
 
         clear tempEMGs bh ah bl al;
