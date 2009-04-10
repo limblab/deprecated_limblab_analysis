@@ -123,9 +123,9 @@ function binnedData = convertBDF2binned(varargin)
     [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
     [bl,al] = butter(4, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
     tempEMGs = datastruct.emg.data(starttime*emgsamplerate+1:stoptime*emgsamplerate,2:numEMGs+1); % *500; % Convert to mV
-    tempEMGs = filtfilt(bh,ah,tempEMGs); %highpass filter
+    tempEMGs = filter(bh,ah,tempEMGs); %highpass filter
     tempEMGs = abs(tempEMGs); %rectify
-    tempEMGs = filtfilt(bl,al,tempEMGs); %lowpass filter
+    tempEMGs = filter(bl,al,tempEMGs); %lowpass filter
     for i=1:numEMGs
         %remove offset
 %            tempEMGs(:,i)=tempEMGs(:,i)-min(tempEMGs(:,i)); %remove offset
@@ -143,7 +143,6 @@ function binnedData = convertBDF2binned(varargin)
     numusableunits = 0;
     units_to_use = zeros(1,totalnumunits);
     maxnum_ts = 0;
-    binframe = zeros(1,numberbins);
     
     %Identify the sorted units %%%with minimum spike rate%%%
     for i=1:totalnumunits
@@ -184,20 +183,17 @@ function binnedData = convertBDF2binned(varargin)
     % Create the spike data matrix, using the specified bin size and
     % identified units
     for unit = 1:numusableunits
-
-        %get all the binned data 
-        [binneddata t]=train2bins(datastruct.units(units_to_use(unit)).ts,binsize);
-        %[binneddata]=train2bins(datastruct.units(units_to_use(unit)).ts,timeframe);
-
-        %extract only the bins that fall in the desired time range
-        binneddata = binneddata(t>=starttime & t<stoptime);
+      
+        %get the binned data from the desired timeframe plus one bin before
+        binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,starttime:binsize:stoptime);
         
-        %if a unit had no spikes in the last second or more, we need to append zeros
-        %to keep all the data vector the same length
-        binframe(1:length(binneddata)) = binneddata;
+        %and get rid of the extra bins at beginnning, it contains all the ts
+        %from the beginning of file that are < starttime. Here I want
+        %starttime to be the lower bound of the first bin.
+        binneddata = binneddata(2:end);
         
         %convert to firing rate and store in spike data matrix
-        spikeratedata(:,unit) = binframe' /binsize;
+        spikeratedata(:,unit) = binneddata' /binsize;
     end
       
 %%%%%%%% much slower and more complicated way of doing the same thing: %%%%%%%%%
@@ -211,6 +207,7 @@ function binnedData = convertBDF2binned(varargin)
 %         end
 %     end
 
+%% Outputs
     binnedData = struct('timeframe',timeframe,...
                            'emgguide',emgguide,...
                            'emgdatabin',emgdatabin,...
