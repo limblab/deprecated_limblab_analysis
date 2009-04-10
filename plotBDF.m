@@ -261,7 +261,7 @@ end
  
             marker=[-2000 2000];
 %            colors={ 'b:' 'c:' 'm:' 'g:' 'r:' 'r:'};   %Colors for WF Task
-             colors={ 'k:' 'c:' 'b:' 'm:' 'y:' 'g:' 'r:' 'r:' 'r:'}; % Colors for BD Task
+             colors={ 'k:' 'c:' 'b:' 'm:' 'y:' 'g:' 'r:' 'r:' 'r:' 'y:'}; % Colors for BD Task
             hold on;
             if (usr_plotEMGs || usr_plotForce)
                 axis manual;
