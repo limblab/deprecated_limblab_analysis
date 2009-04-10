@@ -1,4 +1,4 @@
-function [filter, PredData]=BuildModel(binnedData)
+function [filter, PredData]=BuildModel(binnedData, dataPath)
     addpath ..\mimo\
 
     if ~isstruct(binnedData)
@@ -30,22 +30,22 @@ function [filter, PredData]=BuildModel(binnedData)
     %%
     %%%desiredInputs are the columns in the firing rate matrix that are to be
     %%%used as inputs for the models
-%    UseAllInputsOption=input('Use all available inputs? [y/n] ', 's');
-%    if UseAllInputsOption~=['n'];
+    UseAllInputsOption=input('Use all available inputs? [y/n] ', 's');
+    if UseAllInputsOption~='n'
         disp('Using all available inputs')
         neuronIDs=neuronChannels;
         desiredInputs=1:numberinputs;
-%     else
-%         filename=input('Filename of desired inputs? ', 's');
-%         [neuronIDs] = loadneuronIDs(filename);
-%         numberinputs=size(neuronIDs,1);
-%         for k=1:numberinputs
-%             temp=neuronIDs(k,:);
-%             spot=find((neuronChannels(:,1)==temp(1,1)) & (neuronChannels(:,2)==temp(1,2)));
-%             desiredInputs(1,k)=spot;
-%             clear temp spot
-%         end
-%     end
+     else
+        [FileName, PathName] =uigetfile([dataPath '*.mat'],'Filename of desired inputs? ');
+        [neuronIDs] = loadneuronIDs(filename);
+        numberinputs=size(neuronIDs,1);
+        for k=1:numberinputs
+            temp=neuronIDs(k,:);
+            spot=find((neuronChannels(:,1)==temp(1,1)) & (neuronChannels(:,2)==temp(1,2)));
+            desiredInputs(1,k)=spot;
+            clear temp spot
+        end
+    end
 
 
 %% Calculate the filter
@@ -72,13 +72,13 @@ function [filter, PredData]=BuildModel(binnedData)
     Inputs=spikeratedata(1:fitteddata,desiredInputs);
 
     %%%The following calculates the linear filters (H) that relate the inputs and outputs
-    [H,v,mcc]=FILMIMO3(Inputs,Outputs,numlags,numsides);
+    [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
     
 %% Then, find polynomial and evaluate the model
 
     %% 1- Predict EMGs
     fs=1; numsides=1;
-    [PredictedEMGs,spikeDataNew,ActualEMGsNew]=PREDMIMO3(Inputs,H,numsides,fs,Outputs);
+    [PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
 
     %%%Find a Wiener Cascade Nonlinearity
     %PolynomialOrder=input('What order of Wiener Polynomial?  ');
