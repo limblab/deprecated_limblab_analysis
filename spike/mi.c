@@ -39,8 +39,6 @@ void mutual_info2(double x[], double y[], double *mi, int l)
         }
     }
     
-    /* initialize Px counts to zero */
-  
     /* find max and min in each dimension of y */
     for (i=0; i<l; i++) {
         if (max_1 < y[i]) {

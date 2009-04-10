@@ -45,7 +45,7 @@ void bin(double *s, double *b, double *d, int ns, int nb)
     
     for (b_count = 0; b_count < nb; b_count++) {
         d[b_count] = 0.0;
-        while (s[s_count] < b[b_count]) {
+        while (s[s_count] < b[b_count] && s_count < ns) {
             d[b_count] += 1.0;
             s_count++;
         }
@@ -73,7 +73,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs,
       mexErrMsgTxt("Input S must be a vector of noncomplex doubles");
   }
 
-   /* b must be a noncomplex scalar double.*/
+   /* b must be a noncomplex vector double.*/
   brows = mxGetM(prhs[1]);
   bcols = mxGetN(prhs[1]);
   if ((brows != 1 && bcols != 1) || !mxIsDouble(prhs[0]) || mxIsComplex(prhs[0])) {
