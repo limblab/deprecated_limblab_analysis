@@ -282,7 +282,7 @@ function BMIDataAnalyzer()
         
     function Bin_BuildButton_Callback(obj,event)
         disp('Building Prediction Model, please wait...');
-        [filt_struct, OLPredData] = BuildModel(Bin_FullFileName);
+        [filt_struct, OLPredData] = BuildModel(Bin_FullFileName, dataPath);
         disp('Done.');
         
         disp('Saving prediction model...');
@@ -403,7 +403,7 @@ function BMIDataAnalyzer()
 
     function OLPred_R2VsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDatastruct(Bin_FullFileName,'binned');
+        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
         PredData = LoadDataStruct(OLPred_FullFileName,'OLpred');
         plotflag = 0;
         disp('Done. Processing R2 calculations...');
