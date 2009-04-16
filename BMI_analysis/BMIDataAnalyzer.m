@@ -412,7 +412,7 @@ function BMIDataAnalyzer()
 
     function OLPred_PlotVsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDatastruct(Bin_FullFileName,'binned');
+        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
         PredData = LoadDataStruct(OLPred_FullFileName,'OLpred');
         plotflag = 1;
         disp('Done. Calculating R2 and plotting...');

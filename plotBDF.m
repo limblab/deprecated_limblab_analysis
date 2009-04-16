@@ -3,7 +3,8 @@ function plotBDF(datastructname)
     %already in the matlab workspace
 
 %% Loading the Data Structure
-
+    
+    addpath ./BMI_analysis
     datastruct = LoadDataStruct(datastructname,'bdf');
 
     if isempty(datastruct)
@@ -25,9 +26,11 @@ function plotBDF(datastructname)
     EMGs_to_plot = [];
     Force_to_plot = [];
     Words_to_plot = [];
+    plot_Targets = 0;
     KEvents_to_plot = [];
     LPfreq = 10.0;
-    ploth = [];
+    ploth1 = [];
+    ploth2 = [];
     
 %% Creating UI
 
@@ -76,16 +79,41 @@ end
 %% Words Panel
 if isfield(datastruct,'words')
 
-%%%%%%Words used in the Wrist Flexion Task
-%    WordsNames = {'Start' 'Go Cue' 'Catch' 'Reward' 'Abort' 'Fail'};%'Targets'};
-%    WordsValues= [   23  ;   49   ;   50  ;   32   ;   33  ;  34  ];%   >240  ];
+    wrist_flexion_task = 0;
+    ball_drop_task = 0;
+    
+    %Find which behavior using start word:
+    start_trial_words = datastruct.words( bitand(hex2dec('f0'),datastruct.words(:,2)) == hex2dec('10') ,2);
+    if ~isempty(start_trial_words)
+            start_trial_code = start_trial_words(1);
+            if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+                close(h);
+                error('plotBDF:inconsistentBehaviors','Not all trials are the same type');
+            end
 
-%%%%%%Words used in the Ball Drop Task
-    WordsNames = { 'Start' 'Touch Pad' 'Go Cue' 'Catch' 'Pick up' 'Reward' 'Abort' 'Fail' 'Incomplete' 'Empty Rack'};
-    WordsValues= [   25   ;     48    ;   49   ;   50  ;    144  ;   32   ;   33  ;  34  ;     35     ;     36      ];
+            if start_trial_code == hex2dec('17')
+                wrist_flexion_task = 1;
+            elseif start_trial_code == hex2dec('19')
+                ball_drop_task = 1;
+            else
+                close(h);
+                error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
+            end
+
+        end
+    
+    if wrist_flexion_task
+        %Words used in the Wrist Flexion Task
+        WordsNames = {'Start' 'Go Cue' 'Catch' 'Reward' 'Abort' 'Fail'};%'Targets'};
+        WordsValues= [   23  ;   49   ;   50  ;   32   ;   33  ;  34  ];%   >240  ];
+    elseif ball_drop_task
+        %Words used in the Ball Drop Task
+        WordsNames = { 'Start' 'Touch Pad' 'Go Cue' 'Catch' 'Pick up' 'Reward' 'Abort' 'Fail' 'Incomplete' 'Empty Rack'};
+        WordsValues= [   25   ;     48    ;   49   ;   50  ;    144  ;   32   ;   33  ;  34  ;     35     ;     36      ];
+    end
 
     numWords = length(WordsNames);
-    
+        
     Words_cb=zeros(1,numWords);
     
     Words_ts = GetWords_ts();
@@ -102,6 +130,13 @@ if isfield(datastruct,'words')
                             'Units','normalized','Position',position,...
                             'Callback',{@Words_chbx_Callback,i},'Enable',enable);
     end
+    
+    if isfield(datastruct,'databursts')
+        Targets_cb = uicontrol('Parent',Wordspanel,'Style','checkbox','String','Targets (TODO?)',...
+                            'Units','normalized','Position',[.1 .1 .9 .05],...
+                            'Callback',@Targets_chbx_Callback,'Enable',enable);
+    end        
+        
 end
 %% Keyboard Panel
 if isfield(datastruct,'keyboard_events')
@@ -130,13 +165,16 @@ end
     
 %% Buttons
     Plot_Button = uicontrol('Parent', UI, 'String', 'Plot','Units','normalized','Tag','Plot_Button',...
-                            'Position', [.23 .0375 .2 .075],'Callback',@Plot_Button_Callback);
+                            'Position', [.15 .0375 .2 .075],'Callback',@Plot_Button_Callback);
 
 %     Predict_Button = uicontrol('Parent', UI, 'String', 'Predict EMG','Units','normalized','Tag','Predict_Button',...
 %                             'Position', [.4 .0375 .2 .075],'Callback',@Predict_Button_Callback,'Enable','off');
+
+    PWTH_Button = uicontrol('Parent',UI, 'String', 'PWTH', 'Units', 'normalized', 'Tag', 'PWTH_Button',...
+                            'Position', [.4 0.0375 .2 .075],'Callback',@PWTH_Button_Callback);
                         
     Close_Button = uicontrol('Parent', UI, 'String', 'Close', 'Units', 'normalized', 'Tag','Close_Button',...
-                            'Position', [.56 .0375 .2 .075],'Callback',@Close_Button_Callback);
+                            'Position', [.65 .0375 .2 .075],'Callback',@Close_Button_Callback);
     
 
 %% CheckBoxes CallBacks
@@ -185,6 +223,16 @@ end
         end
     end
 
+    function Targets_chbx_Callback(hObject,eventdata)
+        if (get(hObject,'Value') == get(hObject,'Max'))
+        % Checkbox is checked-take approriate action
+            plot_Targets = 1;
+        else
+        % Checkbox is unchecked-take approriate action
+            plot_Targets = 0;
+        end
+    end
+
     %Force Checkboxes
     function Force_chbx_Callback(hObject,eventdata,index)
         if (get(hObject,'Value') == get(hObject,'Max'))
@@ -221,14 +269,14 @@ end
         usr_plotForce= ~isempty(Force_to_plot);
         usr_plotKEvents=~isempty(KEvents_to_plot);        
         
-        if ishandle(ploth) %overwrite on existing figure
-            figure(ploth);
-            if ~isempty(get(ploth,'Children'))%if an axes exist, save horizontal view and clear it 
+        if ishandle(ploth1) %overwrite on existing figure
+            figure(ploth1);
+            if ~isempty(get(ploth1,'Children'))%if an axes exist, save horizontal view and clear it 
                 scale = axis; %save the axis values
-                clf(ploth); %clear figure
+                clf(ploth1); %clear figure
             end
         else
-            ploth = figure('Units','normalized','Position',[.125 0.3 .75 .5]);
+            ploth1 = figure('Units','normalized','Position',[.125 0.3 .75 .5]);
         end
         
         if (usr_plotEMGs && usr_plotForce) %plot EMG and Force on two different Y axis
@@ -260,8 +308,14 @@ end
         if (usr_plotWords) % Plot the words
  
             marker=[-2000 2000];
-%            colors={ 'b:' 'c:' 'm:' 'g:' 'r:' 'r:'};   %Colors for WF Task
-             colors={ 'k:' 'c:' 'b:' 'm:' 'y:' 'g:' 'r:' 'r:' 'r:' 'y:'}; % Colors for BD Task
+            if wrist_flexion_task
+                colors={ 'b:' 'c:' 'm:' 'g:' 'r:' 'r:'};   %Colors for WF Task
+            elseif ball_drop_task
+                colors={ 'k:' 'c:' 'b:' 'm:' 'y:' 'g:' 'r:' 'r:' 'r:' 'y:'}; % Colors for BD Task
+            else
+                colors= { 'k:' 'c:' 'b:' 'm:' 'y:' 'g:' 'r:' 'r:' 'r:' 'y:'}; % Colors for BD Task
+            end
+            
             hold on;
             if (usr_plotEMGs || usr_plotForce)
                 axis manual;
@@ -309,6 +363,11 @@ end
             [leghk,objh,outh,outm]=legend(outh,outm,'Location','Northwest');
             legh(1) = leghk;
         end
+        
+%         if plot_Targets %TODO ??
+%             num_Targets = size(datastruct.databursts,1)-1; % TODO : is the last databurst always empty? why?
+%         end
+            
          
         if ~isempty(scale) %Maintain the x axis if replotting
             for i=1:length(legh)
@@ -319,10 +378,67 @@ end
         end
     end
         
+
+    function PWTH_Button_Callback(obj,event)
+        
+        legh = []; outh =[]; outm =[]; %handles holders        
+
+        if length(Words_to_plot) ~= 1
+            disp('This action require that no more and no less than one word be selected');
+            return;
+        end
+         
+        usr_plotEMGs = ~isempty(EMGs_to_plot);
+        usr_plotForce= ~isempty(Force_to_plot);   
+
+        PWTH_h = figure('Units','normalized','Position',[.125 0.3 .75 .5]);
+        
+        [timeBefore, timeAfter]=PWTH_GUI();
+        
+        if (usr_plotEMGs && usr_plotForce) %plot EMG and Force on two different Y axis
+            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.emg.emgfreq(1),datastruct.words,...
+                                WordsValues(Words_to_plot), timeBefore, timeAfter);
+                                      
+            Force_PWTH = PWTH(datastruct.force(:,[1; Force_to_plot+1]),datastruct.raw.analog.adfreq(1),datastruct.words,...
+                                WordsValues(Words_to_plot), timeBefore, timeAfter);
+                            
+            hold off; axis auto;
+            FilteredEMGs = FiltEMGs(EMGs_PWTH(:,2:end));
+            FilteredForce= FiltForce(Force_PWTH(:,2:end));
+            [AX,H1,H2]=plotyy(EMGs_PWTH(:,1),FilteredEMGs,Force_PWTH(:,1),FilteredForce);
+            [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot),'Location','NorthWest');
+            [leghf,objhf,outhf,outmf]=legend(AX(2),ForceNames(Force_to_plot),'Location','NorthEast');
+            legh = [leghe; leghf];
+            outm = outme; outh = outhe;
+            emg_handles = H1;
+            force_handles = H2;
+             
+        elseif (usr_plotEMGs) %plot EMGs but not Force
+            hold off; axis auto;
+            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.emg.emgfreq(1),datastruct.words,...
+                                WordsValues(Words_to_plot), timeBefore, timeAfter);
+            FilteredEMGs = FiltEMGs(EMGs_PWTH(:,2:end));
+            emg_handles = plot(EMGs_PWTH(:,1),FilteredEMGs);
+            [legh,objh,outh,outm]=legend(EMGnames(EMGs_to_plot),'Location','NorthWest');
+            
+        elseif (usr_plotForce) %plot Force but no EMG
+            hold off; axis auto;
+            Force_PWTH = PWTH(datastruct.force(:,[1; Force_to_plot+1]),datastruct.raw.analog.adfreq(1),datastruct.words,...
+                                WordsValues(Words_to_plot), timeBefore, timeAfter);
+            FilteredForce= FiltForce(Force_PWTH(:,2:end));
+            force_handles = plot(Force_PWTH(:,1),FilteredForce);
+            [legh,objh,outh,outm]=legend(force_handles, ForceNames(Force_to_plot),'Location','NorthEast');
+        end
+
+    end
+        
     function Close_Button_Callback(obj,event)
         close(get(obj,'Parent'));
-        if ishandle(ploth)
-            close(ploth);
+        if ishandle(ploth1)
+            close(ploth1);
+        end        
+        if ishandle(ploth2)
+            close(ploth2);
         end
     end
 
@@ -332,10 +448,14 @@ end
 
 %% Filtering
 
-    function FilteredEMGs = FiltEMGs()
+    function FilteredEMGs = FiltEMGs(varargin)
         
-        tempEMGs = datastruct.emg.data(:,EMGs_to_plot+1);
-        
+        if nargin
+            tempEMGs = varargin{1};
+        else
+            tempEMGs = datastruct.emg.data(:,EMGs_to_plot+1);
+        end
+            
         if LPfreq % No filtering necessary if user selected 'Raw' (which sets LP to 0.0)
             highpassfreq = 50; %50Hz
             lowpassfreq = LPfreq; %5-20Hz
@@ -359,8 +479,14 @@ end
         clear tempEMGs bh ah bl al;
 
     end
+   
+    function FilteredForce = FiltForce(varargin)
 
-    function FilteredForce = FiltForce()
+        if nargin
+            tempForce = varargin{1}
+        else
+            tempForce = datastruct.force(:,Force_to_plot+1);
+        end
         
         lowpassfreq = 20; %20Hz
         adfreq = datastruct.raw.analog.adfreq(1);
@@ -368,7 +494,6 @@ end
         [bl,al] = butter(4, lowpassfreq*2/adfreq, 'low');
 
         %LP filter @ 20Hz - necessary?
-        tempForce = datastruct.force(:,Force_to_plot+1);
 %        tempForce = filtfilt(bl,al,tempForce);
 
         FilteredForce = tempForce;
