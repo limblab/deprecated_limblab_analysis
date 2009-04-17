@@ -183,36 +183,31 @@ function out_struct = get_cerebus_data(varargin)
     end
         
         
-    % grab the events
     if ~isempty(event_list)
         if (verbose == 1)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
         end
-        for i = length(event_list):-1:1
-            [nsresult,event_ts,event_data] = ns_GetEventData(hfile,event_list(i),1:EntityInfo(event_list(i)).ItemCount);
-            if (event_list(i) == 145)
-                % we have the digin serial line
-                % The input cable for this is currently bugged: Bits 0 and 8
-                % are swapped.  The WORD is mostly on the high byte (bits
-                % 15-9,0) and the ENCODER is mostly on the
-                % low byte (bits 7-1,8).
+        
+        % grab the words -- event_list ID 145
+        [nsresult,event_ts,event_data] = ns_GetEventData(hfile,145,1:EntityInfo(145).ItemCount);
+        % we have the digin serial line
+        % The input cable for this is currently bugged: Bits 0 and 8
+        % are swapped.  The WORD is mostly on the high byte (bits
+        % 15-9,0) and the ENCODER is mostly on the
+        % low byte (bits 7-1,8).
 
-                % Get all words... including zeros.
-                all_words = [event_ts, bitshift(bitand(hex2dec('FE00'),event_data),-8)+bitget(event_data,1)];
-                % Remove all zero words.
-                out_struct.raw.words = all_words(logical(all_words(:,2)),:);
+        % Get all words... including zeros.
+        all_words = [event_ts, bitshift(bitand(hex2dec('FE00'),event_data),-8)+bitget(event_data,1)];
+        % Remove all zero words.
+        out_struct.raw.words = all_words(logical(all_words(:,2)),:);
 
-                % and encoder data
-                all_enc = [event_ts, bitand(hex2dec('FE'),event_data) + bitget(event_data,1)];
-                out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
-            else
-                % something else; kludge it into events
-                out_struct.raw.events{i} = struct(...
-                    'event_name', EntityInfo(event_list(i)).EntityLabel,...
-                    'event_id', event_list(i),...
-                    'event_data',[event_ts, event_data]);
-            end
-        end
+        % and encoder data
+        all_enc = [event_ts, bitand(hex2dec('FE'),event_data) + bitget(event_data,1)];
+        out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
+        
+        % Grab the serial data -- event ID 146
+        [nsresult,event_ts,event_data] = ns_GetEventData(hfile,146,1:EntityInfo(146).ItemCount);
+        out_struct.raw.serial = [event_ts, event_data];
     end
 
 

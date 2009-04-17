@@ -200,6 +200,74 @@ function out_struct = calc_from_raw(varargin)
         end
     end
     
+    % Stimulator serial data
+    if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
+
+        % create bdf.stim array (cell array of matrices of varying sizes )
+        S = size (out_struct.raw.serial);
+        S_rows = S(1);
+        max_length = S(1)/5 ;
+        C1 = zeros(max_length , 6) ;
+        C2 = zeros(max_length , 6) ;
+        C3 = zeros(max_length , 6) ;
+        C4 = zeros(max_length , 6) ;
+        C5 = zeros(max_length , 6) ;
+        C6 = zeros(max_length , 6) ;
+        C7 = zeros(max_length , 6) ;
+        C8 = zeros(max_length , 6) ;
+        C9 = zeros(max_length , 6) ;
+        C10 = zeros(max_length , 6) ;
+        out_struct.stim = { C1 C2 C3 C4 C5 C6 C7 C8 C9 C10} ;
+
+
+        % fill out bdf.stim array
+        % set and initialize variables to keep track of first empty row
+        % in each channel matrix in cell array
+        emp_row = ones (1,10);
+
+        row_count=1 ;
+        %for every fifth row of bdf.raw.serial starting with row 1 add
+        %entry to channel matrix in cell array
+        for row_count= 1: S_rows
+            if mod(row_count,5) == 1
+                % calculate parameters
+                ts = out_struct.raw.serial(row_count,1);
+                cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
+                chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
+                freq = out_struct.raw.serial((row_count+1), 2) ;
+                I = out_struct.raw.serial((row_count+2), 2)/10 ;
+                PW = out_struct.raw.serial((row_count+3), 2) ;
+                NP = out_struct.raw.serial((row_count+4), 2) ;
+
+                % put them into appropriate channel matrix in cell array
+                % empty
+                if (chan == 0 && cmd ~= 0)
+                    for i=1:10
+                        out_struct.stim{i}(emp_row(chan),1)= ts ;
+                        out_struct.stim{i}(emp_row(chan),2)= cmd;
+                        out_struct.stim{i}(emp_row(chan),3)= PW ;
+                        out_struct.stim{i}(emp_row(chan),4)= I ;
+                        out_struct.stim{i}(emp_row(chan),5)= freq ;
+                        out_struct.stim{i}(emp_row(chan),6)= NP ;
+                        emp_row(i)= emp_row(i) + 1 ;
+                    end
+                elseif (chan ~= 0)
+                    out_struct.stim{chan}(emp_row(chan),1)= ts ;
+                    out_struct.stim{chan}(emp_row(chan),2)= cmd;
+                    out_struct.stim{chan}(emp_row(chan),3)= PW ;
+                    out_struct.stim{chan}(emp_row(chan),4)= I ;
+                    out_struct.stim{chan}(emp_row(chan),5)= freq ;
+                    out_struct.stim{chan}(emp_row(chan),6)= NP ;
+                    emp_row(chan)= emp_row(chan) + 1 ;
+                end
+            end
+            row_count= row_count + 1;
+        end
+       
+    end
+    
+  
+    
     % EMGs
 %     emg_channels = find( strncmp(out_struct.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
 %     if ~isempty(emg_channels)
