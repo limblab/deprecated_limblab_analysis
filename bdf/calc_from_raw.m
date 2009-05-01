@@ -186,13 +186,13 @@ function out_struct = calc_from_raw(varargin)
         end
 
         % extract force data for WF task here
-        [b,a] = butter(4, 20/adfreq); % lowpass at 10 Hz
+        %[b,a] = butter(4, 20/adfreq); % lowpass at 10 Hz
         force_x = get_analog_signal(out_struct, 'Force_x');
-        force_x = filtfilt(b,a,force_x);
+        %force_x = filtfilt(b,a,force_x);
         force_x = interp1( force_x(:,1), force_x(:,2), analog_time_base);
         if wrist_flexion_task
             force_y = get_analog_signal(out_struct, 'Force_y');
-            force_y = filtfilt(b,a,force_y);
+            %force_y = filtfilt(b,a,force_y);
             force_y = interp1( force_y(:,1), force_y(:,2), analog_time_base);
             out_struct.force = [analog_time_base' force_x' force_y'];
         else %force data for BD air pressure device

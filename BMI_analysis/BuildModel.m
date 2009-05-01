@@ -36,8 +36,8 @@ function [filter, PredData]=BuildModel(binnedData, dataPath)
         neuronIDs=neuronChannels;
         desiredInputs=1:numberinputs;
      else
-        [FileName, PathName] =uigetfile([dataPath '*.mat'],'Filename of desired inputs? ');
-        [neuronIDs] = loadneuronIDs(filename);
+        [FileName, PathName] =uigetfile([dataPath '\NeuronIDfiles\' '*.mat'],'Filename of desired inputs? ');
+        [neuronIDs] = loadneuronIDs([PathName FileName]);
         numberinputs=size(neuronIDs,1);
         for k=1:numberinputs
             temp=neuronIDs(k,:);
