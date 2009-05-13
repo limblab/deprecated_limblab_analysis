@@ -22,7 +22,7 @@ function varargout = convertBDF2binnedGUI(varargin)
 
 % Edit the above text to modify the response to help convertBDF2binnedGUI
 
-% Last Modified by GUIDE v2.5 08-Mar-2009 22:33:58
+% Last Modified by GUIDE v2.5 08-May-2009 14:52:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -77,7 +77,8 @@ function varargout = convertBDF2binnedGUI_OutputFcn(hObject, eventdata, handles)
     stopTime = get(handles.stopTime_txtbx, 'Value');
     HP = get(handles.HP_txtbx, 'Value');
     LP = get(handles.LP_txtbx, 'Value');
-    varargout = {binsize startTime stopTime HP LP};
+    MFR = get(handles.MFR_txtbx, 'Value');
+    varargout = {binsize startTime stopTime HP LP MFR};
 
     close(handles.figure1);
 
@@ -215,4 +216,28 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
    
+
+
+
+function MFR_txtbx_Callback(hObject, eventdata, handles)
+% hObject    handle to MFR_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of MFR_txtbx as text
+%        str2double(get(hObject,'String')) returns contents of MFR_txtbx as a double
+    set(handles.MFR_txtbx, 'Value', str2double(get(hObject,'String')) );
+
+% --- Executes during object creation, after setting all properties.
+function MFR_txtbx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to MFR_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
 

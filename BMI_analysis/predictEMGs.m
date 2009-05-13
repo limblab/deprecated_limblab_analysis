@@ -35,8 +35,8 @@ end
 %% Use the neural filter to predict the EMGs
 numsides=1; fs=1;
 [PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualEMGs);
-% remove firts bin of Predicted EMGs since it appears to be garbage...
-PredictedEMGs = PredictedEMGs(2:end, :);
+%% remove firts bin of Predicted EMGs since it appears to be garbage...
+%PredictedEMGs = PredictedEMGs(2:end, :);
 
 clear ActualEMGs spikeData;
 
@@ -54,8 +54,8 @@ end
 [numpts,Nx]=size(usableSpikeData);
 [nr,Ny]=size(filter.H);
 fillen=nr/Nx;
-%timeframeNew = BinnedData.timeframe(fillen:numpts);
-timeframeNew = BinnedData.timeframe(fillen+1:numpts); % to account for additional bin removed at beginning of PredictedEMGs
+timeframeNew = BinnedData.timeframe(fillen:numpts);
+%timeframeNew = BinnedData.timeframe(fillen+1:numpts); % to account for additional bin removed at beginning of PredictedEMGs
 
 PredData = struct('timeframe', timeframeNew,...
                   'predemgbin', PredictedEMGs,...

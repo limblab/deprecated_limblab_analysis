@@ -50,8 +50,9 @@ function [filter, PredData]=BuildModel(binnedData, dataPath)
 
 %% Calculate the filter
 
-    desiredfiringrate=1/binsize; %20msec bins give you 50 Hz
-    lagtime = 500; % in ms, the laps of past time used to predict the EMG
+    desiredfiringrate=20; %50msec bins give you 20 Hz
+%    desiredfiringrate=50; %20msec bins give you 50 Hz    
+    lagtime = 250; % in ms, the laps of past time used to predict the EMG
     %desiredfiringrate=20; %In Hertz
     % lagtime = 500; % in ms, the laps of past time used to predict the EMG
 
@@ -60,16 +61,24 @@ function [filter, PredData]=BuildModel(binnedData, dataPath)
     numsides=1;     %%%For a one-sided or causal filter
 
     %numberbins=timelimit*60/binsize;
-    numberbins = length(timeframe);
+    %numberbins = length(timeframe);
 
     %%%Calculate the filters
     %fitteddata=24000; %%%4 min of data
     %fitteddata=36000; %%%6 min of data
-    fitteddata=numberbins; %%%all the available data
-    Outputs=emgdatabin(1:fitteddata,:);
+    %fitteddata=numberbins; %%%all the available data3+
+    
+%    if isfield(binnedData,'timeframeave')
+%        Inputs = binnedData.spikerateave(:,desiredInputs);
+%        Outputs = binnedData.emgavebin;
+%    else
+       Inputs = spikeratedata(:,desiredInputs);
+       Outputs=emgdatabin;
+%    end
 
     %Inputs=spikeratedata(1:fitteddata,:); 
-    Inputs=spikeratedata(1:fitteddata,desiredInputs);
+    %Inputs=spikeratedata(1:fitteddata,desiredInputs);
+    %Outputs=emgdatabin(1:fitteddata,:);
 
     %%%The following calculates the linear filters (H) that relate the inputs and outputs
     [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
@@ -78,6 +87,10 @@ function [filter, PredData]=BuildModel(binnedData, dataPath)
 
     %% 1- Predict EMGs
     fs=1; numsides=1;
+    
+%    Inputs = spikeratedata(:,desiredInputs);
+%    Outputs = emgdatabin;
+    
     [PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
 
     %%%Find a Wiener Cascade Nonlinearity
@@ -100,7 +113,7 @@ function [filter, PredData]=BuildModel(binnedData, dataPath)
 
     fillen = lagtime/(binsize*1000);
     PredData = struct('predemgbin', PredictedEMGs, 'timeframe',timeframe(fillen:end),'spikeratedata',spikeDataNew,'emgguide',emgguide,'spikeguide',spikeguide);
-    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'emgguide', emgguide);
+    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'emgguide', emgguide,'fillen',fillen*binsize, 'binsize', binsize);
 
 %% Save the filter data in a mat file
     %%%Need to save H and the inputs that you used (neuronIDs).

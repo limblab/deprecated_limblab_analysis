@@ -200,8 +200,8 @@ function BMIDataAnalyzer()
     function BDF_BinButton_Callback(obj,event)
         disp('Converting BDF structure to binned data, please wait...');
 %        Bin_UI = figure;
-        [binsize, starttime, stoptime, hpfreq, lpfreq] = convertBDF2binnedGUI;
-        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq);
+        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate] = convertBDF2binnedGUI;
+        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate);
         disp('Done.');
         
         disp('Saving binned data...');

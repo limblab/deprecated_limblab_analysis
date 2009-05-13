@@ -1,5 +1,5 @@
 function binnedData = convertBDF2binned(varargin)
-        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass)
+        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate)
 
 %% Initialization
 
@@ -7,9 +7,10 @@ function binnedData = convertBDF2binned(varargin)
         disp('Wrong number of arguments');
         disp(sprintf('Usage: \nconvertBDF2binned( datastructname, [binsize], [starttime, endtime],[EMG_hp, EMG_lp]'));
         disp('  - datastructname        : string of bdf.mat file path and name, or name of preloaded BDF structure');
-        disp('  - [binsize]             : opt. desired bin size in second (e.g. 0.02)');
-        disp('  - [starttime, stoptime] : time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)');
-        disp('  - [EMG_hp, EMG_lp]      : high pass and low pass cut off frequencies for EMG filtering');
+        disp('  - [binsize]             : [0.02] opt. desired bin size in second');
+        disp('  - [starttime, stoptime] : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)');
+        disp('  - [EMG_hp, EMG_lp]      : [50 10] high pass and low pass cut off frequencies for EMG filtering');
+        disp('  - [minFiringRate]       : [0.0] minimum firing rate a units needs to be included in the data');
         disp(sprintf('\n'));
         return;
     end
@@ -48,6 +49,7 @@ function binnedData = convertBDF2binned(varargin)
     stoptime = floor(duration);
     EMG_hp = 50; % default high pass at 50 Hz
     EMG_lp = 10; % default low pass at 10 Hz
+    minFiringRate = 0.0; %default min firing rate to include a unit in the data
 
     %optional parameters overridding
     if (nargin >= 2)
@@ -57,12 +59,14 @@ function binnedData = convertBDF2binned(varargin)
         starttime = varargin{3};
         stoptime = varargin{4};
     end
-    if (nargin ==6)
+    if (nargin >=6)
         EMG_hp = varargin{5};
         EMG_lp = varargin{6};
     end
-
-    
+    if (nargin ==7)
+        minFiringRate = varargin{7};
+    end
+        
 %% Validation of time parameters
     
     if (starttime <0.0 || starttime > duration-binsize) %making sure the start time is valid, must be at least 10 secs before eof    
@@ -108,6 +112,7 @@ function binnedData = convertBDF2binned(varargin)
     EMGname = char(zeros(1,8));
     numEMGs = length(datastruct.emg.emgnames);
     emgguide = char(zeros(numEMGs,length(EMGname)));
+    emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
     
     
     for i=1:numEMGs
@@ -122,28 +127,30 @@ function binnedData = convertBDF2binned(varargin)
     % Filter EMG data
     [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
     [bl,al] = butter(4, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
-    tempEMGs = datastruct.emg.data(starttime*emgsamplerate+1:stoptime*emgsamplerate,2:numEMGs+1); % *500; % Convert to mV
-    tempEMGs = filter(bh,ah,tempEMGs); %highpass filter
-    tempEMGs = abs(tempEMGs); %rectify
-    tempEMGs = filter(bl,al,tempEMGs); %lowpass filter
-    for i=1:numEMGs
-        %remove offset
-%            tempEMGs(:,i)=tempEMGs(:,i)-min(tempEMGs(:,i)); %remove offset
+ 
+    for E=1:numEMGs
+        % Filter EMG data
+        tempEMG = datastruct.emg.data(emgtimebins,E+1);
+        tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
+        tempEMG = abs(tempEMG); %rectify
+        tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
 
-        %downsample EMG data to desired bin size
-        emgdatabin(:,i) = resample(tempEMGs(:,i), 1/binsize, emgsamplerate);
+        %downsample EMG data to desired bin size        
+        emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
+
     end    
-    clear tempEMGs bh ah bl al;
+    clear tempEMG bh ah bl al emgtimebins;
     
 %% Bin Spike Data
     
     %decide which signals to use: minimum of 20 spikes/mins on average:
-    minimumspikenumber = (stoptime-starttime)/3;
+%    minimumspikenumber = (stoptime-starttime)/3;
+    minimumspikenumber = (stoptime-starttime)*minFiringRate;
     totalnumunits = length(datastruct.units);
     numusableunits = 0;
     units_to_use = zeros(1,totalnumunits);
     maxnum_ts = 0;
-    
+        
     %Identify the sorted units %%%with minimum spike rate%%%
     for i=1:totalnumunits
         
