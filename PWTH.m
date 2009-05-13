@@ -4,7 +4,8 @@ function [PWTH] = PWTH(signals,sigFreq,wordsVect,wordToAve,timeBefore,timeAfter)
     % the first colomn of the signals array should be a time vector in
     % seconds
 
-    windowTimeFrame = -timeBefore:1/sigFreq:timeAfter;
+    binsize = 1/sigFreq;
+    windowTimeFrame = -timeBefore:binsize:timeAfter-binsize;
     windowLength = length(windowTimeFrame);
     numSignals = size(signals,2)-1;
     

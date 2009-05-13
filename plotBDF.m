@@ -81,6 +81,7 @@ if isfield(datastruct,'words')
 
     wrist_flexion_task = 0;
     ball_drop_task = 0;
+    multi_gadget_task = 0 ;
     
     %Find which behavior using start word:
     start_trial_words = datastruct.words( bitand(hex2dec('f0'),datastruct.words(:,2)) == hex2dec('10') ,2);
@@ -95,6 +96,8 @@ if isfield(datastruct,'words')
                 wrist_flexion_task = 1;
             elseif start_trial_code == hex2dec('19')
                 ball_drop_task = 1;
+            elseif start_trial_code == hex2dec('16')
+                multi_gadget_task = 1;
             else
                 close(h);
                 error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
@@ -110,6 +113,9 @@ if isfield(datastruct,'words')
         %Words used in the Ball Drop Task
         WordsNames = { 'Start' 'Touch Pad' 'Go Cue' 'Catch' 'Pick up' 'Reward' 'Abort' 'Fail' 'Incomplete' 'Empty Rack'};
         WordsValues= [   25   ;     48    ;   49   ;   50  ;    144  ;   32   ;   33  ;  34  ;     35     ;     36      ];
+    elseif multi_gadget_task
+        WordsNames = { 'Start' 'Touch Pad' 'Gadget1 on' 'Catch' 'Reach1'  'Reach2' 'Reach3'  'Mvt_onset' 'Reward' 'Abort' 'Fail'};
+        WordsValues= [   22   ;     48    ;   41       ;   50  ;    113  ;   114  ;    115 ;     128    ;    32  ;  33  ;   34  ];
     end
 
     numWords = length(WordsNames);
