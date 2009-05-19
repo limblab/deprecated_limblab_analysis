@@ -28,20 +28,10 @@ function binnedData = convertBDF2binned(varargin)
 
     if isempty(datastruct)
        disp(sprintf('Could not load structure %s',datastructname));
+       binnedData=[];
        return
     end
 
-    if ~isfield(datastruct, 'emg')
-        disp(sprintf('No EMG data is found in structure " %s " ',datastructname));
-        disp('data conversion aborted');
-        return
-    end
-    if ~isstruct(datastruct.units)
-        disp(sprintf('No spike data is found in structure " %s " ',datastructname));
-        disp('data convertion aborted');
-        return
-    end
-        
     %Default Parameters (all units are in seconds):
     binsize = 0.02;
     starttime = 0.0;
@@ -91,116 +81,132 @@ function binnedData = convertBDF2binned(varargin)
     if mod(1,binsize)
         disp('Please choose a binsize that is a factor of 1');
         disp('data conversion aborted');
+        binnedData = [];
         return
     end
     
     %Other time and frequency parameters
     numberbins = (stoptime-starttime)/binsize;              %frame for binned data:
-    emgsamplerate = datastruct.emg.emgfreq;                 %Rate at which emg data were actually acquired.
     timeframe = (starttime:binsize:stoptime-binsize)';      %Time vector of the binned data, mostly for plotting
 
 %% Bin EMG Data
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%Want to assemble the analog data that is to be analyzed into a single
-    %%%matrix.  Each column is a different analog signal. If desired, the analog data is
-    %%%filtered and downsampled according to input specifications.
-    %%%EMG data is hi-pass filtered at 50Hz unless otherwise specified, it is
-    %%%then rectified and low pass filtered at 10Hz, again unless otherwise
-    %%%specified.  Finally it is downsampled to match the desired binsize.
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    EMGname = char(zeros(1,8));
-    numEMGs = length(datastruct.emg.emgnames);
-    emgguide = char(zeros(numEMGs,length(EMGname)));
-    emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
-    
-    
-    for i=1:numEMGs
-        
-        EMGname = char(strrep(datastruct.emg.emgnames(i),'EMG_',''));
-        emgguide(i,1:length(EMGname)) = EMGname;
-    end
-    
-    %Pre-allocate matrix for binned EMG
-    emgdatabin = zeros(numberbins,numEMGs);
+    if ~isfield(datastruct, 'emg')
+        disp(sprintf('No EMG data is found in structure " %s " ',datastructname));
+        emgdatabin = [];
+        emgguide = [];
+    else
 
-    % Filter EMG data
-    [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
-    [bl,al] = butter(4, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
- 
-    for E=1:numEMGs
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%Want to assemble the analog data that is to be analyzed into a single
+        %%%matrix.  Each column is a different analog signal. If desired, the analog data is
+        %%%filtered and downsampled according to input specifications.
+        %%%EMG data is hi-pass filtered at 50Hz unless otherwise specified, it is
+        %%%then rectified and low pass filtered at 10Hz, again unless otherwise
+        %%%specified.  Finally it is downsampled to match the desired binsize.
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        emgsamplerate = datastruct.emg.emgfreq;   %Rate at which emg data were actually acquired.
+        EMGname = char(zeros(1,8));
+        numEMGs = length(datastruct.emg.emgnames);
+        emgguide = char(zeros(numEMGs,length(EMGname)));
+        emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
+
+
+        for i=1:numEMGs
+            EMGname = char(strrep(datastruct.emg.emgnames(i),'EMG_',''));
+            emgguide(i,1:length(EMGname)) = EMGname;
+        end
+
+        %Pre-allocate matrix for binned EMG
+        emgdatabin = zeros(numberbins,numEMGs);
+
         % Filter EMG data
-        tempEMG = datastruct.emg.data(emgtimebins,E+1);
-        tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
-        tempEMG = abs(tempEMG); %rectify
-        tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
+        [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
+        [bl,al] = butter(4, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
 
-        %downsample EMG data to desired bin size        
-        emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
+        for E=1:numEMGs
+            % Filter EMG data
+            tempEMG = datastruct.emg.data(emgtimebins,E+1);
+            tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
+            tempEMG = abs(tempEMG); %rectify
+            tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
 
-    end    
-    clear tempEMG bh ah bl al emgtimebins;
-    
+            %downsample EMG data to desired bin size        
+            emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
+
+        end    
+        clear tempEMG bh ah bl al emgtimebins EMGname;
+     end
+
+        
 %% Bin Spike Data
-    
-    %decide which signals to use: minimum of 20 spikes/mins on average:
-%    minimumspikenumber = (stoptime-starttime)/3;
-    minimumspikenumber = (stoptime-starttime)*minFiringRate;
-    totalnumunits = length(datastruct.units);
-    numusableunits = 0;
-    units_to_use = zeros(1,totalnumunits);
-    maxnum_ts = 0;
-        
-    %Identify the sorted units %%%with minimum spike rate%%%
-    for i=1:totalnumunits
-        
-        % skip unsorted units, which are mostly noise. skip units id 255,
-        % in autosort, I don't know what this is...
-        if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)
-            continue; 
-        end
-        
-        num_ts = length(datastruct.units(i).ts);
-        
-        if num_ts > minimumspikenumber
-            numusableunits = numusableunits+1;
-            units_to_use(numusableunits) = i;
-            maxnum_ts = max(num_ts, maxnum_ts);
-        end
-    end
-    units_to_use = nonzeros(units_to_use);
-    
-    if (numusableunits < 1)
-        disp('The data does not contain any unit with a minimum of 0.3 spike/sec');
-        disp('Data convertion aborted');
-        clear all;
-        return
-    end    
-    
-    % Pre-allocate accordingly
-    spikeguide= char(zeros(numusableunits,length('ee00u0'))); %preallocate space for spikeguide
-    spikeratedata=zeros(numberbins,numusableunits);
-    
-    % Create the spikeguide with electrode names
-    for i=1:numusableunits
-        spikeguide(i,:)=['ee' sprintf('%02d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
-    end
 
-    
-    % Create the spike data matrix, using the specified bin size and
-    % identified units
-    for unit = 1:numusableunits
-      
-        %get the binned data from the desired timeframe plus one bin before
-        binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,starttime:binsize:stoptime);
-        
-        %and get rid of the extra bins at beginnning, it contains all the ts
-        %from the beginning of file that are < starttime. Here I want
-        %starttime to be the lower bound of the first bin.
-        binneddata = binneddata(2:end);
-        
-        %convert to firing rate and store in spike data matrix
-        spikeratedata(:,unit) = binneddata' /binsize;
+    if ~isfield(datastruct, 'units')
+        disp(sprintf('No spike data is found in structure " %s " ',datastructname));
+        spikeratedata = [];
+        spikeguide = [];
+    else
+
+
+        %decide which signals to use: minimum of 20 spikes/mins on average:
+    %    minimumspikenumber = (stoptime-starttime)/3;
+        minimumspikenumber = (stoptime-starttime)*minFiringRate;
+        totalnumunits = length(datastruct.units);
+        numusableunits = 0;
+        units_to_use = zeros(1,totalnumunits);
+        maxnum_ts = 0;
+
+        %Identify the sorted units %%%with minimum spike rate%%%
+        for i=1:totalnumunits
+
+            % skip unsorted units, which are mostly noise. skip units id 255,
+            % in autosort, I don't know what this is...
+            if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)
+                continue; 
+            end
+
+            num_ts = length(datastruct.units(i).ts);
+
+            if num_ts > minimumspikenumber
+                numusableunits = numusableunits+1;
+                units_to_use(numusableunits) = i;
+                maxnum_ts = max(num_ts, maxnum_ts);
+            end
+        end
+        units_to_use = nonzeros(units_to_use);
+
+        if (numusableunits < 1)
+            disp('The data does not contain any unit with a minimum of 0.3 spike/sec');
+            spikeratedata = [];
+            spikeguide = [];
+        else   
+
+            % Pre-allocate accordingly
+            spikeguide= char(zeros(numusableunits,length('ee00u0'))); %preallocate space for spikeguide
+            spikeratedata=zeros(numberbins,numusableunits);
+
+            % Create the spikeguide with electrode names
+            for i=1:numusableunits
+                spikeguide(i,:)=['ee' sprintf('%02d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
+            end
+
+
+            % Create the spike data matrix, using the specified bin size and
+            % identified units
+            for unit = 1:numusableunits
+
+                %get the binned data from the desired timeframe plus one bin before
+                binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,starttime:binsize:stoptime);
+
+                %and get rid of the extra bins at beginnning, it contains all the ts
+                %from the beginning of file that are < starttime. Here I want
+                %starttime to be the lower bound of the first bin.
+                binneddata = binneddata(2:end);
+
+                %convert to firing rate and store in spike data matrix
+                spikeratedata(:,unit) = binneddata' /binsize;
+            end
+        end        
     end
       
 %%%%%%%% much slower and more complicated way of doing the same thing: %%%%%%%%%
