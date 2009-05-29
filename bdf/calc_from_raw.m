@@ -207,14 +207,20 @@ function out_struct = calc_from_raw(varargin)
             error('BDF:noForceSignal','No force signal found because no channel named ''Force_*''');
         end
     end
-    
+
+  
     % Stimulator serial data
     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
+        % Getting serial data
+        if (verbose == 1)
+            progress = progress + .05;
+            waitbar(progress, h, sprintf('Aggregating data...\nget serial data'));
+        end
 
         % create bdf.stim array (cell array of matrices of varying sizes )
         S = size (out_struct.raw.serial);
         S_rows = S(1);
-        max_length = S(1)/5 ;
+        max_length = ceil(S(1)/5) ;
         C1 = zeros(max_length , 6) ;
         C2 = zeros(max_length , 6) ;
         C3 = zeros(max_length , 6) ;
@@ -233,11 +239,14 @@ function out_struct = calc_from_raw(varargin)
         % in each channel matrix in cell array
         emp_row = ones (1,10);
 
-        row_count=1 ;
         %for every fifth row of bdf.raw.serial starting with row 1 add
         %entry to channel matrix in cell array
-        for row_count= 1: S_rows
-            if mod(row_count,5) == 1
+        for stim_update=1:max_length
+            
+            if stim_update*5 > S_rows
+                warning('BDF:IncompleteSerialData', 'The last stim parameters update was skipped because incomplete');
+            else
+                row_count = (stim_update-1)*5+1;
                 % calculate parameters
                 ts = out_struct.raw.serial(row_count,1);
                 cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
@@ -269,7 +278,6 @@ function out_struct = calc_from_raw(varargin)
                     emp_row(chan)= emp_row(chan) + 1 ;
                 end
             end
-            row_count= row_count + 1;
         end
 
     end
