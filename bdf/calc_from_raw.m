@@ -239,49 +239,54 @@ function out_struct = calc_from_raw(varargin)
         % in each channel matrix in cell array
         emp_row = ones (1,10);
 
+        %find the first parameter that correspond to the command, in case
+        %it was not the first received
+        row_lag = 0;
+        first_cmd = out_struct.raw.serial(row_lag+1, 2);
+        while first_cmd<hex2dec('C0') || first_cmd>hex2dec('FA')
+            row_lag = row_lag+1;
+            first_cmd = out_struct.raw.serial(row_lag+1, 2);
+        end
+        
+        %number of rows in serial data from first command parameter to
+        %last parameter of last complete stim update
+        num_valid_rows = S_rows-row_lag-mod(S_rows-row_lag,5);
+        
         %for every fifth row of bdf.raw.serial starting with row 1 add
         %entry to channel matrix in cell array
-        for stim_update=1:max_length
-            
-            if stim_update*5 > S_rows
-                warning('BDF:IncompleteSerialData', 'The last stim parameters update was skipped because incomplete');
-            else
-                row_count = (stim_update-1)*5+1;
-                % calculate parameters
-                ts = out_struct.raw.serial(row_count,1);
-                cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
-                chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
-                freq = out_struct.raw.serial((row_count+1), 2) ;
-                I = out_struct.raw.serial((row_count+2), 2)/10 ;
-                PW = out_struct.raw.serial((row_count+3), 2) ;
-                NP = out_struct.raw.serial((row_count+4), 2) ;
+        for row_count = row_lag+1:5:num_valid_rows-4
+            % calculate parameters
+            ts = out_struct.raw.serial(row_count,1);
+            cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
+            chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
+            freq = out_struct.raw.serial((row_count+1), 2) ;
+            I = out_struct.raw.serial((row_count+2), 2)/10 ;
+            PW = out_struct.raw.serial((row_count+3), 2) ;
+            NP = out_struct.raw.serial((row_count+4), 2) ;
 
-                % put them into appropriate channel matrix in cell array
-                % empty
-                if (chan == 0 && cmd ~= 0)
-                    for i=1:10
-                        out_struct.stim{i}(emp_row(chan),1)= ts ;
-                        out_struct.stim{i}(emp_row(chan),2)= cmd;
-                        out_struct.stim{i}(emp_row(chan),3)= PW ;
-                        out_struct.stim{i}(emp_row(chan),4)= I ;
-                        out_struct.stim{i}(emp_row(chan),5)= freq ;
-                        out_struct.stim{i}(emp_row(chan),6)= NP ;
-                        emp_row(i)= emp_row(i) + 1 ;
-                    end
-                elseif (chan ~= 0)
-                    out_struct.stim{chan}(emp_row(chan),1)= ts ;
-                    out_struct.stim{chan}(emp_row(chan),2)= cmd;
-                    out_struct.stim{chan}(emp_row(chan),3)= PW ;
-                    out_struct.stim{chan}(emp_row(chan),4)= I ;
-                    out_struct.stim{chan}(emp_row(chan),5)= freq ;
-                    out_struct.stim{chan}(emp_row(chan),6)= NP ;
-                    emp_row(chan)= emp_row(chan) + 1 ;
+            % put them into appropriate channel matrix in cell array
+            % empty
+            if (chan == 0 && cmd ~= 0)
+                for i=1:10
+                    out_struct.stim{i}(emp_row(chan),1)= ts ;
+                    out_struct.stim{i}(emp_row(chan),2)= cmd;
+                    out_struct.stim{i}(emp_row(chan),3)= PW ;
+                    out_struct.stim{i}(emp_row(chan),4)= I ;
+                    out_struct.stim{i}(emp_row(chan),5)= freq ;
+                    out_struct.stim{i}(emp_row(chan),6)= NP ;
+                    emp_row(i)= emp_row(i) + 1 ;
                 end
+            elseif (chan ~= 0)
+                out_struct.stim{chan}(emp_row(chan),1)= ts ;
+                out_struct.stim{chan}(emp_row(chan),2)= cmd;
+                out_struct.stim{chan}(emp_row(chan),3)= PW ;
+                out_struct.stim{chan}(emp_row(chan),4)= I ;
+                out_struct.stim{chan}(emp_row(chan),5)= freq ;
+                out_struct.stim{chan}(emp_row(chan),6)= NP ;
+                emp_row(chan)= emp_row(chan) + 1 ;
             end
         end
-
-    end
-    
+    end   
   
     
     % EMGs
