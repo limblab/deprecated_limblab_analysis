@@ -255,15 +255,24 @@ function out_struct = calc_from_raw(varargin)
         %for every fifth row of bdf.raw.serial starting with row 1 add
         %entry to channel matrix in cell array
         for row_count = row_lag+1:5:num_valid_rows-4
-            % calculate parameters
-            ts = out_struct.raw.serial(row_count,1);
             cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
+            
+            %verify that the cmd param make sense, not a very robust way
+            %to determine if there is a missing byte...
+            if cmd<12 || cmd > 15
+                warning('BDF:missingSerialByte','The serial data is inconsistent at ts=%d.\nThe serial data field will not be populated',ts);
+                out_struct.stim =  [];
+                break;
+            end
+            
+            % calculate parameters
+            ts = out_struct.raw.serial(row_count,1);            
             chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
             freq = out_struct.raw.serial((row_count+1), 2) ;
             I = out_struct.raw.serial((row_count+2), 2)/10 ;
             PW = out_struct.raw.serial((row_count+3), 2) ;
             NP = out_struct.raw.serial((row_count+4), 2) ;
-
+       
             % put them into appropriate channel matrix in cell array
             % empty
             if (chan == 0 && cmd ~= 0)
