@@ -9,7 +9,7 @@ function [tuning gof peakness] = rand_walk_new(varargin)
 %
 % OUT = RAND_WALK( DATA ) - returns a matrix with a row for each cell
 %   containing the following:
-%       Channel, Unit, MIPeak, Baseline, PD, PDgain, SpeedGain
+%       Channel, Unit, MIPeak, MIVal, Baseline, PD, PDgain, SpeedGain
 %
 % [OUT, GOF] = RAND_WALK( DATA ) - GOF returns a list of N rows and three
 %   columns with the three columns being sse of the cosine model, sse of a
@@ -56,10 +56,10 @@ t = t.*0.001;
 figure;
 subplot(2,2,1),plot(t,d);
 xlabel('Delay (s)');
-ylabel('Mutual Information (bits)');
+ylabel('Mutual Information (bits/s)');
 
 % MI peak analysis
-[peak peak_width good_cell peakness] = peak_analysis(d);
+[peak peak_width good_cell peakness peak_height] = peak_analysis(d);
 
 % recalculate spike train adjusting for offset
 b = train2bins(s - peak, .001); % 1ms bins
@@ -118,10 +118,12 @@ subplot(2,2,4),plot(X, N, 'b-', X, P/20, 'ko', X, N2, 'r-', X, mdl(X)/20, 'k--')
 xlabel('speed (cm/s)');
 ylabel('Probability');
 
+suptitle(sprintf('%d - %d', channel, unit));
+
 if good_cell == 1
-    tuning = [channel, unit, peak, baseline, curve.b, curve.a, curve.c];
+    tuning = [channel, unit, peak, peak_height, baseline, curve.b, curve.a, curve.c];
 else 
-    tuning = [channel, unit, NaN, NaN, NaN, NaN, NaN];
+    tuning = [channel, unit, NaN, NaN, NaN, NaN, NaN, NaN];
 end
 
 %pref_dir = theta(peak_th);
@@ -133,7 +135,7 @@ end
 % sub functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [peak, width, good_peak, peakness] = peak_analysis(d)
+function [peak, width, good_peak, peakness, peak_height] = peak_analysis(d)
     sd = smooth(d, 21)';
     dd = d - sd;
     if var(sd) > var(dd)*5
@@ -147,6 +149,7 @@ function [peak, width, good_peak, peakness] = peak_analysis(d)
     end
     peak = t(sd==max(sd));
     peakness = var(sd) / var(dd);
+    peak_height = max(sd);
 end
 
 function [mdl, X, N, N2, P] = bayes_regression(th)

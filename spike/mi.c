@@ -13,24 +13,29 @@
 #include "mex.h"
 #include "math.h"
 
-void mutual_info2(double x[], double y[], double *mi, int l)
+void mutual_info2(double x[], double y[], double *mi, int L)
 {
     int i,j,k;
+    int n = 0;
     double max_x = 0;
     double max_1 = 0;
     double max_2 = 0;
     double min_1 = mxGetInf();
     double min_2 = mxGetInf();
     
-    int Py[50][50];
+    int Py[20][20];
     int Px[5];
-    int Pxy[50][50][5];
+    int Pxy[20][20][5];
     
     double px, py, pxy;
     
+    for (i=0; i<L; i++) {
+        n += x[i];
+    }
+    
     /* initialize Px, Py, and Pxy counts to zero */
-    for (i=0; i<50; i++) {
-        for (j=0; j<50; j++) {
+    for (i=0; i<20; i++) {
+        for (j=0; j<20; j++) {
             Py[i][j] = 0;
             for(k=0; k<5; k++) {
                 Px[k] = 0;
@@ -40,18 +45,18 @@ void mutual_info2(double x[], double y[], double *mi, int l)
     }
     
     /* find max and min in each dimension of y */
-    for (i=0; i<l; i++) {
+    for (i=0; i<L; i++) {
         if (max_1 < y[i]) {
             max_1 = y[i];
         }
-        if (max_2 < y[i+l]) {
-            max_2 = y[i+l];
+        if (max_2 < y[i+L]) {
+            max_2 = y[i+L];
         }
         if (min_1 > y[i]) {
             min_1 = y[i];
         }
-        if (min_2 > y[i+l]) {
-            min_2 = y[i+l];
+        if (min_2 > y[i+L]) {
+            min_2 = y[i+L];
         }
         if (max_x < x[i]) {
             max_x = x[i];
@@ -59,35 +64,33 @@ void mutual_info2(double x[], double y[], double *mi, int l)
     }
     
     /* group into fifty bins */
-    for (i=0; i<l; i++) {
+    for (i=0; i<L; i++) {
         /* increment count for this number of spikes in bin */
         Px[ (int)x[i] ]++; 
         /* increment count for this 2D Y */
-        Py[ (int)( 25*y[i]/(max_1-min_1) )   + 25 ]
-          [ (int)( 25*y[i+l]/(max_1-min_1) ) + 25 ]++;
+        Py[ (int)( 10*y[i]/(max_1-min_1) )   + 10 ]
+          [ (int)( 10*y[i+L]/(max_2-min_2) ) + 10 ]++;
         /* increment count for this point in the joint distribution */
-        Pxy[ (int)( 25*y[i]/(max_1-min_1) )   + 25 ]
-           [ (int)( 25*y[i+l]/(max_1-min_1) ) + 25 ]
+        Pxy[ (int)( 10*y[i]/(max_1-min_1) )   + 10 ]
+           [ (int)( 10*y[i+L]/(max_2-min_2) ) + 10 ]
            [ (int)x[i] ]++;
     }
        
     /* now calculate mutual information */
     *mi = 0.0;
 
-    for (i=0; i<50; i++) {
-        for (j=0; j<50; j++) {
+    for (i=0; i<20; i++) {
+        for (j=0; j<20; j++) {
             for (k=0; k<5; k++) {
-                px = (double)(Px[k]) / l;
-                py = (double)(Py[i][j]) / l;
-                pxy = (double)(Pxy[i][j][k]) / l;
+                px = (double)(Px[k]) / (double)L;
+                py = (double)(Py[i][j]) / (double)L;
+                pxy = (double)(Pxy[i][j][k]) / (double)L;
                 
                 if (pxy > 0) 
-                    *mi += pxy * log( pxy / (px * py) ); 
+                    *mi += pxy * log2( pxy / (px * py) ); 
             }
         }
     }
-
-    *mi /= log(2);
 }
 
 
