@@ -7,15 +7,29 @@ function result = bootstrap(f, data, n, reps)
 %       containing N randomly chosen reaches to each target, and is
 %       repeated REPS times.
 %
-%   RESULT = BOOTSTRAP(@F, DATA, 'all', REPS) {{ NOT IMPLEMENTED }}
+%   RESULT = BOOTSTRAP(@F, DATA, 'all', REPS)
 %       To use the number of reaches actually present in the data set pass
 %       the string 'all' for parameter N.
 
 ntargets = length(data);
 
-%all_data_result = f(data);
-%result = zeros(reps,length(all_data_result));
-%result = zeros(reps,1);
+ntrials = cell(1,length(data));
+
+if isscalar(n)
+    for targ = 1:ntargets
+        ntrials{targ} = n;
+    end
+elseif strcmp('all',n)
+    % use same number as in dataset
+    for targ = 1:ntargets
+        ntrials{targ} = length(data{targ});
+    end
+else
+    error('N must be scalar or the value ''all''');
+end
+
+
+
 result = [];
 
 for i = 1:reps
@@ -24,8 +38,8 @@ for i = 1:reps
     % Build test set
     test_set = cell(1,ntargets);
     for targ = 1:ntargets
-        test_set{targ} = zeros(1,n);
-        for trial = 1:n
+        test_set{targ} = zeros(1,ntrials{targ});
+        for trial = 1:ntrials{targ}
             % for each trial pick a trial from the dataset to use
             idx = 1 + floor(length(data{targ})*rand(1));
             test_set{targ}(trial) = data{targ}(idx);

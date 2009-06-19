@@ -4,9 +4,7 @@ function result = test_function(data)
 
 dispdata = zeros(length(data), length(data{1}));
 for i = 1:length(data)
-    dispdata(i,:) = data{i};
+    disp(data{i});
 end
-
-disp(dispdata);
 
 result = randn(1);
