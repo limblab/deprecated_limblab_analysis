@@ -259,7 +259,9 @@ function out_struct = calc_from_raw(varargin)
             
             %verify that the cmd param make sense, not a very robust way
             %to determine if there is a missing byte...
-            if cmd<12 || cmd > 15
+            if cmd == 0
+                continue;
+            elseif cmd<12 || cmd > 15
                 warning('BDF:missingSerialByte','The serial data is inconsistent at ts=%d.\nThe serial data field will not be populated',ts);
                 out_struct.stim =  [];
                 break;

@@ -3,7 +3,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         %varargin = BDF_FileNames, dataPath, binsize, starttime, stoptime, hpfreq,
         %lpfreq, MinFiringRate
         
-    dataPath = 'C:\Monkey\Theo\Data\';
+    dataPath = 'C:\Monkey\Clarence\';
     addpath ../
     
     if nargin == 0

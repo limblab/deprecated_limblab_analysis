@@ -1,13 +1,17 @@
 %extract variable from filter structure
 H = filter.H;
 P = filter.P;
+fillen = filter.fillen;
+binsize = filter.binsize;
 neuronIDs = filter.neuronIDs;
 
 %original filter columns:
-% 1- FDSu 2- 2-FDSm 3-FDPu 4-FDPm 5-FCR1 6-FCU 7-FPB 8-FDI 9-ECR 10-EDC 11-ECU 12-1/2IO
+% 1- FDSu 2- 2-FDSm 3-FDPu 4-FDPm 5-FCR1 6-FCR2 7-PaL 8-FCU1 9-ECR 10-EDC
+% 11-ECU 12-FDI
+
 
 Notes = ['modified filter, prediction columns:'...
-            '[1-FDSu 2-FDSm 3-FDPu 4-FDPu 5-FDPm 6-FDPm 7-FCR 8-1/2IO 9-FPB 10-ECR 11-ECR 12-ECR 13-EDC 14-FDI]'];
+            '[1-FDSu 2-FDSm 3-FDPu 4-FDPu 5-FDPm 6-FDPm 7-FCR 8-FDI 9-PaL 10-ECR 11-ECR 12-ECR 13-EDC 14-FCU1]'];
 
 %modify filter columns        
 Hmod = H;

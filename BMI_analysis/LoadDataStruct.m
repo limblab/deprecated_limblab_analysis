@@ -2,7 +2,9 @@ function datastruct = LoadDataStruct(filename,type)
 % loads a bdf mat file
 % usage: datastruct = loaddatastruct(filename)
 %       filename : the name of the mat file to be loaded
+%       type : 'bdf' | 'binned' | 'pred' | 'filter'
 %       datastruct output: holder for the loaded bdf structure
+       
 
 %default values:
 datastruct = struct([]);
