@@ -220,9 +220,6 @@ function out_struct = get_cerebus_data(varargin)
 
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
     
-    rmpath ./lib_cb
-    rmpath ./event_decoders
-    
     if (verbose == 1)
         close(h);
     end
@@ -232,5 +229,8 @@ function out_struct = get_cerebus_data(varargin)
 %% Extract data from the raw struct
 
     out_struct = calc_from_raw(out_struct,verbose);
+    
+    rmpath ./lib_cb
+    rmpath ./event_decoders
 
 end
