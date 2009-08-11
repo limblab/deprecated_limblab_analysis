@@ -7,7 +7,8 @@ function out_struct = calc_from_raw(varargin)
 %% Initial setup
 
 %    addpath ./event_decoders
-    
+    addpath ../lib
+
     % make sure LaTeX is turned off and save the old state so we can turn
     % it back on at the end
     defaulttextinterpreter = get(0, 'defaulttextinterpreter'); 
@@ -91,53 +92,59 @@ function out_struct = calc_from_raw(varargin)
     
     %Position and Force for Robot Task
     if (isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc))
-        % Position
-        if (verbose == 1)
-            progress = progress + .05;
-            waitbar(progress, h, sprintf('Aggregating data...\nget position'));
+        if robot_task
+            % Position
+            if (verbose == 1)
+                progress = progress + .05;
+                waitbar(progress, h, sprintf('Aggregating data...\nget position'));
+            end
+
+            if ~exist('adfreq','var')
+                % There was no analog data, so we need a default timebase for
+                % the encoder
+                adfreq = 1000; %Arbitrarily 1KHz
+                start_time = 1.0;
+                last_enc_time = out_struct.raw.enc(end,1);
+                stop_time = floor(last_enc_time) - 1;
+                analog_time_base = start_time:1/adfreq:stop_time;
+            end
+
+            l1 = 24.0; l2 = 23.5;
+            th_t = out_struct.raw.enc(:,1); % encoder time stamps
+
+            [b,a] = butter(8, 100/adfreq);
+
+            th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
+            th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
+            th_1_adj = interp1(th_t, filtfilt(b, a, th_1), analog_time_base); 
+            th_2_adj = interp1(th_t, filtfilt(b, a, th_2), analog_time_base); 
+
+            % convert to x and y
+            x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
+            y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
+
+            % get derivatives
+            dx = kin_diff(x);
+            dy = kin_diff(y);
+
+            ddx = kin_diff(dx);
+            ddy = kin_diff(dy);
+
+            % write into structure
+            out_struct.pos = [analog_time_base'   x'   y'];
+            out_struct.vel = [analog_time_base'  dx'  dy'];
+            out_struct.acc = [analog_time_base' ddx' ddy'];
+            
+        else
+            out_struct.pos = [out_struct.raw.enc(:,1) out_struct.raw.enc(:,2)/1000 out_struct.raw.enc(:,3)/1000];
         end
-
-        if ~exist('adfreq','var')
-            % There was no analog data, so we need a default timebase for
-            % the encoder
-            adfreq = 1000; %Arbitrarily 1KHz
-            start_time = 1.0;
-            last_enc_time = out_struct.raw.enc(end,1);
-            stop_time = floor(last_enc_time) - 1;
-            analog_time_base = start_time:1/adfreq:stop_time;
-        end
-        
-        l1 = 24.0; l2 = 23.5;
-        th_t = out_struct.raw.enc(:,1); % encoder time stamps
-
-        [b,a] = butter(8, 100/adfreq);
-
-        th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
-        th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-        th_1_adj = interp1(th_t, filtfilt(b, a, th_1), analog_time_base); 
-        th_2_adj = interp1(th_t, filtfilt(b, a, th_2), analog_time_base); 
-
-        % convert to x and y
-        x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
-        y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
-
-        % get derivatives
-        dx = kin_diff(x);
-        dy = kin_diff(y);
-
-        ddx = kin_diff(dx);
-        ddy = kin_diff(dy);
-
-        % write into structure
-        out_struct.pos = [analog_time_base'   x'   y'];
-        out_struct.vel = [analog_time_base'  dx'  dy'];
-        out_struct.acc = [analog_time_base' ddx' ddy'];
     else
         if robot_task
             close(h);
             error('BDF:noPositionSignal','No position signal present');
         end
     end
+
     
     
     % Force Handle Analog Signals
@@ -178,36 +185,42 @@ function out_struct = calc_from_raw(varargin)
         end
     end
 
-    % Force (Cursor Pos) for Wrist Flexion task (or just Force_x for BD
-    % task when recording stim evoked force with air pressure device)
-    force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) ); %#ok<EFIND>
-    if ~isempty(force_channels)
+    % Force (Cursor Pos) for Wrist Flexion and MG tasks
+    % (or just Force_x for MG task when recording stim evoked
+    %  force with air pressure device)
+    %% Contrarily to previous analog data, we don't want to skip the first
+    %% second of data.    
+    force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) | strncmp(out_struct.raw.analog.channels,'force_',6) ); %#ok<EFIND>
+    if isempty(force_channels)
+        if wrist_flexion_task || multi_gadget_task
+            close(h);
+            error('BDF:noForceSignal','No force signal found because no channel named ''Force_*''');
+        end
+    else
         % Getting Force
         if (verbose == 1)
             progress = progress + .05;
             waitbar(progress, h, sprintf('Aggregating data...\nget force'));
         end
 
-        % extract force data for WF task here
-        %[b,a] = butter(4, 20/adfreq); % lowpass at 10 Hz
+        % extract force data for WF and MG task here
         force_x = get_analog_signal(out_struct, 'Force_x');
-        %force_x = filtfilt(b,a,force_x);
-        force_x = interp1( force_x(:,1), force_x(:,2), analog_time_base);
-        if wrist_flexion_task
-            force_y = get_analog_signal(out_struct, 'Force_y');
-            %force_y = filtfilt(b,a,force_y);
-            force_y = interp1( force_y(:,1), force_y(:,2), analog_time_base);
-            out_struct.force = [analog_time_base' force_x' force_y'];
-        else %force data for BD air pressure device
-            out_struct.force = [analog_time_base' force_x'];
+        if isempty(force_x)
+            force_x = get_analog_signal(out_struct, 'force_x');
         end
-    else
-        if wrist_flexion_task
-            close(h);
-            error('BDF:noForceSignal','No force signal found because no channel named ''Force_*''');
+        
+        force_y = get_analog_signal(out_struct, 'Force_y');
+        if isempty(force_y)
+            force_y = get_analog_signal(out_struct, 'force_y');
         end
+        if ~isempty(force_y)
+            if ~isequal(force_x(:,1),force_y(:,1))
+                close(h);
+                error('BDF:inconsistentForceSigs','Time base for the two force signals are different');
+            end
+        end
+        out_struct.force = [force_x(:,1) force_x(:,2) force_y(:,2)];
     end
-
   
     % Stimulator serial data
     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
@@ -297,8 +310,26 @@ function out_struct = calc_from_raw(varargin)
                 emp_row(chan)= emp_row(chan) + 1 ;
             end
         end
-    end   
-  
+    end
+
+
+    if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) && (wrist_flexion_task || multi_gadget_task) )
+        if (verbose == 1)
+            progress = progress + .05;
+            waitbar(progress, h, sprintf('Aggregating data...\nextracting targets'));
+        end
+        
+        out_struct.targets.corners = zeros(length(out_struct.databursts)-1,5);
+        out_struct.targets.rotation = zeros(length(out_struct.databursts)-1,2);
+        for i=1:length(out_struct.databursts)-1
+            out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
+            out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+            out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
+            out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
+        end
+    end
+
+        
     
     % EMGs
 %     emg_channels = find( strncmp(out_struct.raw.analog.channels, 'EMG_', 4) ); %#ok<EFIND>
