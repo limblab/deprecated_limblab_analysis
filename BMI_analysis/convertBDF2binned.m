@@ -136,8 +136,34 @@ function binnedData = convertBDF2binned(varargin)
 
         end    
         clear tempEMG bh ah bl al emgtimebins EMGname;
-     end
+    end
 
+%% Bin Force
+    if ~isfield(datastruct, 'force')
+        disp(sprintf('No force data is found in structure " %s " ',datastructname));
+        forcedatabin = [];
+        forcelabels = [];
+    else
+        
+        forcesamplerate = 1/( datastruct.force(2,1)-datastruct.force(1,1));
+        forcetimebins = starttime*forcesamplerate+1:stoptime*forcesamplerate;
+        forcelabels = char(datastruct.raw.analog.channels(strncmp(datastruct.raw.analog.channels,'Force_', 6)...
+                                                            |strncmp(datastruct.raw.analog.channels,'force_', 6)));         
+
+        %downsample force data to desired bin size        
+        forcedatabin = resample(datastruct.force(forcetimebins,2:end), 1/binsize, forcesamplerate);
+
+        clear forcesamplerate forcetimebins;
+    end
+
+%% Bin Cursor Position
+
+    if ~isfield(datastruct, 'pos')
+        %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
+        cursorposbin = [];
+    else
+        cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0);
+    end
         
 %% Bin Spike Data
 
@@ -146,7 +172,6 @@ function binnedData = convertBDF2binned(varargin)
         spikeratedata = [];
         spikeguide = [];
     else
-
 
         %decide which signals to use: minimum of 20 spikes/mins on average:
     %    minimumspikenumber = (stoptime-starttime)/3;
@@ -224,8 +249,11 @@ function binnedData = convertBDF2binned(varargin)
     binnedData = struct('timeframe',timeframe,...
                            'emgguide',emgguide,...
                            'emgdatabin',emgdatabin,...
+                           'forcelabels',forcelabels,...
+                           'forcedatabin',forcedatabin,...
                            'spikeguide',spikeguide,...
-                           'spikeratedata',spikeratedata);
+                           'spikeratedata',spikeratedata,...
+                           'cursorposbin',cursorposbin);
                                
 %% Save the binned data in a mat file
     
