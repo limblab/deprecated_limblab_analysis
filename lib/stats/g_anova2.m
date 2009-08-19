@@ -12,11 +12,16 @@ function out = g_anova2(data)
 %
 %   OUT returns an anova result structure.  The example data above returns:
 %
-%    SS: [2.8889 5.3333 8.2222] (within, between, total)
-%    df: [2 6 8]                (within, between, total)
-%    MS: [1.4444 0.8889]        (within, between)
-%     F: 1.6250
-%     p: 0.2729
+%    SS: [33.3791 27.2601 33.3352 93.9744 20.3333 114.3077]
+%    df: [1 1 1 3 9 12]
+%    MS: [33.3791 27.2601 33.3352 2.2593]
+%     F: [14.7744 12.0659 14.7549]
+%     p: [0.0039 0.0070 0.0040]
+%
+%   Elements of SS and df are: (rows, columns, interactions, within,
+%      between, total)
+%   Elements of MS are: (rows, columns, interactions, within)
+%   Elements of F and p are: (rows, columns, interactions)
 
 [p,q] = size(data);
 t = zeros(p,q);
