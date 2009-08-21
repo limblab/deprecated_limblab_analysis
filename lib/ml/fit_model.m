@@ -1,4 +1,5 @@
 function [L_final, mdl, success] = fit_model(bdf, chan, unit, offset)
+% $Id$
 
     offset = floor(1000 * offset);
 
