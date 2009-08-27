@@ -72,7 +72,8 @@ function out_struct = get_cerebus_data(varargin)
 
     % Build catalogue of entities
     [nsresult, EntityInfo] = ns_GetEntityInfo(hfile, 1:FileInfo.EntityCount);
-    unit_list    = find([EntityInfo.EntityType] == 4);
+    unit_list    = find([EntityInfo.EntityType] == 4 & ~strncmp({EntityInfo.EntityLabel},'Stim_', 5));
+    stim_marker  = find([EntityInfo.EntityType] == 4 & strncmp({EntityInfo.EntityLabel},'Stim_', 5));
     % segment_list = find([EntityInfo.EntityType] == 3);
     emg_list     = find([EntityInfo.EntityType] == 2 & strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
     analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
@@ -85,7 +86,7 @@ function out_struct = get_cerebus_data(varargin)
         event_list_item_count  = sum([EntityInfo(event_list).ItemCount]);
         % segment_list_item_count = sum([EntityInfo(segment_list).ItemCount]);
         relevant_entity_count = unit_list_item_count + emg_list_item_count+...
-            analog_list_item_count + event_list_item_count;
+            analog_list_item_count + event_list_item_count + length(stim_marker);
         entity_extraction_weight = 0.9;
     end
 
@@ -210,7 +211,19 @@ function out_struct = get_cerebus_data(varargin)
         out_struct.raw.serial = [event_ts, event_data];
     end
 
-
+    if ~isempty(stim_marker)
+        if (verbose == 1)
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
+        end
+        
+        %populate stim marker ts
+        [nsresult,stim_data] = ns_GetNeuralData(hfile, stim_marker, 1, EntityInfo(stim_marker).ItemCount);
+        out_struct.stim_marker = stim_data;
+        
+        if (verbose == 1)
+            progress = progress + entity_extraction_weight/relevant_entity_count;
+        end
+    end
 %% Clean up
     if (verbose == 1)
         waitbar(1,h,sprintf('Opening: %s\nCleaning Up...', filename));
