@@ -221,7 +221,7 @@ function out_struct = calc_from_raw(varargin)
         end
         out_struct.force = [force_x(:,1) force_x(:,2) force_y(:,2)];
     end
-  
+    
     % Stimulator serial data
     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
         % Getting serial data
@@ -229,28 +229,6 @@ function out_struct = calc_from_raw(varargin)
             progress = progress + .05;
             waitbar(progress, h, sprintf('Aggregating data...\nget serial data'));
         end
-
-        % create bdf.stim array (cell array of matrices of varying sizes )
-        S = size (out_struct.raw.serial);
-        S_rows = S(1);
-        max_length = ceil(S(1)/5) ;
-        C1 = zeros(max_length , 6) ;
-        C2 = zeros(max_length , 6) ;
-        C3 = zeros(max_length , 6) ;
-        C4 = zeros(max_length , 6) ;
-        C5 = zeros(max_length , 6) ;
-        C6 = zeros(max_length , 6) ;
-        C7 = zeros(max_length , 6) ;
-        C8 = zeros(max_length , 6) ;
-        C9 = zeros(max_length , 6) ;
-        C10 = zeros(max_length , 6) ;
-        out_struct.stim = { C1 C2 C3 C4 C5 C6 C7 C8 C9 C10} ;
-
-
-        % fill out bdf.stim array
-        % set and initialize variables to keep track of first empty row
-        % in each channel matrix in cell array
-        emp_row = ones (1,10);
 
         %find the first parameter that correspond to the command, in case
         %it was not the first received
@@ -263,11 +241,17 @@ function out_struct = calc_from_raw(varargin)
         
         %number of rows in serial data from first command parameter to
         %last parameter of last complete stim update
-        num_valid_rows = S_rows-row_lag-mod(S_rows-row_lag,5);
+        num_rows = size(out_struct.raw.serial,1);
+        num_valid_rows = num_rows-row_lag-mod(num_rows-row_lag,5);
         
-        %for every fifth row of bdf.raw.serial starting with row 1 add
-        %entry to channel matrix in cell array
+        out_struct.stim = zeros(num_valid_rows/5,7);
+        stim_cmd_index = 0;
+        
+        %for every fifth row of bdf.raw.serial, starting with the first command row, add
+        %entry to bdf.stim
         for row_count = row_lag+1:5:num_valid_rows-4
+            
+            stim_cmd_index=stim_cmd_index+1;
             cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
             
             %verify that the cmd param make sense, not a very robust way
@@ -281,36 +265,108 @@ function out_struct = calc_from_raw(varargin)
             end
             
             % calculate parameters
-            ts = out_struct.raw.serial(row_count,1);            
+            ts = out_struct.raw.serial(row_count+4,1); %ts of the last serial byte of that command
             chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
             freq = out_struct.raw.serial((row_count+1), 2) ;
             I = out_struct.raw.serial((row_count+2), 2)/10 ;
             PW = out_struct.raw.serial((row_count+3), 2) ;
             NP = out_struct.raw.serial((row_count+4), 2) ;
-       
-            % put them into appropriate channel matrix in cell array
-            % empty
-            if (chan == 0 && cmd ~= 0)
-                for i=1:10
-                    out_struct.stim{i}(emp_row(chan),1)= ts ;
-                    out_struct.stim{i}(emp_row(chan),2)= cmd;
-                    out_struct.stim{i}(emp_row(chan),3)= PW ;
-                    out_struct.stim{i}(emp_row(chan),4)= I ;
-                    out_struct.stim{i}(emp_row(chan),5)= freq ;
-                    out_struct.stim{i}(emp_row(chan),6)= NP ;
-                    emp_row(i)= emp_row(i) + 1 ;
-                end
-            elseif (chan ~= 0)
-                out_struct.stim{chan}(emp_row(chan),1)= ts ;
-                out_struct.stim{chan}(emp_row(chan),2)= cmd;
-                out_struct.stim{chan}(emp_row(chan),3)= PW ;
-                out_struct.stim{chan}(emp_row(chan),4)= I ;
-                out_struct.stim{chan}(emp_row(chan),5)= freq ;
-                out_struct.stim{chan}(emp_row(chan),6)= NP ;
-                emp_row(chan)= emp_row(chan) + 1 ;
-            end
+            
+            % put them into stim field
+            out_struct.stim(stim_cmd_index,:) = [ts cmd chan freq I PW NP];
+
         end
-    end
+    end    
+  
+%     % Stimulator serial data
+%     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
+%         % Getting serial data
+%         if (verbose == 1)
+%             progress = progress + .05;
+%             waitbar(progress, h, sprintf('Aggregating data...\nget serial data'));
+%         end
+% 
+%         % create bdf.stim array (cell array of matrices of varying sizes )
+%         S = size (out_struct.raw.serial);
+%         S_rows = S(1);
+%         max_length = ceil(S(1)/5) ;
+%         C1 = zeros(max_length , 6) ;
+%         C2 = zeros(max_length , 6) ;
+%         C3 = zeros(max_length , 6) ;
+%         C4 = zeros(max_length , 6) ;
+%         C5 = zeros(max_length , 6) ;
+%         C6 = zeros(max_length , 6) ;
+%         C7 = zeros(max_length , 6) ;
+%         C8 = zeros(max_length , 6) ;
+%         C9 = zeros(max_length , 6) ;
+%         C10 = zeros(max_length , 6) ;
+%         out_struct.stim = { C1 C2 C3 C4 C5 C6 C7 C8 C9 C10} ;
+% 
+% 
+%         % fill out bdf.stim array
+%         % set and initialize variables to keep track of first empty row
+%         % in each channel matrix in cell array
+%         emp_row = ones (1,10);
+% 
+%         %find the first parameter that correspond to the command, in case
+%         %it was not the first received
+%         row_lag = 0;
+%         first_cmd = out_struct.raw.serial(row_lag+1, 2);
+%         while first_cmd<hex2dec('C0') || first_cmd>hex2dec('FA')
+%             row_lag = row_lag+1;
+%             first_cmd = out_struct.raw.serial(row_lag+1, 2);
+%         end
+%         
+%         %number of rows in serial data from first command parameter to
+%         %last parameter of last complete stim update
+%         num_valid_rows = S_rows-row_lag-mod(S_rows-row_lag,5);
+%         
+%         %for every fifth row of bdf.raw.serial starting with row 1 add
+%         %entry to channel matrix in cell array
+%         for row_count = row_lag+1:5:num_valid_rows-4
+%             cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
+%             
+%             %verify that the cmd param make sense, not a very robust way
+%             %to determine if there is a missing byte...
+%             if cmd == 0
+%                 continue;
+%             elseif cmd<12 || cmd > 15
+%                 warning('BDF:missingSerialByte','The serial data is inconsistent at ts=%d.\nThe serial data field will not be populated',ts);
+%                 out_struct.stim =  [];
+%                 break;
+%             end
+%             
+%             % calculate parameters
+%             ts = out_struct.raw.serial(row_count,1);            
+%             chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
+%             freq = out_struct.raw.serial((row_count+1), 2) ;
+%             I = out_struct.raw.serial((row_count+2), 2)/10 ;
+%             PW = out_struct.raw.serial((row_count+3), 2) ;
+%             NP = out_struct.raw.serial((row_count+4), 2) ;
+%        
+%             % put them into appropriate channel matrix in cell array
+%             % empty
+%             if (chan == 0 && cmd ~= 0)
+%                 for i=1:10
+%                     out_struct.stim{i}(emp_row(chan),1)= ts ;
+%                     out_struct.stim{i}(emp_row(chan),2)= cmd;
+%                     out_struct.stim{i}(emp_row(chan),3)= PW ;
+%                     out_struct.stim{i}(emp_row(chan),4)= I ;
+%                     out_struct.stim{i}(emp_row(chan),5)= freq ;
+%                     out_struct.stim{i}(emp_row(chan),6)= NP ;
+%                     emp_row(i)= emp_row(i) + 1 ;
+%                 end
+%             elseif (chan ~= 0)
+%                 out_struct.stim{chan}(emp_row(chan),1)= ts ;
+%                 out_struct.stim{chan}(emp_row(chan),2)= cmd;
+%                 out_struct.stim{chan}(emp_row(chan),3)= PW ;
+%                 out_struct.stim{chan}(emp_row(chan),4)= I ;
+%                 out_struct.stim{chan}(emp_row(chan),5)= freq ;
+%                 out_struct.stim{chan}(emp_row(chan),6)= NP ;
+%                 emp_row(chan)= emp_row(chan) + 1 ;
+%             end
+%         end
+%     end
 
 
     if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) && (wrist_flexion_task || multi_gadget_task) )
