@@ -17,7 +17,7 @@ if size(training,2) ~= size(testing,2)
     error('Training and testing sets must have the same number of features (columns)');
 end
 
-ulbl = unique(labels);
+ulbl = unique(labels)';
 nfeatures = size(training,2);
 ncats = length(ulbl);
 ntest = size(testing,1);
