@@ -87,11 +87,13 @@ for trial = 1:num_trials-1
     end
     
     % Classify bump phasing
-    if ot_time == -1
+    if bump_time == -1
+        bump_phase = -1;
+    elseif ot_time == -1
         bump_phase = double('H');
     elseif bump_time > go_cue + .002
         bump_phase = double('M');
-    elseif bump_time ~= -1
+    else
         bump_phase = double('D');
     end
      
