@@ -3,7 +3,7 @@ function pred = pnbayes(labels, training, testing)
 %   PRED = PNBAYES(LABELS, TRAINING, TESTING) trains a naive bayes
 %       classifer on the features in TRAINING with the categories in
 %       LABELS.  TRAINING should be NxM where N is the cardnality of the
-%       training set and M is the number of features.  LABELS is 1xM and
+%       training set and M is the number of features.  LABELS is 1xN and
 %       TESTING is KxM.  Returns PRED a 1xK vector containing the predicted
 %       labels of the testing set.
 

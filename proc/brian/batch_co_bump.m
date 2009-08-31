@@ -22,6 +22,8 @@ for i = 1:size(all_units,1)
     
     a_gain = (max(a(1,:)) - min(a(1,:))) / sqrt(b(3));
     p_gain = (max(p(1,:)) - min(p(1,:))) / sqrt(b(3));
+    %a_gain = (max(a(1,:)) - min(a(1,:)));
+    %p_gain = (max(p(1,:)) - min(p(1,:)));
     
     a_pd = atan2( sum(a(1,:).*sin(th)), sum(a(1,:).*cos(th)) );
     p_pd = atan2( sum(p(1,:).*sin(th)), sum(p(1,:).*cos(th)) );
