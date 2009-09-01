@@ -28,7 +28,7 @@ c = caxis;
 axes('position',[0.1 0.8 0.4615 0.13]);
 %   drawing image a
 image(a,'CDataMapping','scaled');
-set(gca, 'YTICK', [1])
+set(gca, 'YTICK', 1)
 set(gca, 'XTICK', [1 2 3 4])
 %colorbar
 caxis([c])
@@ -37,7 +37,7 @@ caxis([c])
 axes('position',[0.65 0.1 0.2 0.6]);
 image(b,'CDataMapping','scaled');
 set(gca, 'YTICK', [1 2 3 4]);
-set(gca, 'XTICK', [1]);
+set(gca, 'XTICK', 1);
 colorbar;
 caxis([c]);
 
@@ -47,7 +47,7 @@ image(base,'CDataMapping','scaled');
 set(gca, 'YTICK', []);
 set(gca, 'XTICK', []);
 %colorbar
-caxis([c]);
+caxis(c);
 suptitle(title);
 
 %x = 0:pi/100:2*pi
