@@ -1,10 +1,12 @@
+
+
 function plotm[m,a,b,base]
 %defining some dummy values for variables/remove "%" if needed
 
-m = [1 10 20 22; 15 20 35 28; 30 42 35 30; 27 22 25 29];
-a = [1 2 3 4];
-b = [29; 30; 45; 30];
-base = [17];
+%m = [1 10 20 22; 15 20 35 28; 30 42 35 30; 27 22 25 29];
+%a = [1 2 3 4];
+%b = [29; 30; 45; 30];
+%base = [17];
 
 
 
@@ -48,3 +50,7 @@ set(gca, 'YTICK', []);
 set(gca, 'XTICK', []);
 %colorbar
 caxis([c])
+
+
+
+
