@@ -8,21 +8,22 @@ function plotstuff_2(m,a,b,base,title)
 
 
 
-%--------------------------setting figure attributes------------------------------
+%--------------------------setting figure attributes-----------
 scrsz = get(0,'ScreenSize'); %figure orriented on screen size -> determining screen size.
 figure('Position',[scrsz(4)/5, scrsz(4)/5, scrsz(4)/2*1.3, scrsz(4)/2]) %setting figure size 
 
+%---------------find max value and axis dimensions-------------
+c = [0 max([max(max(m)),max(a),max(b),base])];
 
 %--------------------------plot m------------------------------
-axes('position',[0.1 0.1 0.4615 0.6])
+axes('position',[0.1 0.1 0.4615 0.6]);
 image(m,'CDataMapping','scaled');
 
 ylabel('target');
 xlabel('bump');
 set(gca, 'YTICK', [1 2 3 4])
 set(gca, 'XTICK', [1 2 3 4])
-%colorbar
-c = caxis;
+caxis([c])
 %--------------------------plot a------------------------------
 %   setting pos. and size for image a
 axes('position',[0.1 0.8 0.4615 0.13]);
@@ -30,7 +31,6 @@ axes('position',[0.1 0.8 0.4615 0.13]);
 image(a,'CDataMapping','scaled');
 set(gca, 'YTICK', 1)
 set(gca, 'XTICK', [1 2 3 4])
-%colorbar
 caxis([c])
 
 %--------------------------plot b------------------------------
@@ -41,30 +41,11 @@ set(gca, 'XTICK', 1);
 colorbar;
 caxis([c]);
 
-%--------------------------plot base------------------------------
+%--------------------------plot base---------------------------
 axes('position',[0.65 0.8 0.113 0.13]);
 image(base,'CDataMapping','scaled');
 set(gca, 'YTICK', []);
 set(gca, 'XTICK', []);
-%colorbar
 caxis(c);
 suptitle(title);
-
-%x = 0:pi/100:2*pi
-%y1 = sin(x)
-%y2 = sin(x+.25)
-%y3 = sin(x+.5)
-%%subplot(2,2,3)
-%%image (m)
-%plot(x,y1,x,y2,x,y3)
-%axis tight
-%w1 = cos(x)
-%w2 = cos(x+.25)
-%w3 = cos(x+.5)
-%%subplot(2,2,1)
-%axes('position',[0.1 0.1 0.6 0.6])
-%image (m)
-%plot(x,w1,x,w2,x,w3)
-%axis tight=======
-
 
