@@ -7,7 +7,7 @@ function plotstuff_2(m,a,b,base,title)
 %base = [17];
 
 
-suptitle(title);
+
 
 %--------------------------setting figure attributes-----------
 scrsz = get(0,'ScreenSize'); %figure orriented on screen size -> determining screen size.
@@ -24,31 +24,38 @@ ylabel('target');
 xlabel('bump');
 set(gca, 'YTICK', [1 2 3 4])
 set(gca, 'XTICK', [1 2 3 4])
-caxis([c])
+caxis(c)
 %--------------------------plot a------------------------------
 %   setting pos. and size for image a
 axes('position',[0.1 0.8 0.4615 0.13]);
 %   drawing image a
 image(a,'CDataMapping','scaled');
-set(gca, 'YTICK', [])
-set(gca, 'XTICK', [])
-caxis([c])
-
-%--------------------------plot b------------------------------
-axes('position',[0.65 0.1 0.2 0.6]);
-image(b,'CDataMapping','scaled');
-set(gca, 'YTICK', []);
-set(gca, 'XTICK', []);
-colorbar;
-caxis([c]);
+set(gca, 'YTICK', 1)
+set(gca, 'XTICK', [1 2 3 4])
+caxis(c)
 
 %--------------------------plot base---------------------------
 axes('position',[0.65 0.8 0.113 0.13]);
 image(base,'CDataMapping','scaled');
 set(gca, 'YTICK', []);
-set(gca, 'XTICK', [1]);
-set(gca, 'XTICKLABEL', ('base firing rate'));
+set(gca, 'XTICK', []);
 caxis(c);
 
+%--------------------------plot b------------------------------
+axes('position',[0.65 0.1 0.2 0.6]);
+image(b,'CDataMapping','scaled');
+set(gca, 'YTICK', [1 2 3 4]);
+set(gca, 'XTICK', 1);
 
+
+
+
+
+
+
+
+suptitle(title);
+
+colorbar;
+caxis(c);
 
