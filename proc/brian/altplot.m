@@ -1,10 +1,10 @@
-function plotstuff_2(m,a,b,base,title)
+function altplot(m,a,b,base,title)
 %defining some dummy values for variables/remove "%" if needed
 
 %m = [1 10 20 22; 
-%    15 20 35 28; 
- %   30 42 35 30;
-%    27 22 25 29];
+  %  15 20 35 28; 
+%   30 42 35 30;
+ %   27 22 25 29];
 %a = [1 2 3 4];
 %b = [29; 30; 45; 30];
 %base = [17];
@@ -21,6 +21,21 @@ x = [0 0 0 0 0 0 0 0 0 0 0 0 0;
      0 0 0 0 0 0 m(3,1) 0 0 0 0 0 0;
      0 0 0 0 0 m(3,4) b(3) m(3,2) 0 0 0 0 0;
      0 0 0 0 0 0 m(3,3) 0 0 0 0 0 0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0;]
+ 
+ alfa = [0 0 0 0 0 0 0 0 0 0 0 0 0;
+     0 0 0 0 0 0 1 0 0 0 0 0 0;
+     0 0 0 0 0 1 1 1 0 0 0 0 0;
+     0 0 0 0 0 0 1 0 0 0 0 0 0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0;
+     0 0 1 0 0 0 1 0 0 0 1 0 0;
+     0 1 1 1 0 1 1 1 0 1 1 1 0;
+     0 0 1 0 0 0 1 0 0 0 1 0 0;
+     0 0 0 0 0 0 0 0 0 0 0 0 0;
+     0 0 0 0 0 0 1 0 0 0 0 0 0;
+     0 0 0 0 0 1 1 1 0 0 0 0 0;
+     0 0 0 0 0 0 1 0 0 0 0 0 0;
      0 0 0 0 0 0 0 0 0 0 0 0 0;
      0 0 0 0 0 0 0 0 0 0 0 0 0;]
 
@@ -101,13 +116,14 @@ figure('Position',[scrsz(4)/5, scrsz(4)/5, scrsz(4)/2*1.3, scrsz(4)/2]) %setting
 r = [0 max([max(max(m)),max(a),max(b),base])];
 
 %--------------------------plot the thing---------------------------
-axes('position',[0.1 0.1 0.6666 0.8333]);
-image(x,'CDataMapping','scaled');
+%axes('position',[0.1 0.1 0.6666 0.8333]);
+h = image(x,'CDataMapping','scaled');
 set(gca, 'YTICK', []);
 set(gca, 'XTICK', []);
 colorbar;
 caxis(r);
-colormap (c);
+set (h,'AlphaData', alfa)
+
 
 
 
