@@ -375,9 +375,9 @@ function out_struct = calc_from_raw(varargin)
             waitbar(progress, h, sprintf('Aggregating data...\nextracting targets'));
         end
         
-        out_struct.targets.corners = zeros(length(out_struct.databursts)-1,5);
-        out_struct.targets.rotation = zeros(length(out_struct.databursts)-1,2);
-        for i=1:length(out_struct.databursts)-1
+        out_struct.targets.corners = zeros(length(out_struct.databursts),5);
+        out_struct.targets.rotation = zeros(length(out_struct.databursts),2);
+        for i=1:length(out_struct.databursts)
             out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
             out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
             out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
