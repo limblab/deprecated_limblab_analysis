@@ -7,7 +7,7 @@ function r = rho_c(alpha, beta)
 %   BETA are independed, although the converse it not true in general.
 %   Where RHO_C = 1, ALPHA = BETA + K (mod 2 PI).
 %
-%   See also: Topics in Circular Statistics, Jamalamadaka p 176
+%   See also: Topics in Circular Statistics, Jamalamadaka p 176 et Seq.
 %   and Jamalamadaka and Sarma (1988).
 
 % $Id$
@@ -21,6 +21,9 @@ y = sin(beta);
 nu = atan2(sum(y), sum(x));
 
 E = mean(sin(alpha-mu) .* sin(beta-nu));
-V = var(sin(alpha-mu) .* sin(beta-nu));
+V = var(sin(alpha-mu)) .* var(sin(beta-nu));
 
-R_C = E / sqrt(V);
+r = E / sqrt(V);
+
+%r = sum( sin(alpha-mu) .* sin(beta-nu) ) / sqrt( sum( sin(alpha-mu).^2 .* sin(beta-nu).^2 ) );
+

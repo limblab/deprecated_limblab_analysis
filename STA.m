@@ -15,7 +15,7 @@ function STA = STA(stim_ts, signals, timeBefore, timeAfter)
                        stim_ts+timeAfter  <= signals(end,1));
                                  
     numStim_ok = length(stim_ts);
-    disp(sprintf('%d out of %d stimulus were averaged',numStim_ok,numStim));
+    %disp(sprintf('%d out of %d stimulus were averaged',numStim_ok,numStim));
     
     %pre-allocate
     STA = zeros(windowLength,numSignals+1);

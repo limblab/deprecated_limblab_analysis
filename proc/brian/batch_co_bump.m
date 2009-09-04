@@ -5,7 +5,7 @@ all_units = unit_list(bdf);
 %all_units = [80 1];
 th = [0, pi/2, pi, 3*pi/2];
 
-res = zeros(size(all_units,1),9); % [chan unit a_gain a_pd p_gain p_pd]
+res = zeros(size(all_units,1),13); % [chan unit a_gain a_pd p_gain p_pd]
 
 for i = 1:size(all_units,1)
     chan = all_units(i,1);
@@ -28,19 +28,18 @@ for i = 1:size(all_units,1)
     a_pd = atan2( sum(a(1,:).*sin(th)), sum(a(1,:).*cos(th)) );
     p_pd = atan2( sum(p(1,:).*sin(th)), sum(p(1,:).*cos(th)) );
     
-    res(i,:) = [chan unit a_gain a_pd p_gain p_pd anova.p];
+    max_diff = max(max(m)) - min(min(m));
+    max_targ_diff = max(max(m,[],1) - min(m,[],1));
+    max_bump_diff = max(max(m,[],2) - min(m,[],2));
+    max_base = max(max(m)) - b(3);
     
-    %figure;
-    %image(m);
-    %colorbar;
-    %axis square;
-    %ylabel('target');
-    %xlabel('bump');
-    %set(gca, 'YTick', [1 2 3 4])
-    %set(gca, 'XTick', [1 2 3 4])
-    %title(sprintf('%d - %d', chan, unit));
-    plotstuff_2(m, p(1,:), a(1,:)', b(3), sprintf('%d - %d', chan, unit));
-    %print('-dpng', sprintf('tmp/%d-%d.png', chan, unit));
+    res(i,:) = [chan unit a_gain a_pd p_gain p_pd max_diff max_targ_diff max_bump_diff anova.p max_base];
+    
+    %plotstuff_2(m, p(1,:), a(1,:)', b(3), sprintf('%d - %d', chan, unit));
+    altplot(m, p(1,:), a(1,:)', b(3), sprintf('%d - %d', chan, unit));
+    %print('-dwinc');
     %close(gcf);
 end
+
+
 

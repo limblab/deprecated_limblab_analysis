@@ -120,10 +120,10 @@ r = [0 max([max(max(m)),max(a),max(b),base])];
 h = image(x,'CDataMapping','scaled');
 set(gca, 'YTICK', []);
 set(gca, 'XTICK', []);
+suptitle(title);
 colorbar;
 caxis(r);
 set (h,'AlphaData', alfa)
-
 
 
 
