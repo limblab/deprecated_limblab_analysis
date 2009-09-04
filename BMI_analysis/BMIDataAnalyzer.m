@@ -214,7 +214,7 @@ function BMIDataAnalyzer()
             Bin_FullFileName = fullfile(PathName,Bin_FileName);
             set(Bin_BuildButton, 'Enable','on');
             set(Bin_BuildButton, 'Enable','on');
-            set(Bin_PlotButton,  'Enable','on');
+            set(Bin_mfxvalButton,  'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
             end
@@ -247,8 +247,8 @@ function BMIDataAnalyzer()
     Bin_BuildButton = uicontrol('Parent', Bin_Panel, 'String', 'Build Model', 'Units','normalized',...
                             'Position', [.4 .2 .2 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
     
-    Bin_PlotButton = uicontrol('Parent', Bin_Panel, 'String', 'Plot', 'Units','normalized',...
-                            'Position', [.7 .2 .2 .3],'Callback',@Bin_PlotButton_Callback,'Enable','off');
+    Bin_mfxvalButton = uicontrol('Parent', Bin_Panel, 'String', 'mfxval', 'Units','normalized',...
+                            'Position', [.7 .2 .2 .3],'Callback',@Bin_mfxvalButton_Callback,'Enable','off');
     
     %Callbacks
     
@@ -262,7 +262,7 @@ function BMIDataAnalyzer()
             Bin_FullFileName = fullfile(PathName, Bin_FileName);
             
             set(Bin_BuildButton,'Enable','on');
-            set(Bin_PlotButton, 'Enable','on');
+            set(Bin_mfxvalButton, 'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
             end
@@ -282,7 +282,14 @@ function BMIDataAnalyzer()
         
     function Bin_BuildButton_Callback(obj,event)
         disp('Building Prediction Model, please wait...');
-        [filt_struct, OLPredData] = BuildModel(Bin_FullFileName, dataPath);
+        
+        binnedData = LoadDataStruct(Bin_FullFileName,'binned');
+        binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
+        
+        [fillen, UseAllInputsOption, PolynomialOrder] = BuildModelGUI(binsize);
+        [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder);
+        clear binnedData;
+        
         disp('Done.');
         
         disp('Saving prediction model...');
@@ -316,8 +323,20 @@ function BMIDataAnalyzer()
         
     end
 
-    function Bin_PlotButton_Callback(obj,event)
-        disp('Function not available in demo version');
+    function mfxval_R2 = Bin_mfxvalButton_Callback(obj,event)
+        
+        binnedData = LoadDataStruct(Bin_FullFileName,'binned');
+        binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
+        
+        [fillen, UseAllInputsOption, PolynomialOrder, fold_length] = mfxvalGUI(binsize);        
+        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', binsize));
+        [mfxval_R2, nfold] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder);
+
+        assignin('base','mfxval_R2',mfxval_R2); %put the results in the base workspace for easy access
+
+        clear binnedData;
+        disp('Done.');
+        
     end
 
 %% Filter Panel

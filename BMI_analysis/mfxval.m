@@ -1,4 +1,8 @@
-function [R2, nfold] = mfxval(binnedData,foldlength)
+function [R2, nfold] = mfxval(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder)
+
+if ~isstruct(binnedData)
+    binnedData = LoadDataStruct(binnedData, 'binned');
+end
 
 numEMGs = size(binnedData.emgguide,1);
 binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
@@ -48,7 +52,7 @@ for i=0:nfold-1
         modelData.spikeratedata = [ binnedData.spikeratedata(1:testDataStart-1,:); binnedData.spikeratedata(testDataEnd+1:dataEnd,:)];
     end
     
-    filter = BuildModel(modelData);
+    filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder);
     PredData = predictEMGs(filter, testData);
     
     R2(i+1,:) = CalculateR2(testData.emgdatabin(round(filter.fillen/binsize):end,:),PredData.predemgbin)';

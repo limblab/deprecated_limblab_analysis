@@ -1,6 +1,6 @@
 function BDF_FileNames = convertBatch2BDF(varargin)
 
-    dataPath = 'C:\Monkey\Theo\Data\';
+    dataPath = 'C:\Monkey\Clarence\Data\';
     addpath ../
     
     if nargin == 0
