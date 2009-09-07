@@ -158,6 +158,7 @@ function BMIDataAnalyzer()
             BDF_FullFileName = fullfile(PathName, BDF_FileName);
             set(BDF_BinButton,'Enable','on');
             set(BDF_PlotButton,'Enable','on');
+            set(BDF_WSButton,'Enable','on');
             
             BDF_FileLabel =  uicontrol('Parent',BDF_Panel,'Style','text','String',['BDFStruct : ' BDF_FileName],'Units',...
                                   'normalized','Position',[0 .65 1 0.2]);
@@ -176,7 +177,10 @@ function BMIDataAnalyzer()
                             'Position', [.4 .2 .2 .3],'Callback',@BDF_BinButton_Callback,'Enable','off');    
     
     BDF_PlotButton = uicontrol('Parent', BDF_Panel, 'String', 'Plot', 'Units','normalized',...
-                            'Position', [.7 .2 .2 .3],'Callback',@BDF_PlotButton_Callback,'Enable','off');                     
+                            'Position', [.7 .2 .2 .3],'Callback',@BDF_PlotButton_Callback,'Enable','off');
+                        
+    BDF_WSButton = uicontrol('Parent', BDF_Panel, 'String', 'WS', 'Units','normalized',...
+                            'Position', [.02 .2 .06 .3],'Callback',@BDF_WSButton_Callback,'Enable','off');
 
     %Callbacks
     function BDF_LoadButton_Callback(obj,event)
@@ -189,6 +193,7 @@ function BMIDataAnalyzer()
             BDF_FullFileName = fullfile(PathName, BDF_FileName);
             set(BDF_BinButton,'Enable','on');
             set(BDF_PlotButton,'Enable','on');
+            set(BDF_WSButton,'Enable','on');
             
             BDF_FileLabel =  uicontrol('Parent',BDF_Panel,'Style','text','String',['BDFStruct : ' BDF_FileName],'Units',...
                                   'normalized','Position',[0 .65 1 0.2]);
@@ -213,7 +218,7 @@ function BMIDataAnalyzer()
         else
             Bin_FullFileName = fullfile(PathName,Bin_FileName);
             set(Bin_BuildButton, 'Enable','on');
-            set(Bin_BuildButton, 'Enable','on');
+            set(Bin_WSButton, 'Enable','on');
             set(Bin_mfxvalButton,  'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
@@ -236,6 +241,11 @@ function BMIDataAnalyzer()
     function BDF_PlotButton_Callback(obj,event)
         plotBDF(BDF_FullFileName);        
     end
+
+    function BDF_WSButton_Callback(obj,event)
+        datastruct = LoadDataStruct(BDF_FullFileName,'bdf');
+        assignin('base','out_struct',datastruct);
+    end
     
     
 %% Binned Data Panel
@@ -249,6 +259,9 @@ function BMIDataAnalyzer()
     
     Bin_mfxvalButton = uicontrol('Parent', Bin_Panel, 'String', 'mfxval', 'Units','normalized',...
                             'Position', [.7 .2 .2 .3],'Callback',@Bin_mfxvalButton_Callback,'Enable','off');
+                        
+    Bin_WSButton = uicontrol('Parent', Bin_Panel, 'String', 'WS', 'Units','normalized',...
+                            'Position', [.02 .2 .06 .3],'Callback',@Bin_WSButton_Callback,'Enable','off');                        
     
     %Callbacks
     
@@ -262,9 +275,11 @@ function BMIDataAnalyzer()
             Bin_FullFileName = fullfile(PathName, Bin_FileName);
             
             set(Bin_BuildButton,'Enable','on');
+            set(Bin_WSButton,'Enable','on');
             set(Bin_mfxvalButton, 'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
+                set(Filt_WSButton,'Enable','on');
             end
             if OLPred_FileName
                 set(OLPred_R2VsActButton,'Enable','on');
@@ -286,8 +301,8 @@ function BMIDataAnalyzer()
         binnedData = LoadDataStruct(Bin_FullFileName,'binned');
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
-        [fillen, UseAllInputsOption, PolynomialOrder] = BuildModelGUI(binsize);
-        [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder);
+        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos] = BuildModelGUI(binsize);
+        [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos);
         clear binnedData;
         
         disp('Done.');
@@ -301,6 +316,7 @@ function BMIDataAnalyzer()
         else
             Filt_FullFileName = fullfile(PathName,Filt_FileName);
             set(Filt_PredButton, 'Enable','on');
+            set(Filt_WSButton,'Enable','on');
 
             Filt_FileLabel = uicontrol('Parent',Filt_Panel,'Style','text','String',['Model : ' Filt_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.2]);
@@ -316,6 +332,7 @@ function BMIDataAnalyzer()
             OLPred_FullFileName = fullfile(PathName,OLPred_FileName);
             set(OLPred_PlotVsActButton,'Enable','on');
             set(OLPred_R2VsActButton,'Enable','on');
+            set(OLPred_WSButton,'Enable','on');
 
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.38]);
@@ -328,9 +345,9 @@ function BMIDataAnalyzer()
         binnedData = LoadDataStruct(Bin_FullFileName,'binned');
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
-        [fillen, UseAllInputsOption, PolynomialOrder, fold_length] = mfxvalGUI(binsize);        
-        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', binsize));
-        [mfxval_R2, nfold] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder);
+        [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos] = mfxvalGUI(binsize);        
+        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', fold_length));
+        [mfxval_R2, nfold] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos);
 
         assignin('base','mfxval_R2',mfxval_R2); %put the results in the base workspace for easy access
 
@@ -338,6 +355,13 @@ function BMIDataAnalyzer()
         disp('Done.');
         
     end
+
+    function Bin_WSButton_Callback(obj,event)
+        datastruct = LoadDataStruct(Bin_FullFileName,'binned');
+        assignin('base','binnedData',datastruct);
+    end
+    
+
 
 %% Filter Panel
 
@@ -347,6 +371,9 @@ function BMIDataAnalyzer()
 
     Filt_PredButton = uicontrol('Parent', Filt_Panel, 'String', 'Predict', 'Units','normalized',...
                             'Position', [.4 .2 .2 .3],'Callback',@Filt_PredButton_Callback,'Enable','off');
+
+    Filt_WSButton = uicontrol('Parent', Filt_Panel, 'String', 'WS', 'Units','normalized',...
+                            'Position', [.02 .2 .06 .3],'Callback',@Filt_WSButton_Callback,'Enable','off');                        
       
     %Callbacks
     
@@ -357,6 +384,8 @@ function BMIDataAnalyzer()
           disp('User action cancelled');
         else
             Filt_FullFileName = fullfile(PathName, Filt_FileName);
+            set(Filt_WSButton,'Enable','on');
+            
             if Bin_FileName
                 set(Filt_PredButton,'Enable','on');
             end
@@ -368,7 +397,7 @@ function BMIDataAnalyzer()
 
     function Filt_PredButton_Callback(obj,event)
         disp('Predicting EMGs, please wait...');
-        OLPredData = predictEMGs(Filt_FullFileName,Bin_FullFileName);
+        OLPredData = predictSignals(Filt_FullFileName,Bin_FullFileName);
         disp('Done.');
         
         disp('Saving predicted EMGs...');
@@ -381,12 +410,18 @@ function BMIDataAnalyzer()
             OLPred_FullFileName = fullfile(PathName,OLPred_FileName);
             set(OLPred_PlotVsActButton,'Enable','on');
             set(OLPred_R2VsActButton,'Enable','on');
+            set(OLPred_WSButton,'Enable','on');
 
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.38]);
         end
         
         
+    end
+
+    function Filt_WSButton_Callback(obj,event)
+        datastruct = LoadDataStruct(Filt_FullFileName,'filter');
+        assignin('base','filter',datastruct);
     end
         
 %% Offline Predictions Panel
@@ -400,6 +435,9 @@ function BMIDataAnalyzer()
     
     OLPred_PlotVsActButton = uicontrol('Parent', OLPred_Panel, 'String', 'Plot vs Actual', 'Units','normalized',...
                             'Position', [.7 .2 .2 .3],'Callback',@OLPred_PlotVsActButton_Callback,'Enable','off');
+                        
+    OLPred_WSButton = uicontrol('Parent', OLPred_Panel, 'String', 'WS', 'Units','normalized',...
+                            'Position', [.02 .2 .06 .3],'Callback',@OLPred_WSButton_Callback,'Enable','off');                        
     
     %Callbacks
     function OLPred_LoadButton_Callback(obj,event)
@@ -409,6 +447,7 @@ function BMIDataAnalyzer()
           disp('User action cancelled');
         else
             OLPred_FullFileName = fullfile(PathName, OLPred_FileName);
+            set(OLPred_WSButton,'Enable','on');
             if Bin_FileName
                 set(OLPred_R2VsActButton,'Enable','on');
                 set(OLPred_PlotVsActButton,'Enable','on');
@@ -439,6 +478,11 @@ function BMIDataAnalyzer()
         disp('Done.');
     end
 
+    function OLPred_WSButton_Callback(obj,event)
+        datastruct = LoadDataStruct(OLPred_FullFileName,'OLpred');
+        assignin('base','OLPredData',datastruct);
+    end
+
 %% Real-Time Predictions Panel
 
 %Buttons
@@ -451,7 +495,9 @@ function BMIDataAnalyzer()
     RTPred_PlotVsActButton = uicontrol('Parent', RTPred_Panel, 'String', 'Plot vs Actual', 'Units','normalized',...
                             'Position', [.7 .2 .2 .3],'Callback',@RTPred_PlotVsActButton_Callback,'Enable','off');
 
-    
+    RTPred_WSButton = uicontrol('Parent', RTPred_Panel, 'String', 'WS', 'Units','normalized',...
+                            'Position', [.02 .2 .06 .3],'Callback',@RTPred_WSButton_Callback,'Enable','off');  
+                        
     %Callbacks
     function RTPred_LoadButton_Callback(obj,event)
         [RTPred_FileName, PathName] = uigetfile([dataPath '\RTPreds\*.mat'], 'Open Real-Time Predictions Data File');
@@ -460,6 +506,7 @@ function BMIDataAnalyzer()
           disp('User action cancelled');
         else
             RTPred_FullFileName = fullfile(PathName, RTPred_FileName);
+            set(RTPred_WSButton,'Enable','on');
             if Bin_FileName
                 set(RTPred_R2VsActButton,'Enable','on');
                 set(RTPred_PlotVsActButton,'Enable','on');
@@ -488,6 +535,10 @@ function BMIDataAnalyzer()
         ActualvsRTPred(ActualData,PredData,plotflag);    
     end
 
+    function RTPred_WSButton_Callback(obj,event)
+        datastruct = LoadDataStruct(RTPred_FullFileName,'RTpred');
+        assignin('base','RTPredData',datastruct);
+    end
 
 %% Stimulator Commands Panel
 

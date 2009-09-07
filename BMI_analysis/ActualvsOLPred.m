@@ -1,37 +1,56 @@
-function ActualvsOLPred(EMGData, PredData, plotflag)
+function ActualvsOLPred(ActualData, PredData, plotflag)
 
-    numEMGs = size(EMGData.emgguide,1);
-
-    max_mintime = max(EMGData.timeframe(1),PredData.timeframe(1));
-    min_maxtime = min(EMGData.timeframe(end),PredData.timeframe(end));
+    numPredSignals = size(PredData.preddatabin,2);
     
-    start_EMG  = find(EMGData.timeframe == max_mintime);
-    finish_EMG = find(EMGData.timeframe == min_maxtime);    
+    max_mintime = max(ActualData.timeframe(1),PredData.timeframe(1));
+    min_maxtime = min(ActualData.timeframe(end),PredData.timeframe(end));
+    
+    start_Act  = find(ActualData.timeframe == max_mintime);
+    finish_Act = find(ActualData.timeframe == min_maxtime);    
 
     start_Pred  = find(PredData.timeframe == max_mintime);
     finish_Pred = find(PredData.timeframe == min_maxtime);
     
-    R2 = CalculateR2(EMGData.emgdatabin(start_EMG:finish_EMG,:),PredData.predemgbin(start_Pred:finish_Pred,:));
+    ActSignals = zeros(length(start_Act:finish_Act), numPredSignals);
+    
+    for i=1:numPredSignals
+        if ~isempty(ActualData.emgdatabin)
+            if all(strcmp(ActualData.emgguide(1,:),PredData.outnames(i,:)))
+                ActSignals(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(start_Act:finish_Act,:);
+            end
+        end
+        if ~isempty(ActualData.forcedatabin)
+            if all(strcmp(ActualData.forcelabels(1,:),PredData.outnames(i,:)))
+                ActSignals(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(start_Act:finish_Act,:);
+            end
+        end
+        if ~isempty(ActualData.cursorposbin)
+            if all(strcmp(ActualData.cursorposlabels(1,:),PredData.outnames(i,:)))
+                ActSignals(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(start_Act:finish_Act,:);
+            end
+        end    
+    end
+    
+    R2 = CalculateR2(ActSignals,PredData.preddatabin(start_Pred:finish_Pred,:));
     
     %Display R2
     disp('R2 = ');
 
-    for z=1:numEMGs
-        disp(sprintf('%s\t%1.4f',EMGData.emgguide(z,:),R2(z,1)));
+    for z=1:numPredSignals
+        disp(sprintf('%s\t%1.4f',PredData.outnames(z,:),R2(z,1)));
     end
     aveR2 = mean(R2);
     disp(sprintf('Average:\t%1.4f',aveR2));
         
     if plotflag==1
                
-        for i = 1:numEMGs
-            %Plot both Actual and Predicted EMG signals
+        for i = 1:numPredSignals
+            %Plot both Actual and Predicted signals
             figure;
-            plot(EMGData.timeframe,EMGData.emgdatabin(:,i),'k');
+            plot(ActualData.timeframe(start_Act:finish_Act),ActSignals(:,i),'k');
             hold on;
-    %        plot(ActualBinnedEMGs.timeframe(fillen:end),PredictedEMGs(:,i),'r');
-            plot(PredData.timeframe,PredData.predemgbin(:,i),'r');
-            title(EMGData.emgguide(i,:));
+            plot(PredData.timeframe,PredData.preddatabin(:,i),'r');
+            title(PredData.outnames(i,:));
             legend('Actual',['Predicted (R2= ' num2str(R2(i),3) ')']);
         end
     end

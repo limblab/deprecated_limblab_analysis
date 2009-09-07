@@ -1,4 +1,4 @@
-function [IDX,vb,MDLneurons,AICneurons,neurons95]=SelectBestInputsEJP2(Xin,Y,nlags);
+function [IDX,vb,MDLneurons,AICneurons,neurons95]=SelectBestInputsEJP2(Xin,Y,nlags)
 %Function select the optimal set of inputs based upon their unique
 % contributions to the output.  Based upon linear MISO prediction.
 %
@@ -11,7 +11,7 @@ function [IDX,vb,MDLneurons,AICneurons,neurons95]=SelectBestInputsEJP2(Xin,Y,nla
 nInputs=size(Xin,2);
 
 %Initial run with all inputs
-[H,v,mcc,vi]=filMISOSVDEJP2(Xin,Y,nlags,1,1,2);
+[H,v,mcc,vi]=FilmisoSVDEJP2(Xin,Y,nlags,1,1,2);
 
 %Store data and results for using all inputs
 Xbest=Xin;

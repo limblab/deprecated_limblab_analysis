@@ -25,7 +25,7 @@ function STA = STA(stim_ts, signals, timeBefore, timeAfter)
     %Average
     for i=1:numStim_ok
         low = find(signals(:,1)>=stim_ts(i)-timeBefore,1,'first');
-        high= low + windowLength-1;
+        high= round(low) + windowLength-1;
         tempSTA(:,:,i)= signals(low:high,2:end);
     end
         

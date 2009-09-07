@@ -23,7 +23,7 @@ function varargout = BuildModelGUI(varargin)
 
 % Edit the above text to modify the response to help BuildModelGUI
 
-% Last Modified by GUIDE v2.5 03-Sep-2009 15:12:14
+% Last Modified by GUIDE v2.5 04-Sep-2009 15:48:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,11 +79,15 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
     lagtime = get(handles.fillen_txtbx,'Value');
     Inputs = get(handles.Inputs_popup,'Value')-1;
     Polyn_Order = get(handles.Polyn_Order_txtbx,'Value');
+    Pred_EMG = get(handles.EMG_cbx,'Value');
+    Pred_Force = get(handles.Force_cbx,'Value');
+    Pred_CursPos = get(handles.CursPos_cbx,'Value');
+    
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order};
+     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -180,5 +184,32 @@ function Polyn_Order_txtbx_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in EMG_cbx.
+function EMG_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to EMG_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of EMG_cbx
+
+
+% --- Executes on button press in Force_cbx.
+function Force_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Force_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Force_cbx
+
+
+% --- Executes on button press in CursPos_cbx.
+function CursPos_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to CursPos_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of CursPos_cbx
 
 

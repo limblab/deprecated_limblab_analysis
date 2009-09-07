@@ -23,7 +23,7 @@ function varargout = mfxvalGUI(varargin)
 
 % Edit the above text to modify the response to help mfxvalGUI
 
-% Last Modified by GUIDE v2.5 03-Sep-2009 21:01:12
+% Last Modified by GUIDE v2.5 06-Sep-2009 12:21:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -80,9 +80,12 @@ function varargout = mfxvalGUI_OutputFcn(hObject, eventdata, handles)
     Inputs = get(handles.Inputs_popup,'Value')-1;
     Polyn_Order = get(handles.Polyn_Order_txtbx,'Value');
     foldlength = get(handles.fold_length_txtbx,'Value');
+    PredEMGs = get(handles.PredEMG_cbx, 'Value');
+    PredForce = get(handles.PredForce_cbx, 'Value');
+    PredCurs = get(handles.PredCurs_cbx, 'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order, foldlength};
+     varargout = {lagtime, Inputs, Polyn_Order, foldlength, PredEMGs, PredForce, PredCurs};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -202,5 +205,32 @@ function fold_length_txtbx_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in PredEMG_cbx.
+function PredEMG_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to PredEMG_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of PredEMG_cbx
+
+
+% --- Executes on button press in PredForce_cbx.
+function PredForce_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to PredForce_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of PredForce_cbx
+
+
+% --- Executes on button press in PredCurs_cbx.
+function PredCurs_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to PredCurs_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of PredCurs_cbx
 
 

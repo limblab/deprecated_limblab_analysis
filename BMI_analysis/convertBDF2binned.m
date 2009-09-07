@@ -35,7 +35,14 @@ function binnedData = convertBDF2binned(varargin)
     %Default Parameters (all units are in seconds):
     binsize = 0.02;
     starttime = 0.0;
-    duration = datastruct.emg.data(end,1);
+    if isfield(datastruct, 'emg')
+        duration = datastruct.emg.data(end,1);
+    elseif isfield(datastruct,'force')
+        duration = datastruct.force.data(end,1);
+    else
+        error('BDF2BIN: no emg or force field present in input structure');
+    end
+        
     stoptime = floor(duration);
     EMG_hp = 50; % default high pass at 50 Hz
     EMG_lp = 10; % default low pass at 10 Hz
@@ -106,7 +113,7 @@ function binnedData = convertBDF2binned(varargin)
         %%%specified.  Finally it is downsampled to match the desired binsize.
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         emgsamplerate = datastruct.emg.emgfreq;   %Rate at which emg data were actually acquired.
-        EMGname = char(zeros(1,8));
+        EMGname = char(zeros(1,12));
         numEMGs = length(datastruct.emg.emgnames);
         emgguide = char(zeros(numEMGs,length(EMGname)));
         emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
@@ -135,7 +142,7 @@ function binnedData = convertBDF2binned(varargin)
             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
 
         end    
-        clear tempEMG bh ah bl al emgtimebins EMGname;
+        clear tempEMG bh ah bl al emgtimebins EMGname numEMGs;
     end
 
 %% Bin Force
@@ -144,16 +151,21 @@ function binnedData = convertBDF2binned(varargin)
         forcedatabin = [];
         forcelabels = [];
     else
-        
-        forcesamplerate = 1/( datastruct.force(2,1)-datastruct.force(1,1));
+        forcesamplerate = datastruct.force.forcefreq;   %Rate at which emg data were actually acquired.
+        forcename = char(zeros(1,12));
+        numforcech = length(datastruct.force.labels);
+        forcelabels = char(zeros(numforcech,length(forcename)));
         forcetimebins = starttime*forcesamplerate+1:stoptime*forcesamplerate;
-        forcelabels = char(datastruct.raw.analog.channels(strncmp(datastruct.raw.analog.channels,'Force_', 6)...
-                                                            |strncmp(datastruct.raw.analog.channels,'force_', 6)));         
-
+        
+        for i=1:numforcech
+            forcename = char(datastruct.force.labels(i));
+            forcelabels(i,1:length(forcename))= forcename;
+        end
+        
         %downsample force data to desired bin size        
-        forcedatabin = resample(datastruct.force(forcetimebins,2:end), 1/binsize, forcesamplerate);
+        forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
 
-        clear forcesamplerate forcetimebins;
+        clear forcesamplerate forcetimebins forcename numforcech;
     end
 
 %% Bin Cursor Position
@@ -164,7 +176,10 @@ function binnedData = convertBDF2binned(varargin)
     else
         cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0);
     end
-        
+    
+    cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
+    cursposlabels(1,1:5)= 'x_pos';
+    cursposlabels(2,1:5)= 'y_pos';
 %% Bin Spike Data
 
     if ~isfield(datastruct, 'units')
@@ -253,6 +268,7 @@ function binnedData = convertBDF2binned(varargin)
                            'forcedatabin',forcedatabin,...
                            'spikeguide',spikeguide,...
                            'spikeratedata',spikeratedata,...
+                           'cursorposlabels',cursposlabels,...
                            'cursorposbin',cursorposbin);
                                
 %% Save the binned data in a mat file

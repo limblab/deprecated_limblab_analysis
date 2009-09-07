@@ -202,24 +202,41 @@ function out_struct = calc_from_raw(varargin)
             progress = progress + .05;
             waitbar(progress, h, sprintf('Aggregating data...\nget force'));
         end
-
-        % extract force data for WF and MG task here
-        force_x = get_analog_signal(out_struct, 'Force_x');
-        if isempty(force_x)
-            force_x = get_analog_signal(out_struct, 'force_x');
+        
+        %verify that all force channels are rec with same sampling rate
+        if ~all(out_struct.raw.analog.adfreq(force_channels)== out_struct.raw.analog.adfreq(force_channels(1)))
+            close(h);
+            error('BDF:unequalForceFreqs','Not all Force channels have the same sampling frequency');
+        else
+            out_struct.force.forcefreq = out_struct.raw.analog.adfreq(force_channels(1));
         end
         
-        force_y = get_analog_signal(out_struct, 'Force_y');
-        if isempty(force_y)
-            force_y = get_analog_signal(out_struct, 'force_y');
+        % extract force data for WF and MG task here
+        out_struct.force.labels = out_struct.raw.analog.channels(force_channels);
+        out_struct.force.data = zeros(size(out_struct.raw.analog.data{force_channels(1)},1),length(force_channels)+1);
+       
+        for i=1:length(force_channels)
+            out_struct.force.data(:,[1 i+1]) = get_analog_signal(out_struct, out_struct.force.labels{i});
         end
-        if ~isempty(force_y)
-            if ~isequal(force_x(:,1),force_y(:,1))
-                close(h);
-                error('BDF:inconsistentForceSigs','Time base for the two force signals are different');
-            end
-        end
-        out_struct.force = [force_x(:,1) force_x(:,2) force_y(:,2)];
+
+%         
+%         force_x = get_analog_signal(out_struct, 'Force_x');
+%         if isempty(force_x)
+%             force_x = get_analog_signal(out_struct, 'force_x');
+%         end
+%         
+%         force_y = get_analog_signal(out_struct, 'Force_y');
+%         if isempty(force_y)
+%             force_y = get_analog_signal(out_struct, 'force_y');
+%         end
+% 
+%         if ~isempty(force_y)
+%             if ~isequal(force_x(:,1),force_y(:,1))
+%                 close(h);
+%                 error('BDF:inconsistentForceSigs','Time base for the two force signals are different');
+%             end
+%         end
+%         out_struct.force.data = [force_x(:,1) force_x(:,2) force_y(:,2)];
     end
     
     % Stimulator serial data

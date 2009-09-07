@@ -2,7 +2,7 @@ function datastruct = LoadDataStruct(filename,type)
 % loads a bdf mat file
 % usage: datastruct = loaddatastruct(filename)
 %       filename : the name of the mat file to be loaded
-%       type : 'bdf' | 'binned' | 'pred' | 'filter'
+%       type : 'bdf' | 'binned' | 'OLpred' | 'RTPred' | 'filter'
 %       datastruct output: holder for the loaded bdf structure
        
 
@@ -13,7 +13,7 @@ if (nargin~=2)
     disp(' of a data structure in workspace or name of a .mat file');
     disp('usage:');
     disp('DataStruct=loaddatastruct(''myfile'')    % load data struct from ''myfile''');
-    disp('Type = ''bdf'' | ''binned'' | ''pred'' | ''filter''');
+    disp('Type = ''bdf'' | ''binned'' | ''OLpred'' | ''RTpred'' | ''filter''');
     return
 end
 
