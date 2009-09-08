@@ -69,7 +69,7 @@ end
 %% Force Panel
 if isfield(datastruct,'force')
 
-    ForceNames = {'Force\_x' 'Force\_y'};
+    ForceNames = datastruct.force.labels;
 
     Force_x_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String','Force x',...
                                  'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Force_chbx_Callback,1});
@@ -289,7 +289,7 @@ end
             hold off; axis auto;
             FilteredEMGs = FiltEMGs();
             FilteredForce= FiltForce();
-            [AX,H1,H2]=plotyy(datastruct.emg.data(:,1),FilteredEMGs,datastruct.force(:,1),FilteredForce);
+            [AX,H1,H2]=plotyy(datastruct.emg.data(:,1),FilteredEMGs,datastruct.force.data(:,1),FilteredForce);
             [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot),'Location','NorthWest');
             [leghf,objhf,outhf,outmf]=legend(AX(2),ForceNames(Force_to_plot),'Location','NorthEast');
             legh = [leghe; leghf];
@@ -306,7 +306,7 @@ end
         elseif (usr_plotForce) %plot Force but no EMG
             hold off; axis auto;            
             FilteredForce= FiltForce();
-            force_handles = plot(datastruct.force(:,1),FilteredForce);
+            force_handles = plot(datastruct.force.data(:,1),FilteredForce);
             [legh,objh,outh,outm]=legend(force_handles, ForceNames(Force_to_plot),'Location','NorthEast');
         end
        
@@ -405,7 +405,7 @@ end
             EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.emg.emgfreq(1),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
                                       
-            Force_PWTH = PWTH(datastruct.force(:,[1; Force_to_plot+1]),datastruct.raw.analog.adfreq(1),datastruct.words,...
+            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.force.forcefreq(1),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
                             
             hold off; axis auto;
@@ -429,7 +429,7 @@ end
             
         elseif (usr_plotForce) %plot Force but no EMG
             hold off; axis auto;
-            Force_PWTH = PWTH(datastruct.force(:,[1; Force_to_plot+1]),datastruct.raw.analog.adfreq(1),datastruct.words,...
+            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.raw.analog.adfreq(1),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
             FilteredForce= FiltForce(Force_PWTH(:,2:end));
             force_handles = plot(Force_PWTH(:,1),FilteredForce);
@@ -491,7 +491,7 @@ end
         if nargin
             tempForce = varargin{1}
         else
-            tempForce = datastruct.force(:,Force_to_plot+1);
+            tempForce = datastruct.force.data(:,Force_to_plot+1);
         end
         
         lowpassfreq = 20; %20Hz
