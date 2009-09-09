@@ -26,11 +26,9 @@ for i = 1:length(matchingInputs)
 end
 
 %% Outputs:  (assign memory with real or dummy data, just cause predMIMO requires something there
-if isfield(BinnedData,'emgdatabin')
-    ActualEMGs=BinnedData.emgdatabin;
-else % just send dummy data as outputs for the function
-    ActualEMGs=spikeData;
-end
+% just send dummy data as outputs for the function
+ActualEMGs=zeros(size(spikeData));
+
 
 %% Use the neural filter to predict the EMGs
 numsides=1; fs=1;
