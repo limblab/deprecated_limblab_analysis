@@ -102,9 +102,9 @@ function OK_Button_Callback(hObject, eventdata, handles)
     if mod(get(handles.fillen_txtbx,'Value'),handles.binsize)
         %1- Check that filter length is a multiple of binsize
         errordlg('Filter Length must be a multiple of binsize','Stop farting around!');
-    elseif get(handles.Polyn_Order_txtbx,'Value')>4 || get(handles.Polyn_Order_txtbx,'Value') <1
+    elseif get(handles.Polyn_Order_txtbx,'Value')>4 || get(handles.Polyn_Order_txtbx,'Value') <0
         %2- check that the polynomial order is within reasonable limits
-        errordlg('Polynomial Order must be between 1 and 4','Stop farting around!');
+        errordlg('Polynomial Order must be between 0 and 4','Stop farting around!');
     else      
         uiresume(handles.figure1);
     end
