@@ -198,7 +198,10 @@ function binnedData = convertBDF2binned(varargin)
 
         %Identify the sorted units %%%with minimum spike rate%%%
         for i=1:totalnumunits
-
+            
+            if isempty(datastruct.units(i).id)
+                continue;
+            end
             % skip unsorted units, which are mostly noise. skip units id 255,
             % in autosort, I don't know what this is...
             if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)

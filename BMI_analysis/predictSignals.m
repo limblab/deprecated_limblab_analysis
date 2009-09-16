@@ -25,28 +25,36 @@ for i = 1:length(matchingInputs)
     end
 end
 
-%% Outputs:  (assign memory with real or dummy data, just cause predMIMO requires something there
+% Uncomment next line to use EMGs as model inptuts:
+%usableSpikeData=BinnedData.emgdatabin;
+
+%% Outputs:  assign memory with real or dummy data, just cause predMIMO requires something there
 % just send dummy data as outputs for the function
-ActualEMGs=zeros(size(spikeData));
+ActualData=zeros(size(spikeData));
 
-
-%% Use the neural filter to predict the EMGs
+%% Use the neural filter to predict the Data
 numsides=1; fs=1;
-[PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualEMGs);
-%% remove firts bin of Predicted EMGs since it appears to be garbage...
-%PredictedEMGs = PredictedEMGs(2:end, :);
+[PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
 
-clear ActualEMGs spikeData;
+clear ActualData spikeData;
 
+%% Threshold: apply threshold to predicted data
+if ~isempty(filter.T)
+    BetweenThresholds = false(size(PredictedData));
+    for z=1:size(PredictedData,2)
+            BetweenThresholds(:,z) = and(PredictedData(:,z)>=filter.T(z,1),PredictedData(:,z)<=filter.T(z,2));
+            PredictedData(BetweenThresholds(:,z),z)= filter.patch(z);
+    end
+end 
 %% If you have one, convolve the predictions with a Wiener cascade polynomial.
-if size(filter.P)>1
+if ~isempty(filter.P)
     Ynonlinear=zeros(size(PredictedData));
     for z=1:size(PredictedData,2);
         Ynonlinear(:,z) = polyval(filter.P(z,:),PredictedData(:,z));
     end
     PredictedData=Ynonlinear;
 end
-
+    
 %% Aggregate Outputs in a Structure
 
 [numpts,Nx]=size(usableSpikeData);

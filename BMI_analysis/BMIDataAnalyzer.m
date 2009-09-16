@@ -301,8 +301,8 @@ function BMIDataAnalyzer()
         binnedData = LoadDataStruct(Bin_FullFileName,'binned');
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
-        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos] = BuildModelGUI(binsize);
-        [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos);
+        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh] = BuildModelGUI(binsize);
+        [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
         clear binnedData;
         
         disp('Done.');

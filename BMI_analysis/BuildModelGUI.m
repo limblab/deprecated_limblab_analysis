@@ -23,7 +23,7 @@ function varargout = BuildModelGUI(varargin)
 
 % Edit the above text to modify the response to help BuildModelGUI
 
-% Last Modified by GUIDE v2.5 04-Sep-2009 15:48:19
+% Last Modified by GUIDE v2.5 15-Sep-2009 15:58:51
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -82,12 +82,13 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
     Pred_EMG = get(handles.EMG_cbx,'Value');
     Pred_Force = get(handles.Force_cbx,'Value');
     Pred_CursPos = get(handles.CursPos_cbx,'Value');
+    Use_Thresh = get(handles.Thresh_cbx,'Value');
     
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos};
+     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Use_Thresh};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -99,12 +100,12 @@ function OK_Button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
     
     %Check that all parameters are valid
-    if mod(get(handles.fillen_txtbx,'Value'),handles.binsize)
+    if mod(get(handles.fillen_txtbx,'Value'),handles.binsize)> 0.000001
         %1- Check that filter length is a multiple of binsize
         errordlg('Filter Length must be a multiple of binsize','Stop farting around!');
-    elseif get(handles.Polyn_Order_txtbx,'Value')>4 || get(handles.Polyn_Order_txtbx,'Value') <0
+    elseif get(handles.Polyn_Order_txtbx,'Value')>8 || get(handles.Polyn_Order_txtbx,'Value') <0
         %2- check that the polynomial order is within reasonable limits
-        errordlg('Polynomial Order must be between 0 and 4','Stop farting around!');
+        errordlg('Polynomial Order must be between 0 and 8','Stop farting around!');
     else      
         uiresume(handles.figure1);
     end
@@ -211,5 +212,14 @@ function CursPos_cbx_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of CursPos_cbx
+
+
+% --- Executes on button press in Thresh_cbx.
+function Thresh_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Thresh_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Thresh_cbx
 
 

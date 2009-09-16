@@ -8,7 +8,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %       dataPath            : string of the path of the data folder
 %       UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos} : flags to include EMG, Force and Cursor Position in the prediction model (0=no,1=yes)
+%       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh} : flags to include EMG, Force, Cursor Position and Thresholding in the prediction model (0=no,1=yes)
 
    addpath ..\mimo\
    
@@ -27,6 +27,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     PredEMG = 1;
     PredForce = 0;
     PredCursPos = 0;
+    Use_Thresh = 0;
     
     %overwrite if specified in arguments
     if nargin > 5
@@ -35,6 +36,9 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
             PredForce = varargin{2};
             if nargin > 7
                 PredCursPos = varargin{3};
+                if nargin > 8
+                    Use_Thresh = varargin{4};
+                end
             end
         end
     end
@@ -88,6 +92,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     numsides=1;     %%%For a one-sided or causal filter
 
     Inputs = binnedData.spikeratedata(:,desiredInputs);
+    
+    %Uncomment next line to use EMG as inputs for predictions
+%     Inputs = binnedData.emgdatabin;
+   
     Outputs = [];
     OutNames = [];
     
@@ -107,25 +115,51 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     %%%The following calculates the linear filters (H) that relate the inputs and outputs
     [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
     
-%% Then, find polynomial
+%% Then, add non-linearity
 
-    %%Predict EMGs
     fs=1; numsides=1;
     
     [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
 
+    P=[];    
+    T=[];
+    patch = [];
+    
     if PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity
         for z=1:size(PredictedData,2)
-            [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
-            %[P(z,:)] = WienerNonlinearity([detrend(Y(:,z),'constant')+mean(Yact(:,z))], [detrend(Yact(:,z),'constant')+mean(Yact(:,z))], PolynomialOrder, 'plot');
-            PredictedData(:,z) = polyval(P(z,:),PredictedData(:,z));
+            if Use_Thresh            
+                %Find Threshold
+                T_default = 1.25*std(PredictedData(:,z));
+                [T(z,1), T(z,2), patch(z)] = findThresh(ActualDataNew(:,z),PredictedData(:,z),T_default);
+                IncludedDataPoints = or(PredictedData(:,z)>=T(z,2),PredictedData(:,z)<=T(z,1));
+
+                %Apply Threshold to linear predictions and Actual Data
+                PredictedData_Thresh = PredictedData(IncludedDataPoints,z);
+                ActualData_Thresh = ActualDataNew(IncludedDataPoints,z);
+
+                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
+                Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
+                                 (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
+                Act_patches = mean(ActualDataNew(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
+
+                %Find and apply Polynomial to Thresholded Data
+                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+
+                %Do not use threshold anymore:
+                %(uncomment next line to use threshold in the predictions)
+%                PredictedData(~IncludedDataPoints,z)=patch(z);
+                T=[]; patch=[];
+            else
+                [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder,'plot');
+            end
+            PredictedData(:,z)=polyval(P(z,:),PredictedData(:,z));
         end
     end
   
 %% Outputs
 
-    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
+    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
 
     if nargout > 1
                
@@ -137,4 +171,69 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     
 end
 
+function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
 
+    thresholding = 1;
+    h = figure;
+    xT = [0 length(LinPred)];
+    offset = mean(LinPred)-mean(ActualData);
+    LinPred = LinPred-offset;
+    Tsup=mean(LinPred)+T;
+    Tinf=mean(LinPred)-T;
+    patch = mean(ActualData);
+    
+        while thresholding
+            hold off; axis('auto');
+            plot(ActualData,'b');
+            hold on;
+            plot(LinPred,'r');
+            plot(xT,[Tsup Tsup],'k--',xT,[Tinf Tinf],'k--');
+            legend('Actual Data', 'Linear Fit','Threshold');
+            axis('manual');
+            reply = input(sprintf('Redefine High Threshold? [%g] : ',Tsup));
+            if ~isempty(reply)
+                Tsup = reply;
+            else
+                thresholding=0;
+            end
+        end
+        thresholding=1;
+        while thresholding
+            axis('auto');
+            hold off;
+            plot(ActualData,'b');
+            hold on;
+            plot(LinPred,'r');
+            plot(xT,[Tsup Tsup],'k--',xT,[Tinf Tinf],'k--');
+            legend('Actual Data', 'Linear Fit','Threshold');
+            axis('manual');
+            reply = input(sprintf('Redefine Low Threshold? [%g] : ',Tinf));
+            if ~isempty(reply)
+                Tinf = reply;
+            else
+                thresholding=0;
+            end
+        end
+        thresholding=1;
+        while thresholding
+            axis('auto');
+            hold off;
+            plot(ActualData,'b');
+            hold on;
+            plot(LinPred,'r');
+            plot(xT,[Tsup Tsup],'k--',xT,[Tinf Tinf],'k--', xT,[patch patch],'g');
+            legend('Actual Data', 'Linear Fit','Threshold');
+            axis('manual');
+            reply = input(sprintf('Redefine Threshold Value? [%g] : ',patch));
+            if ~isempty(reply)
+                patch = reply;
+            else
+                thresholding=0;
+            end
+        end
+        Tsup = Tsup+offset;
+        Tinf = Tinf+offset;
+        patch = patch+offset;
+        
+    close(h);
+end
