@@ -70,23 +70,43 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1);
+    
     if (nargin == 1)
         filename = varargin{1};
-        verbose = 0;
-    elseif (nargin == 2)
+    else
         filename = varargin{1};
-        verbose = varargin{2};
-    else
-        error ('Invalid number of arguments');
+        for i = 2:nargin
+            opt_str = char(varargin{i} + ...
+                (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case
+            
+            if strcmp(opt_str, 'verbose')
+                opts.verbose = 1;
+            elseif strcmp(opt_str, 'progbar')
+                opts.progbar = 1;
+            elseif strcmp(opt_str, 'noforce')
+                opts.force = 0;
+            elseif strcmp(opt_str, 'nokin')
+                opts.kin = 0;
+                opts.force = 0;
+                warning('GetPlxData:InvalidOption','NoKin option not currently implemented');
+            else
+                error('Unrecognized option: %s', opt_str);
+            end
+        end
     end
 
-    progress = 0;
-    if (verbose == 1)
-        h = waitbar(0, sprintf('Opening: %s', filename));
-    else
-        h = 0;
+    if (opts.verbose)
+        disp(sprintf('Opening: %s', filename));
     end
-
+    
+    %progress = 0;
+    %if (verbose == 1)
+    %    h = waitbar(0, sprintf('Opening: %s', filename));
+    %else
+    %    h = 0;
+    %end
+        
 %% Data From PLX File    
 
     % Get MetaData
@@ -99,9 +119,9 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
-    out_struct.units = get_units_plx(filename, verbose);
-    out_struct.raw = get_raw_plx(filename, verbose);
-    out_struct.keyboard_events = get_keyboard_plx(filename, verbose);
+    out_struct.units = get_units_plx(filename, opts);
+    out_struct.raw = get_raw_plx(filename, opts);    
+    out_struct.keyboard_events = get_keyboard_plx(filename, opts);
     
 %% Clean up
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
@@ -112,6 +132,10 @@ function out_struct = get_plexon_data(varargin)
     
 %% Extract data from the raw struct
     
-    out_struct = calc_from_raw(out_struct,verbose);
+    out_struct = calc_from_raw(out_struct,opts);
 
+    if opts.verbose
+        disp('Done')
+    end
+    
 end

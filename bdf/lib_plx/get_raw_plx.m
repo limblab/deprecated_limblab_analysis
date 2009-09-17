@@ -1,4 +1,4 @@
-function raw = get_raw_plx(filename, verbose)
+function raw = get_raw_plx(filename, opts)
 % GET_RAW_PLX extracts the units from the named plx file
 %   RAW = GET_RAW_PLX(FILENAME, VERBOSE) returns the bdf.raw 
 %       structure from the named plx file.  If a progress bar is desired
@@ -6,6 +6,10 @@ function raw = get_raw_plx(filename, verbose)
 %       progress bar, pass 0.
 
 % $Id$
+
+    if opts.verbose
+        disp('Reading continuous data...')
+    end
 
     % list of channels that we care about
     [tscounts, wfcounts, evcounts] = plx_info(filename,1); %#ok<SETNU>
@@ -32,10 +36,10 @@ function raw = get_raw_plx(filename, verbose)
                 chan_count = chan_count + 1;
             end           
 
-            if (verbose == 1)
-                progress = progress + .3/64;
-                waitbar(progress, h, sprintf('Opening: %s\nget analog (%d of %d)', filename, i+1, 64));
-            end
+            %if (verbose == 1)
+            %    progress = progress + .3/64;
+            %    waitbar(progress, h, sprintf('Opening: %s\nget analog (%d of %d)', filename, i+1, 64));
+            %end
         end
 
         raw.analog.channels = tmp_channels;
@@ -52,6 +56,9 @@ function raw = get_raw_plx(filename, verbose)
     end
         
     % get strobed events and values
+    if opts.verbose
+        disp('Reading digital events...')
+    end
     try
         [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
         raw.enc = get_encoder([strobe_ts strobe_value]);
@@ -62,10 +69,10 @@ function raw = get_raw_plx(filename, verbose)
 
     % Get individual events
     for i = 3:10
-        if (verbose == 1)
-            progress = progress + .2/8;
-            waitbar(progress, h, sprintf('Opening: %s\nget events', filename));
-        end
+%        if (verbose == 1)
+%            progress = progress + .2/8;
+%            waitbar(progress, h, sprintf('Opening: %s\nget events', filename));
+%        end
 
         try
             [n, ts] = plx_event_ts(filename, i);

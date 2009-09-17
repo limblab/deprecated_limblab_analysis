@@ -1,4 +1,4 @@
-function units = get_units_plx(filename, verbose)
+function units = get_units_plx(filename, opts)
 % GET_UNITS_PLX extracts the units from the named plx file
 %   UNITS = GET_UNITS_PLX(FILENAME, VERBOSE) returns the bdf.units 
 %       structure from the named plx file.  If a progress bar is desired
@@ -7,11 +7,15 @@ function units = get_units_plx(filename, verbose)
 
 % $Id$
 
-    if verbose ~= 0
-        h = verbose;
-        progress = 0;
-    end
+    %if verbose ~= 0
+    %    h = verbose;
+    %    progress = 0;
+    %end
 
+    if opts.verbose
+        disp('Reading units...')
+    end
+    
     % Get general info needed for events and units
     tscounts = plx_info(filename, 1);
     [max_num_units num_channels] = size(tscounts);
@@ -25,10 +29,10 @@ function units = get_units_plx(filename, verbose)
     unit_counter = 1;
 
     for chan = 1:num_channels-1
-        if (verbose == 1)
-            progress = progress + .3/num_channels;
-            waitbar(progress, h, sprintf('Opening: %s\nget units (%d)', filename, chan));
-        end
+        %if (verbose == 1)
+        %    progress = progress + .3/num_channels;
+        %    waitbar(progress, h, sprintf('Opening: %s\nget units (%d)', filename, chan));
+        %end
         for unit = 1:max_num_units-1
             % only create a unit if it has spikes
             if (tscounts(unit+1, chan+1) > 0)

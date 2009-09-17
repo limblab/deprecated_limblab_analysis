@@ -241,7 +241,8 @@ function out_struct = get_cerebus_data(varargin)
     
 %% Extract data from the raw struct
 
-    out_struct = calc_from_raw(out_struct,verbose);
+    opts = struct('verbose', verbose, 'progbar', 0, 'force', 1, 'kin', 1);
+    out_struct = calc_from_raw(out_struct, opts);
     
     rmpath ./lib_cb
     rmpath ./event_decoders
