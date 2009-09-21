@@ -143,17 +143,25 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                                  (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
                 Act_patches = mean(ActualDataNew(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
 
-                %Find and apply Polynomial to Thresholded Data
+                %Find Polynomial to Thresholded Data
                 [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-
-                %Do not use threshold anymore:
-                %(uncomment next line to use threshold in the predictions)
-%                PredictedData(~IncludedDataPoints,z)=patch(z);
-                T=[]; patch=[];
+                
+                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%%% Use only one of the following 2 lines:
+                %
+                %   1-Use the threshold only to find polynomial, but not in the model data
+%                 T=[]; patch=[];                
+                %
+                %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
+                PredictedData(~IncludedDataPoints,z)= patch(z);
+                %
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
-                [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+                %Find and apply polynomial
+                [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder,'plot');
             end
-            PredictedData(:,z)=polyval(P(z,:),PredictedData(:,z));
+            PredictedData(:,z) = polyval(P(z,:),PredictedData(:,z));
         end
     end
   
