@@ -23,7 +23,7 @@ function varargout = mfxvalGUI(varargin)
 
 % Edit the above text to modify the response to help mfxvalGUI
 
-% Last Modified by GUIDE v2.5 06-Sep-2009 12:21:50
+% Last Modified by GUIDE v2.5 17-Sep-2009 11:00:12
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -83,9 +83,10 @@ function varargout = mfxvalGUI_OutputFcn(hObject, eventdata, handles)
     PredEMGs = get(handles.PredEMG_cbx, 'Value');
     PredForce = get(handles.PredForce_cbx, 'Value');
     PredCurs = get(handles.PredCurs_cbx, 'Value');
+    Use_Thresh = get(handles.Thresh_cbx, 'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order, foldlength, PredEMGs, PredForce, PredCurs};
+     varargout = {lagtime, Inputs, Polyn_Order, foldlength, PredEMGs, PredForce, PredCurs, Use_Thresh};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -232,5 +233,14 @@ function PredCurs_cbx_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of PredCurs_cbx
+
+
+% --- Executes on button press in Thresh_cbx.
+function Thresh_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Thresh_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Thresh_cbx
 
 
