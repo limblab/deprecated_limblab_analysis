@@ -23,9 +23,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
     %    h = 0;
     %end
 
-    if opts.verbose
+    if opts.verbose==1
         disp('Reading continuous data...')
     end
+  
 
 %% Calculated Data
   
@@ -106,7 +107,11 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 analog_time_base = start_time:1/adfreq:stop_time;
             end
 
-            l1 = 24.0; l2 = 23.5;
+            if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
+                l1=24.0; l2=23.5;
+            else
+                l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
+            end
             th_t = out_struct.raw.enc(:,1); % encoder time stamps
 
             [b,a] = butter(8, 100/adfreq);

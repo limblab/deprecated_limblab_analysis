@@ -90,7 +90,9 @@ function out_struct = get_plexon_data(varargin)
                 opts.kin = 0;
                 opts.force = 0;
                 warning('GetPlxData:InvalidOption','NoKin option not currently implemented');
-            else
+            elseif isnumeric(varargin{i})
+                opts.labnum=varargin{i};    %Allow entering of the lab number               
+            else 
                 error('Unrecognized option: %s', opt_str);
             end
         end

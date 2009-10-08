@@ -192,10 +192,17 @@ function run_all_units(data, verbose)
         tmp_gof = [tmp_gof; res_g];             %#ok<AGROW>
         tmp_peakness = [tmp_peakness; res_p];   %#ok<AGROW>
         
+        
         % write figure to ps
-        set(gcf, 'PaperPosition', [1.25 2.5 6 6]);
-        print('-r600', '-dpsc2', sprintf('tmp/fig%d', j));
-        close(gcf);
+%         set(gcf, 'PaperPosition', [1.25 2.5 6 6]);
+%         print('-r600', '-dpsc2', sprintf('tmp/fig%d', j));
+%         close(gcf);
+        if ~exist('savedir','var')
+            savedir=[];
+        end
+        suptitle(['Unit number ',num2str(j)])
+        saveas(gcf,[savedir,'Unitanalysis #',num2str(j)],'fig')
+        close(gcf)
         
         % status bar
         if verbose
