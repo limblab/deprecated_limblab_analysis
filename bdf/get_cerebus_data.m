@@ -13,27 +13,36 @@ function out_struct = get_cerebus_data(varargin)
 
 %% Initial setup
     % Add paths - take them back out at the end
-    addpath ./lib_cb
-    addpath ./event_decoders
-    
+%     addpath ./lib_cb
+%     addpath ./event_decoders
+%     
     % make sure LaTeX is turned off and save the old state so we can turn
     % it back on at the end
     defaulttextinterpreter = get(0, 'defaulttextinterpreter'); 
     set(0, 'defaulttextinterpreter', 'none');
     
+    %initial setup
+    opts=struct('verbose',0,'progbar',0,'force',0,'kin',1,'labnum',1); %default to lab 1, no force
+   
     % Parse arguments
     if (nargin == 1)
         filename   = varargin{1};
-        verbose    = 0;
-    elseif (nargin == 2)
-        filename   = varargin{1};
-        verbose    = varargin{2};
     else
-        error ('Invalid number of arguments');
+        filename   = varargin{1};
+        if ischar(varargin{2})
+            if strcmpi(varargin{2},'verbose')
+                opts.verbose= 1;
+            else
+                opts.verbose=0;
+            end
+        else
+            opts.verbose=0;
+            opts.labnum=varargin{2};
+        end
     end
-
+  
     progress = 0;
-    if (verbose == 1)
+    if (opts.verbose == 1)
         h = waitbar(0, sprintf('Opening: %s', filename));
     else
         h = 0;
@@ -43,7 +52,7 @@ function out_struct = get_cerebus_data(varargin)
 
     % Load the Cerebus library
     % TODO: MAKE PATH DYNAMIC
-    [nsresult] = ns_SetLibrary('lib_cb/nsNEVLibrary.dll');
+    [nsresult] = ns_SetLibrary('nsNEVLibrary.dll');
     if (nsresult ~= 0)
         close(h);
         error('Error opening library!');
@@ -72,27 +81,26 @@ function out_struct = get_cerebus_data(varargin)
 
     % Build catalogue of entities
     [nsresult, EntityInfo] = ns_GetEntityInfo(hfile, 1:FileInfo.EntityCount);
-    unit_list    = find([EntityInfo.EntityType] == 4 & ~strncmp({EntityInfo.EntityLabel},'Stim_', 5));
-    stim_marker  = find([EntityInfo.EntityType] == 4 & strncmp({EntityInfo.EntityLabel},'Stim_', 5));
+    unit_list    = find([EntityInfo.EntityType] == 4);
     % segment_list = find([EntityInfo.EntityType] == 3);
     emg_list     = find([EntityInfo.EntityType] == 2 & strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
     analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
     event_list   = find([EntityInfo.EntityType] == 1);
 
-    if verbose == 1
+    if opts.verbose == 1
         unit_list_item_count   = sum([EntityInfo(unit_list).ItemCount]);
         analog_list_item_count = sum([EntityInfo(analog_list).ItemCount]);
         emg_list_item_count    = sum([EntityInfo(emg_list).ItemCount]);
         event_list_item_count  = sum([EntityInfo(event_list).ItemCount]);
         % segment_list_item_count = sum([EntityInfo(segment_list).ItemCount]);
         relevant_entity_count = unit_list_item_count + emg_list_item_count+...
-            analog_list_item_count + event_list_item_count + length(stim_marker);
+            analog_list_item_count + event_list_item_count;
         entity_extraction_weight = 0.9;
     end
 
     % the units
     if ~isempty(unit_list)
-        if (verbose == 1)
+        if (opts.verbose == 1)
             progress = progress + (1 - entity_extraction_weight);
             waitbar(progress,h,sprintf('Opening: %s\nExtracting Units...', filename));
         end
@@ -104,14 +112,14 @@ function out_struct = get_cerebus_data(varargin)
             out_struct.units(i).ts = neural_data;
         end
 
-        if (verbose == 1)
+        if (opts.verbose == 1)
             progress = progress + entity_extraction_weight*unit_list_item_count/relevant_entity_count;
         end
     end
 
     % The raw data analog data (other than emgs)
     if ~isempty(analog_list)
-        if (verbose == 1)
+        if (opts.verbose == 1)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
         end
         [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list);
@@ -131,7 +139,7 @@ function out_struct = get_cerebus_data(varargin)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
             out_struct.raw.analog.data(i) = {analog_data.*4.1666667}; %multiplying by 4.1666667 converts analog_data in mV
-            if (verbose == 1)
+            if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
 
@@ -147,7 +155,7 @@ function out_struct = get_cerebus_data(varargin)
 
     % the emgs
     if ~isempty(emg_list)
-        if (verbose == 1)
+        if (opts.verbose == 1)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
         end
     
@@ -174,7 +182,7 @@ function out_struct = get_cerebus_data(varargin)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
             out_struct.emg.data(:,i+1) = emg_data.*4.1666667; %multiplying by 4.1666667 converts emg_data in mV
-            if (verbose == 1)
+            if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
             end
@@ -185,7 +193,7 @@ function out_struct = get_cerebus_data(varargin)
         
         
     if ~isempty(event_list)
-        if (verbose == 1)
+        if (opts.verbose == 1)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
         end
         
@@ -211,21 +219,9 @@ function out_struct = get_cerebus_data(varargin)
         out_struct.raw.serial = [event_ts, event_data];
     end
 
-    if ~isempty(stim_marker)
-        if (verbose == 1)
-            waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
-        end
-        
-        %populate stim marker ts
-        [nsresult,stim_data] = ns_GetNeuralData(hfile, stim_marker, 1, EntityInfo(stim_marker).ItemCount);
-        out_struct.stim_marker = stim_data;
-        
-        if (verbose == 1)
-            progress = progress + entity_extraction_weight/relevant_entity_count;
-        end
-    end
+
 %% Clean up
-    if (verbose == 1)
+    if (opts.verbose == 1)
         waitbar(1,h,sprintf('Opening: %s\nCleaning Up...', filename));
     end
 
@@ -233,18 +229,17 @@ function out_struct = get_cerebus_data(varargin)
 
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
     
-    if (verbose == 1)
+%     rmpath ./lib_cb
+%     rmpath ./event_decoders
+    
+    if (opts.verbose == 1)
         close(h);
     end
     
     
     
 %% Extract data from the raw struct
-
-    opts = struct('verbose', verbose, 'progbar', 0, 'force', 1, 'kin', 1);
-    out_struct = calc_from_raw(out_struct, opts);
-    
-    rmpath ./lib_cb
-    rmpath ./event_decoders
+  
+    out_struct = calc_from_raw(out_struct,opts);
 
 end

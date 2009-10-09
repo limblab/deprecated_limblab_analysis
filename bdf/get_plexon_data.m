@@ -70,7 +70,7 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
-    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1);
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1,'labnum',1);
     
     if (nargin == 1)
         filename = varargin{1};
