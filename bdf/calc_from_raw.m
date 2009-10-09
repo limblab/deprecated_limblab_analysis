@@ -6,7 +6,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
 %% Initial setup
 
-    addpath ./event_decoders
+%    addpath ./event_decoders
 
     % make sure LaTeX is turned off and save the old state so we can turn
     % it back on at the end

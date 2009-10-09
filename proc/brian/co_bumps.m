@@ -57,7 +57,7 @@ for i = 1:length(ot_on_words)
     
     % check that the trial was completed
     reward = rewards(find(rewards>ot_time, 1, 'first'));
-    if sum(start_words > ot_time & start_words < reward) ~= 0
+    if isempty(reward) || sum(start_words > ot_time & start_words < reward) ~= 0
         continue;
     end
     

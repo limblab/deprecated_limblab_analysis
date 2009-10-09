@@ -15,7 +15,10 @@ for timelag = -1:.05:1
     disp(timelag)
     for cell=1:length(ul)
         spikes = bdf.units(cell).ts;
-        table = raster(spikes, dbtrials(:,4), timelag, timelag+.100, -1);
+        % Use this line to align to go tone
+        table = raster(spikes, dbtrials(:,7), timelag, timelag+.100, -1);
+        % Use this to align to bump time
+        %table = raster(spikes, dbtrials(:,4), timelag, timelag+.100, -1);
         for trial=1:length(dbtrials)
             training_set(trial,cell+1) = length(table{trial});
         end

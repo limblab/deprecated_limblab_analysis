@@ -33,9 +33,13 @@ if nargout > 1
     for i = 1:length(frame_idx)
         idx = frame_idx(i);
         datablocks{i,1} = db_list(idx,1);
-        num_bytes = (db_list(idx, 2) - min_db_val) + 16*(db_list(idx+1, 2) - min_db_val);
-        raw_bytes = db_list(idx:idx+num_bytes*2-1, 2)';
-        half_bytes = reshape(raw_bytes,2,[]) - min_db_val;
-        datablocks{i,2} = 16*half_bytes(2,:) + half_bytes(1,:);
+        try 
+            num_bytes = (db_list(idx, 2) - min_db_val) + 16*(db_list(idx+1, 2) - min_db_val);
+            raw_bytes = db_list(idx:idx+num_bytes*2-1, 2)';
+            half_bytes = reshape(raw_bytes,2,[]) - min_db_val;
+            datablocks{i,2} = 16*half_bytes(2,:) + half_bytes(1,:);
+        catch
+            datablocks{i,2} = NaN;
+        end
     end
 end

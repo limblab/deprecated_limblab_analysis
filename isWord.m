@@ -18,7 +18,7 @@ w.Pickup = hex2dec('90');
 if strcmp(type, 'Reward')
     r = w.Reward == word;
 elseif strcmp(type, 'EndTrial')
-    r = bitand(hex2dec('f0'),words(:,2)) == w.End_Code;
+    r = bitand(hex2dec('f0'),word(:,2)) == w.End_Code;
 else 
     error('Unrecognized word type');
 end
