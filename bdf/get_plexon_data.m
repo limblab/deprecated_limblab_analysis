@@ -70,7 +70,7 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
-    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1,'labnum',1);
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1);
     
     if (nargin == 1)
         filename = varargin{1};
@@ -121,9 +121,9 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
-    out_struct.units = get_units_plx(filename, opts);
-    out_struct.raw = get_raw_plx(filename, opts);    
-    out_struct.keyboard_events = get_keyboard_plx(filename, opts);
+    out_struct.units = get_units_plx(filename, opts.verbose);
+    out_struct.raw = get_raw_plx(filename, opts.verbose);    
+    out_struct.keyboard_events = get_keyboard_plx(filename, opts.verbose);
     
 %% Clean up
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
