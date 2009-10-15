@@ -159,7 +159,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
-                [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder,'plot');
+                [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
             end
             PredictedData(:,z) = polyval(P(z,:),PredictedData(:,z));
         end

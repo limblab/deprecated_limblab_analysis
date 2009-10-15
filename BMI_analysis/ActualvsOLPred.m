@@ -15,17 +15,17 @@ function ActualvsOLPred(ActualData, PredData, plotflag)
     
     for i=1:numPredSignals
         if ~isempty(ActualData.emgdatabin)
-            if all(strcmp(ActualData.emgguide(1,:),PredData.outnames(i,:)))
+            if all(strcmp(nonzeros(ActualData.emgguide(1,:)),nonzeros(PredData.outnames(i,:))))
                 ActSignals(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(start_Act:finish_Act,:);
             end
         end
         if ~isempty(ActualData.forcedatabin)
-            if all(strcmp(ActualData.forcelabels(1,:),PredData.outnames(i,:)))
+            if all(strcmp(nonzeros(ActualData.forcelabels(1,:)),nonzeros(PredData.outnames(i,:))))
                 ActSignals(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(start_Act:finish_Act,:);
             end
         end
         if ~isempty(ActualData.cursorposbin)
-            if all(strcmp(ActualData.cursorposlabels(1,:),PredData.outnames(i,:)))
+            if all(strcmp(nonzerso(ActualData.cursorposlabels(1,:)),nonzerso(PredData.outnames(i,:))))
                 ActSignals(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(start_Act:finish_Act,:);
             end
         end    

@@ -3,7 +3,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         %varargin = BDF_FileNames, dataPath, binsize, starttime, stoptime, hpfreq,
         %lpfreq, MinFiringRate
         
-    dataPath = 'C:\Monkey\Clarence\';
+    dataPath = 'C:\Monkey\Theo\Data';
     addpath ../
     
     if nargin == 0
@@ -31,9 +31,9 @@ function Bin_FileNames = convertBatch2Binned(varargin)
     
     for i=1:size(BDF_FileNames,2)
         disp(sprintf('Binning %s structure...', BDF_FileNames{:,i} ));
-        binnedData = convertBDF2binned([dataPath 'BDFStructs\' BDF_FileNames{:,i}],binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate);
+        binnedData = convertBDF2binned([dataPath '\BDFStructs\' BDF_FileNames{:,i}],binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate);
         disp(sprintf('Saving binned data file %s...',Bin_FileNames{:,i}));
-        save([dataPath 'BinnedData\' Bin_FileNames{:,i} ], 'binnedData');
+        save([dataPath '\BinnedData\' Bin_FileNames{:,i} ], 'binnedData');
         disp('Done.');
     end
     

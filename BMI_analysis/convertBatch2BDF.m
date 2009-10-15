@@ -1,6 +1,6 @@
 function BDF_FileNames = convertBatch2BDF(varargin)
 
-    dataPath = 'C:\Monkey\Clarence\Data\';
+    dataPath = 'C:\Monkey\Theo\Data';
     addpath ../
     
     if nargin == 0
@@ -26,7 +26,7 @@ function BDF_FileNames = convertBatch2BDF(varargin)
         disp(sprintf('Converting %s to BDF structure...', CB_FileNames{:,i} ));
         out_struct = get_cerebus_data([CB_PathName CB_FileNames{:,i}],1);
         disp(sprintf('Saving BDF structure %s...',BDF_FileNames{:,i}));
-        save([dataPath 'BDFStructs\' BDF_FileNames{:,i} ], 'out_struct');
+        save([dataPath '\BDFStructs\' BDF_FileNames{:,i} ], 'out_struct');
         disp('Done.');
     end
       

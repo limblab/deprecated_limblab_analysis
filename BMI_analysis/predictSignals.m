@@ -39,6 +39,7 @@ numsides=1; fs=1;
 clear ActualData spikeData;
 
 %% Threshold: apply threshold to predicted data
+if isfield(filter, 'T')
 if ~isempty(filter.T)
     BetweenThresholds = false(size(PredictedData));
     for z=1:size(PredictedData,2)
@@ -46,6 +47,7 @@ if ~isempty(filter.T)
             PredictedData(BetweenThresholds(:,z),z)= filter.patch(z);
     end
 end 
+end
 %% If you have one, convolve the predictions with a Wiener cascade polynomial.
 if ~isempty(filter.P)
     Ynonlinear=zeros(size(PredictedData));
