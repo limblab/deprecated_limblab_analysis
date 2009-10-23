@@ -138,10 +138,8 @@ function BMIDataAnalyzer()
     end
 
     function CB_ConvertButton_Callback(obj,event)
-        cd ../bdf;
         disp('Converting .nev file to BDF structure, please wait...');
-        out_struct = get_cerebus_data(CB_FullFileName,1);
-        cd ../BMI_analysis;
+        out_struct = get_cerebus_data(CB_FullFileName,'verbose');
         disp('Done.');
         
         disp('Saving BDF struct...');
