@@ -28,7 +28,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
     end
   
 
-%% Calculated Data
+%% Find task by start trial code
   
     robot_task = 0;
     wrist_flexion_task =0;
@@ -64,7 +64,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
         warning('BDF:noWords','No WORDs are present');
     end
     
-    % Compile analog data
+%% Compile analog data
     if isfield(out_struct.raw, 'analog') && ~isempty(out_struct.raw.analog.data)
             
         % The highest analog sample rate (local copy)
@@ -85,7 +85,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
         analog_time_base = start_time:1/adfreq:stop_time;        
     end
     
-    %Position and Force for Robot Task
+%% Position and Force for Robot Task
     if (isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc))
         if robot_task
             % Position
@@ -149,7 +149,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
     
     
-    % Force Handle Analog Signals
+%% Force Handle Analog Signals
     if opts.force
         force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
         if (~isempty(force_channels))
@@ -191,49 +191,14 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 warning('BDF:noForceSignal','No force handle signal found because no channel named ''ForceHandle*''');
             end
         end
-
-        % Force (Cursor Pos) for Wrist Flexion and MG tasks
-        % (or just Force_x for MG task when recording stim evoked
-        %  force with air pressure device)
-        %% Contrarily to previous analog data, we don't want to skip the first
-        %% second of data.    
-        force_channels = find( strncmp(out_struct.raw.analog.channels, 'Force_', 6) | strncmp(out_struct.raw.analog.channels,'force_',6) ); %#ok<EFIND>
-        if isempty(force_channels)
-            if wrist_flexion_task || multi_gadget_task
-                close(h);
-                error('BDF:noForceSignal','No force signal found because no channel named ''Force_*''');
-            end
-        else
-            % Getting Force
-            %if (verbose == 1)
-            %    progress = progress + .05;
-            %    waitbar(progress, h, sprintf('Aggregating data...\nget force'));
-            %end
-        
-            %verify that all force channels are rec with same sampling rate
-            if ~all(out_struct.raw.analog.adfreq(force_channels)== out_struct.raw.analog.adfreq(force_channels(1)))
-                close(h);
-                error('BDF:unequalForceFreqs','Not all Force channels have the same sampling frequency');
-            else
-                out_struct.force.forcefreq = out_struct.raw.analog.adfreq(force_channels(1));
-            end
-
-            % extract force data for WF and MG task here
-            out_struct.force.labels = out_struct.raw.analog.channels(force_channels);
-            out_struct.force.data = zeros(size(out_struct.raw.analog.data{force_channels(1)},1),length(force_channels)+1);
-
-            for i=1:length(force_channels)
-                out_struct.force.data(:,[1 i+1]) = get_analog_signal(out_struct, out_struct.force.labels{i});
-            end
-        end
     end % opts.force
     
-    % Stimulator serial data
+%% Stimulator serial data
     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
+
         % Getting serial data
-        if (verbose == 1)
-            progress = progress + .05;
-            waitbar(progress, h, sprintf('Aggregating data...\nget serial data'));
+        if opts.verbose
+            disp('Aggregating data... get serial data')
         end
 
         %find the first parameter that correspond to the command, in case
@@ -285,11 +250,11 @@ function out_struct = calc_from_raw(raw_struct, opts)
   
 
 
-
+%% Extract target info from databursts
     if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) && (wrist_flexion_task || multi_gadget_task) )
-        if (verbose == 1)
-            progress = progress + .05;
-            waitbar(progress, h, sprintf('Aggregating data...\nextracting targets'));
+
+        if opts.verbose
+            disp('Aggregating data... extracting target information');
         end
         
         out_struct.targets.corners = zeros(length(out_struct.databursts),5);
@@ -301,7 +266,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
         end
     end
-            
+%% Get Keyboard_events
     if (isfield(out_struct,'keyboard_events') && ~isempty(out_struct.keyboard_events))
         out_struct.keyboard_events = sortrows( out_struct.keyboard_events, [1 2] );
     end
@@ -317,22 +282,4 @@ function out_struct = calc_from_raw(raw_struct, opts)
         dx = filtfilt(b,a,dx);
         dx = [0 dx];
     end
-
-    % save matfile
-    function savestruct(out_struct)
-    
-        matfilename = out_struct.meta.filename;
-        matfilename = strrep(matfilename,'.nev','.mat');  %change '.nev' for '.mat'
-
-        [FileName,PathName] = uiputfile( matfilename, 'Save mat file');
-        fullfilename = fullfile(PathName, FileName);
-
-        if isequal(FileName,0) || isequal(PathName,0)
-            disp('The structure was not saved!')
-        else
-            save(fullfilename, 'out_struct');
-            disp(['File: ', fullfilename,' saved successfully']);
-        end
-    end
-
 end % close outermost function
