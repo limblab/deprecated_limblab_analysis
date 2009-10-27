@@ -14,7 +14,7 @@ unit_num = -1;
 num_units = size(data.units, 2);
 
 for i = 1:num_units
-    if data.units(i).id == [channel unit]
+    if all(data.units(i).id == [channel unit])
         unit_num = i;
         break
     end

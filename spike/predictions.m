@@ -2,9 +2,9 @@ function [vaf] = predictions(bdf, signal, cells, folds)
 
 % $Id$
 
-addpath mimo
-addpath spike
-addpath bdf
+%addpath mimo
+%addpath spike
+%addpath bdf
 
 if strcmpi(signal, 'pos')
     y = bdf.pos(:,2:3);
@@ -61,8 +61,8 @@ for i = 1:folds
     vaf(i,:) = 1 - var(y_pred - y_test) ./ var(y_test);
 end
     
-rmpath mimo
-rmpath spike
-rmpath bdf
+%rmpath mimo
+%rmpath spike
+%rmpath bdf
 
 

@@ -5,7 +5,7 @@ all_units = unit_list(bdf);
 %all_units = [80 1];
 th = [0, pi/2, pi, 3*pi/2];
 
-res = zeros(size(all_units,1),13); % [chan unit a_gain a_pd p_gain p_pd]
+res = zeros(size(all_units,1),14); % [chan unit a_gain a_pd p_gain p_pd]
 
 for i = 1:size(all_units,1)
     chan = all_units(i,1);
@@ -33,12 +33,16 @@ for i = 1:size(all_units,1)
     max_bump_diff = max(max(m,[],2) - min(m,[],2));
     max_base = max(max(m)) - b(3);
     
-    non_lin = m - repmat(mean(m),4,1)/2 - repmat(mean(m,2),1,4)/2;
-    non_lin_ratio = var(reshape(non_lin,1,[])) / var(reshape(m,1,[]));
+%    non_lin = m - repmat(mean(m),4,1)/2 - repmat(mean(m,2),1,4)/2;
+%    non_lin_ratio = var(reshape(non_lin,1,[])) / var(reshape(m,1,[]));
+    bump_lin = m - repmat(mean(m),4,1)/2;
+    bump_lin_ratio = var(reshape(bump_lin,1,[])) / var(reshape(m,1,[]));
+    tgt_lin = m - repmat(mean(m,2),1,4)/2;
+    tgt_lin_ratio = var(reshape(tgt_lin,1,[])) / var(reshape(m,1,[]));
     
-    res(i,:) = [chan unit a_gain a_pd p_gain p_pd max_diff max_targ_diff max_bump_diff anova.p non_lin_ratio];
+    res(i,:) = [chan unit a_gain a_pd p_gain p_pd max_diff max_targ_diff max_bump_diff anova.p bump_lin_ratio tgt_lin_ratio];
     
-    plotstuff_2(m, p(1,:), a(1,:)', b(3), sprintf('%d - %d', chan, unit));
+    %plotstuff_2(m, p(1,:), a(1,:)', b(3), sprintf('%d - %d', chan, unit));
     %altplot(m, p(1,:), a(1,:)', b(3), sprintf('%d - %d', chan, unit));
     %print('-dwinc');
     %close(gcf);

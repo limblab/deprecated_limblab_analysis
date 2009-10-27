@@ -5,7 +5,7 @@ pos_mi = zeros(length(units), 4);
 
 mis = zeros(length(units), 201);
 
-%tic; 
+tic; 
 for i = 1:length(units)
     et = toc;
     chan = units(i,1);

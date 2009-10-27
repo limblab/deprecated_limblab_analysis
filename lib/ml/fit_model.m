@@ -18,12 +18,12 @@ function [L_final, mdl, success] = fit_model(bdf, chan, unit, offset)
     %       bdf.vel(:,2:3) v_norm bdf.acc(:,2:3) a_norm];
     %kin = [ones(length(bdf.vel),1) bdf.pos(:,2:3) bdf.vel(:,2:3) v_norm];
     
-    v_norm = sqrt(bdf.vel(:,2).^2 + bdf.vel(:,3).^2);
-    kin = [ones(length(bdf.vel),1) bdf.vel(:,2:3) v_norm];
+    %v_norm = sqrt(bdf.vel(:,2).^2 + bdf.vel(:,3).^2);
+    %kin = [ones(length(bdf.vel),1) bdf.vel(:,2:3) v_norm];
     
-    %x = bdf.pos(:,2:3);
-    %x = x - repmat(mean(x), size(x,1), 1);
-    %kin = [ones(length(bdf.vel),1) x];
+    x = bdf.pos(:,2:3);
+    x = x - repmat(mean(x), size(x,1), 1);
+    kin = [ones(length(bdf.vel),1) x];
     
     options.Display = 'off';
     options.TolFun = 1e-9;
