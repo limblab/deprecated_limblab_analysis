@@ -257,14 +257,24 @@ function out_struct = calc_from_raw(raw_struct, opts)
             disp('Aggregating data... extracting target information');
         end
         
-        out_struct.targets.corners = zeros(length(out_struct.databursts),5);
-        out_struct.targets.rotation = zeros(length(out_struct.databursts),2);
-        for i=1:length(out_struct.databursts)
-            out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
-            out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
-            out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
-            out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
-        end
+        num_trials = size(out_struct.databursts,1);
+        
+        out_struct.targets.corners = zeros(num_trials,5);
+        
+        if wrist_flexion_task
+        out_struct.targets.rotation = zeros(num_trials,2);            
+            for i=1:num_trials
+                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
+                out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+                out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
+                out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
+            end
+        elseif multi_gadget_task
+            for i=1:num_trials
+                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(3:18));
+                out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+            end
+        end           
     end
 %% Get Keyboard_events
     if (isfield(out_struct,'keyboard_events') && ~isempty(out_struct.keyboard_events))
