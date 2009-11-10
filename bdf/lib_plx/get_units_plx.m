@@ -12,7 +12,7 @@ function units = get_units_plx(filename, opts)
     %    progress = 0;
     %end
 
-    if opts.verbose
+    if opts
         disp('Reading units...')
     end
     

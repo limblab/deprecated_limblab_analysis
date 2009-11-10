@@ -41,3 +41,7 @@ for i = 1:length(ts_index)-2
     encoder(i,3) = strobed_events(ts_index(i)+2,2) + strobed_events(ts_index(i)+3,2)*2^8 - 32765;
 end
 
+encoder_temp(:,1) = encoder((diff(encoder(:,2))<50)',1);
+encoder_temp(:,2) = encoder((diff(encoder(:,2))<50)',2);
+encoder_temp(:,3) = encoder((diff(encoder(:,2))<50)',3);
+encoder = encoder_temp;

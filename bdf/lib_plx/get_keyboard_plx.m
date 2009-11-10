@@ -12,7 +12,7 @@ function keyboard_events = get_keyboard_plx(filename, opts)
     %    progress = 0;
     %end
 
-    if opts.verbose
+    if opts
         disp('Reading keyboard events...')
     end
     
