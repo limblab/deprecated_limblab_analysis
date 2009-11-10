@@ -42,7 +42,16 @@ for i = 1:length(ts_index)-2
 end
 
 temp_indices = (diff(encoder(:,2))<50 & diff(encoder(:,2))>-50 &...
-    diff(encoder(:,3))<50 & diff(encoder(:,2))>-50);
+    diff(encoder(:,3))<50 & diff(encoder(:,3))>-50);
+encoder_temp(:,1) = encoder(temp_indices,1);
+encoder_temp(:,2) = encoder(temp_indices,2);
+encoder_temp(:,3) = encoder(temp_indices,3);
+encoder = encoder_temp;
+
+clear encoder_temp;
+
+temp_indices = (diff(encoder(:,2))<50 & diff(encoder(:,2))>-50 &...
+    diff(encoder(:,3))<50 & diff(encoder(:,3))>-50);
 encoder_temp(:,1) = encoder(temp_indices,1);
 encoder_temp(:,2) = encoder(temp_indices,2);
 encoder_temp(:,3) = encoder(temp_indices,3);
