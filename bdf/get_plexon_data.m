@@ -121,9 +121,9 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
-    out_struct.units = get_units_plx(filename, opts.verbose);
-    out_struct.raw = get_raw_plx(filename, opts.verbose);    
-    out_struct.keyboard_events = get_keyboard_plx(filename, opts.verbose);
+    out_struct.units = get_units_plx(filename, opts);
+    out_struct.raw = get_raw_plx(filename, opts);    
+    out_struct.keyboard_events = get_keyboard_plx(filename, opts);
     
 %% Clean up
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);

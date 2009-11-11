@@ -1,6 +1,6 @@
 function r = isWord(word, type)
 
-w.Start = hex2dec('17');
+w.Start = hex2dec('10');
 
 w.End_Code = hex2dec('20');
 w.Reward = hex2dec('20');
@@ -15,12 +15,13 @@ w.Catch = hex2dec('32');
 
 w.Pickup = hex2dec('90');
 
-if strcmp(type, 'Reward')
-    r = w.Reward == word;
-elseif strcmp(type, 'EndTrial')
-    r = bitand(hex2dec('f0'),word(:,2)) == w.End_Code;
-else 
-    error('Unrecognized word type');
+switch lower(type)
+    case 'starttrial'
+        r = bitand(hex2dec('f0'),word(:,2)) == w.Start;
+    case 'reward'
+        r = w.Reward == word;
+    case 'endtrial'
+        r = bitand(hex2dec('f0'),word(:,2)) == w.End_Code;
+    otherwise
+        error('Unrecognized word type');
 end
-
-

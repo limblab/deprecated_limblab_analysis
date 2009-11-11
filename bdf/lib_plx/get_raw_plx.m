@@ -7,7 +7,7 @@ function raw = get_raw_plx(filename, opts)
 
 % $Id$
 
-    if opts
+    if opts.verbose
         disp('Reading continuous data...')
     end
 
@@ -56,7 +56,7 @@ function raw = get_raw_plx(filename, opts)
     end
         
     % get strobed events and values
-    if opts
+    if opts.verbose
         disp('Reading digital events...')
     end
     try

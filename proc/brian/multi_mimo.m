@@ -6,11 +6,13 @@ addpath ../../mimo
 %addpath ../../spike
 %addpath ../..
 
-if isfield(bdf, 'force')
-    list = {'pos', 'vel', 'acc', 'force'};
-else
-    list = {'pos', 'vel', 'acc'};
-end
+%if isfield(bdf, 'force')
+%    list = {'pos', 'vel', 'acc', 'force'};
+%else
+%    list = {'pos', 'vel', 'acc'};
+%end
+
+list = {'force'};
 
 %units = out( ~isnan(out(:,3)) , 1:2 );
 
