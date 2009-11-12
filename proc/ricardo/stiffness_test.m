@@ -172,8 +172,8 @@ for iBumpDir = 1:2
         no_bump_start = round(mean(no_bump_start));
         time = no_bump(iFile).pos{1}(:,1)-no_bump(iFile).pos{1}(no_bump_start,1);
         crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
-        no_bump_matrix = zeros(length(no_bump(iFile).time) , length(crop_time));
-        for i = 1:length(no_bump(iFile).time)
+        no_bump_matrix = zeros(length(no_bump(iFile).pos), length(crop_time));
+        for i = 1:length(no_bump(iFile).pos)
             if strcmp(no_bump(iFile).dir{i},'right')
                 no_bump_counter = no_bump_counter+1;
                 no_bump_start = find(no_bump(iFile).pos{i}(:,2)>-.1 & no_bump(iFile).pos{i}(:,2)<.1);
@@ -208,23 +208,34 @@ for iBumpDir = 1:2
 %             title('left -> right')
 %             ylabel('x (cm)')
 
-%         subplot(2,1,2);
+        subplot(2,1,1);
         if ~area_flag
             area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
             hold on
+            plot(time_vector_no_bump,mean(no_bump_matrix),'g','LineWidth',1)
+            plot(time_vector_no_bump,mean(no_bump_matrix)+std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
+            plot(time_vector_no_bump,mean(no_bump_matrix)-std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
+            
         end
+        [h{iBumpDir},p{iBumpDir},ci{iBumpDir},stats{iBumpDir}] = ttest2(no_bump_matrix,bump_matrix);
 %                 plot(time,bump(iFile).pos{i}(:,3)-mean(bump(iFile).pos{i}(:,3)),iColor{iFile})
         plot(time_vector,mean(bump_matrix),iColor{iFile},'LineWidth',1)
         plot(time_vector,mean(bump_matrix)+std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
         plot(time_vector,mean(bump_matrix)-std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
         
-        plot(time_vector_no_bump,mean(no_bump_matrix),'g','LineWidth',1)
-        plot(time_vector_no_bump,mean(no_bump_matrix)+std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
-        plot(time_vector_no_bump,mean(no_bump_matrix)-std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
-        
+         
         ylabel('y (cm)')
         ylim([-4 4])
-        xlim([-.5 .5])
+        xlim([-.3 .3])
         area_flag = 1;
+        
+        [maxp pind] = max(abs(stats{iBumpDir}.tstat));
+                
+        subplot(2,1,2)
+        plot([-.3 .3],sign(stats{iBumpDir}.tstat(pind))*[stats{iBumpDir}.tstat(find(p{iBumpDir}<.05,1)) stats{iBumpDir}.tstat(find(p{iBumpDir}<.05,1))],...
+            'Color',iColor{iFile},'LineWidth',1,'LineStyle','--');
+        hold on
+        plot(time_vector,stats{iBumpDir}.tstat(pind)*stats{iBumpDir}.tstat,iColor{iFile},'LineWidth',1)
+        xlim([-.3 .3])
     end
 end
