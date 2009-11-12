@@ -17,7 +17,23 @@ if ~exist('already_ran','var')
     
     for i = 1:3
         dataFile = [data_path '\bump_stim_forces_test_00' num2str(i+4) '.plx'];
-        bdf(i) = get_plexon_data(dataFile);
+        bdf_temp = get_plexon_data(dataFile,2);
+        bdf(i) = bdf_temp;
+        clear bdf_temp
+        clear ('get_plexon_data',...
+            'get_units_plx',...
+            'get_raw_plx',...
+            'get_keyboard_plx',...
+            'calc_from_raw',...
+            'plx_info',...
+            'plx_information',...
+            'plx_adchan_names',...
+            'plx_ad',...
+            'plx_event_ts',...
+            'get_encoder',...
+            'get_words',...
+            'extract_datablocks',...
+            'get_analog_signal');
     end
 
     cd([s1_analysis_path '\proc\ricardo'])
@@ -32,7 +48,7 @@ for iBumpDir = 1:2
     try %#ok<TRYNC>
         close iBumpDir
     end
-    for iFile = 1:3
+    for iFile = 1:2
         first_trial = find(bdf(iFile).words(:,2)==20 | bdf(iFile).words(:,2)==21,1);
         last_trial = find(bdf(iFile).words(:,2)>=32 & bdf(iFile).words(:,2)<=36,1,'last');
 
@@ -73,7 +89,7 @@ for iBumpDir = 1:2
             bump(iFile).force{i} = bdf(iFile).force(bump(iFile).trial_start_index(i):bump(iFile).trial_end_index(i),:);
             bump(iFile).pos{i} = bdf(iFile).pos(bump(iFile).trial_start_index(i):bump(iFile).trial_end_index(i),:);
             bump(iFile).pos{i}(:,2) = bump(iFile).pos{i}(:,2)+6;
-            bump(iFile).pos{i}(:,3) = bump(iFile).pos{i}(:,3)+34.5;
+            bump(iFile).pos{i}(:,3) = bump(iFile).pos{i}(:,3)+31;
             % offset x=6 y=31b
             if bump(iFile).pos{i}(1,2) < -4
                 bump(iFile).dir{i} = 'right';
@@ -85,6 +101,12 @@ for iBumpDir = 1:2
                 bump(iFile).dir{i} = 'up';
             end
         end
+        
+        for i = 1:length(no_bump(iFile).time)
+            bump(iFile).force{i} = bdf(iFile).force(bump(iFile).trial_start_index(i):bump(iFile).trial_end_index(i),:);
+            bump(iFile).pos{i} = bdf(iFile).pos(bump(iFile).trial_start_index(i):bump(iFile).trial_end_index(i),:);
+            bump(iFile).pos{i}(:,2) = bump(iFile).pos{i}(:,2)+6;
+            bump(iFile).pos{i}(:,3) = bump(iFile).pos{i}(:,3)+31;
 
         % figure;
         for i = 1:length(bump(iFile).force)
@@ -106,7 +128,7 @@ for iBumpDir = 1:2
         bump_start = find(bump(iFile).pos{1}(:,2)>-.1 & bump(iFile).pos{1}(:,2)<.1);
         bump_start = round(mean(bump_start));
         time = bump(iFile).pos{1}(:,1)-bump(iFile).pos{1}(bump_start,1);
-        crop_time = find(time < -.399 & time > -.401,1):find(time > .399 & time < .401,1);
+        crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
         bump_matrix = zeros(length(bump(iFile).time) , length(crop_time));
         for i = 1:length(bump(iFile).time)
             if strcmp(bump(iFile).dir{i},'right') && strcmp(bump(iFile).bump_dir{i},BumpDir{iBumpDir})
@@ -115,33 +137,45 @@ for iBumpDir = 1:2
                 bump_start = round(mean(bump_start));
                 time = bump(iFile).pos{i}(:,1)-bump(iFile).pos{i}(bump_start,1);
                 
-                crop_time = find(time < -.399 & time > -.401,1):find(time > .399 & time < .401,1);
-                time_vector = time(crop_time);
-                bump_matrix(bump_counter,:) = bump(iFile).pos{i}(crop_time,2)';               
+                crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
                 
-                subplot(2,1,1);
-                if ~area_flag
-                    area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
-                    hold on        
+                if length(crop_time)<size(bump_matrix,2)
+                    crop_time = [crop_time crop_time(end)+1];
+                elseif length(crop_time)>size(bump_matrix,2)
+                    crop_time = crop_time(1:end-1);
                 end
-
-                plot(time,bump(iFile).pos{i}(:,2),iColor{iFile})
-                ylim([-14 14])
-                xlim([-.5 .5])
-                title('left -> right')
-                ylabel('x (cm)')
-
-                subplot(2,1,2);
-                if ~area_flag
-                    area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
-                    hold on
-                end
-                plot(time,bump(iFile).pos{i}(:,3)-mean(bump(iFile).pos{i}(:,3)),iColor{iFile})
-                ylabel('y (cm)')
-                ylim([-6 6])
-                xlim([-.5 .5])
-                area_flag = 1;
-            end
+                
+                time_vector = time(crop_time);
+%                 bump_matrix(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)'-mean(bump(iFile).pos{i}(1:end/4,3));               
+                bump_matrix(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)';               
+                
+            end            
         end
+        bump_matrix = bump_matrix(1:bump_counter,:);
+%         subplot(2,1,1);
+%         if ~area_flag
+%             area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
+%             hold on        
+%         end
+
+%             plot(time_vector,bump(iFile).pos{i}(crop_time,2),iColor{iFile})
+%             ylim([-14 14])
+%             xlim([-.5 .5])
+%             title('left -> right')
+%             ylabel('x (cm)')
+
+%         subplot(2,1,2);
+        if ~area_flag
+            area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
+            hold on
+        end
+%                 plot(time,bump(iFile).pos{i}(:,3)-mean(bump(iFile).pos{i}(:,3)),iColor{iFile})
+        plot(time_vector,mean(bump_matrix),iColor{iFile},'LineWidth',1)
+        plot(time_vector,mean(bump_matrix)+std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
+        plot(time_vector,mean(bump_matrix)-std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
+        ylabel('y (cm)')
+        ylim([-4 4])
+        xlim([-.5 .5])
+        area_flag = 1;
     end
 end
