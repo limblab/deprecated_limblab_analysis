@@ -73,15 +73,19 @@ for iBumpDir = 1:2
                     bump(iFile).succ(bump_count) = 0;
                 end
             end
-            if (bdf(iFile).words(i,2)==21 || bdf(iFile).words(i,2)==20) && bdf(iFile).words(i+1,2)<80
+            if (bdf(iFile).words(i,2)==49 && bdf(iFile).words(i+1,2)==32)
                 no_bump_count = no_bump_count + 1;
                 no_bump(iFile).trial_start(no_bump_count) = bdf(iFile).words(i-1,1);
                 no_bump(iFile).trial_end(no_bump_count) = bdf(iFile).words(i+1,1);
-                if bdf(iFile).words(i+1,2)==48
-                    no_bump(iFile).succ(no_bump_count) = 1;
-                else
-                    no_bump(iFile).succ(no_bump_count) = 0;
-                end
+                no_bump(iFile).trial_start_index(no_bump_count) = find(bdf(iFile).pos(:,1) > no_bump(iFile).trial_start(no_bump_count)-.002 &...
+                        bdf(iFile).pos(:,1) < no_bump(iFile).trial_start(no_bump_count)+.002,1);
+                no_bump(iFile).trial_end_index(no_bump_count) = find(bdf(iFile).pos(:,1) > no_bump(iFile).trial_end(no_bump_count)-.002 &...
+                        bdf(iFile).pos(:,1) < no_bump(iFile).trial_end(no_bump_count)+.002,1);                 
+%                 if bdf(iFile).words(i+1,2)==48
+%                     no_bump(iFile).succ(no_bump_count) = 1;
+%                 else
+%                     no_bump(iFile).succ(no_bump_count) = 0;
+%                 end
             end
         end
 
@@ -102,11 +106,21 @@ for iBumpDir = 1:2
             end
         end
         
-        for i = 1:length(no_bump(iFile).time)
-            bump(iFile).force{i} = bdf(iFile).force(bump(iFile).trial_start_index(i):bump(iFile).trial_end_index(i),:);
-            bump(iFile).pos{i} = bdf(iFile).pos(bump(iFile).trial_start_index(i):bump(iFile).trial_end_index(i),:);
-            bump(iFile).pos{i}(:,2) = bump(iFile).pos{i}(:,2)+6;
-            bump(iFile).pos{i}(:,3) = bump(iFile).pos{i}(:,3)+31;
+        for i = 1:length(no_bump(iFile).trial_start)            
+            no_bump(iFile).force{i} = bdf(iFile).force(no_bump(iFile).trial_start_index(i):no_bump(iFile).trial_end_index(i),:);
+            no_bump(iFile).pos{i} = bdf(iFile).pos(no_bump(iFile).trial_start_index(i):no_bump(iFile).trial_end_index(i),:);
+            no_bump(iFile).pos{i}(:,2) = no_bump(iFile).pos{i}(:,2)+6;
+            no_bump(iFile).pos{i}(:,3) = no_bump(iFile).pos{i}(:,3)+31;
+            if no_bump(iFile).pos{i}(1,2) < -4
+                no_bump(iFile).dir{i} = 'right';
+            elseif no_bump(iFile).pos{i}(1,2) > 6
+                no_bump(iFile).dir{i} = 'left'; 
+            elseif no_bump(iFile).pos{i}(1,3) > 6
+                no_bump(iFile).dir{i} = 'down';
+            else
+                no_bump(iFile).dir{i} = 'up';
+            end
+        end
 
         % figure;
         for i = 1:length(bump(iFile).force)
@@ -150,8 +164,38 @@ for iBumpDir = 1:2
                 bump_matrix(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)';               
                 
             end            
-        end
+        end        
         bump_matrix = bump_matrix(1:bump_counter,:);
+       
+        no_bump_counter = 0;
+        no_bump_start = find(no_bump(iFile).pos{1}(:,2)>-.1 & no_bump(iFile).pos{1}(:,2)<.1);
+        no_bump_start = round(mean(no_bump_start));
+        time = no_bump(iFile).pos{1}(:,1)-no_bump(iFile).pos{1}(no_bump_start,1);
+        crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
+        no_bump_matrix = zeros(length(no_bump(iFile).time) , length(crop_time));
+        for i = 1:length(no_bump(iFile).time)
+            if strcmp(no_bump(iFile).dir{i},'right')
+                no_bump_counter = no_bump_counter+1;
+                no_bump_start = find(no_bump(iFile).pos{i}(:,2)>-.1 & no_bump(iFile).pos{i}(:,2)<.1);
+                no_bump_start = round(mean(no_bump_start));
+                time = no_bump(iFile).pos{i}(:,1)-no_bump(iFile).pos{i}(no_bump_start,1);
+                
+                crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
+                
+                if length(crop_time)<size(no_bump_matrix,2)
+                    crop_time = [crop_time crop_time(end)+1];
+                elseif length(crop_time)>size(no_bump_matrix,2)
+                    crop_time = crop_time(1:end-1);
+                end
+                
+                time_vector_no_bump = time(crop_time);
+%                 no_bump_matrix(no_bump_counter,:) = no_bump(iFile).pos{i}(crop_time,3)'-mean(no_bump(iFile).pos{i}(1:end/4,3));               
+                no_bump_matrix(no_bump_counter,:) = no_bump(iFile).pos{i}(crop_time,3)';               
+                
+            end            
+        end
+        no_bump_matrix = no_bump_matrix(1:no_bump_counter,:);
+        
 %         subplot(2,1,1);
 %         if ~area_flag
 %             area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
@@ -173,6 +217,11 @@ for iBumpDir = 1:2
         plot(time_vector,mean(bump_matrix),iColor{iFile},'LineWidth',1)
         plot(time_vector,mean(bump_matrix)+std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
         plot(time_vector,mean(bump_matrix)-std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
+        
+        plot(time_vector_no_bump,mean(no_bump_matrix),'g','LineWidth',1)
+        plot(time_vector_no_bump,mean(no_bump_matrix)+std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
+        plot(time_vector_no_bump,mean(no_bump_matrix)-std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
+        
         ylabel('y (cm)')
         ylim([-4 4])
         xlim([-.5 .5])
