@@ -9,6 +9,9 @@ if ~exist('already_ran','var')
         case 2 
             s1_analysis_path = 'C:\Documents and Settings\limblab\Desktop\s1_analysis\';
             data_path = 'E:\DataFiles\Tiki';
+        case 3
+            s1_analysis_path = 'D:\Ricardo\MATLAB\s1_analysis';
+            data_path = 'D:\Ricardo\MATLAB\Data';
     end
     
     cd(s1_analysis_path)
