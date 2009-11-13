@@ -143,7 +143,7 @@ for iBumpDir = 1:2
         bump_start = round(mean(bump_start));
         time = bump(iFile).pos{1}(:,1)-bump(iFile).pos{1}(bump_start,1);
         crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
-        bump_matrix = zeros(length(bump(iFile).time) , length(crop_time));
+        bump_matrix{iFile} = zeros(length(bump(iFile).time) , length(crop_time));
         for i = 1:length(bump(iFile).time)
             if strcmp(bump(iFile).dir{i},'right') && strcmp(bump(iFile).bump_dir{i},BumpDir{iBumpDir})
                 bump_counter = bump_counter+1;
@@ -153,26 +153,26 @@ for iBumpDir = 1:2
                 
                 crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
                 
-                if length(crop_time)<size(bump_matrix,2)
+                if length(crop_time)<size(bump_matrix{iFile},2)
                     crop_time = [crop_time crop_time(end)+1];
-                elseif length(crop_time)>size(bump_matrix,2)
+                elseif length(crop_time)>size(bump_matrix{iFile},2)
                     crop_time = crop_time(1:end-1);
                 end
                 
                 time_vector = time(crop_time);
-%                 bump_matrix(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)'-mean(bump(iFile).pos{i}(1:end/4,3));               
-                bump_matrix(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)';               
+%                 bump_matrix{iFile}(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)'-mean(bump(iFile).pos{i}(1:end/4,3));               
+                bump_matrix{iFile}(bump_counter,:) = bump(iFile).pos{i}(crop_time,3)';               
                 
             end            
         end        
-        bump_matrix = bump_matrix(1:bump_counter,:);
+        bump_matrix{iFile} = bump_matrix{iFile}(1:bump_counter,:);
        
         no_bump_counter = 0;
         no_bump_start = find(no_bump(iFile).pos{1}(:,2)>-.1 & no_bump(iFile).pos{1}(:,2)<.1);
         no_bump_start = round(mean(no_bump_start));
         time = no_bump(iFile).pos{1}(:,1)-no_bump(iFile).pos{1}(no_bump_start,1);
         crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
-        no_bump_matrix = zeros(length(no_bump(iFile).pos), length(crop_time));
+        no_bump_matrix{iFile} = zeros(length(no_bump(iFile).pos), length(crop_time));
         for i = 1:length(no_bump(iFile).pos)
             if strcmp(no_bump(iFile).dir{i},'right')
                 no_bump_counter = no_bump_counter+1;
@@ -182,19 +182,19 @@ for iBumpDir = 1:2
                 
                 crop_time = find(time < -.299 & time > -.301,1):find(time > .299 & time < .301,1);
                 
-                if length(crop_time)<size(no_bump_matrix,2)
+                if length(crop_time)<size(no_bump_matrix{iFile},2)
                     crop_time = [crop_time crop_time(end)+1];
-                elseif length(crop_time)>size(no_bump_matrix,2)
+                elseif length(crop_time)>size(no_bump_matrix{iFile},2)
                     crop_time = crop_time(1:end-1);
                 end
                 
                 time_vector_no_bump = time(crop_time);
-%                 no_bump_matrix(no_bump_counter,:) = no_bump(iFile).pos{i}(crop_time,3)'-mean(no_bump(iFile).pos{i}(1:end/4,3));               
-                no_bump_matrix(no_bump_counter,:) = no_bump(iFile).pos{i}(crop_time,3)';               
+%                 no_bump_matrix{iFile}(no_bump_counter,:) = no_bump(iFile).pos{i}(crop_time,3)'-mean(no_bump(iFile).pos{i}(1:end/4,3));               
+                no_bump_matrix{iFile}(no_bump_counter,:) = no_bump(iFile).pos{i}(crop_time,3)';               
                 
             end            
         end
-        no_bump_matrix = no_bump_matrix(1:no_bump_counter,:);
+        no_bump_matrix{iFile} = no_bump_matrix{iFile}(1:no_bump_counter,:);
         
 %         subplot(2,1,1);
 %         if ~area_flag
@@ -210,18 +210,22 @@ for iBumpDir = 1:2
 
         subplot(2,1,1);
         if ~area_flag
+            plot(-.5,0,'r')
+            hold on
+            plot(-.5,0,'b')
+            plot(-.5,0,'g')
+            legend('10%','90%','no bump')
             area(bump_area_x,bump_area_y,'LineStyle','none','FaceColor',[.8 .8 .8])
             hold on
-            plot(time_vector_no_bump,mean(no_bump_matrix),'g','LineWidth',1)
-            plot(time_vector_no_bump,mean(no_bump_matrix)+std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
-            plot(time_vector_no_bump,mean(no_bump_matrix)-std(no_bump_matrix),'Color','g','LineWidth',1,'LineStyle','--')
-            
+            plot(time_vector_no_bump,mean(no_bump_matrix{iFile}),'g','LineWidth',1)
+            plot(time_vector_no_bump,mean(no_bump_matrix{iFile})+std(no_bump_matrix{iFile}),'Color','g','LineWidth',1,'LineStyle','--')
+            plot(time_vector_no_bump,mean(no_bump_matrix{iFile})-std(no_bump_matrix{iFile}),'Color','g','LineWidth',1,'LineStyle','--')
         end
-        [h{iBumpDir},p{iBumpDir},ci{iBumpDir},stats{iBumpDir}] = ttest2(no_bump_matrix,bump_matrix);
+        [h{iBumpDir},p{iBumpDir},ci{iBumpDir},stats{iBumpDir}] = ttest2(no_bump_matrix{iFile},bump_matrix{iFile});
 %                 plot(time,bump(iFile).pos{i}(:,3)-mean(bump(iFile).pos{i}(:,3)),iColor{iFile})
-        plot(time_vector,mean(bump_matrix),iColor{iFile},'LineWidth',1)
-        plot(time_vector,mean(bump_matrix)+std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
-        plot(time_vector,mean(bump_matrix)-std(bump_matrix),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
+        plot(time_vector,mean(bump_matrix{iFile}),iColor{iFile},'LineWidth',1)
+        plot(time_vector,mean(bump_matrix{iFile})+std(bump_matrix{iFile}),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
+        plot(time_vector,mean(bump_matrix{iFile})-std(bump_matrix{iFile}),'Color',iColor{iFile},'LineWidth',1,'LineStyle','--')
         
          
         ylabel('y (cm)')
@@ -237,5 +241,23 @@ for iBumpDir = 1:2
         hold on
         plot(time_vector,stats{iBumpDir}.tstat(pind)*stats{iBumpDir}.tstat,iColor{iFile},'LineWidth',1)
         xlim([-.3 .3])
+        xlabel('t (s)')
+        ylabel('p')
     end
 end
+
+[h_2,p_2,ci_2,stats_2] = ttest2(bump_matrix{1},bump_matrix{2});
+[maxp pind] = max(abs(stats_2.tstat));
+figure(3)
+% plot([-.3 .3],sign(stats{iBumpDir}.tstat(pind))*[stats_2.tstat(find(p_2<.05,1)) stats_2.tstat(find(p_2<.05,1))],...
+%             'Color',iColor{iFile},'LineWidth',1,'LineStyle','--');
+subplot(211)
+plot(time_vector,stats_2.tstat(pind)*stats_2.tstat,iColor{iFile},'LineWidth',1)
+xlim([-.3 .3])
+ylabel('t stat')
+subplot(212)
+plot(time_vector,p_2)
+xlim([-.3 .3])
+xlabel('t (s)')
+ylabel('p')
+ylim([0 1])
