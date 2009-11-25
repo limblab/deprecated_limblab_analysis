@@ -23,10 +23,11 @@ end
 
 %Now plot confusion matrix Cmat
 imagesc(Cmat)
-set(gca,'YDir','normal') 
-xlabel('Predicted Target')
-ylabel('Real Target')
-title('Normalized confusion matrix')
+caxis([0 1])        %set scale to 0-1 to standardize plots
+set(gca,'YDir','normal','FontSize',18) 
+xlabel('Predicted Target','FontSize',20,'FontWeight','Bold')
+ylabel('Real Target','FontSize',20,'FontWeight','Bold')
+title('Normalized confusion matrix','FontSize',20,'FontWeight','Bold')
 colorbar
 n1off=0;
 rtot=sum(Cmat,2);   %row (real) reach totals
