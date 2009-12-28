@@ -22,7 +22,7 @@ function S = ave_sigs_tgt_gdt(Sigs, GR_ts, aveTime)
     
     %gdt_tgt_counter counts each apparition of each combination of tgt,gdt
     % its elements are organized as gadget-target [ gdt1tgt1, gdt1tgt2, gdt1tgtM, gdt2tgt1, ..., gdtNtgtM]
-    gdt_tgt_counter = zeros(numTgts*numGdgts,1);
+    gdt_tgt_counter = zeros(numTgts*numGdts,1);
     
     
     for i=1:numRewards

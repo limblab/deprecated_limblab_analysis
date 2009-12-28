@@ -4,7 +4,6 @@ function BaselineFR = Calc_BaselineFR(binnedData,Center_ts,numBins)
     numUnits = size(binnedData.spikeratedata,2);
     numCenters= size(Center_ts,1);
 
-
     AveFR_tmp = zeros(numCenters,numUnits);
 
     for i=1:length(Center_ts)
