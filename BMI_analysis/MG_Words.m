@@ -9,10 +9,12 @@ w.Failure = hex2dec('22');
 w.Incomplete = hex2dec('23');
 
 w.Reach = hex2dec('70');
+w.Gadget_On = hex2dec('40');
 
 % end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
 w.IsEndWord = @endwrd;
-w.GetReachTgt = @tgt;
+w.GetTgt = @tgt;
+w.GetGdt = @gdt;
 
 w.Touch_Pad = hex2dec('30');
 w.Go_Cue = hex2dec('31');
@@ -28,8 +30,18 @@ function t = tgt(wrd)
     if bitand(hex2dec('f0'),wrd) == w.Reach
         t= bitand(hex2dec('0f'),wrd);
     else
-        t=0;
+        t=-1;
     end
 end
+
+function g = gdt(wrd)
+    if bitand(hex2dec('f0'),wrd) == w.Gadget_On
+        g= bitand(hex2dec('0f'),wrd);
+    else
+        g=-1;
+    end
+end
+
+
 
 end

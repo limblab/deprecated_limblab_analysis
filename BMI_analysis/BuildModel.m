@@ -9,8 +9,6 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %       UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
 %       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh} : flags to include EMG, Force, Cursor Position and Thresholding in the prediction model (0=no,1=yes)
-
-   addpath ..\mimo\
    
     if ~isstruct(binnedData)
         binnedData = LoadDataStruct(binnedData, 'binned');

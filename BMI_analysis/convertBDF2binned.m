@@ -14,11 +14,7 @@ function binnedData = convertBDF2binned(varargin)
         disp(sprintf('\n'));
         return;
     end
-    
-    %add path to spike binning function
-    addpath ../spike
- 
-    
+        
     datastructname = varargin{1};
 
     %Load the file or structure
@@ -188,8 +184,7 @@ function binnedData = convertBDF2binned(varargin)
         spikeguide = [];
     else
 
-        %decide which signals to use: minimum of 20 spikes/mins on average:
-    %    minimumspikenumber = (stoptime-starttime)/3;
+        %decide which signals to use: minimum of "minFiringRate spikes/sec on average:
         minimumspikenumber = (stoptime-starttime)*minFiringRate;
         totalnumunits = length(datastruct.units);
         numusableunits = 0;
@@ -219,7 +214,7 @@ function binnedData = convertBDF2binned(varargin)
         units_to_use = nonzeros(units_to_use);
 
         if (numusableunits < 1)
-            disp('The data does not contain any unit with a minimum of 0.3 spike/sec');
+            disp(sprintf('The data does not contain any unit with a minimum of %g spike/sec',minFiringRate));
             spikeratedata = [];
             spikeguide = [];
         else   
@@ -252,16 +247,6 @@ function binnedData = convertBDF2binned(varargin)
         end        
     end
       
-%%%%%%%% much slower and more complicated way of doing the same thing: %%%%%%%%%
-%     for i = 1:numusableunits
-%         for b = 0:numberbins-1
-%             current_bin_time = (starttime+b*binsize); % lower time limit from which we bin, non-inclusive
-% 
-%             ts_to_bin = datastruct.units(units_to_use(i)).ts( and( gt(datastruct.units(units_to_use(i)).ts, current_bin_time), ... %greater than (starttime + lag) and...
-%                                                                      le(datastruct.units(units_to_use(i)).ts, current_bin_time+binsize) ));  %lower or eq to (start+lag) + binsize
-%             spikeratedata(b+1,i) = length(ts_to_bin)/binsize; % convert to firing rate and fill spikeratedata
-%         end
-%     end
 
 %% Outputs
     binnedData = struct('timeframe',timeframe,...

@@ -402,10 +402,10 @@ end
         [timeBefore, timeAfter]=PWTH_GUI();
         
         if (usr_plotEMGs && usr_plotForce) %plot EMG and Force on two different Y axis
-            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.emg.emgfreq(1),datastruct.words,...
+            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
                                       
-            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.force.forcefreq(1),datastruct.words,...
+            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
                             
             hold off; axis auto;
@@ -421,7 +421,7 @@ end
              
         elseif (usr_plotEMGs) %plot EMGs but not Force
             hold off; axis auto;
-            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.emg.emgfreq(1),datastruct.words,...
+            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
             FilteredEMGs = FiltEMGs(EMGs_PWTH(:,2:end));
             emg_handles = plot(EMGs_PWTH(:,1),FilteredEMGs);
@@ -429,7 +429,7 @@ end
             
         elseif (usr_plotForce) %plot Force but no EMG
             hold off; axis auto;
-            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.raw.analog.adfreq(1),datastruct.words,...
+            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.words,...
                                 WordsValues(Words_to_plot), timeBefore, timeAfter);
             FilteredForce= FiltForce(Force_PWTH(:,2:end));
             force_handles = plot(Force_PWTH(:,1),FilteredForce);

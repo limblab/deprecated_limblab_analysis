@@ -1,7 +1,5 @@
 function [PredData] = predictSignals(filter,BinnedData)
 
-addpath ..\mimo
-
 if ischar(filter)
     filter = LoadDataStruct(filter,'filter');
 end

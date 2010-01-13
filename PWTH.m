@@ -1,10 +1,10 @@
-function [PWTH] = PWTH(signals,sigFreq,wordsVect,wordToAve,timeBefore,timeAfter)
+function [PWTH] = PWTH(signals,wordsVect,wordToAve,timeBefore,timeAfter)
     % this function averages signals (e.g. EMG or Force) from timeBefore
     % and timeAfter around the word with dec value 'wordToAve'.
     % the first colomn of the signals array should be a time vector in
     % seconds
 
-    binsize = 1/sigFreq;
+    binsize = signals(2,1)-signals(1,1);
     windowTimeFrame = -timeBefore:binsize:timeAfter-binsize;
     windowLength = length(windowTimeFrame);
     numSignals = size(signals,2)-1;

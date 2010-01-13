@@ -2,11 +2,11 @@ function plot_pos_and_tgts(out_struct)
 
     out_struct = LoadDataStruct(out_struct,'bdf');
 
-    WF_Words;
+    w=WF_Words;
     
     %extract target onset and offset times
-    tgt_on = out_struct.words(out_struct.words(:,2)==Go_Cue | out_struct.words(:,2) == Catch,1);
-    tgt_off = out_struct.words(out_struct.words(:,2)>=End_Code & out_struct.words(:,2)< End_Code+5);
+    tgt_on = out_struct.words(out_struct.words(:,2)==w.Go_Cue | out_struct.words(:,2) == w.Catch,1);
+    tgt_off = out_struct.words(out_struct.words(:,2)>=w.End_Code & out_struct.words(:,2)< w.End_Code+5);
     
     %make sure first time stamp is tgt_on and last is tgt_off 
     %and that there is target information for that trial (tgt_on preceded

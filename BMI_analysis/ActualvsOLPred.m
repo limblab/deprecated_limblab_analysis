@@ -25,7 +25,7 @@ function ActualvsOLPred(ActualData, PredData, plotflag)
             end
         end
         if ~isempty(ActualData.cursorposbin)
-            if all(strcmp(nonzerso(ActualData.cursorposlabels(1,:)),nonzerso(PredData.outnames(i,:))))
+            if all(strcmp(nonzeros(ActualData.cursorposlabels(1,:)),nonzeros(PredData.outnames(i,:))))
                 ActSignals(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(start_Act:finish_Act,:);
             end
         end    

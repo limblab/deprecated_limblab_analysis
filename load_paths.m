@@ -18,4 +18,5 @@ addpath([dir '\\bdf\\event_decoders']);
 addpath([dir '\\bdf\\lib_cb']);
 addpath([dir '\\bdf\\lib_plx']);
 addpath([dir '\\BMI_analysis']);
+addpath([dir '\\proc\\Christian']);
 clear dir;

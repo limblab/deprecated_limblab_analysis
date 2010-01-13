@@ -1,13 +1,48 @@
-Start = hex2dec('19');
+function w = BD_Words()
 
-Reward = hex2dec('20');
-Abort = hex2dec('21');
-Failure = hex2dec('22');
-Incomplete = hex2dec('23');
-Empty_Rack = hex2dec('24');
+w.Start = hex2dec('19');
 
-Touch_Pad = hex2dec('30');
-Go_Cue = hex2dec('31');
-Catch = hex2dec('32');
+w.End_Code = hex2dec('20');
+w.Reward = hex2dec('20');
+w.Abort = hex2dec('21');
+w.Failure = hex2dec('22');
+w.Incomplete = hex2dec('23');
 
-Pickup = hex2dec('90');
+w.Reach = hex2dec('70');
+w.Gadget_On = hex2dec('40');
+
+% end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
+w.IsEndWord = @endwrd;
+w.GetTgt = @tgt;
+w.GetGdt = @gdt;
+
+w.Touch_Pad = hex2dec('30');
+w.Go_Cue = hex2dec('31');
+w.Catch = hex2dec('32');
+
+w.Pickup = hex2dec('90');
+
+function r = endwrd(wrd)
+    r = bitand(hex2dec('f0'), wrd) == w.End_Code;
+end
+
+function t = tgt(wrd)
+    if bitand(hex2dec('f0'),wrd) == w.Reach
+        t= bitand(hex2dec('0f'),wrd);
+    else
+        t=-1;
+    end
+end
+
+function g = gdt(wrd)
+    if bitand(hex2dec('f0'),wrd) == w.Gadget_On
+        g= bitand(hex2dec('0f'),wrd);
+    else
+        g=-1;
+    end
+end
+
+
+
+end
+
