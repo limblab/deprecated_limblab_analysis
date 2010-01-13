@@ -1,4 +1,4 @@
-function S = ave_tgt_EMGs(EMGs,CR_ts, aveTime)
+function S = ave_tgt_EMGs(EMGs,CR_ts, timeWindow)
     %first column of EMGs is ts, others signals from individual muscles
     %CR_ts = Get_Center_and_Reward_ts() = 2x(NumReward+NumTrials) array of
     %[ts tgt_id], where tgt_id = 0 (center), 1 (tgt 1), 2 (tgt 2), ...
@@ -12,7 +12,7 @@ function S = ave_tgt_EMGs(EMGs,CR_ts, aveTime)
 
     numRewards   = size(CR_ts,1);
     binsize = EMGs(2,1) - EMGs(1,1);
-    numBins = int8(aveTime/binsize);
+    numBins = int32(timeWindow/binsize);
     tmp_ave_emgs = zeros(numRewards,numEMGs,numTgts);
     tgt_i_counter = zeros(numTgts,1);
     
@@ -21,7 +21,9 @@ function S = ave_tgt_EMGs(EMGs,CR_ts, aveTime)
         tgt_id = CR_ts(i,2);
         
         if tgt_id %skip tgt id 0, which corresponds to S0
-            timeWindow = find(EMGs(:,1)<=CR_ts(i,1),numBins,'last');
+             timeWindow = find(EMGs(:,1)<=CR_ts(i,1),numBins,'last');
+%            timeWindow = find(EMGs(:,1)>=CR_ts(i,1)-time_before & ...
+%                               EMGs(:,1)<=CR_ts(i,1)+time_after);
             if ~isempty(timeWindow)
                 tgt_i_counter(tgt_id) = tgt_i_counter(tgt_id)+1;
                 tmp_ave_emgs(tgt_i_counter(tgt_id),:,tgt_id) = mean(EMGs(timeWindow,2:end),1);

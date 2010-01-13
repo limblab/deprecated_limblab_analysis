@@ -4,15 +4,17 @@ function [ts] = Get_GR_ts_MG(out_struct)
     % tgt = [1-15] and gdt = [1-4] if ts corresponds to Reward time
 
     w=MG_Words;
-    
-    first_start = find(out_struct.words(:,2)==w.Start,1);
-    first_start_ts = out_struct.words(first_start,1);
 
     %%---------------------------------%
     % get matching Go_cue and Reward ts
     %%---------------------------------%
+    if any(out_struct.words(:,2)==w.Go_Cue)
+        Go_word = w.Go_Cue;
+    else
+        Go_word = w.Touch_Pad;
+    end
     
-    GR_pairs = Get_Words_ts_pairs(w.Start, w.Go_Cue, w.Reward, out_struct.words);
+    GR_pairs = Get_Words_ts_pairs(w.Start, Go_word, w.Reward, out_struct.words);
     
     numRewards = size(GR_pairs,1);
     
