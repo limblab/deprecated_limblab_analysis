@@ -489,7 +489,7 @@ end
     function FilteredForce = FiltForce(varargin)
 
         if nargin
-            tempForce = varargin{1}
+            tempForce = varargin{1};
         else
             tempForce = datastruct.force.data(:,Force_to_plot+1);
         end
