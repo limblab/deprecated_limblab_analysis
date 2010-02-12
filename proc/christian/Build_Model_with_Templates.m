@@ -3,12 +3,12 @@ MG_task = 2;
 BD_task = 3;
 
 %% Indicate which task you are using this code for:
-task = MG_task;
+task = WF_task;
 
 %% Editable Parameters
 %default:
-% EMG_vector = [3 4 5 9]; %Thor
-EMG_vector = [1 2 5 9 10]; %Theo
+EMG_vector = [3 4 5 9]; %Thor
+% EMG_vector = [1 2 5 9 10]; %Theo
 time_before_reward = 2;
 time_after_reward = 1;
 
@@ -18,7 +18,9 @@ switch task
         % CR_ts = [ts tgt] : Nx2 array, N=2xNumReward ([ts reward])
         %   tgt = 0 if ts corresponds to Center Hold (Go_Cue)
         %   tgt = Tid if ts corresponds to Reward time of target Tid (Tid = 1 to numTargets)
-        R_ts = CR_ts(CR_ts(:,2)~=0 & CR_ts(:,1)<binnedData.timeframe(end,1),:);
+%         R_ts = CR_ts(CR_ts(:,2)~=0 & CR_ts(:,1)<binnedData.timeframe(end,1),:);
+        % Emily use this:
+        R_ts = CR_ts(CR_ts(:,2)~=0);
     case MG_task
         GR_ts = Get_GR_ts_MG(out_struct);
         %  GR_ts = [ts tgt_id gdt_id]
@@ -41,13 +43,13 @@ signals = [binnedData.timeframe binnedData.emgdatabin(:,EMG_vector)];
 % clear signals;
 
 %% 2.2- Generate plots of S and S_TVP
-% for i=1:size(S,3)
-%     figure;
-%     theta = 0:2*pi()/(size(S,2)-1):2*pi();
-% %     rho = [S(i,:) S(i,1)];
-%     rho = [S(1,2:end,i) S(1,2,i)];
-%     polar(theta,rho)
-% end
+for i=1:size(S,3)
+    figure;
+    theta = 0:2*pi()/(size(S,2)-1):2*pi();
+%     rho = [S(i,:) S(i,1)];
+    rho = [S(1,2:end,i) S(1,2,i)];
+    polar(theta,rho)
+end
 
 for i = 1:size(S_TVP,3)
     figure;
