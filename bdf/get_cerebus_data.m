@@ -115,7 +115,8 @@ function out_struct = get_cerebus_data(varargin)
         for i = length(unit_list):-1:1
             [nsresult,neural_data] = ns_GetNeuralData(hfile, unit_list(i), 1, EntityInfo(unit_list(i)).ItemCount);
             out_struct.units(i).id = [neural_info(i).SourceEntityID neural_info(i).SourceUnitID];
-            out_struct.units(i).ts = neural_data;
+%             out_struct.units(i).ts = single(neural_data);
+            out_struct.units(i).ts = neural_data; % don't convert as single for now because trains2bins_mex needs double
         end
 
         if (opts.verbose == 1)
@@ -144,12 +145,13 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.raw.analog.data(i) = {analog_data.*4.1666667}; %multiplying by 4.1666667 converts analog_data in mV
+            out_struct.raw.analog.data(i) = single({analog_data.*4.1666667}); %multiplying by 4.1666667 converts analog_data in mV
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
             end
         end
+        clear analog_info analog_data;
     else
         %build default analog fields anyways
         out_struct.raw.analog.channels = [];
@@ -183,14 +185,14 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(emg_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.emg.data(:,i+1) = emg_data.*4.1666667; %multiplying by 4.1666667 converts emg_data in mV
+            out_struct.emg.data(:,i+1) = single(emg_data.*4.1666667); %multiplying by 4.1666667 converts emg_data in mV
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
             end
         end
-        out_struct.emg.data(:,1) = 0:1/emgfreq:(length(emg_data)-1)/emgfreq;
-        clear emg_data emgfreq;
+        out_struct.emg.data(:,1) = single(0:1/emgfreq:(length(emg_data)-1)/emgfreq);
+        clear emg_data emg_info emgfreq;
     end
     
 %% The Force for WF & MG tasks, or whenever the force channel is nammed force_* or Force_*)
@@ -219,14 +221,14 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(force_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.force.data(:,i+1) = force_data.*4.1666667; %multiplying by 4.1666667 converts force_data in mV
+            out_struct.force.data(:,i+1) = single(force_data.*4.1666667); %multiplying by 4.1666667 converts force_data in mV
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(force_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting force...', filename));
             end
         end
-        out_struct.force.data(:,1) = 0:1/forcefreq:(length(force_data)-1)/forcefreq;
-        clear force_data forcefreq;
+        out_struct.force.data(:,1) = single(0:1/forcefreq:(length(force_data)-1)/forcefreq);
+        clear force_data force_info forcefreq;
 
     end
     

@@ -259,10 +259,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
         
         num_trials = size(out_struct.databursts,1);
         
-        out_struct.targets.corners = zeros(num_trials,5);
+        out_struct.targets.corners = zeros(num_trials,5,'single');
         
         if wrist_flexion_task
-        out_struct.targets.rotation = zeros(num_trials,2);            
+        out_struct.targets.rotation = zeros(num_trials,2,'single');            
             for i=1:num_trials
                 out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
                 out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
