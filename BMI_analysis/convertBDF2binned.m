@@ -32,9 +32,9 @@ function binnedData = convertBDF2binned(varargin)
     binsize = 0.02;
     starttime = 0.0;
     if isfield(datastruct, 'emg')
-        duration = datastruct.emg.data(end,1);
+        duration = double(datastruct.emg.data(end,1));
     elseif isfield(datastruct,'force')
-        duration = datastruct.force.data(end,1);
+        duration = double(datastruct.force.data(end,1));
     else
         warning('BDF2BIN: no emg or force field present in input structure');
     end
@@ -89,8 +89,9 @@ function binnedData = convertBDF2binned(varargin)
     end
     
     %Other time and frequency parameters
-    numberbins = (stoptime-starttime)/binsize;              %frame for binned data:
-    timeframe = (starttime:binsize:stoptime-binsize)';      %Time vector of the binned data, mostly for plotting
+    numberbins = (stoptime-starttime)/binsize;      
+    timeframe = ones(numberbins,1,'single');
+    timeframe = timeframe.*(starttime:binsize:stoptime-binsize)';      %Time vector of the binned data, mostly for plotting
 
 %% Bin EMG Data
 
@@ -112,7 +113,7 @@ function binnedData = convertBDF2binned(varargin)
         EMGname = char(zeros(1,12));
         numEMGs = length(datastruct.emg.emgnames);
         emgguide = char(zeros(numEMGs,length(EMGname)));
-        emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
+        emgtimebins = single(starttime*emgsamplerate+1:stoptime*emgsamplerate);
 
 
         for i=1:numEMGs
@@ -120,8 +121,8 @@ function binnedData = convertBDF2binned(varargin)
             emgguide(i,1:length(EMGname)) = EMGname;
         end
 
-        %Pre-allocate matrix for binned EMG
-        emgdatabin = zeros(numberbins,numEMGs);
+        %Pre-allocate matrix for binned EMG -- single precision!
+        emgdatabin = zeros(numberbins,numEMGs,'single');
 
         % Filter EMG data
         [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
@@ -134,8 +135,9 @@ function binnedData = convertBDF2binned(varargin)
             tempEMG = abs(tempEMG); %rectify
             tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
 
-            %downsample EMG data to desired bin size        
-            emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
+            %downsample EMG data to desired bin size
+%             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
+            emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0);
 
         end    
         clear tempEMG bh ah bl al emgtimebins EMGname numEMGs;
@@ -151,16 +153,18 @@ function binnedData = convertBDF2binned(varargin)
         forcename = char(zeros(1,12));
         numforcech = length(datastruct.force.labels);
         forcelabels = char(zeros(numforcech,length(forcename)));
-        forcetimebins = starttime*forcesamplerate+1:stoptime*forcesamplerate;
+        forcetimebins = single(starttime*forcesamplerate+1:stoptime*forcesamplerate);
+        forcedatabin = zeros(length(forcetimebins)/(forcesamplerate*binsize),numforcech,'single');
         
-        for i=1:numforcech
+        for i=numforcech:-1:1
             forcename = char(datastruct.force.labels(i));
             forcelabels(i,1:length(forcename))= forcename;
         end
-        
-        %downsample force data to desired bin size        
-        forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
 
+        %downsample force data to desired bin size
+%         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
+        forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear',0);
+        
         clear forcesamplerate forcetimebins forcename numforcech;
     end
 
@@ -170,12 +174,13 @@ function binnedData = convertBDF2binned(varargin)
         %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
         cursorposbin = [];
     else
-        cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0);
+        cursorposbin = single(interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0));
     end
     
     cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
     cursposlabels(1,1:5)= 'x_pos';
     cursposlabels(2,1:5)= 'y_pos';
+    
 %% Bin Spike Data
 
     if ~isfield(datastruct, 'units')
@@ -219,9 +224,9 @@ function binnedData = convertBDF2binned(varargin)
             spikeguide = [];
         else   
 
-            % Pre-allocate accordingly
+            % Pre-allocate accordingly - singles!
             spikeguide= char(zeros(numusableunits,length('ee00u0'))); %preallocate space for spikeguide
-            spikeratedata=zeros(numberbins,numusableunits);
+            spikeratedata=zeros(numberbins,numusableunits,'single');
 
             % Create the spikeguide with electrode names
             for i=1:numusableunits
@@ -239,8 +244,8 @@ function binnedData = convertBDF2binned(varargin)
                 %and get rid of the extra bins at beginnning, it contains all the ts
                 %from the beginning of file that are < starttime. Here I want
                 %starttime to be the lower bound of the first bin.
-                binneddata = binneddata(2:end);
-
+                binneddata = single(binneddata(2:end));
+                
                 %convert to firing rate and store in spike data matrix
                 spikeratedata(:,unit) = binneddata' /binsize;
             end
@@ -259,17 +264,15 @@ function binnedData = convertBDF2binned(varargin)
                            'cursorposlabels',cursposlabels,...
                            'cursorposbin',cursorposbin);
                                
-%% Save the binned data in a mat file
-    
-%      
-%     [FileName,PathName] = uiputfile( datastructname, 'Save binned data file as');
-%     fullfilename = fullfile(PathName , FileName);
-%         
-%     if isequal(FileName,0) || isequal(PathName,0)
-%         disp('The binned data structure was not saved!')
-%     else       
-%          save(fullfilename, 'binnedData');
-%          disp(['File: ', fullfilename,' saved successfully'])
-% %        save(fullfilename, 'emgguide', 'emgdatabin','timeframe');
-%     end
+%% resample function for single-precision (embeded function):
+
+    function Y = downSample(X,NewSR,OrigSR)
+       % downSample the sequence in vector X at NewSR/OrigSR times the original sample rate.
+       % OrigSR must be a multiple of NewSR
+       
+        binsToKeep = int32(1:round(OrigSR/NewSR):length(X));
+        Y = X(binsToKeep);
+    end
+        
+        
 end

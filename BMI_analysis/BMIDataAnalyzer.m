@@ -1,6 +1,9 @@
 function BMIDataAnalyzer()
 %GUI that process and plot data for Neural FES systems
 %
+%First thing to do: from s1_analysis folder, run 'load_paths', which
+%will add all the necessary paths to the usefull files.
+%
 %First, the API asks you to provide the base folder of the data to
 %analyse. This folder (refered to as dataPath below, must contain the
 %following subfolders (with exact names) :
@@ -50,7 +53,8 @@ function BMIDataAnalyzer()
 %   names that (s)he wants to process. The data files are loaded each
 %   time an action on them is required. That slows all the processes a
 %   little, but I thought Matlab would run out of memory less often
-%   this way
+%   this way. I added WS button for each type of file, which will load
+%   the corresponding data into the Matlab's base workspace.
 %
 %   (4) Bugs:
 %       -Out of Memory error occurs when binning data files. In my
@@ -71,10 +75,8 @@ function BMIDataAnalyzer()
     
 %% Globals
     
-    dataPath = 'C:\Monkey\Theo\Data\';
+    dataPath = 'C:\Monkey\Theo\Data_Second implant\';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
-    
-    addpath ../
     
     %Global Variables
     CB_FileName = 0;
