@@ -7,7 +7,10 @@ th = [0, pi/2, pi, 3*pi/2];
 
 res = zeros(size(all_units,1),14); % [chan unit a_gain a_pd p_gain p_pd]
 
+tic
 for i = 1:size(all_units,1)
+    et = toc;
+    disp(sprintf('%d of %d -- ET: %f', i, size(all_units,1), et));
     chan = all_units(i,1);
     unit = all_units(i,2);
     
