@@ -20,8 +20,10 @@ x = cos(beta);
 y = sin(beta);
 nu = atan2(sum(y), sum(x));
 
-E = mean(sin(alpha-mu) .* sin(beta-nu));
-V = var(sin(alpha-mu)) .* var(sin(beta-nu));
+%E = mean(sin(alpha-mu) .* sin(beta-nu));
+%V = var(sin(alpha-mu)) .* var(sin(beta-nu));
+E = sum(sin(alpha-mu) .* sin(beta-nu));
+V = sum(sin(alpha-mu).^2 .* sin(beta-nu).^2);
 
 r = E / sqrt(V);
 

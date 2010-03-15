@@ -3,7 +3,7 @@
 % Cycles through several iterations of predictions.m dropping neurons and
 % measuring the resulting VAF 
 
-iterations = 10;
+iterations = 20;
 max_dropped = 35;
 
 units = unit_list(bdf);
@@ -12,14 +12,16 @@ units = unit_list(bdf);
 means = zeros(1,max_dropped+1);
 vars = zeros(1,max_dropped+1);
 
+tic;
 for num_dropped_neurons = 0:max_dropped
     disp(sprintf('\n\nDropping %d Neurons\n------------------------', num_dropped_neurons));
     
     vafs = zeros(iterations,1);
-    
-    for iteration = 1:iterations
-        disp(sprintf('Iteration: %d', iteration));
         
+    for iteration = 1:iterations
+        et = toc;
+        disp(sprintf('Iteration: %d (%.2f)', iteration, toc/60));
+
         % Generate random unit list with num_dropped_neurons removed
         kept_units = units;
         for i = 0:num_dropped_neurons-1

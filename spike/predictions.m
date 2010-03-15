@@ -1,4 +1,4 @@
-function [vaf] = predictions(bdf, signal, cells, folds)
+function [vaf, H] = predictions(bdf, signal, cells, folds)
 
 % $Id$
 
