@@ -35,6 +35,8 @@ function binnedData = convertBDF2binned(varargin)
         duration = double(datastruct.emg.data(end,1));
     elseif isfield(datastruct,'force')
         duration = double(datastruct.force.data(end,1));
+    elseif isfield(datastruct,'pos')
+        duration = double(datastruct.pos(end,1)-datastruct.pos(1,1));
     else
         warning('BDF2BIN: no emg or force field present in input structure');
     end
