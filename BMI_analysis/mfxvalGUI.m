@@ -98,7 +98,7 @@ function OK_Button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
     
     %Check that all parameters are valid
-    if mod(get(handles.fillen_txtbx,'Value'),handles.binsize)
+    if mod(round(1000*get(handles.fillen_txtbx,'Value')),round(1000*handles.binsize))
         %1- Check that filter length is a multiple of binsize
         errordlg('Filter Length must be a multiple of binsize','Stop farting around!');
     elseif get(handles.Polyn_Order_txtbx,'Value')>4 || get(handles.Polyn_Order_txtbx,'Value') <1
