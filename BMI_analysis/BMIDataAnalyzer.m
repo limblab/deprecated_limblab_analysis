@@ -397,7 +397,8 @@ function BMIDataAnalyzer()
 
     function Filt_PredButton_Callback(obj,event)
         disp('Predicting EMGs, please wait...');
-        OLPredData = predictSignals(Filt_FullFileName,Bin_FullFileName);
+        [Smooth_Pred, Adapt_Enable] = PredOptionsGUI();
+        OLPredData = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable);
         disp('Done.');
         
         disp('Saving predicted EMGs...');

@@ -2,10 +2,15 @@ function [PredData] = predictSignals(varargin)
 
 filter       = varargin{1};
 BinnedData   = varargin{2};
-if nargin    == 3
+if nargin    >= 3
     FiltPred = varargin{3};
+    Adapt_Enable = false;
+    if nargin == 4
+        Adapt_Enable = varargin{4};
+    end
 else
     FiltPred = false;
+    Adapt_Enable = false;
 end
 
 if ischar(filter)
@@ -64,7 +69,6 @@ if ~isempty(filter.P)
 end
 
 %% Smooth EMG Predictions, moving average with variable length based on 1st deriv of ave FR
-FiltPred = true;
 % 1 - Binary average lag time
 % if FiltPred
 %     PredictedData_S = zeros(size(PredictedData));
