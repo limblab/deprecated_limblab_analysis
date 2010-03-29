@@ -495,7 +495,7 @@ end
         end
         
         lowpassfreq = 20; %20Hz
-        adfreq = datastruct.raw.analog.adfreq(1);
+        adfreq = datastruct.force.forcefreq;
 
         [bl,al] = butter(4, lowpassfreq*2/adfreq, 'low');
 
