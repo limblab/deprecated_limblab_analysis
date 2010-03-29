@@ -75,7 +75,7 @@ function BMIDataAnalyzer()
     
 %% Globals
     
-    dataPath = 'C:\Monkey\Theo\Data_Second implant\';
+    dataPath = 'C:/Monkey/Theo/Data_Second implant/';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
     
     %Global Variables
@@ -123,7 +123,7 @@ function BMIDataAnalyzer()
     %Callbacks
     function CB_LoadButton_Callback(obj,event)
        
-        [CB_FileName, PathName] = uigetfile( { [dataPath '\CerebusData\*.nev']},...
+        [CB_FileName, PathName] = uigetfile( { [dataPath '/CerebusData/*.nev']},...
                                                'Open Cerebus Data File' );
         
         if isequal(CB_FileName,0) || isequal(PathName,0)
@@ -185,7 +185,7 @@ function BMIDataAnalyzer()
     %Callbacks
     function BDF_LoadButton_Callback(obj,event)
         
-        [BDF_FileName, PathName] = uigetfile([dataPath '\BDFStructs\*.mat'], 'Open BDF Data File');
+        [BDF_FileName, PathName] = uigetfile([dataPath '/BDFStructs/*.mat'], 'Open BDF Data File');
         
         if isequal(BDF_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -267,7 +267,7 @@ function BMIDataAnalyzer()
     
     function Bin_LoadButton_Callback(obj,event)
         
-        [Bin_FileName, PathName] = uigetfile([dataPath '\BinnedData\*.mat'], 'Open Binned Data File');
+        [Bin_FileName, PathName] = uigetfile([dataPath '/BinnedData/*.mat'], 'Open Binned Data File');
         
         if isequal(Bin_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -378,7 +378,7 @@ function BMIDataAnalyzer()
     %Callbacks
     
     function Filt_LoadButton_Callback(obj,event)
-        [Filt_FileName, PathName] = uigetfile([dataPath '\SavedFilters\*.mat'], 'Open Filter Data File');
+        [Filt_FileName, PathName] = uigetfile([dataPath '/SavedFilters/*.mat'], 'Open Filter Data File');
         
         if isequal(Filt_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -442,7 +442,7 @@ function BMIDataAnalyzer()
     
     %Callbacks
     function OLPred_LoadButton_Callback(obj,event)
-        [OLPred_FileName, PathName] = uigetfile([dataPath '\OLPreds\*.mat'], 'Open Offline Predictions Data File');
+        [OLPred_FileName, PathName] = uigetfile([dataPath '/OLPreds/*.mat'], 'Open Offline Predictions Data File');
         
         if isequal(OLPred_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -501,7 +501,7 @@ function BMIDataAnalyzer()
                         
     %Callbacks
     function RTPred_LoadButton_Callback(obj,event)
-        [RTPred_FileName, PathName] = uigetfile([dataPath '\RTPreds\*.mat'], 'Open Real-Time Predictions Data File');
+        [RTPred_FileName, PathName] = uigetfile([dataPath '/RTPreds/*.mat'], 'Open Real-Time Predictions Data File');
         
         if isequal(RTPred_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
