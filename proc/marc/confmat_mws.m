@@ -1,4 +1,4 @@
-function [Cmat,p1off]=confmat_mws(predt,realt)
+function [Cmat,p1off]=confmat_mws(predt,realt,varargin)
 %8/15/09 by MWS
 %confmat plots a confusion matrix from real and predicted target
 %information (for centerout). 
@@ -21,6 +21,12 @@ for i=1:ntargs          %i is index of real targets
     Cmat(i,:)=Cmat(i,:)/sum(Cmat(i,:)); %normalize to 1 for each row (i.e. each real target)
 end
 
+if nargin>2
+    plotflag=varargin{1};
+else plotflag=1;
+end
+
+if plotflag
 %Now plot confusion matrix Cmat
 imagesc(Cmat)
 caxis([0 1])        %set scale to 0-1 to standardize plots
@@ -29,6 +35,8 @@ xlabel('Predicted Target','FontSize',20,'FontWeight','Bold')
 ylabel('Real Target','FontSize',20,'FontWeight','Bold')
 title('Normalized confusion matrix','FontSize',20,'FontWeight','Bold')
 colorbar
+end
+
 n1off=0;
 rtot=sum(Cmat,2);   %row (real) reach totals
     Cm1=circshift(Cmat,[0,1]);      %To get i-1th column, use circshift (to avoid indexing errors)
