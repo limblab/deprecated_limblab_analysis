@@ -12,25 +12,26 @@ subs = array_activity_map(spike_list, monkey_name); %David's version
 %constants
 num_bins          = size( spike_rates, 1 );  %number of bins (several thousand)
 fig1              = figure(1);
-%winsize           = get(fig1,'Position');
-%winsize(1:2)      = [0 0];
 frames_per_second = 20;  %based on 50ms/frame (real-time playback)
 times_played      = 1;
 
 %initialize arrays
-all_images = zeros( 10, 10, num_bins );
-all_frames = zeros( 1, num_bins );
+map = colormap(jet(255));
+%g   = struct( 'frames', [] );
 
 %create array activity image for each time bin
-for i = 1:num_bins
+for i = 1:2%num_bins
     
-    all_images(:,:,i) = accumarray( subs, spike_rates(i,:), [10 10] ); %create 10x10 matrix of electrode activity
-    imagesc( all_images(:,:,i) ) %create image    
-    all_frames(i) = getframe( fig1);%, winsize ); %store image as single movie frame
+    curr_image = accumarray( subs, spike_rates(i,:), [10 10] );
+    im = image( curr_image, 'CDataMapping', 'scaled'); %, 'UserData', spike_rates(i,:) );
+    g(i) = im2frame( im, map );
 
 end
 
+movie( g, times_played, frames_per_second );
+spike_activity = g;
+
 %play movie
-spike_activity = movie( all_frames, times_played, frames_per_second ); %#ok<NOPRT>
+%spike_activity = movie( all_frames, times_played, frames_per_second ); %#ok<NOPRT>
 %disp( spike_activity )
 

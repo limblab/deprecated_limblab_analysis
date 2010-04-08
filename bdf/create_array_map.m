@@ -28,8 +28,6 @@ thor_map  = [93 94 75 85 86 87 77 66 76 67 58 78  68 69 59 49 ... %pins 1-31 odd
  
 tiki_map = [];
 
-chewie_map = [];
-
 theo_map = [];
          
          
@@ -37,8 +35,6 @@ if strncmpi( monkey_name, 'thor_map', length(monkey_name) )
     map = [pin_map' thor_map'];
 elseif strncmpi( monkey_name, 'tiki_map', length(monkey_name) )
     map = [pin_map' tiki_map'];
-elseif strncmpi( monkey_name, 'chewie_map', length(monkey_name) )
-    map = [pin_map' chewie_map'];
 elseif strncmpi( monkey_name, 'theo_map', length(monkey_name) )
     map = [pin_map' theo_map'];
 else
