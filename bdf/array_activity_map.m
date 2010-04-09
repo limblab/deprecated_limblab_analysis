@@ -38,5 +38,3 @@ for i = 1 : num_units
     [subs(i,1), subs(i,2)] = find( map_matrix == spike_list(i) );
 end
 
-
-
