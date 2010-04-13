@@ -95,7 +95,7 @@ function BMIDataAnalyzer()
      
 %% Creating UI
 
-    UI = figure('Units','normalized','Position',[.33 .125 .34 .75]);
+    UI = figure('Units','normalized','Position',[.33 .125 .34 .75],'HitTest','off','NextPlot','new');
     set(UI,'Name','BMI Data Analyzer');
     set(UI,'NumberTitle','off');
     
@@ -220,6 +220,7 @@ function BMIDataAnalyzer()
             set(Bin_BuildButton, 'Enable','on');
             set(Bin_WSButton, 'Enable','on');
             set(Bin_mfxvalButton,  'Enable','on');
+            set(Bin_PlotButton, 'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
             end
@@ -252,13 +253,16 @@ function BMIDataAnalyzer()
 
     %Buttons
     Bin_LoadButton = uicontrol('Parent', Bin_Panel, 'String', 'LOAD', 'Units','normalized',...
-                            'Position', [.1 .2 .2 .3],'Callback',@Bin_LoadButton_Callback,'Enable','on');
+                            'Position', [.1 .2 .15 .3],'Callback',@Bin_LoadButton_Callback,'Enable','on');
 
     Bin_BuildButton = uicontrol('Parent', Bin_Panel, 'String', 'Build Model', 'Units','normalized',...
-                            'Position', [.4 .2 .2 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
+                            'Position', [.316 .2 .15 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
     
     Bin_mfxvalButton = uicontrol('Parent', Bin_Panel, 'String', 'mfxval', 'Units','normalized',...
-                            'Position', [.7 .2 .2 .3],'Callback',@Bin_mfxvalButton_Callback,'Enable','off');
+                            'Position', [.533 .2 .15 .3],'Callback',@Bin_mfxvalButton_Callback,'Enable','off');
+                        
+    Bin_PlotButton   = uicontrol('Parent', Bin_Panel, 'String', 'Plot', 'Units', 'normalized',...
+                            'Position', [.75 .2 .15 .3],'Callback',@Bin_PlotButton_Callback,'Enable','off');
                         
     Bin_WSButton = uicontrol('Parent', Bin_Panel, 'String', 'WS', 'Units','normalized',...
                             'Position', [.02 .2 .06 .3],'Callback',@Bin_WSButton_Callback,'Enable','off');                        
@@ -277,6 +281,7 @@ function BMIDataAnalyzer()
             set(Bin_BuildButton,'Enable','on');
             set(Bin_WSButton,'Enable','on');
             set(Bin_mfxvalButton, 'Enable','on');
+            set(Bin_PlotButton, 'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
                 set(Filt_WSButton,'Enable','on');
@@ -354,6 +359,10 @@ function BMIDataAnalyzer()
         clear binnedData;
         disp('Done.');
         
+    end
+
+    function Bin_PlotButton_Callback(obj,event)
+         plotBin(Bin_FullFileName);
     end
 
     function Bin_WSButton_Callback(obj,event)

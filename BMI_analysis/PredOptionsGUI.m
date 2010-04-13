@@ -23,7 +23,7 @@ function varargout = PredOptionsGUI(varargin)
 
 % Edit the above text to modify the response to help PredOptionsGUI
 
-% Last Modified by GUIDE v2.5 25-Mar-2010 11:26:10
+% Last Modified by GUIDE v2.5 05-Apr-2010 10:01:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -104,4 +104,12 @@ function Adapt_cbx_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of Adapt_cbx
+
+
+% --- Executes on key release with focus on figure1 and no controls selected.
+function figure1_KeyReleaseFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
 

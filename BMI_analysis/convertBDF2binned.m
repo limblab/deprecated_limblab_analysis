@@ -156,7 +156,6 @@ function binnedData = convertBDF2binned(varargin)
         numforcech = length(datastruct.force.labels);
         forcelabels = char(zeros(numforcech,length(forcename)));
         forcetimebins = single(starttime*forcesamplerate+1:stoptime*forcesamplerate);
-        forcedatabin = zeros(length(forcetimebins)/(forcesamplerate*binsize),numforcech,'single');
         
         for i=numforcech:-1:1
             forcename = char(datastruct.force.labels(i));
@@ -253,7 +252,9 @@ function binnedData = convertBDF2binned(varargin)
             end
         end        
     end
-      
+
+%% Words
+words = datastruct.words;
 
 %% Outputs
     binnedData = struct('timeframe',timeframe,...
@@ -264,7 +265,8 @@ function binnedData = convertBDF2binned(varargin)
                            'spikeguide',spikeguide,...
                            'spikeratedata',spikeratedata,...
                            'cursorposlabels',cursposlabels,...
-                           'cursorposbin',cursorposbin);
+                           'cursorposbin',cursorposbin,...
+                           'words',words);
                                
 %% resample function for single-precision (embeded function):
 

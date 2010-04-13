@@ -20,7 +20,9 @@ if ischar(BinnedData)
     BinnedData = LoadDataStruct(BinnedData,'binned');
 end
 
+binsize = BinnedData.timeframe(2)-BinnedData.timeframe(1);
 spikeData = BinnedData.spikeratedata;
+numlags = round(filter.fillen/binsize); %round in case of floating point errror
 
 %get usable units from filter info
 matchingInputs = FindMatchingNeurons(BinnedData.spikeguide,filter.neuronIDs);
@@ -45,7 +47,39 @@ ActualData=zeros(size(spikeData));
 
 %% Use the neural filter to predict the Data
 numsides=1; fs=1;
-[PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
+if Adapt_Enable
+    % only test on Force for now
+    ActualData = BinnedData.cursorposbin;
+    LR = 1/1000; %Learning rate
+    SR = BinnedData.timeframe(2)-BinnedData.timeframe(1);%Sampling rate
+    %find bins at which to measure error
+    w = BD_Words;
+    
+    %use a 500ms window before Adapt_bins to measure force error:
+    bins_before = (0.5/(BinnedData.timeframe(2)-BinnedData.timeframe(1)))-1;
+    bins_after = 0;
+    window = [bins_before bins_after];
+
+%     Adapt_ts = BinnedData.words( bitor(BinnedData.words(:,2)==w.Go_Cue,isWord(BinnedData.words,'endtrial')),1);
+    Go_ts  = BinnedData.words(BinnedData.words(:,2)==w.Go_Cue,1);
+    type0   = zeros(length(Go_ts),1);
+    Go_ts  = [Go_ts type0];
+    EOT_ts = BinnedData.words(isWord(BinnedData.words,'endtrial'),1);
+    type1   = ones(length(EOT_ts),1);
+    EOT_ts = [EOT_ts type1];
+
+    Adapt_ts = [Go_ts;EOT_ts];
+    Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/SR) Adapt_ts(:,2)]; %convert first column of Adapt_ts to bins
+    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>=filter.fillen+bins_before & Adapt_bins(:,1)<=length(BinnedData.timeframe),:); %remove bins at ts before (fillen+window) or after time max
+    Adapt_bins = sortrows(Adapt_bins, 1); %sort by bin number
+                                
+    [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt4(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,window);
+%     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt3(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,window);
+%    [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt1(usableSpikeData,filter.H,ActualData,LR);
+else
+%     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
+    [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
+end
 
 clear ActualData spikeData;
 
@@ -146,7 +180,7 @@ end
 if FiltPred
     PredictedData_S = zeros(size(PredictedData));
     
-    PredRate = round(1/(BinnedData.timeframe(2)-BinnedData.timeframe(1)));
+    PredRate = round(1/binsize);
     Pred_smoothlag_max = round(0.5*PredRate); % whatever number of bins that makes 500ms
     
     %abs of first derivative of (5-point smoothed) firing rate
@@ -191,6 +225,7 @@ end
 [nr,Ny]=size(filter.H);
 fillen=nr/Nx;
 timeframeNew = BinnedData.timeframe(fillen:numpts);
+spikeDataNew = usableSpikeData(fillen:numpts,:);
 %timeframeNew = BinnedData.timeframe(fillen+1:numpts); % to account for additional bin removed at beginning of PredictedEMGs
 
 PredData = struct('timeframe', timeframeNew,...
