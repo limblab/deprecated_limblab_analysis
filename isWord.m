@@ -18,6 +18,8 @@ w.Pickup = hex2dec('90');
 switch lower(type)
     case 'starttrial'
         r = bitand(hex2dec('f0'),word(:,2)) == w.Start;
+    case 'Go'
+        r = word(:,2) == w.Go_Cue;
     case 'reward'
         r = w.Reward == word;
     case 'endtrial'
