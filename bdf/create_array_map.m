@@ -10,13 +10,14 @@ pin_map   = [1  3  5  7  9  11 13 15 17 19 21 23 25 27 29 31 ...
              66 68 70 72 74 76 78 80 82 84 86 88 90 92 94 96 ...
              0 0 0 0 ];
 
-%I input electrode numbers below in the order I did because it was much easier
-%for me to type them while looking at the Excel table in this order than in
+%I input electrode numbers in the order I did because it was much easier
+%for me to type them in this order while looking at the Excel table than in
 %actual order (in table, are laid out divided by headstage with each having 
 %a column of the odd numbers of that third of the pins and a column of even 
 %numbers of that third of the pins); I went for ease of input over ease of
 %programming because ease of input made me significantly more sure that I
-%was not making mistakes while typing in the numbers
+%was not making mistakes while typing in the numbers, and it made it
+%significantly easier to check for mistakes after finishing.
 
 %Array ID#1025-0302
 thor_map  = [93 94 75 85 86 87 77 66 76 67 58 78  68 69 59 49 ... %pins 1-31 odd
@@ -54,7 +55,10 @@ theo_map  = [93 91 75 85 86 87 77 66 76 67 58 78 68  69 59 49 ... %pins 1-31 odd
              82 72 62 52 42 32 22 12 23 13 14 5  6   7  18 9  ... %pins 66-96 even
              1  10 27 94]; %gnd/ref electrodes
 
-         
+
+% if a number is not given on end of 'monkey_name' (i.e. only 'tiki', not
+% 'tiki1'), the first map in this list with the matching name will be
+% returned (as in the argument 'tiki' will return 'tiki1_map')
 if strncmpi( monkey_name, 'thor_map', length(monkey_name) )
     map = [pin_map' thor_map'];
 elseif strncmpi( monkey_name, 'tiki1_map', length(monkey_name) )
