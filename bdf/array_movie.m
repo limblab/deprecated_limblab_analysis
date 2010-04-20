@@ -1,9 +1,10 @@
-function spike_activity = array_movie(bdf, monkey_name)
+function avgs = array_movie(bdf, monkey_name)
 %input: array_movie(bdf, 'name')
-%return: nothing, really - just creates a bunch of images in folder
+%return: nothing within MATLAB - just creates a bunch of images in folder
 %specified in 'filename' (currently "tmp")
 
 spike_activity = 0; %#ok<NASGU>
+
 
 %Data flow for this series of functions:
 %In command prompt, call:
@@ -33,28 +34,53 @@ subs = array_activity_map(spike_list, monkey_name);
 
 %% Create images
 
-%initializing
-fig1     = figure('Visible', 'off'); %#ok<NASGU> %initializing figure so an empty window does not pop up whenever the function is called 
-%num_bins = size( spike_rates, 1 );  %total number of bins (several thousand)
+%Initializing:
+%-constants
+fig1     = figure('Visible', 'off'); %#ok<NASGU> %initializing figure so an empty window does not pop up when the function is called 
 length   = 30; %length of video in seconds
 fps      = 20; %frame rate of vdeo
-frames   = length*fps;
-width    = 400; %desired width and heigh in pixels of final images 
+frames   = length*fps; %number of frames that will comprise the video
+width    = 400; %desired width and height of final images (in pixels)
 height   = 400;
-map = colormap(jet(150)); %150 was quasi-randomly picked based on maximum value of curr_image:
-% higher number pushes values to blue, lower pushes to red; most values are
-% in the 40-60 range, but some do get above 100 (120 might be the max, not
-% 100% sure)
+CLim     = 150; %150 was quasi-randomly picked as the color limit (length of the colormap) based on maximum value of curr_image
 
-%create array activity image for each time bin, store to 'tmp' folder as a
-%TIFF image
+%-arrays
+map          = colormap(jet(CLim)); %pre-define colormap for use in 'imwrite' function
+map(1:3,:)   = 0; %makes the electrodes with no activity represented by black instead of blue
+avg_activity = zeros( 1, 10 ); %a single row to add to the bottom [of the image matrix] that represents average activity within the given frame
+all_activity = zeros( frames, 1 ); %stores avg activity values for all frames
+all_images   = zeros( 10, 10, frames ); %stores all images (before avg activity row is added on)
+num_units    = size(  spike_list, 1 );  %number of active units in data file
+
+%Create array activity image for each time bin
+%Must create images in separate loop from converting to frames to allow
+%access to *all* all_activity values (need max value to use scaling
+%function 'clim_ave')
 for i = 1:frames
     
-    curr_image = accumarray( subs, spike_rates(i,:), [10 10] ); %put together a matrix with spike rate counts compiled in corresponding electrode positions
-    curr_image = expand_image( curr_image, width, height ); %enlarge matrix to desired size
-    filename = sprintf('tmp/frame%03d.tif',i); %3 digits in filename gives up to 50s of footage (4 digits: up to ~8mins)
-    imwrite( curr_image , map, filename, 'tif' );
+    curr_image        = accumarray( subs, spike_rates(i,:), [10 10] ); %put together a matrix with spike rate counts compiled in corresponding electrode positions
+    summed            = sum( sum(curr_image) ); %total activity within curr_image
+    all_activity(i)   = round( summed/num_units ); %storing *average* activity over the array
+    all_images(:,:,i) = curr_image;
+    
+end
+
+%max avg activity value to allow scaling of averages
+avg_max = max(all_activity);
+%scales average values based on max average of this dataset, adds a row to
+%the bottom of 'curr_image' to display the average value, expands the
+%image, and prints it out to a TIFF into the 'tmp' folder
+for i = 1:frames
+    
+    curr_image      = all_images(:,:,i); %set a local variable to current frame
+    all_activity(i) = clim_ave(all_activity(i), CLim, avg_max); %scaling average activity values to cover greater range of colormap values
+    avg_activity(:) = all_activity(i);   %create entire row of the scaled avg value for that frame
+    curr_image      = vertcat(curr_image, avg_activity); %adding average activity as an extra row on bottom of image
+    curr_image      = expand_image( curr_image, width, height ); %enlarge matrix to desired size
+    filename        = sprintf('tmp/frame%03d.tif',i); %3 digits in filename gives up to 50s of footage (4 digits: up to ~8mins)
+    
+    imwrite( curr_image , map, filename, 'tif' ); %write image to TIFF file
 
 end
 
-spike_activity = 1; %...have to return something, I suppose
+avgs = all_activity; %returns array storing average activity value for each time bin/frame (just for reference)
