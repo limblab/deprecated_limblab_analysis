@@ -4,21 +4,20 @@ function tt = co_trial_table(bdf)
 %
 % Each row of the table coresponds to a single trial.  Columns are as
 % follows:
-%   Start time
-%   Bump direction          -- -1 for none
-%   Bump phase              -- H (hold), D (delay), or M (movement)
-%   Bump time
-%   Target                  -- -1 for none (e.g., a neutral bump)
-%   OT on time
-%   Go cue
-%   Movement start time     -- Not implemented yet
-%   Trial End time
-%   Trial result            -- R, A, I, or N (N coresponds to no-result)
+%    1: Start time
+%    2: Bump direction          -- -1 for none
+%    3: Bump phase              -- H (hold), D (delay), or M (movement)
+%    4: Bump time
+%    5: Target                  -- -1 for none (e.g., a neutral bump)
+%    6: OT on time
+%    7: Go cue
+%    8: Movement start time     -- Not implemented yet
+%    9: Trial End time
+%   10: Trial result            -- R, A, I, or N (N coresponds to no-result)
 
 % $Id$
 
 words = bdf.words;
-speed = [bdf.vel(:,1), sqrt(bdf.vel(:,2).^2 + bdf.vel(:,3).^2)];
 
 result_codes = 'RAFI------------';
 
@@ -98,13 +97,38 @@ for trial = 1:num_trials-1
     end
      
     % Find movement onset
-    %spd_start_idx = find(speed(:,1) > start_time, 1, 'first');
-    %spd_stop_idx = find(speed(:,1) < stop_time, 1, 'last');
-    %trial_speed = speed(spd_start_idx:spd_stop_idx,:);
-    
-    tt(trial,:) = [start_time bump_dir bump_phase bump_time ot_dir ot_time go_cue -1 stop_time trial_result];
-end
+    if trial_result == double('R') || bump_phase == double('H')
+        sidx = find(bdf.vel(:,1) > start_time,1,'first'):find(bdf.vel(:,1) > stop_time+1,1,'first');
 
+        t = bdf.vel(sidx,1);                                % Set up time index vector
+        s = sqrt(bdf.vel(sidx,2).^2 + bdf.vel(sidx,3).^2);  % Calculate speeds
+
+        d = [0; diff(smooth(s,100))*25];                    % Absolute acceleration (dSpeed/dt)
+        dd = [diff(smooth(d,100)); 0];                      % d^2 Speed / dt^2
+        peaks = dd(1:end-1)>0 & dd(2:end)<0;                % zero crossings are abs. acc. peaks
+        if go_cue > 0
+            mvt_start = go_cue;
+        else
+            mvt_start = bump_time;
+        end
+        mvt_peak = find(peaks & t(2:end) > mvt_start & d(2:end) > 1, 1, 'first'); 
+        thresh = d(mvt_peak)/2;                             % Threshold is half max of acceleration peak
+        onset = t(find(d<thresh & t<t(mvt_peak),1,'last')); % Movement onset is last threshold crossing before peak
+    end
+    
+    % Build table
+    tt(trial,:) = [...
+        start_time, ... % Trial start
+        bump_dir, ...   % Bump Direction (-1 for none)
+        bump_phase, ... % Bump Timing (-1 for none, 'H' for center hold, 'M' for movement, 'D' for go-cue
+        bump_time, ...  % Timestamp of bump event
+        ot_dir, ...     % Outer target direction (-1 for none)
+        ot_time, ...    % Timestamp of OT On event
+        go_cue, ...     % Timestamp of Go Cue
+        onset, ...      % Detected movement onset
+        stop_time, ...  % End of trial
+        trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
+end
 
 
 
