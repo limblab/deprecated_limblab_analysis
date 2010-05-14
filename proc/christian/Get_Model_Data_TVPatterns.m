@@ -26,8 +26,9 @@ function [ModelData] = Get_Model_Data_TVPatterns(binnedData,S_TVP,R_ts )%, timeW
         
         if size(R_ts,2)>1
             tgt_id = R_ts(b,2);
-        elseif size(R_ts,2)>2
-            gdt_id = R_ts(b,3);
+            if size(R_ts,2)>2
+                gdt_id = R_ts(b,3);
+            end
         else
             tgt_id =1;
         end
@@ -40,10 +41,10 @@ function [ModelData] = Get_Model_Data_TVPatterns(binnedData,S_TVP,R_ts )%, timeW
     
         %use template as emg data, scaled in amplitude with aveFR    
         %get an average FR over the block period 
-        aveFR = mean(mean(binnedData.spikeratedata(tmpDataBlock,:)));
+%         aveFR = mean(mean(binnedData.spikeratedata(tmpDataBlock,:)));
         %and scale EMG template with aveFR
 %        ModelData.emgdatabin(tmpDataBlock,:) = S_TVP(:,2:end,tgt_id)*aveFR;
-        ModelData.emgdatabin(tmpDataBlock,:) = S_TVP(:,2:end,tgt_id);
+        ModelData.emgdatabin(tmpDataBlock,:) = S_TVP(:,2:end,tgt_id,gdt_id);
     end
 
 end

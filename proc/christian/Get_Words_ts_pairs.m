@@ -5,12 +5,20 @@ function ts_pairs = Get_Words_ts_pairs(startWord, Word1, Word2, wordsVect)
 % be sequential within the trial.
 % startWord: the start word for the task
 % Word1, Word2: the two words from which you want to extract the ts
+% Word2 can also be a function handle, such as w.IsEndWord
 % WordsVect: a 2 column matrix of words as found in the bdf struct
 
 %get the words ts
 Start_ts = wordsVect(wordsVect(:,2)==startWord,1);
 Word1_ts = wordsVect(wordsVect(:,2)==Word1 & wordsVect(:,1)>Start_ts(1),1);
-Word2_ts = wordsVect(wordsVect(:,2)==Word2 & wordsVect(:,1)>Start_ts(1),1);
+
+if isa(Word2,'numeric') %Word2 is a word
+    Word2_ts = wordsVect(wordsVect(:,2)==Word2 & wordsVect(:,1)>Start_ts(1),1);
+elseif isa(Word2,'function_handle'); %Word2 is a function
+    Word2_ts = wordsVect(Word2(wordsVect(:,2)));
+else
+    error('unexpected argument type: Word2');
+end
 
 % %Use only Word2 after first Word1 occurance
 % Word2_ts=Word2_ts(Word2_ts>Word1_ts(1));

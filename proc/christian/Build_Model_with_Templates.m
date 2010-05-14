@@ -3,12 +3,13 @@ MG_task = 2;
 BD_task = 3;
 
 %% Indicate which task you are using this code for:
-task = WF_task;
+task = MG_task;
 
 %% Editable Parameters
 %default:
 EMG_vector = [3 4 5 9]; %Thor
 % EMG_vector = [1 2 5 9 10]; %Theo
+EMG_vector = [1 3 9 10]; %Fidel
 time_before_reward = 2;
 time_after_reward = 1;
 
@@ -39,7 +40,7 @@ end
 %% 2.1-Calculate Average Signals around Reward Time:
 %default
 signals = [binnedData.timeframe binnedData.emgdatabin(:,EMG_vector)];
-[S,S_TVP] = TVP_tgt(signals,R_ts,time_before_reward,time_after_reward);
+[S,S_TVP] = TVP_tgt_gdt(signals,R_ts,time_before_reward,time_after_reward);
 % clear signals;
 
 %% 2.2- Generate plots of S and S_TVP
@@ -52,10 +53,14 @@ for i=1:size(S,3)
 end
 
 for i = 1:size(S_TVP,3)
-    figure;
-    plot(S_TVP(:,1,i),S_TVP(:,2:end,i));
-    hold on;
-     plot(S(:,1,i),S(:,2:end,i));
+    for j = 1:size(S_TVP,4)
+        figure;
+        plot(S_TVP(:,1,i,j),S_TVP(:,2:end,i,j));
+        hold on;
+%         plot(S(:,1,i,j),S(:,2:end,i,j));
+        title(sprintf('Ave EMGs for Gadget %d, Target %d',j,i));
+        legend(binnedData.emgguide(EMG_vector,:));
+    end
 end
 
 
@@ -67,14 +72,14 @@ switch task
         time_before_reward = 1.5;
         time_aftet_reward =  0.5;
     case MG_task
-        time_before_reward = 1.6;
-        time_after_reward =  -0.5;
+        time_before_reward = 1.5;
+        time_after_reward =  0.5;
     case BD_task
         time_before_reward = 1;
         time_after_reward = 0;
 end
 %and update Templates:
-[S,S_TVP] = TVP_tgt(signals,R_ts,time_before_reward,time_after_reward);
+[S,S_TVP] = TVP_tgt_gdt(signals,R_ts,time_before_reward,time_after_reward);
 
 %% 3.1- Generate the Data to be used for Model Building
 
@@ -106,21 +111,38 @@ PolynomialOrder = 2;
 ActualData = binnedData;
 ActualData.emgdatabin = binnedData.emgdatabin(:,EMG_vector);
 ActualData.emgguide   = binnedData.emgguide(EMG_vector,:);
+ActualData.forcedatabin = [];
+ActualData.cursorposbin = [];
 
-[PredData_TVP] = predictSignals(filter_TVP,ActualData);
-[PredData] = predictSignals(filter,ActualData);
+% Smooth Prediction?
+Smooth = false;
+
+[PredData_TVP] = predictSignals(filter_TVP,ActualData,Smooth);
+[PredData] = predictSignals(filter,ActualData,Smooth);
 
 %Normalize predictions and actual data between 0 and 200
 for i = 1:length(EMG_vector)
     ActualData.emgdatabin(:,i) = 200*ActualData.emgdatabin(:,i)/max(ActualData.emgdatabin(:,i));
-    PredData.preddatabin(:,i) = 200*PredData.preddatabin(:,i)/max(PredData.preddatabin(:,i));
-    PredData_TVP.preddatabin(:,i) = 200*PredData_TVP.preddatabin(:,i)/max(PredData_TVP.preddatabin(:,i));
+    
+    PredData.preddatabin(:,i) = PredData.preddatabin(:,i)*mean(PredData.preddatabin(:,i))/mean(ActualData.emgdatabin(:,i));
+    PredData_TVP.preddatabin(:,i) = PredData_TVP.preddatabin(:,i)*mean(PredData_TVP.preddatabin(:,i))/mean(ActualData.emgdatabin(:,i));
+    
+%     PredData.preddatabin(:,i) = 200*PredData.preddatabin(:,i)/max(PredData.preddatabin(:,i));
+%     PredData_TVP.preddatabin(:,i) = 200*PredData_TVP.preddatabin(:,i)/max(PredData_TVP.preddatabin(:,i));
 end
 
 plotflag=1;
 %TV Patterns
-ActualvsOLPred(ActualData, PredData_TVP, plotflag);
+R2_TVP = ActualvsOLPred(ActualData, PredData_TVP, plotflag);
 %static Patterns
 ActualvsOLPred(ActualData, PredData, plotflag);
 
-
+%subplots
+numEMGs = length(EMG_vector);
+figure;
+for i=1:numEMGs
+    subplot(numEMGs,1,i);
+    plot(ActualData.timeframe,ActualData.emgdatabin(:,i),'k');
+    hold on;
+    plot(PredData_TVP.timeframe, PredData_TVP.preddatabin(:,i),'r')
+end
