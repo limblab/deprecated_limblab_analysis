@@ -205,8 +205,8 @@ function BMIDataAnalyzer()
     function BDF_BinButton_Callback(obj,event)
         disp('Converting BDF structure to binned data, please wait...');
 %        Bin_UI = figure;
-        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate] = convertBDF2binnedGUI;
-        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate);
+        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
+        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData);
         disp('Done.');
         
         disp('Saving binned data...');
@@ -406,8 +406,8 @@ function BMIDataAnalyzer()
 
     function Filt_PredButton_Callback(obj,event)
         disp('Predicting EMGs, please wait...');
-        [Smooth_Pred, Adapt_Enable] = PredOptionsGUI();
-        OLPredData = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable);
+        [Smooth_Pred, Adapt_Enable, LR, Lag] = PredOptionsGUI();
+        OLPredData = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
         disp('Done.');
         
         disp('Saving predicted EMGs...');

@@ -23,7 +23,7 @@ function varargout = PredOptionsGUI(varargin)
 
 % Edit the above text to modify the response to help PredOptionsGUI
 
-% Last Modified by GUIDE v2.5 05-Apr-2010 10:01:40
+% Last Modified by GUIDE v2.5 15-Apr-2010 15:08:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -74,8 +74,10 @@ function varargout = PredOptionsGUI_OutputFcn(hObject, eventdata, handles)
 
     FiltPred = get(handles.Smooth_cbx,'Value');
     Adapt_Enable = get(handles.Adapt_cbx,'Value');
-
-    varargout = {FiltPred,Adapt_Enable};
+    LR = get(handles.LR_txtbx,'Value');
+    Lag = get(handles.Lag_txtbx,'Value');
+    
+    varargout = {FiltPred,Adapt_Enable,LR,Lag};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -104,12 +106,64 @@ function Adapt_cbx_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of Adapt_cbx
-
+if get(hObject,'Value')
+    set(handles.LR_txtbx, 'enable','on');
+    set(handles.Lag_txtbx, 'enable','on');
+else
+    set(handles.LR_txtbx, 'enable','off');
+    set(handles.Lag_txtbx, 'enable','off');
+end
 
 % --- Executes on key release with focus on figure1 and no controls selected.
 function figure1_KeyReleaseFcn(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+
+function LR_txtbx_Callback(hObject, eventdata, handles)
+% hObject    handle to LR_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of LR_txtbx as text
+%        str2double(get(hObject,'String')) returns contents of LR_txtbx as a double
+ set(handles.LR_txtbx, 'value', str2double(get(hObject,'String')) );
+
+% --- Executes during object creation, after setting all properties.
+function LR_txtbx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to LR_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Lag_txtbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Lag_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Lag_txtbx as text
+%        str2double(get(hObject,'String')) returns contents of Lag_txtbx as a double
+ set(handles.Lag_txtbx, 'value', str2double(get(hObject,'String')) );
+
+% --- Executes during object creation, after setting all properties.
+function Lag_txtbx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Lag_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 

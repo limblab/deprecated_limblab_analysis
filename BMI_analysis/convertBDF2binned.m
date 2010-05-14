@@ -1,9 +1,9 @@
 function binnedData = convertBDF2binned(varargin)
-        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate)
+        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate, NormData)
 
 %% Initialization
 
-    if (nargin <1 || nargin == 3 || nargin > 7)
+    if (nargin <1 || nargin == 3 || nargin > 8)
         disp('Wrong number of arguments');
         disp(sprintf('Usage: \nconvertBDF2binned( datastructname, [binsize], [starttime, endtime],[EMG_hp, EMG_lp]'));
         disp('  - datastructname        : string of bdf.mat file path and name, or name of preloaded BDF structure');
@@ -11,6 +11,7 @@ function binnedData = convertBDF2binned(varargin)
         disp('  - [starttime, stoptime] : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)');
         disp('  - [EMG_hp, EMG_lp]      : [50 10] high pass and low pass cut off frequencies for EMG filtering');
         disp('  - [minFiringRate]       : [0.0] minimum firing rate a units needs to be included in the data');
+        disp('  - [NormData]            : [false] specify whether the output data is to be normalized to unity');
         disp(sprintf('\n'));
         return;
     end
@@ -45,6 +46,7 @@ function binnedData = convertBDF2binned(varargin)
     EMG_hp = 50; % default high pass at 50 Hz
     EMG_lp = 10; % default low pass at 10 Hz
     minFiringRate = 0.0; %default min firing rate to include a unit in the data
+    NormData = false;
 
     %optional parameters overridding
     if (nargin >= 2)
@@ -58,8 +60,11 @@ function binnedData = convertBDF2binned(varargin)
         EMG_hp = varargin{5};
         EMG_lp = varargin{6};
     end
-    if (nargin ==7)
+    if (nargin >=7)
         minFiringRate = varargin{7};
+    end
+    if (nargin == 8)
+        NormData = varargin{8};
     end
         
 %% Validation of time parameters
@@ -140,8 +145,15 @@ function binnedData = convertBDF2binned(varargin)
             %downsample EMG data to desired bin size
 %             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
             emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0);
-
-        end    
+        end
+        
+        %Normalize EMGs        
+        if NormData
+            for i=1:numEMGs
+                emgdatabin(:,i) = emgdatabin(:,i)/max(emgdatabin(:,i));
+            end
+        end
+        
         clear tempEMG bh ah bl al emgtimebins EMGname numEMGs;
     end
 
@@ -165,6 +177,13 @@ function binnedData = convertBDF2binned(varargin)
         %downsample force data to desired bin size
 %         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
         forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear',0);
+       
+        if NormData
+            %Normalize Force
+            for i=1:numforcech
+                forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
+            end        
+        end
         
         clear forcesamplerate forcetimebins forcename numforcech;
     end
@@ -176,11 +195,21 @@ function binnedData = convertBDF2binned(varargin)
         cursorposbin = [];
     else
         cursorposbin = single(interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0));
+
     end
     
     cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
     cursposlabels(1,1:5)= 'x_pos';
     cursposlabels(2,1:5)= 'y_pos';
+    
+    if NormData
+        %Normalize Cursor and Target position with same x and y ratios
+        %first, calculate the ratio for cursor and use it later also for
+        %target corners
+        NormRatios = 1./max(abs(cursorposbin));
+        %Normalize cursor position
+        cursorposbin = cursorposbin.*repmat(NormRatios,numberbins,1);
+    end
     
 %% Bin Spike Data
 
@@ -254,19 +283,39 @@ function binnedData = convertBDF2binned(varargin)
     end
 
 %% Words
-words = datastruct.words;
+%(see outputs)
+ words = datastruct.words(datastruct.words(:,1)>=timeframe(1) & datastruct.words(:,1)<=timeframe(end),:);
 
+%% Targets
+%(see outputs)
+ targets.corners = datastruct.targets.corners( datastruct.targets.corners(:,1)>=timeframe(1) & ...
+                                                datastruct.targets.corners(:,1)<=timeframe(end),: );                                            
+
+ if isfield(datastruct.targets, 'rotation')                                            
+     targets.rotation = datastruct.targets.rotation( datastruct.targets.rotation(:,1)>=timeframe(1) & ...
+                                                    datastruct.targets.rotation(:,1)<=timeframe(end),: );
+ end
+                                                    
+if NormData
+    %Normalize Cursor and Target position with same x and y ratios
+    %target x corners
+    targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
+    %target y corners
+    targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
+end
+    
 %% Outputs
     binnedData = struct('timeframe',timeframe,...
-                           'emgguide',emgguide,...
-                           'emgdatabin',emgdatabin,...
-                           'forcelabels',forcelabels,...
-                           'forcedatabin',forcedatabin,...
-                           'spikeguide',spikeguide,...
-                           'spikeratedata',spikeratedata,...
-                           'cursorposlabels',cursposlabels,...
-                           'cursorposbin',cursorposbin,...
-                           'words',words);
+                        'emgguide',emgguide,...
+                        'emgdatabin',emgdatabin,...
+                        'forcelabels',forcelabels,...
+                        'forcedatabin',forcedatabin,...
+                        'spikeguide',spikeguide,...
+                        'spikeratedata',spikeratedata,...
+                        'cursorposlabels',cursposlabels,...
+                        'cursorposbin',cursorposbin,...
+                        'words',words,...
+                        'targets',targets);
                                
 %% resample function for single-precision (embeded function):
 

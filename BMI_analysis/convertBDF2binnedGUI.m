@@ -22,7 +22,7 @@ function varargout = convertBDF2binnedGUI(varargin)
 
 % Edit the above text to modify the response to help convertBDF2binnedGUI
 
-% Last Modified by GUIDE v2.5 08-May-2009 14:52:13
+% Last Modified by GUIDE v2.5 23-Apr-2010 13:46:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,7 +78,8 @@ function varargout = convertBDF2binnedGUI_OutputFcn(hObject, eventdata, handles)
     HP = get(handles.HP_txtbx, 'Value');
     LP = get(handles.LP_txtbx, 'Value');
     MFR = get(handles.MFR_txtbx, 'Value');
-    varargout = {binsize startTime stopTime HP LP MFR};
+    NormData = get(handles.Normalize_cbx,'Value');
+    varargout = {binsize startTime stopTime HP LP MFR NormData};
 
     close(handles.figure1);
 
@@ -239,5 +240,14 @@ function MFR_txtbx_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in Normalize_cbx.
+function Normalize_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Normalize_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Normalize_cbx
 
 

@@ -1,12 +1,14 @@
-function [PredData] = predictSignals(varargin)
+function [PredData, varargout] = predictSignals(varargin)
 
 filter       = varargin{1};
 BinnedData   = varargin{2};
 if nargin    >= 3
     FiltPred = varargin{3};
     Adapt_Enable = false;
-    if nargin == 4
+    if nargin > 3
         Adapt_Enable = varargin{4};
+        LR = varargin{5};
+        Adapt_lag = varargin{6};
     end
 else
     FiltPred = false;
@@ -50,35 +52,42 @@ numsides=1; fs=1;
 if Adapt_Enable
     % only test on Force for now
     ActualData = BinnedData.cursorposbin;
-    LR = 1/1000; %Learning rate
+%     ActualData = BinnedData.forcedatabin;
+%     ActualData = BinnedData.emgdatabin;
+%     LR = 1e-7; %Learning rate
     SR = BinnedData.timeframe(2)-BinnedData.timeframe(1);%Sampling rate
     %find bins at which to measure error
-    w = BD_Words;
+%     w = BD_Words;
     
     %use a 500ms window before Adapt_bins to measure force error:
-    bins_before = (0.5/(BinnedData.timeframe(2)-BinnedData.timeframe(1)))-1;
-    bins_after = 0;
-    window = [bins_before bins_after];
+    Lag_bins =  round(Adapt_lag/(BinnedData.timeframe(2)-BinnedData.timeframe(1)))-1;
+    
 
-%     Adapt_ts = BinnedData.words( bitor(BinnedData.words(:,2)==w.Go_Cue,isWord(BinnedData.words,'endtrial')),1);
-    Go_ts  = BinnedData.words(BinnedData.words(:,2)==w.Go_Cue,1);
-    type0   = zeros(length(Go_ts),1);
-    Go_ts  = [Go_ts type0];
-    EOT_ts = BinnedData.words(isWord(BinnedData.words,'endtrial'),1);
-    type1   = ones(length(EOT_ts),1);
-    EOT_ts = [EOT_ts type1];
+% %     Adapt_ts = BinnedData.words( bitor(BinnedData.words(:,2)==w.Go_Cue,isWord(BinnedData.words,'endtrial')),1);
+%     Go_ts  = BinnedData.words(BinnedData.words(:,2)==w.Go_Cue,1);
+%     Pos0   = zeros(length(Go_ts),1);
+%     Go_ts  = [Go_ts Pos0];
+%     EOT_ts = BinnedData.words(isWord(BinnedData.words,'endtrial'),1);
+%     EOT_ts = [EOT_ts type1];
+% 
+%     Adapt_ts = [Go_ts;EOT_ts];
+    
 
-    Adapt_ts = [Go_ts;EOT_ts];
-    Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/SR) Adapt_ts(:,2)]; %convert first column of Adapt_ts to bins
-    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>=filter.fillen+bins_before & Adapt_bins(:,1)<=length(BinnedData.timeframe),:); %remove bins at ts before (fillen+window) or after time max
-    Adapt_bins = sortrows(Adapt_bins, 1); %sort by bin number
-                                
-    [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt4(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,window);
+    Adapt_ts = get_tgt_center(BinnedData);
+    Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/SR) Adapt_ts(:,2:end)]; %convert first column of Adapt_ts to bins
+    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); %remove first adapt step is too early
+    
+     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt7(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
+%     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt6(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,Lag_bins);
+%     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt5(usableSpikeData,filter.H,ActualData,LR);
+%     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt4(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,window);
 %     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt3(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,window);
 %    [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt1(usableSpikeData,filter.H,ActualData,LR);
+    varargout(1) = {Hnew};
 else
-%     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
-    [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
+     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
+   % [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
+  %  PredictedData = PredictedData(numlags:end,:);
 end
 
 clear ActualData spikeData;

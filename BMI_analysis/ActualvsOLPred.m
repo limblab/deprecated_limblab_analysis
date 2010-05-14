@@ -1,4 +1,4 @@
-function ActualvsOLPred(ActualData, PredData, plotflag)
+function varargout = ActualvsOLPred(ActualData, PredData, plotflag)
 
     numPredSignals = size(PredData.preddatabin,2);
     
@@ -32,7 +32,7 @@ function ActualvsOLPred(ActualData, PredData, plotflag)
     end
     
     R2 = CalculateR2(ActSignals,PredData.preddatabin(start_Pred:finish_Pred,:));
-    
+    varargout = {R2};
     %Display R2
     disp('R2 = ');
 
