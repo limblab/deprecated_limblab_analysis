@@ -192,7 +192,79 @@ function out_struct = calc_from_raw(raw_struct, opts)
             end
         end
     end % opts.force
-    
+
+%% Eye-Tracker (analog) data
+
+if opts.eye
+    eye_channels = find( strncmp(out_struct.raw.analog.channels, 'POG', 3) ); %#ok<EFIND>
+    if(~isempty(eye_channels))
+        
+%------------init matrices/get raw data-----------------------------------
+        %initialize  matrices... size = (length 2), in form [ t a ]
+        x_data  = zeros( length(analog_time_base), 2 ); %#ok<NASGU>
+        y_data  = zeros( length(analog_time_base), 2 ); %#ok<NASGU>
+        raw_eye = zeros( length(analog_time_base), 3 );
+        t = 1;      %naming "raw_eye" indices
+        x = 2;
+        y = 3;
+        b = 0.4;      %blink filter lower voltage limit (picked by visually finding in graph where cut-off appeared to be)
+        
+        x_data = get_analog_signal(out_struct, 'POGX');
+        y_data = get_analog_signal(out_struct, 'POGY');
+        
+        raw_eye(:,t) = analog_time_base';                                 %time stamp
+        raw_eye(:,x) = x_data( 1:length(analog_time_base), 2 );           %x-coord
+        raw_eye(:,y) = y_data( 1:length(analog_time_base), 2 );           %y-coord
+%------------end initialization-------------------------------------------
+ 
+%--------------------------BLINK FILTER; NO POSITION DATA IN OUTPUT-------------------        
+
+        t_valid      = zeros( length( find( raw_eye(:,y) > b) ), 1 ); %#ok<NASGU>
+        x_valid      = zeros( length( find( raw_eye(:,y) > b) ), 1 ); %#ok<NASGU> %generating null arrays in prep.
+        y_valid      = zeros( length( find( raw_eye(:,y) > b) ), 1 ); %#ok<NASGU>
+        
+        t_valid      = raw_eye( find( raw_eye(:,y) > b), t ); %#ok<FNDSB>
+        x_valid      = raw_eye( find( raw_eye(:,y) > b), x ); %#ok<FNDSB> %filtering out data from "blinks" (y-values below zero - any time no pupil diameter is detected by system)
+        y_valid      = raw_eye( find( raw_eye(:,y) > b), y ); %#ok<FNDSB> %FUTURE WORK: modify filter to interpolate POG values during blinks
+        
+        %Now to process the raw data (analog voltages): transform voltage
+        %levels to x/y values AND apply the "blink filter" (remove all data
+        %that has no physical meaning - values below a certain
+        %threshold)...
+        s_unit = 5/409.5;               %some constant used in transformation (from Alex's "plot_pog.m" code)
+        
+        % initializing low pass filter for pog
+        [b,a]        = butter(9,.04); %values from Alex's 'plot_pog' code; have not checked to see how optimal they are
+        filter       = 1;             %currently only able to change this *in the code* (right here)
+
+        %applying filter if wanted //Butterworth low pass
+        if filter
+            x_valid  = filtfilt( b, a, x_valid );
+            y_valid  = filtfilt( b, a, y_valid );
+        end
+        
+        % filling matrices and converting coordinate systems (analog output to pog)*(to cm)
+        % Monitor size = 304.1mm x 228.1mm
+        % No. of Vertical POG Units: 240  |||  No. of Horiz. POG Units: 256
+        x_valid      = ( (x_valid/s_unit) - 130 ) / ( 10*(304.1/256) );     %converting for screen resolution difference (E/T coords not same as behavior screen coords)
+        y_valid      = ( (y_valid/s_unit) - 120 ) / ( 10*(228.1/240) )*(-1);
+        
+        %finalizing output values
+        out_struct.eye = [ t_valid x_valid y_valid ];
+%---------------------------END BLINK FILTER-----------------------------------------        
+        
+
+%-----------------------------NO BLINK FILTER; OUTPUT INCL. POSITION DATA------------        
+%     [ code has been cut out and pasted into a .txt file on David's computer; if
+%       re-inserted, must also remove "blink filter" section of this cell (which
+%       also exists in the .txt file; also, be sure to make "raw_eye" 5 columns
+%       wide in initialization]
+%-----------------------------END NO BLINK FILTER (code avail in .txt file)----------
+
+        
+    end         %ending "if(~isempty(eye_channels))"
+end             %ending "if opts.eye"
+
 %% Stimulator serial data
     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
 

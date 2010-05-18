@@ -70,7 +70,7 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
-    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1);
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1);
     
     if (nargin == 1)
         filename = varargin{1};
@@ -84,6 +84,8 @@ function out_struct = get_plexon_data(varargin)
                 opts.verbose = 1;
             elseif strcmp(opt_str, 'progbar')
                 opts.progbar = 1;
+            elseif strcmp(opt_str, 'noeye')
+                opts.eye = 0;
             elseif strcmp(opt_str, 'noforce')
                 opts.force = 0;
             elseif strcmp(opt_str, 'nokin')
