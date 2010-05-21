@@ -284,26 +284,34 @@ function binnedData = convertBDF2binned(varargin)
 
 %% Words
 %(see outputs)
- words = datastruct.words(datastruct.words(:,1)>=timeframe(1) & datastruct.words(:,1)<=timeframe(end),:);
+if ~isfield(datastruct,'words')
+    words = [];    
+else
+    words = datastruct.words(datastruct.words(:,1)>=timeframe(1) & datastruct.words(:,1)<=timeframe(end),:);
+end
 
 %% Targets
 %(see outputs)
- targets.corners = datastruct.targets.corners( datastruct.targets.corners(:,1)>=timeframe(1) & ...
-                                                datastruct.targets.corners(:,1)<=timeframe(end),: );                                            
+if ~isfield(datastruct,'target')
+    targets.corners = [];
+    targets.rotation= [];
+else
+     targets.corners = datastruct.targets.corners( datastruct.targets.corners(:,1)>=timeframe(1) & ...
+                                                    datastruct.targets.corners(:,1)<=timeframe(end),: );                                            
 
- if isfield(datastruct.targets, 'rotation')                                            
-     targets.rotation = datastruct.targets.rotation( datastruct.targets.rotation(:,1)>=timeframe(1) & ...
-                                                    datastruct.targets.rotation(:,1)<=timeframe(end),: );
- end
-                                                    
-if NormData
-    %Normalize Cursor and Target position with same x and y ratios
-    %target x corners
-    targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
-    %target y corners
-    targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
+     if isfield(datastruct.targets, 'rotation')                                            
+         targets.rotation = datastruct.targets.rotation( datastruct.targets.rotation(:,1)>=timeframe(1) & ...
+                                                        datastruct.targets.rotation(:,1)<=timeframe(end),: );
+     end
+
+    if NormData
+        %Normalize Cursor and Target position with same x and y ratios
+        %target x corners
+        targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
+        %target y corners
+        targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
+    end
 end
-    
 %% Outputs
     binnedData = struct('timeframe',timeframe,...
                         'emgguide',emgguide,...
