@@ -102,4 +102,4 @@ end %closing "else" of "if ~isfield(bdf, 'units')..."
 binned.spike_list  = spike_list;
 binned.spike_rates = spike_rates;
 
-%binned = out_struct;
+

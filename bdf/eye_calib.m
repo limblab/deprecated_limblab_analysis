@@ -2,10 +2,10 @@ function score = eye_calib(paras,data)
 %Only good for retroactive processing (will not work for closed-loop
 %control)
 
-%Auto-calibration routine written by Konrad Kording (April 1, 2010) for use
+%Auto-calibration routine written by Konrad Kording (April 2010) for use
 %with ASL eye-tracking camera; input is "bdf.eye" struct with position coords 
-%added in, of form [ t  eye_x  eye_y  pos_x  pos_y ] (use intersect fn to
-%pull pos_x and pos_y for times that match filtered eye data)
+%added in, of form [ t  eye_x  eye_y  pos_x  pos_y ] (used 'get_positions'
+%to create 'eye_data' matrix)
 
 %this is just here temporarily to allow only input to be the bdf
 %paras = [.65 .0 .02 .25 10 -27];
@@ -29,7 +29,24 @@ distVect = sum( (( data(:,px:py) - pred ).^2)' ); %#ok<UDIM>
 score = -sum( distVect(nGood) < 5 ); %#ok<FNDSB>
 %keyboard
 
+%% Description
+%
+%%%[This section by David]:
+%Okay, here's what's going on above, starting at 'nGood = ...' (as far as
+%I can tell):
+%
+%First, we exclude artifact by finding which data points in 'data' have
+%x-values above -10 and y-values below 20 (approximate range set by valid
+%values for eye position). I got those two values by making/looking at a
+%few plots of this stuff.
+%Second, we create our predictions by operating on 'data' with our
+%initial parameters.
+%Third, we find the distance between the cursor position and the eye
+%position, and calculate an effectiveness 'score' based on how many of our
+%points are within a certain distance of each other.
 
+%% Konrad's Summary
+%
 %I called it by typing:
 % " [paras,score] = fminsearch(@eye_calib,[.65 .0 .02 .25 10 -27],[], 
 % eye_pos2) "    **'eye_pos2' is a .mat file (a matrix of the form

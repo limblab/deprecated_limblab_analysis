@@ -1,5 +1,11 @@
 function array_movie(bdf, monkey_name, varargin)
-%INPUT: array_movie(bdf, 'monkey_name', [otps]): if monkey has more than one
+%
+%   Author: David Bontrager (d-bontrager [at] northwestern.edu)
+%   May 2010, Miller Lab, Northwestern University
+%
+%OUTPUT: animated figure playing video of cortical array activity
+%
+%INPUT: array_movie(bdf, 'monkey_name', [opts]): if monkey has more than one
 %cortical array map in the M-file 'create_array_map', be sure to include
 %the correct number on the end of the string (ex: 'tiki1' vs. 'tiki2'). If 
 %no number is specified and monkey has more than 1 array map in
@@ -19,7 +25,6 @@ function array_movie(bdf, monkey_name, varargin)
 %   *channel* number as listed in Plexon, not electrode number related to
 %   physical location); default: avg activity of that frame. **Constraints: 
 %   0 < sound_chan < 101. 
-%OUTPUT: animated figure playing video of cortical array activity
 %NOTES:
 %Changing playback rate does NOT change bin size. Bin size (defaults to 50 ms)
 %can be changed only by changing 'fps' below, in constants initialization.
@@ -33,10 +38,10 @@ function array_movie(bdf, monkey_name, varargin)
 %    |
 %    |
 %    +--BIN_SPIKES(bdf, fps, start_time);
-%    +--ARRAY_ACTIVITY_MAP(spike_list, monkey_name);
+%    +--ARRAY_ACTIVITY_MAP(spike_list, monkey_name, sound_chan);
 %    |   |
 %    |   +--CREATE_ARRAY_MAP(monkey_name);
-%    +--CLIM_AVG(avg_activity(i), CLim, avg_max);
+%    +--CLIM_AVG(avg_activity, CLim, avg_max);
 %    |
 %    |
 %   And then comes the output...
@@ -110,14 +115,12 @@ num_units   = length( spike_list );             %number of active units in data 
 for i = 1:frames
     
     all_images(:,:,i) = accumarray( subs, spike_rates(i,:), [10 10] );  %put together a matrix with spike rate counts compiled in corresponding electrode positions
-    summed            = sum( sum( all_images(:,:,i) ) );                %total activity within curr_image
+    summed            = sum( sum( all_images(:,:,i) ) );                %sum of all activity within current frame
     avg_activity(i)   = round( summed/num_units );                      %storing *average* activity over the array in each particular frame
     
 end
-%get max avg activity value to allow scaling of averages and scale average
-%values based on max avg of this dataset
-avg_max = max(avg_activity);
-avg_activity = clim_avg(avg_activity, CLim, avg_max);
+%scale average values based on max avg of this dataset
+avg_activity = clim_avg(avg_activity, CLim);
 %adds a row to the bottom of each frame to display the average value, and 
 %saves it into the 'all_w_avgs' array
 for i = 1:frames
@@ -164,6 +167,9 @@ for i = 1:frames
     pause(pause_time);
     
 end
+
+%Do we really want this? closes video window after it's done playing
+%set(spikes, 'Visible','off');
 
 
 
