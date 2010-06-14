@@ -11,7 +11,7 @@ function tt = co_trial_table(bdf)
 %    5: Target                  -- -1 for none (e.g., a neutral bump)
 %    6: OT on time
 %    7: Go cue
-%    8: Movement start time     -- Not implemented yet
+%    8: Movement start time
 %    9: Trial End time
 %   10: Trial result            -- R, A, I, or N (N coresponds to no-result)
 

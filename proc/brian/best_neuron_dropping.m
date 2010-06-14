@@ -39,14 +39,14 @@ for num_dropped_neurons = 1:max_dropped
             
     end
 
-    dropped_units(num_dropped_neurons, :) = units(dropped_row,:);
-    units = units(1:size(units,1) ~= dropped_row, :);
-    
-    means(num_dropped_neurons + 1) = best_mean;
-    vars(num_dropped_neurons + 1) = best_var;
-    
-    filename = sprintf('intermediate_%d.mat', num_dropped_neurons);
-    save(filename, 'means', 'vars');
+     dropped_units(num_dropped_neurons, :) = units(dropped_row,:);
+     units = units(1:size(units,1) ~= dropped_row, :);
+     
+     means(num_dropped_neurons + 1) = best_mean;
+     vars(num_dropped_neurons + 1) = best_var;
+     
+     %filename = sprintf('intermediate_%d.mat', num_dropped_neurons);
+     %save(filename, 'means', 'vars');
 end
 
 

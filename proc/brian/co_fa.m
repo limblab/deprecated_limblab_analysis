@@ -102,7 +102,6 @@ for curtype = 1:8
             mylines{curtype});
 end
 
-
 return;
 
 % n = 3;
