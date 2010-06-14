@@ -162,6 +162,12 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 disp('Aggregating data... get force')
             end
 
+            % Check date of recording to see if it's before or after the
+            % change to force handle mounting.
+            if datenum(out_struct.meta.datetime) > datenum('5/27/2010')
+                error('Date of file is after force change, but new force loader has not been implemented');
+            end
+            
             fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
                      -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
             rotcal = [0.8540 -0.5202; 0.5202 0.8540];
