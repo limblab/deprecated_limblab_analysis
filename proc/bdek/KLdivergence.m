@@ -1,76 +1,125 @@
-function[data, peak] = KLdivergence(bdf, samples, window, unit, block_param, graph, varargin)
+function[data, peak] = KLdivergence(bdf, param_list,unit, varargin)
 
-if isempty(bdf.units(1,unit).ts)==1
-    data = [0 0];
-    peak = [0 0 0];
-else
+% KLdivergence calculates the Kullback-Leibler divergence for a unit 
+% regarding a particular set of parameters, dictated by the struct
+% param_list.
 
-if nargin > 4
-   bp = block_param;          %fraction of parameter variance. Dictates width of empty set around axes
-else
-   bp = 0.05;
-end
-tot_Q = cell(8,2);           %cell array containing all blocks. (Quadrant, direction)
-Q_ind = cell(8,2);
-init_p_array = cell(8,2);
-p_array = cell(8,2);
-D = cell(8,2);
-
+p_v_a_f = [(bdf.pos(:,2)-mean(bdf.pos(:,2))), ...           % x position
+           (bdf.vel(:,2)), ...                              % x velocity
+           (bdf.acc(:,2)), ...                              % x accel
+           (bdf.force(:,2)-mean(bdf.force(:,2))), ...       % x force
+           (bdf.pos(:,3)-mean(bdf.pos(:,3))), ...           % y position
+           (bdf.vel(:,3)), ...                              % y velocity
+           (bdf.acc(:,3)), ...                              % y accel
+           (bdf.force(:,3)-mean(bdf.force(:,3)))];          % y force
 if nargin > 2
-    t_win = window;
-else
-    t_win = 400;        %window width of KL divergence plot (ms)
-end
-
-if nargin > 3
     u = unit;
 else
-    u = 1;
+    u = param_list.unit;
 end
 
-posvel = [(bdf.pos(:, 2) - mean(bdf.pos(:,2))) (bdf.pos(:, 3) - mean(bdf.pos(:,3))) bdf.vel(:,2:3)];
 unit = bdf.units(1,u).ts;
+bp = param_list.block_param;  %fraction of parameter variance. Dictates width of empty set around axes
+t_win = param_list.window;    %window width of KL divergence plot (ms)
 
-%exp_spikes = (length(unit)/(bdf.meta.duration))*samples/1000;
 
-% separate data into blocks
-for i = 1:2
-    tot_Q{1,i} = find((posvel(:,i)) >bp*(var(posvel(:,i))) & (posvel(:,i+2)) >bp*(var(posvel(:,i+2))));   
-    tot_Q{2,i} = find((posvel(:,i)) <-bp*(var(posvel(:,i))) & (posvel(:,i+2)) >bp*(var(posvel(:,i+2))));  
-    tot_Q{3,i} = find((posvel(:,i)) <-bp*(var(posvel(:,i))) & (posvel(:,i+2)) <-bp*(var(posvel(:,i+2))));   
-    tot_Q{4,i} = find((posvel(:,i)) >bp*(var(posvel(:,i))) & (posvel(:,i+2)) <-bp*(var(posvel(:,i+2)))); 
-    tot_Q{5,i} = find((posvel(:,i)) >bp*(var(posvel(:,i))) & (posvel(:,5-i)) >bp*(var(posvel(:,5-i))));   
-    tot_Q{6,i} = find((posvel(:,i)) <-bp*(var(posvel(:,i))) & (posvel(:,5-i)) >bp*(var(posvel(:,5-i))));  
-    tot_Q{7,i} = find((posvel(:,i)) <-bp*(var(posvel(:,i))) & (posvel(:,5-i)) <-bp*(var(posvel(:,5-i))));   
-    tot_Q{8,i} = find((posvel(:,i)) >bp*(var(posvel(:,i))) & (posvel(:,5-i)) <-bp*(var(posvel(:,5-i))));
+if isempty(bdf.units(1,u).ts)==1
+    data = [0 0];
+    peak = [0 0 0];
+return
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%% check parameter list %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%sets each parameter variable (x_pos, y_pos, ...) to either 0, 1, or 2
+%depending on its value in the param_list struct ('omit', 'include', 'respect')
+
+x_pos = isequal(param_list.x_pos, 'include') + 2*isequal(param_list.x_pos, 'respect');
+y_pos = isequal(param_list.y_pos, 'include') + 2*isequal(param_list.y_pos, 'respect');
+x_vel = isequal(param_list.x_vel, 'include') + 2*isequal(param_list.x_vel, 'respect');
+y_vel = isequal(param_list.y_vel, 'include') + 2*isequal(param_list.y_vel, 'respect');
+x_acc = isequal(param_list.x_acc, 'include') + 2*isequal(param_list.x_acc, 'respect');
+y_acc = isequal(param_list.y_acc, 'include') + 2*isequal(param_list.y_acc, 'respect');
+x_force = isequal(param_list.x_force, 'include') + 2*isequal(param_list.x_force, 'respect');
+y_force = isequal(param_list.y_force, 'include') + 2*isequal(param_list.y_force, 'respect');
+
+tot_params = [x_pos, x_vel, x_acc, x_force y_pos, y_vel, y_acc, y_force];
+        %tot_params gives a vector of 0's, 1's, and 2's defining the analysis
+inc_par = find(tot_params == 1);
+resp_par = find(tot_params == 2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%% separate data into blocks %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+tot_Q = cell(8,2);            %cell array (Parameter,sign)
+block_Q = cell(1,(2^length(inc_par)));
+Q_ts = cell(1,(2^length(inc_par)));
+
+for i = 1:2^length(inc_par)
+    block_Q{i} = zeros(length(p_v_a_f),1);
+end
+
+for i = 1:8
+    tot_Q{i,1} = p_v_a_f(:,i) > bp*var(p_v_a_f(:,i));
+    tot_Q{i,2} = p_v_a_f(:,i) < bp*var(p_v_a_f(:,i));
 end
 
 [binned_spikes] = train2bins(unit,0.001);
-binned_spikes(:,1:1000) = [];
+binned_spikes(:,1:1000) = []; binned_spikes = [binned_spikes zeros(1,ceil((bdf.pos(end,1)+2-unit(end)).*1000))];
 
-for i = 1:8
-    for j = 1:2
-        Q_ind{i,j} = tot_Q{i,j}(t_win/2 + ceil((length(tot_Q{i,j})-(t_win))*rand(samples,1)));
-    end
-end
-
-
-%%%%%%%%%%%%%%%%   KL divergence  %%%%%%%%%%%%%%%%%%%%%%%
-
-Q = 1/16;
-
-
-for i = 1:8
-    for k = 1:2
-        init_p_array{j,k} = [];
-    end
-end
-
-for j = 1:8
-    for k = 1:2
-        for i = -(t_win/2):(t_win/2)
-            init_p_array{j,k} = [init_p_array{j,k} sum(binned_spikes(Q_ind{j,k}+i))];
+poss = [];
+for a1 = 1:2
+    for a2 = 1:2
+        for a3 = 1:2
+            for a4 = 1:2
+                for a5 = 1:2
+                    for a6 = 1:2
+                        for a7 = 1:2
+                            for a8 = 1:2
+                                poss = vertcat(poss, [a1 a2 a3 a4 a5 a6 a7 a8]);
+                            end
+                        end
+                    end
+                end
+            end
         end
+    end
+end
+
+poss(:,1:(8-length(inc_par))) = [];
+poss((2^length(inc_par))+1:256,:) = [];
+
+for i = 1:2^length(inc_par)
+    for j = 1:length(inc_par)
+        block_Q{i} = block_Q{i} + tot_Q{inc_par(j),poss(i,j)};
+    end
+    Q_ts{i} = find(block_Q{i} == length(inc_par));
+end
+
+Q_ind = cell(1,2^length(inc_par));            %cell array containing random indices for each block
+
+for i = 1:(2^length(inc_par))
+    Q_ind{i} = Q_ts{i}(t_win/2 + ceil((length(Q_ts{i})-(t_win))*rand(param_list.samples,1)));
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%   KL divergence  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Q = 1/(2^length(inc_par));
+
+init_p_array = cell(1,2^length(inc_par));
+p_array = cell(1,2^length(inc_par));
+D = cell(1,2^length(inc_par));
+
+
+for i = 1:(2^length(inc_par))
+    init_p_array{i} = [];
+end
+
+for j = 1:(2^length(inc_par))
+    for i = -(t_win/2):(t_win/2)
+        init_p_array{j} = [init_p_array{j} sum(binned_spikes(Q_ind{j}+i))];
     end
 end
 
@@ -78,36 +127,47 @@ tot_spikes = sum(vertcat(init_p_array{:,:}));
 if length(tot_spikes) > length(find(tot_spikes))
     peak = [0 0 0];
     data = [0 0];
-else
+return
+end
 
-for i = 1:8
-    for j = 1:2
-        p_array{i,j} = init_p_array{i,j}./(tot_spikes);     
-        D{i,j} = p_array{i,j} .* log2(p_array{i,j}./Q);
-        D{i,j}(isnan(D{i,j})) = 0;
-    end
+for i = 1:(2^length(inc_par))
+    p_array{i} = init_p_array{i}./(tot_spikes);     
+    D{i} = p_array{i} .* log2(p_array{i}./Q);
+    D{i}(isnan(D{i})) = 0;
 end
 
 K = sum(vertcat(D{:,:}));
-smoothK = smooth(K,200); smoothK(1:200,:) = []; smoothK((end-200):end,:) = [];
+smoothK = smooth(K,200); 
+smoothK(1:200,:) = []; 
+smoothK((end-200):end,:) = [];
 
-if nargin > 5
+if isequal(param_list.graph,'yes') == 1
     subplot(2,1,1); plot((-t_win/2+201:t_win/2-200),smoothK);
     subplot(2,1,2); plot((-t_win/2:t_win/2),K);
-else
-    coord = [(-t_win/2+201:t_win/2-200)' smoothK];
-    x = coord(coord(:,2) == max(smoothK),1);
-    ind = [x max(smoothK)];
+return
+end
+
+coord = [(-t_win/2+201:t_win/2-200)' smoothK];
+x = coord(coord(:,2) == max(smoothK),1);
     
-    if ind(1,2) == 0
-        peak = [0 x max(smoothK)];
-        data = [0 0];
-    else
-        peak = [u x max(smoothK)];
-        data = [(-t_win/2+201:t_win/2-200)' smoothK];
-    end
+if length(x) ~= 1;
+    x = find(x,1,'first');
+    disp('multiple peaks');
+    disp(u);
+end
+  
+      
+ind = [x max(smoothK)];
+    
+if ind(1,2) == 0
+    peak = [0 x max(smoothK)];
+    data = [0 0];
+else
+    peak = [u x max(smoothK)];
+    data = [(-t_win/2+201:t_win/2-200)' smoothK];
+end
+   
+   
    
 end
-end
-end
-end
+
