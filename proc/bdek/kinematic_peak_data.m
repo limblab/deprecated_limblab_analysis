@@ -1,10 +1,10 @@
 function kinematic_peak_data(bdf,param_list,samples)
 
 tot_peak = cell(samples,1);
-FirstPlot = cell(1,1);%length(bdf.units));
+FirstPlot = cell(1,length(bdf.units));
 
-for i = 23:23%length(bdf.units)
-    [~, p] = KLdivergence(bdf,param_list,i);
+for i = 1:length(bdf.units)
+    [~, p] = KLD_nongauss(bdf,param_list,i);
     FirstPlot{1,i} = p;
 end
 
@@ -16,7 +16,7 @@ unit_indx = nonzero(:,1);
 table = cell(length_nonzero,1);
 for j = 1: length_nonzero
     for i = 1:samples
-        [~,peaks] = KLdivergence(bdf,param_list,j);
+        [~,peaks] = KLD_nongauss(bdf,param_list,j);
         tot_peak{i,1} = peaks;
     end
 
