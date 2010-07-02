@@ -75,11 +75,11 @@ end
 
 for i = 1:8
     tot_Q{i,1} = p_v_a_f(:,i) > bp*var(p_v_a_f(:,i));
-    tot_Q{i,2} = p_v_a_f(:,i) < bp*var(p_v_a_f(:,i));
+    tot_Q{i,2} = p_v_a_f(:,i) <-bp*var(p_v_a_f(:,i));
 end
 
 [binned_spikes] = train2bins(unit,0.001);
-binned_spikes(:,1:1000) = []; binned_spikes = [binned_spikes zeros(1,ceil((bdf.pos(end,1)+2-unit(end)).*1000))];
+binned_spikes(:,1:1000) = []; binned_spikes = [binned_spikes zeros(1,ceil((bdf.pos(end,1)+5-unit(end)).*1000))];
 
 poss = [];
 for a1 = 1:2
@@ -103,47 +103,50 @@ end
 poss(:,1:(8-length(inc_par))) = [];
 poss((2^length(inc_par))+1:256,:) = [];
 
+total_block = 0;
+sample_sum = 0;
+Q_ind = cell(1,2^length(inc_par));            %cell array containing random indices for each block
+
 for i = 1:2^length(inc_par)
     for j = 1:length(inc_par)
         block_Q{i} = block_Q{i} + tot_Q{inc_par(j),poss(i,j)};
     end
     Q_ts{i} = find(block_Q{i} == length(inc_par));
-end
-
-Q_ind = cell(1,2^length(inc_par));            %cell array containing random indices for each block
-
-total_block = 0;
-for i = 1:(2^length(inc_par))
+    Q_ts{i}(Q_ts{i} < t_win/2 | Q_ts{i} > (length(bdf.pos)-t_win/2))=[];
     total_block = total_block + length(Q_ts{i});
-end
-
-sample_sum = 0;
-for i = 1:(2^length(inc_par))
     num_rand = ceil(perc_quad*length(Q_ts{i}));  
-    Q_ind{i} = Q_ts{i}(t_win/2 + ceil((length(Q_ts{i})-(t_win))*rand(num_rand,1)));
+    Q_ind{i} = Q_ts{i}(ceil((length(Q_ts{i}))*rand(num_rand,1)));
     sample_sum = sample_sum + length(Q_ind{i});
 end
 
+Q_ind_lengths = zeros(2^length(inc_par),1);
+for i = 1:2^length(inc_par)
+    Q_ind_lengths(i) = length(Q_ind{i});
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%   KL divergence  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Q = cell(1,2^length(inc_par));
-init_p_array = cell(1,2^length(inc_par));
+% init_p_array = cell(1,2^length(inc_par));
 p_array = cell(1,2^length(inc_par));
 D = cell(1,2^length(inc_par));
 
+tic;
+t_points = -(t_win/2):(t_win/2);
+init_p_array = zeros(2^length(inc_par), length(t_points));
 
-for i = 1:(2^length(inc_par))
-    init_p_array{i} = [];
-end
+toc
+
 
 for j = 1:(2^length(inc_par))
-    for i = -(t_win/2):(t_win/2)
-        init_p_array{j} = [init_p_array{j} sum(binned_spikes(Q_ind{j}+i))];
+    for i = 1:length(t_points)
+        init_p_array(j,i) = sum(binned_spikes(Q_ind{j}+t_points(i)));
     end
 end
 
-tot_spikes = sum(vertcat(init_p_array{:,:}));
+%tot_spikes = sum(vertcat(init_p_array{:,:}));
+tot_spikes = sum(init_p_array);
+toc
 % if length(tot_spikes) > length(find(tot_spikes))
 %     peak = [0 0 0];
 %     data = [0 0];
@@ -155,13 +158,11 @@ tot_spikes = sum(vertcat(init_p_array{:,:}));
 
 for i = 1:(2^length(inc_par))
     Q{i} = length(Q_ts{i})/total_block;
-end
-    
-for i = 1:(2^length(inc_par))
-    p_array{i} = init_p_array{i}./(tot_spikes);     
+    p_array{i} = init_p_array(i,:)./(tot_spikes);     
     D{i} = p_array{i} .* log2(p_array{i}./Q{i});
-    D{i}(isnan(D{i})) = 0;
+    D{i}(isnan(D{i})) = 0;    
 end
+
 
 K = sum(vertcat(D{:,:}));
 smoothK = smooth(K,100); 
@@ -172,7 +173,8 @@ if isequal(param_list.graph,'yes') == 1
     subplot(2,1,1); plot((-t_win/2+101:t_win/2-100),smoothK);
     title(sprintf('Unit: %d     Samples: %d  (relative)',u,sample_sum));
     subplot(2,1,2); plot((-t_win/2:t_win/2),K);
-return
+    toc
+    return
 end
 
 coord = [(-t_win/2+101:t_win/2-100)' smoothK];
@@ -196,6 +198,7 @@ else
     data = [(-t_win/2+101:t_win/2-100)' smoothK];
 end
    
+toc
    
    
 end
