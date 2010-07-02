@@ -38,7 +38,7 @@ t_win = param_list.window;    %window width of KL divergence plot (ms)
 if isempty(bdf.units(1,u).ts)==1
     data = [0 0];
     peak = [0 0 0];
-    disp(sprintf('unit &d is empty',u));
+    disp(sprintf('unit %d is empty',u));
 return
 end
 
@@ -142,6 +142,7 @@ end
 
 %tot_spikes = sum(vertcat(init_p_array{:,:}));
 tot_spikes = sum(init_p_array);
+
 % if length(tot_spikes) > length(find(tot_spikes))
 %     peak = [0 0 0];
 %     data = [0 0];
@@ -191,7 +192,6 @@ else
     peak = [u x max(smoothK)];
     data = [(-t_win/2+101:t_win/2-100)' smoothK];
 end
-   
-   
+
 end
 
