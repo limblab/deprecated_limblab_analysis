@@ -131,12 +131,8 @@ Q = cell(1,2^length(inc_par));
 p_array = cell(1,2^length(inc_par));
 D = cell(1,2^length(inc_par));
 
-tic;
 t_points = -(t_win/2):(t_win/2);
 init_p_array = zeros(2^length(inc_par), length(t_points));
-
-toc
-
 
 for j = 1:(2^length(inc_par))
     for i = 1:length(t_points)
@@ -146,7 +142,6 @@ end
 
 %tot_spikes = sum(vertcat(init_p_array{:,:}));
 tot_spikes = sum(init_p_array);
-toc
 % if length(tot_spikes) > length(find(tot_spikes))
 %     peak = [0 0 0];
 %     data = [0 0];
@@ -173,7 +168,6 @@ if isequal(param_list.graph,'yes') == 1
     subplot(2,1,1); plot((-t_win/2+101:t_win/2-100),smoothK);
     title(sprintf('Unit: %d     Samples: %d  (relative)',u,sample_sum));
     subplot(2,1,2); plot((-t_win/2:t_win/2),K);
-    toc
     return
 end
 
@@ -197,8 +191,6 @@ else
     peak = [u x max(smoothK)];
     data = [(-t_win/2+101:t_win/2-100)' smoothK];
 end
-   
-toc
    
    
 end
