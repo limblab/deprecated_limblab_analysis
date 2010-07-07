@@ -344,12 +344,17 @@ end             %ending "if opts.eye"
         out_struct.targets.corners = zeros(num_trials,5,'single');
         
         if wrist_flexion_task
-        out_struct.targets.rotation = zeros(num_trials,2,'single');            
+            out_struct.targets.rotation = zeros(num_trials,2,'single');            
             for i=1:num_trials
                 out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
                 out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
                 out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
                 out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
+            end
+        elseif center_out_task
+            for i=1:num_trials
+                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(15:30));
+                out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
             end
         else
             for i=1:num_trials
