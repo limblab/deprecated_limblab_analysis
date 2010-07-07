@@ -30,6 +30,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
 %% Find task by start trial code
   
+    center_out_task=0;
     robot_task = 0;
     wrist_flexion_task =0;
     ball_drop_task = 0;
@@ -50,6 +51,9 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 wrist_flexion_task = 1;
             elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
                 robot_task = 1;
+                if start_trial_code == hex2dec('11')
+                    center_out_task = 1;
+                end
             elseif start_trial_code == hex2dec('19')
                 ball_drop_task = 1;
             elseif start_trial_code == hex2dec('16')
@@ -329,7 +333,7 @@ end             %ending "if opts.eye"
 
 
 %% Extract target info from databursts
-    if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) && (wrist_flexion_task || multi_gadget_task) )
+     if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) && (wrist_flexion_task || multi_gadget_task || center_out_task) )
 
         if opts.verbose
             disp('Aggregating data... extracting target information');
@@ -347,7 +351,7 @@ end             %ending "if opts.eye"
                 out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
                 out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
             end
-        elseif multi_gadget_task
+        else
             for i=1:num_trials
                 out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(3:18));
                 out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
