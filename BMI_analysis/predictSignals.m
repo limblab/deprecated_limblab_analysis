@@ -77,6 +77,7 @@ if Adapt_Enable
     Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/SR) Adapt_ts(:,2:end)]; %convert first column of Adapt_ts to bins
     Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); %remove first adapt step is too early
     
+%     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt8(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
      [PredictedData,spikeDataNew,Hnew] = predMIMOadapt7(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
 %     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt6(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,Lag_bins);
 %     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt5(usableSpikeData,filter.H,ActualData,LR);
@@ -112,7 +113,7 @@ if ~isempty(filter.P)
 end
 
 %% Smooth EMG Predictions, moving average with variable length based on 1st deriv of ave FR
-% 1 - Binary average lag time
+%% 1 - Binary average lag time
 % if FiltPred
 %     PredictedData_S = zeros(size(PredictedData));
 %     
@@ -186,48 +187,84 @@ end
 % end
 
 %% 2- truely variable window length
+% if FiltPred
+%     PredictedData_S = zeros(size(PredictedData));
+%     
+%     PredRate = round(1/binsize);
+%     Pred_smoothlag_max = round(0.5*PredRate); % whatever number of bins that makes 500ms
+%     
+%     %abs of first derivative of (5-point smoothed) firing rate
+%     FR_smoothlag = 5; %5-point moving average
+%     AveFR = mean(spikeDataNew,2);
+%     AveFR_S = tsmovavg(AveFR','m',FR_smoothlag);
+%     AveFR(FR_smoothlag:end) = AveFR_S(FR_smoothlag:end);
+%     
+%     FR_mod = [ 0; abs(diff(AveFR)) ]; %abs of first derivative
+%     FR_mod = 1-(FR_mod/max(FR_mod));%normalize & inverse
+%     %use exponential to weight average window length:
+%     % weigth w is set so when FR_mod is average, window = 63%*Pred_smoothlag_max
+%     w = log(1-(1/exp(1)))/(mean(FR_mod)-1);
+%     mod_index = round(  Pred_smoothlag_max * exp( w * (FR_mod-1))  );
+%     
+%     %then make sure mod_index do not increase by more than one from one
+%     %bin to the next (it can and should decrease as fast as it is though)
+%     mod_index_offset = [NaN; mod_index(1:end-1)];
+%     steep_rises = mod_index-mod_index_offset > 1;
+%     while any(steep_rises)
+%         mod_index(steep_rises) = mod_index(find(steep_rises)-1)+1;
+%         mod_index_offset = [NaN; mod_index(1:end-1)];
+%         steep_rises = mod_index-mod_index_offset > 1;
+%     end
+%     
+%     %higher cortical modulation -> shorter moving window for preds
+%     FR_EMG_delta = round(0.1*PredRate); %100ms delay (in number of bins) between FR_mod and Preds
+%     PredictedData_S(1:FR_EMG_delta) = PredictedData(1:FR_EMG_delta);
+%     
+%     for i=1+FR_EMG_delta:size(PredictedData,1);
+%         
+%         Pred_smoothlag = mod_index(i-FR_EMG_delta);
+%         Pred_smoothlag = min(i-1,Pred_smoothlag);        
+%         PredictedData_S(i,:) = mean(PredictedData((i-Pred_smoothlag):i,:),1);
+%     end
+%     PredictedData = PredictedData_S;
+%     clear PredictedData_S;
+% end
+%% 3- Varying a LP filter's time constant
 if FiltPred
-    PredictedData_S = zeros(size(PredictedData));
     
-    PredRate = round(1/binsize);
-    Pred_smoothlag_max = round(0.5*PredRate); % whatever number of bins that makes 500ms
+    RC_max = 0.2; % 200ms
     
-    %abs of first derivative of (5-point smoothed) firing rate
-    FR_smoothlag = 5; %5-point moving average
-    AveFR = mean(spikeDataNew,2);
-    AveFR_S = tsmovavg(AveFR','m',FR_smoothlag);
-    AveFR(FR_smoothlag:end) = AveFR_S(FR_smoothlag:end);
-    
+    %Smooth Firing Rate:
+    RC = 0.1; %100 ms
+    AveFR = SmoothLP(mean(spikeDataNew,2), binsize, RC);
+ 
+    %abs of first derivative of AveFR
     FR_mod = [ 0; abs(diff(AveFR)) ]; %abs of first derivative
-    FR_mod = 1-(FR_mod/max(FR_mod));%normalize & inverse
-    %use exponential to weight average window length:
-    % weigth w is set so when FR_mod is average, window = 63%*Pred_smoothlag_max
-    w = log(1-(1/exp(1)))/(mean(FR_mod)-1);
-    mod_index = round(  Pred_smoothlag_max * exp( w * (FR_mod-1))  );
+    FR_mod = 1-(FR_mod/max(FR_mod)); %normalize & inverse
     
-    %then make sure mod_index do not increase by more than one from one
-    %bin to the next (it can and should decrease as fast as it is though)
-    mod_index_offset = [NaN; mod_index(1:end-1)];
-    steep_rises = mod_index-mod_index_offset > 1;
+    %weight exponentially from 0 to RC_max with a sigmoid:
+    Top = RC_max;Bottom = 0;V50 = 0.6;Slope = 0.1;
+    RC = Bottom + (Top-Bottom)./(1+exp((V50-FR_mod)/Slope));
+
+    %then make sure RC do not increase by more than binsize from one
+    %bin to the next (it can and should decrease fast when appropriate though)
+    RC_offset = [NaN; RC(1:end-1)];
+    steep_rises = RC-RC_offset > binsize;
+    max_inc = binsize-0.0001;
     while any(steep_rises)
-        mod_index(steep_rises) = mod_index(find(steep_rises)-1)+1;
-        mod_index_offset = [NaN; mod_index(1:end-1)];
-        steep_rises = mod_index-mod_index_offset > 1;
+        RC(steep_rises) = RC(find(steep_rises)-1) + max_inc;
+        RC_offset = [NaN; RC(1:end-1)];
+        steep_rises = RC-RC_offset > binsize;
     end
-    
-    %higher cortical modulation -> shorter moving window for preds
-    FR_EMG_delta = round(0.1*PredRate); %100ms delay (in number of bins) between FR_mod and Preds
-    PredictedData_S(1:FR_EMG_delta) = PredictedData(1:FR_EMG_delta);
-    
-    for i=1+FR_EMG_delta:size(PredictedData,1);
-        
-        Pred_smoothlag = mod_index(i-FR_EMG_delta);
-        Pred_smoothlag = min(i-1,Pred_smoothlag);        
-        PredictedData_S(i,:) = mean(PredictedData((i-Pred_smoothlag):i,:),1);
+
+    %Smooth Predictions:
+    dt = binsize;
+    for i=2:size(PredictedData,1)
+        a = dt/(RC(i)+dt);
+        PredictedData(i,:)= PredictedData(i-1,:) + a*( PredictedData(i,:)-PredictedData(i-1,:) );
     end
-    PredictedData = PredictedData_S;
-    clear PredictedData_S;
 end
+
 %% Aggregate Outputs in a Structure
 
 [numpts,Nx]=size(usableSpikeData);
@@ -244,3 +281,4 @@ PredData = struct('timeframe', timeframeNew,...
                   'spikeguide', filter.neuronIDs);
 
 end
+    

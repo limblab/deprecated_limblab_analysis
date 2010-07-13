@@ -22,7 +22,7 @@ function out_struct = get_cerebus_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     %initial setup
-    opts=struct('verbose',0,'progbar',0,'force',0,'kin',1,'labnum',1); %default to lab 1, no force
+    opts=struct('verbose',0,'progbar',0,'force',0,'kin',1,'labnum',1,'eye',0); %default to lab 1, no force, no eye
    
     % Parse arguments
     if (nargin == 1)
@@ -81,14 +81,14 @@ function out_struct = get_cerebus_data(varargin)
 
     % Build catalogue of entities
     [nsresult, EntityInfo] = ns_GetEntityInfo(hfile, 1:FileInfo.EntityCount);
-    unit_list    = find([EntityInfo.EntityType] == 4 & ~strncmp({EntityInfo.EntityLabel},'Stim_', 5));
-    stim_marker  = find([EntityInfo.EntityType] == 4 & strncmp({EntityInfo.EntityLabel},'Stim_', 5));
+    unit_list    = find([EntityInfo.EntityType] == 4 & ~strncmp(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
+    stim_marker  = find([EntityInfo.EntityType] == 4 & strncmp(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
 
     % segment_list = find([EntityInfo.EntityType] == 3);
-    emg_list     = find([EntityInfo.EntityType] == 2 & strncmp({EntityInfo.EntityLabel}, 'EMG_', 4));
-    force_list   = find([EntityInfo.EntityType] == 2 & strncmpi({EntityInfo.EntityLabel}, 'force_', 6));
-    analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp({EntityInfo.EntityLabel}, 'EMG_', 4)...
-                                                     & ~strncmpi({EntityInfo.EntityLabel}, 'force_', 6) );
+    emg_list     = find([EntityInfo.EntityType] == 2 & strncmp(deblank({EntityInfo.EntityLabel}), 'EMG_', 4));
+    force_list   = find([EntityInfo.EntityType] == 2 & strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6));
+    analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp(deblank({EntityInfo.EntityLabel}), 'EMG_', 4)...
+                                                     & ~strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6) );
     event_list   = find([EntityInfo.EntityType] == 1);
 
     if opts.verbose == 1
@@ -145,7 +145,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.raw.analog.data(i) = single({analog_data.*4.1666667}); %multiplying by 4.1666667 converts analog_data in mV
+            out_struct.raw.analog.data(:,i) = single(analog_data.*4.1666667); %multiplying by 4.1666667 converts analog_data in mV
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));

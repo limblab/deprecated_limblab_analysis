@@ -1,10 +1,18 @@
 function [ts] = Get_Center_and_Reward_ts(out_struct)
+    % reads a bdf file and returns a list of go_cue and Rewards ts
+    % argin-
+    % out_struct: bdf file to be read
+    %
+    % argout-
+    % ts : 2 x numtrials array of corresponding go_cue and reward ts
+    %      i.e. [go_cue_ts reward_ts]
+    %
 
     w=WF_Words;
 
-    %% -------------%
-    % get targets id
-    % --------------%
+    %% --------------%
+    % get target list
+    % ---------------%
     numTrials = size(out_struct.targets.corners,1);
     Tgts = zeros(16,5); % [ Tgt_Id   tgt_y   tgt_h   tgt_x   tgt_w   ];
     Tgts_ts = zeros(numTrials,2);
@@ -50,13 +58,13 @@ function [ts] = Get_Center_and_Reward_ts(out_struct)
         end
     end
     
-    %ts = sortrows([Center_ts; Reward_ts]);
+    ts = sortrows([Center_ts; Reward_ts]);
 
 %%%%% Temp: to use for data with tgt offset by 1 trial
-    tmp=sortrows(Reward_ts);
-    tmp = [tmp(1:end-1,1) tmp(2:end,2)];
-    
-    ts = sortrows([Center_ts; tmp]);
+%     tmp=sortrows(Reward_ts);
+%     tmp = [tmp(1:end-1,1) tmp(2:end,2)];
+%     
+%     ts = sortrows([Center_ts; tmp]);
 % %%%%% End of Temp        
 
     

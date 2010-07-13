@@ -11,7 +11,8 @@ w.Incomplete = hex2dec('23');
 % end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
 w.IsEndWord = @tmp;
 
-w.Touch_Pad = hex2dec('30');
+
+w.CT_On = hex2dec('30');
 w.Go_Cue = hex2dec('31');
 w.Catch = hex2dec('32');
 
