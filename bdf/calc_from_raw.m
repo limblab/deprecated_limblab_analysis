@@ -340,25 +340,36 @@ end             %ending "if opts.eye"
         end
         
         num_trials = size(out_struct.databursts,1);
-        
+                
         out_struct.targets.corners = zeros(num_trials,5,'single');
         
         if wrist_flexion_task
+            burst_size = 34;
+            num_burst = 0;
             out_struct.targets.rotation = zeros(num_trials,2,'single');            
             for i=1:num_trials
-                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(7:22));
-                out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
-                out_struct.targets.rotation(i,1)=out_struct.databursts{i,1};
-                out_struct.targets.rotation(i,2)=bytes2float(out_struct.databursts{i,2}(3:6));
+                if size(out_struct.databursts{i,2})~=burst_size
+                    warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                else
+                    num_burst = num_burst+1;
+                    out_struct.targets.corners(num_burst,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
+                    out_struct.targets.corners(num_burst,1)=out_struct.databursts{i,1};
+                    out_struct.targets.rotation(num_burst,1)=out_struct.databursts{i,1};
+                    out_struct.targets.rotation(num_burst,2)=bytes2float(out_struct.databursts{i,2}(15:18));
+                end
             end
+            out_struct.targets.rotation = out_struct.targets.rotation(1:num_burst,:);
+            out_struct.targets.corners  = out_struct.targets.corners(1:num_burst,:);
         elseif center_out_task
+            burst_size = 30;
             for i=1:num_trials
-                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(15:30));
+                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
                 out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
             end
         else
+            burst_size = 18;
             for i=1:num_trials
-                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(3:18));
+                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
                 out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
             end
         end           

@@ -2,9 +2,7 @@ function convertBatch2BDF2Binned
 
 %% Globals
     
-    dataPath = 'C:\Monkey\Theo\Data\';
-    
-    addpath ../
+    dataPath = 'C:\Monkey\Keedoo\';
     
 %% Get Cerebus Data Files
 
@@ -19,17 +17,34 @@ function convertBatch2BDF2Binned
       disp('User action cancelled');
       return;
     end
+
+%% Get Paths
+
+        BDFsavePath = uigetdir([CB_PathName '\..\..'],'Select a Destination Directory for BDF Files');
+        if ~BDFsavePath
+            disp('User Action Cancelled');
+            return;
+        end
     
+        BINsavePath = uigetdir([CB_PathName '\..\..'],'Select a Destination Directory for Binned Files');
+        if ~BINsavePath
+            disp('User Action Cancelled');
+            return;
+        end
 %% Get Data Binning Parameters
 
-    [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate] = convertBDF2binnedGUI;
+    [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
     
 %% Convert Cerebus to BDF
 
-    BDF_FileNames = convertBatch2BDF(CB_FileNames, CB_PathName, dataPath);
+    BDF_FileNames = convertBatch2BDF(CB_FileNames, CB_PathName, BDFsavePath);
+    if isempty(BDF_FileNames)
+        disp('Error converting Files to BDF');
+        return;
+    end
 
 %% Convert BDF Structures to binned data
 
-    convertBatch2Binned(BDF_FileNames, dataPath, binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate);
+    convertBatch2Binned(BDF_FileNames, BDFsavePath, binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,BINsavePath);
     
 end

@@ -292,7 +292,7 @@ end
 
 %% Targets
 %(see outputs)
-if ~isfield(datastruct,'target')
+if ~isfield(datastruct,'targets')
     targets.corners = [];
     targets.rotation= [];
 else
