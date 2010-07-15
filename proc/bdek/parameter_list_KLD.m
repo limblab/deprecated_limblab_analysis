@@ -1,5 +1,10 @@
 function[param_list] = parameter_list_KLD()
 
+%parameter_list_KLD creates a struct containing input parameters for
+%KLD_nongauss.m
+
+
+
 param_list = struct('x_pos', 'include','y_pos', 'include', ... 
                     'x_vel', 'include', 'y_vel','include', ...
                     'x_acc', 'omit', 'y_acc', 'omit', ...
