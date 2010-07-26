@@ -228,6 +228,8 @@ if opts.eye
 %------------end initialization-------------------------------------------
  
 %--------------------------BLINK FILTER; NO POSITION DATA IN OUTPUT-------------------        
+% THIS WILL NEED TO BE CHANGED TO ACCOMODATE THE CHANGE TO RAW DATA
+% What will need to be changed
 
         t_valid      = zeros( length( find( raw_eye(:,y) > b) ), 1 ); %#ok<NASGU>
         x_valid      = zeros( length( find( raw_eye(:,y) > b) ), 1 ); %#ok<NASGU> %generating null arrays in prep.
