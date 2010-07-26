@@ -17,7 +17,7 @@ function [table, all] = raster(spikes, events, start, stop, varargin)
 %
 %   [TABLE, ALL] = RASTER( ... ) will also return timestamp data ALL being
 %   the time stamps of all spikes aligned to the events.  This is usefull
-%   to feed into a bining routine so the firing rate can be plotted.
+%   to feed into a binning routine so the firing rate can be plotted.
 %
 %   [...] = RASTER(..., -1) will not actually plot the raster but will
 %   still return the requested output variables.
