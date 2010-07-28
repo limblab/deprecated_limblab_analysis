@@ -80,7 +80,10 @@ elseif strncmpi( monkey_name, 'theo_map', length(monkey_name) ) || strncmpi( mon
 elseif strncmpi( monkey_name, 'fidel_map', length(monkey_name) )
     map = [pin_map' fidel_map'];
 else
-    disp('Warning: No array found for given monkey.')
+    disp('Warning: No array found for given monkey.');
+    %If you want to run this function on a monkey for which the map has not
+    %been input, let David know the array ID# and he will create the
+    %necessary map.
 end
 
 
