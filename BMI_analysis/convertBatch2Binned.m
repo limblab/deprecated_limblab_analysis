@@ -51,8 +51,6 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         Bin_FileNames = {};
         return;
     end
-        
-    Bin_FileNames = BDF_FileNames;
     
     if iscell(BDF_FileNames)
         numFiles = size(BDF_FileNames,2);
@@ -60,6 +58,8 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         numFiles = 1;
         BDF_FileNames = {BDF_FileNames};
     end        
+
+    Bin_FileNames = BDF_FileNames;    
     
     for i=1:size(BDF_FileNames,2)
         disp(sprintf('Binning %s structure...', BDF_FileNames{:,i} ));
