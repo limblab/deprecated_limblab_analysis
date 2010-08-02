@@ -55,7 +55,7 @@ if Adapt_Enable
 %     ActualData = BinnedData.forcedatabin;
 %     ActualData = BinnedData.emgdatabin;
 %     LR = 1e-7; %Learning rate
-    SR = BinnedData.timeframe(2)-BinnedData.timeframe(1);%Sampling rate
+    binsize = round(1000*(BinnedData.timeframe(2)-BinnedData.timeframe(1)))/1000;
     %find bins at which to measure error
 %     w = BD_Words;
     
@@ -74,7 +74,7 @@ if Adapt_Enable
     
 
     Adapt_ts = get_tgt_center(BinnedData);
-    Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/SR) Adapt_ts(:,2:end)]; %convert first column of Adapt_ts to bins
+    Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/binsize) Adapt_ts(:,2:end)]; %convert first column of Adapt_ts to bins
     Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); %remove first adapt step is too early
     
 %     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt8(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
@@ -89,6 +89,7 @@ else
     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
 %     [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
 %     PredictedData = PredictedData(numlags:end,:);
+    varargout(1) = {filter.H};
 end
 
 clear ActualData spikeData;
