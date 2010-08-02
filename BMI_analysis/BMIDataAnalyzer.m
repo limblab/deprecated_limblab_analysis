@@ -407,9 +407,28 @@ function BMIDataAnalyzer()
     function Filt_PredButton_Callback(obj,event)
         disp('Predicting EMGs, please wait...');
         [Smooth_Pred, Adapt_Enable, LR, Lag] = PredOptionsGUI();
-        OLPredData = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
+        [OLPredData, H_new] = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
         disp('Done.');
         
+        if Adapt_Enable %we have a new filter
+            disp('Saving updated prediction model...');
+            Filt_FileName = [Bin_FileName(1:end-4) '_adaptFilter.mat'];
+            filt_struct = LoadDataStruct(Filt_FullFileName,'filter');
+            filt_struct.H = H_new;            
+            [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');
+
+            if isequal(Filt_FileName, 0) || isequal(PathName,0)
+                disp('User action cancelled, new filter was not saved');
+            else
+                Filt_FullFileName = fullfile(PathName,Filt_FileName);
+                set(Filt_PredButton, 'Enable','on');
+                set(Filt_WSButton,'Enable','on');
+
+                Filt_FileLabel = uicontrol('Parent',Filt_Panel,'Style','text','String',['Model : ' Filt_FileName],'Units',...
+                                          'normalized','Position',[0 .65 1 0.2]);
+            end
+        end
+            
         disp('Saving predicted EMGs...');
         OLPred_FileName = [sprintf('OLPred_DATA-%s_Filter-%s', Bin_FileName(1:end-4),Filt_FileName(1:end-4)) '.mat'];
         [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
