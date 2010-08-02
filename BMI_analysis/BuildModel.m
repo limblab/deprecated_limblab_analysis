@@ -6,7 +6,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %           [PredData]      : structure with EMG prediction data (fit)
 %       binnedData          : data structure to build model from
 %       dataPath            : string of the path of the data folder
-%       UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
+%       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
 %       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh} : flags to include EMG, Force, Cursor Position and Thresholding in the prediction model (0=no,1=yes)
    
@@ -55,29 +55,32 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     %%%desiredInputs are the columns in the firing rate matrix that are to be
     %%%used as inputs for the models  
     
-    numberinputs=size(binnedData.spikeguide,1);
-    neuronChannels=zeros(numberinputs,2);
-    for k=1:numberinputs
-        temp=deblank(binnedData.spikeguide(k,:));
-        I = findstr(temp, 'u');
-        neuronChannels(k,1)=str2double(temp(1,3:(I-1)));
-        neuronChannels(k,2)=str2double(temp(1,(I+1):size(temp,2)));
-        clear temp I
-    end
     
     if  UseAllInputsOption
 %        disp('Using all available inputs')
-        neuronIDs=neuronChannels;
-        desiredInputs=1:numberinputs;
+        neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
+        desiredInputs=1:size(neuronIDs,1);
      else
         [FileName, PathName] =uigetfile([dataPath '\NeuronIDfiles\' '*.mat'],'Filename of desired inputs? ');
-        [neuronIDs] = loadneuronIDs([PathName FileName]);
+        neuronIDs = load([PathName FileName]);
+        field_name = fieldnames(neuronIDs);
+        neuronIDs = getfield(neuronIDs, field_name{:});
         numberinputs=size(neuronIDs,1);
+        desiredInputs = zeros(1,numberinputs);
+        neuronChannels = spikeguide2neuronIDs(binnedData.spikeguide);
         for k=1:numberinputs
             temp=neuronIDs(k,:);
             spot=find((neuronChannels(:,1)==temp(1,1)) & (neuronChannels(:,2)==temp(1,2)));
+            if isempty(spot)
+                errordlg(sprintf('No data available for elec:%g unit %g\n Model Building Aborted',temp(1,1),temp(1,2)));
+                filter = [];
+                if nargout > 1
+                    varargout = {[]};
+                end
+                return;
+            end
             desiredInputs(1,k)=spot;
-            clear temp spot
+            clear temp spot;
         end
     end
 
