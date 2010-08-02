@@ -3,6 +3,8 @@ function [R2, nfold] = mfxval(binnedData, dataPath, foldlength, fillen, UseAllIn
 %
 %       binnedData          : data structure to build model from
 %       dataPath            : string of the path of the data folder
+%       foldlength          : fold length in seconds (typically 60)
+%       fillen              : filter length in seconds (tipically 0.5)
 %       UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
 %       varargin = {PredEMG, PredForce, PredCursPos} : flags to include

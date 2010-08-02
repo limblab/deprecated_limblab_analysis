@@ -1,4 +1,4 @@
-function [R2, nfold] = mfxval_fixed_model(filter,binnedData,foldlength)
+function [R2, nfold] = mfxval_fixed_model(filter,binnedData,foldlength,Adapt)
 
 %       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
 %
@@ -60,14 +60,15 @@ for i=0:nfold-1
            
         
 %     PredData = predictSignals(filter, testData);
-    Filter = false;
-    Adapt = true;
-    LR = 25e-8;
+    Smooth = false;
+    LR = 1e-7;
     lag = 0.5;
-    [PredData, Hnew] = predictSignals(filter,testData,Filter,Adapt,LR,lag);
-    filter.H = Hnew;
+    [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,LR,lag);
+    if Adapt
+        filter.H = Hnew;
+    end
     
-    R2(i+1,:) = ActualvsOLPred(testData,PredData,1);
+    R2(i+1,:) = ActualvsOLPred(testData,PredData,0);
 %     R2(i+1,:) = CalculateR2(testData.emgdatabin(round(filter.fillen/binsize):end,:),PredData.predemgbin)';
     
 end
