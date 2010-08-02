@@ -365,8 +365,12 @@ end             %ending "if opts.eye"
         elseif center_out_task
             burst_size = 30;
             for i=1:num_trials
-                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
-                out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+                if size(out_struct.databursts{i,2})~=burst_size
+                    warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                else
+                    out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
+                    out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+                end
             end
         else
             burst_size = 18;
