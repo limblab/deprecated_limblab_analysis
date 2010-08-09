@@ -65,22 +65,14 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         neuronIDs = load([PathName FileName]);
         field_name = fieldnames(neuronIDs);
         neuronIDs = getfield(neuronIDs, field_name{:});
-        numberinputs=size(neuronIDs,1);
-        desiredInputs = zeros(1,numberinputs);
-        neuronChannels = spikeguide2neuronIDs(binnedData.spikeguide);
-        for k=1:numberinputs
-            temp=neuronIDs(k,:);
-            spot=find((neuronChannels(:,1)==temp(1,1)) & (neuronChannels(:,2)==temp(1,2)));
-            if isempty(spot)
-                errordlg(sprintf('No data available for elec:%g unit %g\n Model Building Aborted',temp(1,1),temp(1,2)));
-                filter = [];
-                if nargout > 1
-                    varargout = {[]};
-                end
-                return;
+        desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
+        if isempty(desiredInputs)
+            errordlg(sprintf('No data available for elec:%g unit %g\n Model Building Aborted',temp(1,1),temp(1,2)));
+            filter = [];
+            if nargout > 1
+                varargout = {[]};
             end
-            desiredInputs(1,k)=spot;
-            clear temp spot;
+            return;
         end
     end
 
@@ -117,7 +109,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
 %     H = MIMOCE1(Inputs,Outputs,numlags);
     
-%% Then, add non-linearity
+%% Then, add non-linearity if applicable
 
     fs=1; numsides=1;
     
