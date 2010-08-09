@@ -246,7 +246,7 @@ if opts.eye
         s_unit = 5/409.5;               %some constant used in transformation (from Alex's "plot_pog.m" code)
         
         % initializing low pass filter for pog
-        [b,a]        = butter(9,.04); %values from Alex's 'plot_pog' code; have not checked to see how optimal they are
+        [b,a]        = butter(9,.4); %values from Alex's 'plot_pog' code; have not checked to see how optimal they are
         filter       = 1;             %currently only able to change this *in the code* (right here)
 
         %applying filter if wanted //Butterworth low pass
