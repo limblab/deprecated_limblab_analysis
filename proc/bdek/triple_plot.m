@@ -12,7 +12,7 @@ p_list = struct('x_pos', 'include','y_pos', 'include', ...
                 
 FirstPlot = cell(1,length(bdf.units));
 for i = 1:length(bdf.units)
-    [~,p,~] = KLD_nongauss(bdf,p_list,i);
+    [tmp,p,tmp] = KLD_nongauss(bdf,p_list,i);
     FirstPlot{1,i} = p;
 end
 listing = vertcat(FirstPlot{:,:});
@@ -32,19 +32,19 @@ for k = 0:length_nonzero-1
                    'unit', 9,'block_param', 0.00, 'resp_param', ...
                     0.05, 'resp_axes', 'omit','graph', 'no');
                 
-    [dboth,~,~] = KLD_nongauss(bdf,p_list,unit_indx(k+1,1));
+    [dboth,tmp,tmp] = KLD_nongauss(bdf,p_list,unit_indx(k+1,1));
 
     p_list.x_pos = 'omit';
     p_list.y_pos = 'omit';
 
-    [dvel,~,~] = KLD_nongauss(bdf,p_list,unit_indx(k+1,1));
+    [dvel,tmp,tmp] = KLD_nongauss(bdf,p_list,unit_indx(k+1,1));
 
     p_list.x_pos = 'include';
     p_list.y_pos = 'include';
     p_list.x_vel = 'omit';
     p_list.y_vel = 'omit';
 
-    [dpos,~,~] = KLD_nongauss(bdf,p_list,unit_indx(k+1,1));
+    [dpos,tmp,tmp] = KLD_nongauss(bdf,p_list,unit_indx(k+1,1));
 
     dpos_plus_vel = dpos(:,2) + dvel(:,2);
 
@@ -66,19 +66,19 @@ else
                    'unit', 9,'block_param', 0.00, 'resp_param', ...
                     0.05, 'resp_axes', 'omit','graph', 'no');
                 
-    [dboth,~,~] = KLD_nongauss(bdf,p_list,u);
+    [dboth,tmp,tmp] = KLD_nongauss(bdf,p_list,u);
 
     p_list.x_pos = 'omit';
     p_list.y_pos = 'omit';
 
-    [dvel,~,~] = KLD_nongauss(bdf,p_list,u);
+    [dvel,tmp,tmp] = KLD_nongauss(bdf,p_list,u);
 
     p_list.x_pos = 'include';
     p_list.y_pos = 'include';
     p_list.x_vel = 'omit';
     p_list.y_vel = 'omit';
 
-    [dpos,~,~] = KLD_nongauss(bdf,p_list,u);
+    [dpos,tmp,tmp] = KLD_nongauss(bdf,p_list,u);
 
     dpos_plus_vel = dpos(:,2) + dvel(:,2);
     
