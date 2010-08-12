@@ -81,7 +81,8 @@ else
     [dpos,~,~] = KLD_nongauss(bdf,p_list,u);
 
     dpos_plus_vel = dpos(:,2) + dvel(:,2);
-
+    
+    figure;
     plot(dboth(:,1),dboth(:,2),dvel(:,1),dvel(:,2),dpos(:,1),dpos(:,2),dpos(:,1),dpos_plus_vel);
     title(sprintf('Unit: %u', u));
     legend('position and velocity','velocity','position','position + velocity');

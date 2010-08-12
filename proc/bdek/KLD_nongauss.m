@@ -1,4 +1,5 @@
-function[data, peak, param_points] = KLD_nongauss(bdf, param_list,unit, samples, block_param, varargin)
+function[data, peak, param_points, ts] = KLD_nongauss(bdf, param_list,unit,...
+                                                        samples, block_param, varargin)
 
 % KLD_nongauss calculates the Kullback-Leibler divergence for a unit 
 % regarding a particular set of parameters, dictated by the struct
@@ -43,6 +44,7 @@ end
 
 unit = bdf.units(1,u).ts;     % neuron
 t_win = param_list.window;    % window width of KL divergence plot (ms)
+exclusion_type = param_list.exclusion_type;
 rp = param_list.resp_param;
     % rp refers to the exclusion window for the respected parameters. An rp
     % of 0.05 will result in inclusion or exclusion (depending on rpa) of
@@ -55,23 +57,23 @@ rpa = param_list.resp_axes;
 if isempty(bdf.units(1,u).ts)==1
     data = [0 0];
     peak = [0 0 0];
-    disp(sprintf('unit %d is empty',u));
+    disp(sprintf('unit %d is empty',u)); %#ok<DSPS>
 return
     % If unit chosen contains no spikes, zeros are returned
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Info %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-info = sprintf(['x pos: %s\ny pos: %s\nx vel: %s\ny vel: %s\nx acc: %s\ny acc: %s'...
-    '\nx force: %s\ny force: %s\nsamples: %f\nwindow: %d\nunit: %d'...
-    '\nblock param: %f\nresp window: %f\nrespected axes: %s\ngraph: %s'],...
+info = sprintf(['x pos: %s\ny pos: %s\nx vel: %s\ny vel: %s'...
+    '\nx acc: %s\ny acc: %s'...
+    '\nx force: %s\ny force: %s\nsamples: %.3f\nwindow: %d\nunit: %d'...
+    '\ninc param: %.3f\nex type: %s\nresp param: %.3f\nresp axes: %s'],...
     param_list.x_pos,param_list.y_pos,param_list.x_vel,param_list.y_vel,...
     param_list.x_acc,param_list.y_acc,param_list.x_force,param_list.y_force,...
     perc_quad,param_list.window,u,...
-    bp,param_list.resp_param,param_list.resp_axes,...
-    param_list.graph);
+    bp,param_list.exclusion_type,param_list.resp_param,param_list.resp_axes);
         %The information from the input_param struct is converted to a
         %string for inclusion in resulting plot
-
+        
 %%%%%%%%%%%%%%%%%%%%%%%%% check parameter list %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %sets each parameter variable (x_pos, y_pos, ...) to either 0, 1, or 2
@@ -141,14 +143,18 @@ else
     % In default case, no parameters are respected
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
+ex = bp;
+if isequal(exclusion_type,'origin')
+    ex = 0;
+end
+
 for i = inc_par
     if i == 1 || i== 5
         tot_Q{i,1} = p_v_a_f(:,i) > 0;
         tot_Q{i,2} = p_v_a_f(:,i) < 0;
     else
-        tot_Q{i,1} = p_v_a_f(:,i) > bp*std(p_v_a_f(:,i));
-        tot_Q{i,2} = p_v_a_f(:,i) <-bp*std(p_v_a_f(:,i));
+        tot_Q{i,1} = p_v_a_f(:,i) > ex*std(p_v_a_f(:,i));
+        tot_Q{i,2} = p_v_a_f(:,i) <-ex*std(p_v_a_f(:,i));
     %for each included parameter create two kinematic blocks, one for 
     %positive and one for negative values (excluding the block_parameter 
     %exclusion window).  
@@ -160,9 +166,26 @@ for i = inc_par
     %positive and negative, respectively.
     end
 end
-[binned_spikes] = train2bins(unit,0.001);
-binned_spikes(:,1:1000) = []; 
-binned_spikes = [binned_spikes zeros(1,ceil((bdf.pos(end,1)+5-unit(end)).*1000))];
+
+if isequal(exclusion_type,'origin')
+    inc = inc_par;
+    inc(inc==1|inc==5)=[];
+    origin_ex_ind = (p_v_a_f(:,inc(1))).^2 + (p_v_a_f(:,inc(2))).^2 > bp*var(p_v_a_f(:,inc(1)));
+    for i = inc
+        tot_Q{i,1} = tot_Q{i,1} + origin_ex_ind;
+        tot_Q{i,2} = tot_Q{i,2} + origin_ex_ind;
+        tot_Q{i,1}(tot_Q{i,1}==1)=0;
+        tot_Q{i,2}(tot_Q{i,2}==1)=0;
+        tot_Q{i,1}(tot_Q{i,1}==2)=1;
+        tot_Q{i,2}(tot_Q{i,2}==2)=1;
+    end
+end
+    
+    
+
+[binned_spikes] = train2bins(unit,bdf.pos(:,1));
+% binned_spikes(:,1:1002) = []; 
+% binned_spikes = [binned_spikes zeros(1,ceil((bdf.pos(end,1)+5-unit(end)).*1000))];
     %binned_spikes contains all of the spike information, separated into
     %1ms bins. The first second is discarded in order to align the spike
     %timestamps with the kinematic timestamps.
@@ -205,6 +228,7 @@ for i = 1:2^length(inc_par)
     Q_ind_lengths(i) = length(Q_ind{i});
 end
 
+ts = Q_ts;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%   KL divergence  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Q = cell(1,2^length(inc_par));
@@ -251,6 +275,37 @@ for i = 1:(2^length(inc_par))
         %to zero
 end
 
+% d = cell(1,2^length(inc_par));
+% for i = 1:2^length(inc_par)
+%     d{i} = find(D{i}==max([D{1};D{2};D{3};D{4}]));
+%     d{i}(d{i}<=100|d{i}>=2900)=[];
+%     d{i} = d{i}-(t_win/2);
+% end
+
+if isequal(param_list.show_components,'yes') ==1
+    par_names = cell(8,1);
+    keyheads = cell(length(inc_par),1);
+    keybody = cell(2^length(inc_par),length(inc_par));
+    par_names{1} = 'x pos';par_names{2}='x vel';par_names{3}='x acc';
+    par_names{4} = 'x force';par_names{5}= 'y pos';par_names{6}='y vel';
+    par_names{7} = 'y acc'; par_names{8}= 'y force';
+    for i = 1:length(inc_par)
+        keyheads{i} = par_names{inc_par(i)};
+    end
+    d = cell(1,2^length(inc_par));
+    sumD = vertcat(D{:,:});
+    for i = 1:2^length(inc_par)
+        d{i} = i*(D{i}==max(sumD));
+        for j = 1:length(inc_par)
+            keybody{i,j} = num2str(poss(i,j));
+            keybody{i,j}(keybody{i,j}=='1')='+';
+            keybody{i,j}(keybody{i,j}=='2')='-';
+        end
+    end
+    col = sum(vertcat(d{:,:}));
+    col(:,1:101) = []; col(:,(end-101):end) = [];
+end
+
 K = sum(vertcat(D{:,:}));
     %The kinematic state interations (for all lags) are summed, giving the
     %KL divergence for each lag. 
@@ -263,10 +318,39 @@ smoothK((end-100):end,:) = [];
 
 if isequal(param_list.graph,'yes') == 1
     figure;
-    subplot('position',[0.1,0.55,.60,0.35]); plot((-t_win/2+101:t_win/2-100),smoothK);
-    title(sprintf('Unit: %d     Samples: %d  (%.2f%s)',u, sample_sum,(sample_sum/length(bdf.pos))*100,'%'));
-    subplot('position',[0.1,0.1,0.60,0.35]); plot((-t_win/2:t_win/2),K);
-    subplot('position',[0.75,0.1,0.05,0.8]); text(0,0.7,info); axis off; 
+    subplot('position',[0.1,0.55,.60,0.35]); 
+    if isequal(param_list.show_components,'yes') == 1
+        m = [1 0 0;0 0 1;0 1 0;1 1 0;0 1 1;1 0 1; .5 0 0;0 0 .5;0 .5 0;...
+            .5 .5 0;0 .5 .5;.5 0 .5;.5 .5 .5;.25 1 0;0 1 .25;1 .25 0];
+        image([-t_win/2+102 t_win/2-101],[1.2*max(smoothK) 0],col); colormap(m); 
+        hold on;
+        area((-t_win/2+101:t_win/2-100),smoothK,1.2*max(smoothK),'FaceColor','white');
+        hold off;
+    else
+        plot((-t_win/2+101:t_win/2-100),smoothK,'Color','b'); 
+    end
+        text(-t_win/3,0.5*max(smoothK),'Motor','FontSize',12,'HorizontalAlignment','center');
+        text(t_win/3,0.5*max(smoothK),'Sensory','FontSize',12,'HorizontalAlignment','center');
+        title(sprintf('Unit: %d     Samples: %d  (%.2f%s)',u,...
+            sample_sum,(sample_sum/length(bdf.pos))*100,'%'));
+        subplot('position',[0.1,0.1,0.60,0.35]); plot((-t_win/2:t_win/2),K);
+        subplot('position',[0.75,0.1,0.2,0.8]); text(0,1,info,'VerticalAlignment','top');
+        title('Parameters','Fontweight','bold'); axis off;
+    if isequal(param_list.show_components,'yes') == 1
+        for i = 1:2^length(inc_par)
+            text(0,0.26-(i-1)/(2^length(inc_par)-1)*(0.0125*2^length(inc_par)+0.1),...
+                '-','FontSize',40,'color',m(i,:),'FontWeight','bold');
+            for j = 1:length(inc_par)
+                if i==1
+                    text(0.3+(j-1)*(0.245*length(inc_par)-0.2)/(length(inc_par)-1),...
+                        0.30,keyheads{j},'HorizontalAlignment','center');
+                end
+                text(0.3+(j-1)*(0.245*length(inc_par)-0.2)/(length(inc_par)-1),...
+                    0.25-(i-1)/(2^length(inc_par)-1)*(0.0125*2^length(inc_par)+0.1),...
+                    keybody{i,j},'FontSize',15,'HorizontalAlignment','center');
+            end
+        end
+    end  
     return
     %if the graph = 'yes' option is included in param_list input, a plot
     %is displayed containing raw and smoothed KL divergence plots over all
