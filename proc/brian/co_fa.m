@@ -102,7 +102,7 @@ for curtype = 1:8
             mylines{curtype});
 end
 
-return;
+%return;
 
 % n = 3;
 % l = length(y);

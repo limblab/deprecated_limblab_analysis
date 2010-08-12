@@ -13,15 +13,19 @@ function s = get_unit( data, channel, unit )
 unit_num = -1;
 num_units = size(data.units, 2);
 
-for i = 1:num_units
-    if all(data.units(i).id == [channel unit])
-        unit_num = i;
-        break
+try
+    for i = 1:num_units
+        if all(data.units(i).id == [channel unit])
+            unit_num = i;
+            break
+        end
     end
+catch
+    error('Specified unit does not exist in bdf.');
 end
 
 if unit_num == -1
-    error('specified unit not found');
+    error('Specified unit does not exist in bdf.');
 end
 
 s = data.units(unit_num).ts;

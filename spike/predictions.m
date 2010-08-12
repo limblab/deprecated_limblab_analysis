@@ -60,7 +60,7 @@ for i = 1:folds
    
     vaf(i,:) = 1 - var(y_pred - y_test) ./ var(y_test);
 end
-    
+
 %rmpath mimo
 %rmpath spike
 %rmpath bdf

@@ -385,6 +385,3 @@ else
     data = [(-t_win/2+101:t_win/2-100)' smoothK]; 
     %Values set for output arguments 'peak' and 'data'.
 end
-
-end
-

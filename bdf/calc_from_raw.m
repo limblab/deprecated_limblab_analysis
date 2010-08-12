@@ -168,14 +168,20 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
             % Check date of recording to see if it's before or after the
             % change to force handle mounting.
-            if datenum(out_struct.meta.datetime) > datenum('5/27/2010')
-                error('Date of file is after force change, but new force loader has not been implemented');
-            end
+            if datenum(out_struct.meta.datetime) < datenum('5/27/2010')            
+                fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
+                         -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
+                rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
+                force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+                Fy_invert = -1; % old force setup was left hand coordnates.
+            else
+                fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
+                        -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
+                rotcal = [1 0; 0 1];                
+                force_offsets = [-.73 .08 .21 -.23 .25 .44];
+                Fy_invert = 1;
+            end % datenum(out_struct.meta.datetime) < datenum('5/27/2010')
             
-            fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
-                     -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
-            rotcal = [0.8540 -0.5202; 0.5202 0.8540];
-
             [b,a] = butter(4, 20/adfreq);
             raw_force = zeros(length(analog_time_base), 6);
             for c = 1:6
@@ -186,16 +192,16 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 raw_force(:,c) = a_data';
             end
 
-            force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
             force_offsets = repmat(force_offsets, length(raw_force), 1);
             out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
-            out_struct.force(:,2) = -out_struct.force(:,2);    
+            out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
             for p = 1:size(out_struct.force, 1)
                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
                 out_struct.force(p,:) = out_struct.force(p,:) * r;
             end
 
             out_struct.force = [analog_time_base' out_struct.force];
+
         else
             if (robot_task)
                 warning('BDF:noForceSignal','No force handle signal found because no channel named ''ForceHandle*''');
