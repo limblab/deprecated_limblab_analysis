@@ -122,9 +122,12 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
             th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
             th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-            th_1_adj = interp1(th_t, filtfilt(b, a, th_1), analog_time_base); 
-            th_2_adj = interp1(th_t, filtfilt(b, a, th_2), analog_time_base); 
-
+            th_1_adj = filtfilt(b, a, interp1(th_t, th_1, analog_time_base));
+            th_2_adj = filtfilt(b, a, interp1(th_t, th_2, analog_time_base));
+            
+            th_1_adj = smooth(th_1_adj, 51)';
+            th_2_adj = smooth(th_2_adj, 51)';
+            
             % convert to x and y
             x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
             y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
