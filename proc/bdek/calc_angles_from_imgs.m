@@ -11,7 +11,7 @@ function [angles_list,handle_pos] = calc_angles_from_imgs(path,beg_num,end_num,f
 % handle coordinates are in image format (origin is upper left) and are
 % included for possible synchronization with recorded data. 
 %
-% To edit the image processing performance, see wrist_angle.m
+% To edit the image processing performance, see fiducial_track.m
 
 table = zeros(end_num-beg_num+1,6);
 %preallocate the table containing fiducial coordinates
