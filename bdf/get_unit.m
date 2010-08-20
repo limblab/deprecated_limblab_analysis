@@ -10,6 +10,10 @@ function s = get_unit( data, channel, unit )
 
 % $Id$
 
+if regexp(data.meta.filename, 'FAKE SPIKES')
+    warning('BDF:fakeData', 'Using BDF with fake spike data');
+end
+
 unit_num = -1;
 num_units = size(data.units, 2);
 

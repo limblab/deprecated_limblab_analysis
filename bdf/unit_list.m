@@ -6,6 +6,10 @@ function list = unit_list(data)
 
 % $Id$
 
+if regexp(data.meta.filename, 'FAKE SPIKES')
+    warning('BDF:fakeData', 'Using BDF with fake spike data');
+end
+
 L = size(data.units, 2);
 list = [];
 

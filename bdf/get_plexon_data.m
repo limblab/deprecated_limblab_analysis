@@ -54,6 +54,8 @@ function out_struct = get_plexon_data(varargin)
 %     +-- FILENAME
 %     +-- DATETIME
 %     +-- DURATION
+%     +-- LAB      - contains the labnum specifying which lab we think this
+%     |              file was recorded in. (used to calculate pos from angles)
 %     +-- BDF_INFO - contains information about the version of
 %                    get_plexon_data used to create the BDF
 
@@ -65,7 +67,7 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
-    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1);
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1, 'labnum', 2);
     
     if (nargin == 1)
         filename = varargin{1};
@@ -114,7 +116,8 @@ function out_struct = get_plexon_data(varargin)
         SpikePeakV, SpikeADResBits, SlowPeakV, SlowADResBits, Duration, ...
         DateTime] = plx_information(filename);
     
-    out_struct.meta = struct('filename', OpenedFileName, 'datetime', DateTime,'duration', Duration, ...
+    out_struct.meta = struct('filename', OpenedFileName, 'datetime', ...
+        DateTime,'duration', Duration, 'lab', opts.labnum, ...
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
