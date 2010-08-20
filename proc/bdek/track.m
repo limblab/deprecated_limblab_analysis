@@ -18,6 +18,8 @@ for i = beg_num:end_num
    %prec_zeros = repmat('0',1,3-length(int2str(i)));
     img = imread([open_path int2str(i)],extension);
     heldimage = imcrop(img, [80 0 600 480]);
+%%%%%%% MAKE SURE CROPPING IS THE SAME AS IN FIDUCIAL_TRACK.M
+    
     imshow(heldimage); hold on;
     
     if table((i-beg_num+1),1)~=0    

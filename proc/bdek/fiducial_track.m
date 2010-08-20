@@ -25,9 +25,10 @@ function[handle_cent,distal,medial]= fiducial_track(preimage)
 bw_thresh = 0.93;
 size_thresh = 130;
 wrist_marker_ecc = 0.95;
+image = imcrop(preimage, [80 0 600 480]); %crop image.  If using track.m, 
+        %make sure that the cropping is the same.  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-image = imcrop(preimage, [80 0 600 480]); %crop image
 h = fspecial('average',3);
 blurred = imfilter(image,h);
     %blur image to help prevent discontinuity in a single marker
