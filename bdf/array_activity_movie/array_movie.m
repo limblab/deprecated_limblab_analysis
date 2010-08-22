@@ -1,4 +1,4 @@
-function array_movie(bdf, monkey_name, varargin)
+function [A, spike_rates, smoothed_rates] = array_movie(bdf, monkey_name, varargin)
 %
 %   Author: David Bontrager (d-bontrager [at] northwestern.edu)
 %   May 2010, Miller Lab, Northwestern University
@@ -56,27 +56,31 @@ if (nargin == 2)        %Set arbitrary default values for the different play opt
     duration   = 5;     %length of video in seconds (when played in real-time)
     play_rate  = 1;     %playback rate (1 = real-time speed)
     sound_chan = 0;     %channel number to play sound for ('0' gives avg activity)
+    frame_rate = 20;    %native fps to bin data to
+    ff         = .3;    %low-pass filter value
 else
     opts = varargin{1};
     if isfield( opts, 'start_time' ),  start_time = opts.start_time; else start_time = 0;   end
     if isfield( opts, 'duration'   ),  duration   = opts.duration;   else duration   = 5;   end
     if isfield( opts, 'play_rate'  ),  play_rate  = opts.play_rate;  else play_rate  = 1;   end
     if isfield( opts, 'sound_chan' ),  sound_chan = opts.sound_chan; else sound_chan = 0;   end
+    if isfield( opts, 'frame_rate' ),  frame_rate = opts.frame_rate; else frame_rate = 20;  end
+    if isfield( opts, 'filt_value' ),  ff         = opts.filt_value; else ff         = .3;  end
 end
 
 % Make sure it doesn't run past end of file (possible problem: assumes
 % position data exists in bdf)
 if (start_time + duration) > bdf.pos(end,1)
-    disp('Requested time exceeds file length.');
+    disp('Warning: requested time exceeds file length.');
     return;
 end
 
 % -non-argumented constants
 from_left   = 400;          %dimensions and location of figure (in pixels)
-from_bottom = 200; 
-fig_size    = 500;          %set as width AND height
+from_bottom = 50; 
+fig_size    = 400;          %set as width AND height
 Fs          = 20000;        %sound sampling frequency (arbitrary; sets sound pitch)
-fps         = 20;           %native frame rate of video (sets 'binsize' in 'bin_spikes')
+fps         = frame_rate;   %native frame rate of video (sets 'binsize' in 'bin_spikes')
 frames      = duration*fps; %number of frames that will comprise the video
 CLim        = 150;          %picked as the [C]olor [Lim]it (length of colormap) based on maximum value of all 
                             %'all_images' values (~200, generally). The values do in fact get higher than 150, 
@@ -94,10 +98,12 @@ all_w_avgs    = zeros( 11, 10, frames ); %stores all images (after avg activity 
 CMap(1:3,:)   = 0; %sets the electrodes with no activity to black instead of dark blue within colormap 'map'
 %% Bin spike data
 
-binned_data = bin_spikes(bdf, fps, start_time); %returns list of usable units and matrix of binned spike rates
-spike_list  = binned_data.spike_list;           %list containing channel numbers for each signal (for usable channels only)
-spike_rates = binned_data.spike_rates;          %matrix in which the columns are usable channels, rows are time bins
-num_units   = length( spike_list );             %number of active units in data file
+disp('Binning data...');
+binned_data    = bin_spikes(bdf, fps, start_time, ff); %returns list of usable units and matrix of binned spike rates
+spike_list     = binned_data.spike_list;               %list containing channel numbers for each signal (for usable channels only)
+spike_rates    = binned_data.spike_rates;              %matrix in which the columns are usable channels, rows are time bins
+smoothed_rates = binned_data.smoothed_rates;
+num_units      = length( spike_list );                 %number of active units in data file
 
 %% Create subscript array
 
@@ -112,11 +118,12 @@ num_units   = length( spike_list );             %number of active units in data 
 % **NOTE: Must create images in separate loop from adding avg activity rows
 %         to allow access to *all* 'avg_activity' values (need max value to
 %         use scaling function 'clim_avg')
+disp('Compiling images...');
 for i = 1:frames
     
-    all_images(:,:,i) = accumarray( subs, spike_rates(i,:), [10 10] );  %put together a matrix with spike rate counts compiled in corresponding electrode positions
-    summed            = sum( sum( all_images(:,:,i) ) );                %sum of all activity within current frame
-    avg_activity(i)   = round( summed/num_units );                      %storing *average* activity over the array in each particular frame
+    all_images(:,:,i) = accumarray( subs, smoothed_rates(i,:), [10 10] );  %put together a matrix with spike rate counts compiled in corresponding electrode positions
+    summed            = sum( sum( all_images(:,:,i) ) );                   %sum of all activity within current frame
+    avg_activity(i)   = round( summed/num_units );                         %storing *average* activity over the array in each particular frame
     
 end
 %scale average values based on max avg of this dataset
@@ -129,30 +136,31 @@ for i = 1:frames
     all_w_avgs(:,:,i)  = vertcat(all_images(:,:,i), savg_activity);  %adding average activity as extra row on bottom of image
 
 end
+A = all_w_avgs(:,:,1:100); %arbitrary output matrices to play with
 
 %% Play image sequence
 % set figure property values
 set(spikes,'Colormap',CMap,'Name','Spike Activity','NextPlot','replacechildren','NumberTitle','off',...
-                'Position',[ from_left from_bottom fig_size fig_size ],'Units','pixels');
-
+                'Position',[ from_left from_bottom fig_size fig_size*2 ],'Units','pixels');
+            
 %Based on value of 'audio_subs' (determined in 'array_activity_map'),
 %assigns matrix element as channel to play sound for (if 'sound_chan' is
 %input as '0', 'avg_activity' is played)
 if ( audio_subs == 0 )
     aud_activity = avg_activity;
-    smin         = min(aud_activity);      
-    smax         = max(aud_activity); 
 else
-    aud_activity =      all_w_avgs( audio_subs(1), audio_subs(2), : );
-    smin         = min( all_w_avgs( audio_subs(1), audio_subs(2), : ) );
-    smax         = max( all_w_avgs( audio_subs(1), audio_subs(2), : ) );
+    aud_activity = all_w_avgs( audio_subs(1), audio_subs(2), : );
 end
+smin = min( aud_activity );
+smax = max( aud_activity );
 smax = smax*0.6; %scale 'smax' down with a quasi-arbitrarily picked number 
                  %to give audible variation over the normal range of values
                  %because very few values will be near maximum value
 
+time_plot = zeros(frames,1);
 set(spikes,'Visible','on');
 % runs through 'all_w_images', playing sound as appropriate
+disp('Playing animation...');
 for i = 1:frames
     
     tic
@@ -160,13 +168,19 @@ for i = 1:frames
     if ( aud_activity(i) ~= 0 )
         soundsc( aud_activity(i), Fs, [ smin smax ] );    % volume level corresponds to activity level
     end
-    image( all_w_avgs(:,:,i), 'Parent', image_axes ); % change image being displayed in figure to current frame
+    subplot(2,1,1)
+        image( all_w_avgs(:,:,i));
+    %image( all_w_avgs(:,:,i), 'Parent', image_axes ); % change image being displayed in figure to current frame
+    time_plot(1:i) = aud_activity(1:i);
+    subplot(4,1,3)
+        stairs( time_plot );
     
     % take calculating time into account (determine correct playback rate)
     pause_time = (1/fps)/play_rate - toc;
     pause(pause_time);
     
 end
+disp('Animation complete.');
 
 %Do we really want this? closes video window after it's done playing
 %set(spikes, 'Visible','off');
