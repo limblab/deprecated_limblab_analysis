@@ -114,6 +114,8 @@ for trial = 1:num_trials-1
         mvt_peak = find(peaks & t(2:end) > mvt_start & d(2:end) > 1, 1, 'first'); 
         thresh = d(mvt_peak)/2;                             % Threshold is half max of acceleration peak
         onset = t(find(d<thresh & t<t(mvt_peak),1,'last')); % Movement onset is last threshold crossing before peak
+    else
+        onset = NaN;
     end
     
     % Build table
