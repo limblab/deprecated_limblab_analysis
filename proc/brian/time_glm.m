@@ -1,23 +1,24 @@
 % Generate 3-pannel statespace
 
 %units = unit_list(bdf);
-monkey = 'T';
-units = [55 1];
+monkey = 'P';
+units = [33 1];
 
 clear out;
+t = -5:.005:5;
+out = zeros(size(units,1), length(t));
 
 tic;
-for i = 1:size(units, 1)
-    chan = units(i,1);
-    unit = units(i,2);
+for j = 1:size(units, 1)
+    chan = units(j,1);
+    unit = units(j,2);
     
     et = toc;
-    disp(sprintf('%d of %d\t%d-%d\tET: %f', i, size(units, 1), chan, unit, et));
+    disp(sprintf('%d of %d\t%d-%d\tET: %f', j, size(units, 1), chan, unit, et));
     
     %
     % GLM Fitting Method
     %
-    t = -.2:.005:.2;
     L = zeros(size(t));
     Lp = zeros(size(t));
     Lv = zeros(size(t));
@@ -33,10 +34,10 @@ for i = 1:size(units, 1)
     ts = bdf.vel(s<lambda,1);
     
     for i = 1:length(t)
-        disp(i);
+        %disp(i);
                 
         %[b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel', shf_unit_data);
-        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel', ts);
+        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel');
         L(i) = -l;
         L0(i) = -l0;
 
@@ -57,12 +58,15 @@ for i = 1:size(units, 1)
     
     %close all;
     %plot(t,L./L0,'k-',t,Lp./L0,'r-',t,Lv./L0,'b-');
+    
+    out(j,:) = L./L0;
+    
     plot(t,L./L0,'k-');
     title(sprintf('%s-%d-%d%s', monkey, chan, unit));
     xlabel('Lag (s)');
     ylabel('Log Likelihood Ratio');
     
-    %saveas(gcf, sprintf('llfits/%d-%d', chan, unit), 'fig');
+    saveas(gcf, sprintf('llfits/%d-%d', chan, unit), 'fig');
 end
 
 
