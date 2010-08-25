@@ -54,12 +54,14 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 if start_trial_code == hex2dec('11')
                     center_out_task = 1;
                 end
+            elseif start_trial_code == hex2dec('1B')
+                robot_task = 1;
             elseif start_trial_code == hex2dec('19')
                 ball_drop_task = 1;
             elseif start_trial_code == hex2dec('16')
                 multi_gadget_task = 1;
             else
-                close(h);
+                %close(h);
                 error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
             end
 
@@ -238,8 +240,8 @@ if opts.eye
  
 %--------------------------BLINK FILTER; NO POSITION DATA IN OUTPUT-------------------        
 % THIS WILL NEED TO BE CHANGED TO ACCOMODATE THE CHANGE TO RAW DATA
-
-
+filter = 0;
+if filter
         t_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU>
         x_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU> %generating null arrays in prep.
         y_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU>
@@ -261,6 +263,11 @@ if opts.eye
             x_valid  = filtfilt( b, a, x_valid );
             y_valid  = filtfilt( b, a, y_valid );
         end
+else
+    t_valid = raw_eye(:,t);
+    x_valid = raw_eye(:,x);
+    y_valid = raw_eye(:,y);
+end
         
         % filling matrices and converting coordinate systems (analog output to pog)*(to cm)
         % Monitor size = 304.1mm x 228.1mm
