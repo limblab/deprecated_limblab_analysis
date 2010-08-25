@@ -1,7 +1,7 @@
 function kernels = kernel_glm(bdf, chan, unit)
 
 % constants
-num_random_samples = 30000;
+num_random_samples = 60000;
 window_width = 50; % number of samples on either side of t (total window width is double this)
 kernel_length = 2*window_width+1;
 
