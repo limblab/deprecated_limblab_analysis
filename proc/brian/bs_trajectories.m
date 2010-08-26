@@ -3,12 +3,13 @@
 % Plots average trajectories on bump-stim task
 
 clear
-load '../../../data_cache/Tiki Bumps003'
+load 'D:\Data\bump_stim_forces_test_011'
+
 
 %
 % build trial table
 %%%%%%%%%%%%%%%%%%%%%
-forward_start_trial_code = hex2dec('15');
+forward_start_trial_code = hex2dec('14');
 reverse_start_trial_code = hex2dec('15');
 
 forward_trial_starts = bdf.words(bdf.words(:,2) == forward_start_trial_code, 1);
