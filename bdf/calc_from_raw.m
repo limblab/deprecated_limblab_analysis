@@ -269,7 +269,7 @@ else
     y_valid = raw_eye(:,y);
 end
         
-        % filling matrices and converting coordinate systems (analog output to pog)*(to cm)
+        % converting coordinate systems (analog output to pog)*(to cm)
         % Monitor size = 304.1mm x 228.1mm
         % No. of Vertical POG Units: 240  |||  No. of Horiz. POG Units: 256
         %x_valid      = ( (x_valid/s_unit) - 130 );% / ( 10*(304.1/256) );     %converting for screen resolution difference (E/T coords not same as behavior screen coords)
