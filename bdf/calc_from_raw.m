@@ -49,7 +49,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
             if start_trial_code == hex2dec('17')
                 wrist_flexion_task = 1;
-            elseif start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')
+            elseif (start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')) ||...
+                    start_trial_code == hex2dec('1a') || start_trial_code == hex2dec('1c')
                 robot_task = 1;
                 if start_trial_code == hex2dec('11')
                     center_out_task = 1;
