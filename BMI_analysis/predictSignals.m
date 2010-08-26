@@ -9,6 +9,9 @@ if nargin    >= 3
         Adapt_Enable = varargin{4};
         LR = varargin{5};
         Adapt_lag = varargin{6};
+        if nargin > 6
+            numPCs = varargin{7};
+        end
     end
 else
     FiltPred = false;
@@ -23,29 +26,28 @@ if ischar(BinnedData)
 end
 
 binsize = BinnedData.timeframe(2)-BinnedData.timeframe(1);
-spikeData = BinnedData.spikeratedata;
 numlags = round(filter.fillen/binsize); %round in case of floating point errror
 
 %get usable units from filter info
 matchingInputs = FindMatchingNeurons(BinnedData.spikeguide,filter.neuronIDs);
 
 %% Inputs:
-%populate spike data for units in the filter using actual data
-    % 1 - preallocate with zeros 
-usableSpikeData = zeros(size(spikeData,1),size(filter.neuronIDs,1));
-    % 2 - copy spike data for matching units between filter and data
-for i = 1:length(matchingInputs)
-    if matchingInputs(i)
-        usableSpikeData(:,i)= spikeData(:,matchingInputs(i));
-    end
-end
+%populate spike data for data units matching the filter units
+usableSpikeData = zeros(size(BinnedData.spikeratedata,1),size(filter.neuronIDs,1));
+usableSpikeData(:,logical(matchingInputs)) = BinnedData.spikeratedata(:,nonzeros(matchingInputs));
 
-% Uncomment next line to use EMGs as model inptuts:
+% Uncomment next line to use EMGs as model inputs:
 %usableSpikeData=BinnedData.emgdatabin;
+
+
+if isfield(filter, 'PC')
+    % use PCs as model inputs
+    usableSpikeData = usableSpikeData*filter.PC(:,1:numPCs);
+end
 
 %% Outputs:  assign memory with real or dummy data, just cause predMIMO requires something there
 % just send dummy data as outputs for the function
-ActualData=zeros(size(spikeData));
+ActualData=zeros(size(usableSpikeData));
 
 %% Use the neural filter to predict the Data
 numsides=1; fs=1;
@@ -75,7 +77,7 @@ if Adapt_Enable
 
     Adapt_ts = get_tgt_center(BinnedData);
     Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/binsize) Adapt_ts(:,2:end)]; %convert first column of Adapt_ts to bins
-    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); %remove first adapt step is too early
+    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); %remove first adapt step if too early
     
 %     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt8(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
      [PredictedData,spikeDataNew,Hnew] = predMIMOadapt7(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    

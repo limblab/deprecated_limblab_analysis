@@ -1,4 +1,11 @@
-function varargout = ActualvsOLPred(ActualData, PredData, plotflag)
+function varargout = ActualvsOLPred(ActualData, PredData, varargin)
+
+    if nargin >2
+        plotflag = varargin{1};
+    else
+        plotflag = 0;
+    end
+    
 
     numPredSignals = size(PredData.preddatabin,2);
     
@@ -32,9 +39,11 @@ function varargout = ActualvsOLPred(ActualData, PredData, plotflag)
     end
     
     R2 = CalculateR2(ActSignals,PredData.preddatabin(start_Pred:finish_Pred,:));
-    varargout = {R2};
-    %Display R2
-    disp('R2 = ');
+    if nargout
+        varargout = {R2};
+        %Display R2
+        disp('R2 = ');
+    end
 
     for z=1:numPredSignals
         disp(sprintf('%s\t%1.4f',PredData.outnames(z,:),R2(z,1)));
@@ -42,8 +51,7 @@ function varargout = ActualvsOLPred(ActualData, PredData, plotflag)
     aveR2 = mean(R2);
     disp(sprintf('Average:\t%1.4f',aveR2));
         
-    if plotflag==1
-               
+    if plotflag               
         for i = 1:numPredSignals
             %Plot both Actual and Predicted signals
             figure;

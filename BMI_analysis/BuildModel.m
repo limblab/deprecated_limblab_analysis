@@ -8,7 +8,13 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %       dataPath            : string of the path of the data folder
 %       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh} : flags to include EMG, Force, Cursor Position and Thresholding in the prediction model (0=no,1=yes)
+%       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh,numPCs}
+%                           :   flags to include EMG, Force, Cursor Position
+%                               and Thresholding in the prediction model
+%                               (0=no,1=yes), if numPCs is present, will
+%                               use numPCs components as inputs instead of
+%                               spikeratedata
+%
    
     if ~isstruct(binnedData)
         binnedData = LoadDataStruct(binnedData, 'binned');
@@ -21,11 +27,12 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         return;
     end    
     
-    % default value for prediction flags
-    PredEMG = 1;
-    PredForce = 0;
-    PredCursPos = 0;
-    Use_Thresh = 0;
+    % default values for prediction flags
+    PredEMG      = 1;
+    PredForce    = 0;
+    PredCursPos  = 0;
+    Use_Thresh   = 0;
+    Use_PrinComp = 0;
     
     %overwrite if specified in arguments
     if nargin > 5
@@ -36,6 +43,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 PredCursPos = varargin{3};
                 if nargin > 8
                     Use_Thresh = varargin{4};
+                    if nargin > 9
+                        Use_PrinComp = true;
+                        numPCs = varargin{5};
+                    end
                 end
             end
         end
@@ -69,9 +80,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         if isempty(desiredInputs)
             errordlg(sprintf('No data available for elec:%g unit %g\n Model Building Aborted',temp(1,1),temp(1,2)));
             filter = [];
-            if nargout > 1
-                varargout = {[]};
-            end
+            varargout = {};
             return;
         end
     end
@@ -88,7 +97,23 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     
     %Uncomment next line to use EMG as inputs for predictions
 %     Inputs = binnedData.emgdatabin;
-   
+
+    %Uncomment next block to use PCs as inputs for predictions
+    %using base workspace variables named PCoeffs and numPCs
+    if Use_PrinComp
+        % 1-standardise inputs
+%         stdInputs = std(Inputs);
+%         stdInputs = Inputs./repmat(stdInputs, size(Inputs,1),1);
+%         % 2-find PC coefficients
+%         [PCoeffs = princomp(stdInputs);
+%         clear stdInputs;
+%         % 3-use specified number of PCs as inputs
+%         Inputs = Inputs* PCoeffs(:,1:numPCs);
+    
+    [PCoeffs,Inputs] = princomp(zscore(Inputs));
+    Inputs = Inputs(:,1:numPCs);
+    end
+        
     Outputs = [];
     OutNames = [];
     
@@ -163,10 +188,12 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 
     filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
 
+    if Use_PrinComp
+        filter.PC = PCoeffs(:,1:numPCs);
+    end
+    
     if nargout > 1
-               
         PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
-        
         varargout(1) = {PredData};
     end
     

@@ -1,4 +1,4 @@
-function [R2, nfold] = mfxval_fixed_model(filter,binnedData,foldlength,Adapt)
+function [R2, nfold, varargout] = mfxval_fixed_model(filter,binnedData,foldlength,varargin)
 
 %       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
 %
@@ -7,15 +7,29 @@ function [R2, nfold] = mfxval_fixed_model(filter,binnedData,foldlength,Adapt)
 
 numSig = size(filter.outnames,1);
 binsize = filter.binsize;
+Lag = 0;
 
+if nargin > 3
+    Adapt = varargin{1};
+    LR    = varargin{2};
+    Lag   = varargin{3};
+    if nargin > 6
+        Smooth = varargin{7};
+    else
+        Smooth = false;
+    end
+else
+    Adapt = false;
+    LR = 0;
+    Lag = 0;
+    Smooth = false;
+end
 
 
 % default value for prediction flags
 PredEMG = 1;
 PredForce = 0;
 PredCursPos = 0;
-
-binsize = filter.binsize;
 
 if mod(round(foldlength*1000), round(binsize*1000)) %all this rounding because of floating point errors
     disp('specified fold length must be a multiple of the data bin size');
@@ -60,13 +74,20 @@ for i=0:nfold-1
            
         
 %     PredData = predictSignals(filter, testData);
-    Smooth = false;
-    LR = 1e-7;
-    lag = 0.5;
-    [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,LR,lag);
+%     Smooth = false;
+%     LR = 1e-7;
+%     lag = 0.5;
+    if isfield(filter, 'PC')
+        numPCs = size(filter.PC,2);
+        [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,LR,Lag,numPCs);
+    else
+        [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,LR,Lag);
+    end
     if Adapt
         filter.H = Hnew;
     end
+    
+    varargout = {filter};
     
     R2(i+1,:) = ActualvsOLPred(testData,PredData,0);
 %     R2(i+1,:) = CalculateR2(testData.emgdatabin(round(filter.fillen/binsize):end,:),PredData.predemgbin)';

@@ -68,8 +68,8 @@ if isfield(struct1, 'spikeguide') && isfield(struct2, 'spikeguide')
         s1_i = zeros(1,num_units);
         s2_i = zeros(1,num_units);
         for i = 1:num_units
-            spot1 = find( Neurons1==neuronIDs(i,1),1,'first');
-            spot2 = find( Neurons2==neuronIDs(i,1),1,'first');
+            spot1 = find( Neurons1(:,1)==neuronIDs(i,1) & Neurons1(:,2)==neuronIDs(i,2),1,'first');
+            spot2 = find( Neurons2(:,1)==neuronIDs(i,1) & Neurons2(:,2)==neuronIDs(i,2),1,'first');
             if isempty(spot1) || isempty(spot2)
                 disp('incompatible spike data - concatenation aborted');
                 binnedData = struct1;

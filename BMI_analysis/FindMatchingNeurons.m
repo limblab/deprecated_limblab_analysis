@@ -1,15 +1,11 @@
 
 function [matchingInputs] = FindMatchingNeurons(spikeguide, neuronIDs)
 
-numberinputs=size(spikeguide,1);
-neuronChannels=zeros(numberinputs,2);
-for k=1:numberinputs
-    temp=deblank(spikeguide(k,:));
-    I = findstr(temp, 'u');
-    neuronChannels(k,1)=str2double(temp(1,3:(I-1)));
-    neuronChannels(k,2)=str2double(temp(1,(I+1):size(temp,2)));
-    clear temp I
-end
+%This function returns an array of indices. The array
+%indicates the corresponding index in spikeguide for
+%each neuronIDs channel
+
+neuronChannels=spikeguide2neuronIDs(spikeguide);
 
 numberinputs=size(neuronIDs,1);
 matchingInputs = zeros(1,numberinputs);
