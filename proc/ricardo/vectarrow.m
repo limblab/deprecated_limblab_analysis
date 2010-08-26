@@ -1,4 +1,4 @@
-function vectarrow(p0,p1)
+function vectarrow(p0,p1,alpha,beta,color)
 %Arrowline 3-D vector plot.
 %   vectarrow(p0,p1) plots a line vector with arrow pointing from point p0
 %   to point p1. The function can plot both 2D and 3D vector with arrow
@@ -19,6 +19,9 @@ function vectarrow(p0,p1)
 
 %   Rentian Xiong 4-18-05
 %   $Revision: 1.0
+  if nargin<5
+      color = 'k';
+  end
 
   if max(size(p0))==3
       if max(size(p1))==3
@@ -28,18 +31,18 @@ function vectarrow(p0,p1)
           x1 = p1(1);
           y1 = p1(2);
           z1 = p1(3);
-          plot3([x0;x1],[y0;y1],[z0;z1]);   % Draw a line between p0 and p1
+          plot3([x0;x1],[y0;y1],[z0;z1],color);   % Draw a line between p0 and p1
           
           p = p1-p0;
-          alpha = 0.1;  % Size of arrow head relative to the length of the vector
-          beta = 0.1;  % Width of the base of the arrow head relative to the length
+%           alpha = 0.1;  % Size of arrow head relative to the length of the vector
+%           beta = 0.1;  % Width of the base of the arrow head relative to the length
           
           hu = [x1-alpha*(p(1)+beta*(p(2)+eps)); x1; x1-alpha*(p(1)-beta*(p(2)+eps))];
           hv = [y1-alpha*(p(2)-beta*(p(1)+eps)); y1; y1-alpha*(p(2)+beta*(p(1)+eps))];
           hw = [z1-alpha*p(3);z1;z1-alpha*p(3)];
           
           hold on
-          plot3(hu(:),hv(:),hw(:))  % Plot arrow head
+          plot3(hu(:),hv(:),hw(:),color)  % Plot arrow head
           grid on
           xlabel('x')
           ylabel('y')
@@ -54,17 +57,17 @@ function vectarrow(p0,p1)
           y0 = p0(2);
           x1 = p1(1);
           y1 = p1(2);
-          plot([x0;x1],[y0;y1]);   % Draw a line between p0 and p1
+          plot([x0;x1],[y0;y1],color);   % Draw a line between p0 and p1
           
           p = p1-p0;
-          alpha = 0.1;  % Size of arrow head relative to the length of the vector
-          beta = 0.1;  % Width of the base of the arrow head relative to the length
+          alpha = 0.3;  % Size of arrow head relative to the length of the vector
+          beta = 0.3;  % Width of the base of the arrow head relative to the length
           
           hu = [x1-alpha*(p(1)+beta*(p(2)+eps)); x1; x1-alpha*(p(1)-beta*(p(2)+eps))];
           hv = [y1-alpha*(p(2)-beta*(p(1)+eps)); y1; y1-alpha*(p(2)+beta*(p(1)+eps))];
           
           hold on
-          plot(hu(:),hv(:))  % Plot arrow head
+          plot(hu(:),hv(:),color)  % Plot arrow head
           grid on
           xlabel('x')
           ylabel('y')

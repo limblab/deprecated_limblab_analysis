@@ -1,7 +1,7 @@
 % calculate success rate
 % filename = 'D:\Data\Ricardo_BC_no_spikes_001';
-set(0,'DefaultTextInterpreter','Tex')
-filename = 'D:\Data\TestData\Test_newsome_nospikes_004';
+set(0,'DefaultTextInterpreter','none')
+filename = 'D:\Data\Pedro\Pedro_BC_005';
 if ~exist([filename '.mat'],'file')
     curr_dir = pwd;
     cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
@@ -104,35 +104,38 @@ if ~isempty(bump_magnitudes)
     stim_ratio_1(1) = mean([stim_ratio_1(1) stim_ratio_2(1)]);
     stim_ratio_2(1) = stim_ratio_1(1);
     
-    plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [1 1],'k--')
-    hold on
-    plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [0 0],'k--')
-    plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [0.5 0.5],'k--')
     bumps_ordered = 2*[-bump_magnitudes(end:-1:1);bump_magnitudes]; %convert bumps to forces
     
     bump_ratios_ordered = [bump_ratio_2(end:-1:1);bump_ratio_1];
+    stim_ratios_ordered = [stim_ratio_2(end:-1:1);stim_ratio_1];
+    stim_ratios_ordered(isnan(stim_ratios_ordered)) = 0;
+    plot(bumps_ordered, bump_ratios_ordered,'r.','MarkerSize',10)
+    plot(bumps_ordered, stim_ratios_ordered,'b.','MarkerSize',10)
+    
     max_y = max(bump_ratios_ordered);
     min_y = min(bump_ratios_ordered);
     fit_func = [num2str(min_y) '+' num2str((max_y-min_y)/max_y) '/(1+exp(-x*b+c))'];
     f_sigmoid = fittype(fit_func,'independent','x');
 %     f_sigmoid = fittype('a/(1+exp(-x*b)+c)','independent','x');
     sigmoid_fit_bumps = fit(bumps_ordered,bump_ratios_ordered,f_sigmoid);
-    plot(bumps_ordered, bump_ratios_ordered,'r.')
+
     plot(sigmoid_fit_bumps,'r')
-    
-    stim_ratios_ordered = [stim_ratio_2(end:-1:1);stim_ratio_1];
-    stim_ratios_ordered(isnan(stim_ratios_ordered)) = 0;
+        
     max_y = max(stim_ratios_ordered);
     min_y = min(stim_ratios_ordered);
     fit_func = [num2str(min_y) '+' num2str((max_y-min_y)/max_y) '/(1+exp(-x*b+c))'];
     f_sigmoid = fittype(fit_func,'independent','x');
 %     f_sigmoid = fittype('a/(1+exp(-x*b)+c)','independent','x');
     sigmoid_fit_stim = fit(bumps_ordered,stim_ratios_ordered,f_sigmoid);
-    plot(bumps_ordered, stim_ratios_ordered,'b.')
     plot(sigmoid_fit_stim,'b')
+    legend('Bumps','Bumps+Stim','Location','northwest')
+    plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [1 1],'k--')
+    hold on
+    plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [0 0],'k--')
+    plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [0.5 0.5],'k--')
     
-    ylim([-0.2 1.2])
-    xlim([-1.2*max(2*bump_magnitudes) 1.2*max(2*bump_magnitudes)])
+    ylim([0 1])
+    xlim([-1*max(2*bump_magnitudes) 1*max(2*bump_magnitudes)])
     title([filename ' Probability of moving to target at ' num2str(bump_directions(2)*180/pi,3) '^o'])
     xlabel('Bump magnitude [N]')
 end

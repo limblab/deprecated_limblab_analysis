@@ -245,9 +245,12 @@ if ~isempty(bump_magnitudes)
         if isnan(local_ratio_2(1))
             local_ratio_2(1) = local_ratio_1(1);
         end                       
-            
-        local_ratio_1(1) = mean([local_ratio_1(1) local_ratio_2(1)]);
-        local_ratio_2(1) = local_ratio_1(1);
+        
+        if bump_magnitudes(1) == 0
+            local_ratio_1(1) = mean([local_ratio_1(1) local_ratio_2(1)]);
+            local_ratio_2(1) = local_ratio_1(1);
+        end
+        
         plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [1 1],'k--')
         hold on
         plot(2.5*[-bump_magnitudes(end) bump_magnitudes(end)], [0 0],'k--')
@@ -386,11 +389,12 @@ end
 
 %% bump triggered firing rate
 if sum([bdf.units.id]) > 0
+    pedro_array;
     chan_unit = reshape([bdf.units(:).id],2,[])';
     actual_units = length([bdf.units(:).id])/2;
     actual_units = bdf.units(1:actual_units);
     time_bin_length = .100;
-    no_ranges = 12;
+    no_ranges = 8;
     bump_magnitude_used = find(success_rate>0.7,1,'first');
     bump_times = bdf.words(bdf.words(:,2)>=80+bump_magnitude_used &...
         bdf.words(:,2)<90);
@@ -398,6 +402,7 @@ if sum([bdf.units.id]) > 0
     bump_dirs = zeros(length(bump_times)-1,2);
     firing_rate_matrix = zeros(length(bump_dirs),length(actual_units));
     mean_firing_rate = firing_rate_matrix;
+    pd_vector = zeros(length(actual_units),2);
     
     for i=1:length(bump_times)-1        
         bump_dirs(i,:) = [bump_times(i) bump_table(find(bump_table(:,1)>bump_times(i),1,'first'),6)];
@@ -420,34 +425,45 @@ if sum([bdf.units.id]) > 0
             bump_dirs(:,2)<i*2*pi/no_ranges),:));
     end
     figure;
-    for unit = 1:length(actual_units)
-        subplot(6,10,unit)
-        x_points = cos(0:2*pi/no_ranges:2*pi-1/no_ranges).*binned_fr_matrix(:,unit)';
-        y_points = sin(0:2*pi/no_ranges:2*pi-1/no_ranges).*binned_fr_matrix(:,unit)';
-        pd_vector(unit,:) = sum([x_points' y_points']);
-        x_points(end+1) = x_points(1);
-        y_points(end+1) = y_points(1);
-        plot(x_points,y_points);
-        hold on
-        plot(cos(0:2*pi/50:2*pi)*mean(binned_fr_matrix(:,unit)),...
-            sin(0:2*pi/50:2*pi)*mean(binned_fr_matrix(:,unit)),'r')
-        plot(cos(0:2*pi/50:2*pi)*mean_firing_rate(unit),...
-            sin(0:2*pi/50:2*pi)*mean_firing_rate(unit),'k')
-        plot([0 pd_vector(unit,1)],[0 pd_vector(unit,2)],'k-');
-        limits = max(max(abs(x_points)),max(abs(y_points)));
-        xlim([-1.1*limits 1.1*limits])
-        ylim([-1.1*limits 1.1*limits])
-        title([num2str(chan_unit(unit,1)) '-' num2str(chan_unit(unit,2))])
-        set(gca,'XTick',[])
-        set(gca,'YTick',[])
-        text(-limits,-.75*limits,num2str(mean(binned_fr_matrix(:,unit)),2),'Color','r')
+    for unit = 1:length(actual_units)        
+        if sum(binned_fr_matrix(:,unit))~=0
+%             subplot(ceil(length(actual_units)/10),10,unit)
+            subplot(10,10,electrode_pin(electrode_pin(:,2)==actual_units(unit).id(1),1))
+            x_points = cos(0:2*pi/no_ranges:2*pi-1/no_ranges).*binned_fr_matrix(:,unit)';
+            y_points = sin(0:2*pi/no_ranges:2*pi-1/no_ranges).*binned_fr_matrix(:,unit)';
+            pd_vector(unit,:) = sum([x_points' y_points']);
+            x_points(end+1) = x_points(1);
+            y_points(end+1) = y_points(1);
+            plot(x_points,y_points);
+            hold on
+            plot(cos(0:2*pi/50:2*pi)*mean(binned_fr_matrix(:,unit)),...
+                sin(0:2*pi/50:2*pi)*mean(binned_fr_matrix(:,unit)),'r')
+            plot(cos(0:2*pi/50:2*pi)*mean_firing_rate(unit),...
+                sin(0:2*pi/50:2*pi)*mean_firing_rate(unit),'k')
+            plot([0 pd_vector(unit,1)],[0 pd_vector(unit,2)],'k-');
+            limits = max(max(abs(x_points)),max(abs(y_points)));
+            xlim([-1.1*limits 1.1*limits])
+            ylim([-1.1*limits 1.1*limits])
+            title(num2str(chan_unit(unit,1)))
+            set(gca,'XTick',[])
+            set(gca,'YTick',[])
+            text(-limits,-.75*limits,num2str(mean(binned_fr_matrix(:,unit)),2),'Color','r')
+        end
     end
     chans_with_units = unique(chan_unit(:,1));
     for i=1:length(chans_with_units)
-        mean(pd_vector(chan_unit(:,1)==chans_with_units(i),:))
+        mean(pd_vector(chan_unit(:,1)==chans_with_units(i),:));
     end
+    subplot(10,10,1)
+    text(0,1,'Bump FR','Color','b')
+    text(0,.6,'Mean bump FR','Color','r')
+    text(0,.2,'Baseline FR','Color','k')
+    xlim([0 1])
+    ylim([0 1])
+    axis off    
 end   
-% %% raster plot
+
+%% raster plot
 % if sum([bdf.units.id]) > 0
 %     figure;
 %     for unit = 1:length(actual_units)
@@ -473,15 +489,51 @@ end
 %% PDs and depth of modulation.  Top view of array, wire bundle to the right
 if sum([bdf.units.id]) > 0
     figure
-    modulation = sqrt(pd_vector(:,1).^2 + pd_vector(:,2).^2)-mean(binned_fr_matrix)';
-    modulation = (modulation-min(modulation))/max(modulation-min(modulation));
+    modulation = sqrt(pd_vector(:,1).^2 + pd_vector(:,2).^2)./mean(binned_fr_matrix)';
+%     modulation = sqrt(pd_vector(:,1).^2 + pd_vector(:,2).^2)./mean_firing_rate';
+    modulation(isnan(modulation))=0;
+    modulation = (modulation-min(modulation))/(.75*max(modulation-min(modulation)));
+    modulation = min(1,modulation);
     pref_dirs = atan2(pd_vector(:,2),pd_vector(:,1));
     pref_dirs(pref_dirs<0) = 2*pi+pref_dirs(pref_dirs<0);
-    pedro_array;
     for i = 1:length(actual_units)
         subplot(10,10,electrode_pin(electrode_pin(:,2)==actual_units(i).id(1),1))
-        area([0 0 1 1],[0 1 1 0],'FaceColor',hsv2rgb([pref_dirs(i)/(2*pi) 1 modulation(i)]))
+        area([0 0 1 1],[0 1 1 0],'FaceColor',hsv2rgb([pref_dirs(i)/(2*pi) modulation(i) 1]))
+        hold on
+        vectarrow(.5+[0 0],.5+modulation(i)*[0.5*cos(pref_dirs(i)) 0.5*sin(pref_dirs(i))],.3,.3,'k')
         axis off
         title(num2str(chan_unit(i,1)))
     end
+    
+    no_unit_electrodes = setdiff(electrode_pin(:,2),chan_unit(:,1));
+    for i = 1:length(no_unit_electrodes)
+        subplot(10,10,electrode_pin(electrode_pin(:,2)==no_unit_electrodes(i),1))     
+        area([0 0 1 1],[0 1 1 0],'FaceColor','white')
+        axis off
+        title(num2str(no_unit_electrodes(i)))
+    end
+    
+    subplot(10,10,1)    
+    n = 20; 
+    theta = pi*(0:2*n)/n; 
+    r = (0:n)'/n;
+    x = r*cos(theta); 
+    y = r*sin(theta); 
+    c = ones(size(r))*theta; 
+    pcolor(x,y,c)
+    colormap hsv(360)
+    set(get(gca,'Children'),'LineStyle','none');
+    axis equal
+    axis off
+    title('PD color')
 end
+
+%% Preferred direction distribution
+figure;
+subplot(1,2,1)
+compass(modulation.*cos(pref_dirs),modulation.*sin(pref_dirs))
+subplot(1,2,2)
+hist(180*pref_dirs/pi,18)
+xlim([0 360])
+xlabel('Preferred directions (degrees)')
+ylabel('Count')

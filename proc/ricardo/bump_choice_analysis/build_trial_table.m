@@ -78,6 +78,7 @@ elseif (databurst_version == 1)
     trial_table(:,[end-2 end]) = trial_table(:,[end-2 end])+repmat(bytes2float(bdf.databursts{1,2}(12:15)),length(trial_table),2);
 end
 
+trial_table(:,6) = mod(trial_table(:,6),2*pi);
 trial_table = trial_table(abs(trial_table(:,7))<10,:);
 trial_table(:,7) = round(10000*trial_table(:,7))/10000;
 
