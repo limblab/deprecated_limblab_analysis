@@ -8,6 +8,7 @@
 dir = pwd;
 
 addpath(dir);
+
 addpath([dir '/lib']);
 addpath([dir '/lib/ml']);
 addpath([dir '/lib/stats']);
@@ -20,4 +21,7 @@ addpath([dir '/bdf/lib_plx']);
 addpath([dir '/bdf/lib_plx/core_files/']);
 addpath([dir '/BMI_analysis']);
 addpath([dir '/proc/Christian']);
+
+addpath([dir '/proc/brian']);
+addpath([dir '/proc/ricardo']);
 clear dir;
