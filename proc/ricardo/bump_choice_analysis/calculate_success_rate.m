@@ -2,17 +2,17 @@
 filename = 'D:\Data\Pedro\Pedro_BC_001-s_multiunit';
 set(0,'DefaultTextInterpreter','none')
 % filename = 'D:\Data\TestData\Test_newsome_nospikes_002';
-if ~exist([filename '.mat'],'file')
-    curr_dir = pwd;
-    cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
-    load_paths;
+curr_dir = pwd;
+cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
+load_paths;
+if ~exist([filename '.mat'],'file')    
     cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
     bdf = get_plexon_data([filename '.plx'],2);
     save(filename,'bdf');
     cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo\bump_choice_analysis';
-    trial_table = build_trial_table(filename);
-    cd(curr_dir)
+    trial_table = build_trial_table(filename);    
 end
+cd(curr_dir)
 load(filename,'trial_table','bdf')
 
 trial_table = trial_table(trial_table(:,5)==0,:); % remove training trials
