@@ -1,11 +1,11 @@
 % Generate 3-pannel statespace
 
-%units = unit_list(bdf);
-monkey = 'P';
-units = [4 1];
+units = unit_list(bdf);
+%monkey = 'P';
+%units = [4 1];
 
 clear out;
-t = -5:.005:5;
+t = -1:.005:1;
 out = zeros(size(units,1), length(t));
 
 tic;
@@ -34,8 +34,7 @@ for j = 1:size(units, 1)
     ts = bdf.vel(s<lambda,1);
     
     for i = 1:length(t)
-        i
-        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'pos');
+        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel');
         L(i) = -l;
         L0(i) = -l0;
     end
@@ -47,7 +46,7 @@ for j = 1:size(units, 1)
     xlabel('Lag (s)');
     ylabel('Log Likelihood Ratio');
     
-    %saveas(gcf, sprintf('llfits/%d-%d', chan, unit), 'fig');
+    saveas(gcf, sprintf('llfits/%s/%d-%d', monkey, chan, unit), 'fig');
 end
 
 

@@ -21,8 +21,9 @@ addpath([dir '/bdf/lib_cb']);
 addpath([dir '/bdf/lib_plx']);
 addpath([dir '/bdf/lib_plx/core_files/']);
 addpath([dir '/BMI_analysis']);
-addpath([dir '/proc/Christian']);
 
-addpath([dir '/proc/brian']);
-addpath([dir '/proc/ricardo']);
+% Please do not add your proc directory to this file.  Create a load paths
+% script in your proc directory if you need to.  This is to avoid filename
+% conflicts between proc directories.
+
 clear dir;

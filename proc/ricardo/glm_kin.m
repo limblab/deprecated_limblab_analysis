@@ -30,10 +30,10 @@ end
 
 if nargout > 3
     lambda = glmval(b, glm_input, 'log');
-    L = sum(log(lambda.^(s')) - lambda - log(factorial(s')));
+    L = sum(s.*log(lambda) - lambda - log(factorial(s)));
 end
 
 if nargout > 4
     lambda = sum(s)/length(s);
-    L0 = sum(log(lambda.^(s')) - lambda - log(factorial(s')));
+    L0 = sum(s.*log(lambda) - lambda - log(factorial(s)));
 end
