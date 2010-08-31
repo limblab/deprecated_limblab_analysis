@@ -2,7 +2,7 @@
 
 %units = unit_list(bdf);
 monkey = 'P';
-units = [33 1];
+units = [4 1];
 
 clear out;
 t = -5:.005:5;
@@ -34,31 +34,12 @@ for j = 1:size(units, 1)
     ts = bdf.vel(s<lambda,1);
     
     for i = 1:length(t)
-        %disp(i);
-                
-        %[b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel', shf_unit_data);
-        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel');
+        i
+        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'pos');
         L(i) = -l;
         L0(i) = -l0;
-
-        %[b, junk1, junk2, l] = glm_kin(bdf, chan, unit, t(i), 'pos');
-        %Lp(i) = -l;
-        %[b, junk1, junk2, l] = glm_kin(bdf, chan, unit, t(i), 'vel');
-        %Lv(i) = -l;
     end
-    
-    %tuning = mean(p_glm' .* 1000);
-    %tt = [tuning.*cos(theta(:,1)'); tuning.*sin(theta(:,1)')];
-    %tt = sum(tt');    
-    %pd2 = atan2(tt(2), tt(1));
-    %
-    %out(i) = struct('chan', chan, 'unit', unit, 'glmb', b, 'glmstats', stats, ...
-    %    'ml', struct('m',m_ml,'k',k_ml,'th',th_ml,'b',b_ml), ...
-    %    'actual', p_sv, 'apd', pd, 'glmpd', pd2);
-    
-    %close all;
-    %plot(t,L./L0,'k-',t,Lp./L0,'r-',t,Lv./L0,'b-');
-    
+        
     out(j,:) = L./L0;
     
     plot(t,L./L0,'k-');
@@ -66,7 +47,7 @@ for j = 1:size(units, 1)
     xlabel('Lag (s)');
     ylabel('Log Likelihood Ratio');
     
-    saveas(gcf, sprintf('llfits/%d-%d', chan, unit), 'fig');
+    %saveas(gcf, sprintf('llfits/%d-%d', chan, unit), 'fig');
 end
 
 

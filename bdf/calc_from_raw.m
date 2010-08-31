@@ -42,10 +42,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
         start_trial_words = out_struct.words( bitand(hex2dec('f0'),out_struct.words(:,2)) == hex2dec('10') ,2);
         if ~isempty(start_trial_words)
             start_trial_code = start_trial_words(1);
-            if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+%            if ~isempty(find(start_trial_words ~= start_trial_code, 1))
 %                close(h);
 %                error('BDF:inconsistentBehaviors','Not all trials are the same type');
-            end
+%            end
 
             if start_trial_code == hex2dec('17')
                 wrist_flexion_task = 1;
