@@ -10,9 +10,9 @@ dir = pwd;
 addpath(dir);
 
 addpath([dir '/lib']);
-addpath([dir '/lib/glm']);
 addpath([dir '/lib/ml']);
 addpath([dir '/lib/stats']);
+addpath([dir '/lib/glm']);
 addpath([dir '/mimo']);
 addpath([dir '/spike']);
 addpath([dir '/bdf']);
