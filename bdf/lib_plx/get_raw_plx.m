@@ -13,12 +13,12 @@ function raw = get_raw_plx(filename, opts)
 
     % list of channels that we care about
     [tscounts, wfcounts, evcounts] = plx_info(filename,1); %#ok<SETNU>
-    chans_with_data = sum(evcounts(300:363) > 0);
+    chans_with_data = sum(evcounts(300:427) > 0);
     [n, chan_list] = plx_adchan_names(filename); %#ok<SETNU>
 
     chan_count = 1;
     if chans_with_data
-        for i = 0:63             
+        for i = 0:127             
             if evcounts(300+i) > 0 
                 [adfreq, n, ts, fn, ad] = plx_ad(filename, i);
 

@@ -388,8 +388,10 @@ end             %ending "if opts.eye"
         else
             burst_size = 18;
             for i=1:num_trials
-                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
+                if ~isnan(out_struct.databursts{i,2})
+                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(3:18));
                 out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+                end
             end
         end
      end

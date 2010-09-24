@@ -7,17 +7,20 @@ function [vaf, H] = predictions_mwstik(bdf, signal, cells, folds,varargin)
 %addpath bdf
 %v_mws uses find_active_regions_words (reduces timing issues)
 %v_mwstik uses ridge (Tikhunov) regression
+%USAGE: [vaf, H] = predictions_mwstik(bdf, signal,cells,folds,numlags,binsize,lambda)
+
 if nargin>4
     numlags=varargin{1};
     if nargin>5
         binsize=varargin{2};
         if nargin>6
-        lambda=varargin{3};
-    else
-        lambda=1;   %This is factor for ridge regression
+            lambda=varargin{3};
+        else
+            lambda=1;   %This is factor for ridge regression
         end
     else
-        binsize=
+        binsize=0.05;
+    end
 else
     numlags=10;
 end
@@ -38,6 +41,7 @@ if isempty(cells);
     cells = unit_list(bdf);
 end
 
+binsamprate=floor(1/binsize); 
 % Using binsize ms bins
 t = bdf.vel(1,1):binsize:bdf.vel(end,1);
 y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
@@ -64,16 +68,21 @@ fold_length = floor(length(y) ./ folds);
 
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
-    fold_end = fold_start + fold_length;
+    fold_end = fold_start + fold_length-1;
     
     x_test = x(fold_start:fold_end,:);
     y_test = y(fold_start:fold_end,:);
     
     x_train = [x(1:fold_start,:); x(fold_end:end,:)];
     y_train = [y(1:fold_start,:); y(fold_end:end,:)];
+   %% subtract off the mean to reduce offset
+    y_train = y_train - repmat(mean(y_train),size(y_train,1),1);
+    y_test{i}= y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
+    x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
+    x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
     
     [H,v,mcc] = filMIMO3_tik(x_train, y_train, numlags, 2,lambda,binsamprate);
-    y_pred = predMIMO3(x_test,H,2,20,y_test);
+    y_pred = predMIMO3(x_test,H,2,binsamprate,y_test);
    
     vaf(i,:) = 1 - var(y_pred - y_test) ./ var(y_test);
 end

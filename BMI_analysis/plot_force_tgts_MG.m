@@ -1,6 +1,6 @@
 function plot_force_tgts_MG(out_struct)
 
-    out_struct = LoadDataStruct(out_struct,'bdf');
+%     out_struct = LoadDataStruct(out_struct,'bdf');
 
     w=MG_Words;
 
