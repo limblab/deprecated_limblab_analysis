@@ -1,17 +1,17 @@
 % Find PDs
 
-filename = 'D:\Data\Tiki_B\tiki_S1_b_006-presort';
-% filename = 'D:\Data\tiki_rw008';
- curr_dir = pwd;
-    cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
-    load_paths;
-    cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
+filename = 'D:\Data\Pedro\Pedro_S1_043-s_multiunit';
+% filename = 'D:\Data\Tiki_B\tiki_S1_b_006-presort';
+
+curr_dir = pwd;
+cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
+addpath('D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo');
+load_paths;
+cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 if ~exist([filename '.mat'],'file')
    
     bdf = get_plexon_data([filename '.plx'],2);
     save(filename,'bdf');
-%     cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo\bump_choice_analysis';
-%     trial_table = build_trial_table(filename);
     
 end
 cd(curr_dir)
@@ -95,8 +95,10 @@ for i=1:length(out)
         title([num2str(out(i).chan) '-' num2str(out(i).unit)])
         drawnow
     end
-    dm(i) = (max(max(p_glm')) - min(max(p_glm')))/20;
+    dm(i) = max(max(p_glm'))/mean(max(p_glm'));
     speed_comp(i) = mean(max(p_glm'))/20;
+%     dm(i) = (max(max(p_glm')) - min(max(p_glm')))/20;
+%     speed_comp(i) = mean(max(p_glm'))/20;
 end
 
 %%
@@ -108,48 +110,178 @@ xlabel('unit')
 ylabel('modulation (Hz)')
 legend('Depth of modulation','Speed component')
 
-%% map
-figure;
-hold on
-max_dm = max(dm);
-max_mi = max(pos_mi(:,3));
-scaling = 2;
-alpha = .2;
-beta = .3;
-load('D:\Ricardo\Miller Lab\Matlab\map_tiki')
-map_tiki = map_tiki_b;
-for i=1:length(out)
-%     electrode = premap_tiki(premap_tiki(:,1) == out(i).chan,2);
-	[map_row map_column] = find(map_tiki==out(i).chan);
-    p0 = [map_column map_row];
-    if scaling == 1
-        p1 = [map_column+cos(out(i).glmpd)*dm(i)/max_dm map_row-sin(out(i).glmpd)*dm(i)/max_dm];
-    elseif scaling == 2 % scale with MI
-        p1 = [map_column+cos(out(i).glmpd)*pos_mi(i,3)/max_mi map_row-sin(out(i).glmpd)*pos_mi(i,3)/max_mi];
-    else
-    	p1 = [map_column+cos(out(i).glmpd) map_row-sin(out(i).glmpd)];
+%% PDs and depth of modulation.  Top view of array, wire bundle to the right
+if sum([bdf.units.id]) > 0
+    figure
+%     modulation = sqrt(pd_vector(:,1).^2 + pd_vector(:,2).^2)./mean(binned_fr_matrix)';
+% %     modulation = sqrt(pd_vector(:,1).^2 + pd_vector(:,2).^2)./mean_firing_rate';
+%     modulation(isnan(modulation))=0;
+%     modulation = (modulation-min(modulation))/(.75*max(modulation-min(modulation)));
+%     modulation = min(1,modulation);
+    chan_unit = [out.chan]';
+    
+    modulation = min(dm/(1*max(dm)),1);
+    
+%     pref_dirs = atan2(pd_vector(:,2),pd_vector(:,1));
+%     pref_dirs(pref_dirs<0) = 2*pi+pref_dirs(pref_dirs<0);
+    for i = 1:length(out)
+        pref_dirs(i) = out(i).glmpd;
     end
-    p = p1-p0;
-    x0 = p0(1);
-    y0 = p0(2);
-    x1 = p1(1);
-    y1 = p1(2);
-    plot([x0;x1],[y0;y1]);
-    hu = [x1-alpha*(p(1)+beta*(p(2)+eps)); x1; x1-alpha*(p(1)-beta*(p(2)+eps))];
-    hv = [y1-alpha*(p(2)-beta*(p(1)+eps)); y1; y1-alpha*(p(2)+beta*(p(1)+eps))];
-    plot(hu(:),hv(:))
-    text(x0,y0,num2str(out(i).chan))
-%     text(x0,y0,[num2str(out(i).chan) ' (' num2str(floor((out(i).chan-1)/32)+1) '-'...
-%         num2str(mod(out(i).chan,32) + 32*(mod(out(i).chan,32)==0)) ')'])
+    pref_dirs(pref_dirs<0) = pref_dirs(pref_dirs<0)+2*pi;
+
+    for i = 1:length(out)
+        subplot(10,10,electrode_pin(electrode_pin(:,2)==out(i).chan(1),1))
+        area([0 0 1 1],[0 1 1 0],'FaceColor',hsv2rgb([pref_dirs(i)/(2*pi) modulation(i) 1]))
+        hold on
+        vectarrow(.5+[0 0],.5+modulation(i)*[0.5*cos(pref_dirs(i)) 0.5*sin(pref_dirs(i))],.3,.3,'k')
+        axis off
+        title(num2str(chan_unit(i,1)))
+        out(i).chan = out(i).chan(1);
+        out(i).pd = pref_dirs(i);
+    end
+    
+    no_unit_electrodes = setdiff(electrode_pin(:,2),chan_unit(:,1));
+    for i = 1:length(no_unit_electrodes)
+        subplot(10,10,electrode_pin(electrode_pin(:,2)==no_unit_electrodes(i),1))     
+        area([0 0 1 1],[0 1 1 0],'FaceColor','white')
+        axis off
+        title(num2str(no_unit_electrodes(i)))
+    end
+    
+    subplot(10,10,1)    
+    n = 20; 
+    theta = pi*(0:2*n)/n; 
+    r = (0:n)'/n;
+    x = r*cos(theta); 
+    y = r*sin(theta); 
+    c = ones(size(r))*theta; 
+    pcolor(x,y,c)
+    colormap hsv(360)
+    set(get(gca,'Children'),'LineStyle','none');
+    axis equal
+    axis off
+    title('PD color')
 end
-for i = 1:100
-%     text(mod(i-1,10)+1,(i-mod(i-1,10))/10+1,num2str(i))
-%     text(mod(i,11)+1,1+(i-mod(i,11))/11,num2str(i))
+
+%% Preferred direction distribution
+figure;
+subplot(1,2,1)
+compass(modulation.*cos(pref_dirs'),modulation.*sin(pref_dirs'))
+subplot(1,2,2)
+hist(180*pref_dirs/pi,18)
+xlim([0 360])
+xlabel('Preferred directions (degrees)')
+ylabel('Count')
+
+%% Compare GLM and bump PDs
+if sum([bdf.units.id]) > 0 && isstruct(actual_units)
+    figure
+    chan_unit_glm = [out.chan]';
+    chan_unit_bump = [actual_units.id]';
+    chan_unit_both = intersect(chan_unit_glm,chan_unit_bump);
+    pref_dirs_glm = zeros(length(out),1);
+    pref_dirs_bump = zeros(length(actual_units),1);
+
+    for i = 1:length(out)
+        pref_dirs_glm(i) = out(i).glmpd;
+    end
+    pref_dirs_glm(pref_dirs_glm<0) = pref_dirs_glm(pref_dirs_glm<0)+2*pi;
+    
+    for i = 1:length(actual_units)
+        pref_dirs_bump(i) = actual_units(i).pd;
+    end
+%     pref_dirs_bump = pref_dirs_bump';
+    
+    [temp, index_bump, index_glm] = intersect(chan_unit_bump,chan_unit_glm);
+    pref_dirs_diff = abs(pref_dirs_bump(index_bump(:))-pref_dirs_glm(index_glm(:)));
+    cos_pref_dirs = cos(pref_dirs_bump(index_bump(:))-pref_dirs_glm(index_glm(:)));
+    pref_dirs_diff = min(pref_dirs_diff,2*pi-pref_dirs_diff);
+        
+    for i = 1:length(index_bump)
+        subplot(10,10,electrode_pin(electrode_pin(:,2)==out(index_glm(i)).chan(1),1))
+%         area([0 0 1 1],[0 1 1 0],'FaceColor',hsv2rgb([pref_dirs_diff(i)/(2*pi) 1 1]))
+        area([0 0 1 1],[0 1 1 0],'FaceColor',hsv2rgb([1 1 cos_pref_dirs(i)/2 + .5]))
+        hold on
+        vectarrow(.5+[0 0],.5+[0.5*cos(pref_dirs_diff(i)) 0.5*sin(pref_dirs_diff(i))],.3,.3,'white')
+        axis off
+        title(num2str(chan_unit(i,1)))
+    end
+    
+    no_unit_electrodes = setdiff(electrode_pin(:,2),chan_unit_both(:,1));
+    for i = 1:length(no_unit_electrodes)
+        subplot(10,10,electrode_pin(electrode_pin(:,2)==no_unit_electrodes(i),1))     
+        area([0 0 1 1],[0 1 1 0],'FaceColor','white')
+        axis off
+        title(num2str(no_unit_electrodes(i)))
+    end
+    
+    subplot(10,10,1)    
+    n = 20; 
+    theta = pi*(0:2*n)/n; 
+    r = (0:n)'/n;
+    x = r*cos(theta); 
+    y = r*sin(theta); 
+    c = ones(size(r))*theta; 
+    pcolor(x,y,c)
+    colormap hsv(360)
+    set(get(gca,'Children'),'LineStyle','none');
+    axis equal
+    axis off
+    title('PD difference')
 end
-set(gca,'YDir','reverse')
-xlim([0 11])
-ylim([0 11])
-title(filename)       
+
+%% PD difference histogram
+if sum([bdf.units.id]) > 0 && isstruct(actual_units)
+    figure; hist(180*pref_dirs_diff/pi)
+    xlabel('Absolute PD difference (deg)')
+    ylabel('Count')
+end
+
 %%
 [[out.chan]' [out.glmpd]' [dm]']
 save(filename,'out','-append')
+
+%% Get electrode distance
+electrode_distance_x = zeros(5);
+electrode_distance_y = zeros(5);
+interelectrode = 0.4; %mm
+for i =1:5
+    for j =1:5
+        electrode_distance_x(j,i) = (i-1);
+        electrode_distance_y(i,j) = (i-1);
+    end
+end
+
+electrode_distance_x = 4*interelectrode*electrode_distance_x/max(electrode_distance_x(1,:));
+electrode_distance_x = electrode_distance_x + interelectrode/2;
+electrode_distance_y = 4*interelectrode*electrode_distance_y/max(electrode_distance_y(:,1));
+electrode_distance_y = electrode_distance_y + interelectrode/2;
+
+electrode_distance_x = [-electrode_distance_x(:,end:-1:1),electrode_distance_x(:,:);...
+    -electrode_distance_x(:,end:-1:1),electrode_distance_x(:,:)];
+
+electrode_distance_y = [electrode_distance_y(end:-1:1,:),electrode_distance_y(end:-1:1,:);...
+    -electrode_distance_y(:,:),-electrode_distance_y(:,:)];
+
+electrode_distance = [map_pedro(:) electrode_distance_x(:) electrode_distance_y(:)];
+[temp idx_dist temp] = intersect(electrode_distance(:,1),chan_unit_both);
+electrode_distance = electrode_distance(idx_dist,:);
+%% Find centroid
+cos_centroid_mat = [electrode_distance(:,2) electrode_distance(:,3) cos_pref_dirs];
+centroid_x_y = mean([cos_centroid_mat(:,3).*cos_centroid_mat(:,1) cos_centroid_mat(:,3).*cos_centroid_mat(:,2)]);
+
+num_iter = 10000;
+centroids_rand = zeros(num_iter,2);
+%bootstrapping
+for i=1:num_iter
+    rand_indexes = randperm(length(cos_centroid_mat));
+    centroids_rand(i,:) = mean([cos_centroid_mat(:,3).*cos_centroid_mat(rand_indexes,1) cos_centroid_mat(:,3).*cos_centroid_mat(rand_indexes,2)]);
+end
+figure; 
+plot(centroids_rand(:,1),centroids_rand(:,2),'.')
+hold on
+plot(centroid_x_y(1),centroid_x_y(2),'.r')
+
+rs = sqrt(sum(centroids_rand.^2,2));
+r = sqrt(sum(centroid_x_y.^2,2));
+prob = length(find(rs>r))/num_iter
