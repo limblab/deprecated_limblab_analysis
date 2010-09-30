@@ -116,6 +116,14 @@ function out_struct = get_plexon_data(varargin)
         SpikePeakV, SpikeADResBits, SlowPeakV, SlowADResBits, Duration, ...
         DateTime] = plx_information(filename);
     
+    temp = findstr(DateTime,':')+1;
+    if strcmp(DateTime(temp(1)),' ')
+        DateTime(temp(1)) = '0';
+    end
+    if strcmp(DateTime(temp(2)),' ')
+        DateTime(temp(2)) = '0';
+    end
+    
     out_struct.meta = struct('filename', OpenedFileName, 'datetime', ...
         DateTime,'duration', Duration, 'lab', opts.labnum, ...
         'bdf_info', '$Id$');
