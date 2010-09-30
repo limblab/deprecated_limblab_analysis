@@ -18,6 +18,20 @@ bdf.words = bdf.words(find(bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('10'),1
 trial_starts = bdf.words(bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('10'),1);
  
 trial_ends = bdf.words(bitand(bdf.words(:,2), hex2dec('f0')) == hex2dec('20'), :);
+
+flag = 1;
+while flag == 1 
+    for i = 1:length(trial_starts)-1
+        flag = 0;
+        if trial_starts(i+1) < trial_ends(i,1)
+            trial_starts(i:end-1) = trial_starts(i+1:end);
+            trial_starts = trial_starts(1:end-1);
+            flag = 1;
+            break
+        end
+    end
+end
+        
 trial_table = zeros(length(trial_starts),12); % will hold the 
 %[ start end result trial_type training bump_direction bump_magnitude stim_id Xstart Ystart Xend Yend; ... ] for each trial
 % trial type = 1 (bump), 2 (stim)

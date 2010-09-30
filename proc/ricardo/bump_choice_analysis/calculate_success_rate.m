@@ -1,7 +1,11 @@
 % calculate success rate
-filename = 'D:\Data\Pedro\Pedro_BC_001-s_multiunit';
+
+plot_raster = 0;
+
+filename = 'D:\Data\Pedro\Pedro_BC_027-s_multiunit';
 set(0,'DefaultTextInterpreter','none')
 % filename = 'D:\Data\TestData\Test_newsome_nospikes_002';
+addpath('D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo');
 curr_dir = pwd;
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
 load_paths;
@@ -393,7 +397,8 @@ if sum([bdf.units.id]) > 0
     chan_unit = reshape([bdf.units(:).id],2,[])';
     actual_units = length([bdf.units(:).id])/2;
     actual_units = bdf.units(1:actual_units);
-    time_bin_length = .100;
+%     time_bin_length = .100;
+    time_bin_fr = [.02 .1];
     no_ranges = 8;
     bump_magnitude_used = find(success_rate>0.7,1,'first');
     bump_times = bdf.words(bdf.words(:,2)>=80+bump_magnitude_used &...
@@ -410,8 +415,14 @@ if sum([bdf.units.id]) > 0
     
     for i = 1:length(actual_units)
         for j = 1:length(bump_dirs)
-            firing_rate_matrix(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1) & bdf.units(i).ts<bump_dirs(j,1)+time_bin_length)/time_bin_length;
-            mean_firing_rate(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1)-time_bin_length & bdf.units(i).ts<bump_dirs(j,1))/time_bin_length;
+            firing_rate_matrix(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1)+time_bin_fr(1) &...
+                bdf.units(i).ts<bump_dirs(j,1)+time_bin_fr(2))/(time_bin_fr(2)-time_bin_fr(1));
+            mean_firing_rate(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1)-(time_bin_fr(2)-time_bin_fr(1)) &...
+                bdf.units(i).ts<bump_dirs(j,1))/(time_bin_fr(2)-time_bin_fr(1));
+%             firing_rate_matrix(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1) &...
+%                 bdf.units(i).ts<bump_dirs(j,1)+time_bin_length)/time_bin_length;
+%             mean_firing_rate(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1)-time_bin_length &...
+%                 bdf.units(i).ts<bump_dirs(j,1))/time_bin_length;
         end
     end 
     mean_firing_rate = mean(mean_firing_rate);
@@ -464,27 +475,30 @@ if sum([bdf.units.id]) > 0
 end   
 
 %% raster plot
-% if sum([bdf.units.id]) > 0
-%     figure;
-%     for unit = 1:length(actual_units)
-%         time_pre_bump = .2;
-%         time_post_bump = .4;
-%         for i = 1:length(bump_dirs)
-%             time_bin = bdf.units(unit).ts(bdf.units(unit).ts>bump_dirs(i,1)-time_pre_bump &...
-%                 bdf.units(unit).ts<bump_dirs(i,1)+time_post_bump)-bump_dirs(i,1);
-%             if ~isempty(time_bin)
-%                 plot(time_bin,bump_dirs(i,2),'k.')
-%             end
-%             hold on
-%         end
-%         xlim([-time_pre_bump time_post_bump])
-%         ylim([0 2*pi])
-%         plot([0 0],[0 2*pi],'r')
-%         title([num2str(chan_unit(unit,1)) '-' num2str(chan_unit(unit,2))])
-%         pause
-%         clf
-%     end
-% end
+if sum([bdf.units.id]) > 0 & plot_raster
+    figure;
+    for unit = 1:length(actual_units)
+        time_pre_bump = .2;
+        time_post_bump = .4;
+        area([time_bin_fr(1) time_bin_fr(1) time_bin_fr(2) time_bin_fr(2)],...
+            [0 2*pi 2*pi 0],'LineStyle','none','FaceColor',[1 .7 .7])
+        hold on
+        for i = 1:length(bump_dirs)
+            time_bin = bdf.units(unit).ts(bdf.units(unit).ts>bump_dirs(i,1)-time_pre_bump &...
+                bdf.units(unit).ts<bump_dirs(i,1)+time_post_bump)-bump_dirs(i,1);
+            if ~isempty(time_bin)
+                plot(time_bin,bump_dirs(i,2),'k.')
+            end
+            hold on
+        end
+        xlim([-time_pre_bump time_post_bump])
+        ylim([0 2*pi])
+        plot([0 0],[0 2*pi],'r')
+        title([num2str(chan_unit(unit,1)) '-' num2str(chan_unit(unit,2))])
+        pause
+        clf
+    end
+end
 
 %% PDs and depth of modulation.  Top view of array, wire bundle to the right
 if sum([bdf.units.id]) > 0
@@ -503,6 +517,8 @@ if sum([bdf.units.id]) > 0
         vectarrow(.5+[0 0],.5+modulation(i)*[0.5*cos(pref_dirs(i)) 0.5*sin(pref_dirs(i))],.3,.3,'k')
         axis off
         title(num2str(chan_unit(i,1)))
+        actual_units(i).id = actual_units(i).id(1);
+        actual_units(i).pd = pref_dirs(i);
     end
     
     no_unit_electrodes = setdiff(electrode_pin(:,2),chan_unit(:,1));
@@ -537,3 +553,10 @@ hist(180*pref_dirs/pi,18)
 xlim([0 360])
 xlabel('Preferred directions (degrees)')
 ylabel('Count')
+
+%% find mean pd of selected electrodes
+selected_electrodes = [52 63];
+id_pd = [[actual_units.id]' [actual_units.pd]'];
+[temp id_idx temp] = intersect(id_pd(:,1),selected_electrodes);
+mean_pd_selected_electrodes = mean(id_pd(id_idx,2))
+std_pd_selected_electrodes = std(id_pd(id_idx,2))
