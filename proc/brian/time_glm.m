@@ -5,7 +5,7 @@ units = unit_list(bdf);
 %units = [4 1];
 
 clear out;
-t = -1:.005:1;
+t = -5:.005:5;
 out = zeros(size(units,1), length(t));
 
 tic;
@@ -34,11 +34,11 @@ for j = 1:size(units, 1)
     ts = bdf.vel(s<lambda,1);
     
     for i = 1:length(t)
-        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'posvel');
+        [b, junk1, junk2, l, l0] = glm_kin(bdf, chan, unit, t(i), 'pos');
         L(i) = -l;
         L0(i) = -l0;
     end
-        
+
     out(j,:) = L./L0;
     
     plot(t,L./L0,'k-');
@@ -46,7 +46,7 @@ for j = 1:size(units, 1)
     xlabel('Lag (s)');
     ylabel('Log Likelihood Ratio');
     
-    saveas(gcf, sprintf('llfits/%s/%d-%d', monkey, chan, unit), 'fig');
+    %saveas(gcf, sprintf('llfits/%d-%d', chan, unit), 'fig');
 end
 
 
