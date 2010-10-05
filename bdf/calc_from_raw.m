@@ -359,8 +359,9 @@ end             %ending "if opts.eye"
         out_struct.targets.corners = zeros(num_trials,5,'single');
         
         if wrist_flexion_task
-            burst_size = 34;
-            num_burst = 0;
+            burst_size = 34; %newest version as of 08-2010
+%               burst_size = 22; %for older files
+              num_burst = 0;
             out_struct.targets.rotation = zeros(num_trials,2,'single');            
             for i=1:num_trials
                 if size(out_struct.databursts{i,2})~=burst_size
@@ -370,7 +371,7 @@ end             %ending "if opts.eye"
                     out_struct.targets.corners(num_burst,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
                     out_struct.targets.corners(num_burst,1)=out_struct.databursts{i,1};
                     out_struct.targets.rotation(num_burst,1)=out_struct.databursts{i,1};
-                    out_struct.targets.rotation(num_burst,2)=bytes2float(out_struct.databursts{i,2}(15:18));
+                    out_struct.targets.rotation(num_burst,2)=bytes2float(out_struct.databursts{i,2}(burst_size-19:burst_size-16));
                 end
             end
             out_struct.targets.rotation = out_struct.targets.rotation(1:num_burst,:);
@@ -386,7 +387,7 @@ end             %ending "if opts.eye"
                 end
             end
         else
-            burst_size = 18;
+            burst_size = 18; % multi-gadget
             for i=1:num_trials
                 if ~isnan(out_struct.databursts{i,2})
                 out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(3:18));
