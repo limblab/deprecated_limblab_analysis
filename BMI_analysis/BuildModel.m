@@ -6,7 +6,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %           [PredData]      : structure with EMG prediction data (fit)
 %       binnedData          : data structure to build model from
 %       dataPath            : string of the path of the data folder
-%       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file
+%       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
 %       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh,numPCs}
 %                           :   flags to include EMG, Force, Cursor Position
@@ -65,24 +65,29 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     %%
     %%%desiredInputs are the columns in the firing rate matrix that are to be
     %%%used as inputs for the models  
-    
-    
-    if  UseAllInputsOption
+    if size(UseAllInputsOption,1)>1
+        NeuronIDs = UseAllInputsOption;
+        desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
+    elseif UseAllInputsOption
 %        disp('Using all available inputs')
         neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
         desiredInputs=1:size(neuronIDs,1);
-     else
-        [FileName, PathName] =uigetfile([dataPath '\NeuronIDfiles\' '*.mat'],'Filename of desired inputs? ');
-        neuronIDs = load([PathName FileName]);
+    else
+        if ~exist('NeuronIDsFile','var')
+            [FileName, PathName] =uigetfile([dataPath '\NeuronIDfiles\' '*.mat'],'Filename of desired inputs? ');
+            NeuronIDsFile = [PathName FileName];
+        end
+        neuronIDs = load(NeuronIDsFile);
         field_name = fieldnames(neuronIDs);
         neuronIDs = getfield(neuronIDs, field_name{:});
         desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
-        if isempty(desiredInputs)
-            errordlg(sprintf('No data available for elec:%g unit %g\n Model Building Aborted',temp(1,1),temp(1,2)));
-            filter = [];
-            varargout = {};
-            return;
-        end
+    end
+    if isempty(desiredInputs)
+        disp('Incompatible Data; Model Building Aborted');
+        filter = [];
+        varargout = {};
+        return;
+    end
     end
 
 
@@ -99,19 +104,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %     Inputs = binnedData.emgdatabin;
 
     %Uncomment next block to use PCs as inputs for predictions
-    %using base workspace variables named PCoeffs and numPCs
     if Use_PrinComp
-        % 1-standardise inputs
-%         stdInputs = std(Inputs);
-%         stdInputs = Inputs./repmat(stdInputs, size(Inputs,1),1);
-%         % 2-find PC coefficients
-%         [PCoeffs = princomp(stdInputs);
-%         clear stdInputs;
-%         % 3-use specified number of PCs as inputs
-%         Inputs = Inputs* PCoeffs(:,1:numPCs);
-    
-    [PCoeffs,Inputs] = princomp(zscore(Inputs));
-    Inputs = Inputs(:,1:numPCs);
+
+        [PCoeffs,Inputs] = princomp(zscore(Inputs));
+        Inputs = Inputs(:,1:numPCs);
     end
         
     Outputs = [];

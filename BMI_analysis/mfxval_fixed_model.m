@@ -26,11 +26,6 @@ else
 end
 
 
-% default value for prediction flags
-PredEMG = 1;
-PredForce = 0;
-PredCursPos = 0;
-
 if mod(round(foldlength*1000), round(binsize*1000)) %all this rounding because of floating point errors
     disp('specified fold length must be a multiple of the data bin size');
     disp('operation aborted');
@@ -47,7 +42,7 @@ testData = binnedData;
 
 for i=0:nfold-1
     
-    disp(sprintf('processing xval %d of %d',i+1,nfold));
+%     disp(sprintf('processing xval %d of %d',i+1,nfold));
 
     testDataStart = round(1 + i*foldlength/binsize);      %move the test block from beginning of file up to the end,round because of floating point error
     testDataEnd = round(testDataStart + foldlength/binsize - 1);    
@@ -86,13 +81,13 @@ for i=0:nfold-1
     if Adapt
         filter.H = Hnew;
     end
-    
-    varargout = {filter};
-    
+       
     R2(i+1,:) = ActualvsOLPred(testData,PredData,0);
 %     R2(i+1,:) = CalculateR2(testData.emgdatabin(round(filter.fillen/binsize):end,:),PredData.predemgbin)';
     
 end
+
+varargout = {filter};
    
     
     
