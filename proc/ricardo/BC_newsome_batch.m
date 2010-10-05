@@ -2,7 +2,7 @@
 % filename = 'D:\Data\Ricardo_BC_no_spikes_001';
 close all
 clear all
-boot_iter = 2000;
+boot_iter = 10000;
 set(0,'DefaultTextInterpreter','none')
 curr_dir = pwd;    
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
@@ -14,7 +14,8 @@ resultpath = 'D:\Ricardo\Miller Lab\Bump choice results\Newsome results\';
 
 for file_no = 1:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
-    filename = filelist{file_no};
+    filename = filelist(file_no).name;
+    stim_pd = filelist(file_no).pd;
     if ~exist([resultpath filename '.fig'],'file')
         if ~exist([datapath filename '.mat'],'file')    
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
@@ -22,6 +23,7 @@ for file_no = 1:length(filelist)
             save([datapath filename],'bdf');
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo\';
             trial_table = BC_build_trial_table([datapath filename]);    
+            save([datapath filename],'trial_table','-append')
         end
 
         cd(curr_dir)
@@ -32,7 +34,7 @@ for file_no = 1:length(filelist)
         stim_table = trial_table(trial_table(:,4)==2,:);
 
         %%  Probability of moving to a certain target
-        figure_h = BC_newsome_sigmoids_plot(bump_table,stim_table,boot_iter,filename); 
+        figure_h = BC_newsome_sigmoids_plot(bump_table,stim_table,boot_iter,filename,stim_pd); 
 
         % %% Success rate for 0N trials over time
         % bin_length = 25;

@@ -1,4 +1,4 @@
-function h = BC_newsome_sigmoids_plot(bump_table,stim_table,bootstrapping_iter,filename)
+function h = BC_newsome_sigmoids_plot(bump_table,stim_table,bootstrapping_iter,filename,stim_pd)
 
 fit_func = 'a+b/(1+exp(-x*c+d))';
 f_sigmoid = fittype(fit_func,'independent','x');
@@ -6,10 +6,16 @@ f_sigmoid = fittype(fit_func,'independent','x');
 bump_magnitudes = unique(bump_table(:,7));
 bump_directions = unique(bump_table(:,6));
 
+if bump_directions~=stim_pd
+    error(['Stim PD (' num2str(stim_pd) ') does not match file bump directions ('...
+        num2str(bump_directions(1)) ', ' num2str(bump_directions(2)) '), check BC_newsome_experiment_list.m']); %#ok<WNTAG>
+end
+
+bump_directions = [bump_directions(bump_directions==stim_pd) bump_directions(bump_directions~=stim_pd)];
 bumps_ordered = unique(2*[-bump_magnitudes(end:-1:1);bump_magnitudes]); %convert bumps to forces
 
-bump_table_summary = BC_table_summary(bump_table);
-stim_table_summary = BC_table_summary(stim_table);
+bump_table_summary = BC_table_summary(bump_table,bump_directions);
+stim_table_summary = BC_table_summary(stim_table,bump_directions);
 
 bump_ratios = bump_table_summary(:,2)./(bump_table_summary(:,1)+bump_table_summary(:,2));
 stim_ratios = stim_table_summary(:,2)./(stim_table_summary(:,1)+stim_table_summary(:,2));
@@ -145,6 +151,9 @@ if bootstrapping_iter
         text(-.09,.7,'Bump + ICMS','Color','b')
         legend off
 
+        ylim([0 1]);
+        xlim([min(bumps_ordered) max(bumps_ordered)]);
+        
         xlabel('Bump magnitude [N]')
         ylabel('P(moving to T1)')
         title(filename)
@@ -175,7 +184,8 @@ if bootstrapping_iter
             stim_zero_crossing(stim_samples),100)
         h1 = findobj(gca,'Type','patch');
         set(h1,'FaceColor','r','EdgeColor','r'); 
-        p_value = min(sum(temp_hist(hist_bins<0))/sum(temp_hist),1-sum(temp_hist(hist_bins<0))/sum(temp_hist));
+%         p_value = min(sum(temp_hist(hist_bins<0))/sum(temp_hist),1-sum(temp_hist(hist_bins<0))/sum(temp_hist));
+        p_value = sum(temp_hist(hist_bins<0))/sum(temp_hist);
         text(hist_bins(round(.75*length(hist_bins))),1.1*max(temp_hist),['p = ' num2str(p_value)])
 
         subplot(4,2,7)        
@@ -202,7 +212,8 @@ if bootstrapping_iter
             stim_50_percent(stim_samples),100);
         h1 = findobj(gca,'Type','patch');
         set(h1,'FaceColor','r','EdgeColor','r'); 
-        p_value = min(sum(temp_hist(hist_bins<0))/sum(temp_hist),1-sum(temp_hist(hist_bins<0))/sum(temp_hist));
+%         p_value = min(sum(temp_hist(hist_bins<0))/sum(temp_hist),1-sum(temp_hist(hist_bins<0))/sum(temp_hist));
+        p_value = sum(temp_hist(hist_bins<0))/sum(temp_hist);
         text(hist_bins(round(.75*length(hist_bins))),1.1*max(temp_hist),['p = ' num2str(p_value)])
     
     else 

@@ -419,10 +419,6 @@ if sum([bdf.units.id]) > 0
                 bdf.units(i).ts<bump_dirs(j,1)+time_bin_fr(2))/(time_bin_fr(2)-time_bin_fr(1));
             mean_firing_rate(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1)-(time_bin_fr(2)-time_bin_fr(1)) &...
                 bdf.units(i).ts<bump_dirs(j,1))/(time_bin_fr(2)-time_bin_fr(1));
-%             firing_rate_matrix(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1) &...
-%                 bdf.units(i).ts<bump_dirs(j,1)+time_bin_length)/time_bin_length;
-%             mean_firing_rate(j,i) = sum(bdf.units(i).ts>bump_dirs(j,1)-time_bin_length &...
-%                 bdf.units(i).ts<bump_dirs(j,1))/time_bin_length;
         end
     end 
     mean_firing_rate = mean(mean_firing_rate);
@@ -438,7 +434,6 @@ if sum([bdf.units.id]) > 0
     figure;
     for unit = 1:length(actual_units)        
         if sum(binned_fr_matrix(:,unit))~=0
-%             subplot(ceil(length(actual_units)/10),10,unit)
             subplot(10,10,electrode_pin(electrode_pin(:,2)==actual_units(unit).id(1),1))
             x_points = cos(0:2*pi/no_ranges:2*pi-1/no_ranges).*binned_fr_matrix(:,unit)';
             y_points = sin(0:2*pi/no_ranges:2*pi-1/no_ranges).*binned_fr_matrix(:,unit)';

@@ -1,7 +1,7 @@
-function [table_summary] = BC_table_summary(table)
+function [table_summary] = BC_table_summary(table,bump_directions)
 
 bump_magnitudes = unique(table(:,7));
-bump_directions = unique(table(:,6));
+
 table_summary = zeros(2*length(bump_magnitudes),2);
 table_summary_new = zeros(2*length(bump_magnitudes),2);
 bumps_ordered = 2*[-bump_magnitudes(end:-1:1);bump_magnitudes];
