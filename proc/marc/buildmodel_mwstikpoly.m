@@ -1,4 +1,4 @@
-function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpoly(bdf, signal, cells, binsize, folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,varargin)
+function [vaf, vmean,vsd,y_test,y_pred,varargout] = buildmodel_mwstikpoly(bdf, signal, cells, binsize, buildfrac,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,varargin)
 
 % $Id: predictions.m 184 2010-03-15 16:30:46Z brian $
 
@@ -9,13 +9,14 @@ function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpoly(bdf, 
 %v_mwstik uses ridge (Tikhunov) regression
 %USAGE:
 %[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y] =...
-% predictions_mwstikpoly(bdf,'vel',[],.05,10,10,1,0,0,0,fnam)
+% buildmodel_mwstikpoly(bdf,'vel',[],.05,10,10,1,0,0,0,fnam)
 %v_mwstikpoly uses ridge AND polynomial
 %x is the feature matrix of all features (spiking rates), y is the binned
 %output, H is the filter
 % Varargins:
 % 1: fnam
 % 2: emglpf emg low pass filter
+%buildfrac is the fraction of the file to use in building the model
 
 emglpf=5; %default 
 if length(varargin)>0
@@ -97,51 +98,49 @@ end
 x = x(q==1,:);
 y = y(q==1,:);
 
-vaf = zeros(folds,size(y,2));
-r2 = zeros(folds,size(y,2));
-fold_length = floor(length(y) ./ folds);
+vaf = zeros(size(y,2));
+r2 = zeros(size(y,2));
+fold_length = floor(length(y) .* buildfrac);    %buildfrac is a fraction
     
 
-for i = 1:folds
-    fold_start = (i-1) * fold_length + 1;
-    fold_end = fold_start + fold_length-1;
+% for i = 1:buildfrac
+    fold_start = fold_length + 1;
+    fold_end = length(y);
     
-    x_test{i} = x(fold_start:fold_end,:);
-    y_test{i} = y(fold_start:fold_end,:);
+    x_test = x(fold_start:fold_end-150,:);
+    y_test = y(fold_start:fold_end-150,:);
     
-    x_train = [x(1:fold_start,:); x(fold_end:end,:)];
-    y_train = [y(1:fold_start,:); y(fold_end:end,:)];
-   %% subtract off the mean to reduce offset
-%     y_train = y_train - repmat(mean(y_train),size(y_train,1),1);
-%     y_test{i}= y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
-%     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
-%     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
+    x_train = x(1:fold_start,:);
+    y_train = y(1:fold_start,:);
 %     
-    [H{i},v,mcc] = filMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
-    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
+    [H,v,mcc] = filMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+%     xt= detrend(x_test, 'constant');    %subtract off the mean for testing
+%     yt= detrend(y_test, 'constant'); 
+xt=x_test; yt=y_test;
+    [y_pred,xtnew,ytnew] = predMIMO3(xt,H,numsides,binsamprate,yt);
    
-    %%Polynomial section
-               P=[];    
+    %% Polynomial section
+    P=[];
     T=[];
     patch = [];
     
     if PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity
-        for z=1:size(y_pred{i},2)
+        for z=1:size(y_pred,2)
             if Use_Thresh            
                 %Find Threshold
-                T_default = 1.25*std(y_pred{i}(:,z));
-                [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
-                IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
+                T_default = 1.25*std(y_pred(:,z));
+                [T(z,1), T(z,2), patch(z)] = findThresh(ytnew(:,z),y_pred(:,z),T_default);
+                IncludedDataPoints = or(y_pred(:,z)>=T(z,2),y_pred(:,z)<=T(z,1));
 
                 %Apply Threshold to linear predictions and Actual Data
-                PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
-                ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
+                PredictedData_Thresh = y_pred(IncludedDataPoints,z);
+                ActualData_Thresh = ytnew(IncludedDataPoints,z);
 
                 %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
                 Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
                                  (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
-                Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
+                Act_patches = mean(ytnew(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
 
                 %Find Polynomial to Thresholded Data
                 [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
@@ -154,46 +153,46 @@ for i = 1:folds
                 T=[]; patch=[];                
                 %
                 %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
+%                 y_pred(~IncludedDataPoints,z)= patch(z);
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
-                [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+                [P(z,:)] = WienerNonlinearity(y_pred(:,z), ytnew(:,z), PolynomialOrder);
             end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            y_pred(:,z) = polyval(P(z,:),y_pred(:,z));
         end
     end
     %%
-    vaftr(i,:)=v/100;
-%     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
-    vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
+    vaftr=v/100;
+%     vaf(i,:) = 1 - var(y_pred - y_test) ./ var(y_test);
+    vaf = 1 - var(y_pred - ytnew) ./ var(ytnew);
     for j=1:size(y,2)
-        r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
-        if size(r{i,j},2)>1
-            r2(i,j)=r{i,j}(1,2)^2;
+        r{j}=corrcoef(y_pred(:,j),ytnew(:,j));
+        if size(r{j},2)>1
+            r2(j)=r{j}(1,2)^2;
         else
-            r2(i,j)=r{i,j}^2;
+            r2(j)=r{j}^2;
         end
     end
 
-end
+% end
 
-if vaf(10,1)<0
-vmean=mean(vaf(1:9,:));
-vsd=std(vaf(1:9,:));
-else
+% if vaf(10,1)<0
+% vmean=mean(vaf(1:9,:));
+% vsd=std(vaf(1:9,:));
+% else
     vmean=mean(vaf);
     vsd=std(vaf);
-end
+% end
 
-if (r2(9,1)-r2(10,1))>.5    %if big disparity in last fold, don't include it in mean
-    r2mean=mean(r2(1:9,:));
-    r2sd=std(r2(1:9,:));
-else
+% if (r2(9,1)-r2(10,1))>.5    %if big disparity in last fold, don't include it in mean
+%     r2mean=mean(r2(1:9,:));
+%     r2sd=std(r2(1:9,:));
+% else
     r2mean=mean(r2);
 r2sd=std(r2);
-end
+% end
 
 snam=[fnam,signal,' predict tikpoly.mat'];
 % save(snam,'v*','x','y*','Poly*','Use*','num*','bin*','H','lambda')
