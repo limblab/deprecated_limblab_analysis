@@ -34,17 +34,18 @@ for Bin = 1:size(Adapt_bins,1)
     %Calculate predictions for new segment of data
     Pred_Out(startbin:endbin,:) = predMIMOCE1(Inputs(startbin:endbin,:),H_new,numlags);
     
-    %measure prediction error over an window of length Adapt_lag at end of the data segment
-    Err = Pred_Out(endbin-Adapt_lag:endbin,:) - repmat(Adapt_bins(Bin,2:end),Adapt_lag+1,1);
+    for window_i = 0:Adapt_lag-1
+        %measure prediction error
+        Err = Pred_Out(endbin-Adapt_lag+window_i,:) - Adapt_bins(Bin,2:end);
 
-    %update H accordingly
-    dH = -LR*2*Err'*Inputs(endbin-Adapt_lag:endbin,:);
-    H_new = H_new + dH';
+        %update H accordingly
+        dH = -LR*2*Err'*Inputs(endbin-Adapt_lag+window_i,:);
+        H_new = H_new + dH';
+
+        %redo predictions with corrected H - correct as you go:
+        Pred_Out(endbin-Adapt_lag+window_i,:) = predMIMOCE1(Inputs(endbin-Adapt_lag+window_i,:),H_new,numlags);
+    end
     
-    %redo predictions with corrected H - correct as you go:
-    %% THIS IS NON CAUSAL %%
-    Pred_Out(startbin:endbin,:) = predMIMOCE1(Inputs(startbin:endbin,:),H_new,numlags);
-            
     %initialize for next segment
     startbin=endbin+1;
 end

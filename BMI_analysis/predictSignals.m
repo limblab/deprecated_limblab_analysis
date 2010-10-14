@@ -75,12 +75,13 @@ if Adapt_Enable
 %     Adapt_ts = [Go_ts;EOT_ts];
     
 
-    Adapt_ts = get_tgt_center(BinnedData);
+     Adapt_ts = get_tgt_center(BinnedData); %includes only trials ending with a reward
+%     Adapt_ts = get_tgt_center_EOT(BinnedData); %includes all trials ending with Reward or Failure
     Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/binsize) Adapt_ts(:,2:end)]; %convert first column of Adapt_ts to bins
     Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); %remove first adapt step if too early
     
 %     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt8(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
-     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt7(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);    
+     [PredictedData,spikeDataNew,Hnew] = predMIMOadapt7b(usableSpikeData,filter.H,LR,Adapt_bins,Lag_bins);
 %     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt6(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,Lag_bins);
 %     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt5(usableSpikeData,filter.H,ActualData,LR);
 %     [PredictedData,spikeDataNew,ActualEMGsNew,Hnew] = predMIMOadapt4(usableSpikeData,filter.H,ActualData,LR,Adapt_bins,window);

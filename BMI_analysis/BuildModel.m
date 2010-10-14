@@ -88,7 +88,6 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         varargout = {};
         return;
     end
-    end
 
 
 %% Calculate the filter

@@ -1,9 +1,9 @@
-function [Go_Rew_ts_w_tgt_centers] = get_tgt_center(out_struct)
+function [Go_EOT_ts_w_tgt_centers] = get_tgt_center(out_struct)
 
     % This function returns a matrix of [ts tgt_x tgt_y]
     % out_struct can be either a BDF or a binnedData structure (as of 4/12/10)
     %
-    % ts is the time at which a 'Go_Cue' or a 'Reward' word was issue
+    % ts is the time at which a 'Go_Cue' or a 'End of trial' word was issue
     % tgt_x and tgt_y are the coordinates of the center of the target
     % corresponding to this trial, in "cursor position" coordinate system.
     % Note: for "Go_Cue" trials, the target is automatically defined as being at
@@ -43,28 +43,25 @@ function [Go_Rew_ts_w_tgt_centers] = get_tgt_center(out_struct)
     numCenters = size(Center_ts,1);
 
     %% -----------------------------%
-    % get Reward ts and target center pairs
+    % get EOT ts and target center pairs
     % ------------------------------%
     words_and_Tgts=sortrows([out_struct.words;Tgts_ts]);
 
-    Rew_ts = [];
+    EOT_ts = [];
 
     for i=1:numTgts
-        % find the Rew_ts corresponding to target i
-        ts_pairs = Get_Words_ts_pairs(w.Start, Tgts(i,1), w.Reward, words_and_Tgts);
-%         ts_pairs = [ts_pairs; Get_Words_ts_pairs(w.Start, Tgts(i,1), w.Failure, words_and_Tgts)];
+        % find the EOT_ts corresponding to target i
+        ts_pairs = Get_Words_ts_pairs(w.Start, Tgts(i,1), w.IsEndWord, words_and_Tgts);
 
         %time stamps for End Of Trials for target i in first column of EOT_ts
         %target i x and y center coord in 2nd and 3rd columns
         tgt_x = mean([Tgts(i,2) Tgts(i,4)]);
         tgt_y = mean([Tgts(i,3) Tgts(i,5)]);
         tgt_centers = ones(size(ts_pairs,1),1)*[tgt_x tgt_y];
-        Rew_ts = [Rew_ts; [ts_pairs(:,2) tgt_centers]];
+        EOT_ts = [EOT_ts; [ts_pairs(:,2) tgt_centers]];
     end
     
     %concat and sort Center and End of Trial ts, with corresponding target center
-    Go_Rew_ts_w_tgt_centers = sortrows([Center_ts;Rew_ts],1);
+    Go_EOT_ts_w_tgt_centers = sortrows([Center_ts;EOT_ts],1);
     
 end
-
-

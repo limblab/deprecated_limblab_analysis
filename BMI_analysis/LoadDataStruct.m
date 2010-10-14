@@ -39,7 +39,7 @@ datastruct = load(filename);
 
 switch type
     case 'bdf'
-        datastruct = datastruct.bdf;
+        datastruct = datastruct.out_struct;
         disp(datastruct.meta);
     case 'binned'
         datastruct = datastruct.binnedData;
