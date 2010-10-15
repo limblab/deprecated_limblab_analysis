@@ -20,7 +20,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         binnedData = LoadDataStruct(binnedData, 'binned');
     end
 
-    binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
+    binsize = double(binnedData.timeframe(2)-binnedData.timeframe(1));
     
     if nargout > 2
         disp('Wrong number of output arguments');
