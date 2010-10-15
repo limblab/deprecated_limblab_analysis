@@ -244,8 +244,9 @@ function BMIDataAnalyzer()
     end
 
     function BDF_WSButton_Callback(obj,event)
-        datastruct = LoadDataStruct(BDF_FullFileName,'bdf');
-        assignin('base','out_struct',datastruct);
+        assignin('base','temp_str',BDF_FullFileName);
+        evalin('base','load(temp_str);');
+        evalin('base','clear(''temp_str'')');
     end
     
     
@@ -303,11 +304,12 @@ function BMIDataAnalyzer()
     function Bin_BuildButton_Callback(obj,event)
         disp('Building Prediction Model, please wait...');
         
-        binnedData = LoadDataStruct(Bin_FullFileName,'binned');
+        binnedData = LoadDataStruct(Bin_FullFileName);
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
         [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh] = BuildModelGUI(binsize);
         [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
+        filt_struct.FromData = Bin_FileName;
         clear binnedData;
         
         disp('Done.');
@@ -320,6 +322,9 @@ function BMIDataAnalyzer()
             disp('User action cancelled');
         else
             Filt_FullFileName = fullfile(PathName,Filt_FileName);
+            %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
+            save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
+            
             set(Filt_PredButton, 'Enable','on');
             set(Filt_WSButton,'Enable','on');
 
@@ -347,7 +352,7 @@ function BMIDataAnalyzer()
 
     function mfxval_R2 = Bin_mfxvalButton_Callback(obj,event)
         
-        binnedData = LoadDataStruct(Bin_FullFileName,'binned');
+        binnedData = LoadDataStruct(Bin_FullFileName);
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
         [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos,Use_Thresh] = mfxvalGUI(binsize);        
@@ -366,8 +371,9 @@ function BMIDataAnalyzer()
     end
 
     function Bin_WSButton_Callback(obj,event)
-        datastruct = LoadDataStruct(Bin_FullFileName,'binned');
-        assignin('base','binnedData',datastruct);
+        assignin('base','temp_str',Bin_FullFileName);
+        evalin('base','load(temp_str);');
+        evalin('base','clear(''temp_str'')');
     end
     
 
@@ -413,7 +419,7 @@ function BMIDataAnalyzer()
         if Adapt_Enable %we have a new filter
             disp('Saving updated prediction model...');
             Filt_FileName = [Bin_FileName(1:end-4) '_adaptFilter.mat'];
-            filt_struct = LoadDataStruct(Filt_FullFileName,'filter');
+            filt_struct = LoadDataStruct(Filt_FullFileName);
             filt_struct.H = H_new;            
             [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');
 
@@ -449,8 +455,11 @@ function BMIDataAnalyzer()
     end
 
     function Filt_WSButton_Callback(obj,event)
-        datastruct = LoadDataStruct(Filt_FullFileName,'filter');
-        assignin('base','filter',datastruct);
+%         datastruct = LoadDataStruct(Filt_FullFileName);
+%         assignin('base','filter',datastruct);
+          assignin('base','temp_str',Filt_FullFileName);
+          evalin('base','load(temp_str);');
+          evalin('base','clear(''temp_str'');');
     end
         
 %% Offline Predictions Panel
@@ -490,8 +499,8 @@ function BMIDataAnalyzer()
 
     function OLPred_R2VsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
-        PredData = LoadDataStruct(OLPred_FullFileName,'OLpred');
+        ActualData = LoadDataStruct(Bin_FullFileName);
+        PredData = LoadDataStruct(OLPred_FullFileName);
         plotflag = 0;
         disp('Done. Processing R2 calculations...');
         ActualvsOLPred(ActualData,PredData,plotflag);   
@@ -499,8 +508,8 @@ function BMIDataAnalyzer()
 
     function OLPred_PlotVsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
-        PredData = LoadDataStruct(OLPred_FullFileName,'OLpred');
+        ActualData = LoadDataStruct(Bin_FullFileName);
+        PredData = LoadDataStruct(OLPred_FullFileName);
         plotflag = 1;
         disp('Done. Calculating R2 and plotting...');
         ActualvsOLPred(ActualData,PredData,plotflag);
@@ -508,8 +517,9 @@ function BMIDataAnalyzer()
     end
 
     function OLPred_WSButton_Callback(obj,event)
-        datastruct = LoadDataStruct(OLPred_FullFileName,'OLpred');
-        assignin('base','OLPredData',datastruct);
+        assignin('base','temp_str',OLPred_FullFileName);
+        evalin('base','load(temp_str);');
+        evalin('base','clear(''temp_str'')');
     end
 
 %% Real-Time Predictions Panel
@@ -548,8 +558,8 @@ function BMIDataAnalyzer()
 
     function RTPred_R2VsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
-        PredData = LoadDataStruct(RTPred_FullFileName,'RTpred');
+        ActualData = LoadDataStruct(Bin_FullFileName);
+        PredData = LoadDataStruct(RTPred_FullFileName);
         plotflag = 0;
         disp('Done. Processing R2 calculations...');
         ActualvsRTPred(ActualData,PredData,plotflag);      
@@ -557,16 +567,17 @@ function BMIDataAnalyzer()
 
     function RTPred_PlotVsActButton_Callback(obj,event)
         disp('Loading data, please wait...');
-        ActualData = LoadDataStruct(Bin_FullFileName,'binned');
-        PredData = LoadDataStruct(RTPred_FullFileName,'RTpred');
+        ActualData = LoadDataStruct(Bin_FullFileName);
+        PredData = LoadDataStruct(RTPred_FullFileName);
         plotflag = 1;
         disp('Done. Calculating R2 and plotting...');
         ActualvsRTPred(ActualData,PredData,plotflag);    
     end
 
     function RTPred_WSButton_Callback(obj,event)
-        datastruct = LoadDataStruct(RTPred_FullFileName,'RTpred');
-        assignin('base','RTPredData',datastruct);
+        assignin('base','temp_str',RTPred_FullFileName);
+        evalin('base','load(temp_str);');
+        evalin('base','clear(''temp_str'')');
     end
 
 %% Stimulator Commands Panel

@@ -17,7 +17,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %
    
     if ~isstruct(binnedData)
-        binnedData = LoadDataStruct(binnedData, 'binned');
+        binnedData = LoadDataStruct(binnedData);
     end
 
     binsize = double(binnedData.timeframe(2)-binnedData.timeframe(1));

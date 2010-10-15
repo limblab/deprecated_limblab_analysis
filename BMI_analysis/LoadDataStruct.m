@@ -1,19 +1,16 @@
-function datastruct = LoadDataStruct(filename,type)
-% loads a bdf mat file
+function datastruct = LoadDataStruct(filename,varargin)
+% loads a mat file
 % usage: datastruct = loaddatastruct(filename)
-%       filename : the name of the mat file to be loaded
-%       type : 'bdf' | 'binned' | 'OLpred' | 'RTPred' | 'filter'
-%       datastruct output: holder for the loaded bdf structure
+%       filename   : the name of the mat file to be loaded
+%       datastruct : the loaded structure
+%       varargin   : obsolete "type" argument, just for compatibility
        
 
 %default values:
 datastruct = struct([]);
-if (nargin~=2)
-    disp('Please provide two string arguments containing the name and type');
-    disp(' of a data structure in workspace or name of a .mat file');
-    disp('usage:');
-    disp('DataStruct=loaddatastruct(''myfile'')    % load data struct from ''myfile''');
-    disp('Type = ''bdf'' | ''binned'' | ''OLpred'' | ''RTpred'' | ''filter''');
+if (nargin==0)
+    disp('Please provide a string arguments containing the name');
+    disp('of a data structure in workspace or name and full path of a .mat file');
     return
 end
 
@@ -35,22 +32,24 @@ if ~(exist(filename,'file')) % hope it's a file
     return
 end % if file exists
 
-datastruct = load(filename);
-
-switch type
-    case 'bdf'
-        datastruct = datastruct.out_struct;
-        disp(datastruct.meta);
-    case 'binned'
-        datastruct = datastruct.binnedData;
-    case 'filter'
-        datastruct = datastruct.filter;
-    case 'OLpred'
-        datastruct = datastruct.OLPredData;
-    case 'RTpred'
-        datastruct = datastruct.RTPredData;
-    otherwise
-        disp(sprintf('unknown file type: %s', type));
+datastruct  = load(filename);
+field_names = fieldnames(datastruct);
+datastruct  = getfield(datastruct, field_names{:});
+% 
+% switch type
+%     case 'bdf'
+%         datastruct = datastruct.out_struct;
+%         disp(datastruct.meta);
+%     case 'binned'
+%         datastruct = datastruct.binnedData;
+%     case 'filter'
+%         datastruct = datastruct.filter;
+%     case 'OLpred'
+%         datastruct = datastruct.OLPredData;
+%     case 'RTpred'
+%         datastruct = datastruct.RTPredData;
+%     otherwise
+%         disp(sprintf('unknown file type: %s', type));
 end
 
 

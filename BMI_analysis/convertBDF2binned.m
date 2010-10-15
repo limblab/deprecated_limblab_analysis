@@ -19,9 +19,7 @@ function binnedData = convertBDF2binned(varargin)
     datastructname = varargin{1};
 
     %Load the file or structure
-%    datapath = 'C:\Monkey\Theo\Data\BDFStructs\';
-%    datastruct = loaddatastruct([datapath datastructname],'binned');
-    datastruct = LoadDataStruct(datastructname,'bdf');
+    datastruct = LoadDataStruct(datastructname);
 
     if isempty(datastruct)
        disp(sprintf('Could not load structure %s',datastructname));
