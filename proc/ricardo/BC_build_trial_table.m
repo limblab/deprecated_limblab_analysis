@@ -1,5 +1,7 @@
 % Build trial_table
-% trial_table = [ start end direction result trial_type bump_magnitude stim_id; ... ]
+% trial_table = 
+%[ start end result trial_type training bump_direction bump_magnitude stim_id Xstart Ystart Xend Yend; ... ] for each trial
+% trial type = 1 (bump), 2 (stim)
 
 function trial_table = BC_build_trial_table(filename)
 load(filename)
@@ -32,9 +34,8 @@ while flag == 1
     end
 end
         
-trial_table = zeros(length(trial_starts),12); % will hold the 
-%[ start end result trial_type training bump_direction bump_magnitude stim_id Xstart Ystart Xend Yend; ... ] for each trial
-% trial type = 1 (bump), 2 (stim)
+trial_table = zeros(length(trial_starts),12);
+
 for i=1:length(trial_starts)
     start_time = trial_starts(i);
     trial_type = 0;

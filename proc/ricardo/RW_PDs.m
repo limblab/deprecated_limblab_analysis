@@ -3,7 +3,7 @@ function out = RW_PDs(filename)
 if ~exist([filename '.mat'],'file')
     curr_dir = pwd;
     cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
-    bdf = get_plexon_data([RW_filename '.plx'],2);
+    bdf = get_plexon_data([filename '.plx'],2);
     save(filename,'bdf');    
     cd(curr_dir)
 end
@@ -22,7 +22,7 @@ for i = 1:size(units, 1)
     mi_peak = 0;
     
     % GLM Fitting Method
-    [b, dev, stats] = glm_kin(bdf, chan, unit, mi_peak);    
+    [b, dev, stats] = glm_kin(bdf, chan, unit, mi_peak,'vel');    
     s = train2bins(get_unit(bdf, chan, unit) - mi_peak, bdf.vel(:,1));
     vs = bdf.vel(s>0,2:3);
     [p_vs, theta, rho] = vel_pdf_polar(vs);
@@ -31,7 +31,7 @@ for i = 1:size(units, 1)
     p_glm = zeros(size(rho));
     for x = 1:size(p_glm,1)
         for y = 1:size(p_glm,2)
-            state = [0 0 rho(x,y)*cos(theta(x,y)) rho(x,y)*sin(theta(x,y)) rho(x,y)];
+            state = [rho(x,y)*cos(theta(x,y)) rho(x,y)*sin(theta(x,y)) rho(x,y)];
             p_glm(x,y) = glmval(b, state, 'log').*20;
         end
     end
