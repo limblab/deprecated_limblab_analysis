@@ -146,7 +146,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.raw.analog.data(:,i) = single(analog_data.*4.1666667); %multiplying by 4.1666667 converts analog_data in mV
+            out_struct.raw.analog.data{i} = single(analog_data.*4.1666667); %multiplying by 4.1666667 converts analog_data in mV
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
