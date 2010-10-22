@@ -34,7 +34,12 @@ end % if file exists
 
 datastruct  = load(filename);
 field_names = fieldnames(datastruct);
-datastruct  = getfield(datastruct, field_names{:});
+for i=1:size(field_names,1)
+    if isstruct(eval(['datastruct.' field_names{i,:}]))
+        datastruct  = getfield(datastruct, field_names{i,:});
+        continue;
+    end
+end
 % 
 % switch type
 %     case 'bdf'
