@@ -98,22 +98,26 @@ for trial = 1:num_trials-1
      
     % Find movement onset
     if trial_result == double('R') || bump_phase == double('H')
-        sidx = find(bdf.vel(:,1) > start_time,1,'first'):find(bdf.vel(:,1) > stop_time+1,1,'first');
+        try
+            sidx = find(bdf.vel(:,1) > start_time,1,'first'):find(bdf.vel(:,1) > stop_time+1,1,'first');
 
-        t = bdf.vel(sidx,1);                                % Set up time index vector
-        s = sqrt(bdf.vel(sidx,2).^2 + bdf.vel(sidx,3).^2);  % Calculate speeds
+            t = bdf.vel(sidx,1);                                % Set up time index vector
+            s = sqrt(bdf.vel(sidx,2).^2 + bdf.vel(sidx,3).^2);  % Calculate speeds
 
-        d = [0; diff(smooth(s,100))*25];                    % Absolute acceleration (dSpeed/dt)
-        dd = [diff(smooth(d,100)); 0];                      % d^2 Speed / dt^2
-        peaks = dd(1:end-1)>0 & dd(2:end)<0;                % zero crossings are abs. acc. peaks
-        if go_cue > 0
-            mvt_start = go_cue;
-        else
-            mvt_start = bump_time;
+            d = [0; diff(smooth(s,100))*25];                    % Absolute acceleration (dSpeed/dt)
+            dd = [diff(smooth(d,100)); 0];                      % d^2 Speed / dt^2
+            peaks = dd(1:end-1)>0 & dd(2:end)<0;                % zero crossings are abs. acc. peaks
+            if go_cue > 0
+                mvt_start = go_cue;
+            else
+                mvt_start = bump_time;
+            end
+            mvt_peak = find(peaks & t(2:end) > mvt_start & d(2:end) > 1, 1, 'first'); 
+            thresh = d(mvt_peak)/2;                             % Threshold is half max of acceleration peak
+            onset = t(find(d<thresh & t<t(mvt_peak),1,'last')); % Movement onset is last threshold crossing before peak
+        catch
+            onset = NaN;
         end
-        mvt_peak = find(peaks & t(2:end) > mvt_start & d(2:end) > 1, 1, 'first'); 
-        thresh = d(mvt_peak)/2;                             % Threshold is half max of acceleration peak
-        onset = t(find(d<thresh & t<t(mvt_peak),1,'last')); % Movement onset is last threshold crossing before peak
     else
         onset = NaN;
     end

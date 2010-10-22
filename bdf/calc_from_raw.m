@@ -93,7 +93,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
     end
     
 %% Position and Force for Robot Task
-    if (isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc))
+    if (isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc) && opts.kin)
         if robot_task
             % Position
             %if (verbose == 1)
@@ -151,13 +151,12 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.pos = [out_struct.raw.enc(:,1) out_struct.raw.enc(:,2)/1000 out_struct.raw.enc(:,3)/1000];
         end
     else
-        if robot_task
-            close(h);
+        if robot_task && ~opts.nokin
+%            close(h);
             error('BDF:noPositionSignal','No position signal present');
         end
     end
 
-    
     
 %% Force Handle Analog Signals
     if opts.force

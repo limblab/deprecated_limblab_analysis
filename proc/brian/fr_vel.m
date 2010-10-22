@@ -1,8 +1,9 @@
 % Generate 3-pannel statespace
 
-units = unit_list(bdf);
-monkey = 'T';
-%units = [63 1];
+%units = unit_list(bdf);
+monkey = 'P';
+%units = [3 1];
+units = [96 1; 43 1];
 
 clear out;
 
@@ -45,42 +46,43 @@ for i = 1:size(units, 1)
     %
     % ML fitting method
     %
-    [L, alpha, success] = fit_model(bdf, chan, unit, mi_peak);
-    m_ml = alpha(1);
-    k_ml = sqrt(alpha(2).^2 + alpha(3).^2);
-    th_ml = atan2(alpha(3), alpha(2));
-    b_ml = alpha(4);
+    %[L, alpha, success] = fit_model(bdf, chan, unit, mi_peak);
+    %m_ml = alpha(1);
+    %k_ml = sqrt(alpha(2).^2 + alpha(3).^2);
+    %th_ml = atan2(alpha(3), alpha(2));
+    %b_ml = alpha(4);
 
-    if success ~= 1
-        warn = ' (DNC)';
-    else 
-        warn = '';
-    end
+    %if success ~= 1
+    %    warn = ' (DNC)';
+    %else 
+    %    warn = '';
+    %end
     
     %
     % Actual data
     %
-    s = train2bins(get_unit(bdf, chan, unit) - mi_peak, bdf.vel(:,1));
+    %s = train2bins(get_unit(bdf, chan, unit) - mi_peak, bdf.vel(:,1));
+    s = train2bins(get_unit(bdf, chan, unit), bdf.vel(:,1));
     vs = bdf.vel(s>0,2:3);
     [p_vs, theta, rho] = vel_pdf_polar(vs);
     %p_sv = p_vs ./ arthur_v_prior;
-    p_sv = p_vs ./ tiki_vel_prior;
+    %p_sv = p_vs ./ tiki_vel_prior;
 
     %figure;pcolor(theta, rho, mini_psv_37_1.*1000)
 
     %
     % Plot
     %
-    close all;
+    %close all;
     figure;
-    subplot(1,3,1), h=pcolor(theta, rho, p_sv .* 1000 );
-    axis square;
-    title('Actual');
-    xlabel('Direction');
-    ylabel('Speed (cm/s)');
-    set(gca,'XTick',0:pi:2*pi)
-    set(gca,'XTickLabel',{'0','pi','2*pi'})
-    set(h, 'EdgeColor', 'none');
+    %subplot(1,3,1), h=pcolor(theta, rho, p_sv .* 1000 );
+    %axis square;
+    %title('Actual');
+    %xlabel('Direction');
+    %ylabel('Speed (cm/s)');
+    %set(gca,'XTick',0:pi:2*pi)
+    %set(gca,'XTickLabel',{'0','pi','2*pi'})
+    %set(h, 'EdgeColor', 'none');
     %caxis([0 m_bl*3]);
     
     % Emperical
@@ -98,15 +100,15 @@ for i = 1:size(units, 1)
 %     
 
     % ML fit
-    p_ml = m_ml + k_ml .* rho .* cos(theta-th_ml) + b_ml .* rho;
-    subplot(1,3,2), h=pcolor(theta, rho, p_ml );
-    axis square;
-    title('Maximum Likelihood');
-    xlabel('Direction');
-    ylabel('Speed (cm/s)');
-    set(gca,'XTick',0:pi:2*pi)
-    set(gca,'XTickLabel',{'0','pi','2*pi'})
-    set(h, 'EdgeColor', 'none');
+    %p_ml = m_ml + k_ml .* rho .* cos(theta-th_ml) + b_ml .* rho;
+    %subplot(1,3,2), h=pcolor(theta, rho, p_ml );
+    %axis square;
+    %title('Maximum Likelihood');
+    %xlabel('Direction');
+    %ylabel('Speed (cm/s)');
+    %set(gca,'XTick',0:pi:2*pi)
+    %set(gca,'XTickLabel',{'0','pi','2*pi'})
+    %set(h, 'EdgeColor', 'none');
     %caxis([0 b_ml*3]);
     
     % GLM fit
@@ -127,25 +129,25 @@ for i = 1:size(units, 1)
     set(h, 'EdgeColor', 'none');
     %caxis([0 b_ml*3]);
 
-    
+    warn = '';
     suptitle(sprintf('Velocity Tuning: %s-%d-%d%s', monkey, chan, unit, warn));
     
     %saveas(gcf, sprintf('tmp2/%d-%d', chan, unit), 'fig');
     
     
-    tuning = mean(p_sv' .* 1000);
-    tt = [tuning.*cos(theta(:,1)'); tuning.*sin(theta(:,1)')];
-    tt = sum(tt');    
-    pd = atan2(tt(2), tt(1));
+    %tuning = mean(p_sv' .* 1000);
+    %tt = [tuning.*cos(theta(:,1)'); tuning.*sin(theta(:,1)')];
+    %tt = sum(tt');    
+    %pd = atan2(tt(2), tt(1));
     
     tuning = mean(p_glm' .* 1000);
     tt = [tuning.*cos(theta(:,1)'); tuning.*sin(theta(:,1)')];
     tt = sum(tt');    
-    pd2 = atan2(tt(2), tt(1));
+    pd2 = atan2(tt(2), tt(1))
     
-    out(i) = struct('chan', chan, 'unit', unit, 'glmb', b, 'glmstats', stats, ...
-        'ml', struct('m',m_ml,'k',k_ml,'th',th_ml,'b',b_ml), ...
-        'actual', p_sv, 'apd', pd, 'glmpd', pd2);
+    %out(i) = struct('chan', chan, 'unit', unit, 'glmb', b, 'glmstats', stats, ...
+    %    'ml', struct('m',m_ml,'k',k_ml,'th',th_ml,'b',b_ml), ...
+    %    'actual', p_sv, 'apd', pd, 'glmpd', pd2);
 end
 
 

@@ -9,11 +9,11 @@ function[data, peak, param_points, ts] = KLD_nongauss(bdf, param_list,unit,...
 p_v_a_f = [(bdf.pos(:,2)-mean(bdf.pos(:,2))), ...           % x position
            (bdf.vel(:,2)), ...                              % x velocity
            (bdf.acc(:,2)), ...                              % x accel
-           (bdf.force(:,2)-mean(bdf.force(:,2))), ...       % x force
+        zeros(size(bdf.acc(:,3))),...   %(bdf.force(:,2)-mean(bdf.force(:,2))), ...       % x force
            (bdf.pos(:,3)-mean(bdf.pos(:,3))), ...           % y position
            (bdf.vel(:,3)), ...                              % y velocity
            (bdf.acc(:,3)), ...                              % y accel
-           (bdf.force(:,3)-mean(bdf.force(:,3)))];          % y force
+         zeros(size(bdf.acc(:,3)))];  %(bdf.force(:,3)-mean(bdf.force(:,3)))];          % y force
        
        % p_v_a_f creates a (#time_stamps) x (8) array containing position,
        % velocity, acceleration, and force data for x and y directions

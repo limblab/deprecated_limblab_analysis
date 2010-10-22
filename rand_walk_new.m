@@ -42,6 +42,7 @@ b = b(1000:end); % drop points before begin mi
 %v = [interp1(data.pos(1:end-1,1),dx,1:.001:end_mi)'
 %interp1(data.pos(1:end-1,1),dy,1:.001:end_mi)'];
 v = data.vel(:,2:3);
+%v = data.pos(:,2:3);
 
 if (length(b) > length(v))
     b = b(1:size(v));
@@ -54,9 +55,11 @@ d = tmi(b, v, -1000:10:1000);
 t = -1000:10:1000;
 t = t.*0.001;
 figure;
+%plot(t,d,'r-')
 subplot(2,2,1),plot(t,d);
 xlabel('Delay (s)');
 ylabel('Mutual Information (bits/s)');
+
 
 % MI peak analysis
 [peak peak_width good_cell peakness peak_height] = peak_analysis(d);

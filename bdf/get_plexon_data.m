@@ -111,7 +111,7 @@ function out_struct = get_plexon_data(varargin)
 %% Data From PLX File    
 
     % Get MetaData
-    [tscounts, wfcounts, evcounts] = plx_info(filename,1);
+    [tscounts, wfcounts, evcounts] = plx_info(filename,0);
     [OpenedFileName, Version, Freq, Comment, Trodalness, NPW, PreThresh, ...
         SpikePeakV, SpikeADResBits, SlowPeakV, SlowADResBits, Duration, ...
         DateTime] = plx_information(filename);

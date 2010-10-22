@@ -3,7 +3,10 @@ function res = batch_co_bump(bdf)
 
 all_units = unit_list(bdf);
 %all_units = [80 1];
-th = [0, pi/2, pi, 3*pi/2];
+%th = [0, pi/2, pi, 3*pi/2];
+th = [pi/2, 0, 3*pi/2, pi];
+%th = [0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3];
+%th = [pi/2, pi/6, 11*pi/6, 3*pi/4, 7*pi/6, 5*pi/6];
 
 res = zeros(size(all_units,1),14); % [chan unit a_gain a_pd p_gain p_pd]
 

@@ -7,7 +7,7 @@ cell_idx = find(ul(:,1) == chan & ul(:,2) == unit);
 spikes = bdf.units(cell_idx).ts;
 words = bdf.words;
 
-speed = sqrt(bdf.vel(:,2).^2 + bdf.vel(:,3).^2);
+%speed = sqrt(bdf.vel(:,2).^2 + bdf.vel(:,3).^2);
 
 %%% Passive
 bump_word_base = hex2dec('50');
@@ -23,6 +23,7 @@ ot_on_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_ot_on, 2);
 
 center_hold_bumps = [];
 delay_bumps = cell(1,4);
+%delay_bumps = cell(1,6);
 for i = 2:length(all_bumps);
     bump_time = all_bumps(i);
     trial_start = start_words(find(start_words < bump_time, 1, 'last'));
@@ -50,6 +51,7 @@ word_reward = hex2dec('20');
 rewards = words(words(:,2) == word_reward, 1);
 
 movement_starts = cell(1,4);
+%movement_starts = cell(1,6);
 for i = 1:length(ot_on_words)
     ot_time = ot_on_words(i,1);
     ot_id = ot_on_words(i,2);
@@ -77,6 +79,7 @@ passive_tuning = zeros(2,4);
 active_tuning = zeros(2,4);
 baseline = zeros(1,4);
 for dir = 0:3
+%for dir = 0:5
     % active
     mvts = movement_starts{dir+1};
     [table, all] = raster(spikes, mvts, 0.000, 0.500, -1);

@@ -12,7 +12,8 @@ addpath ../../mimo
 %    list = {'pos', 'vel', 'acc'};
 %end
 
-list = {'force'};
+%list = {'force'};
+list = {'vel'};
 
 %units = out( ~isnan(out(:,3)) , 1:2 );
 
