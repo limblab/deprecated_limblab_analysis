@@ -1,8 +1,6 @@
-% calculate success rate
-% filename = 'D:\Data\Ricardo_BC_no_spikes_001';
 close all
 clear all
-boot_iter = 1000;
+boot_iter = 2000;
 set(0,'DefaultTextInterpreter','none')
 curr_dir = pwd;    
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';

@@ -15,8 +15,8 @@ resultpath = 'D:\Ricardo\Miller Lab\Bump choice results\Detection results\';
 for file_no = 1:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
-    stim_pd = filelist(file_no).pd;
-    if ~exist([resultpath filename '.fig'],'file')
+    stim_pds = filelist(file_no).pd;
+%     if ~exist([resultpath filename '.fig'],'file')
         if ~exist([datapath filename '.mat'],'file')    
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
             bdf = get_plexon_data([datapath filename '.plx'],2);
@@ -28,31 +28,85 @@ for file_no = 1:length(filelist)
 
         cd(curr_dir)
         load([datapath filename],'trial_table','bdf')
-
+        
         trial_table = trial_table(trial_table(:,5)==0,:); % remove training trials
-        stim_table = trial_table(trial_table(:,8)==0,:);
-        no_stim_table = trial_table(trial_table(:,8)==1,:);
-
-        stim_table(:,end+1) = 
         
-        %%  Probability of moving to a certain target
-        figure_sigmoid = BC_newsome_sigmoids_plot(bump_table,stim_table,boot_iter,filename,stim_pd);
-        figure_null_bias = BC_newsome_null_bias_vs_time(bump_table,stim_table,stim_pd);
-
-        % %% Success rate for 0N trials over time
-        % bin_length = 25;
-        % BC_newsome_zero_bump_plot(trial_table,bin_length)
-        % 
-        % %% Success rate by bump magnitude
-        % BC_bump_success_plot(bump_table,filename);
+        fit_func = 'm*x+b';
+        f_linear = fittype(fit_func,'independent','x');
         
-        hgsave(figure_sigmoid,[resultpath filename]);
-        hgsave(figure_null_bias,[resultpath filename '_null_bias']);
-        I = getframe(figure_sigmoid);
+        correct = trial_table(:,3)==32;
+        [correct_fit fit_stats] = fit(trial_table(:,1),correct,f_linear);
+        percentage_correct = sum(trial_table(:,3)==32)/(sum(trial_table(:,3)==32)+sum(trial_table(:,3)==34))       
+        correct_moving_ave = zeros(1,length(correct)-50);
+        
+        for i=1:length(correct_moving_ave)
+            correct_moving_ave(i) = mean(correct(i:i+50));
+        end
+         
+        bin_size = 20;
+        num_bins = floor(length(correct)/bin_size);
+        correct_binned = zeros(num_bins,bin_size);
+        correct_bootstrapped = zeros(num_bins,bin_size,boot_iter);
+        for i=1:num_bins
+            correct_binned_temp = correct((i-1)*bin_size+1:i*bin_size);
+            correct_binned(i,:) = correct_binned_temp;
+            correct_bootstrapped(i,:,:) = correct_binned_temp(ceil(length(correct_binned_temp)*rand(length(correct_binned_temp),boot_iter)));
+        end
+        correct_percent_bootstrapped = squeeze(mean(correct_bootstrapped,2));
+        correct_binned_fit = fit((1:num_bins)',mean(correct_binned,2),f_linear,'StartPoint',[0 0]);
+        fit_binned_conf = confint(correct_binned_fit);
+        correct_moving_ave_fit = fit((1:length(correct_moving_ave))',correct_moving_ave',f_linear,'StartPoint',[0 0]);
+        fit_moving_conf = confint(correct_moving_ave_fit);
+        
+        figure_behavior = figure; 
+        subplot(1,2,1)
+        plot(1:length(correct_moving_ave),correct_moving_ave)
+        hold on
+        plot(correct_moving_ave_fit,'r')
+        plot(1:length(correct_moving_ave),(1:length(correct_moving_ave))*fit_moving_conf(1,2)+fit_moving_conf(1,1),'-r');
+        plot(1:length(correct_moving_ave),(1:length(correct_moving_ave))*fit_moving_conf(2,2)+fit_moving_conf(2,1),'-r');
+        xlim([1 length(correct_moving_ave)])
+        ylim([0 1])
+        ylabel('Percent correct')
+        xlabel('Trial number (moving average)')
+        legend off
+        
+        stim_ids = unique(trial_table(:,8));
+        response_table = zeros(length(stim_ids),2);
+        for i=1:length(stim_ids)
+            response_table(i,1) = sum(trial_table(:,8)==stim_ids(i) & trial_table(:,3)==32);
+            response_table(i,2) = sum(trial_table(:,8)==stim_ids(i) & trial_table(:,3)==34);
+        end
+        response_table
+        first_hundred(file_no) = sum(correct(1:100));
+        last_hundred(file_no) = sum(correct(end-99:end));
+%         fit_slope = zeros(1,boot_iter);
+%         tic
+%         for i=1:boot_iter
+%             correct_fit{i} = fit([1:num_bins]',mean(correct_bootstrapped(:,:,i),2),f_linear,'StartPoint',[0 0]);
+%             fit_slope(i) = correct_fit{i}.m;
+%         end
+%         toc
+%         [fit_slope_hist fit_slope_hist_bins] = hist(fit_slope,100);
+%         
+%         conf_inter = [fit_slope_hist_bins(find(cumsum(fit_slope_hist)>boot_iter*.05,1,'first')),...
+%             fit_slope_hist_bins(find(cumsum(fit_slope_hist)>boot_iter*.95,1,'first'))];
+
+        subplot(1,2,2)
+        hold on
+        plot(1:num_bins,mean(correct_binned,2))
+        plot(correct_binned_fit,'r')
+        plot(1:num_bins,(1:num_bins)*fit_binned_conf(1,2)+fit_binned_conf(1,1),'-r');
+        plot(1:num_bins,(1:num_bins)*fit_binned_conf(2,2)+fit_binned_conf(2,1),'-r');       
+        xlim([1 num_bins])
+        ylim([0 1])
+        xlabel('Bin number')
+        ylabel('Percent correct')
+        legend off
+
+        hgsave(figure_behavior,[resultpath filename]);
+        I = getframe(figure_behavior);
         imwrite(I.cdata, [resultpath filename '.png']);
-        I = getframe(figure_null_bias);
-        imwrite(I.cdata, [resultpath filename  '_null_bias.png']);
-        close all
-    end
+%     end
 
 end
