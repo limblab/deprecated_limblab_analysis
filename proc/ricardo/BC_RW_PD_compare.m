@@ -1,7 +1,9 @@
 % Find PDs
 monkey_array = 'Pedro_1';
 RW_filename = 'D:\Data\Pedro\Pedro_S1_044-s_multiunit';
-BC_filename = 'D:\Data\Pedro\Pedro_BC_031-s_multiunit';
+% BC_filename = 'D:\Data\Pedro\Pedro_BC_031-s_multiunit';
+BC_filename = 'D:\Ricardo\MATLAB\Data\Pedro_BC_031-s_multiunit';
+BC_filename = 'D:\Ricardo\MATLAB\Data\Pedro_BC_008-s_multiunit';
 
 curr_dir = pwd;
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';

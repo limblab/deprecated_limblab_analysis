@@ -48,7 +48,7 @@ mean_firing_rate = mean(mean_firing_rate);
 
 fit_func = 'a+b*cos(x+d)';
 f_cosine = fittype(fit_func,'independent','x');
-boot_iter = 1000;
+boot_iter = 10000;
 PD_boot = zeros(size(firing_rate_matrix,boot_iter));
 rand_idx = ceil(size(firing_rate_matrix,1)*rand(size(firing_rate_matrix,1),boot_iter));
 bump_dirs_mat = repmat(bump_dirs(:,2),1,boot_iter);
@@ -84,17 +84,30 @@ dispersion = zeros(length(PD_mu),1);
 
 for i = 1:length(PD_mu)
     [hist_PD angle_bins] = hist(cos(PD_mu(i)-PD_boot(i,:)),1000);
-    hist_PD_cum = cumsum(hist_PD);
-    dispersion(i) = angle_bins(find(hist_PD_cum>.05*length(hist_PD),1,'first'));
+%     hist_PD_cum = cumsum(hist_PD);
+    dispersion(i) = angle_bins(find(hist_PD>.05*length(hist_PD),1,'first'));
 end
 
-hist(acos(dispersion)*180/pi,50);
+dispersion_degrees = acos(dispersion)*180/pi;
+hist(dispersion_degrees,50);
 
 % for i=1:size(firing_rate_matrix,2)
 %     [PD_mu2(i) PD_kappa(i)] = von_mises_fit(PD_boot(i,:));
 % end
 % figure; plot(theta,feval(y,theta)); hold on; plot(bump_dirs(:,2),firing_rate_matrix(:,1),'.r')
-
+%%
+for i=1:length(dispersion_degrees)
+    clf;
+    y = fit(bump_dirs(:,2),firing_rate_matrix(:,i),f_cosine); 
+    plot(bump_dirs(:,2),firing_rate_matrix(:,i),'.'); 
+    hold on; 
+    plot(sort(bump_dirs(:,2)),feval(y,sort(bump_dirs(:,2)))); 
+    plot([PD_mu(i)-dispersion(i) PD_mu(i)-dispersion(i)],[0 30]);
+    plot([PD_mu(i)+dispersion(i) PD_mu(i)+dispersion
+        (i)],[0 30]);
+    pause
+end
+%%
 binned_fr_matrix = zeros(no_ranges,length(actual_units));
 binned_fr_matrix_std = zeros(no_ranges,length(actual_units));
 for i = 1:no_ranges

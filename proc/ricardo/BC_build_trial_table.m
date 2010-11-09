@@ -66,7 +66,12 @@ trial_table = trial_table(trial_table(:,3) == hex2dec('20')|trial_table(:,3) == 
  
 % replace the trial start time with the go cue start time and add databurst
 % info
-go_times = bdf.words(bdf.words(:,2) == hex2dec('31'), 1);
+% go_times = bdf.words(bdf.words(:,2) == hex2dec('31'), 1);
+% go_times = bdf.words(bdf.words(:,2) == hex2dec('31'), 1);
+% go_times = trial_table(:,1);  %%% FIX!!!
+go_times = bdf.words(bitand(bdf.words(:,2),hex2dec('60'))==hex2dec('60') |...
+    bitand(bdf.words(:,2),hex2dec('50'))==hex2dec('50'),1);
+go_times = go_times(1:length(trial_table));
 databurst_times = cell2mat(bdf.databursts(:,1));
 
 if (databurst_version == 0)

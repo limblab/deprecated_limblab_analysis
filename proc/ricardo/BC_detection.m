@@ -11,6 +11,8 @@ cd(curr_dir)
 
 resultpath = 'D:\Ricardo\Miller Lab\Bump choice results\Detection results\';
 [datapath filelist] = BC_detection_experiment_list();
+tpr = zeros(1,length(filelist));
+fpr = zeros(1,length(filelist));
 
 for file_no = 1:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
@@ -69,15 +71,19 @@ for file_no = 1:length(filelist)
         ylim([0 1])
         ylabel('Percent correct')
         xlabel('Trial number (moving average)')
+        title(filelist(file_no).name)
         legend off
         
         stim_ids = unique(trial_table(:,8));
+        stim_ids = stim_ids(stim_ids>=0);
         response_table = zeros(length(stim_ids),2);
         for i=1:length(stim_ids)
             response_table(i,1) = sum(trial_table(:,8)==stim_ids(i) & trial_table(:,3)==32);
             response_table(i,2) = sum(trial_table(:,8)==stim_ids(i) & trial_table(:,3)==34);
         end
         response_table
+        tpr(file_no) = response_table(1,1)/(response_table(1,1)+response_table(2,2));
+        fpr(file_no) = response_table(1,2)/(response_table(1,2)+response_table(2,1));
         first_hundred(file_no) = sum(correct(1:100));
         last_hundred(file_no) = sum(correct(end-99:end));
 %         fit_slope = zeros(1,boot_iter);
@@ -108,5 +114,11 @@ for file_no = 1:length(filelist)
         I = getframe(figure_behavior);
         imwrite(I.cdata, [resultpath filename '.png']);
 %     end
-
 end
+figure; 
+plot(fpr,tpr,'-')
+hold on
+plot([0 1],[0 1],'--b')
+xlim([0 1])
+ylim([0 1])
+axis square
