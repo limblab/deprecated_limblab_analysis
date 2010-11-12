@@ -210,3 +210,25 @@ filelist(19).period = [3.3 3.3 3.3 3.3 0];
 filelist(19).pulses = [30 30 30 30 0];
 filelist(19).delay = [1 1.5 2 2.5 0];
 filelist(19).date = '2010-11-08';
+
+filelist(20).name = 'Pedro_BC_detection_017_spl_s001';  
+filelist(20).pd = [3.142 3.142 3.142 3.142 0];
+filelist(20).codes = [0 0 0 0 1];
+filelist(20).electrodes = [89 91 93 95 0];
+filelist(20).pulsewidth = [200 200 200 200 0];
+filelist(20).current = [30 30 30 30 0];
+filelist(20).period = [3.3 3.3 3.3 3.3 0];
+filelist(20).pulses = [30 30 30 30 0];
+filelist(20).delay = [1 1.5 2 2.5 0];
+filelist(20).date = '2010-11-09';
+
+filelist(21).name = 'Pedro_BC_detection_017_spl_s002';  
+filelist(21).pd = [3.142 3.142 3.142 3.142 0];
+filelist(21).codes = [0 0 0 0 1];
+filelist(21).electrodes = [89 91 93 95 0];
+filelist(21).pulsewidth = [200 200 200 200 0];
+filelist(21).current = [30 30 30 30 0];
+filelist(21).period = [3.3 3.3 3.3 3.3 0];
+filelist(21).pulses = [30 30 30 30 0];
+filelist(21).delay = [1 1.5 2 2.5 0];
+filelist(21).date = '2010-11-09';
