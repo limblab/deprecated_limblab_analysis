@@ -35,6 +35,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
     wrist_flexion_task =0;
     ball_drop_task = 0;
     multi_gadget_task=0;
+    random_walk_task=0;
     % figure out which behavior is running if words are available
     if (isfield(out_struct.raw,'words') && ~isempty(out_struct.raw.words))
         
@@ -54,6 +55,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 robot_task = 1;
                 if start_trial_code == hex2dec('11')
                     center_out_task = 1;
+                elseif start_trial_code == hex2dec('12')
+                    random_walk_task = 1;
                 end
             elseif start_trial_code == hex2dec('1B')
                 robot_task = 1;
@@ -347,21 +350,21 @@ end             %ending "if opts.eye"
 
 
 %% Extract target info from databursts
-     if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) && (wrist_flexion_task || multi_gadget_task || center_out_task) )
+     if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) )
 
         if opts.verbose
             disp('Aggregating data... extracting target information');
         end
         
         num_trials = size(out_struct.databursts,1);
+        num_burst = 0;
+        burst_size = out_struct.databursts{1,2}(1);
                 
-        out_struct.targets.corners = zeros(num_trials,5,'single');
-        
-        if wrist_flexion_task
-            burst_size = 34; %newest version as of 08-2010
+        if (wrist_flexion_task ||multi_gadget_task || center_out_task)
+%               burst_size = 34; %newest version as of 08-2010
 %               burst_size = 22; %for older files
-              num_burst = 0;
-            out_struct.targets.rotation = zeros(num_trials,2,'single');            
+            out_struct.targets.corners = zeros(num_trials,5);
+            out_struct.targets.rotation = zeros(num_trials,2);            
             for i=1:num_trials
                 if size(out_struct.databursts{i,2})~=burst_size
                     warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
@@ -369,30 +372,28 @@ end             %ending "if opts.eye"
                     num_burst = num_burst+1;
                     out_struct.targets.corners(num_burst,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
                     out_struct.targets.corners(num_burst,1)=out_struct.databursts{i,1};
-                    out_struct.targets.rotation(num_burst,1)=out_struct.databursts{i,1};
-                    out_struct.targets.rotation(num_burst,2)=bytes2float(out_struct.databursts{i,2}(burst_size-19:burst_size-16));
+                    if wrist_flexion_task
+                        out_struct.targets.rotation(num_burst,1)=out_struct.databursts{i,1};
+                        out_struct.targets.rotation(num_burst,2)=bytes2float(out_struct.databursts{i,2}(burst_size-19:burst_size-16));
+                    end
                 end
             end
             out_struct.targets.rotation = out_struct.targets.rotation(1:num_burst,:);
             out_struct.targets.corners  = out_struct.targets.corners(1:num_burst,:);
-        elseif center_out_task
-            burst_size = 30;
+        elseif random_walk_task
+            num_targets = (burst_size - 18)/8;
+            out_struct.targets.centers = zeros(num_trials,2+2*num_targets);
             for i=1:num_trials
                 if size(out_struct.databursts{i,2})~=burst_size
                     warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
                 else
-                    out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(burst_size-15:end));
-                    out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
+                    num_burst = num_burst+1;
+                    out_struct.targets.centers(num_burst,1)=out_struct.databursts{i,1};
+                    out_struct.targets.centers(num_burst,2)    =bytes2float(out_struct.databursts{i,2}(15:18));
+                    out_struct.targets.centers(num_burst,3:end)=bytes2float(out_struct.databursts{i,2}(19:end));
                 end
             end
-        else
-            burst_size = 18; % multi-gadget
-            for i=1:num_trials
-                if ~isnan(out_struct.databursts{i,2})
-                out_struct.targets.corners(i,2:5)=bytes2float(out_struct.databursts{i,2}(3:18));
-                out_struct.targets.corners(i,1)=out_struct.databursts{i,1};
-                end
-            end
+            out_struct.targets.centers = out_struct.targets.centers(1:num_burst,:);
         end
      end
     
