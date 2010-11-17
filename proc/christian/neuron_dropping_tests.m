@@ -1,5 +1,5 @@
 %% Predict data using randomized unit dropping
-function [res]=neuron_dropping_tests(filter, NeuronIDs, pctdrop, pctperm)
+function [res]=neuron_dropping_tests(filter, NeuronIDs, pctdrop, pctperm, rand)
 
 datapath='C:\Documents and Settings\Christian\Desktop\Adaptation2_new_sort\BinnedData\';
 
@@ -14,7 +14,6 @@ TestFileNames = {[datapath 'Strick_mid_7-9-10_001.mat'] ...
 
 %                 [datapath 'Strick_mid_7-12-10_001.mat'] ...  
 NumTestFiles = length(TestFileNames);
-
 
 % pctdrop= [0,0,0,0,0,0,0,0];
 % pctperm= [0,0,0,0,0,0,0,0];
@@ -35,12 +34,20 @@ H = cell(NumTestFiles+1,NumLoops);
 %% L:oo:ps
 for k = 1:NumLoops
        
-    filter_adapt = filter;
-    %start with a null filter for adaptation
-    filter_adapt.H = zeros(size(filter_adapt.H));
+    if rand
+        %start with a random filter for adaptation
+        filter_rand  = randomize_weights(filter);
+        filter_adapt = filter_rand;
+    else
+        %start with a null filter for adaptation
+        filter_rand  = filter;
+        filter_adapt = filter_rand; 
+        filter_adapt.H = zeros(size(filter_adapt.H));
+    end
+    
     H{1,k}=filter_adapt.H;
     dropped_units = [];
-    permuted_units = [];
+    permuted_units = [];    
     
     for i = 1:NumTestFiles
         
@@ -103,7 +110,7 @@ for k = 1:NumLoops
         %Fixed Model, no drop
         [R2ff{i,k}, nfold] = mfxval_fixed_model(filter,TestData,foldlength);
         
-        %Fixed Model, with neuron loss or changed
+        %Fixed Model, with neuron loss or changed or random filter
         [R2f{i,k}, nfold] = mfxval_fixed_model(filter,TestData_d,foldlength);
         
         %Adaptive algorithm with neuron loss
