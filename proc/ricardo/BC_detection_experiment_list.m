@@ -287,3 +287,14 @@ filelist(26).period = [3.3 3.3 3.3 3.3 0];
 filelist(26).pulses = [30 30 30 30 0];
 filelist(26).delay = [1 1.5 2 2.5 0];
 filelist(26).date = '2010-11-15';
+
+filelist(27).name = 'Pedro_BC_detection_021';  
+filelist(27).pd = [3.142 3.142 3.142 3.142 0];
+filelist(27).codes = [0 0 0 0 1];
+filelist(27).electrodes = [89 91 93 95 0];
+filelist(27).pulsewidth = [200 200 200 200 0];
+filelist(27).current = [30 30 30 30 0];
+filelist(27).period = [3.3 3.3 3.3 3.3 0];
+filelist(27).pulses = [30 30 30 30 0];
+filelist(27).delay = [1 1.5 2 2.5 0];
+filelist(27).date = '2010-11-16';

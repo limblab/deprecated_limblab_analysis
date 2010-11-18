@@ -14,7 +14,7 @@ resultpath = 'D:\Ricardo\Miller Lab\Bump choice results\Detection results\';
 tpr = zeros(1,length(filelist));
 fpr = zeros(1,length(filelist));
 
-for file_no = 26:length(filelist)
+for file_no = 1:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
     stim_pds = filelist(file_no).pd;
@@ -116,9 +116,11 @@ for file_no = 26:length(filelist)
 %     end
 end
 figure; 
-plot(fpr,tpr,'-')
+plot(fpr,tpr,'.r')
 hold on
 plot([0 1],[0 1],'--b')
 xlim([0 1])
 ylim([0 1])
 axis square
+xlabel('FPR')
+ylabel('TPR')
