@@ -35,6 +35,7 @@ function units = get_units_plx(filename, opts)
         %end
         if opts.verbose
             disp(sprintf('Spike channel: %d', chan));
+        end
         for unit = 1:max_num_units-1
             % only create a unit if it has spikes
             if (tscounts(unit+1, chan+1) > 0)
