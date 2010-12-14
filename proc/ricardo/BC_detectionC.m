@@ -15,7 +15,7 @@ abort_code = 33;
 fail_code = 34;
 incomplete_code = 35;
 
-for file_no = 1:length(filelist)
+for file_no = 5:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
     stim_pds = filelist(file_no).pd;
@@ -144,10 +144,14 @@ for file_no = 1:length(filelist)
             rewards_bump(i) = sum(trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(i),table_columns.result)==reward_code);
             incomplete_bump(i) = sum(trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(i),table_columns.result)==incomplete_code);
         end
-        rewards_incomplete_bump = rewards_bump./( rewards_bump+incomplete_bump);
-        
+        rewards_incomplete_bump = rewards_bump./( rewards_bump+incomplete_bump);        
         figure; 
         plot(bump_magnitudes,rewards_incomplete_bump);
         legend('Rewards/(Rewards+Incomplete)','Location','Southeast');
         xlabel('Bump magnitude [N]')
+        
+        % figure 0N bump performance over time
+        zero_bump_subtable = trial_table(trial_table(:,table_columns.bump_magnitude)==0,:);
+        figure; 
+        plot(zero_bump_subtable(:,table_columns.start),zero_bump_subtable(:,table_columns.result)==reward_code,'.')
 end

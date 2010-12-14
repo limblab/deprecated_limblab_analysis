@@ -37,3 +37,27 @@ filelist(3).pulses = [30 30 30 30];
 filelist(3).delay = [31 31.5 32 32.5];
 filelist(3).date = '2010-12-08';
 filelist(3).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw';
+
+filelist(4).name = 'Pedro_BC_detectionC_004';  
+filelist(4).pd = [3.142 3.142 3.142 3.142];
+filelist(4).codes = [0 0 0 0];
+filelist(4).electrodes = [57 59 61 63];
+filelist(4).pulsewidth = [200 200 200 200];
+filelist(4).current = [40 40 40 40];
+filelist(4).period = [3.3 3.3 3.3 3.3];
+filelist(4).pulses = [30 30 30 30];
+filelist(4).delay = [31 31.5 32 32.5];
+filelist(4).date = '2010-12-13';
+filelist(4).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw';
+
+filelist(5).name = 'Pedro_BC_detectionC_005';  
+filelist(5).pd = [3.142 3.142 3.142 3.142];
+filelist(5).codes = [0 0 0 0];
+filelist(5).electrodes = [57 59 61 63];
+filelist(5).pulsewidth = [200 200 200 200];
+filelist(5).current = [40 40 40 40];
+filelist(5).period = [3.3 3.3 3.3 3.3];
+filelist(5).pulses = [30 30 30 30];
+filelist(5).delay = [31 31.5 32 32.5];
+filelist(5).date = '2010-12-14';
+filelist(5).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw';
