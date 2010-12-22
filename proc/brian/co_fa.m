@@ -18,9 +18,10 @@ for bumpdir = 0:3
 end
 title('Bump');
 
+
 % Un-bumped Reaches
 reachtrials = tt( tt(:,3) == -1 & tt(:,10) == double('R'), :);
-[lambda, proj] = fa_single(bdf, reachtrials(:,8), 0.000, 0.150);
+[lambda, proj] = fa_single(bdf, reachtrials(:,8), 0.000, 0.400);
 
 figure; hold on;
 for reachdir = 0:3
@@ -43,10 +44,10 @@ title('Target');
 % title('Combined 1');
 
 
-combtrials = [bumptrials(:,4); reachtrials(:,8)];
+combtrials = [bumptrials(:,4); reachtrials(:,8)+.050];
 trialtype = [bumptrials(:,2)+1; reachtrials(:,5)+5];
 
-[lambda, proj] = fa_single(bdf, combtrials, 0.000, 0.200);
+[lambda, proj] = fa_single(bdf, combtrials, 0.000, 0.150);
 
 X = []; y = [];
 

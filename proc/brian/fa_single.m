@@ -11,10 +11,11 @@ for cell=1:length(ul)
     end
 end
 
-lambda = factoran(training_set+.05*randn(size(training_set)), 3);
-%warning('Kludge Mode');
-%q = [training_set + .01*randn(size(training_set)); training_set + .01*randn(size(training_set))];
-%lambda = factoran(q,3);
+%lambda = factoran(training_set+.05*randn(size(training_set)), 3);
+warning('Kludge Mode');
+q = [training_set + .01*randn(size(training_set)); training_set + .01*randn(size(training_set))];
+lambda = factoran(q,3);
+
 proj = training_set * lambda;
 
 
