@@ -88,7 +88,7 @@ if isfield(datastruct,'words')
     if ~isempty(start_trial_words)
             start_trial_code = start_trial_words(1);
             if ~isempty(find(start_trial_words ~= start_trial_code, 1))
-                close(h);
+                close(UI);
                 error('plotBDF:inconsistentBehaviors','Not all trials are the same type');
             end
 
@@ -99,7 +99,7 @@ if isfield(datastruct,'words')
             elseif start_trial_code == hex2dec('16')
                 multi_gadget_task = 1;
             else
-                close(h);
+                close(UI);
                 error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
             end
 
