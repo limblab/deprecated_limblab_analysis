@@ -309,11 +309,15 @@ function BMIDataAnalyzer()
         
         [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh] = BuildModelGUI(binsize);
         [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
-        filt_struct.FromData = Bin_FileName;
-        clear binnedData;
-        
         disp('Done.');
         
+        if isempty(filt_struct)
+            disp('Model Building Failed');
+            return;
+        end
+        
+        filt_struct.FromData = Bin_FileName;
+        clear binnedData;       
         disp('Saving prediction model...');
         Filt_FileName = [Bin_FileName(1:end-4) '_filter.mat'];
         [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');

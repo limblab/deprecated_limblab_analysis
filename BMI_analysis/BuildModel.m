@@ -85,7 +85,9 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     if isempty(desiredInputs)
         disp('Incompatible Data; Model Building Aborted');
         filter = [];
-        varargout = {};
+        if nargout > 1
+            varargout(1) = {[]};
+        end
         return;
     end
 
