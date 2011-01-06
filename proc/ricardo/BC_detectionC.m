@@ -15,7 +15,7 @@ abort_code = 33;
 fail_code = 34;
 incomplete_code = 35;
 
-for file_no = 5:length(filelist)
+for file_no = 14:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
     stim_pds = filelist(file_no).pd;
@@ -27,6 +27,7 @@ for file_no = 5:length(filelist)
                     pause(30) 
                     why
                 end
+                disp('Done')
                 copyfile([serverdatapath '\' filename '.plx'],datapath);
             end
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
@@ -154,4 +155,6 @@ for file_no = 5:length(filelist)
         zero_bump_subtable = trial_table(trial_table(:,table_columns.bump_magnitude)==0,:);
         figure; 
         plot(zero_bump_subtable(:,table_columns.start),zero_bump_subtable(:,table_columns.result)==reward_code,'.')
+        zero_bump_reward_ratio(file_no) = sum(zero_bump_subtable(:,table_columns.result)==reward_code)/...
+            length(zero_bump_subtable(:,table_columns.result)==reward_code);
 end

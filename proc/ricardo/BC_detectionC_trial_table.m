@@ -106,5 +106,5 @@ for i=1:length(trial_table)
 end
 
 trial_table(:,table_columns.cursor_on_ct) = cursor_on_ct;
-
+trial_table = trial_table(trial_table(:,table_columns.bump_magnitude)>=0,:);
 % save(filename,'trial_table','-append')
