@@ -294,20 +294,35 @@ if ~isfield(datastruct,'targets')
     targets.corners = [];
     targets.rotation= [];
 else
-     targets.corners = datastruct.targets.corners( datastruct.targets.corners(:,1)>=timeframe(1) & ...
-                                                    datastruct.targets.corners(:,1)<=timeframe(end),: );                                            
-
+     if isfield(datastruct.targets, 'corners')
+         targets.corners = datastruct.targets.corners( datastruct.targets.corners(:,1)>=timeframe(1) & ...
+                                                       datastruct.targets.corners(:,1)<=timeframe(end),: );                                            
+     end
+     
+     if isfield(datastruct.targets, 'centers')
+         targets.centers = datastruct.targets.center( datastruct.targets.centers(:,1)>=timeframe(1) & ...
+                                                       datastruct.targets.centers(:,1)<=timeframe(end),: );                                            
+     end
+                                                   
      if isfield(datastruct.targets, 'rotation')                                            
          targets.rotation = datastruct.targets.rotation( datastruct.targets.rotation(:,1)>=timeframe(1) & ...
                                                         datastruct.targets.rotation(:,1)<=timeframe(end),: );
      end
 
-    if NormData
-        %Normalize Cursor and Target position with same x and y ratios
+    %Normalize Cursor and Target position with same x and y ratios     
+    if NormData && isfield(datastruct.targets, 'corners')
         %target x corners
         targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
         %target y corners
         targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
+    end
+    
+    if NormData && isfield(datastruct.targets, 'corners')
+        numtgt = (size(targets.corners,2)-1)/2;
+        %target x centers
+        targets.centers(:,2:2:(2+2*(numtgt-1))) = targets.centers(:,2:2:(2+2*(numtgt-1)))*NormRatios(1);
+        %target y centers
+        targets.centers(:,3:2:(3+2*(numtgt-1))) = targets.centers(:,3:2:(3+2*(numtgt-1)))*NormRatios(1);
     end
 end
 %% Outputs
