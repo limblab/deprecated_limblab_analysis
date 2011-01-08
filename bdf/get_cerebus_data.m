@@ -54,8 +54,13 @@ function out_struct = get_cerebus_data(varargin)
     % TODO: MAKE PATH DYNAMIC : DONE
     [nsresult] = ns_SetLibrary(which('nsNEVLibrary.dll'));
     if (nsresult ~= 0)
-        close(h);
-        error('Error opening library!');
+        %try again with 64 bit library...
+        [nsresult] = ns_SetLibrary(which('nsNEVLibrary64.dll'));
+        disp('Retrying with 64 bit version...');
+        if (nsresult ~=0)
+            close(h);
+            error('Error opening library!');
+        end
     end
 
     % Load the file
