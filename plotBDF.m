@@ -4,7 +4,6 @@ function plotBDF(datastructname)
 
 %% Loading the Data Structure
     
-    addpath ./BMI_analysis
     datastruct = LoadDataStruct(datastructname,'bdf');
 
     if isempty(datastruct)
