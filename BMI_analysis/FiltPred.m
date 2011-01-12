@@ -117,37 +117,37 @@ function PredictedData = FiltPred(PredictedData,spikeDataNew,binsize)
 %     clear PredictedData_S;
 % end
 %% 3- Varying a LP filter's time constant
-%if FiltPred
-    
-    RC_max = 0.2; % 200ms
-    
-    %Smooth Firing Rate:
-    RC = 0.1; %100 ms
-    AveFR = SmoothLP(mean(spikeDataNew,2), binsize, RC);
- 
-    %abs of first derivative of AveFR
-    FR_mod = [ 0; abs(diff(AveFR)) ]; %abs of first derivative
-    FR_mod = 1-(FR_mod/max(FR_mod)); %normalize & inverse
-    
-    %weight exponentially from 0 to RC_max with a sigmoid:
-    Top = RC_max;Bottom = 0;V50 = 0.6;Slope = 0.1;
-    RC = Bottom + (Top-Bottom)./(1+exp((V50-FR_mod)/Slope));
-
-    %then make sure RC do not increase by more than binsize from one
-    %bin to the next (it can and should decrease fast when appropriate though)
-    RC_offset = [NaN; RC(1:end-1)];
-    steep_rises = RC-RC_offset > binsize;
-    max_inc = binsize-0.0001;
-    while any(steep_rises)
-        RC(steep_rises) = RC(find(steep_rises)-1) + max_inc;
-        RC_offset = [NaN; RC(1:end-1)];
-        steep_rises = RC-RC_offset > binsize;
-    end
-
-    %Smooth Predictions:
-    dt = binsize;
-    for i=2:size(PredictedData,1)
-        a = dt/(RC(i)+dt);
-        PredictedData(i,:)= PredictedData(i-1,:) + a*( PredictedData(i,:)-PredictedData(i-1,:) );
-    end
-end
+% %if FiltPred
+%     
+%     RC_max = 0.2; % 200ms
+%     
+%     %Smooth Firing Rate:
+%     RC = 0.1; %100 ms
+%     AveFR = SmoothLP(mean(spikeDataNew,2), binsize, RC);
+%  
+%     %abs of first derivative of AveFR
+%     FR_mod = [ 0; abs(diff(AveFR)) ]; %abs of first derivative
+%     FR_mod = 1-(FR_mod/max(FR_mod)); %normalize & inverse
+%     
+%     %weight exponentially from 0 to RC_max with a sigmoid:
+%     Top = RC_max;Bottom = 0;V50 = 0.6;Slope = 0.1;
+%     RC = Bottom + (Top-Bottom)./(1+exp((V50-FR_mod)/Slope));
+% 
+%     %then make sure RC do not increase by more than binsize from one
+%     %bin to the next (it can and should decrease fast when appropriate though)
+%     RC_offset = [NaN; RC(1:end-1)];
+%     steep_rises = RC-RC_offset > binsize;
+%     max_inc = binsize-0.0001;
+%     while any(steep_rises)
+%         RC(steep_rises) = RC(find(steep_rises)-1) + max_inc;
+%         RC_offset = [NaN; RC(1:end-1)];
+%         steep_rises = RC-RC_offset > binsize;
+%     end
+% 
+%     %Smooth Predictions:
+%     dt = binsize;
+%     for i=2:size(PredictedData,1)
+%         a = dt/(RC(i)+dt);
+%         PredictedData(i,:)= PredictedData(i-1,:) + a*( PredictedData(i,:)-PredictedData(i-1,:) );
+%     end
+% end

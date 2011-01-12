@@ -6,7 +6,7 @@ else
     neuronIDs = [];
 end
 
-if struct1.timeframe(2)-struct1.timeframe(1)~=struct2.timeframe(2)-struct2.timeframe(1)
+if round(1000*(struct1.timeframe(2)-struct1.timeframe(1)))~=round(1000*(struct2.timeframe(2)-struct2.timeframe(1)));
     disp('incompatible sampling rate - data concatenation aborted');
     binnedData = struct1;
     return;
@@ -15,7 +15,7 @@ else
     
     binsize = round(1000*(struct1.timeframe(2)-struct1.timeframe(1)))/1000;
     t_offset = struct1.timeframe(end)+binsize;
-    tf2 = struct2.timeframe+t_offset;
+    tf2 = struct2.timeframe-struct2.timeframe(1)+t_offset;
   %     tf2 = (0:size(struct2.timeframe,1)-1)*(binsize) + t_offset;
     binnedData.timeframe = [struct1.timeframe; tf2]; 
     clear tf2;

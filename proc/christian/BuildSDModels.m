@@ -1,19 +1,21 @@
-function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, varargin)
-%    [filter, varargout] = BuildModel(binnedData, dataPath, UseAllInputsOption, xvalidate_flag)
+function [filter,varargout] = BuildSDModels(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, varargin)
+%       [filter,varargout] = BuildModel(binnedData, dataPath, UseAllInputsOption, xvalidate_flag)
 %
-%       filter: structure of filter data (neuronIDs,H,P,emgguide,fillen,binsize)
-%       varargout = {PredData}
-%           [PredData]      : structure with EMG prediction data (fit)
-%       binnedData          : data structure to build model from
-%       dataPath            : string of the path of the data folder
-%       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
-%       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh,numPCs}
-%                           :   flags to include EMG, Force, Cursor Position
-%                               and Thresholding in the prediction model
-%                               (0=no,1=yes), if numPCs is present, will
-%                               use numPCs components as inputs instead of
-%                               spikeratedata
+%       filter                : cell array containing computed models, one for each state in (States)
+%                               (neuronIDs,H,P,emgguide,fillen,binsize,etc.)
+%       varargout ={PredData}
+% Input arguments:
+%       1.binnedData          : data structure to build model from
+%       2.fillen              : Filter length, in seconds
+%       3.dataPath            : string of the path of the data folder
+%       4.UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
+%       5.PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
+%       varargin            : {6.PredEMG, 7.PredForce,8.PredCursPos,9.PredVeloc,10.Use_States,11.numPCs}
+%                              flags to include EMG, Force, Cursor Position
+%                              and Thresholding in the prediction model
+%                              (0=no,1=yes), if numPCs is present, will
+%                              use numPCs components as inputs instead of
+%                              spikeratedata
 %
    
     if ~isstruct(binnedData)
@@ -32,9 +34,9 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     PredForce    = 0;
     PredCursPos  = 0;
     PredVeloc    = 0;
-    Use_Thresh   = 0;
+    Use_States   = 0;
     Use_PrinComp = 0;
-    
+
     
     %overwrite if specified in arguments
     if nargin > 5
@@ -46,8 +48,11 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 if nargin > 8
                     PredVeloc = varargin{4};
                     if nargin > 9
-                        Use_PrinComp = true;
-                        numPCs = varargin{5};
+                        Use_States = varargin{5};
+                        if nargin > 10
+                            Use_PrinComp = true;
+                            numPCs = varargin{6};
+                        end
                     end
                 end
             end
@@ -94,24 +99,24 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     end
 
 
-%% Calculate the filter
+%% Setup Inputs/Outputs
 
     numlags= round(fillen/binsize); %%%Designate the length of the filters/number of time lags
         %% round helps getting rid of floating point error but care should
         %% be taken in making sure fillen is a multiple of binsize.
     numsides=1;     %%%For a one-sided or causal filter
-
-    Inputs = binnedData.spikeratedata(:,desiredInputs);
+    
+    % Duplicate and shift neural channels so we don't have to look in the past with the linear filter.
+    DS_spikes = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags);
+    numlags = 1;
     
     %Uncomment next line to use EMG as inputs for predictions
 %     Inputs = binnedData.emgdatabin;
 
-    %Uncomment next block to use PCs as inputs for predictions
-    if Use_PrinComp
-
-        [PCoeffs,Inputs] = princomp(zscore(Inputs));
-        Inputs = Inputs(:,1:numPCs);
-    end
+%     if Use_PrinComp
+%         [PCoeffs,Inputs] = princomp(zscore(Inputs));
+%         Inputs = Inputs(:,1:numPCs);
+%     end
         
     Outputs = [];
     OutNames = [];
@@ -131,22 +136,22 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     if PredVeloc
         Outputs = [Outputs binnedData.velocbin];
         OutNames = [OutNames;  binnedData.veloclabels];
-    end 
+    end    
+    
+numStates = size(States,2);
+H      = [];
+Ins    = [];
+Outs   = [];
+Models = cell(1,numStates);
+    
+%% Calculate a model for each state    
+    H = Ins\Outs;
+    
+%% Add non-linearity if applicable    
         
-    %%%The following calculates the linear filters (H) that relate the inputs and outputs
-%     Inputs = DuplicateAndShift(Inputs,numlags);
-%     H = Inputs\Outputs; 
-   [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
-%     H = MIMOCE1(Inputs,Outputs,numlags);
-    
-%% Then, add non-linearity if applicable
+    PredictedData = Ins*H;
+    ActualDataNew = Outs;
 
-    fs=1; numsides=1;
-    
-    [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
-%     PredictedData = Inputs*H;
-%     ActualDataNew = Outputs;
-    
     P=[];    
     T=[];
     patch = [];
@@ -190,24 +195,24 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
             PredictedData(:,z) = polyval(P(z,:),PredictedData(:,z));
         end
     end
-  
 %% Outputs
-
     filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
 
-    if Use_PrinComp
-        filter.PC = PCoeffs(:,1:numPCs);
-    end
-    
-    if nargout > 1
-         PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
-%          PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
-        varargout(1) = {PredData};
-    end
-    
-    
+%     if Use_PrinComp
+%         filter.PC = PCoeffs(:,1:numPCs);
+%     end
+
+%         if nargout > 1
+%             PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
+%             varargout(1) = {PredData};
+%         end
+
+    Models{state} = filter;
+
 end
 
+end
+%% Thresholding function:
 function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
 
     thresholding = 1;

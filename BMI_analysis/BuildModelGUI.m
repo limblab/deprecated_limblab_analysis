@@ -23,7 +23,7 @@ function varargout = BuildModelGUI(varargin)
 
 % Edit the above text to modify the response to help BuildModelGUI
 
-% Last Modified by GUIDE v2.5 15-Sep-2009 15:58:51
+% Last Modified by GUIDE v2.5 11-Jan-2011 21:53:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -82,13 +82,14 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
     Pred_EMG = get(handles.EMG_cbx,'Value');
     Pred_Force = get(handles.Force_cbx,'Value');
     Pred_CursPos = get(handles.CursPos_cbx,'Value');
-    Use_Thresh = get(handles.Thresh_cbx,'Value');
+    Pred_Veloc = get(handles.Veloc_cbx,'Value');
+    Use_State = get(handles.State_cbx,'Value');
     
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Use_Thresh};
+     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -213,13 +214,21 @@ function CursPos_cbx_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of CursPos_cbx
 
-
-% --- Executes on button press in Thresh_cbx.
-function Thresh_cbx_Callback(hObject, eventdata, handles)
-% hObject    handle to Thresh_cbx (see GCBO)
+% --- Executes on button press in Veloc_cbx.
+function Veloc_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Veloc_cbx (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of Thresh_cbx
+% Hint: get(hObject,'Value') returns toggle state of Veloc_cbx
+
+
+% --- Executes on button press in State_cbx.
+function State_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to State_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of State_cbx
 
 

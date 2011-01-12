@@ -2,8 +2,13 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
 
     if nargin >2
         plotflag = varargin{1};
+        dispflag = 0;
+        if nargin>3
+            dispflag = varargin{2};
+        end
     else
         plotflag = 0;
+        dispflag = 0;
     end
     
 
@@ -43,12 +48,14 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
     varargout = {R2};
 
     %Display R2
-%    disp('R2 = ');
-%    for z=1:numPredSignals
-%        disp(sprintf('%s\t%1.4f',PredData.outnames(z,:),R2(z,1)));
-%    end
-%    aveR2 = mean(R2);
-%    disp(sprintf('Average:\t%1.4f',aveR2));
+    if dispflag
+        disp('R2 = ');
+        for z=1:numPredSignals
+           disp(sprintf('%s\t%1.4f',PredData.outnames(z,:),R2(z,1)));
+        end
+        aveR2 = mean(R2);
+        disp(sprintf('Average:\t%1.4f',aveR2));
+    end
         
     if plotflag               
         for i = 1:numPredSignals

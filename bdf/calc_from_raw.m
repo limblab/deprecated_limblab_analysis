@@ -388,7 +388,7 @@ end             %ending "if opts.eye"
                     warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
                 else
                     num_burst = num_burst+1;
-                    out_struct.targets.centers(num_burst,1)=out_struct.databursts{i,1};
+                    out_struct.targets.centers(num_burst,1)    =out_struct.databursts{i,1};
                     out_struct.targets.centers(num_burst,2)    =bytes2float(out_struct.databursts{i,2}(15:18));
                     out_struct.targets.centers(num_burst,3:end)=bytes2float(out_struct.databursts{i,2}(19:end));
                 end

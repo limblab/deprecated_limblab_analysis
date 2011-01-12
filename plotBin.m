@@ -16,8 +16,8 @@ function plotBin(datastructname)
         disp('Please provide the name of a preloaded structure');
         disp('OR the name of a .mat file');
         disp('usage:');
-        disp('plotForceEMG(''mystruct'')            % plot data from ''mystruct'' in the ''base'' workspace');
-        disp('plotForceEMG(''myfile'')              % plot data from datastruct in ''myfile''');
+        disp('plotBin''mystruct'')            % plot data from ''mystruct'' in the ''base'' workspace');
+        disp('plotBin(''myfile'')              % plot data from datastruct in ''myfile''');
         return
     end
     
@@ -26,10 +26,13 @@ function plotBin(datastructname)
     Force_to_plot = [];
     Words_to_plot = [];
     plot_Targets = 0;
-    KEvents_to_plot = [];
+    Pos_to_plot = [];
     LPfreq = 10.0;
     ploth1 = [];
     ploth2 = [];
+    ForceNames = [];
+    EMGNames   = [];
+    PosNames   = [];
     
 %% Creating UI
 
@@ -40,6 +43,7 @@ function plotBin(datastructname)
     EMGpanel = uipanel('Parent',UI,'Title','EMGs','Position',[.05 .15 .3 .8]);
     Forcepanel = uipanel('Parent',UI,'Title','Force','Position',[.35 .15 .3 .8]);
 %    KEvents_panel = uipanel('Parent',UI,'Title','Keyboard Events','Position',[.35 .15 .3 .4]);
+    Pospanel = uipanel('Parent',UI,'Title','Cursor Position','Position',[.35 .15 .3 .4]);
     Wordspanel = uipanel('Parent',UI,'Title','Words','Position',[.65 .15 .3 .8]);
     
 %% EMG Panel
@@ -69,22 +73,17 @@ end
 if ~isempty(datastruct.forcedatabin)
 
     ForceNames = datastruct.forcelabels;
-    numForces = size(ForceNames,1);
     
-    Focrce_cb = zeros(1,numForces);
-    
-    for i=1:numForces
-        ctrlBottom = .9-(i-1)*.8/numForces; %distribute chkboxes from top to middle of middle panel
-        position = [.1 ctrlBottom .9 .05];
-        Force_cb(i) = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(i,:),...
-                                 'Units','normalized','Position',position,'Callback',{@Force_chbx_Callback,i});
-    end
+    Force_x_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(1,:),...
+                                 'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Force_chbx_Callback,1});
+    Force_y_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(2,:),...
+                                 'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Force_chbx_Callback,2});
     
 end
 %% Words Panel
 if isfield(datastruct,'words')
-    
-    WordsValue = zeros(20,1);
+        
+    WordsValue = zeros(30,1);
     numWords = 0;
     WordsNames = {};
     for i = 1:size(datastruct.words,1)
@@ -111,6 +110,18 @@ if isfield(datastruct,'words')
                             'Callback',{@Words_chbx_Callback,i},'Enable',enable);
     end      
         
+end
+
+%% Position Panel
+if ~isempty(datastruct.cursorposbin)
+
+    PosNames = datastruct.cursorposlabels;
+    
+    Pos_x_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames(1,:),...
+                                 'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Pos_chbx_Callback,1});
+    Pos_y_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames(2,:),...
+                                 'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Pos_chbx_Callback,2});
+    
 end
 %% Keyboard Panel
 % if isfield(datastruct,'keyboard_events')
@@ -201,16 +212,30 @@ end
             Force_to_plot = nonzeros(Force_to_plot);
         end
     end       
-        
+
+    %Cursor Pos Checkboxes
+    function Pos_chbx_Callback(hObject,eventdata,index)
+        if (get(hObject,'Value') == get(hObject,'Max'))
+        % Checkbox is checked-take approriate action
+            Pos_to_plot(length(Pos_to_plot)+1)=index;
+            Pos_to_plot = sort(nonzeros(Pos_to_plot));
+        else
+        % Checkbox is unchecked-take approriate action
+            Pos_to_plot(Pos_to_plot==index)=0;
+            Pos_to_plot = nonzeros(Pos_to_plot);
+        end
+    end  
+
 %% Button Callback
     function Plot_Button_Callback(obj,event)
         legh = []; outh =[]; outm =[]; %handles holders
         scale = []; % to save x axis values when re-ploting
         
-        usr_plotWords = ~isempty(Words_to_plot);
-        usr_plotEMGs = ~isempty(EMGs_to_plot);
-        usr_plotForce= ~isempty(Force_to_plot);
-        usr_plotKEvents=~isempty(KEvents_to_plot);        
+        usr_plotWords  = ~isempty(Words_to_plot);
+        usr_plotEMGs   = ~isempty(EMGs_to_plot);
+        usr_plotForce  = ~isempty(Force_to_plot);
+%         usr_plotKEvents= ~isempty(KEvents_to_plot);  
+        usr_plotPos    = ~isempty(Pos_to_plot);
         
         if ishandle(ploth1) %overwrite on existing figure
             figure(ploth1);
@@ -222,11 +247,12 @@ end
             ploth1 = figure('Units','normalized','Position',[.125 0.3 .75 .5]);
         end
         
-        if (usr_plotEMGs && usr_plotForce) %plot EMG and Force on two different Y axis
+        if (usr_plotEMGs && (usr_plotForce || usr_plotPos)) %plot EMG and Force on two different Y axis
             hold off; axis auto;
-            [AX,H1,H2]=plotyy(datastruct.timeframe,datastruct.emgdatabin(:,EMGs_to_plot),datastruct.timeframe,datastruct.forcedatabin(:,Force_to_plot));
+            [AX,H1,H2]=plotyy(datastruct.timeframe, datastruct.emgdatabin(:,EMGs_to_plot),...
+                              datastruct.timeframe, [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)] );
             [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot,:),'Location','NorthWest');
-            [leghf,objhf,outhf,outmf]=legend(AX(2),ForceNames(Force_to_plot,:),'Location','NorthEast');
+            [leghf,objhf,outhf,outmf]=legend(AX(2),[ForceNames(Force_to_plot,:); PosNames(Pos_to_plot)],'Location','NorthEast');
             legh = [leghe; leghf];
             outm = outme; outh = outhe;
             emg_handles = H1;
@@ -237,10 +263,10 @@ end
             emg_handles = plot(datastruct.timeframe,datastruct.emgdatabin(:,EMGs_to_plot));
             [legh,objh,outh,outm]=legend(EMGnames(EMGs_to_plot,:),'Location','NorthWest');
             
-        elseif (usr_plotForce) %plot Force but no EMG
+        elseif (usr_plotForce || usr_plotPos) %plot Force but no EMG
             hold off; axis auto;            
-            force_handles = plot(datastruct.timeframe,datastruct.forcedatabin(:,Force_to_plot));
-            [legh,objh,outh,outm]=legend(force_handles, ForceNames(Force_to_plot,:),'Location','NorthEast');
+            force_handles = plot(datastruct.timeframe, [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)] );
+            [legh,objh,outh,outm]=legend(force_handles, [ForceNames(Force_to_plot,:);PosNames(Pos_to_plot)],'Location','NorthEast');
         end
        
  
@@ -250,7 +276,7 @@ end
             colors= { 'b:' 'g:' 'r:' 'c:' 'm:' 'k:' 'b--' 'g--' 'r--' 'c--' 'm--' 'k--' 'b-.' 'g-.' 'r-.' 'c-.' 'm-.' 'k-.'};
             
             hold on;
-            if (usr_plotEMGs || usr_plotForce)
+            if (usr_plotEMGs || usr_plotForce || usr_plotPos)
                 axis manual;
             else
                 axis auto;

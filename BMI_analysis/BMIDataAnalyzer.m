@@ -16,7 +16,9 @@ function BMIDataAnalyzer()
 %           |               data structures
 %           - CerebusData\  subfolder for storing .nev and .nsx data
 %           |               from Cerebus
-%           - NeuronIDfiles\for future use, to store files specifying
+%           - PlexonData\  subfolder for storing .plx data
+%           |               from Plexon
+%           - NeuronIDfiles\ to store files specifying
 %           |               units to use for model building
 %           - OLPreds\      for storing off-line EMG predictions
 %           |
@@ -75,7 +77,7 @@ function BMIDataAnalyzer()
     
 %% Globals
     
-    dataPath = 'C:/Monkey/Theo/Data_Second implant/';
+    dataPath = 'C:/Monkey/Jaco/Data/';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
     
     %Global Variables
@@ -102,7 +104,7 @@ function BMIDataAnalyzer()
     %vertical pannel position
     PanelsPos = linspace(0.025,0.975-0.13,7);
     
-    CB_DataPanel = uipanel('Parent',UI,'Title','CerebusData','Position',[0.015 PanelsPos(7) .97 .13]);
+    CB_DataPanel = uipanel('Parent',UI,'Title','nev/plx Data','Position',[0.015 PanelsPos(7) .97 .13]);
     BDF_Panel = uipanel('Parent',UI,'Title','BDF Struct','Position', [0.015 PanelsPos(6) 0.97 .13]);
     Bin_Panel =uipanel('Parent',UI,'Title','BinnedData','Position',[0.015 PanelsPos(5) 0.97 .13]);
     Filt_Panel =uipanel('Parent',UI,'Title','Filter','Position',[0.015 PanelsPos(4) 0.97 .13]);
@@ -122,9 +124,11 @@ function BMIDataAnalyzer()
                         
     %Callbacks
     function CB_LoadButton_Callback(obj,event)
+        [CB_FileName, PathName] = uigetfile( {'*.nev;*.plx'},'Open .nev or .plx Data File',dataPath );
        
-        [CB_FileName, PathName] = uigetfile( { [dataPath '/CerebusData/*.nev']},...
-                                               'Open Cerebus Data File' );
+
+%         [CB_FileName, PathName] = uigetfile( { [dataPath '\CerebusData\*.nev'];[dataPath '\PlexonData\*.plx']},...
+%                                                'Open .nev or .plx Data File' );
         
         if isequal(CB_FileName,0) || isequal(PathName,0)
           %  CB_FileName = 'User Cancelled File Loading';
@@ -140,16 +144,19 @@ function BMIDataAnalyzer()
     end
 
     function CB_ConvertButton_Callback(obj,event)
-        disp('Converting .nev file to BDF structure, please wait...');
-        out_struct = get_cerebus_data(CB_FullFileName,'verbose');
-        disp('Done.');
+        if strcmp(CB_FileName(end-3:end),'.nev')
+            disp('Converting .nev file to BDF structure, please wait...');
+            out_struct = get_cerebus_data(CB_FullFileName,'verbose');
+            disp('Done.');
+            BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
+        elseif strcmp(CB_FileName(end-3:end),'.plx')
+            disp('Converting .plx file to BDF structure, please wait...');
+            out_struct = get_plexon_data(CB_FullFileName,'verbose');
+            disp('Done.');
+            BDF_FileName =  strrep(CB_FileName,'.plx','.mat');            
+        end
         
         disp('Saving BDF struct...');
-        if strcmp(CB_FileName(end-3:end),'.nev')
-            BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
-        elseif strcmp(CB_FileName(end-3:end-1),'.ns')
-            BDF_FileName = [CB_FileName(1:end-4) '.mat'];
-        end
         [BDF_FileName, PathName] = saveDataStruct(out_struct,dataPath,BDF_FileName,'bdf');
 
         if isequal(BDF_FileName,0) || isequal(PathName,0)
@@ -205,8 +212,8 @@ function BMIDataAnalyzer()
     function BDF_BinButton_Callback(obj,event)
         disp('Converting BDF structure to binned data, please wait...');
 %        Bin_UI = figure;
-        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
-        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData);
+        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,FindStates] = convertBDF2binnedGUI;
+        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData,FindStates);
         disp('Done.');
         
         disp('Saving binned data...');
@@ -307,8 +314,12 @@ function BMIDataAnalyzer()
         binnedData = LoadDataStruct(Bin_FullFileName);
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
-        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh] = BuildModelGUI(binsize);
-        [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
+        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State] = BuildModelGUI(binsize);
+        if Use_State
+            [filt_struct, OLPredData] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc);
+        else
+            [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc);
+        end
         disp('Done.');
         
         if isempty(filt_struct)
@@ -361,9 +372,15 @@ function BMIDataAnalyzer()
         
         [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos,Use_Thresh] = mfxvalGUI(binsize);        
         disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', fold_length));
-        [mfxval_R2, nfold] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos,Use_Thresh);
+        plotflag = 1;
+        PredVeloc = 0;
+        Use_SD = 1;
+        [mfxval_R2, nfold] = mfxval(binnedData, evalin('base','States'), dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos,PredVeloc,Use_Thresh,Use_SD,plotflag);
 
-        assignin('base','mfxval_R2',mfxval_R2); %put the results in the base workspace for easy access
+        %put the results in the base workspace for easy access
+        assignin('base','mfxval_R2',mfxval_R2);
+        ave_R2 = mean(mfxval_R2);
+        assignin('base','ave_R2',ave_R2);
 
         clear binnedData;
         disp('Done.');
