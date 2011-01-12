@@ -9,16 +9,18 @@ cd(curr_dir)
 boot_iter = 1000;
 
 resultpath = 'D:\Ricardo\Miller Lab\Bump choice results\DetectionC results\';
-[datapath filelist] = BC_detectionC_experiment_list();
+[datapath filelist] = BC_detectionD_experiment_list();
 reward_code = 32;
 abort_code = 33;
 fail_code = 34;
 incomplete_code = 35;
 
-for file_no = 10:length(filelist)
+for file_no = 4:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
     stim_pds = filelist(file_no).pd;
+    stim_duration = filelist(file_no).period.*filelist(file_no).pulses;
+    bump_duration = filelist(file_no).bump_duration;
     serverdatapath = filelist(file_no).serverdatapath;
         if ~exist([datapath filename '.mat'],'file')  
             if ~exist([datapath filename '.plx'],'file')
@@ -28,13 +30,19 @@ for file_no = 10:length(filelist)
                     why
                 end
                 disp('Done')
-                copyfile([serverdatapath '\' filename '.plx'],datapath);
+                copied=0;
+                while copied==0
+                    try
+                        copyfile([serverdatapath '\' filename '.plx'],datapath);
+                        copied=1;
+                    end
+                end
             end
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
             bdf = get_plexon_data([datapath filename '.plx'],2);
             save([datapath filename],'bdf');
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo\';
-            [trial_table table_columns]= BC_detectionC_trial_table([datapath filename]);    
+            [trial_table table_columns]= BC_detectionD_trial_table([datapath filename]);    
             save([datapath filename],'trial_table','table_columns','-append')
         end
 
@@ -104,15 +112,25 @@ for file_no = 10:length(filelist)
         hgsave(figure_behavior,[resultpath filename]);
         I = getframe(figure_behavior);
         imwrite(I.cdata, [resultpath filename '.png']);
-        
+%         
         % timing plot
         movement_time = [trial_table(:,table_columns.cursor_on_ct) trial_table(:,table_columns.end)]-...
             repmat(trial_table(:,table_columns.start),1,2);
+        bump_time = trial_table(:,table_columns.bump_time) -...
+            trial_table(:,table_columns.start);
+        bump_time = [bump_time bump_time+bump_duration];
+        bump_time(bump_time<0) = inf;
+        stim_time = zeros(length(movement_time),2);
+        stim_time(trial_table(:,table_columns.stim_id)~=-1,2) = ...
+            stim_duration(trial_table(trial_table(:,table_columns.stim_id)~=-1,table_columns.stim_id)+1)/1000;
+        
         [temp sort_idx] = sort(movement_time);
         movement_time_sorted = movement_time(sort_idx(:,1),:);
-        trial_table_sorted = trial_table(sort_idx(:,1),:);
-        
-        figure; 
+        bump_time_sorted = bump_time(sort_idx(:,1),:);
+        stim_time_sorted = stim_time(sort_idx(:,1),:);
+        trial_table_sorted = trial_table(sort_idx(:,1),:);       
+%%
+        figure;        
         plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==reward_code,:)',...
             [sort_idx(trial_table_sorted(:,table_columns.result)==reward_code) sort_idx(trial_table_sorted(:,table_columns.result)==reward_code)]','b')
         hold on;
@@ -120,7 +138,12 @@ for file_no = 10:length(filelist)
             [sort_idx(trial_table_sorted(:,table_columns.result)==abort_code) sort_idx(trial_table_sorted(:,table_columns.result)==abort_code)]','r')
         plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==incomplete_code,:)',...
             [sort_idx(trial_table_sorted(:,table_columns.result)==incomplete_code) sort_idx(trial_table_sorted(:,table_columns.result)==incomplete_code)]','k')
-        
+        plot([bump_time_sorted(:,1) bump_time_sorted(:,1)]',[sort_idx(:,1)-.3 sort_idx(:,1)+.3]','g')
+        plot([bump_time_sorted(:,2) bump_time_sorted(:,2)]',[sort_idx(:,1)-.5 sort_idx(:,1)+.5]','g')
+        plot([stim_time_sorted(:,1) stim_time_sorted(:,1)]',[sort_idx(:,1)-.5 sort_idx(:,1)+.5]','k')
+        plot([stim_time_sorted(:,2) stim_time_sorted(:,2)]',[sort_idx(:,1)-.15 sort_idx(:,1)+.15]','k')
+
+%%                
         figure; hist(-movement_time_sorted(trial_table_sorted(:,table_columns.result)==reward_code,1),0:.1:5)
         xlabel('Wait time (s)')
         title('Reward count')
@@ -158,7 +181,7 @@ for file_no = 10:length(filelist)
         zero_bump_reward_ratio(file_no) = sum(zero_bump_subtable(:,table_columns.result)==reward_code)/...
             length(zero_bump_subtable(:,table_columns.result)==reward_code);
         
-         % response time figure
+        % response time figure
         figure; 
         plot(response_time(trial_table(:,table_columns.result)==reward_code));   
         
@@ -170,7 +193,6 @@ for file_no = 10:length(filelist)
             response_time_bump_mag(i) = mean(response_time_temp);
             response_time_bump_mag_std(i) = std(response_time_temp);
         end
-
         figure;
         errorbar(bump_magnitudes,response_time_bump_mag,response_time_bump_mag_std)
         xlabel('Bump magnitude [N]')
