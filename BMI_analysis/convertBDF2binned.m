@@ -353,6 +353,7 @@ end
 %% Movement States
 if ~Find_States
     states = [];
+    statemethods = [];
     tt = [];
 else
     states = NaN(numberbins,2);
