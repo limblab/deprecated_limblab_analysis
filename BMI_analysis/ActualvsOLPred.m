@@ -41,6 +41,11 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
                 ActSignals(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(start_Act:finish_Act,:);
             end
         end    
+        if ~isempty(ActualData.velocbin)
+            if all(strcmp(nonzeros(ActualData.veloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
+                ActSignals(:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin(start_Act:finish_Act,:);
+            end
+        end          
     end
     
     R2 = CalculateR2(ActSignals,PredData.preddatabin(start_Pred:finish_Pred,:));

@@ -1,4 +1,4 @@
-function DataSigs = concatSigs(binnedData, EMGs, Force, CursPos)
+function DataSigs = concatSigs(binnedData, EMGs, Force, CursPos, Veloc)
 
     DataSigs = [];
 
@@ -10,6 +10,9 @@ function DataSigs = concatSigs(binnedData, EMGs, Force, CursPos)
     end
     if CursPos
         DataSigs = [DataSigs binnedData.cursorposbin];
+    end
+    if Veloc
+        DataSigs = [DataSigs binnedData.velocbin];
     end
 
 end

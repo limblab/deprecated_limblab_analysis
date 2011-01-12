@@ -1,4 +1,4 @@
-function [R2, nfold] = mfxval(binnedData, States, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
+function [R2, nfold] = mfxval(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
 %       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
 %
 %       binnedData          : data structure to build model from
@@ -21,15 +21,13 @@ PredCursPos = 0;
 PredVeloc = 0;
 %TODO: Use_Thresh?
 plotflag = 1;
-
-numSig    = size(binnedData.emgguide,1);
-numStates = size(States,2);
+numSig    = 0;
 
 %overwrite if specified in arguments
 if nargin > 6
     PredEMG = varargin{1};
-    if ~PredEMG
-        numSig = 0;
+    if PredEMG
+        numSig = numSig+size(binnedData.emgguide,1);
     end
     if nargin > 7
         PredForce = varargin{2};
@@ -46,10 +44,10 @@ if nargin > 6
                 if PredVeloc
                     numSig = numSig+size(binnedData.veloclabels,1);
                 end
-                if nargin > 11
-                    Use_SD= varargin{6};
+                if nargin > 10
+                    Use_SD= varargin{5};
                     if nargin >12
-                        plotflag = varargin{7};
+                        plotflag = varargin{6};
                     end
                 end
             end
@@ -57,6 +55,12 @@ if nargin > 6
     end
 end
 
+if Use_SD
+    disp('State Dependent Decoding not implemented yet, better luck next time...');
+    R2=[];
+    nfold=[];
+    return
+end
 
 binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
 
@@ -86,7 +90,7 @@ for i=0:nfold-1
     testData.timeframe = binnedData.timeframe(testDataStart:testDataEnd);
     testData.spikeratedata = binnedData.spikeratedata(testDataStart:testDataEnd,:);
     if Use_SD
-        testData.state = binnedData.state(testDataStart:testDataEnd,:);
+        testData.states = binnedData.states(testDataStart:testDataEnd,:);
     end
     
     %copy timeframe and spikeratedata segments into modelData
@@ -94,19 +98,19 @@ for i=0:nfold-1
         modelData.timeframe = binnedData.timeframe(testDataEnd+1:dataEnd);    
         modelData.spikeratedata = binnedData.spikeratedata(testDataEnd+1:dataEnd,:);
         if Use_SD
-            modelData.state = binnedData.state(testDataEnd+1:dataEnd,:);
+            modelData.states = binnedData.states(testDataEnd+1:dataEnd,:);
         end
     elseif testDataEnd == dataEnd
         modelData.timeframe = binnedData.timeframe(1:testDataStart-1);
         modelData.spikeratedata = binnedData.spikeratedata(1:testDataStart-1,:);
         if Use_SD
-            modelData.state = binnedData.state(1:testDataStart-1,:);
+            modelData.states = binnedData.states(1:testDataStart-1,:);
         end
     else
         modelData.timeframe = [ binnedData.timeframe(1:testDataStart-1); binnedData.timeframe(testDataEnd+1:dataEnd)];
         modelData.spikeratedata = [ binnedData.spikeratedata(1:testDataStart-1,:); binnedData.spikeratedata(testDataEnd+1:dataEnd,:)];        
         if Use_SD
-            modelData.state = [ binnedData.state(1:testDataStart-1); binnedData.state(testDataEnd+1:dataEnd)];
+            modelData.states = [ binnedData.states(1:testDataStart-1); binnedData.states(testDataEnd+1:dataEnd)];
         end
     end
 
@@ -159,14 +163,14 @@ for i=0:nfold-1
     end
 
     if Use_SD
-        filters = BuildSDModels(modelData, States, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
-        PredData = predictSDSignals(filters, testData, States);
+        filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+%         PredData = predictSDSignals(filters, testData);
     else
-        filter = BuildModels(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos);
+        filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
         PredData = predictSignals(filter, testData);
     end
     
-    TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos);
+    TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc);
     
     R2(i+1,:) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
     
