@@ -267,7 +267,7 @@ function out_struct = get_cerebus_data(varargin)
 
         % Get all words... including zeros.
         
-        if datenum(out_struct.meta.datetime) - datenum('12-Jan-2011') < 0 
+        if datenum(out_struct.meta.datetime) - datenum('14-Jan-2011') < 0 
             % The input cable for this was bugged: Bits 0 and 8
             % are swapped.  The WORD is mostly on the high byte (bits
             % 15-9,0) and the ENCODER is mostly on the
