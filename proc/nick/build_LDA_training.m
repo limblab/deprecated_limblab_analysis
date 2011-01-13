@@ -1,4 +1,4 @@
-function [training_set, groups] = build_LDA_training(bdf)
+function [training_set, groups] = build_LDA_training(bdf_file)
 
 % This function accepts a bdf file and generates a training set and
 % grouping set that can be used to classify hold and movement periods based
@@ -19,16 +19,19 @@ samps = floor(window/bin);
 % Bin data starting at 1 second to eliminate missing initial position
 % data from plexon.
 
-binnedData = convertBDF2binned(bdf, bin, 1, end);
+% binnedData_file = convertBDF2binned(bdf_file, bin, 1, 0);
+binnedData_file = convertBDF2binned('/Users/nsachs/Documents/MATLAB/Keedoo_Spike_12142010001-01.mat', bin, 1, 0);
 
 % Calculate overall speed from x and y velocities
 
 % old version:
 % column 1 is time, column 2 is speed
-% speed(:,1) = bdf.vel(:,1);
-% speed(:,2) = sqrt((bdf.vel(:,2)).^2 + (bdf.vel(:,3)).^2);
+% speed(:,1) = bdf_file.vel(:,1);
+% speed(:,2) = sqrt((bdf_file.vel(:,2)).^2 + (bdf_file.vel(:,3)).^2);
 
-speed = sqrt((binnedData.cursorvelbin(:,1)).^2 + (binnedData.cursorvelbin(:,2)).^2);
+% speed = sqrt((binnedData_file.cursorvelbin(:,1)).^2 + (binnedData_file.cursorvelbin(:,2)).^2);
+
+speed = binnedData_file.velocbin(:,3);
 
 % Filter speed with 4th order butterworth LPF.
 % Use filtfilt to prevent lag.
@@ -38,7 +41,7 @@ speed = sqrt((binnedData.cursorvelbin(:,1)).^2 + (binnedData.cursorvelbin(:,2)).
 % data for hold training sets.
 
 % old version:
-% [B,A] = butter(4,2/max(bdf.speed(:,1)),'low');
+% [B,A] = butter(4,2/max(bdf_file.speed(:,1)),'low');
 % speed_filt(:,1) = speed(:,1);
 % speed_filt(:,2) = filtfilt(B,A,speed(:,2));
 
@@ -49,9 +52,11 @@ speed_filt = filtfilt(B,A,speed);
 
 % Calculate number of targets.
 
-for x = 1:length(bdf.words)
-    if bdf.words(x,2) < 80 % maximum 16 targets
-        max_target = max([max_target bdf.words(x,2)]);
+max_target = 0;
+
+for x = 1:length(bdf_file.words)
+    if bdf_file.words(x,2) < 80 % maximum 16 targets
+        max_target = max([max_target bdf_file.words(x,2)]);
     end
 end
 number_targets = max_target - 63;
@@ -73,7 +78,7 @@ number_targets = max_target - 63;
 % |
 % row (2 + 2*no.targets) = movement from target 1 to center
 
-training_set = zeros(3*number_targets+1,length(binnedData.spikeguide));
+training_set = zeros(3*number_targets+1,length(binnedData_file.spikeguide));
 
 % Initialize groups (classifications for rows in training_set).
 %
@@ -95,24 +100,24 @@ end
 
 trials = zeros(number_targets,1); % initialize vector of number of trials to each target
 
-for x = 1:length(bdf.words)
-    if bdf.words(x,2) == 27 % start_trial
-        if (bdf.words(x+6,2) == 32) && (bdf.words(x+9) == 160) % reward and back to center
-            target = 65 - bdf.words(x+3,2); % determine target (between 1 and number_targets)
+for x = 1:length(bdf_file.words)-9
+    if bdf_file.words(x,2) == 27 % start_trial
+        if (bdf_file.words(x+6,2) == 32) && (bdf_file.words(x+9,2) == 160) % reward and back to center
+            target = bdf_file.words(x+3,2) - 63; % determine target (between 1 and number_targets)
             complete = zeros(4,1);
-            for y = samps:length(binnedData.timeframe)
-                if (timeframe(y) > bdf.words(x+2,1)) && (speed_filt(y) < speed_filt(y+1)) && (complete(1) == 0) % first min after center_hold
-                    training_set(:,1) = training_set(:,1) + sum(binnedData.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
+            for y = samps:length(binnedData_file.timeframe)-1
+                if (binnedData_file.timeframe(y) > bdf_file.words(x+2,1)) && (speed_filt(y) < speed_filt(y+1)) && (complete(1) == 0) % first min after center_hold
+                    training_set(1,:) = training_set(1,:) + sum(binnedData_file.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
                     complete(1) = 1;
-                elseif (timeframe(y) > bdf.words(x+4,1)) && (speed_filt(y) > speed_filt(y+1)) && (complete(2) == 0) % first max after after movement_onset
-                    training_set(:,1+number_targets+target) = training_set(:,1+number_targets+target) + sum(binnedData.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
+                elseif (binnedData_file.timeframe(y) > bdf_file.words(x+4,1)) && (speed_filt(y) > speed_filt(y+1)) && (complete(2) == 0) % first max after after movement_onset
+                    training_set(1+number_targets+target,:) = training_set(1+number_targets+target,:) + sum(binnedData_file.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
                     trials(target) = trials(target) + 1; % increment trial count for correcct target
                     complete(2) = 1;
-                elseif (timeframe(y) > bdf.words(x+5,1)) && (speed_filt(y) < speed_filt(y+1)) && (complete(3) == 0) % first min after after outer_hold
-                    training_set(:,1+target) = training_set(:,1+target) + sum(binnedData.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
+                elseif (binnedData_file.timeframe(y) > bdf_file.words(x+5,1)) && (speed_filt(y) < speed_filt(y+1)) && (complete(3) == 0) % first min after after outer_hold
+                    training_set(1+target,:) = training_set(1+target,:) + sum(binnedData_file.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
                     complete(3) = 1;
-                elseif (timeframe(y) > bdf.words(x+6,1)) && (speed_filt(y) > speed_filt(y+1)) && (complete(4) == 0) % first max after reward
-                    training_set(:,1+2*number_targets+target) = training_set(:,1+2*number_targets+target) + sum(binnedData.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
+                elseif (binnedData_file.timeframe(y) > bdf_file.words(x+6,1)) && (speed_filt(y) > speed_filt(y+1)) && (complete(4) == 0) % first max after reward
+                    training_set(1+2*number_targets+target,:) = training_set(1+2*number_targets+target,:) + sum(binnedData_file.spikeratedata(y+1-samps:y,:),1); % sum previous 20 spike rates
                     complete(4) = 1;
                 end                    
             end
@@ -120,12 +125,14 @@ for x = 1:length(bdf.words)
     end
 end
 
+training_set = training_set./samps;
+
 % Divide rows of training_set by number of trials included in each to get
 % average values.
 
-training_set(:,1) = training_set(:,1)./sum(trials);
-for x = 1:length(number_targets)
-    training_set(:,1+x) = training_set(:,1+x)./trials(x);
-    training_set(:,1+number_targets+x) = training_set(:,1+number_targets+x)./trials(x);
-    training_set(:,1+2*+number_targets+x) = training_set(:,1+2*number_targets+x)./trials(x);
+training_set(1,:) = training_set(1,:)./sum(trials);
+for x = 1:number_targets
+    training_set(1+x,:) = training_set(1+x,:)./trials(x);
+    training_set(1+number_targets+x,:) = training_set(1+number_targets+x,:)./trials(x);
+    training_set(1+2*+number_targets+x,:) = training_set(1+2*number_targets+x,:)./trials(x);
 end
