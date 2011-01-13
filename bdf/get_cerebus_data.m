@@ -263,18 +263,33 @@ function out_struct = get_cerebus_data(varargin)
         % grab the words -- event_list ID 145
         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,145,1:EntityInfo(145).ItemCount);
         % we have the digin serial line
-        % The input cable for this is currently bugged: Bits 0 and 8
-        % are swapped.  The WORD is mostly on the high byte (bits
-        % 15-9,0) and the ENCODER is mostly on the
-        % low byte (bits 7-1,8).
+
 
         % Get all words... including zeros.
-        all_words = [event_ts, bitshift(bitand(hex2dec('FE00'),event_data),-8)+bitget(event_data,1)];
-        % Remove all zero words.
-        out_struct.raw.words = all_words(logical(all_words(:,2)),:);
+        
+        if datenum(out_struct.meta.datetime) - datenum('12-Jan-2011') < 0 
+            % The input cable for this was bugged: Bits 0 and 8
+            % are swapped.  The WORD is mostly on the high byte (bits
+            % 15-9,0) and the ENCODER is mostly on the
+            % low byte (bits 7-1,8).
+            all_words = [event_ts, bitshift(bitand(hex2dec('FE00'),event_data),-8)+bitget(event_data,1)];
+            all_enc = [event_ts, bitand(hex2dec('00FE'),event_data) + bitget(event_data,9)];
+        else
+            %The WORD is on the high byte (bits
+            % 15-8) and the ENCODER is on the
+            % low byte (bits 8-1).
+            all_words = [event_ts, bitshift(bitand(hex2dec('FF00'),event_data),-8)];
+            all_enc = [event_ts, bitand(hex2dec('00FF'),event_data)];
+        end             
 
-        % and encoder data
-        all_enc = [event_ts, bitand(hex2dec('00FE'),event_data) + bitget(event_data,9)];
+        % Remove all zero words.
+        actual_words = all_words(logical(all_words(:,2)),:);
+        % Remove all repeated words (due to encoder data timing)
+        word_indices = find(diff(actual_words(:,1))<0.0005 & diff(actual_words(:,2))==0);
+        
+        out_struct.raw.words = actual_words(word_indices,:); %#ok<FNDSB>
+
+        % and encoder data       
         out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
         
         % Grab the serial data -- event ID 146
