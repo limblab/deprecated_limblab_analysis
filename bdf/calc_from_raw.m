@@ -195,7 +195,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
                 a_data = get_analog_signal(out_struct, channame);
-                a_data = filtfilt(b, a, a_data);
+                a_data(:,2) = filtfilt(b, a, a_data(:,2));
+%                 a_data(:,2) = filtfilt(b, a, a_data(:,2));
                 a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
                 raw_force(:,c) = a_data';
             end

@@ -15,17 +15,22 @@ abort_code = 33;
 fail_code = 34;
 incomplete_code = 35;
 
-for file_no = 4:length(filelist)
+for file_no = 9:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
     stim_pds = filelist(file_no).pd;
     stim_duration = filelist(file_no).period.*filelist(file_no).pulses;
     bump_duration = filelist(file_no).bump_duration;
     serverdatapath = filelist(file_no).serverdatapath;
+    if strcmp(filelist(file_no).system,'plexon')
+        extension = '.plx';
+    else
+        extension = '.nev';
+    end
         if ~exist([datapath filename '.mat'],'file')  
-            if ~exist([datapath filename '.plx'],'file')
+            if ~exist([datapath filename extension],'file')
                 disp('Waiting for file to be copied to server')
-                while ~exist([serverdatapath '\' filename '.plx'],'file')                
+                while ~exist([serverdatapath '\' filename extension],'file')              
                     pause(30) 
                     why
                 end
@@ -33,13 +38,21 @@ for file_no = 4:length(filelist)
                 copied=0;
                 while copied==0
                     try
-                        copyfile([serverdatapath '\' filename '.plx'],datapath);
+                        copyfile([serverdatapath '\' filename extension],datapath);
                         copied=1;
                     end
                 end
+                all_files = dir([serverdatapath '\' filename '*']);
+                for i=1:length(all_files)
+                    copyfile([serverdatapath '\' all_files(i).name],datapath);
+                end                    
             end
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
-            bdf = get_plexon_data([datapath filename '.plx'],2);
+            if strcmp(extension,'.plx')
+                bdf = get_plexon_data([datapath filename extension],2);
+            else
+                bdf = get_cerebus_data([datapath filename extension],3);
+            end
             save([datapath filename],'bdf');
             cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo\';
             [trial_table table_columns]= BC_detectionD_trial_table([datapath filename]);    
@@ -94,24 +107,26 @@ for file_no = 4:length(filelist)
         title(filelist(file_no).name)
         legend off
         
-        first_hundred(file_no) = sum(correct(1:100));
-        last_hundred(file_no) = sum(correct(end-99:end));
+        if length(correct)>=100
+            first_hundred(file_no) = sum(correct(1:100));
+            last_hundred(file_no) = sum(correct(end-99:end));
 
-        subplot(1,2,2)
-        hold on
-        plot(1:num_bins,mean(correct_binned,2))
-        plot(correct_binned_fit,'r')
-        plot(1:num_bins,(1:num_bins)*fit_binned_conf(1,2)+fit_binned_conf(1,1),'-r');
-        plot(1:num_bins,(1:num_bins)*fit_binned_conf(2,2)+fit_binned_conf(2,1),'-r');       
-        xlim([1 num_bins])
-        ylim([0 1])
-        xlabel('Bin number')
-        ylabel('Percent correct')
-        legend off
+            subplot(1,2,2)
+            hold on
+            plot(1:num_bins,mean(correct_binned,2))
+            plot(correct_binned_fit,'r')
+            plot(1:num_bins,(1:num_bins)*fit_binned_conf(1,2)+fit_binned_conf(1,1),'-r');
+            plot(1:num_bins,(1:num_bins)*fit_binned_conf(2,2)+fit_binned_conf(2,1),'-r');       
+            xlim([1 num_bins])
+            ylim([0 1])
+            xlabel('Bin number')
+            ylabel('Percent correct')
+            legend off
 
-        hgsave(figure_behavior,[resultpath filename]);
-        I = getframe(figure_behavior);
-        imwrite(I.cdata, [resultpath filename '.png']);
+            hgsave(figure_behavior,[resultpath filename]);
+            I = getframe(figure_behavior);
+            imwrite(I.cdata, [resultpath filename '.png']);
+        end
 %         
         % timing plot
         movement_time = [trial_table(:,table_columns.cursor_on_ct) trial_table(:,table_columns.end)]-...

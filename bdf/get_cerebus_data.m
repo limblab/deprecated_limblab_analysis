@@ -269,7 +269,7 @@ function out_struct = get_cerebus_data(varargin)
         
         % Check if file was recorded before the digital input cable was
         % switched.
-        if datenum(out_struct.meta.datetime) - datenum('13-Jan-2011 14:00:00') < 0 
+        if datenum(out_struct.meta.datetime) - datenum('14-Jan-2011 14:00:00') < 0 
             % The input cable for this was bugged: Bits 0 and 8
             % are swapped.  The WORD is mostly on the high byte (bits
             % 15-9,0) and the ENCODER is mostly on the
@@ -287,9 +287,12 @@ function out_struct = get_cerebus_data(varargin)
         % Remove all zero words.
         actual_words = all_words(logical(all_words(:,2)),:);
         % Remove all repeated words (due to encoder data timing)
-        word_indices = find(diff(actual_words(:,1))<0.0005 & diff(actual_words(:,2))==0);
         
-        out_struct.raw.words = actual_words(word_indices,:); %#ok<FNDSB>
+        word_indices_remove = find(diff(actual_words(:,1))<0.0005 & diff(actual_words(:,2))==0)+1;
+        word_indices_keep = setxor(word_indices_remove,1:length(actual_words));
+        actual_words = actual_words(word_indices_keep,:);
+        
+        out_struct.raw.words = actual_words; %#ok<FNDSB>
 
         % and encoder data       
         out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
