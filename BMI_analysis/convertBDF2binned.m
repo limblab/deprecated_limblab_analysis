@@ -341,7 +341,7 @@ else
         targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
     end
     
-    if NormData && isfield(datastruct.targets, 'corners')
+    if NormData && isfield(datastruct.targets, 'centers')
         numtgt = (size(targets.corners,2)-1)/2;
         %target x centers
         targets.centers(:,2:2:(2+2*(numtgt-1))) = targets.centers(:,2:2:(2+2*(numtgt-1)))*NormRatios(1);

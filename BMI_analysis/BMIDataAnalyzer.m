@@ -79,6 +79,7 @@ function BMIDataAnalyzer()
     
     dataPath = 'C:/Monkey/Jaco/Data/';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
+    Use_State =0;
     
     %Global Variables
     CB_FileName = 0;
@@ -314,9 +315,15 @@ function BMIDataAnalyzer()
         binnedData = LoadDataStruct(Bin_FullFileName);
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
         
-        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State] = BuildModelGUI(binsize);
+        statemethods=[];
+        if isfield(binnedData,'statemethods')
+            [m,n]=size(binnedData.statemethods);
+            statemethods = mat2cell(binnedData.statemethods,ones(1,m),n);
+        end
+        
+        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State] = BuildModelGUI(binsize,statemethods);
         if Use_State
-            [filt_struct, OLPredData] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc);
+            [filt_struct] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State);
         else
             [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc);
         end
@@ -327,7 +334,14 @@ function BMIDataAnalyzer()
             return;
         end
         
-        filt_struct.FromData = Bin_FileName;
+        if isstruct(filt_struct)
+            filt_struct.FromData = Bin_FileName;
+        else
+            %state dependent filters, filt_struct is a cell array:
+            for i=1:size(filt_struct,2)
+                filt_struct{1,i}.FromData = Bin_FileName;
+            end
+        end
         clear binnedData;       
         disp('Saving prediction model...');
         Filt_FileName = [Bin_FileName(1:end-4) '_filter.mat'];
@@ -336,21 +350,64 @@ function BMIDataAnalyzer()
         if isequal(Filt_FileName, 0) || isequal(PathName,0)
             disp('User action cancelled');
         else
-            Filt_FullFileName = fullfile(PathName,Filt_FileName);
-            %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
-            save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
-            
+            if isstruct(filt_struct)
+                Filt_FullFileName = fullfile(PathName,Filt_FileName);
+                %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
+                save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
+            end
             set(Filt_PredButton, 'Enable','on');
-            set(Filt_WSButton,'Enable','on');
-
+            set(Filt_WSButton,'Enable','on');            
             Filt_FileLabel = uicontrol('Parent',Filt_Panel,'Style','text','String',['Model : ' Filt_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.2]);
         end
+        if ~Use_State
+            %no Predictions are made at this stage when State dependent algorithm is built
+            disp('Saving Offline EMG Predictions...');
+            OLPred_FileName = [sprintf('OLPred_DATA-%s_Filter-%s', Bin_FileName(1:end-4),Filt_FileName(1:end-4)) '.mat'];
+            [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
+
+            if isequal(OLPred_FileName, 0) || isequal(PathName,0)
+                disp('User action cancelled');
+            else
+                OLPred_FullFileName = fullfile(PathName,OLPred_FileName);
+                set(OLPred_PlotVsActButton,'Enable','on');
+                set(OLPred_R2VsActButton,'Enable','on');
+                set(OLPred_WSButton,'Enable','on');
+
+                OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
+                                          'normalized','Position',[0 .65 1 0.38]);
+            end
+        end
+    end
+
+    function mfxval_R2 = Bin_mfxvalButton_Callback(obj,event)
         
+        binnedData = LoadDataStruct(Bin_FullFileName);
+        binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
+        
+        statemethods=[];
+        if isfield(binnedData,'statemethods')
+            [m,n]=size(binnedData.statemethods);
+            statemethods = mat2cell(binnedData.statemethods,ones(1,m),n);
+        end
+        
+        [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States] = mfxvalGUI(binsize, statemethods);        
+        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', fold_length));
+        plotflag = 1;
+        [mfxval_R2, OLPredData, nfold] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
+
+        %put the results in the base workspace for easy access
+        assignin('base','mfxval_R2',mfxval_R2);
+        ave_R2 = mean(mfxval_R2);
+        assignin('base','ave_R2',ave_R2);
+
+        clear binnedData;
+        disp('Done.');
+
         disp('Saving Offline EMG Predictions...');
-        OLPred_FileName = [sprintf('OLPred_DATA-%s_Filter-%s', Bin_FileName(1:end-4),Filt_FileName(1:end-4)) '.mat'];
+        OLPred_FileName = [sprintf('OLPred_mfxval_-%s', Bin_FileName(1:end-4)) '.mat'];
         [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
-        
+
         if isequal(OLPred_FileName, 0) || isequal(PathName,0)
             disp('User action cancelled');
         else
@@ -362,26 +419,6 @@ function BMIDataAnalyzer()
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.38]);
         end
-        
-    end
-
-    function mfxval_R2 = Bin_mfxvalButton_Callback(obj,event)
-        
-        binnedData = LoadDataStruct(Bin_FullFileName);
-        binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
-        
-        [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States] = mfxvalGUI(binsize);        
-        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', fold_length));
-        plotflag = 1;
-        [mfxval_R2, nfold] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
-
-        %put the results in the base workspace for easy access
-        assignin('base','mfxval_R2',mfxval_R2);
-        ave_R2 = mean(mfxval_R2);
-        assignin('base','ave_R2',ave_R2);
-
-        clear binnedData;
-        disp('Done.');
         
     end
 
@@ -426,13 +463,23 @@ function BMIDataAnalyzer()
             
             Filt_FileLabel =  uicontrol('Parent',Filt_Panel,'Style','text','String',['Model : ' Filt_FileName],'Units',...
                                   'normalized','Position',[0 .65 1 0.2]);
+            tmpfilt = load(Filt_FullFileName);
+            Use_State = iscell(tmpfilt);
+            if Use_State
+                disp('This file includes multiple models with state classification, method 1 will be used');
+            end
+            clear tmpfilt;
         end
     end
 
     function Filt_PredButton_Callback(obj,event)
-        disp('Predicting EMGs, please wait...');
+        disp('Predicting, please wait...');
         [Smooth_Pred, Adapt_Enable, LR, Lag] = PredOptionsGUI();
-        [OLPredData, H_new] = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
+        if Use_State
+            [OLPredData, H_new] = predictSDSignals(Filt_FullFileName,Bin_FullFileName,Use_State,Smooth_Pred,Adapt_Enable,LR,Lag);
+        else
+            [OLPredData, H_new] = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
+        end
         disp('Done.');
         
         if Adapt_Enable %we have a new filter
@@ -454,7 +501,7 @@ function BMIDataAnalyzer()
             end
         end
             
-        disp('Saving predicted EMGs...');
+        disp('Saving predictions...');
         OLPred_FileName = [sprintf('OLPred_DATA-%s_Filter-%s', Bin_FileName(1:end-4),Filt_FileName(1:end-4)) '.mat'];
         [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
         
@@ -521,8 +568,9 @@ function BMIDataAnalyzer()
         ActualData = LoadDataStruct(Bin_FullFileName);
         PredData = LoadDataStruct(OLPred_FullFileName);
         plotflag = 0;
+        dispflag = 1;
         disp('Done. Processing R2 calculations...');
-        ActualvsOLPred(ActualData,PredData,plotflag);   
+        ActualvsOLPred(ActualData,PredData,plotflag,dispflag);   
     end
 
     function OLPred_PlotVsActButton_Callback(obj,event)

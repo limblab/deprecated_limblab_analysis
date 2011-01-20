@@ -123,6 +123,54 @@ if isfield(struct1, 'cursorposlabels') && isfield(struct2, 'cursorposlabels')
         binnedData.cursorposbin = [struct1.cursorposbin; struct2.cursorposbin];
     end
 end
+%% Concat Vel
+if isfield(struct1, 'veloclabels') && isfield(struct2, 'veloclabels')
+    for i = 1:size(struct1.veloclabels,1)
+        if ~strcmp(deblank(struct1.veloclabels(i,:)),deblank(struct2.veloclabels(i,:)))
+            disp('incompatible velocity labels - concatenation aborted');
+            binnedData = struct1;
+            return;
+        end
+    end
+
+    if ~isfield(struct1, 'velocbin') || ~isfield(struct2, 'velocbin') || (size(struct1.veloclabels,1)~=size(struct2.veloclabels,1))
+        disp('incompatible velocity data - concatenation aborted');
+        binnedData = struct1;
+        return;
+    else
+        binnedData.velocbin = [struct1.velocbin; struct2.velocbin];
+    end
+end
+
+%% Concat States
+if isfield(struct1, 'statemethods') && isfield(struct2, 'statemethods')
+    for i = 1:size(struct1.statemethods,1)
+        if ~strcmp(deblank(struct1.statemethods(i,:)),deblank(struct2.statemethods(i,:)))
+            disp('incompatible state methods - concatenation aborted');
+            binnedData = struct1;
+            return;
+        end
+    end
+
+    if ~isfield(struct1, 'states') || ~isfield(struct2, 'states') || (size(struct1.statemethods,1)~=size(struct2.statemethods,1))
+        disp('incompatible state data - concatenation aborted');
+        binnedData = struct1;
+        return;
+    else
+        binnedData.states = [struct1.states; struct2.states];
+    end
+end
+
+%% Concat trialtable
+if isfield(struct1, 'trialtable') && isfield(struct2, 'trialtable')
+    if (size(struct1.trialtable,2)~=size(struct2.trialtable,2))
+        disp('incompatible trial tables - concatenation aborted');
+        binnedData = struct1;
+        return;
+    else
+        binnedData.trialtable = [struct1.trialtable; struct2.trialtable];
+    end
+end
 
 %% Concat Words
 if isfield(struct1, 'words') && isfield(struct2, 'words')

@@ -23,7 +23,7 @@ function varargout = mfxvalGUI(varargin)
 
 % Edit the above text to modify the response to help mfxvalGUI
 
-% Last Modified by GUIDE v2.5 11-Jan-2011 22:23:30
+% Last Modified by GUIDE v2.5 12-Jan-2011 22:21:15
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -56,12 +56,13 @@ function mfxvalGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for mfxvalGUI
 handles.output = hObject;
 handles.binsize = varargin{1};
+handles.statelabels = varargin{2};
 
 % Update handles structure
 guidata(hObject, handles);
 
 set(handles.binsize_txt,'String',[ 'BinnedData binsize : ' num2str(handles.binsize*1000) ' ms' ]);
-
+set(handles.States_popup,'String', [{'Don''t use State Dep'}; handles.statelabels]);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -84,7 +85,7 @@ function varargout = mfxvalGUI_OutputFcn(hObject, eventdata, handles)
     PredForce = get(handles.PredForce_cbx, 'Value');
     PredCurs = get(handles.PredCurs_cbx, 'Value');
     PredVeloc = get(handles.PredVeloc_cbx, 'Value');
-    Use_States= get(handles.State_cbx, 'Value');
+    Use_States = get(handles.States_popup,'Value')-1;
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
      varargout = {lagtime, Inputs, Polyn_Order, foldlength, PredEMGs, PredForce, PredCurs, PredVeloc, Use_States};
@@ -252,5 +253,28 @@ function State_cbx_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of State_cbx
+
+
+% --- Executes on selection change in States_popup.
+function States_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to States_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns States_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from States_popup
+
+
+% --- Executes during object creation, after setting all properties.
+function States_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to States_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 

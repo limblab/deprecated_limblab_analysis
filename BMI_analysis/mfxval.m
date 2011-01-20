@@ -1,4 +1,4 @@
-function [R2, nfold] = mfxval(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
+function [R2, varargout] = mfxval(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
 %       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
 %
 %       binnedData          : data structure to build model from
@@ -55,13 +55,6 @@ if nargin > 6
     end
 end
 
-if Use_SD
-    disp('State Dependent Decoding not implemented yet, better luck next time...');
-    R2=[];
-    nfold=[];
-    return
-end
-
 binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
 
 if mod(round(foldlength*1000), round(binsize*1000)) %all this rounding because of floating point errors
@@ -110,7 +103,7 @@ for i=0:nfold-1
         modelData.timeframe = [ binnedData.timeframe(1:testDataStart-1); binnedData.timeframe(testDataEnd+1:dataEnd)];
         modelData.spikeratedata = [ binnedData.spikeratedata(1:testDataStart-1,:); binnedData.spikeratedata(testDataEnd+1:dataEnd,:)];        
         if Use_SD
-            modelData.states = [ binnedData.states(1:testDataStart-1); binnedData.states(testDataEnd+1:dataEnd)];
+            modelData.states = [ binnedData.states(1:testDataStart-1,:); binnedData.states(testDataEnd+1:dataEnd,:)];
         end
     end
 
@@ -163,16 +156,26 @@ for i=0:nfold-1
     end
 
     if Use_SD
-        filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
-%         PredData = predictSDSignals(filters, testData);
+        %% 2 different models, one for each state:
+        filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+        PredData = predictSDSignals(filter, testData, Use_SD);
+        TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+        R2(i+1,:) = CalculateR2(TestSigs,PredData.preddatabin)';
+
+        %% 1 model but filter only state 0 (Hold State):
+%         filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+%         PredData = predictSDFSignals(filter, testData, Use_SD);
+%         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+%         R2(i+1,:) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+%         
     else
         filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
         PredData = predictSignals(filter, testData);
+        TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+        R2(i+1,:) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
     end
     
-    TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc);
-    
-    R2(i+1,:) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+
     
     %Concatenate predicted Data if we want to plot it later:
     if plotflag
@@ -208,3 +211,8 @@ end
 
 binnedData.timeframe = binnedData.timeframe(idx);
 ActualvsOLPred(binnedData,AllPredData,plotflag);
+
+AllPredData.mfxval_R2 = R2;
+
+varargout{1} = AllPredData;
+varargout{2} = nfold;

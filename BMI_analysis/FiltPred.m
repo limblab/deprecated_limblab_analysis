@@ -1,4 +1,10 @@
-function PredictedData = FiltPred(PredictedData,spikeDataNew,binsize)
+% function PredictedData = FiltPred(PredictedData,spikeDataNew,binsize)
+function FilteredData = FiltPred(PredictedData,SR,LP)
+
+    [bl,al] = butter(4, LP*2/SR, 'low');  %lowpass filter params
+
+    FilteredData = filter(bl,al,PredictedData); %lowpass filter
+end
 
 %% 1 - Binary average lag time
 % if FiltPred
