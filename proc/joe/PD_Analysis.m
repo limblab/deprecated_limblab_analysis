@@ -1,0 +1,167 @@
+%This script compares the preferred directions of a number of neurons
+%across several data recording sessions. It is necessary to edit the script
+%to accurately include the filenames (files(i).filename), the file paths 
+%(files(i).datapath), the number of files (numSets), and the number of 
+%channels in the electrode array (numChans). 
+
+%Initial data. Ensure this is correct before proceeding.
+files(1).filename = 'Pedro_S1_040-s_multiunit';
+files(1).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+files(2).filename = 'Pedro_S1_041-s_multiunit';
+files(2).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+files(3).filename = 'Pedro_S1_042-s_multiunit';
+files(3).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+files(4).filename = 'Pedro_S1_043-s_multiunit';
+files(4).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+files(5).filename = 'Pedro_S1_044-s_multiunit';
+files(5).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+numSets = 5;
+numChans = 96;
+
+%Run RW_PDs on data files and save output for later use.
+for i = 1:numSets
+    files(i).data = RW_PDs([files(i).datapath files(i).filename]);
+end;
+
+%Initialize data collection dates. 
+collectionDates = zeros(numSets);
+for i = 1:numSets
+    currpath = [files(i).datapath files(i).filename];
+    load(currpath);
+    currDate = datenum(bdf.meta.datetime);
+    if i == 1
+        firstDate = currDate;
+    end;
+    files(i).date = currDate - (firstDate-1);
+end;
+for i = 1:numSets
+    collectionDates(i) = files(i).date;
+end;
+
+%Make an array describing the size of each of the input data sets
+setSize = zeros(numSets, 2);
+for i = 1:numSets
+    setSize(i, :) = size(files(i).data);
+end;
+trodes = setSize(:, 2); 
+
+%Make a table with all the PD data arranged by electrode including missing
+%values as NaN with electrode index starting at one for the first column
+%and ending at the number of input data sets for the last column
+pdTable = zeros(numSets, numChans);
+for i = 1:numSets;
+    for j = 1:trodes(i)
+        trode = files(i).data(j).chan;
+        pdTable(i, trode) = files(i).data(j).glmpd;
+    end;
+    for j = 1:numChans
+        if pdTable(i,j) == 0
+            pdTable(i,j) = NaN;
+        end;
+    end;
+end;
+pdTable = unwrap(pdTable);
+
+%Make a plot of the preferred direction data
+chansPlot = zeros(numChans,numSets);
+for i = 1:numSets
+    chansPlot(:,i) = 1:numChans;
+end;
+figure(1);
+plot(chansPlot, pdTable', 'marker','.', 'markerSize', 10, 'LineStyle', 'none');
+grid minor;
+title 'Preferred Directions';
+
+%Make a cell array of only valid PD values
+validPD = cell(1,numChans);
+for i = 1:numChans
+    pd = NaN;
+    index = 0;
+    while isnan(pd) && index < numSets
+        index = index+1;
+        pd = pdTable(index, i);
+    end;
+    validPD{i} = pd;
+    if index ~= numSets
+        for j = index+1:numSets
+            currPDs = validPD{i};
+            if ~isnan(pdTable(j, i))
+                validPD{i} = cat(1, currPDs, pdTable(j,i));
+            end;
+        end;
+    end;
+end;
+
+%Evaluate the length of the dot product of all PDs for each electrode,
+%including the missing values. Or something like that, at any rate. 
+dotPSets = zeros(1,numChans);
+dotPVals = zeros(1,numChans);
+for i = 1:numChans
+    currXY = zeros(1,2);
+    count = 0;
+    for j = 1:numSets
+        if isnan(pdTable(j,i))
+            continue;
+        end;
+        currXY(1) = currXY(1) + cos(pdTable(j,i));
+        currXY(2) = currXY(2) + sin(pdTable(j,i));
+        count = count+1;
+    end;
+    dotPSets(i) = (sqrt((currXY(1)^2)+(currXY(2)^2)))/numSets;
+    dotPVals(i) = (sqrt((currXY(1)^2)+(currXY(2)^2)))/count;
+end;
+figure(2);
+plot(dotPSets, 'marker', '.', 'markerSize', 10, 'LineStyle', 'none');
+title 'Dot Products Including Missing Values';
+figure(3);
+plot(dotPVals, 'marker', '.', 'markerSize', 10, 'LineStyle', 'none');
+title 'Dot Products';
+
+%Evaluate the slope of the best-fit line for PD change over time for each
+%electrode
+slopes = zeros(1,numChans);
+for i = 1:numChans
+    if isnan(pdTable(:,i))
+        continue;
+    end;
+    regVals = zeros(numSets,2);
+    regVals(:,2) = 1:numSets; 
+    for j = 1:numSets
+        regVals(j,1) = pdTable(j,i);
+    end;
+    slopes(i) = regress(regVals(:,1), regVals(:,2));
+end;
+posSlopes = abs(slopes);
+figure(4);
+plot(posSlopes, 'marker', '.', 'markerSize', 10, 'LineStyle', 'none');
+title 'Slopes';
+
+%Perform some kind of statistical analysis on the slopes... H0: mean = 0??
+%I am really shaky on the statistics behind this particular question.
+meanSlope = mean(slopes);
+SESlope = (sum(slopes.^2))./(numChans-1);
+prob = 200*(tcdf(-meanSlope/SESlope,numChans-1));
+disp([num2str(prob) '% probability that mean slope is zero.']);
+   
+
+%Look at change of preferred directions over time
+pdPlot = zeros(numSets,2*numChans);
+for i = 1:numChans
+    pdPlot(:,2*i-1) = pdTable(:,i)';
+    pdPlot(:,2*i) = collectionDates;
+end;
+
+figure(5);
+title('PDs For All Channels');
+for i = 1:numChans
+    subplot(8,12,i) %This subplot configuration is up to the user's judgement
+    plot(pdPlot(:,2*i),pdPlot(:,2*i-1), 'marker', '.', 'markerSize', 10);
+    axis( [1 files(numSets).date -6.5 6.5]);
+end;
+
+% plot3(pdPlot, 'marker', '.', 'markerSize', 10, 'LineStyle', 'none');
+% title 'Trial Number vs. PD for Each Channel';
+
+clearvars i j numSets numChans currpath currDate collectionDates setSize...
+    trodes trode chansPlot pd index currPDs currXY count regVals...
+    pdPlot firstDate SESlope meanSlope bdf out prob posSlopes
