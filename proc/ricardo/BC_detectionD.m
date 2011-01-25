@@ -15,7 +15,7 @@ abort_code = 33;
 fail_code = 34;
 incomplete_code = 35;
 
-for file_no = 9:length(filelist)
+for file_no = 14:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
     stim_pds = filelist(file_no).pd;

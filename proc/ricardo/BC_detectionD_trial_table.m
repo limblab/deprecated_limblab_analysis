@@ -38,11 +38,18 @@ trial_starts = bdf.words(bitand(bdf.words(:,2),hex2dec('60'))==hex2dec('60') |..
 
 bump_times = bdf.words(bitand(bdf.words(:,2),hex2dec('50'))==hex2dec('50'),:);
 
+% for i=1:length(trial_starts)-1
+%     if trial_starts(i+1,1)<bump_times(i,1) || trial_starts(i,2)==abort_code
+%         bump_times = [bump_times(1:i-1,:) ; [0 0] ; bump_times(i:end,:)];
+%     end
+% end
+
 for i=1:length(trial_starts)-1
-    if trial_starts(i+1,1)<bump_times(i,1) || trial_starts(i,2)==abort_code
+    if trial_starts(i,2)==abort_code
         bump_times = [bump_times(1:i-1,:) ; [0 0] ; bump_times(i:end,:)];
     end
 end
+
 if trial_starts(end,1)>bump_times(end,1)
     bump_times = [bump_times; [0 0]];
 end
