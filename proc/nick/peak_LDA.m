@@ -67,3 +67,11 @@ ylabel('state (+/-)1 = movement, state 0 = hold');
 % title('Classification errors');
 % xlabel('time (s)');
 % ylabel('1 = error, 0 = correct');
+
+incorrect = sum(abs(binnedData.states(:,1) - classes(:,1)));
+false_hold = (sum(binnedData.states(:,1) - classes(:,1)) + incorrect) / 2;
+false_move = incorrect - false_hold;
+true_hold = length(binnedData.states) - sum(binnedData.states(:,1)) - false_move;
+true_move = sum(binnedData.states(:,1)) - false_hold;
+confusion = [true_hold false_hold; false_move true_move]
+descriptor = ['true_hold ' 'false_hold'; 'false_move ' 'true_move']

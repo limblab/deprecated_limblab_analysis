@@ -1,10 +1,11 @@
-training_set = zeros(length(binnedData.timeframe)-3,length(binnedData.spikeguide));
-group = zeros(length(training_set),1);
-
 window = 0.200; % in seconds (for spike averaging) should match training
 
 bin = double(binnedData.timeframe(2) - binnedData.timeframe(1));
 window_bins = floor(window/bin);
+
+training_set = zeros(length(binnedData.timeframe)-(window_bins-1),length(binnedData.spikeguide));
+group = zeros(length(training_set),1);
+
 
 for x = window_bins:length(binnedData.timeframe)
     training_set(x,:) = mean(binnedData.spikeratedata(x-(window_bins-1):x,:),1);
@@ -45,3 +46,11 @@ ylabel('state (+/-)1 = movement, state 0 = hold');
 % title('Classification errors');
 % xlabel('time (s)');
 % ylabel('1 = error, 0 = correct');
+
+incorrect = sum(abs(binnedData.states(:,1) - classes(:,1)));
+false_hold = (sum(binnedData.states(:,1) - classes(:,1)) + incorrect) / 2;
+false_move = incorrect - false_hold;
+true_hold = length(binnedData.states) - sum(binnedData.states(:,1)) - false_move;
+true_move = sum(binnedData.states(:,1)) - false_hold;
+confusion = [true_hold false_hold; false_move true_move]
+descriptor = ['true_hold ' 'false_hold'; 'false_move ' 'true_move']
