@@ -350,11 +350,58 @@ else
     end
 end
 
+%% Trial Table
+if (isfield(datastruct,'words') && ~isempty(datastruct.words))
+    center_out_task=0;
+    robot_task = 0;
+    wrist_flexion_task =0;
+    ball_drop_task = 0;
+    multi_gadget_task=0;
+    random_walk_task=0;
+    
+    start_trial_words = datastruct.words( bitand(hex2dec('f0'),datastruct.words(:,2)) == hex2dec('10') ,2);
+    if ~isempty(start_trial_words)
+        start_trial_code = start_trial_words(1);
+        if ~isempty(find(start_trial_words ~= start_trial_code, 1))
+           close(h);
+           error('BDF:inconsistentBehaviors','Not all trials are the same type');
+        end
+
+        if start_trial_code == hex2dec('17')
+            wrist_flexion_task = 1;
+        elseif (start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')) ||...
+                start_trial_code == hex2dec('1a') || start_trial_code == hex2dec('1c')
+            robot_task = 1;
+            if start_trial_code == hex2dec('11')
+                center_out_task = 1;
+            elseif start_trial_code == hex2dec('12')
+                random_walk_task = 1;
+            end
+        elseif start_trial_code == hex2dec('1B')
+            robot_task = 1;
+        elseif start_trial_code == hex2dec('19')
+            ball_drop_task = 1;
+        elseif start_trial_code == hex2dec('16')
+            multi_gadget_task = 1;
+        else
+            %close(h);
+            error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
+        end
+    end
+else
+        warning('BDF:noWords','No WORDs are present');
+end
+    
+if ball_drop_task
+    tt = bd_trial_table(datastruct);
+else
+    tt = [];
+end
+
 %% Movement States
 if ~Find_States
     states = [];
     statemethods = [];
-    tt = [];
 else
     states = NaN(numberbins,2);
     statemethods(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];   

@@ -2,7 +2,7 @@ function convertBatch2BDF2Binned
 
 %% Globals
     
-    dataPath = 'C:\Monkey\Jaco\';
+    dataPath = 'C:\Monkey\Jaco\Data';
     
 %% Get Cerebus Data Files
 
@@ -34,7 +34,7 @@ function convertBatch2BDF2Binned
 %% Get Data Binning Parameters
 
     [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
-    
+
 %% Convert Cerebus to BDF
 
     BDF_FileNames = convertBatch2BDF(CB_FileNames, CB_PathName, BDFsavePath);

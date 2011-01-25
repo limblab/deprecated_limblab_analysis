@@ -1,6 +1,6 @@
 function BDF_FileNames = convertBatch2BDF(varargin)
 
-    dataPath = 'C:\Monkey\Keedoo\';
+    dataPath = 'C:\Monkey\Jaco\Data\';
     
     if nargin == 0
         [CB_FileNames, CB_PathName] = uigetfile( { [dataPath '\CerebusData\*.nev']},...
@@ -37,12 +37,16 @@ function BDF_FileNames = convertBatch2BDF(varargin)
     end        
     
     for i=1:numFiles
-        BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.nev', '.mat');
+        if strcmp(CB_FileNames{i}(end-3:end),'.nev')
+            BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.nev', '.mat');
+        else
+            BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.plx', '.mat');
+        end
     end  
 
     for i=1:numFiles
         disp(sprintf('Converting %s to BDF structure...', CB_FileNames{:,i} ));
-        out_struct = get_cerebus_data([CB_PathName CB_FileNames{:,i}],1);
+        out_struct = get_cerebus_data([CB_PathName CB_FileNames{:,i}],'verbose');
         disp(sprintf('Saving BDF structure %s...',BDF_FileNames{:,i}));
         save([savePath '\' BDF_FileNames{:,i} ], 'out_struct');
         disp('Done.');
