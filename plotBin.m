@@ -329,34 +329,32 @@ end
         [timeBefore, timeAfter]=PWTH_GUI();
         
         if (usr_plotEMGs && usr_plotForce) %plot EMG and Force on two different Y axis
-            EMGs_PWTH = PWTH(datastruct.emg.data(:,[1; EMGs_to_plot+1]),datastruct.words,...
-                                WordsValue(Words_to_plot), timeBefore, timeAfter);
-                                      
-            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.words,...
-                                WordsValue(Words_to_plot), timeBefore, timeAfter);
+            EMGs_PWTH = PWTH([datastruct.timeframe datastruct.emgdatabin(:,EMGs_to_plot)],datastruct.words,...
+                                WordsValue(Words_to_plot), timeBefore, timeAfter);            
+            Force_PWTH = PWTH([datastruct.timeframe datastruct.forcedatabin(:,Force_to_plot)],datastruct.words,...
+                                WordsValue(Words_to_plot), timeBefore, timeAfter);                
                             
             hold off; axis auto;
-            [AX,H1,H2]=plotyy(EMGs_PWTH(:,1),FilteredEMGs,Force_PWTH(:,1),FilteredForce);
+            [AX,H1,H2]=plotyy(EMGs_PWTH(:,1),EMGs_PWTH(:,2:end),Force_PWTH(:,1),Force_PWTH(:,2:end));
             [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot,:),'Location','NorthWest');
             [leghf,objhf,outhf,outmf]=legend(AX(2),ForceNames(Force_to_plot,:),'Location','NorthEast');
             legh = [leghe; leghf];
             outm = outme; outh = outhe;
             emg_handles = H1;
             force_handles = H2;
-             
+            
         elseif (usr_plotEMGs) %plot EMGs but not Force
             hold off; axis auto;
             EMGs_PWTH = PWTH([datastruct.timeframe datastruct.emgdatabin(:,EMGs_to_plot)],datastruct.words,...
                                 WordsValue(Words_to_plot), timeBefore, timeAfter);
-            emg_handles = plot(EMGs_PWTH(:,1),EMGs_PWTH);
+            emg_handles = plot(EMGs_PWTH(:,1),EMGs_PWTH(:,2:end));
             [legh,objh,outh,outm]=legend(EMGnames(EMGs_to_plot,:),'Location','NorthWest');
             
         elseif (usr_plotForce) %plot Force but no EMG
             hold off; axis auto;
-            Force_PWTH = PWTH(datastruct.force.data(:,[1; Force_to_plot+1]),datastruct.words,...
+            Force_PWTH = PWTH([datastruct.timeframe datastruct.forcedatabin(:,Force_to_plot)],datastruct.words,...
                                 WordsValue(Words_to_plot), timeBefore, timeAfter);
-            FilteredForce= FiltForce(Force_PWTH(:,2:end));
-            force_handles = plot(Force_PWTH(:,1),FilteredForce);
+            force_handles = plot(Force_PWTH(:,1),Force_PWTH(:,2:end));
             [legh,objh,outh,outm]=legend(force_handles, ForceNames(Force_to_plot),'Location','NorthEast');
         end
 
