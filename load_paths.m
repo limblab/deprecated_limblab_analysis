@@ -12,6 +12,7 @@ addpath(dir);
 addpath([dir '/lib']);
 addpath([dir '/lib/ml']);
 addpath([dir '/lib/stats']);
+addpath([dir '/lib/bootstrapping']);
 addpath([dir '/lib/glm']);
 addpath([dir '/mimo']);
 addpath([dir '/spike']);

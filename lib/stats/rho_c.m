@@ -12,22 +12,31 @@ function r = rho_c(alpha, beta)
 
 % $Id$
 
+alpha = mod(2*pi, alpha);
+beta = mod(2*pi, beta);
+
 x = cos(alpha);
 y = sin(alpha);
-mu = atan2(sum(y), sum(x));
+mu = mod(2*pi, atan2(sum(y), sum(x)));
 
 x = cos(beta);
 y = sin(beta);
-nu = atan2(sum(y), sum(x));
+nu = mod(2*pi, atan2(sum(y), sum(x)));
 
-E = mean(sin(alpha-mu) .* sin(beta-nu));
-%V = var(sin(alpha-mu)) .* var(sin(beta-nu));
-V = mean(sin(alpha-mu).^2) * mean(sin(beta-nu).^2);
+%E = mean(sin(alpha-mu) .* sin(beta-nu));
+%V = mean(sin(alpha-mu).^2) * mean(sin(beta-nu).^2);
 
-%E = sum(sin(alpha-mu) .* sin(beta-nu));
-%V = sum(sin(alpha-mu).^2 .* sin(beta-nu).^2);
+%r = E / sqrt(V);
 
-r = E / sqrt(V);
+%E = mean( sin(alpha-mu).*sin(beta-nu) );
+%V = mean( sin(alpha-mu).^2 ).*mean( sin(beta-nu).^2 );
 
-%r = sum( sin(alpha-mu) .* sin(beta-nu) ) / sqrt( sum( sin(alpha-mu).^2 .* sin(beta-nu).^2 ) );
+%r = E/sqrt(V);
 
+
+
+
+a=alpha(:);
+b=beta(:);
+n=length(a);
+r=4*(sum(cos(a).*cos(b))*sum(sin(a).*sin(b))-sum(cos(a).*sin(b))*sum(sin(a).*cos(b)))/sqrt((n.^2-sum(cos(2*a)).^2-sum(sin(2*a)).^2)*(n.^2-sum(cos(2*b)).^2-sum(sin(2*b)).^2));
