@@ -14,9 +14,15 @@ channels{2} = sortData(units{2});
 channels{1} = combineUnits(channels{1});
 channels{2} = combineUnits(channels{2});
 
+spikeMatrix = numSpikes(channels{1}, channels{2});
+
 binary = compareChannels(channels{1}, channels{2});
 
-mismatched = countMismatches(binary);
+missMatrix = countMismatches(binary);
+
+spikeMatrix = spikeMatrix - (missMatrix ./ 2);
+
+mismatched = missMatrix ./ spikeMatrix;
 
 %Reorganizes the data in bdf.units into a 1X96 structure. Each cell of the
 %structure represents a channel and contains an integer, id, that
@@ -58,6 +64,17 @@ mismatched = countMismatches(binary);
         end;
     end
 
+%Produces a matrix containing the number of spikes for each channel with
+%overlap in cases of spikes that were sorted by both users. 
+    function output = numSpikes(one, two)
+        output = zeros(1,96);
+        for i = 1:96
+            temp = size(one{i});
+            output(i) = output(i) + temp(1);
+            temp = size(two{i});
+            output(i) = output(i) + temp(1);
+        end;
+    end
 
 %Compares two attempts at sorting the same channel, producing a vector of
 %ones and zeros in which the zeros represent spikes that were sorted by
@@ -88,12 +105,15 @@ mismatched = countMismatches(binary);
 %for every timestamp that is the same between the two columns and one for
 %every timestamp that appears in only one column.
     function output = compareColumns(un, deux)
-        sizes = [size(un); size(deux)];
-        output = zeros((sizes(3)+sizes(4)),1);
+        sizes{1} = size(un);
+        sizes{2} = size(deux);
+        maximum{1} = max(sizes{1});
+        maximum{2} = max(sizes{2});
+        output = zeros((maximum{1}+maximum{2}),1);
         u = 1;
         d = 1;
         loop = 1;
-        while u < (sizes(1)+1) && d < (sizes(2)+1)
+        while u < (maximum{1}+1) && d < (maximum{2}+1)
             if abs(un(u)-deux(d)) < 1
                 u = u+1;
                 d = d+1;
@@ -110,13 +130,13 @@ mismatched = countMismatches(binary);
         end;
         if abs(u-d) < 1
             return;
-        elseif u > sizes(1)
-            for n = 1:(sizes(2)-d)
+        elseif u > maximum{1}
+            for n = 1:(maximum{2}-d)
                 output(loop) = 1;
                 loop = loop+1;
             end;
-        elseif d > sizes(2)
-            for n = 1:(sizes(1)-u)
+        elseif d > maximum{2}
+            for n = 1:(maximum{1}-u)
                 output(loop) = 1;
                 loop = loop+1;
             end;
@@ -124,8 +144,8 @@ mismatched = countMismatches(binary);
     end
     
 %Takes in a cell array containing vectors of ones and zeros and counts the
-%number of ones in each vector, returning the total number of ones in the
-%entire cell array.
+%number of ones in each vector, returning the total number of ones in each
+%cell of the array.
     function mismatches = countMismatches(binary)
         mismatches = zeros(1,96);
         for i = 1:96
