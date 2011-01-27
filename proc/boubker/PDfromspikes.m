@@ -1,8 +1,8 @@
 clear; close all;clc;
+pathname='Z:\Miller\Pedro_4C2\S1 Array\Sorted\';
+root=('Pedro_BC_031-s_multiunit');
+filname='bdf';
 
-
-pathname='C:\Documents and Settings\Administrator\Desktop\Boubker_Data\LFPs\Chewie\';
-root=('CHEWlfp');
 data=load([pathname,root,'.mat']);
 
 nbtarget=8;
@@ -16,7 +16,7 @@ direc=os;
 direc(1)=[];
 
 dd=[];
-dd=[dd data.(root).units.id];
+dd=[dd data.(filname).units.id];
 chan=dd(1:2:end-1);
 units=dd(2:2:end);
 chanunit(:,1)=dd(1:2:end-1)';
@@ -24,24 +24,24 @@ chanunit(:,2)=dd(2:2:end)';
 cha_uni=chanunit;
 cha_uni(find(cha_uni(:,2)==0),:)=[];
 
-postimes=(data.(root).pos(:,1)*1000);
+postimes=(data.(filname).pos(:,1)*1000);
 
 
 
-xposall=data.(root).pos(:,2);
-yposall=data.(root).pos(:,3);
+xposall=data.(filname).pos(:,2);
+yposall=data.(filname).pos(:,3);
 
 psr= 1/(postimes(2)- postimes(1))*1000;
 
 
 if psr<1000
 postim=(postimes(1):1:(postimes(end)))';
-xposall=interp1(postimes,data.(root).pos(:,2),postim,'nearest');
-yposall=interp1(postimes,data.(root).pos(:,3),postim,'nearest');
+xposall=interp1(postimes,data.(filname).pos(:,2),postim,'nearest');
+yposall=interp1(postimes,data.(filname).pos(:,3),postim,'nearest');
 end
 
-cuesall= data.(root).words(:,1);
-words=data.(root).words(:,2);
+cuesall= data.(filname).words(:,1);
+words=data.(filname).words(:,2);
 starts=cuesall(find(words==rewardword)-nbtarget);
 ends=cuesall(find(words==rewardword));
 while (starts(1)<=0)
@@ -81,7 +81,7 @@ for i=1: length(starts)
 unitsc=[];
 for h=1:size(chanunit,1)
     if chanunit(h,2)~=0
-        unitsc=[unitsc;(length(find(data.(root).units(1,h).ts>rt & data.(root).units(1,h).ts<rt+timeaft)))];
+        unitsc=[unitsc;(length(find(data.(filname).units(1,h).ts>rt & data.(filname).units(1,h).ts<rt+timeaft)))];
     end
 end
 
@@ -141,3 +141,4 @@ figure;compass(pdcartx,pdcarty);
  errorbar([1:1:size(cha_uni,1)],PDMatrix(:,2),PDMatrix(:,2)-PDMatrix(:,1),PDMatrix(:,3)-PDMatrix(:,2),'+')
 xlabel('Units');
 ylabel('PD');
+hold off;
