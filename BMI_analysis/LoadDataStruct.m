@@ -37,7 +37,7 @@ field_names = fieldnames(datastruct);
 for i=1:size(field_names,1)
     if isstruct(eval(['datastruct.' field_names{i,:}]))
         datastruct  = getfield(datastruct, field_names{i,:});
-        continue;
+        break;
     end
 end
 % 
