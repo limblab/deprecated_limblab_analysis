@@ -1,7 +1,7 @@
 clear; close all;clc;
 
-pathname='Z:\Miller\Pedro_4C2\S1 Array\Sorted\';
-root=('Pedro_BC_031-s_multiunit');
+pathname='/Users/limblab/Documents/Joe Lancaster/';
+root=('Pedro_S1_040-s');
 data=LoadDataStruct([pathname,root,'.mat']);
 
 nbtarget=8;
@@ -39,8 +39,14 @@ xposall=interp1(postimes,data.pos(:,2),postim,'nearest');
 yposall=interp1(postimes,data.pos(:,3),postim,'nearest');
 end
 
-cuesall= data.(filname).words(:,1);
+cuesall= data.words(:,1);
 words=data.words(:,2);
+for i=1 : nbtarget
+    if (words(i)==rewardword) 
+       cuesall(i)=[]; 
+       words(i)=[];
+    end
+end
 starts=cuesall(find(words==rewardword)-nbtarget);
 ends=cuesall(find(words==rewardword));
 while (starts(1)<=0)
@@ -114,8 +120,8 @@ end;
 s = struct('filename', {root}, 'counts_unit', {cell2struct(spike_counts,'counts_unit_direction',15)}, ...
  'directions', {direction});
 %% bootstrapping then calculate the circular mean and the CI
-cd('..\..');
-load_paths;
+% cd('..\..');
+% load_paths;
 
 bootstrapPDS = cell(1, size(cha_uni,1));
 
@@ -141,3 +147,15 @@ figure;compass(pdcartx,pdcarty);
 xlabel('Units');
 ylabel('PD');
 hold off;
+%% export to Excel file
+
+dataSize = size(PDMatrix);
+ndata = zeros(dataSize(1),dataSize(2)+2);
+for i = 1:2
+    ndata(:,i) = cha_uni(:,i);
+end;
+for i = 1:dataSize(2)
+    ndata(:,i+2) = PDMatrix(:,i);
+end;
+xlswrite('/Users/limblab/Documents/Joe Lancaster/PD Analysis Output/PDData.xls', ndata, 'Pedro 040');
+
