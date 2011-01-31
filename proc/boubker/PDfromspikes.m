@@ -180,15 +180,4 @@ hold off;
 
 %% export to Excel file
 
-dataSize = size(PDMatrix);
-ndata = zeros(dataSize(1),dataSize(2)+2);
-for i = 1:2
-    ndata(:,i) = cha_uni(:,i);
-end;
-for i = 1:dataSize(2)
-    ndata(:,i+2) = PDMatrix(:,i);
-end;
-
-
-xlswrite('/Users/limblab/Documents/Joe Lancaster/PD Analysis Output/PDData.xls', ndata, 'Pedro 040');
-
+xlswrite([pathname 'PD Analysis Output\' root '.csv'], allPDs, root);
