@@ -128,15 +128,21 @@ bootstrapPDS = cell(1, size(cha_uni,1));
 PDMatrix=zeros(size(cha_uni,1),3);
 for x = 1:size(cha_uni,1)
     bootstrapPDS{x} = bootstrap(@vector_sum_pd, spike_counts{x}, 'all', 1000);
-    ss=bootstrapPDS{x}(:,1);
+    ss=bootstrapPDS{x}(:,1)-pi;
     PDMatrix(x,:)=cprctile(ss,[5 50 95]);
 end
+
+
 %% get the mean magnitudes and plot PD as a polar 
 for x = 1:size(cha_uni,1)
    mag(x) =mean(bootstrapPDS{x}(:,2));end;
 
 [pdcartx,pdcarty]=pol2cart(PDMatrix(:,2),mag');
 figure;compass(pdcartx,pdcarty);
+
+allPDs(:,1:2)= cha_uni;
+allPDs(:,3:5)= PDMatrix;
+allPDs(:,6)= mag;
 
 %% convert to degrees and plot histogram
 
@@ -147,6 +153,8 @@ figure;compass(pdcartx,pdcarty);
 xlabel('Units');
 ylabel('PD');
 hold off;
+
+
 %% export to Excel file
 
 dataSize = size(PDMatrix);
@@ -157,5 +165,7 @@ end;
 for i = 1:dataSize(2)
     ndata(:,i+2) = PDMatrix(:,i);
 end;
+
+
 xlswrite('/Users/limblab/Documents/Joe Lancaster/PD Analysis Output/PDData.xls', ndata, 'Pedro 040');
 
