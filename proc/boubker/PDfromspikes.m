@@ -1,7 +1,9 @@
 clear; close all;clc;
 
-pathname='/Users/limblab/Documents/Joe Lancaster/';
-root=('Pedro_S1_040-s');
+% pathname='/Users/limblab/Documents/Joe Lancaster/';
+pathname='C:\Documents and Settings\Administrator\Desktop\Boubker_Data\spikes\';
+% root=('Pedro_S1_040-s');
+ root=('pedro39rw');
 data=LoadDataStruct([pathname,root,'.mat']);
 
 nbtarget=8;
@@ -20,8 +22,25 @@ chan=dd(1:2:end-1);
 units=dd(2:2:end);
 chanunit(:,1)=dd(1:2:end-1)';
 chanunit(:,2)=dd(2:2:end)';
+
+for i=1:length(chanunit)
+    isi=[];
+    unicount(i)=length(data.units(1,i).ts);
+    lendata(i)= data.pos(end,1);
+    for j=1 :  unicount(i)-1;
+        isi(j)=data.units(1,i).ts(j+1)-data.units(1,i).ts(j);
+    end
+   meanisi(i)=mean(isi);
+end;
 cha_uni=chanunit;
+ unicount(find(cha_uni(:,2)==0),:)=[];
+lendata(find(cha_uni(:,2)==0),:)=[];
+meanisi(find(cha_uni(:,2)==0),:)=[];
 cha_uni(find(cha_uni(:,2)==0),:)=[];
+unicount=unicount';
+lendata=lendata';
+meanisi=meanisi';
+unicperlen=unicount./lendata;
 
 postimes=(data.pos(:,1)*1000);
 
@@ -87,6 +106,7 @@ unitsc=[];
 for h=1:size(chanunit,1)
     if chanunit(h,2)~=0
         unitsc=[unitsc;(length(find(data.units(1,h).ts>rt & data.units(1,h).ts<rt+timeaft)))];
+    
     end
 end
 
@@ -143,7 +163,10 @@ figure;compass(pdcartx,pdcarty);
 allPDs(:,1:2)= cha_uni;
 allPDs(:,3:5)= PDMatrix;
 allPDs(:,6)= mag;
-
+allPDs(:,7)= unicount;
+allPDs(:,8)= lendata;
+allPDs(:,9)= unicperlen;
+allPDs(:,10)= meanisi;
 %% convert to degrees and plot histogram
 
  PDMatrix=PDMatrix/pi*180;
