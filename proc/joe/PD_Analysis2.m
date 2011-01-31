@@ -5,10 +5,10 @@
 %channels in the electrode array (numChans). 
 
 %Initial data. Ensure this is correct before proceeding.
-% files(1).filename = 'Pedro_S1_040-s_multiunit';
-% files(1).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
-% files(2).filename = 'Pedro_S1_041-s_multiunit';
-% files(2).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+files(1).filename = 'Pedro_S1_040-s_multiunit';
+files(1).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+files(2).filename = 'Pedro_S1_041-s_multiunit';
+files(2).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
 % files(3).filename = 'Pedro_S1_042-s_multiunit';
 % files(3).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
 % files(4).filename = 'Pedro_S1_043-s_multiunit';
@@ -16,11 +16,11 @@
 % files(5).filename = 'Pedro_S1_044-s_multiunit';
 % files(5).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
 
-files(1).filename = 'Pedro_S1_008-s';
-files(1).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
-files(2).filename = 'Pedro_S1_011-s';
-files(2).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
-numSets = 5;
+% files(1).filename = 'Pedro_S1_008-s';
+% files(1).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+% files(2).filename = 'Pedro_S1_011-s';
+% files(2).datapath = '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/proc/joe/';
+numSets = 2;
 numChans = 96;
 
 %Run RW_PDs on data files and save output for later use.
