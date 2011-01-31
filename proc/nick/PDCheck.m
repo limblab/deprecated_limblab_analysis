@@ -1,4 +1,4 @@
-function PDCheck(PDMatrix)
+function PDCheck2(PDMatrix)
 
 % PDCHECK plots the preferred directions (PDs) of the units represented in
 % PDMATRIX in a compass plot and allows the user to exclude individual
@@ -36,11 +36,31 @@ for x = 1:num_units
         'Callback', @BoxCheck); % set all checks and unchecks to call function BoxCheck below
 end
 
-axes('Position', [50/fig_pos(3), 100/fig_pos(4), 400/fig_pos(3), 400/fig_pos(4)]); % set position of axes for PD plot
+sel_all = uicontrol('Parent', UI, ...
+    'Style', 'pushbutton', ...
+    'String', 'Select All', ...
+    'Position', [100, 50, 100, 50], ...
+    'Callback', @SelectAll);
+
+desel_all = uicontrol('Parent', UI, ...
+    'Style', 'pushbutton', ...
+    'String', 'Deselect All', ...
+    'Position', [300, 50, 100, 50], ...
+    'Callback', @DeselectAll);
+
+max_mag = max(PDMatrix(:,6)); % for scaling axes of PD plot
+uicontrol('Parent', UI, ...
+    'Style', 'text', ...
+    'String', ['Maximum Magnitude = ' num2str(max_mag,3)], ...
+    'Position', [100, 100, 300, 25], ...
+    'BackgroundColor', get(UI, 'Color'));
+
+axes('Position', [50/fig_pos(3), 125/fig_pos(4), 400/fig_pos(3), 400/fig_pos(4)]); % set position of axes for PD plot
 
 [PDcartX, PDcartY]=pol2cart(PDMatrix(goodUnits,4), PDMatrix(goodUnits,6)); % convert PD vectors from polar to cartesian coordinates for plotting
 compass(PDcartX, PDcartY); % plot all PDs on a compass plot
 title('Preferred Directions of Active Units');
+% axis([-max_mag, max_mag, -max_mag, max_mag]);
 
     function BoxCheck(~,~) % called whenever a check box is either checked or unchecked
         unit = find(unit_check(:) == gcbo); % find the unit whose check box has been clicked
@@ -48,6 +68,27 @@ title('Preferred Directions of Active Units');
         goodUnits(unit) = logical(val); % toggle the value for the unit from either 1 to 0 (unchecked) or 0 to 1 (checked)
         compass(PDcartX(goodUnits), PDcartY(goodUnits)); % plot PDs for all checked units on a compass plot
         title('Preferred Directions of Active Units');
+%         axis([-max_mag, max_mag, -max_mag, max_mag]);
+    end
+
+    function SelectAll(~,~)
+        for y = 1:length(unit_check)
+            set (unit_check(y), 'Value', 1); % select all checkboxes
+        end
+        goodUnits(:) = true; % update logical array of good units
+        compass(PDcartX(goodUnits), PDcartY(goodUnits)); % plot PDs for all checked units on a compass plot
+        title('Preferred Directions of Active Units');
+%         axis([-max_mag, max_mag, -max_mag, max_mag]);
+    end
+
+    function DeselectAll(~,~)
+        for y = 1:length(unit_check)
+            set (unit_check(y), 'Value', 0); % deselect all checkboxes
+        end
+        goodUnits(:) = false; % update logical array of good units
+        compass(PDcartX(goodUnits), PDcartY(goodUnits)); % plot PDs for all checked units on a compass plot
+        title('Preferred Directions of Active Units');
+%         axis([-max_mag, max_mag, -max_mag, max_mag]);
     end
 
 end
