@@ -1,9 +1,9 @@
 clear; close all;clc;
 
 % pathname='/Users/limblab/Documents/Joe Lancaster/';
-pathname='C:\Documents and Settings\Administrator\Desktop\Boubker_Data\spikes\';
+pathname='Z:\Miller\Pedro_4C2\S1 Array\Processed\';
 % root=('Pedro_S1_040-s');
- root=('pedro39rw');
+ root=('Pedro_S1_047-s');
 data=LoadDataStruct([pathname,root,'.mat']);
 
 nbtarget=8;
@@ -177,7 +177,10 @@ xlabel('Units');
 ylabel('PD');
 hold off;
 
-
+figure;bar(bootstrapPDS{1,1}(:,1)+pi,bootstrapPDS{1,1}(:,2));
+xlabel('PDs');
+ylabel('mags')
+title(root);
 %% export to Excel file
 
 xlswrite([pathname 'PD Analysis Output\' root '.csv'], allPDs, root);
