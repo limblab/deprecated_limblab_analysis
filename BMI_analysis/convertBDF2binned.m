@@ -388,15 +388,17 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
             error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
         end
     end
+
+    if ball_drop_task
+        tt = bd_trial_table(datastruct);
+    else
+        tt = [];
+    end
 else
         warning('BDF:noWords','No WORDs are present');
+        tt = [];
 end
     
-if ball_drop_task
-    tt = bd_trial_table(datastruct);
-else
-    tt = [];
-end
 
 %% Movement States
 if ~Find_States

@@ -1,21 +1,23 @@
 function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, varargin)
-%       [filter,varargout] = BuildModel(binnedData, dataPath, UseAllInputsOption, xvalidate_flag)
-%
-%       filter                : cell array containing computed models, one for each state in (States)
-%                               (neuronIDs,H,P,emgguide,fillen,binsize,etc.)
-%       varargout ={PredData}
-% Input arguments:
+% Outputs:
+%       1.Models                : a structure (or a cell array of structures) containing the computed model(s)
+%                               (neuronIDs,H,P,emgguide,fillen,binsize,etc.
+% Inputs:
 %       1.binnedData          : data structure to build model from
 %       2.fillen              : Filter length, in seconds
 %       3.dataPath            : string of the path of the data folder
 %       4.UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
 %       5.PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin            : {6.PredEMG, 7.PredForce,8.PredCursPos,9.PredVeloc,10.Use_State,11.numPCs}
-%                              flags to include EMG, Force, Cursor Position
-%                              and Thresholding in the prediction model
-%                              (0=no,1=yes), if numPCs is present, will
-%                              use numPCs components as inputs instead of
-%                              spikeratedata
+%       6-11 varargin :
+%          6.PredEMG, 7.PredForce,8.PredCursPos,9.PredVeloc
+%                         : flags to include EMG, Force, Cursor Position
+%                           and Thresholding in the prediction model (0=no,1=yes).
+%          10.Use_State   : if non-zero, the function will return as many models as there are
+%                           different classification in binnedData.states(:,Use_State). Use_State
+%                           is both a flag to enable multiple decoders and an index 
+%                           to select the classification method.
+%          11. numPCs     : if non-zero, it uses N = numPCs principal components as inputs instead of
+%                           the spike rate of all the units
 %
    
     if ~isstruct(binnedData)
@@ -34,10 +36,9 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
     PredForce    = 0;
     PredCursPos  = 0;
     PredVeloc    = 0;
-    Use_Thresh   = 0;
     Use_State    = 0;
-    Use_PrinComp = 0;
-
+    numPCs       = 0;
+    
     
     %overwrite if specified in arguments
     if nargin > 5
@@ -51,7 +52,6 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
                     if nargin > 9
                         Use_State = varargin{5};
                         if nargin > 10
-                            Use_PrinComp = true;
                             numPCs = varargin{6};
                         end
                     end
@@ -106,19 +106,19 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
         %% round helps getting rid of floating point error but care should
         %% be taken in making sure fillen is a multiple of binsize.
     numsides=1;     %%%For a one-sided or causal filter
-    
-    % Duplicate and shift neural channels so we don't have to look in the past with the linear filter.
-    DS_spikes = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags);
-    numlags = 1;
 
+    % Duplicate and shift neural channels so we don't have to look in the past with the linear filter.
+%     DS_spikes = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags);
+    Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags);
+    numlags = 1;
     
     %Uncomment next line to use EMG as inputs for predictions
 %     Inputs = binnedData.emgdatabin;
 
-%     if Use_PrinComp
-%         [PCoeffs,Inputs] = princomp(zscore(Inputs));
-%         Inputs = Inputs(:,1:numPCs);
-%     end
+    if numPCs > 0
+        [PCoeffs,Inputs] = princomp(zscore(Inputs));
+        Inputs = Inputs(:,1:numPCs);
+    end
         
     Outputs = [];
     OutNames = [];
@@ -145,13 +145,23 @@ Models = cell(1,numStates);
    
 for state = 1:numStates
     
-    Ins = DS_spikes(state-1==binnedData.states(:,state),:);
-    Outs= Outputs  (state-1==binnedData.states(:,state),:);
+%     Ins = DS_spikes(state-1==binnedData.states(:,state),:);
+    Ins = Inputs (state-1==binnedData.states(:,Use_State),:);
+    Outs= Outputs(state-1==binnedData.states(:,Use_State),:);
 
 %% Calculate a model for each state, and for each 
 
-    [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);    
+%     disp('building model using left divide...');
+%     tic;
+%     Ins = detrend(Ins, 'constant'); Outs=detrend(Outs, 'constant');
 %     H = Ins\Outs;
+%     toc;
+     
+    disp('building model using filMIMO3...');
+    tic;
+    [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);    
+    toc;
+
     
 %% Add non-linearity if applicable    
      

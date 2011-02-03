@@ -68,9 +68,8 @@ else
     numOutputs    =  size(models{1,1}.H,2);
     PredictedData =  zeros(numPoints,numOutputs);
     for state = 1:numStates
-%         Inputs = DS_spikes(state-1==BinnedData.states(:,state),:);
         [TempPred,spikeDataNew,ActualDataNew]=predMIMO3(DS_spikes,models{1,state}.H,numsides,fs,Outputs);
-%        State_Mask = repmat(BinnedData.state(:,state),1,numOutputs);
+%         TempPred = DS_spikes*models{1,state}.H;
         State_Mask = repmat(state-1==BinnedData.states(:,State_index),1,numOutputs);
         TempPred = TempPred .* State_Mask;
         if ~isempty(models{1,state}.P)

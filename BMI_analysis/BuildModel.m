@@ -102,6 +102,8 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     numsides=1;     %%%For a one-sided or causal filter
 
     Inputs = binnedData.spikeratedata(:,desiredInputs);
+
+%     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
     
     %Uncomment next line to use EMG as inputs for predictions
 %     Inputs = binnedData.emgdatabin;
