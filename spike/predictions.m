@@ -1,4 +1,4 @@
-function [vaf, H] = predictions(bdf, signal, cells, folds)
+function [vaf, vaf2, r2] = predictions(bdf, signal, cells, folds)
 
 % $Id$
 
@@ -40,14 +40,17 @@ q = interp1(bdf.vel(:,1), q, t);
 
 x = x(q==1,:);
 y = y(q==1,:);
+y = y - repmat(mean(y),length(y),1);
 
 vaf = zeros(folds,2);
-%r2 = zeros(folds,2);
+r2 = zeros(folds,2);
+vaf2 = zeros(folds,1);
+
 fold_length = floor(length(y) ./ folds);
     
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
-    fold_end = fold_start + fold_length;
+    fold_end = min([fold_start + fold_length, length(y)]);
     
     x_test = x(fold_start:fold_end,:);
     y_test = y(fold_start:fold_end,:);
@@ -58,11 +61,14 @@ for i = 1:folds
     [H,v,mcc] = filMIMO3(x_train, y_train, 20, 2, 20);
     y_pred = predMIMO3(x_test,H,2,20,y_test);
    
-    vaf(i,:) = 1 - var(y_pred - y_test) ./ var(y_test);
+    %vaf(i,:) = 1 - var(y_pred - y_test) ./ var(y_test);
+    r2(i,:)  = (diag(corr(y_pred,y_test))').^2;
+    vaf(i,:) = 1 - sum( (y_pred-y_test).^2 ) ./ sum( (y_test - repmat(mean(y_test),length(y_test),1)).^2 );
+    vaf2(i) = 1 - sum( sum((y_pred-y_test).^2) ) ...
+        ./ sum( sum((y_test - repmat(mean(y_test),length(y_test),1)).^2) );
 end
 
 %rmpath mimo
 %rmpath spike
 %rmpath bdf
-
 
