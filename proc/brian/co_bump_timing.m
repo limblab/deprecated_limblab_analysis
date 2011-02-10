@@ -12,14 +12,18 @@ mdltmplt = fittype('a*cos(x-b)+c', 'options', fitopts);
 % get eventsc
 %tt = co_trial_table(bdf);
 
-active_onsets = cell(4,1);
-passive_onsets = cell(4,1);
-for dir = 0:3
+%active_onsets = cell(4,1);
+%passive_onsets = cell(4,1);
+%for dir = 0:3
+active_onsets = cell(6,1);
+passive_onsets = cell(6,1);
+for dir = 0:5
     active_onsets{dir+1} = tt( tt(:,10)==double('R') & tt(:,5)==dir & tt(:,2) == -1 , 8);
     passive_onsets{dir+1} = tt( tt(:,3)==double('H') & tt(:,2)==dir, 4);
 end
 
 ul = unit_list(bdf);
+%ul = [5 1];
 %ul = [13 1];
 %ul = [80 2];
 
@@ -32,10 +36,13 @@ t = -.5:0.005:1;
 for n = 1:size(ul,1)
     disp(n)
     chan = ul(n,1); unit = ul(n,2);
-    table = cell(4,1); all = cell(4,1); count = cell(4,1); indv_counts = cell(4,1);
+    %table = cell(4,1); all = cell(4,1); count = cell(4,1); indv_counts = cell(4,1);
+    table = cell(6,1); all = cell(6,1); count = cell(6,1); indv_counts = cell(6,1);
     figure; suptitle(sprintf('Passive: %d-%d', chan, unit));
-    for dir = 1:4
-        h = subplot(4,1,dir);
+    %for dir = 1:4
+    for dir = 1:6
+        %h = subplot(4,1,dir);
+        h = subplot(6,1,dir);
         [table{dir}, all{dir}] = raster(get_unit(bdf, chan, unit), passive_onsets{dir}, -.75, 1.25, h);
         indv_counts{dir} = table_to_vector(raster(get_unit(bdf, chan, unit), passive_onsets{dir}, pmiw(1), pmiw(2), -1));
         count{dir} = sum(indv_counts{dir});
@@ -44,14 +51,18 @@ for n = 1:size(ul,1)
     res = bootstrap(@vector_sum_pd, indv_counts, 'all', 1000);
     ptune = cprctile(res(:,1),[50 5 95]);
 
-    pas = zeros(4,2);
-    for i = 1:4
+    %pas = zeros(4,2);
+    %for i = 1:4
+    pas = zeros(6,2);
+    for i = 1:6     
         pas(i,1) = mean(indv_counts{i}) ./ (pmiw(2)-pmiw(1));
         pas(i,2) = sqrt(var(indv_counts{i})) / sqrt(length(indv_counts{i}));
     end
         
-    mdl = fit([0 0.5*pi pi 1.5*pi]', pas(:,1), mdltmplt);
-    figure; errorbar([0 90 180 270], pas(:,1), pas(:,2), 'ko');
+    %mdl = fit([0 0.5*pi pi 1.5*pi]', pas(:,1), mdltmplt);
+    %figure; errorbar([0 90 180 270], pas(:,1), pas(:,2), 'ko');
+    mdl = fit([0 pi/3 2*pi/3 pi 4*pi/3 5*pi/3]', pas(:,1), mdltmplt);
+    figure; errorbar([0 60 120 180 240 300], pas(:,1), pas(:,2), 'ko');
     hold on;
     plot(-45:315, mdl((-45:315).*pi./180), 'k--');
     title(sprintf('Passive: %d-%d', chan, unit));
@@ -91,18 +102,24 @@ for n = 1:size(ul,1)
         thr = mean(mean(psb(:,1:50))) + 2*sqrt(var(reshape(psb(:,1:50),1,[])));        
         for i = 1:1000
             %thr = (max(psb(i,:)) - mean(psb(i,1:50)))/2 + mean(psb(i,1:50));    
-            priseb(i) = t(find(psb(i,:)<thr & t<t(psb(i,:)==max(psb(i,:))),1,'last')+1);
+            priseb(i) = t(find( ...
+                psb(i,:)<thr & t<t(psb(i,:)==max(psb(i,1:201))), ...
+                    1, 'last' )+1);
         end
         prise = prctile(priseb, [2.5 50 97.5]);
     catch
         prise = [NaN NaN NaN];
     end
     
-    table = cell(4,1);
-    all = cell(4,1);
+    %table = cell(4,1);
+    %all = cell(4,1);
+    table = cell(6,1);
+    all = cell(6,1);
     figure; suptitle(sprintf('Active: %d-%d', chan, unit));
-    for dir = 1:4
-        h = subplot(4,1,dir);
+%    for dir = 1:4
+    for dir = 1:6
+%        h = subplot(4,1,dir);
+        h = subplot(6,1,dir);
         [table{dir}, all{dir}] = raster(get_unit(bdf, chan, unit), active_onsets{dir}, -.75, 1.25, h);
         indv_counts{dir} = table_to_vector(raster(get_unit(bdf, chan, unit), active_onsets{dir}, amiw(1), amiw(2), -1));
         count{dir} = sum(indv_counts{dir});
@@ -111,14 +128,18 @@ for n = 1:size(ul,1)
     res = bootstrap(@vector_sum_pd, indv_counts, 'all', 1000);
     atune = cprctile(res(:,1),[50 5 95]);
 
-    act = zeros(4,2);
-    for i = 1:4
+    %act = zeros(4,2);
+    %for i = 1:4
+    act = zeros(6,2);
+    for i = 1:6
         act(i,1) = mean(indv_counts{i}) ./ (amiw(2)-amiw(1));
         act(i,2) = sqrt(var(indv_counts{i})) / sqrt(length(indv_counts{i}));
     end
     
-    mdl = fit([0 0.5*pi pi 1.5*pi]', act(:,1), mdltmplt);
-    figure; errorbar([0 90 180 270], act(:,1), act(:,2), 'ko');
+    %mdl = fit([0 0.5*pi pi 1.5*pi]', act(:,1), mdltmplt);
+    %figure; errorbar([0 90 180 270], act(:,1), act(:,2), 'ko');
+    mdl = fit([0 pi/3 2*pi/3 pi 4*pi/3 5*pi/3]', act(:,1), mdltmplt);
+    figure; errorbar([0 60 120 180 240 300], act(:,1), act(:,2), 'ko');
     hold on;
     plot(-45:315, mdl((-45:315).*pi./180), 'k--');
     title(sprintf('Active: %d-%d', chan, unit));
@@ -166,7 +187,9 @@ for n = 1:size(ul,1)
         for i = 1:1000
             %thr = (max(asb(i,:)) - mean(asb(i,1:50)))/2 + mean(asb(i,1:50));    
             %ariseb(i) = t(find(asb(i,:)<thr & t<t(asb(i,:)==max(asb(i,:))),1,'last')+1);
-            ariseb(i) = t(find(asb(i,:)<thr & t<t(asb(i,:)==max(asb(i,:))),1,'last')+1);
+            ariseb(i) = t(find( ...
+                asb(i,:)<thr & t<t(asb(i,:)==max(asb(i,1:201))), ...
+                    1, 'last' )+1);
         end        
         arise = prctile(ariseb, [2.5 50 97.5]);
     catch
