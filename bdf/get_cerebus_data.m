@@ -289,8 +289,11 @@ function out_struct = get_cerebus_data(varargin)
         % Remove all repeated words (due to encoder data timing)
         
         word_indices_remove = find(diff(actual_words(:,1))<0.0005 & diff(actual_words(:,2))==0)+1;
-        word_indices_keep = setxor(word_indices_remove,1:length(actual_words));
-        actual_words = actual_words(word_indices_keep,:);
+
+        if ~isempty(word_indices_remove)
+            word_indices_keep = setxor(word_indices_remove,1:length(actual_words));
+            actual_words = actual_words(word_indices_keep,:);
+        end
         
         out_struct.raw.words = actual_words; %#ok<FNDSB>
 

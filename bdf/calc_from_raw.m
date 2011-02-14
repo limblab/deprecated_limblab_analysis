@@ -301,50 +301,29 @@ end             %ending "if opts.eye"
             disp('Aggregating data... get serial data')
         end
 
-        %find the first parameter that correspond to the command, in case
-        %it was not the first received
-        row_lag = 0;
-        first_cmd = out_struct.raw.serial(row_lag+1, 2);
-        while first_cmd<hex2dec('C0') || first_cmd>hex2dec('FA')
-            row_lag = row_lag+1;
-            first_cmd = out_struct.raw.serial(row_lag+1, 2);
+        %find 3 ms gaps between bytes
+        cmd_start = find(diff([0;out_struct.raw.serial(:,1)]) > 0.003);
+        cmd_end = [cmd_start(2:end)-1; size(out_struct.raw.serial,1)];
+        
+        %skip last if incomplete
+        if out_struct.meta.duration-out_struct.raw.serial(end,1)<0.03
+            cmd_start = cmd_start(1:end-1);
+            cmd_end = cmd_end(1:end-1);
         end
         
-        %number of rows in serial data from first command parameter to
-        %last parameter of last complete stim update
-        num_rows = size(out_struct.raw.serial,1);
-        num_valid_rows = num_rows-row_lag-mod(num_rows-row_lag,5);
-        
-        out_struct.stim = zeros(num_valid_rows/5,7);
-        stim_cmd_index = 0;
-        
-        %for every fifth row of bdf.raw.serial, starting with the first command row, add
-        %entry to bdf.stim
-        for row_count = row_lag+1:5:num_valid_rows-4
-            
-            stim_cmd_index=stim_cmd_index+1;
-            cmd  = bitshift(bitand(out_struct.raw.serial(row_count, 2),hex2dec('F0')),-4);
-            
-            %verify that the cmd param make sense, not a very robust way
-            %to determine if there is a missing byte...
-            if cmd == 0
-                continue;
-            elseif cmd<12 || cmd > 15
-                warning('BDF:missingSerialByte','The serial data is inconsistent at ts=%d.\nThe serial data field will not be populated',ts);
-                out_struct.stim =  [];
-                break;
+        num_cmd = length(cmd_start);
+        out_struct.stim = cell(num_cmd,2);
+        for cmd=1:num_cmd
+            asciicmd = char(out_struct.raw.serial(cmd_start(cmd):cmd_end(cmd),2)');
+            cmd_idx_end   = [strfind(asciicmd,',') length(asciicmd)];
+            cmd_idx_start = [1 cmd_idx_end(1:end-1)+1];
+            cmd_length = length(cmd_idx_start);
+            decoded_cmd = zeros(1,cmd_length);
+            for i=1:cmd_length
+                decoded_cmd(i) = str2double(asciicmd(cmd_idx_start(i):cmd_idx_end(i)));
             end
-            
-            % calculate parameters
-            ts = out_struct.raw.serial(row_count+4,1); %ts of the last serial byte of that command
-            chan = bitand(out_struct.raw.serial(row_count, 2),hex2dec('0F'));
-            freq = out_struct.raw.serial((row_count+1), 2) ;
-            I = out_struct.raw.serial((row_count+2), 2)/10 ;
-            PW = out_struct.raw.serial((row_count+3), 2) ;
-            NP = out_struct.raw.serial((row_count+4), 2) ;
-            
-            % put them into stim field
-            out_struct.stim(stim_cmd_index,:) = [ts cmd chan freq I PW NP];
+            out_struct.stim{cmd,1} = out_struct.raw.serial(cmd_end(cmd),1);
+            out_struct.stim{cmd,2} = decoded_cmd;
         end
     end    
   
