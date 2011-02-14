@@ -580,8 +580,9 @@ function BMIDataAnalyzer()
         ActualData = LoadDataStruct(Bin_FullFileName);
         PredData = LoadDataStruct(OLPred_FullFileName);
         plotflag = 1;
+        dispflag = 1;
         disp('Done. Calculating R2 and plotting...');
-        ActualvsOLPred(ActualData,PredData,plotflag);
+        ActualvsOLPred(ActualData,PredData,plotflag,dispflag);
         disp('Done.');
     end
 

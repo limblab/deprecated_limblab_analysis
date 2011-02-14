@@ -6,11 +6,12 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %           [PredData]      : structure with EMG prediction data (fit)
 %       binnedData          : data structure to build model from
 %       dataPath            : string of the path of the data folder
+%       fillen              : filter length (in seconds)
 %       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos,Use_Thresh,numPCs}
+%       varargin = {PredEMG, PredForce, PredCursPos,PredVeloc,numPCs}
 %                           :   flags to include EMG, Force, Cursor Position
-%                               and Thresholding in the prediction model
+%                               and Velocity in the prediction model
 %                               (0=no,1=yes), if numPCs is present, will
 %                               use numPCs components as inputs instead of
 %                               spikeratedata

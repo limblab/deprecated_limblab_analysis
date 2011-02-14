@@ -65,6 +65,7 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
         return;
     end
     
+%%  Inputs
     %%%Need to be able to find which column(s) is the requested input(s) and only
     %%%use those to build the models.
     %%
@@ -98,7 +99,6 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
         end
         return;
     end
-
 
 %% Setup Inputs/Outputs
 
@@ -140,16 +140,25 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
         OutNames = [OutNames;  binnedData.veloclabels];
     end    
     
-numStates = 1+range(binnedData.states(:,Use_State));
-Models = cell(1,numStates);
+    if Use_State
+        numStates = 1+range(binnedData.states(:,Use_State));
+        Models = cell(1,numStates);
+    else
+        numStates = 1;
+    end
    
 for state = 1:numStates
     
-%     Ins = DS_spikes(state-1==binnedData.states(:,state),:);
-    Ins = Inputs (state-1==binnedData.states(:,Use_State),:);
-    Outs= Outputs(state-1==binnedData.states(:,Use_State),:);
-
-%% Calculate a model for each state, and for each 
+    if Use_State
+    %     Ins = DS_spikes(state-1==binnedData.states(:,state),:);
+        Ins = Inputs (state-1==binnedData.states(:,Use_State),:);
+        Outs= Outputs(state-1==binnedData.states(:,Use_State),:);
+    else
+        Ins = Inputs;
+        Outs= Outputs;
+    end
+        
+%% Calculate a model for each state
 
 %     disp('building model using left divide...');
 %     tic;
@@ -180,8 +189,11 @@ for state = 1:numStates
     end
 %% Outputs
     filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
-    Models{state} = filter;
-
+    if Use_State
+        Models{state} = filter;
+    else
+        Models = filter;
+    end
 end
 
 end

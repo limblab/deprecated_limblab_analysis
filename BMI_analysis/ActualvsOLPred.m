@@ -10,67 +10,71 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
         plotflag = 0;
         dispflag = 0;
     end
-    
 
     numPredSignals = size(PredData.preddatabin,2);
     
-    max_mintime = max(ActualData.timeframe(1),PredData.timeframe(1));
-    min_maxtime = min(ActualData.timeframe(end),PredData.timeframe(end));
+    %match data with timeframes
+    idx = false(size(ActualData.timeframe));
+    for i = 1:length(PredData.timeframe)
+        idx = idx | ActualData.timeframe == PredData.timeframe(i);
+    end   
     
-    start_Act  = find(ActualData.timeframe == max_mintime);
-    finish_Act = find(ActualData.timeframe == min_maxtime);    
-
-    start_Pred  = find(PredData.timeframe == max_mintime);
-    finish_Pred = find(PredData.timeframe == min_maxtime);
-    
-    ActSignals = zeros(length(start_Act:finish_Act), numPredSignals);
+    ActSignalsTrunk = zeros(length(nonzeros(idx))       ,numPredSignals);
+    ActSignalsFull  = zeros(length(ActualData.timeframe),numPredSignals);
     
     for i=1:numPredSignals
         if ~isempty(ActualData.emgdatabin)
             if all(strcmp(nonzeros(ActualData.emgguide(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignals(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(start_Act:finish_Act,:);
+                ActSignalsTrunk(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(idx,:);
+                ActSignalsFull (:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin;
             end
         end
         if ~isempty(ActualData.forcedatabin)
             if all(strcmp(nonzeros(ActualData.forcelabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignals(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(start_Act:finish_Act,:);
+                ActSignalsTrunk(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(idx,:);
+                ActSignalsFull (:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin;
             end
         end
         if ~isempty(ActualData.cursorposbin)
             if all(strcmp(nonzeros(ActualData.cursorposlabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignals(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(start_Act:finish_Act,:);
+                ActSignalsTrunk(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(idx,:);
+                ActSignalsFull (:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin;
             end
         end    
         if ~isempty(ActualData.velocbin)
             if all(strcmp(nonzeros(ActualData.veloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignals(:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin(start_Act:finish_Act,:);
+                ActSignalsTrunk(:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin(idx,:);
+                ActSignalsFull (:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin;
             end
         end          
     end
     
-    R2 = CalculateR2(ActSignals,PredData.preddatabin(start_Pred:finish_Pred,:));
-
-    varargout = {R2};
+    R2 = CalculateR2(ActSignalsTrunk,PredData.preddatabin);
+    vaf= 1- (var(PredData.preddatabin - ActSignalsTrunk) ./ var(ActSignalsTrunk) );
+    mse= mean((PredData.preddatabin-ActSignalsTrunk) .^2);
+    varargout = {R2, vaf, mse};
 
     %Display R2
     if dispflag
-        disp('R2 = ');
-        for z=1:numPredSignals
-           disp(sprintf('%s\t%1.4f',PredData.outnames(z,:),R2(z,1)));
+        disp('R2\tvaf\tmse');
+        for i=1:numPredSignals
+           disp(sprintf('%s\t%1.3f\t%1.3f\t%.2f',PredData.outnames(i,:),R2(i),vaf(i),mse(i)));
         end
         aveR2 = mean(R2);
-        disp(sprintf('Average:\t%1.4f',aveR2));
+        avevaf= mean(vaf);
+        avemse= mean(mse);
+        disp(sprintf('Averages:\t%1.3f\t%1.3f\t%.2f',aveR2,avevaf,avemse));
     end
         
     if plotflag               
         for i = 1:numPredSignals
             %Plot both Actual and Predicted signals
             figure;
-            plot(ActualData.timeframe(start_Act:finish_Act),ActSignals(:,i),'k');
+            plot(ActualData.timeframe,ActSignalsFull(:,i),'k');
             hold on;
             plot(PredData.timeframe,PredData.preddatabin(:,i),'r');
             title(PredData.outnames(i,:));
-            legend('Actual',['Predicted (R2= ' num2str(R2(i),3) ')']);
+            legend('Actual',['Predicted (vaf= ' num2str(vaf(i),3) ')']);
         end
     end
 end
