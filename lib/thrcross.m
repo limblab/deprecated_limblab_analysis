@@ -4,7 +4,7 @@ function idx = thrcross(curve, thr)
 %       crosses the threashold THR.  In the event that it crosses more than
 %       once, it will return the crossing on the largest swing.
 
-% $Id: $
+% $Id$
 
 % Find peaks and troughs
 dd = diff(curve);
