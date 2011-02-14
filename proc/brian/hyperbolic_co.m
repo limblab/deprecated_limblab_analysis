@@ -8,14 +8,14 @@ ul = unit_list(bdf);
 ul = ul(ul(:,2) ~= 0,:);
 ul = ul(ul(:,2) ~= 255,:);
 % Center Out task
-%tt = co_trial_table(bdf);
-%tt = tt( tt(:,10)==double('R') , :);
-%events = tt(:,8);
+tt = co_trial_table(bdf);
+tt = tt( tt(:,10)==double('R') , :);
+events = tt(:,8);
 
 % Wrist flexion task
-tt = wf_trial_table(bdf);
-tt = tt( tt(:,9)==double('R') , :);
-events = tt(:,8);
+%tt = wf_trial_table(bdf);
+%tt = tt( tt(:,9)==double('R') , :);
+%events = tt(:,8);
 
 for cell=1:length(ul)
     spikes = bdf.units(cell).ts;
