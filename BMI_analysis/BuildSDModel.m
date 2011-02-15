@@ -188,7 +188,7 @@ for state = 1:numStates
         end
     end
 %% Outputs
-    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
+    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
     if Use_State
         Models{state} = filter;
     else

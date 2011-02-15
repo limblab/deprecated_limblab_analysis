@@ -173,7 +173,8 @@ for i=0:nfold-1
 %         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
 % 
 %         R2(i+1,:,1) = CalculateR2(TestSigs,PredData.preddatabin)';
-%         vaf(i+1,:,1)= 1 - var(PredData.preddatabin - TestSigs) ./ var(TestSigs);
+% %         vaf(i+1,:,1)= 1 - var(PredData.preddatabin - TestSigs) ./ var(TestSigs);
+%         vaf = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
 %         mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs).^2);
 %         for s = 1:numStates
 %             State_idx = find(s-1==testData.states(:,Use_SD));
@@ -187,7 +188,11 @@ for i=0:nfold-1
         PredData = predictSDFSignals(filter, testData, Use_SD);
         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
         R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-        vaf(i+1,:,1)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
+%         vaf(i+1,:,1)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
+        vaf = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+            sum( (TestSigs(round(fillen/binsize):end,:) - ...
+            repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+            size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );     
         mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
 %         
     else
@@ -195,7 +200,11 @@ for i=0:nfold-1
         PredData = predictSignals(filter, testData);
         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
         R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-        vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
+%         vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
+        vaf = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+            sum( (TestSigs(round(fillen/binsize):end,:) - ...
+            repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+            size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );  
         mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
     end
     

@@ -31,6 +31,12 @@ end
 
 neuronIDs = models{1,1}.neuronIDs;
 fillen    = models{1,1}.fillen;
+if isfield(models{1,1},'PC')
+    numPCs = models{1,1}.PC;
+else
+    numPCs = 0;
+end
+
 if any(any(neuronIDs~=models{1,2}.neuronIDs)) || any(any(fillen~=models{1,2}.fillen))
     disp('Different decoders must be built with same units and filter length for now');
     disp('Operation aborted');
@@ -51,12 +57,17 @@ usableSpikeData = zeros(size(BinnedData.spikeratedata,1),size(neuronIDs,1));
 usableSpikeData(:,logical(matchingInputs)) = BinnedData.spikeratedata(:,nonzeros(matchingInputs));
 
 % Duplicate and shift neural channels so we don't have to look in the past with the linear filter.
-DS_spikes = DuplicateAndShift(usableSpikeData,numlags); numlags = 1;
+Inputs = DuplicateAndShift(usableSpikeData,numlags); numlags = 1;
 clear usableSpikeData;
+
+if numPCs
+    % use PCs as model inputs
+    Inputs = Inputs*filter.PC(:,1:numPCs);
+end
 
 %% Outputs:  assign memory with real or dummy data, just cause predMIMO requires something there
 % just send dummy data as outputs for the function
-Outputs = zeros(size(DS_spikes,1),2);
+Outputs = zeros(size(Inputs,1),2);
 
 %% Use the neural filter to predict the Data
  numsides=1; fs=1;
@@ -64,11 +75,11 @@ if Adapt_Enable
 %     [PredictedData,spikeDataNew,Hnew] = predAdaptSD(BinnedData,usableSpikeData,filter.H,LR,Adapt_lag);
 %     varargout(1) = {Hnew};
 else
-    numPoints     =  size(DS_spikes,1);
+    numPoints     =  size(Inputs,1);
     numOutputs    =  size(models{1,1}.H,2);
     PredictedData =  zeros(numPoints,numOutputs);
     for state = 1:numStates
-        [TempPred,spikeDataNew,ActualDataNew]=predMIMO3(DS_spikes,models{1,state}.H,numsides,fs,Outputs);
+        [TempPred,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,models{1,state}.H,numsides,fs,Outputs);
 %         TempPred = DS_spikes*models{1,state}.H;
         State_Mask = repmat(state-1==BinnedData.states(:,State_index),1,numOutputs);
         TempPred = TempPred .* State_Mask;
@@ -81,7 +92,7 @@ else
     end
 end
         
-clear ActualData spikeData TempPred;
+clear ActualData spikeData TempPred Inputs;
 H_new = [];
 varargout{1}=H_new;
 

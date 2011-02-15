@@ -11,6 +11,8 @@ if nargin    >= 3
         Adapt_lag = varargin{6};
         if nargin > 6
             numPCs = varargin{7};
+        else
+            numPCs = 0;
         end
     end
 else
@@ -40,7 +42,7 @@ usableSpikeData(:,logical(matchingInputs)) = BinnedData.spikeratedata(:,nonzeros
 %usableSpikeData=BinnedData.emgdatabin;
 
 
-if isfield(filter, 'PC')
+if numPCs
     % use PCs as model inputs
     usableSpikeData = usableSpikeData*filter.PC(:,1:numPCs);
 end

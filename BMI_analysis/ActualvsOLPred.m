@@ -50,19 +50,27 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
     end
     
     R2 = CalculateR2(ActSignalsTrunk,PredData.preddatabin);
-    vaf= 1- (var(PredData.preddatabin - ActSignalsTrunk) ./ var(ActSignalsTrunk) );
+%     vaf= 1- (var(PredData.preddatabin - ActSignalsTrunk) ./ var(ActSignalsTrunk) );
+    vaf = 1 - sum( (PredData.preddatabin-ActSignalsTrunk).^2 ) ./ sum( (ActSignalsTrunk - repmat(mean(ActSignalsTrunk),size(ActSignalsTrunk,1),1)).^2 );
     mse= mean((PredData.preddatabin-ActSignalsTrunk) .^2);
     varargout = {R2, vaf, mse};
 
+    assignin('base','R2',R2);
+    assignin('base','vaf',vaf);
+    assignin('base','mse',mse);
+    aveR2 = mean(R2);
+    avevaf= mean(vaf);
+    avemse= mean(mse);
+%     assignin('base','aveR2',aveR2);
+%     assignin('base','avevaf',avevaf);
+%     assignin('base','avemse',avemse);
+        
     %Display R2
     if dispflag
-        disp('R2\tvaf\tmse');
+        disp(sprintf('\tR2\tvaf\tmse'));
         for i=1:numPredSignals
            disp(sprintf('%s\t%1.3f\t%1.3f\t%.2f',PredData.outnames(i,:),R2(i),vaf(i),mse(i)));
         end
-        aveR2 = mean(R2);
-        avevaf= mean(vaf);
-        avemse= mean(mse);
         disp(sprintf('Averages:\t%1.3f\t%1.3f\t%.2f',aveR2,avevaf,avemse));
     end
         
