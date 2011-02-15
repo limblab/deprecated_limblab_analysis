@@ -1,6 +1,6 @@
 function [vaf,vmean,vsd,y_test,y_pred,H] = predictionsfromBDF2(bdf, signal, cells, binsize, folds,numlags,varargin)
 
-% $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
+% $Id$
 
 %addpath mimo
 %addpath spike

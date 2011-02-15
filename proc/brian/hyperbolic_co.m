@@ -1,6 +1,6 @@
 function errs = hyperbolic_co(bdf)
 
-show_plots = 0;
+show_plots = 1;
 colors = [1 0 0; 1 .5 0; 1 1 0; 0 1 0; 0 1 1; 0 0 1; .5 0 1; 1 0 .5; 0 0 0];
 
 % get data
@@ -9,7 +9,7 @@ ul = ul(ul(:,2) ~= 0,:);
 ul = ul(ul(:,2) ~= 255,:);
 % Center Out task
 tt = co_trial_table(bdf);
-tt = tt( tt(:,10)==double('R') , :);
+tt = tt( tt(:,9)==double('R') , :);
 events = tt(:,8);
 
 % Wrist flexion task
@@ -19,8 +19,8 @@ events = tt(:,8);
 
 for cell=1:length(ul)
     spikes = bdf.units(cell).ts;
-%    table = raster(spikes, events, -.1, .3, -1);
-    table = raster(spikes, events, -.4, 0, -1);
+    table = raster(spikes, events, -.1, .3, -1);
+%    table = raster(spikes, events, -.4, 0, -1);
     for trial=1:length(events)
         T(trial,cell) = length(table{trial});
     end
@@ -33,19 +33,19 @@ D = pdist(T);
 Y = mdscale(D, 2);
 
 % Draw the figure
-%plot(Y(:,1), Y(:,2), 'ko');
-% if show_plots
-%     figure; hold on;
-%     for reachdir = 0:7
-%         f = tt(:,5) == reachdir;
-%         plot(Y(f,1), Y(f,2), 'ko', ...
-%             'MarkerEdgeColor', colors(reachdir+1,:),...
-%             'MarkerFaceColor', colors(reachdir+1,:));
-%     end
-%     axis equal;
-%     axis square;
-%     title('Euclidian');
-% end
+plot(Y(:,1), Y(:,2), 'ko');
+if show_plots
+    figure; hold on;
+    for reachdir = 0:7
+        f = tt(:,5) == reachdir;
+        plot(Y(f,1), Y(f,2), 'ko', ...
+            'MarkerEdgeColor', colors(reachdir+1,:),...
+            'MarkerFaceColor', colors(reachdir+1,:));
+    end
+    axis equal;
+    axis square;
+    title('Euclidian');
+end
 
 % calculate the error
 De = pdist(Y);
@@ -54,7 +54,9 @@ err_Y = sum(sum((De-D).^2))/sum(sum(D));
 %%%%%%%%%%%%%%%%%%%%%%%
 % now do H^n distances
 %%%%%%%%%%%%%%%%%%%%%%%
-Ks = -1:-.1:-20;
+%Ks = -1:-.1:-20;
+Ks = -1:-1:-20;
+%Ks = -1;
 err_Yh = zeros(size(Ks));
 
 tic
@@ -117,13 +119,13 @@ for i = 1:length(Ks)
         Yp = [Yh(:,1)./(1+Yh(:,3)) Yh(:,2)./(1+Yh(:,3))];
          figure; hold on;
          for reachdir = 0:8
-%             f = tt(:,5) == reachdir;
-             f = tt(:,10) == reachdir;
+             f = tt(:,5) == reachdir;
+%             f = tt(:,10) == reachdir;
              plot(Yp(f,1), Yp(f,2), 'ko', ...
                  'MarkerEdgeColor', colors(reachdir+1,:),...
                  'MarkerFaceColor', colors(reachdir+1,:));
          end
-        plot(Yp(:,1), Yp(:,2), 'ko');
+        %plot(Yp(:,1), Yp(:,2), 'ko');
         t = 0:pi/100:2*pi;
         plot(sin(t), cos(t), 'k-');
         axis square;

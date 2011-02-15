@@ -12,7 +12,7 @@ function tt = wf_trial_table(bdf)
 %    9: Trial result        -- R, A, I, or F 
 %   10: Target ID           -- Arbitrary target ID
 
-% $Id: $
+% $Id$
 
 words = bdf.words;
 

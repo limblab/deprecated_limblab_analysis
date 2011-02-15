@@ -3,7 +3,7 @@
 % Loads all of the necessary paths to run s1_analysis.  Should only be
 % used once per session.
 
-% $Id: $
+% $Id$
 
 dir = pwd;
 

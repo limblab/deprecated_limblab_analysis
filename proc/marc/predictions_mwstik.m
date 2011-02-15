@@ -1,6 +1,6 @@
 function [vaf, H] = predictions_mwstik(bdf, signal, cells, folds,varargin)
 
-% $Id: predictions.m 184 2010-03-15 16:30:46Z brian $
+% $Id$
 
 %addpath mimo
 %addpath spike

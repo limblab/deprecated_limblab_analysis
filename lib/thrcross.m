@@ -19,7 +19,8 @@ swings = curve(peaks) - curve(troughs);
 ms = find(swings == max(swings));
 bigswing = troughs(ms):peaks(ms);
 
-idx = find(curve(bigswing) > thr, 1, 'first') + bigswing(1) - 1;
+%idx = find(curve(bigswing) > thr, 1, 'first') + bigswing(1) - 1;
+idx = peaks(ms);
 
 %figure; hold on;
 %plot(curve, 'k-')

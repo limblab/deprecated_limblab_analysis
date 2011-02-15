@@ -2,7 +2,7 @@ function b = glm_pois(x, y)
 % Fits a GLM with a pois distribution and exponential link function to x
 % and y
 
-% $Id: $
+% $Id$
 
 warning('You should probably be using glmfit instead of this file');
 

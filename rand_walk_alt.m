@@ -22,7 +22,7 @@ function [tuning gof peakness] = rand_walk_new(varargin)
 %   variance of the LP filtered MI curve to the variance of the HP filtered
 %   MI curve.  A peakness > 5 indicates a "good cell".
 
-% $Id: rand_walk_new.m 56 2009-03-06 18:21:55Z brian $
+% $Id$
 
 if nargin == 1
     run_all_units(varargin{1}, 1);

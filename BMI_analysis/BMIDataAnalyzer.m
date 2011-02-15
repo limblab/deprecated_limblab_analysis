@@ -71,7 +71,7 @@ function BMIDataAnalyzer()
 %       + For both these error and for most others, restarting Matlab
 %       will solve the problems.
 %
-% $Id: BMIDataAnalyzer.m 1 2009-03-10 11:58:46Z chris $
+% $Id$
     
     
     

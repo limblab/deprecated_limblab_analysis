@@ -1,6 +1,6 @@
 function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpoly(bdf, signal, cells, binsize, folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,varargin)
 
-% $Id: predictions.m 184 2010-03-15 16:30:46Z brian $
+% $Id$
 
 %addpath mimo
 %addpath spike

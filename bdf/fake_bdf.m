@@ -27,13 +27,13 @@ function bdf = fake_bdf( orig_bdf )
 %   7-4: X velocity (20|1) 100ms delay / 200ms smooth
 %   7-5: X velocity (20|1) 100ms delay / 500ms smooth
 
-% $Id: $
+% $Id$
 
 bdf = orig_bdf;
 
 % Setup meta information and clear units
 bdf.meta.filename = [bdf.meta.filename ' *** FAKE SPIKES ***'];
-bdf.meta.bdf_info = '$Id: $';
+bdf.meta.bdf_info = '$Id$';
 
 bdf.units = struct('id', {}, 'ts', {});
 

@@ -15,7 +15,7 @@ function tt = vs_trial_table(bdf)
 %    9: Trial End time
 %   10: Trial result            -- R, A, I, or N (N coresponds to no-result)
 
-% $Id: co_trial_table.m 308 2010-10-22 17:10:15Z brian $
+% $Id$
 
 words = bdf.words;
 

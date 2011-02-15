@@ -52,6 +52,7 @@ rewards = words(words(:,2) == word_reward, 1);
 
 movement_starts = cell(1,4);
 %movement_starts = cell(1,6);
+%movement_starts = cell(1,8);
 for i = 1:length(ot_on_words)
     ot_time = ot_on_words(i,1);
     ot_id = ot_on_words(i,2);
@@ -89,7 +90,7 @@ for dir = 0:3
         tmp(i) = length(table{i});
     end
     active_tuning(2,dir+1) = var(tmp);
-    
+
     % passive
     bump = center_hold_bumps(center_hold_bumps(:,2) == (bump_word_base+dir), 1);
     [table, all] = raster(spikes, bump, 0.000, 0.150, -1);
@@ -99,7 +100,7 @@ for dir = 0:3
         tmp(i) = length(table{i});
     end
     passive_tuning(2,dir+1) = var(tmp);
-    
+
     % baseline
     [table, all] = raster(spikes, bump, -0.5, 0, -1);
     baseline(1,dir+1) = length(all) / length(table) / .5;

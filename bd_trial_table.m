@@ -12,7 +12,7 @@ function tt = bd_trial_table(bdf)
 %    6: Trial End time
 %    7: Trial result        -- R, A, F, or I
 
-% $Id: $
+% $Id$
 
 words = bdf.words;
 w = BD_Words();

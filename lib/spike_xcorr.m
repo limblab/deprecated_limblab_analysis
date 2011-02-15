@@ -10,7 +10,7 @@ function [out, out_t] = spike_xcorr(bdf, chan, unit, bin, num_lags, drawplot)
 % [OUT, OUT_T] = SPIKE_XCORR( ... ) also returns a vector representing the
 % time lags.
 
-% $Id: $
+% $Id$
 
 % setup spikes and kin signals
 spike_times = get_unit(bdf,chan,unit);

@@ -16,7 +16,7 @@ if nargin < 2
     tt = [];
 end
 
-if isempty(tt)    
+if isempty(tt)
     tt = co_trial_table(bdf);
 end
 
@@ -59,7 +59,7 @@ for n = 1:size(ul,1)
         pas(i,1) = mean(indv_counts{i}) ./ (pmiw(2)-pmiw(1));
         pas(i,2) = sqrt(var(indv_counts{i})) / sqrt(length(indv_counts{i}));
     end
-        
+
     th = (2*pi*(0:nTargets-1)/nTargets)';
     mdl = fit(th, pas(:,1), mdltmplt);
     figure; errorbar(th*180/pi, pas(:,1), pas(:,2), 'ko');
@@ -67,7 +67,7 @@ for n = 1:size(ul,1)
     hold on;
     plot(-45:315, mdl((-45:315).*pi./180), 'k--');
     title(sprintf('Passive: %d-%d', chan, unit));
-    
+
     % Save F statistic
     %out = g_anova(indv_counts);
     %fs(n,2) = out.F;
@@ -82,13 +82,13 @@ for n = 1:size(ul,1)
                 ps(trial,:) = ps(trial,:) + exp( - (t-spike).^2 / (2*.03.^2) );
             end
         end
-        
+
         f = @(r) mean(r(ceil(size(r,1)*rand(1,size(r,1))),:));
         psb = [];
         for i = 1:1000
             psb = [psb; f(ps)];
         end
-        
+
         psbo = prctile(psb, [2.5 50 97.5]);
         figure; hold on; plot(t,psbo(2,:),'k-'); plot(t,psbo(1,:),'b-'); plot(t,psbo(3,:),'b-'); 
         %stderr = sqrt(var(ps));%./sqrt(size(ps,1));
@@ -114,7 +114,7 @@ for n = 1:size(ul,1)
     catch
         prise = [NaN NaN NaN];
     end
-    
+
     table = cell(nTargets,1);
     all = cell(nTargets,1);
     figure; suptitle(sprintf('Active: %d-%d', chan, unit));
@@ -140,15 +140,15 @@ for n = 1:size(ul,1)
     hold on;
     plot(-45:315, mdl((-45:315).*pi./180), 'k--');
     title(sprintf('Active: %d-%d', chan, unit));
-    
+
     % Save F statistic
     %out = g_anova(indv_counts);
     %fs(n,1) = out.F;
     fs(n,1) = max(act(:,1));
-    
+
     try
         pdir = find(max(cell2mat(count)) == cell2mat(count));
-        
+
         as = zeros(length(table{pdir}), length(t));
         for trial = 1:length(table{pdir})
             for spike = table{pdir}{trial}'
@@ -161,11 +161,11 @@ for n = 1:size(ul,1)
         for i = 1:1000
             asb = [asb; f(as)];
         end
-        
+
         asbo = prctile(asb, [5 50 95]);
         figure; hold on; plot(t,asbo(2,:),'k-'); plot(t,asbo(1,:),'b-'); plot(t,asbo(3,:),'b-'); 
         title(sprintf('Active: %d-%d', chan, unit));
-        
+
         ariseb = zeros(1,size(psb,1));
         %thr = mean(mean(asb(:,1:50))) + 2*sqrt(var(reshape(asb(:,1:50),1,[])));
         thr = (mean(mean(asb(:,1:50))) + mean(max(asb')))/2;
@@ -185,12 +185,12 @@ for n = 1:size(ul,1)
     catch
         arise = [NaN NaN NaN];
     end
-    
+
     pd(n,:) = [atune ptune];
     risetime(n,:) = [arise prise];
-    
+
     close all;
-    
+
     %try
     %    figure; hist(ariseb, -1:.005:1);
     %    figure; hist(priseb, -1:.005:1);

@@ -1,4 +1,4 @@
-% $Id: bs_trajectories.m 56 2009-03-06 18:21:55Z brian $
+% $Id$
 
 % Plots average trajectories on bump-stim task
 

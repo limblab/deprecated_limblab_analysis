@@ -1,4 +1,4 @@
-% $Id:  $
+% $Id$
 
 % Cycles through several iterations of predictions.m dropping neurons and
 % measuring the resulting VAF 
