@@ -2,17 +2,18 @@ function [PredData, varargout] = predictSignals(varargin)
 
 filter       = varargin{1};
 BinnedData   = varargin{2};
+
+% default values
+numPCs = 0;
+Adapt_Enable = false;
+
 if nargin    >= 3
     FiltPred = varargin{3};
-    Adapt_Enable = false;
     if nargin > 3
         Adapt_Enable = varargin{4};
         LR = varargin{5};
         Adapt_lag = varargin{6};
         if nargin > 6
-            numPCs = varargin{7};
-        else
-            numPCs = 0;
         end
     end
 else
