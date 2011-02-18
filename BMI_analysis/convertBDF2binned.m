@@ -419,15 +419,19 @@ else
     
     % 3- Classify states according to naive Bayesian using all datapoints for training
     states(:,3) = perf_bayes_clas(spikeratedata,binsize,vel_magn);
-    statemethods(3,1:13) = 'Perfect Bayes';
+    statemethods(3,1:14) = 'Complete Bayes';
     
     % 4- Classify states according to naive Bayesian using velocity peaks for training
     states(:,4) = peak_bayes_clas(spikeratedata,binsize,vel_magn);
     statemethods(4,1:10) = 'Peak Bayes';
     
     % 5- Classify states according to Linear Discriminant Analysis using velocity peaks for training
-    states(:,5) = peak_LDA_clas(spikeratedata,binsize,vel_magn);
-    statemethods(5,1:8) = 'Peak LDA';
+    states(:,5) = perf_LDA_clas(spikeratedata,binsize,vel_magn);
+    statemethods(5,1:12) = 'Complete LDA';
+    
+    % 6- Classify states according to Linear Discriminant Analysis using velocity peaks for training
+    states(:,6) = peak_LDA_clas(spikeratedata,binsize,vel_magn);
+    statemethods(6,1:8) = 'Peak LDA';
     
     
 %     

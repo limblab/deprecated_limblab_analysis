@@ -26,10 +26,16 @@ for x = window_bins:size(spikes,1)-1
     end
 end
 
-o1 = NaiveBayes.fit(training_set, group); % create predictor
+[~,~,~,~,coeff0] = classify(mean(spikes(1:window_bins,:),1),training_set,group,'linear',[0.7 0.3]); % calculate coefficients for posture state
+
+[~,~,~,~,coeff1] = classify(mean(spikes(1:window_bins,:),1),training_set,group,'linear',[0.6 0.4]); % calculate coefficients for movement state
 
 states = zeros(size(spikes,1),1); % initialize states
 
 for x = window_bins:size(spikes,1)
-    states(x) = classify(mean(spikes(x-(window_bins-1):x,:),1),training_set,group); % predict states
+    if states(x-1) == 0
+        states(x) = 0 >= mean(spikes(x-(window_bins-1):x,:),1)*coeff0(1,2).linear + coeff0(1,2).const; % predict states following posture state
+    else
+        states(x) = 0 >= mean(spikes(x-(window_bins-1):x,:),1)*coeff1(1,2).linear + coeff1(1,2).const; % predict states following movement state
+    end
 end
