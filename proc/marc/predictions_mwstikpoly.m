@@ -54,7 +54,11 @@ elseif strcmpi(signal,'emg')
     tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
     tempEMG = abs(tempEMG); %rectify
     y = filtfilt(bl,al,tempEMG); %lowpass filter
+    if isfield(bdf.emg,'ts')
+        temg=bdf.emg.ts;
+    else
     temg=(1/emgsamplerate):(1/emgsamplerate):(bdf.meta.duration);   %emg time vector
+    end
 else
     error('Unknown signal requested');
 end
@@ -66,9 +70,13 @@ end
 binsamprate=floor(1/binsize); 
 % Using binsize ms bins
 
+if strcmpi(signal,'vel') ||  strcmpi(signal, 'pos') ||  strcmpi(signal, 'acc')
 t = bdf.vel(1,1):binsize:bdf.vel(end,1);
-
+end
 if strcmpi(signal,'emg')
+%     if isfield(bdf.emg,'ts')
+%     t = bdf.emg.ts(1):binsize:bdf.emg.ts(end);
+    t=temg(1):binsize:temg(end);
     if t(1)<temg(1)
         t(1)=temg(1);   %Do this to avoid NaNs when interpolating
     end
@@ -117,7 +125,7 @@ for i = 1:folds
 %     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
 %     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
 %     
-    [H{i},v,mcc] = filMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+    [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
    
     %%Polynomial section
@@ -179,7 +187,7 @@ for i = 1:folds
 
 end
 
-if vaf(10,1)<0
+if (vaf(9,1)-vaf(10,1))>0.5
 vmean=mean(vaf(1:9,:));
 vsd=std(vaf(1:9,:));
 else
@@ -187,7 +195,7 @@ else
     vsd=std(vaf);
 end
 
-if (r2(9,1)-r2(10,1))>.5    %if big disparity in last fold, don't include it in mean
+if (r2(9,1)-r2(10,1))>0.5    %if big disparity in last fold, don't include it in mean
     r2mean=mean(r2(1:9,:));
     r2sd=std(r2(1:9,:));
 else
