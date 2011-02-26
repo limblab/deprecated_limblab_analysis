@@ -5,6 +5,7 @@ BinnedData   = varargin{2};
 
 % default values
 numPCs = 0;
+FiltPred = false;
 Adapt_Enable = false;
 
 if nargin    >= 3
@@ -14,11 +15,9 @@ if nargin    >= 3
         LR = varargin{5};
         Adapt_lag = varargin{6};
         if nargin > 6
+            numPCs = varargin{7};
         end
     end
-else
-    FiltPred = false;
-    Adapt_Enable = false;
 end
 
 if ischar(filter)
@@ -45,6 +44,7 @@ usableSpikeData(:,logical(matchingInputs)) = BinnedData.spikeratedata(:,nonzeros
 
 if numPCs
     % use PCs as model inputs
+    usableSpikeData = DuplicateAndShift(usableSpikeData,numlags); numlags = 1;
     usableSpikeData = usableSpikeData*filter.PC(:,1:numPCs);
 end
 

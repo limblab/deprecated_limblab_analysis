@@ -167,41 +167,41 @@ for i=0:nfold-1
     end
 
     if Use_SD
-        %% 2 different models, one for each state:
-%         filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
-%         PredData = predictSDSignals(filter, testData, Use_SD);
-%         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
-% 
-%         R2(i+1,:,1) = CalculateR2(TestSigs,PredData.preddatabin)';
-% %         vaf(i+1,:,1)= 1 - var(PredData.preddatabin - TestSigs) ./ var(TestSigs);
-%         vaf = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
-%         mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs).^2);
-%         for s = 1:numStates
-%             State_idx = find(s-1==testData.states(:,Use_SD));
-%             R2(i+1,:,s+1) = CalculateR2(TestSigs(State_idx,:),PredData.preddatabin(State_idx,:))';
-%             vaf(i+1,:,s+1)= 1 - var(PredData.preddatabin(State_idx,:) - TestSigs(State_idx,:)) ./ var(TestSigs(State_idx,:));
-%             mse(i+1,:,s+1)= mean((PredData.preddatabin(State_idx,:)-TestSigs(State_idx,:)).^2);
-%         end
-        
-        %% 1 model but filter only state 0 (Hold State):
-        filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
-        PredData = predictSDFSignals(filter, testData, Use_SD);
+        % 2 different models, one for each state:
+        filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+        PredData = predictSDSignals(filter, testData, Use_SD);
         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
-        R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-%         vaf(i+1,:,1)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
-        vaf = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
-            sum( (TestSigs(round(fillen/binsize):end,:) - ...
-            repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
-            size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );     
-        mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
-%         
+
+        R2(i+1,:,1) = CalculateR2(TestSigs,PredData.preddatabin)';
+%         vaf(i+1,:,1)= 1 - var(PredData.preddatabin - TestSigs) ./ var(TestSigs);
+        vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
+        mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs).^2);
+        for s = 1:numStates
+            State_idx = find(s-1==testData.states(:,Use_SD));
+            R2(i+1,:,s+1) = CalculateR2(TestSigs(State_idx,:),PredData.preddatabin(State_idx,:))';
+            vaf(i+1,:,s+1)= 1 - var(PredData.preddatabin(State_idx,:) - TestSigs(State_idx,:)) ./ var(TestSigs(State_idx,:));
+            mse(i+1,:,s+1)= mean((PredData.preddatabin(State_idx,:)-TestSigs(State_idx,:)).^2);
+        end
+        
+%         %% 1 model but filter only state 0 (Hold State):
+%         filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+%         PredData = predictSDFSignals(filter, testData, Use_SD);
+%         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+%         R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+% %         vaf(i+1,:,1)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
+%         vaf = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+%             sum( (TestSigs(round(fillen/binsize):end,:) - ...
+%             repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+%             size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );     
+%         mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
+% %         
     else
         filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
         PredData = predictSignals(filter, testData);
         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
         R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
 %         vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
-        vaf = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+        vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
             sum( (TestSigs(round(fillen/binsize):end,:) - ...
             repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
             size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );  
@@ -251,4 +251,4 @@ AllPredData.mfxval.mse= mse;
 
 % varargout{1} = AllPredData;
 % varargout{2} = nfold;
-varargout = { vaf, mse, AllPredData, nfold};
+varargout = {vaf, mse, AllPredData, nfold};

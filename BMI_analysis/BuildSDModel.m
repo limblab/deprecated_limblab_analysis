@@ -38,7 +38,11 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
     PredVeloc    = 0;
     Use_State    = 0;
     numPCs       = 0;
-    
+    if isfield(binnedData,'PC')
+        PCoeffs = binnedData.PC;
+    else
+        PCoeffs      = [];
+    end
     
     %overwrite if specified in arguments
     if nargin > 5
@@ -108,7 +112,6 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
     numsides=1;     %%%For a one-sided or causal filter
 
     % Duplicate and shift neural channels so we don't have to look in the past with the linear filter.
-%     DS_spikes = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags);
     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags);
     numlags = 1;
     
@@ -116,8 +119,9 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
 %     Inputs = binnedData.emgdatabin;
 
     if numPCs > 0
-        [PCoeffs,Inputs] = princomp(zscore(Inputs));
-        Inputs = Inputs(:,1:numPCs);
+%         [PCoeffs,Inputs] = princomp(zscore(Inputs));
+%         Inputs = Inputs(:,1:numPCs);
+        Inputs = Inputs*binnedData.PC(:,1:numPCs);
     end
         
     Outputs = [];
@@ -166,10 +170,10 @@ for state = 1:numStates
 %     H = Ins\Outs;
 %     toc;
      
-    disp('building model using filMIMO3...');
-    tic;
+%     disp('building model using filMIMO3...');
+%     tic;
     [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);    
-    toc;
+%     toc;
 
     
 %% Add non-linearity if applicable    
