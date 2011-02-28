@@ -161,6 +161,10 @@ for state = 1:numStates
         Ins = Inputs;
         Outs= Outputs;
     end
+    
+    if isempty(Ins) || isempty(Outs)
+        continue;
+    end
         
 %% Calculate a model for each state
 

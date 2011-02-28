@@ -12,6 +12,7 @@ Use_State    = 0;
 numPCs       = 0;
 dataPath     = '';
 binsize      = modelData.timeframe(2)-modelData.timeframe(1);
+% binsize      = binnedData.timeframe(2)-binnedData.timeframe(1);
 FiltPred     = 0;
 Adapt_Enable = 0;
 Adapt_lag    = 0.2;
@@ -31,34 +32,55 @@ if PredVeloc
     numSig = numSig+size(modelData.veloclabels,1);
 end
 
+% 
+% Model    = BuildSDModel(modelData,dataPath,fillen,UseAllInputs,Polyn,PredEMG,PredForce,PredCursPos,PredVeloc,Use_State,numPCs);
+% PredData = predictSignals(Model,testData);
+% TestSigs = concatSigs(testData,PredEMG,PredForce,PredCursPos,PredVeloc);
+% R2_full  = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+% vaf_full = 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
+% mse_full = mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
 
-Model    = BuildSDModel(modelData,dataPath,fillen,UseAllInputs,Polyn,PredEMG,PredForce,PredCursPos,PredVeloc,Use_State,numPCs);
-PredData = predictSignals(Model,testData);
-TestSigs = concatSigs(testData,PredEMG,PredForce,PredCursPos,PredVeloc);
-R2_full  = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-vaf_full = 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
-mse_full = mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
+
+Use_State = 1; %Vel Thresh
 
 
-R2_PC  = zeros(100,numSig);
-vaf_PC = zeros(100,numSig);
-mse_PC = zeros(100,numSig);
+%------numPCs------
+% Inputs = DuplicateAndShift(modelData.spikeratedata,10);
+% [PCoeffs,Inputs, Latent] = princomp(Inputs);
+% modelData.PC = PCoeffs;
+%------------------
 
-Inputs = DuplicateAndShift(modelData.spikeratedata,10);
-[PCoeffs,Inputs, Latent] = princomp(Inputs);
-modelData.PC = PCoeffs;
-maxPCs = length(PCoeffs);
+%--------RC--------
+% RC = 0:0.01:1;
+% numIter = length(RC);
+%------------------
 
-stepPCs = maxPCs/2;
+%------Thresh------
+% velMagn = binnedData.velocbin(:,3);
+% vel = 0:0.2:20;
+% numvel = length(vel);
+% for i=1:numvel
+%     states(:,i) = velMagn >= vel(i);
+% end
+% binnedData.states = states;
+thresh_levels = 0:0.2:20;
+numIter = length(thresh_levels);
+%------------------
 
-for i = maxPCs:stepPCs:1
-    numPCs      = i;
-    disp(sprintf('using %g PCs',numPCs));    
+R2_test  = zeros(numIter,numSig);
+vaf_test = zeros(numIter,numSig);
+mse_test = zeros(numIter,numSig);
+
+for i = 2:numIter
+    Use_State = i;
+    disp(sprintf('iteration %g of %g',i,numIter));
     Model      = BuildSDModel(modelData,dataPath,fillen,UseAllInputs,Polyn,PredEMG,PredForce,PredCursPos,PredVeloc,Use_State,numPCs);
-    PredData   = predictSignals(Model,testData,FiltPred,Adapt_Enable,LR,Adapt_lag,numPCs);
+    PredData   = predictSDSignals(Model,testData,Use_State,FiltPred,Adapt_Enable,LR,Adapt_lag,numPCs,RC(i));
     TestSigs   = concatSigs(testData,PredEMG,PredForce,PredCursPos,PredVeloc);
-    R2_PC(i,:) = CalculateR2(TestSigs,PredData.preddatabin)';
-    vaf_PC(i,:)= 1 - (var(PredData.preddatabin - TestSigs) ./ var(TestSigs));
-    mse_PC(i,:)= mean((PredData.preddatabin-TestSigs).^2);
-    stepPCs = floor(numPCs/2);
+    R2_test(i,:) = CalculateR2(TestSigs,PredData.preddatabin)';
+    vaf_test(i,:)= 1 - (var(PredData.preddatabin - TestSigs) ./ var(TestSigs));
+    mse_test(i,:)= mean((PredData.preddatabin-TestSigs).^2);
+%     R2_test(i,:) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+%     vaf_test(i,:)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
+%     mse_test(i,:)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
 end

@@ -3,6 +3,15 @@ function [PredData, varargout] = predictSDFSignals(varargin)
 model       = varargin{1};
 BinnedData   = varargin{2};
 State_index  = varargin{3};
+
+% default values:
+Smooth_Pred = false;
+Adapt_Enable = false;
+LR = [];
+Adapt_lag = [];
+numPCs = 0;
+RC = 0.3;
+
 if nargin    >= 4
     Smooth_Pred = varargin{4};
     Adapt_Enable = varargin{5};
@@ -11,11 +20,9 @@ if nargin    >= 4
     if nargin > 7
         numPCs = varargin{8};
     end
-else
-    Smooth_Pred = false;
-    Adapt_Enable = false;
-    LR = [];
-    Adapt_lag = [];
+    if nargin > 8
+        RC = varargin{9};
+    end
 end
 
 if ischar(model)
@@ -69,11 +76,10 @@ else
             PredictedData(:,z) = polyval(model.P(z,:),PredictedData(:,z));
         end
     end
-    
+
     %Smooth Predictions during Rest State
     dt = binsize;
-    RC = 0.3; %300ms time constant
-    a = dt/(RC+dt); %inertia
+    a = dt/(RC+dt); %inertia factor
     
     for i=1:length(Rest_idxs)
         if Rest_idxs(i)==1
@@ -82,6 +88,19 @@ else
         end
         PredictedData(Rest_idxs(i),:)= PredictedData(Rest_idxs(i)-1,:) + a*( PredictedData(Rest_idxs(i),:)-PredictedData(Rest_idxs(i)-1,:) );
     end
+%     ---
+%     %Predict no movement during rest state
+%         %% Caution, this assumes 5 predicted signals: Px, Py, Vx, Vy, Vmagn.
+%     PredictedData(Rest_idxs,3:5) = zeros(length(Rest_idxs),3);
+%     for i=1:length(Rest_idxs)
+%         if Rest_idxs(i)==1
+%             %skip first bin
+%             continue;
+%         end
+%         PredictedData(Rest_idxs(i),1:2) = PredictedData(Rest_idxs(i)-1,1:2);
+%     end
+%     ---
+
 end
         
 clear ActualData spikeData TempPred;
