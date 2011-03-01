@@ -107,8 +107,8 @@ function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOptio
 %% Setup Inputs/Outputs
 
     numlags= round(fillen/binsize); %%%Designate the length of the filters/number of time lags
-        %% round helps getting rid of floating point error but care should
-        %% be taken in making sure fillen is a multiple of binsize.
+        % round helps getting rid of floating point error but care should
+        % be taken in making sure fillen is a multiple of binsize.
     numsides=1;     %%%For a one-sided or causal filter
 
     % Duplicate and shift neural channels so we don't have to look in the past with the linear filter.

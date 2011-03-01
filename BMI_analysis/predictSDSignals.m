@@ -3,6 +3,14 @@ function [PredData, varargout] = predictSDSignals(varargin)
 models       = varargin{1};
 BinnedData   = varargin{2};
 State_index  = varargin{3};
+
+%default values:
+Smooth_Pred = false;
+Adapt_Enable = false;
+LR = [];
+Adapt_lag = [];
+numPCs = 0;
+
 if nargin    >= 4
     Smooth_Pred = varargin{4};
     Adapt_Enable = varargin{5};
@@ -11,11 +19,6 @@ if nargin    >= 4
     if nargin > 7
         numPCs = varargin{8};
     end
-else
-    Smooth_Pred = false;
-    Adapt_Enable = false;
-    LR = [];
-    Adapt_lag = [];
 end
 
 if ischar(models)
@@ -31,11 +34,6 @@ end
 
 neuronIDs = models{1,1}.neuronIDs;
 fillen    = models{1,1}.fillen;
-if isfield(models{1,1},'PC')
-    numPCs = models{1,1}.PC;
-else
-    numPCs = 0;
-end
 
 if any(any(neuronIDs~=models{1,2}.neuronIDs)) || any(any(fillen~=models{1,2}.fillen))
     disp('Different decoders must be built with same units and filter length for now');
@@ -62,7 +60,7 @@ clear usableSpikeData;
 
 if numPCs
     % use PCs as model inputs
-    Inputs = Inputs*filter.PC(:,1:numPCs);
+    Inputs = Inputs*models{1,1}.PC(:,1:numPCs);
 end
 
 %% Outputs:  assign memory with real or dummy data, just cause predMIMO requires something there

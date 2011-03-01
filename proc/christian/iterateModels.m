@@ -9,7 +9,7 @@ PredForce    = 0;
 PredCursPos  = 1;
 PredVeloc    = 1;
 Use_State    = 0;
-numPCs       = 0;
+numPCs       = 200;
 dataPath     = '';
 binsize      = modelData.timeframe(2)-modelData.timeframe(1);
 % binsize      = binnedData.timeframe(2)-binnedData.timeframe(1);
@@ -55,7 +55,7 @@ Use_State = 1; %Vel Thresh
 % numIter = length(RC);
 %------------------
 
-%------Thresh------
+% %------Thresh------
 % velMagn = binnedData.velocbin(:,3);
 % vel = 0:0.2:20;
 % numvel = length(vel);
@@ -71,11 +71,16 @@ R2_test  = zeros(numIter,numSig);
 vaf_test = zeros(numIter,numSig);
 mse_test = zeros(numIter,numSig);
 
-for i = 2:numIter
+for i = 2:3
     Use_State = i;
     disp(sprintf('iteration %g of %g',i,numIter));
+    disp('building models');
+    tic;
     Model      = BuildSDModel(modelData,dataPath,fillen,UseAllInputs,Polyn,PredEMG,PredForce,PredCursPos,PredVeloc,Use_State,numPCs);
-    PredData   = predictSDSignals(Model,testData,Use_State,FiltPred,Adapt_Enable,LR,Adapt_lag,numPCs,RC(i));
+    toc;tic;
+    disp('predicting data');
+    PredData   = predictSDSignals(Model,testData,Use_State,FiltPred,Adapt_Enable,LR,Adapt_lag,numPCs);
+    toc;
     TestSigs   = concatSigs(testData,PredEMG,PredForce,PredCursPos,PredVeloc);
     R2_test(i,:) = CalculateR2(TestSigs,PredData.preddatabin)';
     vaf_test(i,:)= 1 - (var(PredData.preddatabin - TestSigs) ./ var(TestSigs));
