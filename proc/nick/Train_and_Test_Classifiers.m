@@ -1,20 +1,17 @@
 % Calculate classification coefficients from model data
 
-clear peak_training_set
-clear peak_group
-
 window = 0.500; % in seconds (for spike averaging) should match training
 
 bin = double(modelData.timeframe(2) - modelData.timeframe(1));
 window_bins = floor(window/bin);
 
 complete_training_set = zeros(length(modelData.timeframe),length(modelData.spikeguide)*window_bins);
-observation = zeros(1,length(modelData.spikeguide)*window_bins);
 group = zeros(length(complete_training_set),1);
 
 for x = window_bins:length(modelData.timeframe)
+observation = [];
     for y = 1:window_bins
-        observation((y-1)*length(modelData.spikeguide)+1:y*length(modelData.spikeguide)) = modelData.spikeratedata(x-(y-1),:);
+        observation = [observation modelData.spikeratedata(x-(y-1),:)];
     end
     complete_training_set(x,:) = observation;
 
@@ -29,6 +26,8 @@ speed = double(modelData.velocbin(:,3));
 [B,A] = butter(4,cutoff*bin/2,'low');
 speed_filt = filtfilt(B,A,speed);
 
+peak_training_set = [];
+peak_group = [];
 peak_count = 0;
 for x = window_bins:length(modelData.timeframe)-1 % default
     if (speed_filt(x-1) < speed_filt(x)) && (speed_filt(x) > speed_filt(x+1)) % local max
@@ -42,10 +41,9 @@ for x = window_bins:length(modelData.timeframe)-1 % default
     end
 end
 
-data_set = zeros(1,length(modelData.spikeguide)*window_bins);
-
+data_set = [];
 for y = 1:window_bins
-    data_set((y-1)*length(modelData.spikeguide)+1:y*length(modelData.spikeguide)) = modelData.spikeratedata(window_bins-(y-1),:);
+    data_set = [data_set modelData.spikeratedata(window_bins-(y-1),:)];
 end
 
 mean_data_set = mean(modelData.spikeratedata(1:window_bins,:),1);
@@ -62,8 +60,9 @@ states = zeros(length(testData.timeframe),5);
 
 for x = window_bins:length(testData.timeframe)
 
+    data_set = [];
     for y = 1:window_bins
-        data_set((y-1)*length(testData.spikeguide)+1:y*length(testData.spikeguide)) = testData.spikeratedata(x-(y-1),:);
+        data_set = [data_set testData.spikeratedata(x-(y-1),:)];
     end
 
     mean_data_set = mean(testData.spikeratedata(x-(window_bins-1):x,:),1);
