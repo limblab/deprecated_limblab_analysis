@@ -49,7 +49,7 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
         end          
     end
     
-    R2 = CalculateR2(ActSignalsTrunk,PredData.preddatabin);
+    R2 = CalculateR2(ActSignalsTrunk,PredData.preddatabin)';
 %     vaf= 1- (var(PredData.preddatabin - ActSignalsTrunk) ./ var(ActSignalsTrunk) );
     vaf = 1 - sum( (PredData.preddatabin-ActSignalsTrunk).^2 ) ./ sum( (ActSignalsTrunk - repmat(mean(ActSignalsTrunk),size(ActSignalsTrunk,1),1)).^2 );
     mse= mean((PredData.preddatabin-ActSignalsTrunk) .^2);

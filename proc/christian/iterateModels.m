@@ -9,7 +9,7 @@ PredForce    = 0;
 PredCursPos  = 1;
 PredVeloc    = 1;
 Use_State    = 0;
-numPCs       = 200;
+numPCs       = 0;
 dataPath     = '';
 binsize      = modelData.timeframe(2)-modelData.timeframe(1);
 % binsize      = binnedData.timeframe(2)-binnedData.timeframe(1);
@@ -63,18 +63,23 @@ Use_State = 1; %Vel Thresh
 %     states(:,i) = velMagn >= vel(i);
 % end
 % binnedData.states = states;
-thresh_levels = 0:0.2:20;
-numIter = length(thresh_levels);
+%--
+% thresh_levels = 0:0.2:20;
+% numIter = length(thresh_levels);
 %------------------
+
+%---Classifiers----
+numClasses = size(modelData.states,2);
+numIter = numClasses;
 
 R2_test  = zeros(numIter,numSig);
 vaf_test = zeros(numIter,numSig);
 mse_test = zeros(numIter,numSig);
 
-for i = 2:3
+for i = 1:numClasses
     Use_State = i;
-    disp(sprintf('iteration %g of %g',i,numIter));
-    disp('building models');
+    disp(sprintf('iteration %g of %g',i,numClasses));
+    fprintf('building models using ''%s'' Classifier',modelData.statemethods(i,:));
     tic;
     Model      = BuildSDModel(modelData,dataPath,fillen,UseAllInputs,Polyn,PredEMG,PredForce,PredCursPos,PredVeloc,Use_State,numPCs);
     toc;tic;
