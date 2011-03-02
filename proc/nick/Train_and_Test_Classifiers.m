@@ -51,15 +51,9 @@ end
 mean_data_set = mean(modelData.spikeratedata(1:window_bins,:),1);
 
 completeBayes = NaiveBayes.fit(complete_training_set(window_bins:end,:), group(window_bins:end));
-% meanBayes = NaiveBayes.fit(mean_training_set(window_bins:end,:), group(window_bins:end));
 peakBayes = NaiveBayes.fit(peak_training_set, peak_group);
 
-% [~,~,~,~,completeLDAcoeffQ] = classify(data_set,complete_training_set(window_bins:end,:),group(window_bins:end),'quadratic');
-% [~,~,~,~,meanLDAcoeffQ] = classify(mean_data_set,mean_training_set(window_bins:end,:),group(window_bins:end),'quadratic');
-% [~,~,~,~,peakLDAcoeffQ] = classify(mean_data_set,peak_training_set,peak_group,'quadratic');
-
 [~,~,~,~,completeLDAcoeffL] = classify(data_set,complete_training_set(window_bins:end,:),group(window_bins:end),'linear');
-% [~,~,~,~,meanLDAcoeffL] = classify(mean_data_set,mean_training_set(window_bins:end,:),group(window_bins:end),'linear');
 [~,~,~,~,peakLDAcoeffL] = classify(mean_data_set,peak_training_set,peak_group,'linear');
 
 % Classify test data according to coefficients
@@ -80,22 +74,15 @@ for x = window_bins:length(testData.timeframe)
 
     states(x,2) = completeBayes.predict(data_set);
 
-%     binnedData.states(x,3) = meanBayes.predict(mean_data_set);
-
     states(x,3) = peakBayes.predict(mean_data_set);
 
-%     binnedData.states(x,5) = 0 >= data_set*completeLDAcoeffQ(1,2).quadratic*data_set' + data_set*completeLDAcoeffQ(1,2).linear + completeLDAcoeffQ(1,2).const;
-
-%     binnedData.states(x,6) = 0 >= mean_data_set*meanLDAcoeffQ(1,2).quadratic*mean_data_set' + mean_data_set*meanLDAcoeffQ(1,2).linear + meanLDAcoeffQ(1,2).const;
-
-%     binnedData.states(x,7) = 0 >= mean_data_set*peakLDAcoeffQ(1,2).quadratic*mean_data_set' + mean_data_set*peakLDAcoeffQ(1,2).linear + peakLDAcoeffQ(1,2).const;
-
     states(x,4) = 0 >= data_set*completeLDAcoeffL(1,2).linear + completeLDAcoeffL(1,2).const;
-
-%     binnedData.states(x,9) = 0 >= mean_data_set*meanLDAcoeffL(1,2).linear + meanLDAcoeffL(1,2).const;
 
     states(x,5) = 0 >= mean_data_set*peakLDAcoeffL(1,2).linear + peakLDAcoeffL(1,2).const;
 
 end
 
-
+correct = zeros(1,5);
+for x = 1:5
+    correct(x) = 1 - sum(abs(states(:,1) - states(:,x)))/length(states);
+end
