@@ -1,4 +1,4 @@
-function PDCheck2(PDMatrix)
+function PDCheck(PDMatrix)
 
 % PDCHECK plots the preferred directions (PDs) of the units represented in
 % PDMATRIX in a compass plot and allows the user to exclude individual
@@ -57,7 +57,8 @@ uicontrol('Parent', UI, ...
 
 axes('Position', [50/fig_pos(3), 125/fig_pos(4), 400/fig_pos(3), 400/fig_pos(4)]); % set position of axes for PD plot
 
-[PDcartX, PDcartY]=pol2cart(PDMatrix(goodUnits,4), PDMatrix(goodUnits,6)); % convert PD vectors from polar to cartesian coordinates for plotting
+% [PDcartX, PDcartY]=pol2cart(PDMatrix(goodUnits,4), PDMatrix(goodUnits,6)); % convert PD vectors from polar to cartesian coordinates for plotting
+[PDcartX, PDcartY]=pol2cart(PDMatrix(goodUnits,4), log10(PDMatrix(goodUnits,6))); % convert PD vectors from polar to cartesian coordinates for plotting
 compass(PDcartX, PDcartY); % plot all PDs on a compass plot
 title('Preferred Directions of Active Units');
 % axis([-max_mag, max_mag, -max_mag, max_mag]);

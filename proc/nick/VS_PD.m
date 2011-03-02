@@ -18,10 +18,10 @@ function PDMatrix = VS_PD(datafile,delay,window_length)
 %   b - data
 %       1 - channel number
 %       2 - unit number (for specific channel)
-%       1 - 5th percentile of preferred direction (in radians)
-%       2 - mean preferred direction (in radians)
-%       3 - 95th percentile of preferred direction (in radians)
-%       3 - PD vector magnitude
+%       3 - 2.5th percentile of preferred direction (in radians)
+%       4 - mean preferred direction (in radians)
+%       5 - 97.5th percentile of preferred direction (in radians)
+%       6 - PD vector magnitude
 %
 % DATAFILE should be the BDF file of interest.  This version uses the
 % following words to determine timing of events and target positions:
@@ -51,7 +51,11 @@ cd('../..'); % change directory to s1_analysis
 load_paths % load paths to include subdirectories with LOADDTATSTRUCT BOOTSTRAP and CPRCTILE functions
 cd('proc/nick/');
 
-BDF = LoadDataStruct(datafile); % load BDF struct
+if ischar(datafile)
+    BDF = LoadDataStruct(datafile); % load BDF struct from file
+else
+    BDF = datafile; % load BDF struct from workspace
+end
 
 if (nargin == 1)
     delay = 0.1; % set default delay
@@ -108,7 +112,7 @@ for x = 1:total_units
     bootstrapPDs{x}(:,1) = bootstrapPDs{x}(:,1) + pi/2; % rotate all bootstrapped PD calculations by 90 degrees (VECTOR_SUM_PD assumes 0 degrees is in direction of first target, we need to realign with x axis)
     
     PDMatrix(x,1:2) = [BDF.units(1,x).id(1,1) BDF.units(1,x).id(1,2)]; % find channel and unit ID for each unit
-    PDMatrix(x,3:5) = cprctile(bootstrapPDs{x}(:,1),[5 50 95]); % calculate 5th percentile, mean, and 95th percetile of PD for each unit based on bootstrapping results
+    PDMatrix(x,3:5) = cprctile(bootstrapPDs{x}(:,1),[2.5 50 97.5]); % calculate 5th percentile, mean, and 95th percetile of PD for each unit based on bootstrapping results
     PDMatrix(x,6) = mean(bootstrapPDs{x}(:,2)); % calculate magnitude of PD vectors
 end
 
