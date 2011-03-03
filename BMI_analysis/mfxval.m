@@ -22,7 +22,7 @@ PredEMG = 1;
 PredForce = 0;
 PredCursPos = 0;
 PredVeloc = 0;
-plotflag = 1;
+plotflag = 0;
 numSig    = 0;
 
 %overwrite if specified in arguments
@@ -175,13 +175,16 @@ for i=0:nfold-1
     fprintf('Classification...');
     tic;
     [states{1,i+1}, correct] = Train_and_Test_Classifiers(modelData, testData);
+    testData.states = states{1,i+1};
     toc;
     %modelData.states =  peak_bayes_clas(modelData.spikeratedata,binsize,vel_magn);
     tic;
-    fprintf('Building Models Using Vel Thresh...'); toc;
+    fprintf('Building Models Using Vel Thresh...');
     Use_SD = 1;
     filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
-        
+    toc;
+    
+    numClasses = 5;
     for j = 1:numClasses
         Use_SD = j;
         
@@ -245,28 +248,31 @@ for i=0:nfold-1
 end %for i=1:nfold
 
 
-% Plot Actual and Predicted Data
-idx = false(size(binnedData.timeframe));
-for i = 1:length(AllPredData.timeframe)
-    idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
-end    
+if plotflag
 
-if PredEMG
-    binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
-end
-if PredForce
-    binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
-end
-if PredCursPos
-    binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
-end
-if PredVeloc
-    binnedData.velocbin = binnedData.velocbin(idx,:);
-end
+    % Plot Actual and Predicted Data
+    idx = false(size(binnedData.timeframe));
+    for i = 1:length(AllPredData.timeframe)
+        idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
+    end    
 
-binnedData.timeframe = binnedData.timeframe(idx);
-ActualvsOLPred(binnedData,AllPredData,plotflag);
+    if PredEMG
+        binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
+    end
+    if PredForce
+        binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
+    end
+    if PredCursPos
+        binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
+    end
+    if PredVeloc
+        binnedData.velocbin = binnedData.velocbin(idx,:);
+    end
 
+    binnedData.timeframe = binnedData.timeframe(idx);
+    ActualvsOLPred(binnedData,AllPredData,plotflag);
+end
+    
 AllPredData.mfxval.R2 = R2;
 AllPredData.mfxval.vaf= vaf;
 AllPredData.mfxval.mse= mse;
