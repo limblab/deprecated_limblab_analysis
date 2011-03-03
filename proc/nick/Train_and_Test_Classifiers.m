@@ -1,4 +1,4 @@
-function [states, correct]=Train_and_Test_Classifiers(modelData, testData)
+function [test_states, model_states]=Train_and_Test_Classifiers(modelData, testData)
 % Calculate classification coefficients from model data
 
 window = 0.500; % in seconds (for spike averaging) should match training
@@ -49,15 +49,15 @@ end
 
 mean_data_set = mean(modelData.spikeratedata(1:window_bins,:),1);
 
-% completeBayes = NaiveBayes.fit(complete_training_set(window_bins:end,:), group(window_bins:end));
-% peakBayes = NaiveBayes.fit(peak_training_set, peak_group);
+completeBayes = NaiveBayes.fit(complete_training_set(window_bins:end,:), group(window_bins:end));
+peakBayes = NaiveBayes.fit(peak_training_set, peak_group);
 
 [a,b,c,d,completeLDAcoeffL] = classify(data_set,complete_training_set(window_bins:end,:),group(window_bins:end),'linear');
 [a,b,c,d,peakLDAcoeffL] = classify(mean_data_set,peak_training_set,peak_group,'linear');
 clear a b c d;
 % Classify test data according to coefficients
 
-states = zeros(length(testData.timeframe),5);
+test_states = zeros(length(testData.timeframe),5);
 
 for x = window_bins:length(testData.timeframe)
 
@@ -69,22 +69,42 @@ for x = window_bins:length(testData.timeframe)
     mean_data_set = mean(testData.spikeratedata(x-(window_bins-1):x,:),1);
     
     if testData.velocbin(x,3) > 8
-        states(x,1) = 1;
+        test_states(x,1) = 1;
     end
 
-%     states(x,2) = completeBayes.predict(data_set);
-% 
-%     states(x,3) = peakBayes.predict(mean_data_set);
+    test_states(x,2) = completeBayes.predict(data_set);
 
-    states(x,4) = 0 >= data_set*completeLDAcoeffL(1,2).linear + completeLDAcoeffL(1,2).const;
+    test_states(x,3) = peakBayes.predict(mean_data_set);
 
-    states(x,5) = 0 >= mean_data_set*peakLDAcoeffL(1,2).linear + peakLDAcoeffL(1,2).const;
+    test_states(x,4) = 0 >= data_set*completeLDAcoeffL(1,2).linear + completeLDAcoeffL(1,2).const;
+
+    test_states(x,5) = 0 >= mean_data_set*peakLDAcoeffL(1,2).linear + peakLDAcoeffL(1,2).const;
 
 end
 
-correct = zeros(1,5);
-for x = 1:5
-    correct(x) = 1 - sum(abs(states(:,1) - states(:,x)))/length(states);
+model_states = zeros(length(modelData.timeframe),5);
+
+for x = window_bins:length(modelData.timeframe)
+
+    data_set = [];
+    for y = 1:window_bins
+        data_set = [data_set modelData.spikeratedata(x-(y-1),:)];
+    end
+
+    mean_data_set = mean(modelData.spikeratedata(x-(window_bins-1):x,:),1);
+    
+    if modelData.velocbin(x,3) > 8
+        model_states(x,1) = 1;
+    end
+
+    model_states(x,2) = completeBayes.predict(data_set);
+
+    model_states(x,3) = peakBayes.predict(mean_data_set);
+
+    model_states(x,4) = 0 >= data_set*completeLDAcoeffL(1,2).linear + completeLDAcoeffL(1,2).const;
+
+    model_states(x,5) = 0 >= mean_data_set*peakLDAcoeffL(1,2).linear + peakLDAcoeffL(1,2).const;
+
 end
 
 end
