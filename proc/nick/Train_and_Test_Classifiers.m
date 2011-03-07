@@ -52,9 +52,9 @@ mean_data_set = mean(modelData.spikeratedata(1:window_bins,:),1);
 completeBayes = NaiveBayes.fit(complete_training_set(window_bins:end,:), group(window_bins:end));
 peakBayes = NaiveBayes.fit(peak_training_set, peak_group);
 
-[a,b,c,d,completeLDAcoeffL] = classify(data_set,complete_training_set(window_bins:end,:),group(window_bins:end),'linear');
-[a,b,c,d,peakLDAcoeffL] = classify(mean_data_set,peak_training_set,peak_group,'linear');
-clear a b c d;
+[~,~,~,~,completeLDAcoeffL] = classify(data_set,complete_training_set(window_bins:end,:),group(window_bins:end),'linear');
+[~,~,~,~,peakLDAcoeffL] = classify(mean_data_set,peak_training_set,peak_group,'linear');
+
 % Classify test data according to coefficients
 
 test_states = zeros(length(testData.timeframe),5);

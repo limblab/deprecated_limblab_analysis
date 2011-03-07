@@ -48,7 +48,7 @@ if nargin > 6
                 end
                 if nargin > 10
                     Use_SD= varargin{5};
-                    if nargin >12
+                    if nargin >11
                         plotflag = varargin{6};
                     end
                 end
@@ -82,8 +82,9 @@ end
 R2 = zeros(nfold,numSig,numClasses);
 vaf= zeros(nfold,numSig,numClasses);
 mse= zeros(nfold,numSig,numClasses);
-states = cell(1,nfold);
-    
+test_states = cell(1,nfold);
+model_states = cell(1,nfold);
+
 %allocate structs
 testData = binnedData;
 modelData = binnedData;
@@ -170,30 +171,34 @@ for i=0:nfold-1
             modelData.velocbin = [ binnedData.velocbin(1:testDataStart-1,:); binnedData.velocbin(testDataEnd+1:dataEnd,:)];
         end
     end
+% 
+%     % Create Training sets for classifiers - Train classifiers - Predict testData States
+%     fprintf('Classification...');
+%     tic;
+%     [test_states{1,i+1}, model_states{1,i+1}] = Train_and_Test_Classifiers(modelData, testData);
+%     testData.states = test_states{1,i+1};
+%     modelData.states= model_states{1,i+1}; 
+%     toc;
 
-    % Create Training sets for classifiers - Train classifiers - Predict testData States
-    fprintf('Classification...');
-    tic;
-    [states{1,i+1}, correct] = Train_and_Test_Classifiers(modelData, testData);
-    testData.states = states{1,i+1};
-    toc;
-    %modelData.states =  peak_bayes_clas(modelData.spikeratedata,binsize,vel_magn);
-    tic;
-    fprintf('Building Models Using Vel Thresh...');
-    Use_SD = 1;
-    filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
-    toc;
+    testData.states = evalin('base',sprintf('test_states{1,%d}',i+1));
+    modelData.states= evalin('base',sprintf('model_states{1,%d}',i+1));
     
+%     tic;
+%     fprintf('Building Models Using Vel Thresh...');
+%     Use_SD = 1;
+%     filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+%     toc;
+%     
     numClasses = 5;
     for j = 1:numClasses
         Use_SD = j;
         
         if Use_SD
-%             % 2 different models, one for each state:
-%             fprintf('Model Building');
-%             tic;
-%             filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD,numPCs);
-%             toc;
+            % 2 different models, one for each state:
+            fprintf('Model Building class %d...',Use_SD);
+            tic;
+            filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+            toc;
 
             PredData = predictSDSignals(filter, testData, Use_SD);
             TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
@@ -235,16 +240,20 @@ for i=0:nfold-1
         end
 
         %Concatenate predicted Data if we want to plot it later:
-        if plotflag
-            %Skip this for the first fold
-            if i == 0
-                AllPredData = PredData;
-            else
-                AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
-                AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
-            end
+        %Skip this for the first fold
+        if i == 0
+            AllPredData.preddatabin{1,j} = PredData.preddatabin;
+        else
+            AllPredData.preddatabin{1,j} =[AllPredData.preddatabin{1,j}; PredData.preddatabin];
         end
     end %for j=1:numClasses
+    if i==0
+        AllPredData.timeframe = PredData.timeframe;
+        AllPredData.states    = testData.states((end-size(PredData.preddatabin,1)+1):end,:);
+    else
+        AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
+        AllPredData.states = [AllPredData.states; testData.states((end-size(PredData.preddatabin,1)+1):end,:)];
+    end
 end %for i=1:nfold
 
 
@@ -279,4 +288,4 @@ AllPredData.mfxval.mse= mse;
 
 % varargout{1} = AllPredData;
 % varargout{2} = nfold;
-varargout = {vaf, mse, AllPredData, nfold, states,correct};
+varargout = {vaf, mse, AllPredData};
