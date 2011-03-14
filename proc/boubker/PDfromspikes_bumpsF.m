@@ -1,11 +1,14 @@
-function [allfilesPDs]=PDfromspikesF(pathname,allroots,startword ,rewardword,shiftstart,degres,timeaft,pvallim)
-% pathname='\';
-% ,allroots={'pedro002','pedro003'};
-% ,startword=18 for rw  ,
-%     rewardword 32,
-%     shiftstart 0;,
-%     degres 30,timeaft 0.2;
-%     ,pvallim 0.05
+function [allfilesPDs]=PDfromspikes_bumpsF(pathname,allroots,startword ,bumpdur,shiftstart,degres,timeaft,pvallim)
+% close all; clc; clear;
+% pathname='\\165.124.111.234\data\Miller\Pedro_4C2\S1 Array\Processed\';
+% allroots={'Pedro_S1_011'}
+% startword=[80:84];
+% bumpdur=0.125;
+% shiftstart=0
+% degres=30
+% timeaft=0.120
+% pvallim=0.05
+
 % this fuction generates a cell array called allfilesPDs and it uses
 % bootstrap.m
 %-each column corresponds to a file designated in the allroots arguments.
@@ -105,27 +108,35 @@ for nr=1:length(allroots)
     
     cuesall= data.words(:,1);
     words=data.words(:,2);
-    startI=cuesall(find(words==startword));
-    ends=cuesall(find(words==rewardword));
+    %%startI=cuesall(find(words==startword));
+    startI=[];
+    for i=1: length(startword)
+    startI=[startI; cuesall(find(words==startword(i)))];
+    end
+    startI=sort(startI);
+%     ends=cuesall(find(words==rewardword));
     while (startI(1)<=1)
         startI(1)=[];
     end;
-    while (ends(1)<startI(1))
-        ends(1)=[];
-    end;
-    while (startI(end)>ends(end))
-        startI(end)=[];
-    end; 
-   
-for i=1 :length(ends)
-    inend=(find(startI<ends(i)));
-    starts(i)=startI(inend(end));
+%     while (ends(1)<startI(1))
+%         ends(1)=[];
+%     end;
+%     while (startI(end)>ends(end))
+%         startI(end)=[];
+%     end; 
+ends=startI+bumpdur;
+% for i=1 :length(ends)
+%     inend=(find(startI<ends(i)));
+%     starts(i)=startI(inend(end));
 end
-    starts=starts';
+    starts=startI;
     
     mintrialtime=min(ends-starts);
 
-    
+while timeaft> bumpdur
+    beep
+  timeaft= input(['timeaft should be less than bump duration ',num2str(mintrialtime),'; timeaft = ']);
+end    
 while abs(shiftstart)> mintrialtime
     beep
   shiftstart= input(['shiftstart should be less than ',num2str(mintrialtime),'; shiftstart = ']);
@@ -226,8 +237,8 @@ end
     allfilesPDs{1,nr}=allPDs;
     allfilesPDs{2,nr}=allroots(nr);
     allfilesPDs{3,nr}=data.meta.datetime;
-        waitbar(nr/length(allroots))
-    clearvars -except allroots rn allfilesPDs  h pathname rewardword startword shiftstart degres timeaft pvallim
+    waitbar(nr/length(allroots))
+    clearvars -except allroots rn allfilesPDs  h pathname rewardword startword shiftstart degres timeaft pvallim 
+    beep
 end
-beep
-end
+
