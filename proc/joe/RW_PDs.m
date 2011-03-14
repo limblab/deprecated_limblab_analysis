@@ -2,7 +2,7 @@ function out = RW_PDs(filename)
 
 if ~exist([filename '.mat'],'file')
     curr_dir = pwd;
-    cd '/Users/limblab/Documents/Joe Lancaster/MATLAB/s1_analysis/';
+    cd '/Users/limblab/Desktop/s1_analysis/';
     bdf = get_plexon_data([filename '.plx'],2);
     save(filename,'bdf');    
     cd(curr_dir)
