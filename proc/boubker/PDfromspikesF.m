@@ -1,5 +1,25 @@
-function [allfilesPDs]=PDfromspikesF(pathname,allroots,startword ,rewardword,shiftstart,degres,timeaft,pvallim)
-% pathname='\';
+%function [allfilesPDs]=PDfromspikesF(pathname,allroots,startword ,rewardword,shiftstart,degres,timeaft,pvallim)
+clear; close all; clc;
+
+pathname='\\165.124.111.234\limblab\user_folders\Boubker\PDs/';
+allroots={'Keedoo_Spike_013111001', 'Keedoo_Spike_020111001', 'Keedoo_Spike_020911001', 'Keedoo_Spike_021411001',...
+    'Keedoo_Spike_111210001', 'Keedoo_Spike_111210002', 'Keedoo_Spike_120610001-01', ...
+    'Keedoo_Spike_120610001-02', 'Keedoo_Spike_120710002-02', 'Keedoo_Spike_121310001-01', 'Keedoo_Spike_12142010001-01'};
+startword =27;
+rewardword=32;
+shiftstart=0;
+degres=30;
+timeaft=0.2;
+pvallim=0.05;
+
+
+% pathname='C:\Users\Boubker\Documents\Desktop\s1_analysis\proc\boubker\';
+% allroots={'multiPedro_RW_LFP_002'};
+% startword=18;
+% rewardword=32;
+% shiftstart=0;
+% degres=30;timeaft= 0.2;pvallim=0.05;
+% pathname='...\';
 % ,allroots={'pedro002','pedro003'};
 % ,startword=18 for rw  ,
 %     rewardword 32,
@@ -43,7 +63,7 @@ function [allfilesPDs]=PDfromspikesF(pathname,allroots,startword ,rewardword,shi
 % allroots={'Pedro_S1_040-s','Pedro_S1_042-s','Pedro_S1_043-s','Pedro_S1_044-s','Pedro_S1_046-s','Pedro_S1_047-s'};
 
 allfilesPDs=cell(3,length(allroots));
-
+  messa = waitbar(0,['Please wait...analysing file ']);
 for nr=1:length(allroots)    
     root=char(allroots(:,nr));
     data=LoadDataStruct([pathname,root,'.mat']);
@@ -51,10 +71,7 @@ for nr=1:length(allroots)
     os=-pi:degres:pi;
     direc=os;
     direc(1)=[];
-    
-    h = waitbar(0,['Please wait...analysing file ',root]);
-   
-    
+       
     dd=[];
     dd=[dd data.units.id];
     chan=dd(1:2:end-1);
@@ -101,6 +118,8 @@ for nr=1:length(allroots)
         postim=(postimes(1):1:(postimes(end)))';
         xposall=interp1(postimes,data.pos(:,2),postim,'nearest');
         yposall=interp1(postimes,data.pos(:,3),postim,'nearest');
+        postimes=[];
+        postimes=postim;
     end
     
     cuesall= data.words(:,1);
@@ -136,7 +155,11 @@ end
     
     
     td=sum(ceil((ends-starts)/timeaft));
+    %waitbar(progressbar,h,['analysing file',int2str(nr),'/',int2str(length(allroots))])
+
     
+  
+   waitbar(0,messa,['Analysing file: ', int2str(nr),'/',int2str(length(allroots))]);
     moves=[];
     trials=[];
     direction=zeros(td,1);
@@ -193,9 +216,9 @@ end
     end;
 
     %% bootstrapping then calculate the circular mean and the CI
-    pvallim=pvallim*100;
-    lowCI=pvallim/2;
-    upCI=100-pvallim/2;
+    pvallum=pvallim*100;
+    lowCI=pvallum/2;
+    upCI=100-pvallum/2;
     bootstrapPDS = cell(1, size(cha_uni,1));
     
     PDMatrix=zeros(size(cha_uni,1),3);
@@ -206,8 +229,15 @@ end
         bootstrapPDS{x} = bootstrap(@vector_sum_pd, spike_counts{x}, 'all', 1000);
         ss=bootstrapPDS{x}(:,1)-pi;
         PDMatrix(x,:)=cprctile(ss,[lowCI 50 upCI]);
-    end
-    
+
+  
+
+  
+   waitbar(x/size(cha_uni,1),messa,['bootstrapping file: ',int2str(nr),'/',int2str(length(allroots))]);
+     
+     end
+     
+  
     
     %% get the mean magnitudes and plot PD as a polar
     for x = 1:size(cha_uni,1)
@@ -226,8 +256,9 @@ end
     allfilesPDs{1,nr}=allPDs;
     allfilesPDs{2,nr}=allroots(nr);
     allfilesPDs{3,nr}=data.meta.datetime;
-        waitbar(nr/length(allroots))
-    clearvars -except allroots rn allfilesPDs  h pathname rewardword startword shiftstart degres timeaft pvallim
+       
+    clearvars -except allroots rn allfilesPDs  h pathname rewardword startword shiftstart degres timeaft pvallim messa
 end
-beep
-end
+beep  
+close(messa)
+% end
