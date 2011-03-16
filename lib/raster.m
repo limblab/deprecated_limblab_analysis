@@ -41,18 +41,16 @@ for i = 1:num_trials
 end
 
 
-if H ~= -1
-    hold on;
-    for i = 1:num_trials
-        plot(table{i}, i*ones(length(table{i})), 'k.')
-    end
+all = [];
+for i = 1:num_trials
+    all = [all; table{i}, i*ones(length(table{i}),1)];
 end
 
-if nargout > 1
-    all = [];
-    for i = 1:num_trials
-        all = [all; table{i}];
-    end
-    all = sort(all);
+
+if H ~= -1
+    plot(all(:,1), all(:,2), 'k.');
 end
+
+all = sort(all(:,1));
+
 
