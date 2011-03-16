@@ -1,0 +1,13 @@
+function [datapath filelist] = BC_detection_experiment_list
+
+datapath = 'D:\Data\Pedro\';
+    
+filelist(1).name = 'Pedro_BC_detection_001';
+filelist(1).pd = [3.402 3.402 3.402 0.26 0.26 ;
+filelist(1).electrodes = [95 95 95 0 0 0];
+filelist(1).pulsewidth = 400;
+filelist(1).current = 20;
+filelist(1).period = 5;
+filelist(1).pulses = 25;
+filelist(1).delay = 0;
+filelist(1).date = '2010-08-27';

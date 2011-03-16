@@ -1,6 +1,7 @@
 % Find PDs
-plotting = 0;
-filename = 'D:\Data\Tiki_B\Tiki_S1_b_006_spl_t003';
+plotting = 1;
+filename = 'D:\Data\Tiki\FMAs\Sorted\Tiki_2011-03-15_BC_003-s';
+extension = '.nev';
 filename_analyzed = [filename '-analyzed'];
 
 curr_dir = pwd;
@@ -9,7 +10,11 @@ load_paths;
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 
 if ~exist([filename '.mat'],'file')
-    bdf = get_plexon_data([filename '.plx'],2);
+    if strcmp(extension,'.nev')
+        bdf = get_cerebus_data([filename extension],2);
+    else
+        bdf = get_plexon_data([filename extension],2);
+    end
     save(filename,'bdf');    
 else
     load(filename,'bdf')
@@ -17,12 +22,14 @@ end
 cd(curr_dir)
 
 units = unit_list(bdf);
+units = units(units(:,2)>0 & units(:,2)<10,:);
 monkey = 'T';
 
 clear out;
 
 tic;
-for i = 1:size(units, 1)
+%% figure
+for i = 1:size(units, 1)    
     chan = units(i,1);
     unit = units(i,2);
     
@@ -35,6 +42,11 @@ for i = 1:size(units, 1)
     [b, dev, stats] = glm_kin(bdf, chan, unit, mi_peak);    
     s = train2bins(get_unit(bdf, chan, unit) - mi_peak, bdf.vel(:,1));
     vs = bdf.vel(s>0,2:3);
+%     plot(vs(:,1),vs(:,2),'.')
+%     xlim([-150 150])
+%     ylim([-150 150])
+%     drawnow
+%     pause
     [p_vs, theta, rho] = vel_pdf_polar(vs);
     
     % GLM evaluation

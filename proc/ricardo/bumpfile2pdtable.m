@@ -96,16 +96,16 @@ hist(dispersion_degrees,50);
 % end
 % figure; plot(theta,feval(y,theta)); hold on; plot(bump_dirs(:,2),firing_rate_matrix(:,1),'.r')
 %%
-for i=1:length(dispersion_degrees)
-    clf;
-    y = fit(bump_dirs(:,2),firing_rate_matrix(:,i),f_cosine); 
-    plot(bump_dirs(:,2),firing_rate_matrix(:,i),'.'); 
-    hold on; 
-    plot(sort(bump_dirs(:,2)),feval(y,sort(bump_dirs(:,2)))); 
-    plot([PD_mu(i)-dispersion(i) PD_mu(i)-dispersion(i)],[0 30]);
-    plot([PD_mu(i)+dispersion(i) PD_mu(i)+dispersion(i)],[0 30]);
-    pause
-end
+% for i=1:length(dispersion_degrees)
+%     clf;
+%     y = fit(bump_dirs(:,2),firing_rate_matrix(:,i),f_cosine); 
+%     plot(bump_dirs(:,2),firing_rate_matrix(:,i),'.'); 
+%     hold on; 
+%     plot(sort(bump_dirs(:,2)),feval(y,sort(bump_dirs(:,2)))); 
+%     plot([PD_mu(i)-dispersion(i) PD_mu(i)-dispersion(i)],[0 30]);
+%     plot([PD_mu(i)+dispersion(i) PD_mu(i)+dispersion(i)],[0 30]);
+%     pause
+% end
 %%
 binned_fr_matrix = zeros(no_ranges,length(actual_units));
 binned_fr_matrix_std = zeros(no_ranges,length(actual_units));
