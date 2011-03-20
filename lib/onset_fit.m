@@ -12,34 +12,6 @@ function [beta, ci] = onset_fit( curve )
 
 % $Id$
 
-% x = 1:20;
-% y = [5*ones(1,10) .3*x(1:10).^2+5];
-% y = y+randn(size(y));
-% 
-% %x = 1:length(curve);
-% %y = curve;
-% beta0 = [1 1 1];
-% F = @(beta,xdata) (xdata<beta(1)).*beta(2) + (xdata>=beta(1)).*(beta(3)*(xdata-beta(1)).^2+beta(2));
-% %out = lsqcurvefit(F,x0,x,y);
-% [beta,r,J] = nlinfit(x, y, F, beta0);
-% ci = nlparci(beta, r, 'jacobian', J);
-% 
-% plot(x, y, 'ko', x, F(beta,x), 'r-', ci(1,:), [beta(2) beta(2)], 'r*')
-
-%frt = -.75:.05:1.25;
-
-%frt = -.75:.025:1.25;
-%y = hist(sort(cell2mat(curve)), frt);
-
-
-%t = -.5:0.005:1;
-%y = mean(curve);
-%dy = diff(y);
-%idx = find(dy == max(dy), 1, 'first');
-%beta = [t(idx) t(idx) t(idx)];
-%ci = beta;
-%return;
-
 frt = -.5:0.005:1;
 y = mean(curve);
 plot(frt,y,'ko');
@@ -68,11 +40,16 @@ betaub = [+Inf length(x) 20];
 
 F = @(beta,xdata) (xdata<beta(1)).*beta(2) + (xdata>=beta(1)).*(beta(3)*(xdata-beta(1)).^2+beta(2));
 %[beta,r,J] = nlinfit(x, y, F, beta0);
-[beta,rn,r,xf,out,lambda,jacobian] = lsqcurvefit(F, beta0, x, y);
+opts = optimset('Display', 'off', 'MaxFunEvals', 1E5);
+[beta,rn,r,xf,out,lambda,jacobian] = lsqcurvefit(F, beta0, x, y, [], [], opts);
 ci = nlparci(beta, r, 'jacobian', jacobian);
 
-%plot(x, y, 'ko', x, F(beta,x), 'r-')
 plot(x, y, 'ko', min(x):.1:max(x), F(beta,min(x):.1:max(x)), 'r-', [ci(1,1) beta(1) ci(1,2)], [beta(2) beta(2) beta(2)], 'r*')
+
+[ypred,delta] = nlpredci(F,x,beta,r,'jacobian',jacobian);
+hold on
+plot(x,ypred+delta, 'k-')
+plot(x,ypred-delta, 'k-')
 
 tmpt = min(x):.01:max(x);
 thr = (beta(2) + F(beta,max(x)))/2;

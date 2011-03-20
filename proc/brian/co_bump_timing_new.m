@@ -1,4 +1,4 @@
-function [pd, risetime, fs] = co_bump_timing(bdf, tt)
+function [pd, risetime, fs] = co_bump_timing_new(bdf, tt)
 % Draw rasters for the different bump/reach directions sorted by active PD
 
 nTargets = 4;
@@ -27,12 +27,18 @@ for dir = 0:nTargets-1
     passive_onsets{dir+1} = tt( tt(:,3)==double('H') & tt(:,2)==dir, 4);
 end
 
+%h1 = figure;
+
 %ul = unit_list(bdf);
+ul = [13 1; 34 1; 95 1; 61 1]; % example set
+%ul = [53 1];
+%ul = [17 1];
 %ul = [34 1; 88 1; 95 2];
 %ul = [5 1];
 %ul = [7 1];
+%ul = [34 1; 88 1; 95 2; 13 1; 80 2];
 %ul = [13 1];
-ul = [34 1; 88 1; 95 2; 13 1; 80 2];
+%ul = [34 1];
 %ul = [80 2];
 
 pd = zeros(size(ul,1),6);
@@ -59,7 +65,7 @@ for n = 1:size(ul,1)
     pas = zeros(nTargets,2);
     for i = 1:nTargets
         pas(i,1) = mean(indv_counts{i}) ./ (pmiw(2)-pmiw(1));
-        pas(i,2) = sqrt(var(indv_counts{i})) / sqrt(length(indv_counts{i}));
+        pas(i,2) = sqrt(var(indv_counts{i}));% / sqrt(length(indv_counts{i}));
     end
 
     th = (2*pi*(0:nTargets-1)/nTargets)';
@@ -78,10 +84,16 @@ for n = 1:size(ul,1)
     try
         pdir = find(max(cell2mat(count)) == cell2mat(count),1);
 
+        %figure(h1); 
+        %h2 = subplot(5,2,2*(n-1)+1);
+        %raster(get_unit(bdf, chan, unit), passive_onsets{pdir}, -.75, .75, h2);
+        %axis([ -.5, .5, .5, length(passive_onsets{pdir})+.5]);
+        
         ps = zeros(length(table{pdir}), length(t));
         for trial = 1:length(table{pdir})
             for spike = table{pdir}{trial}'
-                ps(trial,:) = ps(trial,:) + exp( - (t-spike).^2 / (2*.03.^2) )./sqrt(2*pi*.03^2);
+                %ps(trial,:) = ps(trial,:) + exp( - (t-spike).^2 / (2*.03.^2) )./sqrt(2*pi*.03^2);         
+                ps(trial,:) = ps(trial,:) + ((t-spike)>0) .* (t-spike) .* exp( -(t-spike) ./ .03 ) ./ .03^2;
             end
         end
 
@@ -101,24 +113,11 @@ for n = 1:size(ul,1)
         %stderr = sqrt(var(ps));%./sqrt(size(ps,1));
         %figure; hold on; plot(t,mean(ps),'k-'); plot(t,mean(ps)-stderr,'b-'); plot(t,mean(ps)+stderr,'b-'); 
         title(sprintf('Passive: %d-%d', chan, unit));
-        priseb = zeros(1,size(psb,1));
-        %thr = mean(mean(psb(:,1:50))) + 2*sqrt(var(reshape(psb(:,1:50),1,[])));  
-        thr = (mean(mean(psb(:,1:50))) + mean(max(psb')))/2;
-        %oidx = thrcross(mean(psb), thr);
-        for i = 1:1000
-            priseb(i) = t(find( ...
-                psb(i,:)<thr & t<t(psb(i,:)==max(psb(i,1:201))), ...
-                    1, 'last' )+1);
-            %idx = thrcross(psb(i,:), thr);
-            %idxs = find(psb(i,2:end) > thr & psb(i,1:end-1) < thr);
-            %idx = idxs(min(abs(idxs-oidx)) == abs(idxs-oidx));
-            if ~isempty(idx)
-                priseb(i) = t(idx);
-            else
-                priseb(i) = NaN;
-            end
-        end
-        prise = prctile(priseb, [5 50 95]);
+
+        figure;
+%        [beta, ci] = onset_fit(table{pdir});
+        [beta, ci] = onset_fit(ps);
+        prise = [ci(1,1) beta(1) ci(1,2)];        
     catch
         prise = [NaN NaN NaN];
     end
@@ -139,7 +138,7 @@ for n = 1:size(ul,1)
     act = zeros(nTargets,2);
     for i = 1:nTargets
         act(i,1) = mean(indv_counts{i}) ./ (amiw(2)-amiw(1));
-        act(i,2) = sqrt(var(indv_counts{i})) / sqrt(length(indv_counts{i}));
+        act(i,2) = sqrt(var(indv_counts{i}));% / sqrt(length(indv_counts{i}));
     end
 
     th = (2*pi*(0:nTargets-1)/nTargets)';
@@ -155,12 +154,19 @@ for n = 1:size(ul,1)
     fs(n,1) = max(act(:,1));
 
     try
-        pdir = find(max(cell2mat(count)) == cell2mat(count));
+        pdir = find(max(cell2mat(count)) == cell2mat(count),1);
 
+        
+        %figure(h1); 
+        %h2 = subplot(5,2,2*(n-1)+2);
+        %raster(get_unit(bdf, chan, unit), active_onsets{pdir}, -.75, .75, h2);
+        %axis([ -.5, .5, .5, length(active_onsets{pdir})+.5]);
+        
         as = zeros(length(table{pdir}), length(t));
         for trial = 1:length(table{pdir})
             for spike = table{pdir}{trial}'
-                as(trial,:) = as(trial,:) + exp( - (t-spike).^2 / (2*.03.^2) )./sqrt(2*pi*.03^2);
+                %as(trial,:) = as(trial,:) + exp( - (t-spike).^2 / (2*.03.^2) )./sqrt(2*pi*.03^2);
+                as(trial,:) = as(trial,:) + ((t-spike)>0) .* (t-spike) .* exp( -(t-spike) ./ .03 ) ./ .03^2;
             end
         end
 
@@ -179,25 +185,10 @@ for n = 1:size(ul,1)
 
         title(sprintf('Active: %d-%d', chan, unit));
 
-        ariseb = zeros(1,size(psb,1));
-        %thr = mean(mean(asb(:,1:50))) + 2*sqrt(var(reshape(asb(:,1:50),1,[])));
-        thr = (mean(mean(asb(:,1:50))) + mean(max(asb')))/2;
-        %oidx = thrcross(mean(asb), thr);
-        for i = 1:1000
-            idx = find( ...
-                asb(i,:)<thr & t<t(asb(i,:)==max(asb(i,1:201))), ...
-                    1, 'last' ) + 1;
-            %idx = find(asb(i,:)>thr,1,'first');
-            %idx = thrcross(asb(i,:), thr);
-            %idxs = find(asb(i,2:end) > thr & asb(i,1:end-1) < thr);
-            %idx = idxs(min(abs(idxs-oidx)) == abs(idxs-oidx));
-            if ~isempty(idx)
-                ariseb(i) = t(idx);
-            else
-                ariseb(i) = NaN;
-            end
-        end
-        arise = prctile(ariseb, [5 50 95]);
+        figure;
+        %[beta, ci] = onset_fit(table{pdir});        
+        [beta, ci] = onset_fit(as);
+        arise = [ci(1,1) beta(1) ci(1,2)];
     catch
         arise = [NaN NaN NaN];
     end
