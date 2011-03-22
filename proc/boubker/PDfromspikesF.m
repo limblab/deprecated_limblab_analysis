@@ -1,6 +1,6 @@
 %function [allfilesPDs]=PDfromspikesF(pathname,allroots,startword ,rewardword,shiftstart,degres,timeaft,pvallim)
-clear; close all; clc;
-
+%clear; close all; clc;
+ clearvars -except allfilesPDs  
 pathname='\\165.124.111.234\limblab\user_folders\Boubker\PDs/';
 allroots={'Keedoo_Spike_013111001', 'Keedoo_Spike_020111001', 'Keedoo_Spike_020911001', 'Keedoo_Spike_021411001',...
     'Keedoo_Spike_111210001', 'Keedoo_Spike_111210002', 'Keedoo_Spike_120610001-01', ...
@@ -62,9 +62,9 @@ pvallim=0.05;
 % pathname='\\165.124.111.234\data\Miller\Pedro_4C2\S1 Array\Processed\';
 % allroots={'Pedro_S1_040-s','Pedro_S1_042-s','Pedro_S1_043-s','Pedro_S1_044-s','Pedro_S1_046-s','Pedro_S1_047-s'};
 
-allfilesPDs=cell(3,length(allroots));
-  messa = waitbar(0,['Please wait...analysing file ']);
-for nr=1:length(allroots)    
+%%allfilesPDs=cell(3,length(allroots));
+  %messa = waitbar(0,['Please wait...analysing file ']);
+for nr=2:length(allroots)    
     root=char(allroots(:,nr));
     data=LoadDataStruct([pathname,root,'.mat']);
     degres=degres * pi / 180;
@@ -158,8 +158,8 @@ end
     %waitbar(progressbar,h,['analysing file',int2str(nr),'/',int2str(length(allroots))])
 
     
-  
-   waitbar(0,messa,['Analysing file: ', int2str(nr),'/',int2str(length(allroots))]);
+  disp(['Analysing file: ', int2str(nr),'/',int2str(length(allroots))]);
+%   waitbar(0,messa,['Analysing file: ', int2str(nr),'/',int2str(length(allroots))]);
     moves=[];
     trials=[];
     direction=zeros(td,1);
@@ -222,7 +222,7 @@ end
     bootstrapPDS = cell(1, size(cha_uni,1));
     
     PDMatrix=zeros(size(cha_uni,1),3);
-   
+    disp(['bootstrap start: ', int2str(nr),'/',int2str(length(allroots))]); tic
     for x = 1:size(cha_uni,1)
      
         
@@ -233,10 +233,10 @@ end
   
 
   
-   waitbar(x/size(cha_uni,1),messa,['bootstrapping file: ',int2str(nr),'/',int2str(length(allroots))]);
+   %waitbar(x/size(cha_uni,1),messa,['bootstrapping file: ',int2str(nr),'/',int2str(length(allroots))]);
      
      end
-     
+      disp(['bootstrap end: ', int2str(nr),'/',int2str(length(allroots))]); toc
   
     
     %% get the mean magnitudes and plot PD as a polar
