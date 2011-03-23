@@ -10,7 +10,7 @@ Adapt_Enable = false;
 LR = [];
 Adapt_lag = [];
 numPCs = 0;
-RC = 0.3;
+RC = 0.1;
 
 if nargin    >= 4
     Smooth_Pred = varargin{4};

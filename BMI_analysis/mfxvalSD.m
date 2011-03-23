@@ -48,7 +48,7 @@ if nargin > 6
                 end
                 if nargin > 10
                     Use_SD= varargin{5};
-                    if nargin >11
+                    if nargin >12
                         plotflag = varargin{6};
                     end
                 end
@@ -57,11 +57,6 @@ if nargin > 6
     end
 end
 
-if Use_SD
-    disp('for state dependent cross-validation, please use mfxval_SD.m');
-    return;
-end
-    
 binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
 
 if mod(round(foldlength*1000), round(binsize*1000)) %all this rounding because of floating point errors
@@ -73,15 +68,28 @@ end
 duration = size(binnedData.timeframe,1);
 nfold = floor(round(binsize*1000)*duration/(1000*foldlength)); % again, because of floating point errors
 dataEnd = round(nfold*foldlength/binsize);
+if Use_SD
+    numStates = max(binnedData.states(:,Use_SD))-min(binnedData.states(:,Use_SD))+1;
+    numClasses= size(binnedData.states,2);
+else
+    numStates = 0;
+    numClasses= 0;
+end
 
-
-R2 = zeros(nfold,numSig);
-vaf= zeros(nfold,numSig);
-mse= zeros(nfold,numSig);
+% R2 = zeros(nfold,numSig,numStates+1);
+% vaf= zeros(nfold,numSig,numStates+1);
+% mse= zeros(nfold,numSig,numStates+1);
+R2 = zeros(nfold,numSig,numClasses);
+vaf= zeros(nfold,numSig,numClasses);
+mse= zeros(nfold,numSig,numClasses);
+test_states = cell(1,nfold);
+model_states = cell(1,nfold);
 
 %allocate structs
 testData = binnedData;
 modelData = binnedData;
+
+nfold = 1;
 
 for i=0:nfold-1
     
@@ -93,17 +101,29 @@ for i=0:nfold-1
     %copy timeframe and spikeratedata segments into testData
     testData.timeframe = binnedData.timeframe(testDataStart:testDataEnd);
     testData.spikeratedata = binnedData.spikeratedata(testDataStart:testDataEnd,:);
+    if Use_SD
+%         testData.states = binnedData.states(testDataStart:testDataEnd,:);
+    end
     
     %copy timeframe and spikeratedata segments into modelData
     if testDataStart == 1
         modelData.timeframe = binnedData.timeframe(testDataEnd+1:dataEnd);    
         modelData.spikeratedata = binnedData.spikeratedata(testDataEnd+1:dataEnd,:);
+        if Use_SD
+%             modelData.states = binnedData.states(testDataEnd+1:dataEnd,:);
+        end
     elseif testDataEnd == dataEnd
         modelData.timeframe = binnedData.timeframe(1:testDataStart-1);
         modelData.spikeratedata = binnedData.spikeratedata(1:testDataStart-1,:);
+        if Use_SD
+%             modelData.states = binnedData.states(1:testDataStart-1,:);
+        end
     else
         modelData.timeframe = [ binnedData.timeframe(1:testDataStart-1); binnedData.timeframe(testDataEnd+1:dataEnd)];
-        modelData.spikeratedata = [ binnedData.spikeratedata(1:testDataStart-1,:); binnedData.spikeratedata(testDataEnd+1:dataEnd,:)];
+        modelData.spikeratedata = [ binnedData.spikeratedata(1:testDataStart-1,:); binnedData.spikeratedata(testDataEnd+1:dataEnd,:)];        
+        if Use_SD
+%             modelData.states = [ binnedData.states(1:testDataStart-1,:); binnedData.states(testDataEnd+1:dataEnd,:)];
+        end
     end
 
     % copy emgdatabin segment into modelData only if PredEMG
@@ -154,26 +174,85 @@ for i=0:nfold-1
         end
     end
 
-    model = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
-    PredData = predictSignals(model, testData);
-    TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
-    R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-%     vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
-    vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
-        sum( (TestSigs(round(fillen/binsize):end,:) - ...
-        repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
-        size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );  
-    mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
+    % Create Training sets for classifiers - Train classifiers - Predict testData States
+%     fprintf('Classification...');
+%     tic;
+%     [test_states{1,i+1}, ] = Train_and_Test_Classifiers(modelData, testData);
+%     testData.states = states{1,i+1};
+%     toc;
 
-    %Concatenate predicted Data if we want to plot it later:
-    %Skip this for the first fold
-    if i == 0
-        AllPredData = PredData;
-    else
-        AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
-        AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
-    end
+    testData.states = evalin('base',sprintf('test_states{1,%d}',i+1));
+    modelData.states= evalin('base',sprintf('model_states{1,%d}',i+1));
+    
+%     tic;
+%     fprintf('Building Models Using Vel Thresh...');
+%     Use_SD = 1;
+%     filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+%     toc;
+%   
 
+    numClasses = 5;
+    for j = 1:numClasses
+        Use_SD = j;
+        
+        if Use_SD
+%             % 2 different models, one for each state:
+%             fprintf('Model Building classe %d',j);
+%             tic;
+%             filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+%             toc;
+% 
+%             PredData = predictSDSignals(filter, testData, Use_SD);
+%             TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+% 
+%             R2(i+1,:,1) = CalculateR2(TestSigs,PredData.preddatabin)';
+%     %         vaf(i+1,:,1)= 1 - var(PredData.preddatabin - TestSigs) ./ var(TestSigs);
+%             vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
+%             mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs).^2);
+% %             for s = 1:numStates
+% %                 State_idx = find(s-1==testData.states(:,Use_SD));
+% %                 R2(i+1,:,s+1) = CalculateR2(TestSigs(State_idx,:),PredData.preddatabin(State_idx,:))';
+% %                 vaf(i+1,:,s+1)= 1 - var(PredData.preddatabin(State_idx,:) - TestSigs(State_idx,:)) ./ var(TestSigs(State_idx,:));
+% %                 mse(i+1,:,s+1)= mean((PredData.preddatabin(State_idx,:)-TestSigs(State_idx,:)).^2);
+% %             end
+
+    %         %% 1 model but filter only state 0 (Hold State):
+            filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+            PredData = predictSDFSignals(filter, testData, Use_SD);
+            TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+            R2(i+1,:,j) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+    %         vaf(i+1,:,1)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
+            vaf(i+1,:,j) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+                sum( (TestSigs(round(fillen/binsize):end,:) - ...
+                repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+                size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );     
+            mse(i+1,:,j)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
+    %         
+        else
+            model = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+            PredData = predictSignals(model, testData);
+            TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+            R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+    %         vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
+            vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+                sum( (TestSigs(round(fillen/binsize):end,:) - ...
+                repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+                size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );  
+            mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
+        end
+
+        %Concatenate predicted Data if we want to plot it later:
+        %Skip this for the first fold
+        if i == 0
+            AllPredData = PredData;
+            AllPredData.states = testData.states((end-size(PredData.preddatabin,1)+1):end,:);
+        else
+            AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
+            AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
+            AllPredData.states = [AllPredData.states; testData.states((end-size(PredData.preddatabin,1)+1):end,:)];
+        end
+
+    end %for j=1:numClasses
 end %for i=1:nfold
 
 

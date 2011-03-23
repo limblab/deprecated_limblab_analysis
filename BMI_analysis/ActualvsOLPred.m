@@ -67,7 +67,7 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
         
     %Display R2
     if dispflag
-        disp(sprintf('\tR2\tvaf\tmse'));
+        disp(sprintf('\t\tR2  \tvaf  \tmse  '));
         for i=1:numPredSignals
            disp(sprintf('%s\t%1.3f\t%1.3f\t%.2f',PredData.outnames(i,:),R2(i),vaf(i),mse(i)));
         end

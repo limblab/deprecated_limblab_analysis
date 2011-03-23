@@ -7,12 +7,12 @@ binsize = filter.binsize;
 neuronIDs = filter.neuronIDs;
 
 %original filter columns:
-% 1- FDSr 2-FDSu 3-FDPr 4-FDPu 5-ECR1 6-FCR2 7-ECRb 8-FCU2 9-EDCu 10-OP 11-ECU2 12-EPL 
+% 1- FDSr 2-FDSu 3-FDPr 4-FDPu 5-FCR1 6-ECU1 7-ECU2 8-ECR1 9-ECR2 10-EPL 11-EDC2 12-FCU1 
 
 Notes = ['modified filter, prediction columns:'...
-            '[1-FDSr 2-FDSu 3-FDSu 4-FDSu 5-FDSu]'];
+            '[1-FDSr 2-FDSu 3-FDPr 4-FDPu 5-FCR1]'];
 
-mod_idx = [1 2 2 2 2];
+mod_idx = [1 2 3 4 5];
         
         
 %modify output labels        
@@ -22,5 +22,5 @@ outnames = outnames(mod_idx,:);
 H = H(:,mod_idx);
 
 %modify polynomial rows
-Pmod = P(mod_idx,:);
+P = P(mod_idx,:);
 

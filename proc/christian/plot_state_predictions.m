@@ -43,14 +43,14 @@ stop  = find(binnedData.timeframe >= 305,1,'first');
 data = binnedData;
 data.timeframe = binnedData.timeframe(start:stop);
 data.states    = binnedData.states(start:stop,:);
-data.velocbin = binnedData.velocbin(start:stop,:);
+data.velocbin = binnedData.velocbin(start:stop,3);
 data.spikeratedata = binnedData.spikeratedata(start:stop,:);
 data.cursorposbin  = binnedData.cursorposbin(start:stop,:);
 data.cursorposbin  = binnedData.cursorposbin(start:stop,:);
 
 figure
 hold on;
-numStates = size(data.states,2);
+numClass = size(data.states,2);
 bottom = [-0.1 0.9 1.1 1.3 1.5];
 top    = [ 1.6 1.0 1.2 1.4 1.6];
 g0 = [200 200 200];
@@ -61,7 +61,7 @@ g4 = [30 30 30];
 colors = {g0 g1 g2 g3 g4};
 axis([285 305 -0.1 1.6]);
 
-for state = 1:numStates
+for state = 1:numClass
     endx = 0;
     while endx<length(data.timeframe)
         startx = endx + find(data.states(endx+1:end,state),1,'first');
