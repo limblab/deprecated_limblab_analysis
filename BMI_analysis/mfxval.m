@@ -177,28 +177,30 @@ for i=0:nfold-1
 end %for i=1:nfold
 
 
+
+
+% Plot Actual and Predicted Data
+idx = false(size(binnedData.timeframe));
+for i = 1:length(AllPredData.timeframe)
+    idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
+end    
+
+if PredEMG
+    binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
+end
+if PredForce
+    binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
+end
+if PredCursPos
+    binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
+end
+if PredVeloc
+    binnedData.velocbin = binnedData.velocbin(idx,:);
+end
+
+binnedData.timeframe = binnedData.timeframe(idx);
+
 if plotflag
-
-    % Plot Actual and Predicted Data
-    idx = false(size(binnedData.timeframe));
-    for i = 1:length(AllPredData.timeframe)
-        idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
-    end    
-
-    if PredEMG
-        binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
-    end
-    if PredForce
-        binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
-    end
-    if PredCursPos
-        binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
-    end
-    if PredVeloc
-        binnedData.velocbin = binnedData.velocbin(idx,:);
-    end
-
-    binnedData.timeframe = binnedData.timeframe(idx);
     ActualvsOLPred(binnedData,AllPredData,plotflag);
 end
     
@@ -208,4 +210,4 @@ AllPredData.mfxval.mse= mse;
 
 % varargout{1} = AllPredData;
 % varargout{2} = nfold;
-varargout = {vaf, mse, AllPredData};
+varargout = {vaf, mse, AllPredData, binnedData};
