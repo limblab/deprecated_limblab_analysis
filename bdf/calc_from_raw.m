@@ -302,35 +302,10 @@ end             %ending "if opts.eye"
         if opts.verbose
             disp('Aggregating data... get serial data')
         end
-
-        %find 3 ms gaps between bytes
-        cmd_start = find(diff([0;out_struct.raw.serial(:,1)]) > 0.003);
-        cmd_end = [cmd_start(2:end)-1; size(out_struct.raw.serial,1)];
         
-        %skip last if incomplete
-        if out_struct.meta.duration-out_struct.raw.serial(end,1)<0.03
-            cmd_start = cmd_start(1:end-1);
-            cmd_end = cmd_end(1:end-1);
-        end
-        
-        num_cmd = length(cmd_start);
-        out_struct.stim = cell(num_cmd,2);
-        for cmd=1:num_cmd
-            asciicmd = char(out_struct.raw.serial(cmd_start(cmd):cmd_end(cmd),2)');
-            cmd_idx_end   = [strfind(asciicmd,',') length(asciicmd)];
-            cmd_idx_start = [1 cmd_idx_end(1:end-1)+1];
-            cmd_length = length(cmd_idx_start);
-            decoded_cmd = zeros(1,cmd_length);
-            for i=1:cmd_length
-                decoded_cmd(i) = str2double(asciicmd(cmd_idx_start(i):cmd_idx_end(i)));
-            end
-            out_struct.stim{cmd,1} = out_struct.raw.serial(cmd_end(cmd),1);
-            out_struct.stim{cmd,2} = decoded_cmd;
-        end
+        out_struct.stim = get_stim_commands(out_struct);
     end    
   
-
-
 %% Extract target info from databursts
      if (isfield(out_struct,'databursts') && ~isempty(out_struct.databursts) )
 

@@ -96,6 +96,8 @@ function out_struct = get_cerebus_data(varargin)
     analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp(deblank({EntityInfo.EntityLabel}), 'EMG_', 4)...
                                                      & ~strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6) );
     event_list   = find([EntityInfo.EntityType] == 1);
+    digin_listID = event_list(strncmpi(deblank({EntityInfo(event_list).EntityLabel}), 'digin', 5));
+    serial_listID= event_list(strncmpi(deblank({EntityInfo(event_list).EntityLabel}), 'serial', 6));
 
     if opts.verbose == 1
         unit_list_item_count   = sum([EntityInfo(unit_list).ItemCount]);
@@ -261,7 +263,9 @@ function out_struct = get_cerebus_data(varargin)
         end
         
         % grab the words -- event_list ID 145
-        [nsresult,event_ts,event_data] = ns_GetEventData(hfile,145,1:EntityInfo(145).ItemCount);
+        % apparently sometimes it is not ID 145, now should use 'digin_listID' and 'serial_listID'
+%         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,145,1:EntityInfo(145).ItemCount);
+         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,digin_listID,1:EntityInfo(digin_listID).ItemCount);
         % we have the digin serial line
 
 
@@ -301,7 +305,8 @@ function out_struct = get_cerebus_data(varargin)
         out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
         
         % Grab the serial data -- event ID 146
-        [nsresult,event_ts,event_data] = ns_GetEventData(hfile,146,1:EntityInfo(146).ItemCount);
+%         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,146,1:EntityInfo(146).ItemCount);
+         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,serial_listID,1:EntityInfo(serial_listID).ItemCount);
         out_struct.raw.serial = [event_ts, event_data];
     end
 
