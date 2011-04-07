@@ -1,23 +1,24 @@
 % Find PDs
 plotting = 1;
-filename = 'D:\Data\Tiki\FMAs\Sorted\Tiki_2011-03-15_BC_003-s';
+datapath = 'D:\Data\Tiki\FMAs\';
+filename = 'Tiki_2011-03-29_RW_001-s';
 extension = '.nev';
-filename_analyzed = [filename '-analyzed'];
+filename_analyzed = [datapath 'Processed\' filename];
 
 curr_dir = pwd;
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
 load_paths;
 cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 
-if ~exist([filename '.mat'],'file')
+if ~exist([datapath 'Processed\' filename '.mat'],'file')
     if strcmp(extension,'.nev')
-        bdf = get_cerebus_data([filename extension],2);
+        bdf = get_cerebus_data([datapath 'Sorted\' filename extension],2);
     else
-        bdf = get_plexon_data([filename extension],2);
+        bdf = get_plexon_data([datapath 'Sorted\' filename extension],2);
     end
-    save(filename,'bdf');    
+    save([datapath 'Processed\' filename],'bdf');    
 else
-    load(filename,'bdf')
+    load([datapath 'Processed\' filename],'bdf')
 end
 cd(curr_dir)
 
@@ -167,4 +168,4 @@ if plotting
 end
 %%
 % [[out.chan]' [out.glmpd]' [dm]']
-save(filename_analyzed,'out','pos_mi','mis')
+% save(filename_analyzed,'out','pos_mi','mis')
