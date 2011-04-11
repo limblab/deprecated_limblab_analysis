@@ -480,6 +480,20 @@ filelist(i).delay = [1 1.5];
 filelist(i).bump_duration = 250; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
 
+% i = i+1;
+% filelist(i).name = 'Tiki_2011-04-11_BC_001';  
+% filelist(i).datapath = 'D:\Data\Tiki\FMAs\'; 
+% filelist(i).pd = repmat(3.142,1,12);
+% filelist(i).codes = [1:8 9 9 10 10 11 11 12 12];
+% filelist(i).electrodes = [repmat(54,1,4) repmat(55,1,4) repmat([54 55],1,4)];
+% filelist(i).pulsewidth = repmat(0.2,1,12);
+% filelist(i).current = [0:15:45 0:15:45 0 0 15 15 30 30 45 45];
+% filelist(i).period = repmat(3.3,1,12);
+% filelist(i).pulses = [120 120];
+% filelist(i).delay = [1 1.5];
+% filelist(i).bump_duration = 250; % (ms)
+% filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
 i = i+1;
 filelist(i).name = 'Pedro_2011-04-05_BC_001';  
 filelist(i).datapath = 'D:\Data\Pedro\S1_array\'; 
