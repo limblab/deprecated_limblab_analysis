@@ -6,7 +6,7 @@ bump_raster_files = [];
 
 % psychophysics_files = {'Tiki_2011-03-24_BC_001','Tiki_2011-03-24_BC_002',...
 %     'Tiki_2011-03-24_BC_003','Tiki_2011-03-24_BC_004'};
-psychophysics_files = {'Pedro_2011-04-10_BC_001'};
+psychophysics_files = {'Pedro_2011-04-11_BC_001'};
 % psychophysics_files = {'Pedro_2011-04-06_BC_001'};
 % psychophysics_files = [];
 

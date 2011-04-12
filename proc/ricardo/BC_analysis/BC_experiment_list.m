@@ -592,6 +592,20 @@ filelist(i).delay = [1 1.5 2 2.5 3 3.5];
 filelist(i).bump_duration = 250; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
 
+i = i+1;
+filelist(i).name = 'Pedro_2011-04-11_BC_001';  
+filelist(i).datapath = 'D:\Data\Pedro\S1_array\'; 
+filelist(i).pd = [3.142 3.142 3.142 3.142];
+filelist(i).codes = [2 2 2 2];
+filelist(i).electrodes = [55 9 49 96 ];
+filelist(i).pulsewidth = [0.2 0.2 0.2 0.2];
+filelist(i).current = [20 20 20 20];
+filelist(i).period = [3.3 3.3 3.3 3.3];
+filelist(i).pulses = [120 120 120 120];
+filelist(i).delay = [1 1.5 2 2.5];
+filelist(i).bump_duration = 250; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
+
 % i = i+1;
 % filelist(i).name = '';  
 % filelist(i).pd = [];              % rad
