@@ -1,10 +1,10 @@
 function BC_batch
 % bump_raster_files(1).filenames = {'Tiki_2011-03-22_BC_002-s_multiunit','Tiki_2011-03-22_BC_003-s_multiunit'};
 % bump_raster_files(2).filenames = {'Tiki_2011-03-22_BC_002-s_clear_units_only','Tiki_2011-03-22_BC_003-s_clear_units_only'};
-user = 'Boubker';
+user = 'Ricardo';
 bump_raster_files = [];
 
-psychophysics_files = {'Pedro_2011-04-11_BC_001'};
+psychophysics_files = {'Pedro_2011-04-12_BC_003'};
 % psychophysics_files = [];
 
 filelist = BC_experiment_list(user);
