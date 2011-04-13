@@ -126,6 +126,42 @@ for file_no = 1:length(filelist)
     
     plot(bump_magnitudes,rewards_incompletes(:,:,1)./sum(rewards_incompletes,3))
     legend(['Stim ' num2str(stim_ids(1))],['Stim ' num2str(stim_ids(2))])
+    xlabel('Bump magnitude [N]')
+    ylabel('Rewards/(Rewards+Incompletes)')
+    
+    
+%% stim psychophysics plot
+    stim_rewards_incompletes = sum(rewards_incompletes,1);
+    stim_rewards_incompletes = squeeze(stim_rewards_incompletes)';
+    file_stim_codes = filelist(file_no).codes;    
+    
+    stim_details = [filelist(file_no).pd;...
+        filelist(file_no).electrodes;...
+        filelist(file_no).pulsewidth;...
+        filelist(file_no).current;...
+        filelist(file_no).period;...
+        filelist(file_no).pulses]';
+    
+    param_list = {'pd','electrodes','pulsewidth','current','period','pulses'};
+    
+    most_varying_param = std(stim_details)./mean(stim_details);
+    [temp most_varying_param] = max(most_varying_param);
+    
+    plotting_parameter = param_list{most_varying_param};
+    
+    stim_plot_temp = [filelist(file_no).codes; eval(['filelist(file_no).' plotting_parameter])];
+    if intersect(stim_ids,-1)
+        stim_plot_temp = [[-1;0] stim_plot_temp];
+    end
+    
+    for iStim = 1:length(stim_ids)
+        param_value(iStim) = mean(stim_plot_temp(2,stim_plot_temp(1,:)==stim_ids(iStim)));
+    end        
+    
+    figure;
+    plot(param_value,stim_rewards_incompletes(1,:)./sum(stim_rewards_incompletes));
+    xlabel(plotting_parameter)
+    ylabel('Rewards/(Incompletes+Rewards)')
     
 %% timing plot
     movement_time = [trial_table(:,table_columns.cursor_on_ct) trial_table(:,table_columns.end)]-...
@@ -343,14 +379,14 @@ max_mov_time = trial_table(trial_table(:,table_columns.result)==reward_code,...
 max_mov_time = round(max(diff(max_mov_time')')*1000);
 mean_mov_speed = zeros(length(bump_magnitudes),length(stim_ids),max_mov_time+1);
 std_mov_speed = zeros(length(bump_magnitudes),length(stim_ids),max_mov_time+1);
-plot_colors = {'b','r','k','g'};
+plot_colors = colormap(hsv);
+plot_colors = plot_colors(round(1:length(plot_colors)/length(stim_ids):end),:);
 for iBump = 1:length(bump_magnitudes)
     figure;
     hold on
-    plot(0,0,plot_colors{1});
-    plot(0,0,plot_colors{2});
-    plot(0,0,plot_colors{3});
-    plot(0,0,plot_colors{4});
+    for iColor = 1:length(stim_ids)
+        plot(0,0,'Color',plot_colors(iColor,:));
+    end
     title(['Bump: ' num2str(bump_magnitudes(iBump))])
     for iStim = 1:length(stim_ids)
         movement_times = trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(iBump) &...
@@ -372,9 +408,9 @@ for iBump = 1:length(bump_magnitudes)
         end
         mean_mov_speed(iBump,iStim,:) = mean(temp_mov_speed);
         std_mov_speed(iBump,iStim,:) = std(temp_mov_speed);
-        plot(squeeze(mean_mov_speed(iBump,iStim,:)),plot_colors{iStim})
-        plot(squeeze(mean_mov_speed(iBump,iStim,:))+squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors{iStim})
-        plot(squeeze(mean_mov_speed(iBump,iStim,:))-squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors{iStim})
+        plot(squeeze(mean_mov_speed(iBump,iStim,:)),'Color',plot_colors(iStim,:))
+%         plot(squeeze(mean_mov_speed(iBump,iStim,:))+squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors(iStim,:))
+%         plot(squeeze(mean_mov_speed(iBump,iStim,:))-squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors(iStim,:))
     end
     legend(num2str(stim_ids))
 end
