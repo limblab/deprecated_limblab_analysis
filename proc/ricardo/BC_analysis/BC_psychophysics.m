@@ -73,7 +73,9 @@ for file_no = 1:length(filelist)
         ylim([0 1])
         ylabel('Percent correct')
         xlabel('Trial number (moving average)')
-        title(filelist(file_no).name)
+        title_temp = filelist(file_no).name;
+        title_temp = strrep(title_temp,'_','\_');
+        title(title_temp)
         legend off
               
         first_hundred(file_no) = sum(correct(1:100));
@@ -126,9 +128,11 @@ for file_no = 1:length(filelist)
     
     plot(bump_magnitudes,rewards_incompletes(:,:,1)./sum(rewards_incompletes,3))
     legend(['Stim ' num2str(stim_ids(1))],['Stim ' num2str(stim_ids(2))])
-    xlabel('Bump magnitude [N]')
+    xlabel('Bump magnitude (N)')
     ylabel('Rewards/(Rewards+Incompletes)')
-    
+    title_temp = filelist(file_no).name;
+    title_temp = strrep(title_temp,'_','\_');
+    title(title_temp)    
     
 %% stim psychophysics plot
     stim_rewards_incompletes = sum(rewards_incompletes,1);
@@ -162,6 +166,9 @@ for file_no = 1:length(filelist)
     plot(param_value,stim_rewards_incompletes(1,:)./sum(stim_rewards_incompletes));
     xlabel(plotting_parameter)
     ylabel('Rewards/(Incompletes+Rewards)')
+    title_temp = filelist(file_no).name;
+    title_temp = strrep(title_temp,'_','\_');
+    title(title_temp)
     
 %% timing plot
     movement_time = [trial_table(:,table_columns.cursor_on_ct) trial_table(:,table_columns.end)]-...
@@ -226,6 +233,10 @@ for file_no = 1:length(filelist)
     plot(bump_movement_time',repmat(1:length(bump_movement_time),2,1)+length(stim_movement_time),'r')
     plot(stim_time(stim_trials,:),[repmat(1:length(stim_movement_time),2,1)+repmat([-.3 ;.3],1,length(stim_movement_time))]','-b')
     plot(bump_time(~isinf(bump_time(:,1)),:),[repmat(1:sum(~isinf(bump_time(:,1))),2,1)+repmat([-.3 ;.3],1,sum(~isinf(bump_time(:,1))))]','-g')
+    
+    title_temp = filelist(file_no).name;
+    title_temp = strrep(title_temp,'_','\_');
+    title(title_temp)
 %     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==reward_code,:)',...
 %         [sort_idx(trial_table_sorted(:,table_columns.result)==reward_code) sort_idx(trial_table_sorted(:,table_columns.result)==reward_code)]','b')
 %     hold on;
@@ -269,7 +280,9 @@ for file_no = 1:length(filelist)
     set(h(h~=h_temp), 'FaceColor','r','FaceAlpha',0.5)
     xlabel('Wait time (s)')
     ylabel('Count')
-    title('Reward count (No bump)')
+    title_temp = filelist(file_no).name;
+    title_temp = strrep(title_temp,'_','\_');
+    title({title_temp;' Reward count (No bump)'})
     legend('Stim','No Stim')
     xlim([0 1.5])
     
@@ -298,7 +311,9 @@ for file_no = 1:length(filelist)
     set(h(h==h_temp), 'FaceColor','b','FaceAlpha',0.5)
     set(h(h~=h_temp), 'FaceColor','r','FaceAlpha',0.5)
     xlabel('Wait time (s)')
-    title('Reward count')
+    title_temp = filelist(file_no).name;
+    title_temp = strrep(title_temp,'_','\_');
+    title({title_temp;'Reward count'})
     legend('Stim+Bump','Bump')
     xlim([0 1.5])
 
@@ -370,51 +385,56 @@ for file_no = 1:length(filelist)
     end
     xlabel('Time (s)')
     ylabel('Rewards/Incompletes')
-    title('Zero bump performance')
+    title_temp = filelist(file_no).name;
+    title_temp = strrep(title_temp,'_','\_');
+    title({title_temp;'Zero bump performance'})
     legend('No stim','Stim')
     
 %% Movement onset figure
-max_mov_time = trial_table(trial_table(:,table_columns.result)==reward_code,...
-            [table_columns.start table_columns.end]);
-max_mov_time = round(max(diff(max_mov_time')')*1000);
-mean_mov_speed = zeros(length(bump_magnitudes),length(stim_ids),max_mov_time+1);
-std_mov_speed = zeros(length(bump_magnitudes),length(stim_ids),max_mov_time+1);
-plot_colors = colormap(hsv);
-plot_colors = plot_colors(round(1:length(plot_colors)/length(stim_ids):end),:);
-for iBump = 1:length(bump_magnitudes)
-    figure;
-    hold on
-    for iColor = 1:length(stim_ids)
-        plot(0,0,'Color',plot_colors(iColor,:));
-    end
-    title(['Bump: ' num2str(bump_magnitudes(iBump))])
-    for iStim = 1:length(stim_ids)
-        movement_times = trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(iBump) &...
-            trial_table(:,table_columns.stim_id)==stim_ids(iStim) & trial_table(:,table_columns.result)==reward_code,...
-            [table_columns.start table_columns.end]);
-        movement_times = movement_times(diff(movement_times')'>0.5,:);
-                
-      
-        temp_mov_speed = zeros(length(movement_times),max_mov_time+1);
-        for iMov = 1:size(movement_times,1)
-            kin_idx(1) = find(bdf.pos(:,1)>movement_times(iMov,1),1,'first');
-%             kin_idx(2) = find(bdf.pos(:,1)<=movement_times(iMov,2),1,'last');
-            kin_idx(2) = kin_idx(1)+max_mov_time;
-            mov_speed{iBump,iStim}(iMov) = {sqrt(bdf.vel(kin_idx(1):kin_idx(2),2).^2+...
-                bdf.vel(kin_idx(1):kin_idx(2),3).^2)};
-%             plot(mov_speed{iBump,iStim}{iMov})
-            xlim([0 max_mov_time])
-            temp_mov_speed(iMov,:) = cell2mat(mov_speed{iBump,iStim}(iMov));
+    max_mov_time = trial_table(trial_table(:,table_columns.result)==reward_code,...
+                [table_columns.start table_columns.end]);
+    max_mov_time = round(max(diff(max_mov_time')')*1000);
+    mean_mov_speed = zeros(length(bump_magnitudes),length(stim_ids),max_mov_time+1);
+    std_mov_speed = zeros(length(bump_magnitudes),length(stim_ids),max_mov_time+1);
+    plot_colors = colormap(hsv);
+    plot_colors = plot_colors(round(1:length(plot_colors)/length(stim_ids):end),:);
+    for iBump = 1:length(bump_magnitudes)
+        figure;
+        hold on
+        for iColor = 1:length(stim_ids)
+            plot(0,0,'Color',plot_colors(iColor,:));
         end
-        mean_mov_speed(iBump,iStim,:) = mean(temp_mov_speed);
-        std_mov_speed(iBump,iStim,:) = std(temp_mov_speed);
-        plot(squeeze(mean_mov_speed(iBump,iStim,:)),'Color',plot_colors(iStim,:))
-%         plot(squeeze(mean_mov_speed(iBump,iStim,:))+squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors(iStim,:))
-%         plot(squeeze(mean_mov_speed(iBump,iStim,:))-squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors(iStim,:))
+        ylabel('Speed (cm/s)')
+        xlabel('t (s)')
+        title_temp = filelist(file_no).name;
+        title_temp = strrep(title_temp,'_','\_');
+        title({title_temp; 'Mean speed'; ['Bump= ' num2str(bump_magnitudes(iBump)) ' N']})
+        for iStim = 1:length(stim_ids)
+            movement_times = trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(iBump) &...
+                trial_table(:,table_columns.stim_id)==stim_ids(iStim) & trial_table(:,table_columns.result)==reward_code,...
+                [table_columns.start table_columns.end]);
+            movement_times = movement_times(diff(movement_times')'>0.5,:);
+
+
+            temp_mov_speed = zeros(length(movement_times),max_mov_time+1);
+            for iMov = 1:size(movement_times,1)
+                kin_idx(1) = find(bdf.pos(:,1)>movement_times(iMov,1),1,'first');
+    %             kin_idx(2) = find(bdf.pos(:,1)<=movement_times(iMov,2),1,'last');
+                kin_idx(2) = kin_idx(1)+max_mov_time;
+                mov_speed{iBump,iStim}(iMov) = {sqrt(bdf.vel(kin_idx(1):kin_idx(2),2).^2+...
+                    bdf.vel(kin_idx(1):kin_idx(2),3).^2)};
+    %             plot(mov_speed{iBump,iStim}{iMov})
+                xlim([0 max_mov_time])
+                temp_mov_speed(iMov,:) = cell2mat(mov_speed{iBump,iStim}(iMov));
+            end
+            mean_mov_speed(iBump,iStim,:) = mean(temp_mov_speed);
+            std_mov_speed(iBump,iStim,:) = std(temp_mov_speed);
+            plot(squeeze(mean_mov_speed(iBump,iStim,:)),'Color',plot_colors(iStim,:))
+    %         plot(squeeze(mean_mov_speed(iBump,iStim,:))+squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors(iStim,:))
+    %         plot(squeeze(mean_mov_speed(iBump,iStim,:))-squeeze(std_mov_speed(iBump,iStim,:)),'--','Color',plot_colors(iStim,:))
+        end
+        legend(num2str(stim_ids))
     end
-    legend(num2str(stim_ids))
-end
-iMov;
 
 %% response time figure
 %     figure; 
