@@ -128,6 +128,7 @@ for file_no = 1:length(filelist)
     
     plot(bump_magnitudes,rewards_incompletes(:,:,1)./sum(rewards_incompletes,3))
     legend(['Stim ' num2str(stim_ids(1))],['Stim ' num2str(stim_ids(2))])
+    ylim([0 1])
     xlabel('Bump magnitude (N)')
     ylabel('Rewards/(Rewards+Incompletes)')
     title_temp = filelist(file_no).name;
@@ -164,15 +165,95 @@ for file_no = 1:length(filelist)
     
     figure;
     plot(param_value,stim_rewards_incompletes(1,:)./sum(stim_rewards_incompletes));
+    ylim([0 1])
     xlabel(plotting_parameter)
     ylabel('Rewards/(Incompletes+Rewards)')
     title_temp = filelist(file_no).name;
     title_temp = strrep(title_temp,'_','\_');
     title(title_temp)
     
-%% timing plot
+%% Stim psychophysics comparing electrodes
+
+    for iStim=1:length(stim_ids)
+        stim_indexes = filelist(file_no).codes==stim_ids(iStim);
+        stims.codes{iStim} = unique(filelist(file_no).codes(stim_indexes));
+        stims.electrodes{iStim} = filelist(file_no).electrodes(stim_indexes);
+        stims.currents{iStim} = filelist(file_no).current(stim_indexes);
+    end
+    
+    electrode_groups = stims.electrodes;    
+    for iElectrodeGroups = 1:length(stims.electrodes)
+        for iScanEGroups = iElectrodeGroups+1:length(stims.electrodes)
+            if isequal(electrode_groups{iElectrodeGroups},electrode_groups{iScanEGroups})
+                electrode_groups{iScanEGroups} = [];
+            end
+        end
+    end                
+    electrode_groups(cellfun(@isempty,electrode_groups)) = [];
+    
+    current_groups = stims.currents;    
+    for iCurrentGroups = 1:length(stims.currents)
+        for iScanCGroups = iCurrentGroups+1:length(stims.currents)
+            if isequal(mean(current_groups{iCurrentGroups}),mean(current_groups{iScanCGroups}))
+                current_groups{iScanCGroups} = [];
+            end
+        end
+    end                
+    current_groups(cellfun(@isempty,current_groups)) = [];
+    
+    electrode_current_rewards = zeros(length(electrode_groups),length(current_groups));
+    electrode_current_incompletes = zeros(length(electrode_groups),length(current_groups));
+    
+    for iElectrodeGroups = 1:length(electrode_groups)
+        for iCurrentGroups = 1:length(current_groups)
+            for iStimIds = 1:length(stim_ids)
+                if isequal(mean(stims.currents{iStimIds}),mean(current_groups{iCurrentGroups}))
+                    if isequal(stims.electrodes{iStimIds},electrode_groups{iElectrodeGroups})
+                        electrode_current_rewards(iElectrodeGroups,iCurrentGroups) = ...
+                            electrode_current_rewards(iElectrodeGroups,iCurrentGroups) +...
+                            sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
+                            trial_table(:,table_columns.result)==reward_code);
+                        electrode_current_incompletes(iElectrodeGroups,iCurrentGroups) = ...
+                            electrode_current_incompletes(iElectrodeGroups,iCurrentGroups) +...
+                            sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
+                            trial_table(:,table_columns.result)==incomplete_code);
+                    end
+                end
+            end
+        end
+    end                
+  
+    clear legendstrings
+    
+    for iStrings = 1:length(electrode_groups)
+        legendstrings{iStrings} = num2str(electrode_groups{iStrings});
+    end
+    
+    for iCurrentGroups = 1:length(current_groups)
+        current_groups{iCurrentGroups} = mean(current_groups{iCurrentGroups});
+    end
+    
+    figure;
+    colors = colormap(jet);
+    colors = colors(1:round(length(colors)/size(electrode_current_incompletes,1)):end,:);
+    for iPlot = 1:size(electrode_current_rewards,1)
+        plot(cell2mat(current_groups),electrode_current_rewards(iPlot,:)./...
+            (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:)),'Color',colors(iPlot,:));
+        hold on
+    end
+    ylim([0 1])
+    xlabel(plotting_parameter)
+    ylabel('Rewards/(Incompletes+Rewards)')
+    legend(legendstrings)
+    title_temp = filelist(file_no).name;
+%     title_temp = strrep(title_temp,'_','\_');
+    title(title_temp)
+    
+%% Timing plot by trial type
+    figure;     
+    
     movement_time = [trial_table(:,table_columns.cursor_on_ct) trial_table(:,table_columns.end)]-...
-        repmat(trial_table(:,table_columns.start),1,2);
+    repmat(trial_table(:,table_columns.start),1,2);
     
     stim_trials = find(trial_table(:,table_columns.stim_id)>-1);
     bump_only_trials = find(trial_table(:,table_columns.stim_id)==-1 & trial_table(:,table_columns.result)~=abort_code);
@@ -185,49 +266,16 @@ for file_no = 1:length(filelist)
     
     movement_time(stim_trials,:) = stim_movement_time;
     movement_time(bump_only_trials,:) = bump_movement_time;
-    
-%     stim_movement_time = [trial_table(stim_trials,table_columns.cursor_on_ct) trial_table(stim_trials,table_columns.end)]-...
-%         repmat(trial_table(stim_trials,table_columns.start)+(trial_table(trial_table(:,table_columns.stim_id)~=-1,table_columns.bump_time)-...
-%         trial_table(trial_table(:,table_columns.stim_id)~=-1,table_columns.start)),1,2);
-%     stim_movement_time = stim_movement_time(trial_table(stim_trials,table_columns.bump_time)~=0,:);
-%     bump_movement_time = [trial_table(bump_only_trials,table_columns.cursor_on_ct) trial_table(bump_only_trials,table_columns.end)]-...
-%         repmat(trial_table(bump_only_trials,table_columns.start),1,2);
-    
-%     movement_time(trial_table(:,table_columns.stim_id)~=-1,:) = movement_time(trial_table(:,table_columns.stim_id)~=-1,:)-...
-%         repmat((trial_table(trial_table(:,table_columns.stim_id)~=-1,table_columns.bump_time)-...
-%         trial_table(trial_table(:,table_columns.stim_id)~=-1,table_columns.start)),1,2);
-    
+        
     bump_time = trial_table(:,table_columns.bump_time) -...
         trial_table(:,table_columns.start);
     bump_time = [bump_time bump_time+bump_duration];
     bump_time(bump_time<0) = inf;
     
-    stim_time = zeros(length(trial_table),2);
-    
+    stim_time = zeros(length(trial_table),2);    
     stim_time(stim_trials,2) = ...
         stim_duration(trial_table(stim_trials,table_columns.stim_id)+1)/1000;
-
-%     [temp sort_idx] = sort(movement_time);
-%     movement_time_sorted = movement_time(sort_idx(:,1),:);
-%     bump_time_sorted = bump_time(sort_idx(:,1),:);
-%     stim_time_sorted = stim_time(sort_idx(:,1),:);
-%     trial_table_sorted = trial_table(sort_idx(:,1),:);       
-%%
-%     figure;        
-%     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==reward_code,:)',...
-%         [sort_idx(trial_table_sorted(:,table_columns.result)==reward_code) sort_idx(trial_table_sorted(:,table_columns.result)==reward_code)]','b')
-%     hold on;
-%     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==abort_code,:)',...
-%         [sort_idx(trial_table_sorted(:,table_columns.result)==abort_code) sort_idx(trial_table_sorted(:,table_columns.result)==abort_code)]','r')
-%     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==incomplete_code,:)',...
-%         [sort_idx(trial_table_sorted(:,table_columns.result)==incomplete_code) sort_idx(trial_table_sorted(:,table_columns.result)==incomplete_code)]','k')
-%     plot([bump_time_sorted(:,1) bump_time_sorted(:,1)]',[sort_idx(:,1)-.3 sort_idx(:,1)+.3]','g')
-%     plot([bump_time_sorted(:,2) bump_time_sorted(:,2)]',[sort_idx(:,1)-.5 sort_idx(:,1)+.5]','g')
-%     plot([stim_time_sorted(:,1) stim_time_sorted(:,1)]',[sort_idx(:,1)-.5 sort_idx(:,1)+.5]','k')
-%     plot([stim_time_sorted(:,2) stim_time_sorted(:,2)]',[sort_idx(:,1)-.15 sort_idx(:,1)+.15]','k')
-
-%% Timing plot by trial type
-    figure;     
+    
     plot(stim_movement_time',repmat(1:length(stim_movement_time),2,1),'k')
     hold on
     plot(bump_movement_time',repmat(1:length(bump_movement_time),2,1)+length(stim_movement_time),'r')
@@ -236,20 +284,10 @@ for file_no = 1:length(filelist)
     
     title_temp = filelist(file_no).name;
     title_temp = strrep(title_temp,'_','\_');
-    title(title_temp)
-%     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==reward_code,:)',...
-%         [sort_idx(trial_table_sorted(:,table_columns.result)==reward_code) sort_idx(trial_table_sorted(:,table_columns.result)==reward_code)]','b')
-%     hold on;
-%     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==abort_code,:)',...
-%         [sort_idx(trial_table_sorted(:,table_columns.result)==abort_code) sort_idx(trial_table_sorted(:,table_columns.result)==abort_code)]','r')
-%     plot(movement_time_sorted(trial_table_sorted(:,table_columns.result)==incomplete_code,:)',...
-%         [sort_idx(trial_table_sorted(:,table_columns.result)==incomplete_code) sort_idx(trial_table_sorted(:,table_columns.result)==incomplete_code)]','k')
-%     plot([bump_time_sorted(:,1) bump_time_sorted(:,1)]',[sort_idx(:,1)-.3 sort_idx(:,1)+.3]','g')
-%     plot([bump_time_sorted(:,2) bump_time_sorted(:,2)]',[sort_idx(:,1)-.5 sort_idx(:,1)+.5]','g')
-%     plot([stim_time_sorted(:,1) stim_time_sorted(:,1)]',[sort_idx(:,1)-.5 sort_idx(:,1)+.5]','k')
-%     plot([stim_time_sorted(:,2) stim_time_sorted(:,2)]',[sort_idx(:,1)-.15 sort_idx(:,1)+.15]','k')
-
-%%                
+    title(title_temp)   
+ 
+%%
+           
     rewards_indices = find(trial_table(:,table_columns.result)==reward_code);
     incomplete_indices = find(trial_table(:,table_columns.result)==incomplete_code);
     
@@ -267,8 +305,8 @@ for file_no = 1:length(filelist)
     zero_bump_stim_incompletes = intersect(zero_bump_stim_indices,incomplete_indices);
     zero_bump_no_stim_rewards = intersect(zero_bump_no_stim_indices,rewards_indices);
     zero_bump_no_stim_incompletes = intersect(zero_bump_no_stim_indices,incomplete_indices);
- 
-%%
+
+%%  Zero bump time histograms
     figure
     subplot(2,1,1)
     hold on
@@ -300,7 +338,7 @@ for file_no = 1:length(filelist)
     legend('Stim','No stim')
     xlim([0 1.5])
  
-%%
+%%  All bump magnitudes time histograms
     figure; 
     subplot(2,1,1)
     hold on
@@ -330,28 +368,7 @@ for file_no = 1:length(filelist)
     legend('Stim+Bump','Bump')
     xlim([0 1.5])
     
-%     subplot(3,1,3)
-%     hist(-movement_time_sorted(trial_table_sorted(:,table_columns.result)==abort_code,1),0:.1:5)
-%     xlabel('Wait time (s)')
-%     title('Abort count')
-%     xlim([0 5])
-
-%%
-%     % figure correct as a function of bump mag
-%     bump_magnitudes = unique(trial_table(:,table_columns.bump_magnitude));
-%     rewards_bump = zeros(1,length(bump_magnitudes));
-%     incomplete_bump = zeros(1,length(bump_magnitudes));
-%     fail_bump = zeros(1,length(bump_magnitudes));
-%     for i=1:length(bump_magnitudes)
-%         rewards_bump(i) = sum(trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(i),table_columns.result)==reward_code);
-%         incomplete_bump(i) = sum(trial_table(trial_table(:,table_columns.bump_magnitude)==bump_magnitudes(i),table_columns.result)==incomplete_code);
-%     end
-%     rewards_incomplete_bump = rewards_bump./( rewards_bump+incomplete_bump);        
-%     figure; 
-%     plot(bump_magnitudes,rewards_incomplete_bump);
-%     legend('Rewards/(Rewards+Incomplete)','Location','Southeast');
-%     xlabel('Bump magnitude [N]')
-% 
+%%  Zero bump performance figure
     % figure 0N bump performance over time
     figure; 
     plot(trial_table(zero_bump_no_stim_indices,table_columns.start),trial_table(zero_bump_no_stim_indices,table_columns.result)==reward_code,'r.')
@@ -390,7 +407,7 @@ for file_no = 1:length(filelist)
     title({title_temp;'Zero bump performance'})
     legend('No stim','Stim')
     
-%% Movement onset figure
+%% Speed figures
     max_mov_time = trial_table(trial_table(:,table_columns.result)==reward_code,...
                 [table_columns.start table_columns.end]);
     max_mov_time = round(max(diff(max_mov_time')')*1000);

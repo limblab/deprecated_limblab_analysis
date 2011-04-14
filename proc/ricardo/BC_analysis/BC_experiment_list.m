@@ -499,6 +499,34 @@ filelist(i).bump_duration = 0; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
 
 i = i+1;
+filelist(i).name = 'Tiki_2011-04-14_BC_001';  
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.142,1,16);
+filelist(i).codes = [1:8 reshape(repmat(9:12,2,1),1,[])];
+filelist(i).electrodes = [repmat(54,1,4) repmat(55,1,4) reshape(repmat([54 55],4,1)',1,[])];
+filelist(i).pulsewidth = repmat(0.2,1,16);
+filelist(i).current = [repmat([0 10 20 40],1,2) reshape(repmat([0 10 20 40],2,1),1,[])];
+filelist(i).period = repmat(3.3, 1, 16);
+filelist(i).pulses = repmat(120, 1, 16);
+filelist(i).delay = [repmat(1,1,8) reshape(repmat([1 1.5],4,1)',1,[])];
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-04-14_BC_002';  
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.142,1,16);
+filelist(i).codes = [1:8 reshape(repmat(9:12,2,1),1,[])];
+filelist(i).electrodes = [repmat(54,1,4) repmat(55,1,4) reshape(repmat([54 55],4,1)',1,[])];
+filelist(i).pulsewidth = repmat(0.2,1,16);
+filelist(i).current = [repmat([0 10 20 40],1,2) reshape(repmat([0 10 20 40],2,1),1,[])];
+filelist(i).period = repmat(3.3, 1, 16);
+filelist(i).pulses = repmat(120, 1, 16);
+filelist(i).delay = [repmat(1,1,8) reshape(repmat([1 1.5],4,1)',1,[])];
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
 filelist(i).name = 'Pedro_2011-04-05_BC_001';  
 filelist(i).datapath = [datapath 'Pedro_4C2\S1 array\']; 
 filelist(i).pd = [3.142 3.142 3.142 3.142 3.142];
@@ -677,6 +705,20 @@ filelist(i).current = reshape(repmat([0 10 20 30 40 60 80 100],2,1),1,[]);
 filelist(i).period = repmat(3.3, 1, 16);
 filelist(i).pulses = repmat(120, 1, 16);
 filelist(i).delay = reshape(repmat([1; 1.5],1,8),1,[]);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
+
+i = i+1;
+filelist(i).name = 'Pedro_2011-04-14_BC_001';  
+filelist(i).datapath = [datapath 'Pedro_4C2\S1 array\']; 
+filelist(i).pd = repmat(3.142,1,16);
+filelist(i).codes = [1:8 reshape(repmat(9:12,2,1),1,[])];
+filelist(i).electrodes = [repmat(41,1,4) repmat(57,1,4) reshape(repmat([41 57],4,1)',1,[])];
+filelist(i).pulsewidth = repmat(0.2,1,16);
+filelist(i).current = [repmat([1 20 40 80],1,2) reshape(repmat([1 20 40 80],2,1),1,[])];
+filelist(i).period = repmat(3.3, 1, 16);
+filelist(i).pulses = repmat(120, 1, 16);
+filelist(i).delay = [repmat(1,1,8) reshape(repmat([1 1.5],4,1)',1,[])];
 filelist(i).bump_duration = 0; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
 
