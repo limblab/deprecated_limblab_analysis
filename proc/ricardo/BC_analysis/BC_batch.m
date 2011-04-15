@@ -4,7 +4,7 @@ function BC_batch
 user = 'Ricardo';
 bump_raster_files = [];
 
-psychophysics_files = {'Tiki_2011-04-14_BC_001'};
+psychophysics_files = {'Pedro_2011-04-15_BC_001'};
 % psychophysics_files = [];
 
 filelist = BC_experiment_list(user);

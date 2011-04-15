@@ -163,6 +163,14 @@ for file_no = 1:length(filelist)
         param_value(iStim) = mean(stim_plot_temp(2,stim_plot_temp(1,:)==stim_ids(iStim)));
     end        
     
+%     correct_bootstrapped = zeros(num_bins,bin_size,boot_iter);
+%         for i=1:num_bins
+%             correct_binned_temp = correct((i-1)*bin_size+1:i*bin_size);
+%             correct_binned(i,:) = correct_binned_temp;
+%             correct_bootstrapped(i,:,:) = correct_binned_temp(ceil(length(correct_binned_temp)*rand(length(correct_binned_temp),boot_iter)));
+%         end
+%     correct_percent_bootstrapped = squeeze(mean(correct_bootstrapped,2));
+    
     figure;
     plot(param_value,stim_rewards_incompletes(1,:)./sum(stim_rewards_incompletes));
     ylim([0 1])
@@ -233,12 +241,17 @@ for file_no = 1:length(filelist)
         current_groups{iCurrentGroups} = mean(current_groups{iCurrentGroups});
     end
     
+    error_bars = get_error_bounds(electrode_current_rewards,...
+        electrode_current_incompletes,boot_iter,.1);
+        
     figure;
     colors = colormap(jet);
     colors = colors(1:round(length(colors)/size(electrode_current_incompletes,1)):end,:);
     for iPlot = 1:size(electrode_current_rewards,1)
-        plot(cell2mat(current_groups),electrode_current_rewards(iPlot,:)./...
-            (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:)),'Color',colors(iPlot,:));
+        plot_var = electrode_current_rewards(iPlot,:)./...
+            (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:));
+        errorbar(cell2mat(current_groups),plot_var,...
+            plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-plot_var,'Color',colors(iPlot,:));
         hold on
     end
     ylim([0 1])
@@ -246,7 +259,7 @@ for file_no = 1:length(filelist)
     ylabel('Rewards/(Incompletes+Rewards)')
     legend(legendstrings)
     title_temp = filelist(file_no).name;
-%     title_temp = strrep(title_temp,'_','\_');
+    title_temp = strrep(title_temp,'_','\_');
     title(title_temp)
     
 %% Timing plot by trial type
@@ -274,7 +287,7 @@ for file_no = 1:length(filelist)
     
     stim_time = zeros(length(trial_table),2);    
     stim_time(stim_trials,2) = ...
-        stim_duration(trial_table(stim_trials,table_columns.stim_id)+1)/1000;
+        stim_duration(trial_table(stim_trials,table_columns.stim_id))/1000;
     
     plot(stim_movement_time',repmat(1:length(stim_movement_time),2,1),'k')
     hold on
