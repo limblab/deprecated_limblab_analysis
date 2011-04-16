@@ -28,7 +28,7 @@ if ~exist([datapath 'Processed\' fileinfo.name '.mat'],'file')
         sorted = 1;
     end
     currdir = pwd;
-    cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
+%cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
     if sorted            
         for iSorted = 1:length(sorted_files)
             bdf = get_cerebus_data([datapath 'Sorted\' sorted_files(iSorted).name],2);

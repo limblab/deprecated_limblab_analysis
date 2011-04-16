@@ -751,7 +751,7 @@ filelist(i).bump_duration = 0; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
 
 i = i+1;
-filelist(i).name = 'Pedro_2011-04-16_BC_001';  
+filelist(i).name = 'Pedro_2011-04-15_BC_001';  
 filelist(i).datapath = [datapath 'Pedro_4C2\S1 array\']; 
 filelist(i).pd = repmat(3.142,1,6);
 filelist(i).codes = 1:6;
