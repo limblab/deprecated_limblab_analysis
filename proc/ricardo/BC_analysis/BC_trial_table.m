@@ -37,6 +37,15 @@ bdf.words = bdf.words(find(bdf.words(:,1)>bdf.databursts{1} & bitand(bdf.words(:
 
 bdf.words = bdf.words(find([diff(bdf.words(:,2))~=0;1]),:);
 
+long_pauses = find(diff(bdf.words(:,1))>100);
+words_temp = bdf.words;
+for iPauses = 1:length(long_pauses)
+    words_temp(find(bdf.words(1:long_pauses(iPauses),2)>=reward_code &...
+        bdf.words(1:long_pauses(iPauses),2)<=incomplete_code,1,'last')+1:...
+        find(bdf.words(long_pauses(iPauses)+1:end,2)==start_trial_code,1,'first')+long_pauses(iPauses)-1,:) = nan;   
+end
+bdf.words = words_temp(~isnan(words_temp(:,1)),:);
+
 trial_starts = bdf.words(bdf.words(:,2)==start_trial_code,:);
 ct_on = bdf.words(bdf.words(:,2)==ct_on_code,:);
 
