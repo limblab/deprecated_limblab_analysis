@@ -1,6 +1,7 @@
 numstates = max( range(AllPred.states)+1);
 numclass  = size(AllPred.states,2);
 
+
 predStateVar = cell(1,numclass);
 actStateVar  = cell(1,numclass);
 predVar = cell(numstates,numclass);
