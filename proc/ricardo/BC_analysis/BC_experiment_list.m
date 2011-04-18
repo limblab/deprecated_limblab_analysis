@@ -820,21 +820,6 @@ filelist(i).delay = repmat(1,1,6);
 filelist(i).bump_duration = 0; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
 
-=======
-i = i+1;
-filelist(i).name = 'Pedro_2011-04-16_BC_001';  
-filelist(i).datapath = [datapath 'Pedro_4C2\S1 array\']; 
-filelist(i).pd = repmat(3.142,1,6);
-filelist(i).codes = 1:6;
-filelist(i).electrodes = repmat(57,1,6);
-filelist(i).pulsewidth = repmat(0.2,1,6);
-filelist(i).current = 0:15:75;
-filelist(i).period = repmat(3.3, 1, 6);
-filelist(i).pulses = repmat(120, 1, 6);
-filelist(i).delay = repmat(1,1,6);
-filelist(i).bump_duration = 0; % (ms)
-filelist(i).serverdatapath = 'Z:\Miller\Pedro_4C2\S1 Array\Raw\';
-
 % i = i+1;
 % filelist(i).name = 'Pedro_2011-04-12_BC_004';  
 % filelist(i).datapath = [datapath 'Pedro_4C2\S1 array\']; 
