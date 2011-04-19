@@ -1,5 +1,5 @@
 function binnedData = convertBDF2binned(varargin)
-        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate, NormData,FindStates)
+        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate, NormData)
 
 %% Initialization
 
@@ -65,9 +65,6 @@ if (nargin >=7)
 end
 if (nargin >= 8)
     NormData = varargin{8};
-end
-if (nargin == 9)
-    Find_States = varargin{9};
 end
         
 %% Validation of time parameters
@@ -213,7 +210,7 @@ if NormData
 end
 
 
-%% Bin Velocity (Magnitude only)
+%% Bin Velocity
 if ~isfield(datastruct, 'vel')
     %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     velocbin = [];
@@ -358,6 +355,7 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
     ball_drop_task = 0;
     multi_gadget_task=0;
     random_walk_task=0;
+    vs_task = 0;
     
     start_trial_words = datastruct.words( bitand(hex2dec('f0'),datastruct.words(:,2)) == hex2dec('10') ,2);
     if ~isempty(start_trial_words)
@@ -377,12 +375,13 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
             elseif start_trial_code == hex2dec('12')
                 random_walk_task = 1;
             end
-        elseif start_trial_code == hex2dec('1B')
-            robot_task = 1;
         elseif start_trial_code == hex2dec('19')
             ball_drop_task = 1;
         elseif start_trial_code == hex2dec('16')
             multi_gadget_task = 1;
+        elseif start_trial_code == hex2dec('1B')
+            robot_task =1;
+            vs_task = 1;
         else
             %close(h);
             error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
@@ -391,6 +390,8 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
 
     if ball_drop_task
         tt = bd_trial_table(datastruct);
+    elseif vs_task
+        tt = vs_trial_table(datastruct);
     else
         tt = [];
     end
@@ -410,42 +411,6 @@ end
 %
 %     end
 % end
-        
-
-%% Movement States
-if ~Find_States
-    states = [];
-    statemethods = [];
-else
-    states = NaN(numberbins,2);
-    statemethods(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];   
-    tt = vs_trial_table(datastruct);
-    
-    % 1- Classify states according to a velocity threshold:
-    states(:,1) = vel_magn >= std(vel_magn);
-    statemethods(1,1:10) = 'Vel thresh';
-    
-%     % 2- Classify states according to a Global Firing Rate threshold:
-%     states(:,2) = GFR_clas(spikeratedata,binsize);
-%     statemethods(2,1:10) = 'GFR thresh';
-    
-    % 2- Classify states according to naive Bayesian using all datapoints for training
-    states(:,2) = perf_bayes_clas(spikeratedata,binsize,vel_magn);
-    statemethods(2,1:14) = 'Complete Bayes';
-    
-    % 3- Classify states according to naive Bayesian using velocity peaks for training
-    states(:,3) = peak_bayes_clas(spikeratedata,binsize,vel_magn);
-    statemethods(3,1:10) = 'Peak Bayes';
-    
-    % 4- Classify states according to Linear Discriminant Analysis using velocity peaks for training
-    states(:,4) = perf_LDA_clas(spikeratedata,binsize,vel_magn);
-    statemethods(4,1:12) = 'Complete LDA';
-    
-    % 5- Classify states according to Linear Discriminant Analysis using velocity peaks for training
-    states(:,5) = peak_LDA_clas(spikeratedata,binsize,vel_magn);
-    statemethods(5,1:8) = 'Peak LDA';
-    
-end
 
 %% Outputs
 binnedData = struct('timeframe',timeframe,...
@@ -461,8 +426,6 @@ binnedData = struct('timeframe',timeframe,...
                     'veloclabels',veloclabels,...
                     'words',words,...
                     'targets',targets,...
-                    'states',states,...
-                    'statemethods',statemethods,...
                     'trialtable',tt);
                                
 %% resample function for single-precision (embeded function):

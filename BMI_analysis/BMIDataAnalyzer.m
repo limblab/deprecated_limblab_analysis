@@ -214,7 +214,14 @@ function BMIDataAnalyzer()
         disp('Converting BDF structure to binned data, please wait...');
 %        Bin_UI = figure;
         [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,FindStates] = convertBDF2binnedGUI;
-        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData,FindStates);
+        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData);
+        if FindStates
+            [states,statemethods] = findStates(binnedData);
+            binnedData.states = states;
+            binnedData.statemethods = statemethods;
+            clear states statemethods;
+        end
+            
         disp('Done.');
         
         disp('Saving binned data...');
