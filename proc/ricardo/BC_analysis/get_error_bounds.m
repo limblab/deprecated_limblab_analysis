@@ -7,13 +7,16 @@ result1 = reshape(result1,1,[]);
 size_result2 = size(result2);
 result2 = reshape(result2,1,[]);
 
-sample_length = min(result1+result2);
+temp = result1+result2;
+sample_length = min(temp(temp>0));
 reward_bootstrapped = zeros(length(result1),sample_length,boot_iter);
 for i=1:length(result1)
     reward_temp = [ones(result1(i),1);zeros(result2(i),1)];
-    reward_temp = reward_temp(ceil(length(reward_temp)*rand(length(reward_temp),boot_iter)));
-    reward_temp = reward_temp(1:sample_length,:);
-    reward_bootstrapped(i,:,:) = reward_temp;
+    if ~isempty(reward_temp)
+        reward_temp = reward_temp(ceil(length(reward_temp)*rand(length(reward_temp),boot_iter)));
+        reward_temp = reward_temp(1:sample_length,:);
+        reward_bootstrapped(i,:,:) = reward_temp;
+    end
 end
 reward_bootstrapped = squeeze(mean(reward_bootstrapped,2));
 
