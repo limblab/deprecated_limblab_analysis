@@ -399,6 +399,18 @@ else
         tt = [];
 end
     
+%% Stimulator Commands
+% if isfield(datastruct,'stim') 
+%     if isa(datastruct.stim,'numeric')
+%         
+%         chans    = unique(datastruct.stim(:,2));
+%         numchans = length(chans);
+%
+%         %%% Bin at binsize or Stim period??
+%
+%     end
+% end
+        
 
 %% Movement States
 if ~Find_States
@@ -413,44 +425,26 @@ else
     states(:,1) = vel_magn >= std(vel_magn);
     statemethods(1,1:10) = 'Vel thresh';
     
-    % 2- Classify states according to a Global Firing Rate threshold:
-    states(:,2) = GFR_clas(spikeratedata,binsize);
-    statemethods(2,1:10) = 'GFR thresh';
+%     % 2- Classify states according to a Global Firing Rate threshold:
+%     states(:,2) = GFR_clas(spikeratedata,binsize);
+%     statemethods(2,1:10) = 'GFR thresh';
     
-    % 3- Classify states according to naive Bayesian using all datapoints for training
-    states(:,3) = perf_bayes_clas(spikeratedata,binsize,vel_magn);
-    statemethods(3,1:14) = 'Complete Bayes';
+    % 2- Classify states according to naive Bayesian using all datapoints for training
+    states(:,2) = perf_bayes_clas(spikeratedata,binsize,vel_magn);
+    statemethods(2,1:14) = 'Complete Bayes';
     
-    % 4- Classify states according to naive Bayesian using velocity peaks for training
-    states(:,4) = peak_bayes_clas(spikeratedata,binsize,vel_magn);
-    statemethods(4,1:10) = 'Peak Bayes';
+    % 3- Classify states according to naive Bayesian using velocity peaks for training
+    states(:,3) = peak_bayes_clas(spikeratedata,binsize,vel_magn);
+    statemethods(3,1:10) = 'Peak Bayes';
+    
+    % 4- Classify states according to Linear Discriminant Analysis using velocity peaks for training
+    states(:,4) = perf_LDA_clas(spikeratedata,binsize,vel_magn);
+    statemethods(4,1:12) = 'Complete LDA';
     
     % 5- Classify states according to Linear Discriminant Analysis using velocity peaks for training
-    states(:,5) = perf_LDA_clas(spikeratedata,binsize,vel_magn);
-    statemethods(5,1:12) = 'Complete LDA';
+    states(:,5) = peak_LDA_clas(spikeratedata,binsize,vel_magn);
+    statemethods(5,1:8) = 'Peak LDA';
     
-    % 6- Classify states according to Linear Discriminant Analysis using velocity peaks for training
-    states(:,6) = peak_LDA_clas(spikeratedata,binsize,vel_magn);
-    statemethods(6,1:8) = 'Peak LDA';
-    
-    
-%     
-%     %% Below is first, more complicated attempt at classifying data into
-%     %% Posture and Movement states according to both words and movement parameters
-%     States = mvt_clas(datastruct,tt);
-%     
-%     % Find which data bin correspond to each state
-%     numStates = size(States,2);
-%     idxs   = false(length(timeframe),numStates);
-%     for state = 1:numStates
-%         numChunks = size(States{state},1);
-%         for chunk = 1:numChunks
-%             idxs(:,state) = idxs(:,state) | (timeframe >= States{state}(chunk,1) & ...
-%                                              timeframe <= States{state}(chunk,2)      );
-%         end
-%     end
-%     state = idxs;
-%     statelabels = ['Posture ';'Movement'];
 end
 
 %% Outputs
