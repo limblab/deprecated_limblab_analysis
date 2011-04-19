@@ -1,10 +1,7 @@
 function [vaf, vaf2, r2] = predictions(bdf, signal, cells, folds)
-
+% [vaf, vaf2, r2] = predictions(bdf, signal, cells, folds)
+%
 % $Id$
-
-%addpath mimo
-%addpath spike
-%addpath bdf
 
 if strcmpi(signal, 'pos')
     y = bdf.pos(:,2:3);
@@ -47,7 +44,7 @@ r2 = zeros(folds,2);
 vaf2 = zeros(folds,1);
 
 fold_length = floor(length(y) ./ folds);
-    
+
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
     fold_end = min([fold_start + fold_length, length(y)]);
@@ -67,8 +64,3 @@ for i = 1:folds
     vaf2(i) = 1 - sum( sum((y_pred-y_test).^2) ) ...
         ./ sum( sum((y_test - repmat(mean(y_test),length(y_test),1)).^2) );
 end
-
-%rmpath mimo
-%rmpath spike
-%rmpath bdf
-

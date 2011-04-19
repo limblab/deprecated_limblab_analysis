@@ -51,7 +51,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if start_trial_code == hex2dec('17')
                 wrist_flexion_task = 1;
             elseif (start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')) ||...
-                    start_trial_code == hex2dec('1a') || start_trial_code == hex2dec('1c')
+                    start_trial_code == hex2dec('1a') || start_trial_code == hex2dec('1c') ||...
+                    start_trial_code == hex2dec('18')
                 robot_task = 1;
                 if start_trial_code == hex2dec('11')
                     center_out_task = 1;
@@ -82,7 +83,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
         % The highest analog sample rate (local copy)
         adfreq = max(out_struct.raw.analog.adfreq);
         
-        start_time = 1.0;
+        start_time = floor(1.0 + out_struct.raw.analog.ts{1});
         last_analog_time = min([out_struct.raw.analog.ts{:}] + ...
             cellfun('length',out_struct.raw.analog.data) / out_struct.raw.analog.adfreq);
         if isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc)
@@ -205,6 +206,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
             force_offsets = repmat(force_offsets, length(raw_force), 1);
             out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
+            clear force_offsets; % cleanup a little
             out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
             for p = 1:size(out_struct.force, 1)
                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
@@ -344,10 +346,14 @@ end             %ending "if opts.eye"
                 if size(out_struct.databursts{i,2})~=burst_size
                     warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
                 else
-                    num_burst = num_burst+1;
-                    out_struct.targets.centers(num_burst,1)    =out_struct.databursts{i,1};
-                    out_struct.targets.centers(num_burst,2)    =bytes2float(out_struct.databursts{i,2}(15:18));
-                    out_struct.targets.centers(num_burst,3:end)=bytes2float(out_struct.databursts{i,2}(19:end));
+                    try
+                        num_burst = num_burst+1;
+                        out_struct.targets.centers(num_burst,1)    =out_struct.databursts{i,1};
+                        out_struct.targets.centers(num_burst,2)    =bytes2float(out_struct.databursts{i,2}(15:18));
+                        out_struct.targets.centers(num_burst,3:end)=bytes2float(out_struct.databursts{i,2}(19:end));
+                    catch
+                        warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                    end
                 end
             end
             out_struct.targets.centers = out_struct.targets.centers(1:num_burst,:);
