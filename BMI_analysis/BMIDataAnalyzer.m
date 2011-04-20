@@ -233,6 +233,7 @@ function BMIDataAnalyzer()
         else
             Bin_FullFileName = fullfile(PathName,Bin_FileName);
             set(Bin_BuildButton, 'Enable','on');
+            set(Bin_ClassButton, 'Enable','on');
             set(Bin_WSButton, 'Enable','on');
             set(Bin_mfxvalButton,  'Enable','on');
             set(Bin_PlotButton, 'Enable','on');
@@ -272,10 +273,13 @@ function BMIDataAnalyzer()
                             'Position', [.1 .2 .15 .3],'Callback',@Bin_LoadButton_Callback,'Enable','on');
 
     Bin_BuildButton = uicontrol('Parent', Bin_Panel, 'String', 'Build Model', 'Units','normalized',...
-                            'Position', [.316 .2 .15 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
-    
+                            'Position', [.2625 .2 .15 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
+
+    Bin_ClassButton = uicontrol('Parent', Bin_Panel, 'String', 'Train Class', 'Units','normalized',...
+                            'Position', [.425 .2 .15 .3],'Callback',@Bin_ClassButton_Callback,'Enable','off');                            
+                                               
     Bin_mfxvalButton = uicontrol('Parent', Bin_Panel, 'String', 'mfxval', 'Units','normalized',...
-                            'Position', [.533 .2 .15 .3],'Callback',@Bin_mfxvalButton_Callback,'Enable','off');
+                            'Position', [.5875 .2 .15 .3],'Callback',@Bin_mfxvalButton_Callback,'Enable','off');
                         
     Bin_PlotButton   = uicontrol('Parent', Bin_Panel, 'String', 'Plot', 'Units', 'normalized',...
                             'Position', [.75 .2 .15 .3],'Callback',@Bin_PlotButton_Callback,'Enable','off');
@@ -298,6 +302,7 @@ function BMIDataAnalyzer()
             set(Bin_WSButton,'Enable','on');
             set(Bin_mfxvalButton, 'Enable','on');
             set(Bin_PlotButton, 'Enable','on');
+            set(Bin_ClassButton,'Enable','on');
             if Filt_FileName
                 set(Filt_PredButton,'Enable','on');
                 set(Filt_WSButton,'Enable','on');
@@ -385,6 +390,43 @@ function BMIDataAnalyzer()
                                           'normalized','Position',[0 .65 1 0.38]);
             end
         end
+    end
+
+    function Bin_ClassButton_Callback(obj,event)
+        disp('Training classifier, please wait...');
+        binnedData = LoadDataStruct(Bin_FullFileName);
+        binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
+        ClassMethods = {'Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};
+        CompBayes = 1; PeakBayes = 2; CompLDA = 3; PeakLDA = 4;
+        
+        selectedClassMethod = PeakLDA;
+        selectedClassMethod = TrainClassGUI(ClassMethods,selectedClassMethod);
+        
+        switch selectedClassMethod
+            case CompBayes
+                disp('Classification method unimplemented yet...');
+            case PeakBayes
+                disp('Classification method unimplemented yet...');
+            case CompLDA
+                [posture_classifier,movement_classifier] = trainCompLDA(binnedData.spikeratedata,binsize);
+            case PeakLDA
+                [posture_classifier,movement_classifier] = trainPeakLDA(binnedData.spikeratedata,binsize,binnedData.velocbin);
+        end
+           
+        disp('Done.');
+        
+        Class_Methods = {'_CBay','_PBay','_CLDA','_PLDA'};
+        [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,[Bin_FileName ClassMethods(selectedClassMethod)],'binned');
+                
+        if isequal(Bin_FileName, 0) || isequal(PathName,0)
+            disp('User action cancelled');
+        else
+            Bin_FullFileName = fullfile(PathName,Bin_FileName);
+
+            Bin_FileLabel = uicontrol('Parent',Bin_Panel,'Style','text','String',['Binned Data : ' Bin_FileName],'Units',...
+                                      'normalized','Position',[0 .65 1 0.2]);
+        end
+        
     end
 
     function mfxval_R2 = Bin_mfxvalButton_Callback(obj,event)
