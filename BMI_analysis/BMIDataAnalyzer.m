@@ -344,10 +344,8 @@ function BMIDataAnalyzer()
         if isempty(filt_struct)
             disp('Model Building Failed');
             return;
-        end
+        end     
         
-        
-    
         disp('Saving prediction model...');
         Filt_FileName = [Bin_FileName(1:end-4) '_Decoder.mat'];
         if isstruct(filt_struct)
