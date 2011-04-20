@@ -346,26 +346,35 @@ function BMIDataAnalyzer()
             return;
         end
         
+        
+    
+        disp('Saving prediction model...');
+        Filt_FileName = [Bin_FileName(1:end-4) '_Decoder.mat'];
         if isstruct(filt_struct)
             filt_struct.FromData = Bin_FileName;
+            [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');            
         else
             %state dependent filters, filt_struct is a cell array:
             for i=1:size(filt_struct,2)
                 filt_struct{1,i}.FromData = Bin_FileName;
             end
+            general_decoder = filt_struct{1};
+            posture_decoder = filt_struct{2};
+            movement_decoder= filt_struct{3};
+            
+            [Filt_FileName,PathName] = uiputfile( fullfile(FilePath,Filt_FileName), 'Save file');
         end
-        clear binnedData;       
-        disp('Saving prediction model...');
-        Filt_FileName = [Bin_FileName(1:end-4) '_filter.mat'];
-        [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');
         
         if isequal(Filt_FileName, 0) || isequal(PathName,0)
             disp('User action cancelled');
         else
+            Filt_FullFileName = fullfile(PathName,Filt_FileName);
             if isstruct(filt_struct)
-                Filt_FullFileName = fullfile(PathName,Filt_FileName);
                 %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
                 save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
+            else
+                save(Filt_FullFileName, 'general_decoder','posture_decoder','movement_decoder');
+                disp(['File: ', Filt_FullFileName,' saved successfully']);
             end
             set(Filt_PredButton, 'Enable','on');
             set(Filt_WSButton,'Enable','on');            
@@ -390,6 +399,7 @@ function BMIDataAnalyzer()
                                           'normalized','Position',[0 .65 1 0.38]);
             end
         end
+        clear binnedData OLPredData filt_struct posture_decoder movement_decoder general_decoder;
     end
 
     function Bin_ClassButton_Callback(obj,event)
@@ -425,7 +435,7 @@ function BMIDataAnalyzer()
         binnedData.statemethods = statemethods;
         binnedData.Classifiers = Classifiers;
 
-        [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,[Bin_FileName ClassMethods(selectedClassMethod)],'binned');
+        [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,strep(Bin_FileName,'.mat','_class.mat'),'binned');
                 
         if isequal(Bin_FileName, 0) || isequal(PathName,0)
             disp('User action cancelled');

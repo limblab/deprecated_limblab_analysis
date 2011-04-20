@@ -86,6 +86,7 @@ else
                 TempPred(State_Mask(:,z),z) = polyval(models{1,state}.P(z,:),TempPred(State_Mask(:,z),z));
             end
         end
+%         TempPred = TempPred .* repmat(abs((state-2)+BinnedData.states(:,8)),1,numOutputs);        
         PredictedData = PredictedData + TempPred;
     end
 end

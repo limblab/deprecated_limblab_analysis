@@ -152,8 +152,8 @@ if PolynomialOrder
     %%%Find a Wiener Cascade Nonlinearity
     for z=1:size(PredictedData,2)
         %Find and apply polynomial
-        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
-        PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
+        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder)';
+        PredictedData(:,z) = polyval(P(:,z)',PredictedData(:,z));
     end
 else
     P=[];
