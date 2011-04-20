@@ -170,7 +170,9 @@ function BMIDataAnalyzer()
             
             BDF_FileLabel =  uicontrol('Parent',BDF_Panel,'Style','text','String',['BDFStruct : ' BDF_FileName],'Units',...
                                   'normalized','Position',[0 .65 1 0.2]);
-        end       
+        end
+        
+        clear out_struct;
     end
     
     
@@ -252,6 +254,9 @@ function BMIDataAnalyzer()
             Bin_FileLabel = uicontrol('Parent',Bin_Panel,'Style','text','String',['Binned Data : ' Bin_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.2]);
         end
+        
+        clear binsize starttime stoptime hpfreq lpfreq MinFiringRate NormData FindStates;
+        clear binnedData;
 
     end
 
@@ -348,7 +353,7 @@ function BMIDataAnalyzer()
         
         disp('Saving prediction model...');
         Filt_FileName = [Bin_FileName(1:end-4) '_Decoder.mat'];
-        if isstruct(filt_struct)
+        if ~Use_State
             filt_struct.FromData = Bin_FileName;
             [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');            
         else
@@ -360,18 +365,39 @@ function BMIDataAnalyzer()
             posture_decoder = filt_struct{2};
             movement_decoder= filt_struct{3};
             
-            [Filt_FileName,PathName] = uiputfile( fullfile(FilePath,Filt_FileName), 'Save file');
+            [Filt_FileName,PathName] = uiputfile( fullfile([dataPath '\SavedFilters\'],Filt_FileName), 'Save file');
         end
         
         if isequal(Filt_FileName, 0) || isequal(PathName,0)
             disp('User action cancelled');
         else
             Filt_FullFileName = fullfile(PathName,Filt_FileName);
-            if isstruct(filt_struct)
+            if ~Use_State
                 %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
                 save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
             else
-                save(Filt_FullFileName, 'general_decoder','posture_decoder','movement_decoder');
+                %This assumes class methods={velthres,CompBayes,PeakBayes,CompLDA,PeakLDA};
+                ClassMethods = {'Vel Thresh','Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};
+                VelThresh = 1; CompBayes = 2; PeakBayes = 3; CompLDA = 4; PeakLDA = 5;
+                switch Use_State
+                    case VelThresh
+                        posture_classifier = binnedData.classifiers{1};
+                        movement_classifier= binnedData.classifiers{1};
+                    case CompBayes
+                        posture_classifier = binnedData.classifiers{2};
+                        movement_classifier= binnedData.classifiers{2};
+                    case PeakBayes
+                        posture_classifier = binnedData.classifiers{3};
+                        movement_classifier= binnedData.classifiers{3};
+                    case CompLDA
+                        posture_classifier = binnedData.classifiers{4}{1};
+                        movement_classifier= binnedData.classifiers{4}{2};
+                    case PeakLDA
+                        posture_classifier = binnedData.classifiers{5}{1};
+                        movement_classifier= binnedData.classifiers{5}{2};
+                end
+                save(Filt_FullFileName, 'general_decoder','posture_decoder','movement_decoder',...
+                                        'posture_classifier','movement_classifier');
                 disp(['File: ', Filt_FullFileName,' saved successfully']);
             end
             set(Filt_PredButton, 'Enable','on');
@@ -397,41 +423,21 @@ function BMIDataAnalyzer()
                                           'normalized','Position',[0 .65 1 0.38]);
             end
         end
-        clear binnedData OLPredData filt_struct posture_decoder movement_decoder general_decoder;
+        clear binnedData OLPredData filt_struct posture_decoder movement_decoder general_decoder posture_classifier movement_classifier;
+        clear fillen UseAllInputsOption PolynomialOrder Pred_EMG Pred_Force Pred_CursPos Pred_Veloc Use_State;
     end
 
     function Bin_ClassButton_Callback(obj,event)
-        disp('Training classifier, please wait...');
+        disp('Training classifiers, please wait...');
         binnedData = LoadDataStruct(Bin_FullFileName);
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
-        [states,statemethods,Classifiers]=findStates(binnedData);
-%         
-%         ClassMethods = {'Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};
-%         CompBayes = 1; PeakBayes = 2; CompLDA = 3; PeakLDA = 4;
-%         
-%         selectedClassMethod = PeakLDA;
-%         selectedClassMethod = TrainClassGUI(ClassMethods,selectedClassMethod);
-%         
-%         switch selectedClassMethod
-%             case CompBayes
-%                 disp('Classification method unimplemented yet...');
-%             case PeakBayes
-%                 disp('Classification method unimplemented yet...');
-%             case CompLDA
-%                 [coeffs1,coeffs2] = trainCompLDA(binnedData.spikeratedata,binsize);
-%                 binnedData.CompLDA = struct('posture_classifier',coeffs1,'movement_classifier',coeffs2);
-%             case PeakLDA
-%                 [coeffs1,coeffs2] = trainPeakLDA(binnedData.spikeratedata,binsize,binnedData.velocbin);
-%                 binnedData.PeakLDA = struct('posture_classifier',coeffs1,'movement_classifier',coeffs2);
-%         end
-%            
-%         disp('Done.');
-%         
-%         Class_Methods = {'_CBay','_PBay','_CLDA','_PLDA'};
-        
+        [states,statemethods,classifiers]=findStates(binnedData);
+
+        disp('Done.');
+
         binnedData.states = states;
         binnedData.statemethods = statemethods;
-        binnedData.Classifiers = Classifiers;
+        binnedData.classifiers = classifiers;
 
         [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,strep(Bin_FileName,'.mat','_class.mat'),'binned');
                 
@@ -443,6 +449,8 @@ function BMIDataAnalyzer()
             Bin_FileLabel = uicontrol('Parent',Bin_Panel,'Style','text','String',['Binned Data : ' Bin_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.2]);
         end
+        
+        clear binnedData states statemethods classifiers;
         
     end
 
@@ -469,7 +477,6 @@ function BMIDataAnalyzer()
         ave_R2 = mean(mfxval_R2);
         assignin('base','ave_R2',ave_R2);
 
-        clear binnedData;
         disp('Done.');
 
         disp('Saving Offline EMG Predictions...');
@@ -487,6 +494,9 @@ function BMIDataAnalyzer()
             OLPred_FileLabel = uicontrol('Parent',OLPred_Panel,'Style','text','String',['OLPred : ' OLPred_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.38]);
         end
+
+        clear binnedData OLPredData;
+        clear fillen UseAllInputsOption PolynomialOrder fold_length PredEMG PredForce PredCursPos PredVeloc Use_States;
         
     end
 
@@ -543,11 +553,17 @@ function BMIDataAnalyzer()
     function Filt_PredButton_Callback(obj,event)
         disp('Predicting, please wait...');
         [Smooth_Pred, Adapt_Enable, LR, Lag] = PredOptionsGUI();
-        if Use_State
-            [OLPredData, H_new] = predictSDSignals(Filt_FullFileName,Bin_FullFileName,Use_State,Smooth_Pred,Adapt_Enable,LR,Lag);
+        
+        decoder = load(Filt_FullFileName);
+        field_names = fieldnames(decoder);
+        if any(strcmp(field_names,'posture_decoder'))
+            Use_State = 1;
+            [OLPredData, H_new] = predictSDSignals(decoder,Bin_FullFileName,Use_State,Smooth_Pred,Adapt_Enable,LR,Lag);
         else
+            Use_State = 0;
             [OLPredData, H_new] = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
         end
+        
         disp('Done.');
         
         if Adapt_Enable %we have a new filter
@@ -585,7 +601,9 @@ function BMIDataAnalyzer()
                                       'normalized','Position',[0 .65 1 0.38]);
         end
         
-        
+        clear Smooth_Pred Adapt_Enable LR Lag;
+        clear OLPredData H_new;
+        clear filt_struct decoder Use_State;
     end
 
     function Filt_WSButton_Callback(obj,event)
@@ -639,6 +657,7 @@ function BMIDataAnalyzer()
         dispflag = 1;
         disp('Done. Processing R2 calculations...');
         ActualvsOLPred(ActualData,PredData,plotflag,dispflag);   
+        clear ActualData PredData plotflag dispflag;
     end
 
     function OLPred_PlotVsActButton_Callback(obj,event)
@@ -650,6 +669,7 @@ function BMIDataAnalyzer()
         disp('Done. Calculating R2 and plotting...');
         ActualvsOLPred(ActualData,PredData,plotflag,dispflag);
         disp('Done.');
+        clear ActualData PredData plotflag dispflag;
     end
 
     function OLPred_WSButton_Callback(obj,event)
@@ -698,7 +718,8 @@ function BMIDataAnalyzer()
         PredData = LoadDataStruct(RTPred_FullFileName);
         plotflag = 0;
         disp('Done. Processing R2 calculations...');
-        ActualvsRTPred(ActualData,PredData,plotflag);      
+        ActualvsRTPred(ActualData,PredData,plotflag);
+        clear ActualData PredData plotflag;
     end
 
     function RTPred_PlotVsActButton_Callback(obj,event)
@@ -708,6 +729,7 @@ function BMIDataAnalyzer()
         plotflag = 1;
         disp('Done. Calculating R2 and plotting...');
         ActualvsRTPred(ActualData,PredData,plotflag);    
+        clear ActualData PredData plotflag;
     end
 
     function RTPred_WSButton_Callback(obj,event)

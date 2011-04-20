@@ -148,12 +148,12 @@ end
 [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,1,Outputs);
 if PolynomialOrder
     numouts = size(PredictedData,2);
-    P = zeros(PolynomialOrder,numouts);
+    P = zeros(PolynomialOrder+1,numouts);
     %%%Find a Wiener Cascade Nonlinearity
     for z=1:size(PredictedData,2)
         %Find and apply polynomial
-        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder)';
-        PredictedData(:,z) = polyval(P(:,z)',PredictedData(:,z));
+        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+        PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
     end
 else
     P=[];
@@ -188,7 +188,7 @@ if Use_State
     %     ActualDataNew = Outs;
         if PolynomialOrder
             numouts = size(PredictedData,2);
-            P = zeros(PolynomialOrder,numouts);
+            P = zeros(PolynomialOrder+1,numouts);
             %%%Find a Wiener Cascade Nonlinearity
             for z=1:size(PredictedData,2)
                 %Find and apply polynomial
