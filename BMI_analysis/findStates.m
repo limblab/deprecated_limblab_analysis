@@ -14,7 +14,7 @@ function [states,statemethods,Classifiers] = findStates(binnedData)
 %     statemethods(x,1:10) = 'GFR thresh';
     
     % 2- Classify states according to naive Bayesian using all datapoints for training
-    [states(:,2), Classifiers{2}]= perf_bayes_clas(binnedData.spikeratedata,binsize,vel_magn);
+    [states(:,2), Classifiers{2}]= perf_bayes_clas(binnedData.spikeratedata,binsize,vel_magn,Classifiers{1});
     statemethods(2,1:14) = 'Complete Bayes';
     
     % 3- Classify states according to naive Bayesian using velocity peaks for training
@@ -22,7 +22,7 @@ function [states,statemethods,Classifiers] = findStates(binnedData)
     statemethods(3,1:10) = 'Peak Bayes';
     
     % 4- Classify states according to Linear Discriminant Analysis using velocity peaks for training
-    [states(:,4), Classifiers{4}] = perf_LDA_clas(binnedData.spikeratedata,binsize,vel_magn);
+    [states(:,4), Classifiers{4}] = perf_LDA_clas(binnedData.spikeratedata,binsize,vel_magn,Classifiers{1});
     statemethods(4,1:12) = 'Complete LDA';
     
     % 5- Classify states according to Linear Discriminant Analysis using velocity peaks for training
