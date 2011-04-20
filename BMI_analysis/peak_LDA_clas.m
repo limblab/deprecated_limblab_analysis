@@ -1,10 +1,10 @@
-function states = peak_LDA_clas(spikes,bin_length,vel)
+function [states,Coeffs] = peak_LDA_clas(spikes,bin_length,vel)
 
 clear training_set;
 clear group;
 
 bin = double(bin_length); % convert bin to double for filtering
-window = 0.200; % in seconds (for spike averaging)
+window = 0.500; % in seconds (for spike averaging)
 cutoff = 5; % in Hz (for velocity low pass filtering)
 
 window_bins = floor(window/bin); % calculate # of bins in window
@@ -30,6 +30,7 @@ end
 
 [~,~,~,~,coeff1] = classify(mean(spikes(1:window_bins,:),1),training_set,group,'linear',[0.6 0.4]); % calculate coefficients for movement state
 
+Coeffs = {coeff0(1,2),coeff1(1,2)};
 states = zeros(size(spikes,1),1); % initialize states
 
 for x = window_bins:size(spikes,1)

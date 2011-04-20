@@ -275,7 +275,7 @@ function BMIDataAnalyzer()
     Bin_BuildButton = uicontrol('Parent', Bin_Panel, 'String', 'Build Model', 'Units','normalized',...
                             'Position', [.2625 .2 .15 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
 
-    Bin_ClassButton = uicontrol('Parent', Bin_Panel, 'String', 'Train Class', 'Units','normalized',...
+    Bin_ClassButton = uicontrol('Parent', Bin_Panel, 'String', 'Classify', 'Units','normalized',...
                             'Position', [.425 .2 .15 .3],'Callback',@Bin_ClassButton_Callback,'Enable','off');                            
                                                
     Bin_mfxvalButton = uicontrol('Parent', Bin_Panel, 'String', 'mfxval', 'Units','normalized',...
@@ -396,26 +396,35 @@ function BMIDataAnalyzer()
         disp('Training classifier, please wait...');
         binnedData = LoadDataStruct(Bin_FullFileName);
         binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
-        ClassMethods = {'Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};
-        CompBayes = 1; PeakBayes = 2; CompLDA = 3; PeakLDA = 4;
+        [states,statemethods,Classifiers]=findStates(binnedData);
+%         
+%         ClassMethods = {'Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};
+%         CompBayes = 1; PeakBayes = 2; CompLDA = 3; PeakLDA = 4;
+%         
+%         selectedClassMethod = PeakLDA;
+%         selectedClassMethod = TrainClassGUI(ClassMethods,selectedClassMethod);
+%         
+%         switch selectedClassMethod
+%             case CompBayes
+%                 disp('Classification method unimplemented yet...');
+%             case PeakBayes
+%                 disp('Classification method unimplemented yet...');
+%             case CompLDA
+%                 [coeffs1,coeffs2] = trainCompLDA(binnedData.spikeratedata,binsize);
+%                 binnedData.CompLDA = struct('posture_classifier',coeffs1,'movement_classifier',coeffs2);
+%             case PeakLDA
+%                 [coeffs1,coeffs2] = trainPeakLDA(binnedData.spikeratedata,binsize,binnedData.velocbin);
+%                 binnedData.PeakLDA = struct('posture_classifier',coeffs1,'movement_classifier',coeffs2);
+%         end
+%            
+%         disp('Done.');
+%         
+%         Class_Methods = {'_CBay','_PBay','_CLDA','_PLDA'};
         
-        selectedClassMethod = PeakLDA;
-        selectedClassMethod = TrainClassGUI(ClassMethods,selectedClassMethod);
-        
-        switch selectedClassMethod
-            case CompBayes
-                disp('Classification method unimplemented yet...');
-            case PeakBayes
-                disp('Classification method unimplemented yet...');
-            case CompLDA
-                [posture_classifier,movement_classifier] = trainCompLDA(binnedData.spikeratedata,binsize);
-            case PeakLDA
-                [posture_classifier,movement_classifier] = trainPeakLDA(binnedData.spikeratedata,binsize,binnedData.velocbin);
-        end
-           
-        disp('Done.');
-        
-        Class_Methods = {'_CBay','_PBay','_CLDA','_PLDA'};
+        binnedData.states = states;
+        binnedData.statemethods = statemethods;
+        binnedData.Classifiers = Classifiers;
+
         [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,[Bin_FileName ClassMethods(selectedClassMethod)],'binned');
                 
         if isequal(Bin_FileName, 0) || isequal(PathName,0)
