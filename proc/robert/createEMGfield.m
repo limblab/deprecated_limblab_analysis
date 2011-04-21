@@ -13,18 +13,19 @@ function BDFout=createEMGfield(BDFin)
 BDFout=BDFin;
 
 % find emg channels
-if isfield(BDFin,'raw.analog')
+if isfield(BDFin,'raw') && isfield(BDFin.raw,'analog') && isfield(BDFin.raw.analog,'channels')
     emgchans=find(cellfun(@isempty,regexp(BDFin.raw.analog.channels,'ainp[0-9]'))==0);
     if isempty(emgchans)
         % was previously converted, or named something else.  either way, no
         % choice but to return.
-        disp('createEMGfield.m did not modify the bdf')
+        disp('createEMGfield.m did not modify the bdf.')
+        disp('bdf.raw.analog.channels did not contain identifiable EMG channels')
         return
     end
 else
     % was previously converted, or named something else.  either way, no
     % choice but to return.
-    disp('createEMGfield.m did not modify the bdf')
+    disp('createEMGfield.m did not modify the bdf.  bdf.raw.analog not found.')
     return
 end
 % populate bdf.emg
