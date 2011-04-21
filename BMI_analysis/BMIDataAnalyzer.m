@@ -468,8 +468,12 @@ function BMIDataAnalyzer()
         [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States] = mfxvalGUI(binsize, statemethods);        
         disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', fold_length));
         plotflag = 1;
-        [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
-
+        if Use_States
+            [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxvalSD(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
+        else
+            [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
+        end
+            
         %put the results in the base workspace for easy access
         assignin('base','mfxval_R2',mfxval_R2);
         assignin('base','mfxval_vaf',mfxval_vaf);
