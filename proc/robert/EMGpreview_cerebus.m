@@ -80,7 +80,7 @@ function out_struct = EMGpreview_cerebus(varargin)
 %     stim_marker  = find([EntityInfo.EntityType] == 4 & strncmp(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
 
     % segment_list = find([EntityInfo.EntityType] == 3);
-    emg_list     = find([EntityInfo.EntityType] == 2 & strncmp(deblank({EntityInfo.EntityLabel}), 'ainp', 4));
+    emg_list     = find([EntityInfo.EntityType] == 2 & (strncmp(deblank({EntityInfo.EntityLabel}), 'ainp', 4) | strncmp(deblank({EntityInfo.EntityLabel}), 'EMG', 3)));
 %     force_list   = find([EntityInfo.EntityType] == 2 & strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6));
 %     analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp(deblank({EntityInfo.EntityLabel}), 'EMG_', 4)...
 %                                                      & ~strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6) );

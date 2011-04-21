@@ -23,8 +23,8 @@ disp('done')
 disp('assigning tunable parameters and building the decoder...')
 folds=10; 
 numlags=10; 
-PolynomialOrder=2;
-binsize=0.1;
+PolynomialOrder=3;
+binsize=0.05;
 cells=[]; % will be read in from .nev
 
 [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y,ytnew,xtnew] = ...

@@ -1,5 +1,5 @@
-% this script operates on a folder that contains 1 or more .nev/.ns3
-% file pairs.
+% this script operates on a folder that contains 1 or more .mat
+% files containing FP and EMG data
 
 %% folder/file info
 PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
@@ -14,34 +14,43 @@ Files(1:2)=[];
 FileNames={Files.name};
 MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0);
 if isempty(MATfiles)
-    disp('no MAT files found.  quitting...')
+    fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
+    disp('quitting...')
     return
 end
 
+% master containment for r2 aggregate data
+r2all=cell(length(MATfiles),4);
+
 for n=1:length(MATfiles)
     FileName=MATfiles{n};
-    load(FileName)
+    % only load the variable you want.  loading all loads in index n, which
+    % is used by batch_get_cerebus_data, and saved.  Rather than
+    % constricting the save, which destroys information, constrict the
+    % load.
+    load(FileName,'bdf')
     fnam=FileName(1:end-4);
-    
-    %% assign EMG
-    if isfield(bdf,'emg')
-        try
-            emgsamplerate=bdf.emg.emgfreq;
-        catch
-            emgsamplerate=bdf.emg.freq;
-        end
-        sig=bdf.emg.data;
-    else
-        emgsamplerate=bdf.raw.analog.adfreq(1);
-        emgchans=find(cellfun(@isempty,regexp(bdf.raw.analog.channels,'ainp[0-9]'))==0);
-        if ~isempty(emgchans)
-            sig=cat(2,bdf.raw.analog.data{emgchans});
-        else
-            disp('No EMG channels found!  Stopping...')
-            return
-        end
+
+    str=regexp(bdf.meta.datetime,' ','split');
+    r2all{n,1}=datestr(str{1},'mm-dd-yyyy');
+    r2all{n,2}=fnam;
+
+    % make sure the bdf has a .emg field
+    bdf=createEMGfield(bdf);
+    % the default for the creation of a bdf with a .emg field is for
+    % bdf.emg.data to have N+1 columns for N emgs, where the first column
+    % is a time vector and the rest are the EMG data.  Therefore, bdf after
+    % passing through createEMGfield will have this as well.
+
+    try
+        emgsamplerate=bdf.emg.emgfreq;
+    catch
+        emgsamplerate=bdf.emg.freq;
     end
-    analog_times=1/emgsamplerate:1/emgsamplerate:size(sig,1)/emgsamplerate;
+    % bdf.emg.data should just be an array, not cells or anything.
+    sig=bdf.emg.data(:,2:end);
+    analog_times=bdf.emg.data(:,1);
+%     analog_times=1/emgsamplerate:1/emgsamplerate:size(sig,1)/emgsamplerate;
     signal='emg';
     
     %% assign fp, static input parameters
@@ -101,12 +110,19 @@ for n=1:length(MATfiles)
     
     r2
     
-    fprintf(1,'EMG r2 mean across folds: %.4f   %.4f   %.4f   %.4f\n',mean(r2,1))
-    fprintf(1,'overall mean r2 %.4f\n',mean(r2(:)))
+    formatstr='EMG r2 mean across folds: ';
+    for k=1:size(r2,2), formatstr=[formatstr, '%.4f   ']; end
+    formatstr=[formatstr, '\n'];
     
+    fprintf(1,formatstr,mean(r2,1))
+    fprintf(1,'overall mean r2 %.4f\n',mean(r2(:)))
+
+    r2all{n,3}=r2;
+
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
-    clear H EMGchanNames
+    clear H EMGchanNames Use_Thresh formatstr k lambda str words
+    
 end
+clear n k ans 
 diary off
-clear
