@@ -9,7 +9,10 @@ if exist(PathName,'dir')~=7
 end
 cd(PathName)
 Files=dir(PathName);
-diary('r2results.txt')
+% diary is preferable to fopen if we want to include a simple command like
+% echoing r2 to the standard output and having it show up in the log.  On
+% the other hand, standard output messages will also show up.
+diary('LFP_EMGdecoder_results.txt');
 Files(1:2)=[];
 FileNames={Files.name};
 MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0);
@@ -20,7 +23,7 @@ if isempty(MATfiles)
 end
 
 % master containment for r2 aggregate data
-r2all=cell(length(MATfiles),4);
+r2LFP=cell(length(MATfiles),4);
 
 for n=1:length(MATfiles)
     FileName=MATfiles{n};
@@ -32,8 +35,8 @@ for n=1:length(MATfiles)
     fnam=FileName(1:end-4);
 
     str=regexp(bdf.meta.datetime,' ','split');
-    r2all{n,1}=datestr(str{1},'mm-dd-yyyy');
-    r2all{n,2}=fnam;
+    r2LFP{n,1}=datestr(str{1},'mm-dd-yyyy');
+    r2LFP{n,2}=fnam;
 
     % make sure the bdf has a .emg field
     bdf=createEMGfield(bdf);
@@ -117,12 +120,18 @@ for n=1:length(MATfiles)
     fprintf(1,formatstr,mean(r2,1))
     fprintf(1,'overall mean r2 %.4f\n',mean(r2(:)))
 
-    r2all{n,3}=r2;
+	% columns of r2matrix are: 
+	% date	file	LFP_r2	good_EMGs	spike_r2	H
+    r2LFP{n,3}=r2;
+	r2LFP{n,6}=H;
+	
 
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
     clear H EMGchanNames Use_Thresh formatstr k lambda str words
     
 end
+r2LFP=[{'date','file','LFP r2','good EMGs','spike r2'}; r2LFP];
 clear n k ans 
 diary off
+save([date,'r2results.mat'],r2LFP)
