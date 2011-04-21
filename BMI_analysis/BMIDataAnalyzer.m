@@ -439,7 +439,7 @@ function BMIDataAnalyzer()
         binnedData.statemethods = statemethods;
         binnedData.classifiers = classifiers;
 
-        [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,strep(Bin_FileName,'.mat','_class.mat'),'binned');
+        [Bin_FileName, PathName] = saveDataStruct(binnedData,dataPath,strrep(Bin_FileName,'.mat','_class.mat'),'binned');
                 
         if isequal(Bin_FileName, 0) || isequal(PathName,0)
             disp('User action cancelled');
