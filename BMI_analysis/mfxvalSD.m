@@ -192,6 +192,7 @@ for i=0:nfold-1
 %   
 
     numClasses = 5;
+    AllPredData = cell(1,5);
     
     for j = 1:numClasses
         Use_SD = j;
@@ -225,7 +226,7 @@ for i=0:nfold-1
 %                 vaf(i+1,:,s+1)= 1 - var(PredData.preddatabin(State_idx,:) - TestSigs(State_idx,:)) ./ var(TestSigs(State_idx,:));
 %                 mse(i+1,:,s+1)= mean((PredData.preddatabin(State_idx,:)-TestSigs(State_idx,:)).^2);
 %             end
-% 
+
 %     %         %% 1 model but filter only state 0 (Hold State):
 %             filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
 %             PredData = predictSDFSignals(filter, testData, Use_SD);
@@ -254,12 +255,12 @@ for i=0:nfold-1
         %Concatenate predicted Data if we want to plot it later:
         %Skip this for the first fold
         if i == 0
-            AllPredData = PredData;
-            AllPredData.states = testData.states((end-size(PredData.preddatabin,1)+1):end,:);
+            AllPredData{j} = PredData;
+            AllPredData{j}.states = testData.states((end-size(PredData.preddatabin,1)+1):end,:);
         else
-            AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
-            AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
-            AllPredData.states = [AllPredData.states; testData.states((end-size(PredData.preddatabin,1)+1):end,:)];
+            AllPredData{j}.timeframe = [AllPredData{j}.timeframe; PredData.timeframe];
+            AllPredData{j}.preddatabin=[AllPredData{j}.preddatabin;PredData.preddatabin];
+            AllPredData{j}.states = [AllPredData{j}.states; testData.states((end-size(PredData.preddatabin,1)+1):end,:)];
         end
 
     end %for j=1:numClasses
@@ -273,7 +274,7 @@ if plotflag
     % Plot Actual and Predicted Data
     idx = false(size(binnedData.timeframe));
     for i = 1:length(AllPredData.timeframe)
-        idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
+        idx = idx | binnedData.timeframe == AllPredData{1}.timeframe(i);
     end    
 
     if PredEMG
@@ -290,12 +291,14 @@ if plotflag
     end
 
     binnedData.timeframe = binnedData.timeframe(idx);
-    ActualvsOLPred(binnedData,AllPredData,plotflag);
+    for j=1:numClasses
+        ActualvsOLPred(binnedData,AllPredData{j},plotflag);
+    end
 end
     
-AllPredData.mfxval.R2 = R2;
-AllPredData.mfxval.vaf= vaf;
-AllPredData.mfxval.mse= mse;
+% AllPredData.mfxval.R2 = R2;
+% AllPredData.mfxval.vaf= vaf;
+% AllPredData.mfxval.mse= mse;
 
 % varargout{1} = AllPredData;
 % varargout{2} = nfold;
