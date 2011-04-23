@@ -117,7 +117,7 @@ else
     end
     PredictedData = TempPred1 + TempPred2;    
 end
-        
+
 clear ActualData spikeData TempPred1 TempPred2 Inputs;
 H_new = [];
 varargout{1}=H_new;
