@@ -89,7 +89,7 @@ model_states = cell(1,nfold);
 testData = binnedData;
 modelData = binnedData;
 
-% nfold = 1;
+nfold = 1;
 
 for i=0:nfold-1
     
@@ -176,23 +176,17 @@ for i=0:nfold-1
 
     % Create Training sets for classifiers - Train classifiers - Predict testData States
 %     fprintf('Classification...');
-    tic;
-    [test_states{1,i+1}, model_states{1,i+1}] = Train_and_Test_Classifiers(modelData, testData);
-    testData.states = test_states{1,i+1};
-    toc;
-% 
-%     testData.states = evalin('base',sprintf('test_states{1,%d}',i+1));
-%     modelData.states= evalin('base',sprintf('model_states{1,%d}',i+1));
-%     
 %     tic;
-%     fprintf('Building Models Using Vel Thresh...');
-%     Use_SD = 1;
-%     filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+%     [test_states{1,i+1}, model_states{1,i+1}] = Train_and_Test_Classifiers(modelData, testData);
+%     testData.states = test_states{1,i+1};
 %     toc;
-%   
+% 
+    testData.states = evalin('base',sprintf('test_states{1,%d}',i+1));
+    modelData.states= evalin('base',sprintf('model_states{1,%d}',i+1));
 
-    numClasses = 5;
-    AllPredData = cell(1,5);
+    
+    numClasses = size(modelData.states,2);
+    AllPredData = cell(1,numClasses);
     
     for j = 1:numClasses
         Use_SD = j;
