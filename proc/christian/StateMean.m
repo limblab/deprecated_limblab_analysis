@@ -1,4 +1,4 @@
-function predVar = StateVar(PredData,PredStates)
+function predVar = StateMean(PredData,PredStates)
 
 %ActData    = [BinnedData.cursorposbin BinnedData.velocbin];
 %PredData   = AllPred.preddatabin;
@@ -55,12 +55,12 @@ for class = 1:numclass
             
         if ~state
             rest_counter = rest_counter+1;
-             predVar{state+1,class}(rest_counter,:) = std(PredData(start:stop,:));            
+             predVar{state+1,class}(rest_counter,:) = mean(PredData(start:stop,:));            
 %             predVar{state+1,class}(rest_counter,:) = std(PredData(1,class}(start:stop,:));
 %             actVar{state+1,class}(rest_counter,:) = std(ActData(start:stop,:));
         else
             mvt_counter  =  mvt_counter+1;
-            predVar{state+1,class}(mvt_counter,:) = std(PredData(start:stop,:));
+            predVar{state+1,class}(mvt_counter,:) = mean(PredData(start:stop,:));
 %             predVar{state+1,class}(mvt_counter,:) = std(PredData(1,class}(start:stop,:));            
 %             actVar{state+1,class}(mvt_counter,:) = std(ActData(start:stop,:));
         end
