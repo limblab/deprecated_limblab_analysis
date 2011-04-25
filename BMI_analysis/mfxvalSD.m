@@ -1,4 +1,4 @@
-function [R2, varargout] = mfxval(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
+function [R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
 %       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
 %
 %       binnedData          : data structure to build model from
