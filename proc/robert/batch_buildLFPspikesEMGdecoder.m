@@ -15,7 +15,10 @@ Files=dir(PathName);
 diary('LFP_EMGdecoder_results.txt');
 Files(1:2)=[];
 FileNames={Files.name};
-MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0);
+% should exclude EMG files and output files (which usually end in
+% 'polyN.mat')
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0 & ...
+    cellfun(@isempty,regexp(FileNames,'[^poly][^0-9]\.mat'))==0);
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
@@ -78,7 +81,8 @@ for n=1:length(MATfiles)
     numsides=1;
     fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
     fse=emgsamplerate;
-    temg=(1/fse):(1/fse):(t2(end)+1/fse);
+%     temg=(1/fse):(1/fse):(t2(end)+1/fse);
+    temg=analog_times;
 
     Use_Thresh=0; words=[]; lambda=1;
 
@@ -87,9 +91,9 @@ for n=1:length(MATfiles)
     numlags=10;
     wsz=256;
     nfeat=150;
-    PolynomialOrder=3;
+    PolynomialOrder=2;
     smoothfeats=0;
-    binsize=0.05;
+    binsize=0.1;
     if exist('fnam','var')~=1
         fnam='';
     end
@@ -128,7 +132,11 @@ for n=1:length(MATfiles)
 	% date	file	LFP_r2	good_EMGs	spike_r2	H
     r2LFP{n,3}=r2;
 	
-    save([sname,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
+    % consider creating a new folder, and saving this file AND THE SPIKES
+    % FILE in it; that way if the thing has to be run > 1X because of an
+    % error somewhere the loader won't choke on the new .mat files that
+    % were added.
+    save([fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats');
 
     % clear all the outputs of the LFP predictions analysis, so there's no
@@ -143,7 +151,6 @@ for n=1:length(MATfiles)
     uList=unit_list(bdf);
     bdf.units(uList(:,2)==0)=[];
     cells=[];
-    r2m=r2mean;
     
     % the version of predictions_mwstikpoly.m in the
     % s1_analysis/.../proc/marc folder is set to use the whole bdf.emg.data
@@ -171,24 +178,22 @@ for n=1:length(MATfiles)
     fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
     
     r2
-    
-    r2all{n,3}=r2;
 
     formatstr='EMG r2 mean across folds: ';
     for k=1:size(r2,2), formatstr=[formatstr, '%.4f   ']; end
     formatstr=[formatstr, '\n'];
     fprintf(1,formatstr,mean(r2,1))
     fprintf(1,'overall mean r2 %.4f\n',mean(r2(:)))
-    
+
+    r2m=r2mean;
     save([fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
         ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P');
     
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
-    clear H EMGchanNames Use_Thresh formatstr k lambda str words fse temg
+    clear H EMGchanNames Use_Thresh formatstr k lambda str words fse temg P cells uList x* y*
     
 end
-r2LFP=[{'date','file','LFP r2','good EMGs','spike r2'}; r2LFP];
-clear n k ans 
+clear n k ans r2* 
 diary off
 % save([date,'r2results.mat'],r2LFP)

@@ -16,6 +16,15 @@ NEVfiles=FileNames(cellfun(@isempty,regexp(FileNames,'\.nev'))==0);
 %% process the files
 for n=1:length(NEVfiles)
     FileName=NEVfiles{n};
+    % if .nev and .ns2/.ns3 differ only by 'sorted' in the .nev filename, they
+    % should be considered as still belonging together.  Unfortunately,
+    % get_cerebus_data does not understand this, so must alter filenames.
+    [~,NEVname,ext,~] = fileparts(FileName);
+    if ~isempty(regexp(NEVname,'sorted','once'))
+        regexp(NEVname,'sorted','split')
+        NS2name=[NEVname,'.ns2'];
+        NS3name=[];
+    end
     
     bdfEMGonly=EMGpreview_cerebus(FileName);
     save(fullfile(PathName,[FileName(1:end-4),'EMGonly.mat']),'bdfEMGonly','FileName')
