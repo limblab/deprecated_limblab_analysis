@@ -1,6 +1,12 @@
 tic;
 
-% clear all
+clear all
+
+load('Nick_CO_001-01-binned.mat')
+trainData = binnedData;
+load('Nick_CO_002-01-binned.mat')
+testData = binnedData;
+clear binnedData
 
 addpath('Kalman');
 addpath('KPMstats');
@@ -14,23 +20,25 @@ bin = double(trainData.timeframe(2) - trainData.timeframe(1));
 window_bins = floor(window/bin);
 
 %%adjust timing of words and target info to coincide with bins
-% trainData.words(:,1) = ceil(trainData.words(:,1)./bin)*bin;
-% trainData.targets.corners(:,1) = ceil(trainData.targets.corners(:,1)./bin)*bin;
-% trainData.words(:,1) = ceil(trainData.words(:,1)./0.05)*0.05;
-% trainData.targets.corners(:,1) = ceil(trainData.targets.corners(:,1)./0.05)*0.05;
-trainData.words(:,1) = ceil(trainData.words(:,1).*20)*.05;
-trainData.targets.corners(:,1) = ceil(trainData.targets.corners(:,1).*20)*.05;
+trainData.words(:,1) = ceil(trainData.words(:,1)./bin).*bin;
+trainData.targets.corners(:,1) = ceil(trainData.targets.corners(:,1)./bin).*bin;
+
+%%added to compensate for small variations in timestamps
+% trainData.words(:,1) = floor(trainData.words(:,1).*100 + 0.1)./100;
+% trainData.targets.corners(:,1) = floor(trainData.targets.corners(:,1).*100 + 0.1)./100;
+% trainData.timeframe = floor(trainData.timeframe.*100 + 0.1)./100;
+trainData.words(:,1) = floor(trainData.words(:,1).*100 + 0.1);
+trainData.targets.corners(:,1) = floor(trainData.targets.corners(:,1).*100 + 0.1);
+trainData.timeframe = floor(trainData.timeframe.*100 + 0.1);
 
 %%extract target times and positions for center and outer targets
 trainData.centergoals = zeros(length(find(trainData.words(:,2) == 48)),3);
 trainData.centergoals(:,1) = trainData.words(trainData.words(:,2) == 48,1);
 % trainData.outergoals = zeros(size(trainData.targets.corners,1),3);
 trainData.outergoals = repmat(trainData.words([false; false; (trainData.words(3:end,2) >= 64 & trainData.words(3:end,2) < 80)],1),1,3);
-starts = trainData.words((trainData.words(:,2) == 17),1);
 for x = 1:length(trainData.outergoals)
-    trial_start = starts(find(starts < trainData.outergoals(x,1),1,'last'));
-    trainData.outergoals(x,2) = mean(trainData.targets.corners((trainData.targets.corners(:,1) == trial_start),[2 4]),2);
-    trainData.outergoals(x,3) = mean(trainData.targets.corners((trainData.targets.corners(:,1) == trial_start),[3 5]),2);
+    trainData.outergoals(x,2) = mean(trainData.targets.corners(find(trainData.targets.corners(:,1) < trainData.outergoals(x,1),1,'last'),[2 4]),2);
+    trainData.outergoals(x,3) = mean(trainData.targets.corners(find(trainData.targets.corners(:,1) < trainData.outergoals(x,1),1,'last'),[3 5]),2);
 end
 trainData.goals = [trainData.centergoals; trainData.outergoals];
 
@@ -87,28 +95,26 @@ fprintf('Finished training\n')
 toc
 
 %%adjust timing of words and target info to coincide with bins
-% testData.words(:,1) = ceil(testData.words(:,1)./bin)*bin;
-% testData.targets.corners(:,1) = ceil(testData.targets.corners(:,1)./bin)*bin;
-% testData.words(:,1) = ceil(testData.words(:,1)./0.05)*0.05;
-% testData.targets.corners(:,1) = ceil(testData.targets.corners(:,1)./0.05)*0.05;
-testData.words(:,1) = ceil(testData.words(:,1).*20)*.05;
-testData.targets.corners(:,1) = ceil(testData.targets.corners(:,1).*20)*.05;
+testData.words(:,1) = ceil(testData.words(:,1)./bin).*bin;
+testData.targets.corners(:,1) = ceil(testData.targets.corners(:,1)./bin).*bin;
+
+%%added to compensate for small variations in timestamps
+% testData.words(:,1) = floor(testData.words(:,1).*100 + 0.1)./100;
+% testData.targets.corners(:,1) = floor(testData.targets.corners(:,1).*100 + 0.1)./100;
+% testData.timeframe = floor(testData.timeframe.*100 + 0.1)./100;
+testData.words(:,1) = floor(testData.words(:,1).*100 + 0.1);
+testData.targets.corners(:,1) = floor(testData.targets.corners(:,1).*100 + 0.1);
+testData.timeframe = floor(testData.timeframe.*100 + 0.1);
 
 %%extract target times and positions for center and outer targets
 testData.centergoals = zeros(length(find(testData.words(:,2) == 48)),3);
 testData.centergoals(:,1) = testData.words(testData.words(:,2) == 48,1);
 % testData.outergoals = zeros(size(testData.targets.corners,1),3);
 testData.outergoals = repmat(testData.words([false; false; (testData.words(3:end,2) >= 64 & testData.words(3:end,2) < 80)],1),1,3);
-starts = testData.words((testData.words(:,2) == 17),1);
 for x = 1:length(testData.outergoals)
-    trial_start = starts(find(starts < testData.outergoals(x,1),1,'last'));
-    testData.outergoals(x,2) = mean(testData.targets.corners((testData.targets.corners(:,1) == trial_start),[2 4]),2);
-    testData.outergoals(x,3) = mean(testData.targets.corners((testData.targets.corners(:,1) == trial_start),[3 5]),2);
+    testData.outergoals(x,2) = mean(testData.targets.corners(find(trainData.targets.corners(:,1) < testData.outergoals(x,1),1,'last'),[2 4]),2);
+    testData.outergoals(x,3) = mean(testData.targets.corners(find(trainData.targets.corners(:,1) < testData.outergoals(x,1),1,'last'),[3 5]),2);
 end
-% for x = 1:length(testData.outergoals)
-%     testData.outergoals(x,2) = mean(testData.targets.corners((testData.targets.corners(:,1) == testData.outergoals(x,1)),[2 4]),2);
-%     testData.outergoals(x,3) = mean(testData.targets.corners((testData.targets.corners(:,1) == testData.outergoals(x,1)),[3 5]),2);
-% end
 testData.goals = [testData.centergoals; testData.outergoals];
 
 %%build test set
