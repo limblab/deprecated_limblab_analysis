@@ -81,6 +81,9 @@ for i=1:cX
     end
 end
 
+disp('Determinant of PX')
+det(PX)
+
   
   PXY=zeros(cX*numlags,cY);
   for i=1:cX							%input loop
