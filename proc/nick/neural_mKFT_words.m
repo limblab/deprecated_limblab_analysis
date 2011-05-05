@@ -43,7 +43,7 @@ for x = window_bins:length(trainData.timeframe)
 
     if ~isempty(trainData.goals(:,1) == trainData.timeframe(x))
         transitions(x) = 1;
-        targets(x,:) = trainData.goals(trainData.goals(:,1) == trainData.timeframe(x),2:3);
+        targets(x,:) = trainData.goals(trainData.goals(:,1) == trainData.timeframe(x,2:3));
     end
 end
 
@@ -106,7 +106,7 @@ for x = window_bins:length(testData.timeframe)
 
     if ~isempty(testData.goals(:,1) == testData.timeframe(x))
         transitions(x) = 1;
-        targets(x,:) = testData.goals(testData.goals(:,1) == testData.timeframe(x),2:3);
+        targets(x,:) = testData.goals(testData.goals(:,1) == testData.timeframe(x,2:3));
     end
 end
 
