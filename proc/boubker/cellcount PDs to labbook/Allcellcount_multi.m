@@ -1,0 +1,15 @@
+clc;clear;
+pathnamesorted='\\165.124.111.234\data\Miller\Pedro_4C2\S1 Array\Sorted\';
+pathname='\\165.124.111.234\data\Miller\Pedro_4C2\S1 Array\Processed\';
+ pathnameout='\\165.124.111.234\limblab\user_folders\Boubker\Labbooks\';
+pathnamePDs='\\165.124.111.234\limblab\user_folders\Boubker\PDs\';
+root={'Pedro_2011-05-04_RW_001'};
+% 
+% stimulated=[41,57];
+% totalcurrent=[80,80];
+% data=get_cerebus_data([pathnamesorted,char(root),'.nev']);
+% save([pathname,char(root)], 'data');
+
+ PDfromspikesFtic_cell_count_multi
+save([pathnamePDs,char(root),'_multi.mat'], 'allfilesPDs');
+figureformulti

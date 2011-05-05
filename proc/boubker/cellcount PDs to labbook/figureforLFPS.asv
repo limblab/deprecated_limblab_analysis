@@ -1,0 +1,39 @@
+pathname='\\165.124.111.234\limblab\user_folders\Boubker\PDs\';
+close all;
+root='Pedro_2011_04_28_RW_001'
+load([pathname,root,'.mat']);%load allfiles PDS
+LFPband={'10-50';'70-110';'130-190';'200-260'};
+for m=1: size(LFPfilesPDs{1,1},2)
+    series1=[];
+    series1=LFPfilesPDs{1,1}{1,m}(:,1:3);
+    series1(:,4)=LFPfilesPDs{1,1}{1,m}(:,5);
+    sa=ceil(sqrt(length(series1)));
+    
+    figure('name',char(LFPband(m)));
+    
+    for cellID=1: length(series1)
+        if abs( series1(cellID,3)-series1(cellID,2))>0
+            subplot(sa,sa,cellID)
+            compass(0,0);
+            hold on;
+            
+            %wedgeplot(series1(cellID,2), series1(cellID,3)-series1(cellID,2),'k',1)
+            wedgeplot(series1(cellID,2), series1(cellID,3)-series1(cellID,2),[0 0 0],1)
+            
+            [Xglm,Yglm] = pol2cart(series1(cellID,2),1);
+            compass(Xglm,Yglm,'r');
+            
+            %    [Xglm1,Yglm1] = pol2cart(series1(cellID,7),1 );
+            % compass(Xglm1,Yglm1,'g');
+            
+            
+            title(['chan ',int2str(series1(cellID,4))]);
+            hold off;
+        end
+        
+    end
+     saveas(gcf,([pathname,root,int2str(curu(v)),'_array.fig']))
+    saveas(gcf,([pathname,root,int2str(curu(v)),'_array.tif']))
+      saveas(gcf,([pathname,root,int2str(curu(v)),'_array.jpg']))
+  print(gcf, '-dpdf', '-r300', [pathname,root,int2str(curu(v)),'_array.pdf'])
+end
