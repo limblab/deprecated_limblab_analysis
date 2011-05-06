@@ -34,11 +34,12 @@ trainData.timeframe = floor(trainData.timeframe.*100 + 0.1);
 %%extract target times and positions for center and outer targets
 trainData.centergoals = zeros(length(find(trainData.words(:,2) == 48)),3);
 trainData.centergoals(:,1) = trainData.words(trainData.words(:,2) == 48,1);
+trainData.centergoals(:,3) = trainData.centergoals(:,3) - 33.5;
 % trainData.outergoals = zeros(size(trainData.targets.corners,1),3);
-trainData.outergoals = repmat(trainData.words([false; false; (trainData.words(3:end,2) >= 64 & trainData.words(3:end,2) < 80)],1),1,3);
+trainData.outergoals = repmat(trainData.words([false; false; (trainData.words(3:end-3,2) >= 64 & trainData.words(3:end-3,2) < 80)],1),1,3);
 for x = 1:length(trainData.outergoals)
-    trainData.outergoals(x,2) = mean(trainData.targets.corners(find(trainData.targets.corners(:,1) < trainData.outergoals(x,1),1,'last'),[2 4]),2);
-    trainData.outergoals(x,3) = mean(trainData.targets.corners(find(trainData.targets.corners(:,1) < trainData.outergoals(x,1),1,'last'),[3 5]),2);
+    trainData.outergoals(x,2) = mean(trainData.targets.corners(find(trainData.targets.corners(:,1) > trainData.outergoals(x,1),1,'first'),[2 4]),2);
+    trainData.outergoals(x,3) = mean(trainData.targets.corners(find(trainData.targets.corners(:,1) > trainData.outergoals(x,1),1,'first'),[3 5]),2) - 33.5; % include offset
 end
 trainData.goals = [trainData.centergoals; trainData.outergoals];
 
@@ -76,8 +77,8 @@ for i = 1:length(startindex)
 %     v = [zeros(1,2); diff(p)];
 %     a = [zeros(2,2); diff(diff(p))];
     targ = repmat(targets(startindex(i),:),length(p),1); % make target new target position
-    X{n} = [p v a targ];
-    X0{n} = [p v a];
+    X{n} = [p v a ones(length(p),1) targ];
+    X0{n} = [p v a ones(length(p),1)];
     Z{n} = training_set(startindex(i):endindex(i),:);
 end
 
@@ -87,8 +88,6 @@ toc
 %%train KF parameters
 [A, C, Q, R] = train_kf(X,Z);%%with target
 [A0, C0, Q0, R0] = train_kf(X0,Z);%%without target
-xpredc=zeros(length(transitions),6);
-xpred0c = xpredc;
 clear X Z X0 transitions
 
 fprintf('Finished training\n')
@@ -109,11 +108,12 @@ testData.timeframe = floor(testData.timeframe.*100 + 0.1);
 %%extract target times and positions for center and outer targets
 testData.centergoals = zeros(length(find(testData.words(:,2) == 48)),3);
 testData.centergoals(:,1) = testData.words(testData.words(:,2) == 48,1);
+testData.centergoals(:,3) = testData.centergoals(:,3) - 33.5;
 % testData.outergoals = zeros(size(testData.targets.corners,1),3);
-testData.outergoals = repmat(testData.words([false; false; (testData.words(3:end,2) >= 64 & testData.words(3:end,2) < 80)],1),1,3);
-for x = 1:length(testData.outergoals)
-    testData.outergoals(x,2) = mean(testData.targets.corners(find(trainData.targets.corners(:,1) < testData.outergoals(x,1),1,'last'),[2 4]),2);
-    testData.outergoals(x,3) = mean(testData.targets.corners(find(trainData.targets.corners(:,1) < testData.outergoals(x,1),1,'last'),[3 5]),2);
+testData.outergoals = repmat(testData.words([false; false; (testData.words(3:end-3,2) >= 64 & testData.words(3:end-3,2) < 80)],1),1,3);
+for x = 1:length(testData.outergoals)-1
+    testData.outergoals(x,2) = mean(testData.targets.corners(find(testData.targets.corners(:,1) > testData.outergoals(x,1),1,'first'),[2 4]),2);
+    testData.outergoals(x,3) = mean(testData.targets.corners(find(testData.targets.corners(:,1) > testData.outergoals(x,1),1,'first'),[3 5]),2) - 33.5;
 end
 testData.goals = [testData.centergoals; testData.outergoals];
 
@@ -149,8 +149,9 @@ for i = 1:length(startindex)
 %     v = [zeros(1,2); diff(p)];
 %     a = [zeros(2,2); diff(diff(p))];
     targ = repmat(targets(startindex(i),:),length(p),1); % make target new target position
-    X{n} = [p v a targ];
-    X0{n} = [p v a];
+%     targ = repmat([0 0],length(p),1); % make target new target position
+    X{n} = [p v a ones(length(p),1) targ];
+    X0{n} = [p v a ones(length(p),1)];
     Z{n} = test_set(startindex(i):endindex(i),:);
 end
 
@@ -158,7 +159,11 @@ fprintf('Finished building test set\n')
 toc
 
 %%test KF
+xpredc=zeros(length(transitions),6);
+xpred0c = xpredc;
+
 for i = 1:length(X)
+% for i = 1:10
     if i == 1
         initx = X{i}(1,:)';
         initx0 = X0{i}(1,:)';
@@ -176,6 +181,8 @@ for i = 1:length(X)
 
     xpredc(startindex(i):endindex(i),:) = xpred{i}(1:6,:)';
     xpred0c(startindex(i):endindex(i),:) = xpred0{i}(1:6,:)';
+    
+    toc
 end
 
 fprintf('Finished testing\n')
