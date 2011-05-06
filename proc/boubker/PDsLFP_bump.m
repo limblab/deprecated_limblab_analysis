@@ -15,7 +15,7 @@ LFPs=1:96;
 fbandst=[10,70,130,200,300];
 fbanden=[50,110,190,290,390];
 
-startword=18;
+startword=[80:84];
 % rewardword=32;
 bumpdur=0.125;
 
@@ -87,25 +87,31 @@ for nr=1:length(allroots)
     
     cuesall= data.words(:,1);
     words=data.words(:,2);
-    startI=cuesall(find(words==startword));
-    
+  
+        startI=[];
+    for i=1: length(startword)
+    startI=[startI; cuesall(find(words==startword(i)))];
+    end
+    startI=sort(startI);
 
-    ends=startI+bumpdur;
+   
     while (startI(1)<=1)
         startI(1)=[];
-    end;
-    while (ends(1)<startI(1))
-        ends(1)=[];
-    end;
-    while (startI(end)>ends(end))
-        startI(end)=[];
     end; 
+    
+    ends=startI+bumpdur;
+%     while (ends(1)<startI(1))
+%         ends(1)=[];
+%     end;
+%     while (startI(end)>ends(end))
+%         startI(end)=[];
+%     end; 
    
-for i=1 :length(ends)
-    inend=(find(startI<ends(i)));
-    starts(i)=startI(inend(end));
-end
-    starts=starts';
+% for i=1 :length(ends)
+%     inend=(find(startI<ends(i)));
+%     starts(i)=startI(inend(end));
+% end
+    starts= startI;
     
     mintrialtime=min(ends-starts);
 while timeaft> bumpdur
@@ -125,7 +131,7 @@ end
         
         ends(end)=[]
          starts(end)=[]
-         disp(['removing  trial starteing at',int2str( starts(end)) ]);
+         disp(['removing  trial starteing at ',int2str( starts(end)) ]);
     end
     
     
