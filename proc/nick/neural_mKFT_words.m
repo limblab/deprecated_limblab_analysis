@@ -162,7 +162,6 @@ for x = (window_bins + delay_bins):length(testData.timeframe)
     end
 end
 
-
 %%separate test data into reaches
 startindex = find(transitions);
 endindex = [(startindex(2:end) - 1); length(transitions)];
@@ -269,5 +268,5 @@ plot((startindex(1):length(testData.cursorposbin)).*bin, transitions(startindex(
 title(['y Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2))])
 ylabel('Handle Position (cm)')
 xlabel('Time (x)')
-axis([startindex(1)*bin length(testData.cursorposbin)*bin min(xpred0c(:,1)) max(xpred0c(:,1))])
+axis([startindex(1)*bin length(testData.cursorposbin)*bin min(xpred0c(:,2)) max(xpred0c(:,2))])
 legend('Real', 'KFT', 'KF', 'Trans')

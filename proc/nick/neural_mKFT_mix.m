@@ -16,24 +16,37 @@ addpath('KPMtools');
 train_state_col = 1;
 test_state_col = 1;
 
-window = 0.500; % in seconds (for spike averaging) should match training
+% window = 0.500; % in seconds (for spike averaging) should match training
+window = 0.100; % in seconds (for spike averaging) should match training
+delay = 0.100;
 
 bin = double(trainData.timeframe(2) - trainData.timeframe(1));
 window_bins = floor(window/bin);
+delay_bins = floor(delay/bin);
 
 %%build training set
-training_set = zeros(length(trainData.timeframe),(length(trainData.spikeguide)-2)*window_bins); % removed channel 70 for Chewie data
+% training_set = zeros(length(trainData.timeframe),(length(trainData.spikeguide)-2)*window_bins); % removed channel 70 for Chewie data
+training_set = zeros(length(trainData.timeframe),(length(trainData.spikeguide)-2)); % removed channel 70 for Chewie data
 % training_set = zeros(length(trainData.timeframe),length(trainData.spikeguide)*window_bins);
 
 transitions = zeros(length(trainData.timeframe),1);
 
-for x = window_bins:length(trainData.timeframe)
-    observation = [];
-    for y = 1:window_bins
-        observation = [observation trainData.spikeratedata(x-(y-1),1:89) trainData.spikeratedata(x-(y-1),92:97)]; % removed channel 70 for Chewie data
-%         observation = [observation trainData.spikeratedata(x-(y-1),:)];
-    end
-    training_set(x,:) = observation;
+% for x = window_bins:length(trainData.timeframe)
+%     observation = [];
+%     for y = 1:window_bins
+%         observation = [observation trainData.spikeratedata(x-(y-1),1:89) trainData.spikeratedata(x-(y-1),92:97)]; % removed channel 70 for Chewie data
+% %         observation = [observation trainData.spikeratedata(x-(y-1),:)];
+%     end
+%     training_set(x,:) = observation;
+% 
+%     if trainData.states(x,train_state_col) == 1 && trainData.states(x-1,train_state_col) == 0
+%         transitions(x) = 1;
+%     end
+% end
+
+for x = (window_bins + delay_bins):length(trainData.timeframe)
+    training_set(x,:) = [mean(trainData.spikeratedata(x-(window_bins + delay_bins-1):x-(delay_bins-1),1:89)) mean(trainData.spikeratedata(x-(window_bins + delay_bins-1):x-(delay_bins-1),92:97))]; % removed channel 70 for Chewie data
+%     training_set(x,:) = mean(trainData.spikeratedata(x-(window_bins + delay_bins-1):x-(delay_bins-1),:));
 
     if trainData.states(x,train_state_col) == 1 && trainData.states(x-1,train_state_col) == 0
         transitions(x) = 1;
@@ -96,17 +109,27 @@ end
 testData.goals = [testData.centergoals; testData.outergoals];
 
 %%build test set
-test_set = zeros(length(testData.timeframe),length(testData.spikeguide)*window_bins);
+% test_set = zeros(length(testData.timeframe),length(testData.spikeguide)*window_bins);
+test_set = zeros(length(testData.timeframe),length(testData.spikeguide));
 
 transitions = zeros(length(testData.timeframe),1);
 targets = zeros(length(testData.timeframe),2);
 
-for x = window_bins:length(testData.timeframe)
-    observation = [];
-    for y = 1:window_bins
-        observation = [observation testData.spikeratedata(x-(y-1),:)];
-    end
-    test_set(x,:) = observation;
+% for x = window_bins:length(testData.timeframe)
+%     observation = [];
+%     for y = 1:window_bins
+%         observation = [observation testData.spikeratedata(x-(y-1),:)];
+%     end
+%     test_set(x,:) = observation;
+% 
+%     if sum(testData.goals(:,1) == testData.timeframe(x))
+%         transitions(x) = 1;
+%         targets(x,:) = testData.goals((testData.goals(:,1) == testData.timeframe(x)),2:3);
+%     end
+% end
+
+for x = (window_bins + delay_bins):length(testData.timeframe)
+    test_set(x,:) = mean(testData.spikeratedata(x-(window_bins + delay_bins-1):x-(delay_bins-1),:));
 
     if sum(testData.goals(:,1) == testData.timeframe(x))
         transitions(x) = 1;
@@ -220,5 +243,5 @@ plot((startindex(1):length(testData.cursorposbin)).*bin, transitions(startindex(
 title(['y Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2))])
 ylabel('Handle Position (cm)')
 xlabel('Time (x)')
-axis([startindex(1)*bin length(testData.cursorposbin)*bin min(xpred0c(:,1)) max(xpred0c(:,1))])
+axis([startindex(1)*bin length(testData.cursorposbin)*bin min(xpred0c(:,2)) max(xpred0c(:,2))])
 legend('Real', 'KFT', 'KF', 'Trans')
