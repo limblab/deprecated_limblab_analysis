@@ -7,7 +7,7 @@ if length(varargin)==3
 else
     configuration = 'TikiFMAs';
     adapter_version = 1;
-    data_file = 'Tiki_2011-03-09_RW_001.nev';
+    data_file = 'Tiki_2011-04-22_RW_001.nev';
 end
 
 samtec_omnetics = samtec_omnetics_adapters(adapter_version);

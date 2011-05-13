@@ -1,12 +1,16 @@
 function BC_batch
-% bump_raster_files(1).filenames = {'Tiki_2011-03-22_BC_002-s_multiunit','Tiki_2011-03-22_BC_003-s_multiunit'};
-% bump_raster_files(2).filenames = {'Tiki_2011-03-22_BC_002-s_clear_units_only','Tiki_2011-03-22_BC_003-s_clear_units_only'};
+
 user = 'Ricardo';
+
+% bump_raster_files(1).filenames = {'Tiki_2011-03-22_BC_002-s_multiunit','Tiki_2011-03-22_BC_003-s_multiunit'};
+% bump_raster_files(1).filenames = {'Tiki_2011-05-04_BC_001-s_multiunit'};
+% bump_raster_files(2).filenames = {'Tiki_2011-03-22_BC_002-s_clear_units_only','Tiki_2011-03-22_BC_003-s_clear_units_only'};
 bump_raster_files = [];
 
-psychophysics_files = {'Tiki_2011-04-19_BC_001'};
+% psychophysics_files = {'Tiki_2011-04-28_BC_001-s_multiunit','Tiki_2011-04-28_BC_002-s_multiunit','Tiki_2011-04-28_BC_003-s_multiunit'};
+psychophysics_files = [];
 
-% psychophysics_files = [];
+newsome_files(1).filenames = {'Tiki_2011-05-07_BC_001'};
 
 filelist = BC_experiment_list(user);
 [BC_sorted_filelist BC_non_sorted_filelist] = BC_sorted_files(filelist);
@@ -28,7 +32,7 @@ for iFileGroup = 1:length(bump_raster_files)
     for iFile=1:length(bump_raster_files(iFileGroup).filenames)
         bump_raster_idx = bump_raster_idx + strcmp({filelist.name},bump_raster_files(iFileGroup).filenames(iFile));
     end
-    BC_bump_raster({filelist(find(bump_raster_idx)).name})
+    BC_bump_raster(filelist(find(bump_raster_idx)))
 end
 
 %% Psychophysics plots
@@ -37,3 +41,12 @@ for iFile=1:length(psychophysics_files)
     psychophysics_idx = psychophysics_idx + strcmp({filelist.name},psychophysics_files{iFile});
 end
 BC_psychophysics(filelist(find(psychophysics_idx)))
+
+%% Newsome analysis
+for iFileGroup = 1:length(newsome_files)
+    newsome_files_idx = zeros(size(filelist));
+    for iFile=1:length(newsome_files(iFileGroup).filenames)
+        newsome_files_idx = newsome_files_idx + strcmp({filelist.name},newsome_files(iFileGroup).filenames(iFile));
+    end
+    BC_newsome(filelist(find(newsome_files_idx)))
+end

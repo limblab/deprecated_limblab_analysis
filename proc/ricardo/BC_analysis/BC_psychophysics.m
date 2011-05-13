@@ -18,6 +18,9 @@ for file_no = 1:length(filelist)
     load([filelist(file_no).datapath 'Processed\' filename],'trial_table','bdf','table_columns')
     
     trial_table(trial_table(:,table_columns.stim_id)==16,table_columns.stim_id) = -1;
+    trial_table(trial_table(:,table_columns.bump_and_stim)==0 &...
+        trial_table(:,table_columns.stim_id)==0 &...
+        trial_table(:,table_columns.bump_magnitude)>0,table_columns.stim_id) = -1;
 
     trial_table = trial_table(trial_table(:,table_columns.bump_time)~=0,:);
     
@@ -203,115 +206,114 @@ for file_no = 1:length(filelist)
     end
     
 %% Stim psychophysics comparing electrodes
+    if length(stim_ids)>1 & stim_ids~=-1
+        for iStim=1:length(stim_ids)
+            stim_indexes = filelist(file_no).codes==stim_ids(iStim);
+            stims.codes{iStim} = unique(filelist(file_no).codes(stim_indexes));
+            stims.electrodes{iStim} = filelist(file_no).electrodes(stim_indexes);
+            stims.currents{iStim} = filelist(file_no).current(stim_indexes);
+        end
 
-    for iStim=1:length(stim_ids)
-        stim_indexes = filelist(file_no).codes==stim_ids(iStim);
-        stims.codes{iStim} = unique(filelist(file_no).codes(stim_indexes));
-        stims.electrodes{iStim} = filelist(file_no).electrodes(stim_indexes);
-        stims.currents{iStim} = filelist(file_no).current(stim_indexes);
-    end
-    
-    electrode_groups = stims.electrodes;    
-    for iElectrodeGroups = 1:length(stims.electrodes)
-        for iScanEGroups = iElectrodeGroups+1:length(stims.electrodes)
-            if isequal(electrode_groups{iElectrodeGroups},electrode_groups{iScanEGroups})
-                electrode_groups{iScanEGroups} = [];
+        electrode_groups = stims.electrodes;    
+        for iElectrodeGroups = 1:length(stims.electrodes)
+            for iScanEGroups = iElectrodeGroups+1:length(stims.electrodes)
+                if isequal(electrode_groups{iElectrodeGroups},electrode_groups{iScanEGroups})
+                    electrode_groups{iScanEGroups} = [];
+                end
             end
-        end
-    end                
-    electrode_groups(cellfun(@isempty,electrode_groups)) = [];
-    
-    current_groups = stims.currents;    
-    for iCurrentGroups = 1:length(stims.currents)
-        for iScanCGroups = iCurrentGroups+1:length(stims.currents)
-            if isequal(mean(current_groups{iCurrentGroups}),mean(current_groups{iScanCGroups}))
-                current_groups{iScanCGroups} = [];
+        end                
+        electrode_groups(cellfun(@isempty,electrode_groups)) = [];
+
+        current_groups = stims.currents;    
+        for iCurrentGroups = 1:length(stims.currents)
+            for iScanCGroups = iCurrentGroups+1:length(stims.currents)
+                if isequal(mean(current_groups{iCurrentGroups}),mean(current_groups{iScanCGroups}))
+                    current_groups{iScanCGroups} = [];
+                end
             end
-        end
-    end                
-    current_groups(cellfun(@isempty,current_groups)) = [];
-    
-    electrode_current_rewards = zeros(length(electrode_groups),length(current_groups));
-    electrode_current_incompletes = zeros(length(electrode_groups),length(current_groups));
-    electrode_current_fails = zeros(length(electrode_groups),length(current_groups));
-    
-    for iElectrodeGroups = 1:length(electrode_groups)
-        for iCurrentGroups = 1:length(current_groups)
-            for iStimIds = 1:length(stim_ids)
-                if isequal(mean(stims.currents{iStimIds}),mean(current_groups{iCurrentGroups}))
-                    if isequal(stims.electrodes{iStimIds},electrode_groups{iElectrodeGroups})
-                        electrode_current_rewards(iElectrodeGroups,iCurrentGroups) = ...
-                            electrode_current_rewards(iElectrodeGroups,iCurrentGroups) +...
-                            sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
-                            trial_table(:,table_columns.result)==reward_code);
-                        electrode_current_incompletes(iElectrodeGroups,iCurrentGroups) = ...
-                            electrode_current_incompletes(iElectrodeGroups,iCurrentGroups) +...
-                            sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
-                            trial_table(:,table_columns.result)==incomplete_code);
-                        electrode_current_fails(iElectrodeGroups,iCurrentGroups) = ...
-                            electrode_current_fails(iElectrodeGroups,iCurrentGroups) +...
-                            sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
-                            trial_table(:,table_columns.result)==fail_code);
+        end                
+        current_groups(cellfun(@isempty,current_groups)) = [];
+
+        electrode_current_rewards = zeros(length(electrode_groups),length(current_groups));
+        electrode_current_incompletes = zeros(length(electrode_groups),length(current_groups));
+        electrode_current_fails = zeros(length(electrode_groups),length(current_groups));
+
+        for iElectrodeGroups = 1:length(electrode_groups)
+            for iCurrentGroups = 1:length(current_groups)
+                for iStimIds = 1:length(stim_ids)
+                    if isequal(mean(stims.currents{iStimIds}),mean(current_groups{iCurrentGroups}))
+                        if isequal(stims.electrodes{iStimIds},electrode_groups{iElectrodeGroups})
+                            electrode_current_rewards(iElectrodeGroups,iCurrentGroups) = ...
+                                electrode_current_rewards(iElectrodeGroups,iCurrentGroups) +...
+                                sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
+                                trial_table(:,table_columns.result)==reward_code);
+                            electrode_current_incompletes(iElectrodeGroups,iCurrentGroups) = ...
+                                electrode_current_incompletes(iElectrodeGroups,iCurrentGroups) +...
+                                sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
+                                trial_table(:,table_columns.result)==incomplete_code);
+                            electrode_current_fails(iElectrodeGroups,iCurrentGroups) = ...
+                                electrode_current_fails(iElectrodeGroups,iCurrentGroups) +...
+                                sum(trial_table(:,table_columns.stim_id)==stims.codes{iStimIds} &...
+                                trial_table(:,table_columns.result)==fail_code);
+                        end
                     end
                 end
             end
-        end
-    end                
-  
-    clear legendstrings
-    
-    for iStrings = 1:length(electrode_groups)
-        legendstrings{iStrings} = num2str(electrode_groups{iStrings});
-    end
-    
-    for iCurrentGroups = 1:length(current_groups)
-        current_groups{iCurrentGroups} = mean(current_groups{iCurrentGroups});
-    end
-    
-    if num_outer_targets == 1
-        error_bars = get_error_bounds(electrode_current_rewards,...
-            electrode_current_incompletes,boot_iter,.1);
+        end                
 
-        figure;
-        colors = colormap(jet);
-        colors = colors(1:round(length(colors)/size(electrode_current_incompletes,1)):end,:);
-        for iPlot = 1:size(electrode_current_rewards,1)
-            plot_var = electrode_current_rewards(iPlot,:)./...
-                (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:));
-            errorbar(cell2mat(current_groups),plot_var,...
-                plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-plot_var,'Color',colors(iPlot,:));
-            hold on
+        clear legendstrings    
+        for iStrings = 1:length(electrode_groups)
+            legendstrings{iStrings} = num2str(electrode_groups{iStrings});
         end
-        ylim([0 1])
-        xlabel(plotting_parameter)
-        ylabel('Rewards/(Incompletes+Rewards)')
-        legend(legendstrings)
-        title_temp = filelist(file_no).name;
-        title_temp = strrep(title_temp,'_','\_');
-        title(title_temp)
-    else
-        error_bars = get_error_bounds(electrode_current_rewards,...
-            electrode_current_fails,boot_iter,.1);
 
-        figure;
-        colors = colormap(jet);
-        colors = colors(1:round(length(colors)/size(electrode_current_fails,1)):end,:);
-        for iPlot = 1:size(electrode_current_rewards,1)
-            plot_var = electrode_current_rewards(iPlot,:)./...
-                (electrode_current_rewards(iPlot,:)+electrode_current_fails(iPlot,:));
-            errorbar(cell2mat(current_groups),plot_var,...
-                plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-plot_var,'Color',colors(iPlot,:));
-            hold on
+        for iCurrentGroups = 1:length(current_groups)
+            current_groups{iCurrentGroups} = mean(current_groups{iCurrentGroups});
         end
-        ylim([0 1])
-        xlabel(plotting_parameter)
-        ylabel('Rewards/(Fails+Rewards)')
-        legend(legendstrings)
-        title_temp = filelist(file_no).name;
-        title_temp = strrep(title_temp,'_','\_');
-        title(title_temp)
+
+        if num_outer_targets == 1
+            error_bars = get_error_bounds(electrode_current_rewards,...
+                electrode_current_incompletes,boot_iter,.1);
+
+            figure;
+            colors = colormap(jet);
+            colors = colors(1:round(length(colors)/size(electrode_current_incompletes,1)):end,:);
+            for iPlot = 1:size(electrode_current_rewards,1)
+                plot_var = electrode_current_rewards(iPlot,:)./...
+                    (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:));
+                errorbar(cell2mat(current_groups),plot_var,...
+                    plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-plot_var,'Color',colors(iPlot,:));
+                hold on
+            end
+            ylim([0 1])
+            xlabel(plotting_parameter)
+            ylabel('Rewards/(Incompletes+Rewards)')
+            legend(legendstrings)
+            title_temp = filelist(file_no).name;
+            title_temp = strrep(title_temp,'_','\_');
+            title(title_temp)
+        else
+            error_bars = get_error_bounds(electrode_current_rewards,...
+                electrode_current_fails,boot_iter,.1);
+
+            figure;
+            colors = colormap(jet);
+            colors = colors(1:round(length(colors)/size(electrode_current_fails,1)):end,:);
+            for iPlot = 1:size(electrode_current_rewards,1)
+                plot_var = electrode_current_rewards(iPlot,:)./...
+                    (electrode_current_rewards(iPlot,:)+electrode_current_fails(iPlot,:));
+                errorbar(cell2mat(current_groups),plot_var,...
+                    plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-plot_var,'Color',colors(iPlot,:));
+                hold on
+            end
+            ylim([0 1])
+            xlabel(plotting_parameter)
+            ylabel('Rewards/(Fails+Rewards)')
+            legend(legendstrings)
+            title_temp = filelist(file_no).name;
+            title_temp = strrep(title_temp,'_','\_');
+            title(title_temp)
+        end
     end
-    
 %% Timing plot by trial type
     figure;     
     

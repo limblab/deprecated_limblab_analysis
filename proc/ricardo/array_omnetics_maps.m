@@ -9,10 +9,10 @@ if configuration=='TikiFMAs'
 end
 
 if strcmp(data_file,'Tiki_2011-03-09_RW_001.nev')
-    pedestal_omnetics_map = [5 1;
-                            4 2;
-                            3 3;
-                            1 4];
+    pedestal_omnetics_map = [1 1;
+                            2 2;
+                            5 3;
+                            6 4];
 elseif strcmp(data_file,'Tiki_2011-03-18_BC_001.nev')
     pedestal_omnetics_map = [2 2;
                             5 3;
@@ -21,6 +21,12 @@ elseif strcmp(data_file,'Tiki_2011-03-18_BC_001.nev')
 elseif strcmp(data_file,'Tiki_2011-03-21_BC_001.nev')
     pedestal_omnetics_map = [1 1;
                             2 2;
+                            5 3;
+                            6 4];
+elseif strcmp(data_file,'Tiki_2011-04-22_RW_001.nev')
+    pedestal_omnetics_map = [1 6;
+                            2 2;
+                            4 5;
                             5 3;
                             6 4];
 end

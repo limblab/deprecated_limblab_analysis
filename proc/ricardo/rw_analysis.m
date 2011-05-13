@@ -1,7 +1,7 @@
 % Find PDs
 plotting = 1;
-datapath = 'D:\Data\Tiki\FMAs\';
-filename = 'Tiki_2011-03-29_RW_001-s';
+datapath = 'D:\Data\Tiki_4C1\FMAs\';
+filename = 'Tiki_2011-04-20_RW_001-s';
 extension = '.nev';
 filename_analyzed = [datapath 'Processed\' filename];
 
@@ -122,50 +122,50 @@ if plotting
 end
 
 %% Mutual information
-[pos_mi, mis] = batch_mi(bdf, 'vel');
+% [pos_mi, mis] = batch_mi(bdf, 'vel');
 
-%% map
-if plotting
-    figure;
-    hold on
-    max_mi = max(pos_mi(:,3));
-    scaling = 2;
-    alpha = .2;
-    beta = .3;
-    load('D:\Ricardo\Miller Lab\Matlab\map_tiki')
-    map_tiki = map_tiki_b;
-    for i=1:length(out)
-    %     electrode = premap_tiki(premap_tiki(:,1) == out(i).chan,2);
-        [map_row map_column] = find(map_tiki==out(i).chan);
-        p0 = [map_column map_row];
-        if scaling
-            p1 = [map_column+cos(out(i).glmpd)*pos_mi(i,3)/max_mi...
-                map_row-sin(out(i).glmpd)*pos_mi(i,3)/max_mi];
-        else
-            p1 = [map_column+cos(out(i).glmpd) map_row-sin(out(i).glmpd)];
-        end
-        p = p1-p0;
-        x0 = p0(1);
-        y0 = p0(2);
-        x1 = p1(1);
-        y1 = p1(2);
-        plot([x0;x1],[y0;y1]);
-        hu = [x1-alpha*(p(1)+beta*(p(2)+eps)); x1; x1-alpha*(p(1)-beta*(p(2)+eps))];
-        hv = [y1-alpha*(p(2)-beta*(p(1)+eps)); y1; y1-alpha*(p(2)+beta*(p(1)+eps))];
-        plot(hu(:),hv(:))
-        text(x0,y0,num2str(out(i).chan))
-    %     text(x0,y0,[num2str(out(i).chan) ' (' num2str(floor((out(i).chan-1)/32)+1) '-'...
-    %         num2str(mod(out(i).chan,32) + 32*(mod(out(i).chan,32)==0)) ')'])
-    end
-    for i = 1:100
-    %     text(mod(i-1,10)+1,(i-mod(i-1,10))/10+1,num2str(i))
-    %     text(mod(i,11)+1,1+(i-mod(i,11))/11,num2str(i))
-    end
-    set(gca,'YDir','reverse')
-    xlim([0 11])
-    ylim([0 11])
-    title(filename)       
-end
+% %% map
+% if plotting
+%     figure;
+%     hold on
+%     max_mi = max(pos_mi(:,3));
+%     scaling = 2;
+%     alpha = .2;
+%     beta = .3;
+%     load('D:\Ricardo\Miller Lab\Matlab\map_tiki')
+%     map_tiki = map_tiki_b;
+%     for i=1:length(out)
+%     %     electrode = premap_tiki(premap_tiki(:,1) == out(i).chan,2);
+%         [map_row map_column] = find(map_tiki==out(i).chan);
+%         p0 = [map_column map_row];
+%         if scaling
+%             p1 = [map_column+cos(out(i).glmpd)*pos_mi(i,3)/max_mi...
+%                 map_row-sin(out(i).glmpd)*pos_mi(i,3)/max_mi];
+%         else
+%             p1 = [map_column+cos(out(i).glmpd) map_row-sin(out(i).glmpd)];
+%         end
+%         p = p1-p0;
+%         x0 = p0(1);
+%         y0 = p0(2);
+%         x1 = p1(1);
+%         y1 = p1(2);
+%         plot([x0;x1],[y0;y1]);
+%         hu = [x1-alpha*(p(1)+beta*(p(2)+eps)); x1; x1-alpha*(p(1)-beta*(p(2)+eps))];
+%         hv = [y1-alpha*(p(2)-beta*(p(1)+eps)); y1; y1-alpha*(p(2)+beta*(p(1)+eps))];
+%         plot(hu(:),hv(:))
+%         text(x0,y0,num2str(out(i).chan))
+%     %     text(x0,y0,[num2str(out(i).chan) ' (' num2str(floor((out(i).chan-1)/32)+1) '-'...
+%     %         num2str(mod(out(i).chan,32) + 32*(mod(out(i).chan,32)==0)) ')'])
+%     end
+%     for i = 1:100
+%     %     text(mod(i-1,10)+1,(i-mod(i-1,10))/10+1,num2str(i))
+%     %     text(mod(i,11)+1,1+(i-mod(i,11))/11,num2str(i))
+%     end
+%     set(gca,'YDir','reverse')
+%     xlim([0 11])
+%     ylim([0 11])
+%     title(filename)       
+% end
 %%
 % [[out.chan]' [out.glmpd]' [dm]']
 % save(filename_analyzed,'out','pos_mi','mis')
