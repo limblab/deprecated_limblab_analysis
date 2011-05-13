@@ -113,24 +113,11 @@ toc
 [A0, C0, Q0, R0] = train_kf(X0,Z);%%without target
 clear X Z X0 transitions
 
+R = 5.*R; % for testing trajectory model...
+% R0 = 10.*R0;
+
 fprintf('Finished training\n')
 toc
-
-runthrough = 0;
-
-for prior_i = 1:11
-    
-    p1 = (prior_i - 1) * 0.1;
-    p2 = 1 - p1;
-    priors = [p1 p2];
-    
-    for r_i = 1:9
-        
-        Rmult = 2^(r_i - 5);
-        runthrough = runthrough + 1;
-
-R = Rmult.*R; % for testing trajectory model...
-% R0 = 10.*R0;
 
 %%adjust timing of words and target info to coincide with bins
 testData.words(:,1) = ceil(testData.words(:,1)./bin).*bin;
@@ -206,10 +193,6 @@ for i = 1:length(startindex)
 %     X{n} = [p v ones(length(p),1) targ]; % no accel
 %     X0{n} = [p v ones(length(p),1)]; % no accel
     Z{n} = test_set(startindex(i):endindex(i),:);
-    if runthrough == 1
-        rand1(n) = rand*20 - 10; % random target x position
-        rand2(n) = rand*20 - 43.5 ; % random target y position
-    end
 end
 
 fprintf('Finished building test set\n')
@@ -223,24 +206,18 @@ xpred0c = xpredc;
 for i = 1:length(X)
 % for i = 1:10
     if i == 1
-        initx{1} = X{i}(1,:)';
-        initx{2} = X{i}(1,[1:7 rand1(i) rand2(i)])'; 
-        initV{1} = zeros(length(initx{1}));
-        initV{2} = zeros(length(initx{2}));
-
+        initx = X{i}(1,:)';
         initx0 = X0{i}(1,:)';
+        initV = zeros(length(initx));
         initV0 = zeros(length(initx0));
     else
-        initx{1} = [xpred{i-1}(1:end-2,end); X{i}(1,end-1:end)'];
-        initx{2} = [xpred{i-1}(1:end-2,end); [rand1(i) rand2(i)]'];
-        initV{1} = zeros(length(initx{1}));
-        initV{2} = zeros(length(initx{2}));
+        initx = [xpred{i-1}(1:end-2,end); X{i}(1,end-1:end)'];
+        initV = squeeze(Vpred{i-1}(:,:,end));
 
         initx0 = xpred0{i-1}(:,end);
         initV0 = squeeze(Vpred0{i-1}(:,:,end));
     end
-    
-    [xpred{i}, Vpred{i}, VV{i}, loglik{i}, weight{i}] = kalman_filter_mix(Z{i}', A, C, Q, R, initx, initV, priors); %%mixture with target
+    [xpred{i}, Vpred{i}, VV{i}, loglik(i)] = kalman_filter(Z{i}', A, C, Q, R, initx, initV); %%with target
     [xpred0{i}, Vpred0{i}, VV0{i}, loglik0(i)] = kalman_filter(Z{i}', A0, C0, Q0, R0, initx0, initV0); %%without target
 
 %     xpredc(startindex(i):endindex(i),:) = xpred{i}(1:6,:)';
@@ -260,26 +237,26 @@ toc
 KF_mVAF = getmvaf(testData.cursorposbin(startindex(1):end,:),xpred0c(startindex(1):end,1:2))
 KFT_mVAF = getmvaf(testData.cursorposbin(startindex(1):end,:),xpredc(startindex(1):end,1:2))
 
-% figure
-% plot((startindex(1):length(testData.cursorposbin))./bin, testData.cursorposbin(startindex(1):end,1),'k')
-% hold on
-% plot((startindex(1):length(testData.cursorposbin))./bin, xpredc(startindex(1):end,1),'g')
-% plot((startindex(1):length(testData.cursorposbin))./bin, xpred0c(startindex(1):end,1),'r')
-% title(['x Predictions - KFT VAF = ' num2str(vaf(1)) '; KF VAF = ' num2str(vaf0(1))])
-% ylabel('Handle Position (cm)')
-% xlabel('Time (x)')
-% legend('Real', 'KFT', 'KF')
-% 
-% figure
-% plot((startindex(1):length(testData.cursorposbin))./bin, testData.cursorposbin(startindex(1):end,2),'k')
-% hold on
-% plot((startindex(1):length(testData.cursorposbin))./bin, xpredc(startindex(1):end,2),'g')
-% plot((startindex(1):length(testData.cursorposbin))./bin, xpred0c(startindex(1):end,2),'r')
-% title(['y Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2))])
-% ylabel('Handle Position (cm)')
-% xlabel('Time (x)')
-% legend('Real', 'KFT', 'KF')
-% 
+figure
+plot((startindex(1):length(testData.cursorposbin))./bin, testData.cursorposbin(startindex(1):end,1),'k')
+hold on
+plot((startindex(1):length(testData.cursorposbin))./bin, xpredc(startindex(1):end,1),'g')
+plot((startindex(1):length(testData.cursorposbin))./bin, xpred0c(startindex(1):end,1),'r')
+title(['x Predictions - KFT VAF = ' num2str(vaf(1)) '; KF VAF = ' num2str(vaf0(1))])
+ylabel('Handle Position (cm)')
+xlabel('Time (x)')
+legend('Real', 'KFT', 'KF')
+
+figure
+plot((startindex(1):length(testData.cursorposbin))./bin, testData.cursorposbin(startindex(1):end,2),'k')
+hold on
+plot((startindex(1):length(testData.cursorposbin))./bin, xpredc(startindex(1):end,2),'g')
+plot((startindex(1):length(testData.cursorposbin))./bin, xpred0c(startindex(1):end,2),'r')
+title(['y Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2))])
+ylabel('Handle Position (cm)')
+xlabel('Time (x)')
+legend('Real', 'KFT', 'KF')
+
 %%plot with transitions
 
 figure
@@ -288,7 +265,7 @@ hold on
 plot((startindex(1):length(testData.cursorposbin)).*bin, xpredc(startindex(1):end,1)-mean(testData.cursorposbin(startindex(1):end,1)),'g')
 plot((startindex(1):length(testData.cursorposbin)).*bin, xpred0c(startindex(1):end,1)-mean(testData.cursorposbin(startindex(1):end,1)),'r')
 plot((startindex(1):length(testData.cursorposbin)).*bin, transitions(startindex(1):end)*20-20,'k*')
-title(['x Predictions - KFT VAF = ' num2str(vaf(1)) '; KF VAF = ' num2str(vaf0(1)) '; Real Prior = ' num2str(priors(1)) '; R* = ' num2str(Rmult)])
+title(['x Predictions - KFT VAF = ' num2str(vaf(1)) '; KF VAF = ' num2str(vaf0(1))])
 ylabel('Handle Position (cm)')
 xlabel('Time (x)')
 axis([startindex(1)*bin length(testData.cursorposbin)*bin min(xpred0c(startindex(1):end,1)-mean(testData.cursorposbin(startindex(1):end,1))) max(xpred0c(startindex(1):end,1)-mean(testData.cursorposbin(startindex(1):end,1)))])
@@ -300,12 +277,8 @@ hold on
 plot((startindex(1):length(testData.cursorposbin)).*bin, xpredc(startindex(1):end,2)-mean(testData.cursorposbin(startindex(1):end,2)),'g')
 plot((startindex(1):length(testData.cursorposbin)).*bin, xpred0c(startindex(1):end,2)-mean(testData.cursorposbin(startindex(1):end,2)),'r')
 plot((startindex(1):length(testData.cursorposbin)).*bin, transitions(startindex(1):end)*20-20,'k*')
-% title(['y Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2))])
-title(['x Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2)) '; Real Prior = ' num2str(priors(1)) '; R* = ' num2str(Rmult)])
+title(['y Predictions - KFT VAF = ' num2str(vaf(2)) '; KF VAF = ' num2str(vaf0(2))])
 ylabel('Handle Position (cm)')
 xlabel('Time (x)')
 axis([startindex(1)*bin length(testData.cursorposbin)*bin min(xpred0c(startindex(1):end,2)-mean(testData.cursorposbin(startindex(1):end,2))) max(xpred0c(startindex(1):end,2)-mean(testData.cursorposbin(startindex(1):end,2)))])
 legend('Real', 'KFT', 'KF', 'Trans')
-
-    end
-end
