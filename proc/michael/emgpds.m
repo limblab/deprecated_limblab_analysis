@@ -15,10 +15,11 @@ nEmgs = size(bdf.emg.data,2) - 1- exclEMG;
 %-1 for time column
 
 
-timebefore= 0.5;
-timeafter=0.5;
+timebefore= 2;
+timeafter=2;
 stas = zeros((bdf.emg.emgfreq*(timebefore+timeafter))+1,nEmgs,length(List));
 t = bdf.emg.data(:,1);
+tmp_emg = zeros(size(bdf.emg.data,1),size(bdf.emg.data,2) - exclEMG);
 
 PDm= zeros(length(List), nEmgs+4);
 
@@ -30,10 +31,11 @@ for i=1:length(List)
 
     u= get_unit(bdf, List(i,1), List(i,2));
 
-    tmp_emg = bdf.emg.data(:,2:nEmgs+1);
-    var_emg = var(tmp_emg);
-
-    tmp_emg = tmp_emg.*(repmat(var_emg, size(tmp_emg,1),1).^-1);
+    tmp_emg = bdf.emg.data(:, 2 : size(bdf.emg.data,2) - exclEMG);
+    %var_emg = var(tmp_emg);
+    p=prctile(tmp_emg,[5,50,95]);
+    tmp_emg=(tmp_emg-p(2))/(p(3)-p(1));
+    %tmp_emg = tmp_emg.*(repmat(var_emg, size(tmp_emg,1),1).^-1);
 
     for emg_id=1:nEmgs
      
@@ -47,6 +49,7 @@ for i=1:length(List)
 
     
     %stas(:,:,i) = tmp_sta(:,2:end) - repmat(mean(tmp_sta(:,2:end)), size(tmp_sta,1), 1);
+    
     stas(:,:,i) = tmp_sta(:,2:end);
     %STAs matrix row=time, col=Each muscle
 
@@ -60,6 +63,9 @@ for i=1:length(List)
     
     opt_delay_t = tsta(opt_delay);
     %Index time array tsta to find the optimum delay=opt_delay
+    
+    %stas(:,:,i) = tmp_sta(:,2:end) - repmat(mean(tmp_sta(****,2:end)), size(tmp_sta,1), 1);
+    %Subtract mean to normalize
     
     PDm(i,1)= List(i,1);
     PDm(i,2)= List(i,2);
