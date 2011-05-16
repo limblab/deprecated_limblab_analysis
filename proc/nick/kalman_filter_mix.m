@@ -34,15 +34,14 @@ function [xmtm,Vmtm, VVmtm, loglik,weight] = kalman_filter_mix(y, A, C, Q, R, in
 % e.g., x(:,t) = E[X(:,t) | y(:,1:t), u(:, 1:t), m(1:t)]
 
 [os T] = size(y);
-ss = length(init_x{1}); % size of state space
-xmtm = zeros(ss, T);
-Vmtm = zeros(ss, ss, T);
-VVmtm = zeros(ss,ss,T);
+
+% size of state space
 % set default params
 model = ones(1,T);
 obs = ones(1,T);
 extended = 0;
-
+kappa=3;
+neutral=0;
 args = varargin;
 nargs = length(args);
 for i=1:2:nargs
@@ -51,11 +50,29 @@ for i=1:2:nargs
         case 'isObserved', obs=double(args{i+1});
         case 'extended', extended = args{i+1};
         case 'ntargets', ntargets = args{i+1};
+        case 'kappa', kappa = args{i+1};
+        case 'neutral', neutral=args{i+1}; 
+        case 'A',    A2 = args{i+1}; 
+        case 'C',    C2 = args{i+1}; 
+        case 'Q',    Q2 = args{i+1};
+        case 'R',    R2 = args{i+1}; 
         otherwise, error(['unrecognized argument ' args{i}])
     end
 end
 obs(obs==0)= 10000000;
 obs(obs==1)=0;
+if neutral
+init_x{length(init_x)+1} = init_x{1}(1:end-3);
+init_V{length(init_x)} = init_V{1}(1:end-3,1:end-3);
+end
+for i = 1:length(init_x)
+    ss{i} = length(init_x{i});
+end
+
+xmtm = zeros(ss{end}, T);
+Vmtm = zeros(ss{end}, ss{end}, T);
+VVmtm = zeros(ss{end},ss{end},T);
+
 x = cell(length(init_x));
 V = cell(length(init_x));
 VV = cell(length(init_x));
@@ -63,9 +80,9 @@ prevV = cell(length(init_x));
 loglik= cell(length(init_x));
 weight = zeros(T,length(init_x));
 for i = 1:length(init_x)
-    x{i} = zeros(ss, T);
-    V{i} = zeros(ss, ss, T);
-    VV{i} = zeros(ss, ss, T);
+    x{i} = zeros(ss{i}, T);
+    V{i} = zeros(ss{i}, ss{i}, T);
+    VV{i} = zeros(ss{i}, ss{i}, T);
 
     loglik{i} = 0;
 end
@@ -94,11 +111,23 @@ for t=1:T
     toobig=0;
     for i = 1:length(prevx)
 
-        if extended
+        if extended==1
 
             [x{i}(:,t), V{i}(:,:,t), LL{i}, VV{i}(:,:,t)] = ...
                 extended_kalman_update(A(:,:,m), C(:,:,m), Q(:,:,m), R(:,:,m)+obs(t), y(:,t), prevx{i}, prevV{i}, 'initial', initial,'log',1,'ntargets',ntargets);
+        elseif extended == 2
+            [x{i}(:,t), V{i}(:,:,t), LL{i}, VV{i}(:,:,t)] = unscented_kalman_update(A(:,:,m), C(:,:,m), Q(:,:,m), R(:,:,m)+obs(t), y(:,t), prevx{i}, prevV{i}, 'initial', initial,'log',1,'kappa',kappa,'ntargets',ntargets);
+           
+           
+        elseif neutral && i ==length(prevx)
+            
+            [x{i}(:,t), V{i}(:,:,t), LL{i}, VV{i}(:,:,t)] = ...
+                kalman_update(A2, C2, Q2, R2+obs(t), y(:,t), prevx{i}, prevV{i}, 'initial', initial);
+
+
+            
         else
+            
             [x{i}(:,t), V{i}(:,:,t), LL{i}, VV{i}(:,:,t)] = ...
                 kalman_update(A(:,:,m), C(:,:,m), Q(:,:,m), R(:,:,m)+obs(t), y(:,t), prevx{i}, prevV{i}, 'initial', initial);
 
@@ -107,7 +136,7 @@ for t=1:T
         end
         loglik{i} = loglik{i} + LL{i};
 
-        if loglik{i}>700
+        if abs(loglik{i})>700
             toobig=1;
         end
 
@@ -117,9 +146,15 @@ for t=1:T
 
     for i = 1:length(prevx)
         if toobig
+            
+            if loglik{i} < 0
+       %             weight(t,i) = Pm(i)*exp(loglik{i}+450);
+               weight(t,i) = Pm(i)*exp(loglik{i}-min(cell2num(loglik)));
+            else
 
             weight(t,i) = Pm(i)*exp(loglik{i}-max(cell2num(loglik)));
-
+          %  weight(t,i) = Pm(i)*exp(loglik{i}-450);
+            end
         else
             weight(t,i) = Pm(i)*exp(loglik{i});
         end
@@ -139,9 +174,9 @@ for t=1:T
     VVmtm(:,:,t) = 0;
     for i = 1:length(prevx)
 
-        xmtm(:,t) = xmtm(:,t) + weight(t,i)*x{i}(:,t);
-        Vmtm(:,:,t) = Vmtm(:,:,t) + weight(t,i)*(V{i}(:,:,t) + x{i}(:,t)*x{i}(:,t)');
-        VVmtm(:,:,t) = VVmtm(:,:,t) + weight(t,i)*VV{i}(:,:,t);
+        xmtm(:,t) = xmtm(:,t) + weight(t,i)*x{i}(1:ss{end},t);
+        Vmtm(:,:,t) = Vmtm(:,:,t) + weight(t,i)*(V{i}(1:ss{end},1:ss{end},t) + x{i}(1:ss{end},t)*x{i}(1:ss{end},t)');
+        VVmtm(:,:,t) = VVmtm(:,:,t) + weight(t,i)*VV{i}(1:ss{end},1:ss{end},t);
     end
 
 end

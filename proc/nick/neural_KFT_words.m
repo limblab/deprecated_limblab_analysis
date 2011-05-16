@@ -9,8 +9,8 @@ testData = binnedData;
 clear binnedData
 
 
-% trainData.spikeratedata = sqrt(trainData.spikeratedata);
-% testData.spikeratedata = sqrt(testData.spikeratedata);
+trainData.spikeratedata = sqrt(trainData.spikeratedata);
+testData.spikeratedata = sqrt(testData.spikeratedata);
 
 
 addpath('Kalman');
@@ -113,7 +113,7 @@ toc
 [A0, C0, Q0, R0] = train_kf(X0,Z);%%without target
 clear X Z X0 transitions
 
-R = 5.*R; % for testing trajectory model...
+% R = 10.*R; % for testing trajectory model...
 % R0 = 10.*R0;
 
 fprintf('Finished training\n')
