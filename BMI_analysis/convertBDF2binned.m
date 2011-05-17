@@ -361,8 +361,7 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
     if ~isempty(start_trial_words)
         start_trial_code = start_trial_words(1);
         if ~isempty(find(start_trial_words ~= start_trial_code, 1))
-           close(h);
-           error('BDF:inconsistentBehaviors','Not all trials are the same type');
+           warning('BDF:inconsistentBehaviors','Not all trials are the same type');
         end
 
         if start_trial_code == hex2dec('17')
@@ -383,7 +382,6 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
             robot_task =1;
             vs_task = 1;
         else
-            %close(h);
             error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
         end
     end
