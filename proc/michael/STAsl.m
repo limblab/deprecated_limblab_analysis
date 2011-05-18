@@ -28,5 +28,6 @@ function STA = STAsl(stim_ts, signals, timeBefore, timeAfter)
             high= round(low) + windowLength-1;
             tempSTA(:,:)= tempSTA(:,:)+signals(low:high,2:end);  
         end
+        keyboard
     STA(:,2:end) = tempSTA(:,:)./numStim_ok;
 end
