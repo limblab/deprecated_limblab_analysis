@@ -81,8 +81,8 @@ for i=1:cX
     end
 end
 
-disp('Determinant of PX')
-det(PX)
+% disp('Determinant of PX')
+% det(PX)
 
   
   PXY=zeros(cX*numlags,cY);
