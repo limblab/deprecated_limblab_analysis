@@ -1,4 +1,4 @@
-function getDataByDate(animal,dateNumber)
+function CEBorPLX=getDataByDate(animal,dateNumber)
 
 if ~nargin
     animal=input('name of animal: ','s');
@@ -16,9 +16,15 @@ elseif nargin==1
     end
 end
         
-destFolder='C:\Users\limblab\Desktop\test';
+destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
+    filesep,animal];
+cd(destFolder)
+mkdir(datestr(dateNumber,'mm-dd-yyyy'))
+destFolder=[destFolder, filesep, datestr(dateNumber,'mm-dd-yyyy')];
 
-remoteDriveLetter='Y';
+% remoteDriveLetter='Y';    % appropriate for offline sorting machine
+remoteDriveLetter='Z';      % appropriate for GOB
+
 pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\SpikeLFP'], ...
     [remoteDriveLetter,':\Miller\Mini_7H1\', ...
     'Spikes and Local Field Potentials\MiniSpikeLFPL']};
@@ -35,12 +41,18 @@ if ~status
     for n=1:length(datestamps)
         endLine=characterReference(find(characterReference==datestamps(n))+1);
         candidateFileLineText=regexp(result(datestamps(n):endLine),' *','split');
-        if ~isempty(regexp(candidateFileLineText{5},'\.[nevs23plx]', 'once'))
+        if ~isempty(regexp(candidateFileLineText{5},'\.[nevs23plx]','once'))
             [status1,~]=dos(['copy "',fullfile(chosenPath, ...
-                candidateFileLineText{5}(1:end-1)),'" "',destFolder,'"']);
+                candidateFileLineText{5}(1:end-1)),'" "',destFolder,filesep,'"']);
             if ~status1
                 fprintf(1,'%s copied successfully.\n',candidateFileLineText{5}(1:end-1))
             end
         end
+    end
+    cd(destFolder)
+    if ~isempty(regexp(candidateFileLineText{5},'\.plx','once'))
+        CEBorPLX='plx';
+    else
+        CEBorPLX='ceb';
     end
 end

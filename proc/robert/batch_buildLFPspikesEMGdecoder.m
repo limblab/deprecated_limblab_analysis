@@ -17,8 +17,8 @@ Files(1:2)=[];
 FileNames={Files.name};
 % should exclude EMG files and output files (which usually end in
 % 'polyN.mat')
-MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0 & ...
-    cellfun(@isempty,regexp(FileNames,'[^poly][^0-9]\.mat'))==0);
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0);
+% & ...    cellfun(@isempty,regexp(FileNames,'[^poly][^0-9]\.mat')));
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
@@ -26,7 +26,7 @@ if isempty(MATfiles)
 end
 
 % master containment for r2 aggregate data
-r2LFP=cell(length(MATfiles),4);
+% r2LFP=cell(length(MATfiles),4);
 
 for n=1:length(MATfiles)
     FileName=MATfiles{n};
@@ -38,8 +38,8 @@ for n=1:length(MATfiles)
     fnam=FileName(1:end-4);
 
     str=regexp(bdf.meta.datetime,' ','split');
-    r2LFP{n,1}=datestr(str{1},'mm-dd-yyyy');
-    r2LFP{n,2}=fnam;
+    % r2LFP{n,1}=datestr(str{1},'mm-dd-yyyy');
+    % r2LFP{n,2}=fnam;
 
     % make sure the bdf has a .emg field
     bdf=createEMGfield(bdf);
@@ -100,13 +100,15 @@ for n=1:length(MATfiles)
     
     % in runpredfp_emgonly.m, temg takes the place of analog_times and so
     % it is substituted in its place in the input list below.
-    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y,featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
-        predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags,numsides,samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
+    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
+        featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
+        predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+        samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     close
     fprintf(1,'\n\n\n\n\n=====================\nLFP predictions DONE\n====================\n\n\n\n')
     
-    EMGchanNames={'BI','Tri','Adelt','Pdelt'};
+    EMGchanNames=bdf.emg.emgnames; % {'BI','Tri','Adelt','Pdelt'};
     if exist('FileName','var')==1
         disp(FileName)
     end
@@ -119,18 +121,18 @@ for n=1:length(MATfiles)
     fprintf(1,'binsize=%.2f\n',binsize)
     fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
     
-    r2
+    vaf
     
-    formatstr='EMG r2 mean across folds: ';
-    for k=1:size(r2,2), formatstr=[formatstr, '%.4f   ']; end
+    formatstr='EMG vaf mean across folds: ';
+    for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
     formatstr=[formatstr, '\n'];
     
-    fprintf(1,formatstr,mean(r2,1))
-    fprintf(1,'overall mean r2 %.4f\n',mean(r2(:)))
+    fprintf(1,formatstr,mean(vaf,1))
+    fprintf(1,'overall mean r2 %.4f\n',mean(vaf(:)))
 
 	% columns of r2matrix are: 
 	% date	file	LFP_r2	good_EMGs	spike_r2	H
-    r2LFP{n,3}=r2;
+    % r2LFP{n,3}=r2;
 	
     % consider creating a new folder, and saving this file AND THE SPIKES
     % FILE in it; that way if the thing has to be run > 1X because of an
@@ -156,7 +158,7 @@ for n=1:length(MATfiles)
     % s1_analysis/.../proc/marc folder is set to use the whole bdf.emg.data
     % field, so cut out the leading column if it's just times.
     if size(bdf.emg.data,2) > max(size(bdf.emg.emgnames)) && all(diff(bdf.emg.data(:,1)) > 0)
-        bdf.emg.data(:,1)=[]; 
+%         bdf.emg.data(:,1)=[]; 
     end
     
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P] = ...
@@ -177,13 +179,13 @@ for n=1:length(MATfiles)
     fprintf(1,'binsize=%.2f\n',binsize)
     fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
     
-    r2
+    vaf
 
-    formatstr='EMG r2 mean across folds: ';
-    for k=1:size(r2,2), formatstr=[formatstr, '%.4f   ']; end
+    formatstr='EMG vaf mean across folds: ';
+    for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
     formatstr=[formatstr, '\n'];
     fprintf(1,formatstr,mean(r2,1))
-    fprintf(1,'overall mean r2 %.4f\n',mean(r2(:)))
+    fprintf(1,'overall mean vaf %.4f\n',mean(r2(:)))
 
     r2m=r2mean;
     save([fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...

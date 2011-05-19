@@ -2,7 +2,8 @@
 % files containing FP and EMG data
 
 %% folder/file info
-PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+% PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+PathName=pwd;
 if exist(PathName,'dir')~=7
     disp('folder not valid.  aborting...')
     return
@@ -15,7 +16,8 @@ Files=dir(PathName);
 diary('LFP_EMGdecoder_results.txt');
 Files(1:2)=[];
 FileNames={Files.name};
-MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0);
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0 & ...
+    cellfun(@isempty,regexp(FileNames,'[^poly][^0-9]\.mat')));
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
@@ -54,6 +56,7 @@ for n=1:length(MATfiles)
     sig=bdf.emg.data(:,2:end);
     analog_times=bdf.emg.data(:,1);
 %     analog_times=1/emgsamplerate:1/emgsamplerate:size(sig,1)/emgsamplerate;
+    temg=analog_times;
     signal='emg';
     
     %% assign fp, static input parameters
@@ -84,16 +87,17 @@ for n=1:length(MATfiles)
     numlags=10;
     wsz=256;
     nfeat=150;
-    PolynomialOrder=3;
+    PolynomialOrder=2;
     smoothfeats=0;
     binsize=0.05;
     if exist('fnam','var')~=1
         fnam='';
     end
     
-    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H] = ...
-        predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags, ...
-        numsides,samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
+    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
+        featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
+        predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+        samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     close
     fprintf(1,'\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n')
@@ -131,7 +135,7 @@ for n=1:length(MATfiles)
     clear H EMGchanNames Use_Thresh formatstr k lambda str words
     
 end
-r2LFP=[{'date','file','LFP r2','good EMGs','spike r2'}; r2LFP];
+r2LFP=[{'date','file','LFP r2','good EMGs','spike r2','H'}; r2LFP];
 clear n k ans 
 diary off
-save([date,'r2results.mat'],r2LFP)
+save([date,'r2results.mat'],'r2LFP')

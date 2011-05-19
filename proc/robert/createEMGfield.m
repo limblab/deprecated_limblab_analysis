@@ -29,7 +29,7 @@ else
     return
 end
 % populate bdf.emg
-BDFout.emg.emgnames=BDFin.raw.analog.channels(emgchans);
+BDFout.emg.emgnames=ainpScrubber(BDFin.raw.analog.channels(emgchans));
 BDFout.emg.emgfreq=BDFin.raw.analog.adfreq(emgchans(1));
 BDFout.emg.data=cat(2,BDFin.raw.analog.data{emgchans});
 emgfreq=BDFout.emg.emgfreq;

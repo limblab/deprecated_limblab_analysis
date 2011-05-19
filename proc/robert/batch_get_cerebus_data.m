@@ -3,6 +3,7 @@
 
 %% folder/file info
 PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+% PathName=pwd;
 if sum(double(PathName))==0 || exist(PathName,'dir')~=7
     disp('folder not valid.  aborting...')
     return
@@ -32,7 +33,7 @@ for n=1:length(NEVfiles)
     disp('saved EMG preview')
     
     bdf=get_cerebus_data(FileName,1);
-    save(fullfile(PathName,[FileName(1:end-4),'.mat']))
+    save(fullfile(PathName,[FileName(1:end-4),'.mat']),'bdf','FileName','PathName')
     clear bdf
     disp('saved bdf')
 end
