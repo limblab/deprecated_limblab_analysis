@@ -1,5 +1,8 @@
 filenames = dir('*Pedro*');
 
+fit_func = 'm*x';
+f_linear = fittype(fit_func,'independent','x');
+
 allPDs = [];
 allDates = [];
 for iFile = 1:length(filenames)
@@ -21,26 +24,37 @@ for iElectrode = 1:length(electrode_list)
 %     errorbar(allDates, unwrap(electrode_pds{iElectrode}(:,4)),electrode_pds{iElectrode}(:,4)-electrode_pds{iElectrode}(:,3),...
 %         electrode_pds{iElectrode}(:,5)-electrode_pds{iElectrode}(:,4));
 %     plot(allDates, unwrap(electrode_pds{iElectrode}(:,4)))
-    temp = std(unwrap(electrode_pds{iElectrode}(:,4)));
-    electrode_std(iElectrode) = min(temp,abs(temp-2*pi));    
-    rand_idx = round(rand(1,length(electrode_pds{iElectrode}(:,4)))*(length(allPDs)-1))+1;
-    temp = std(unwrap(sort(allPDs(rand_idx,4))));
-    rand_std(iElectrode) =  min(temp,abs(temp-2*pi));    
-end
+%     temp = std(unwrap(electrode_pds{iElectrode}(:,4)));
+%     electrode_std(iElectrode) = min(temp,abs(temp-2*pi));
+%     rand_idx = round(rand(1,length(electrode_pds{iElectrode}(:,4)))*(length(allPDs)-1))+1;
+%     temp = std(unwrap(sort(allPDs(rand_idx,4))));
+%     rand_std(iElectrode) =  min(temp,abs(temp-2*pi)); 
 
+    pdmeans = electrode_pds{iElectrode}(:,4);
+    temp = length(pdmeans)/(sqrt(sum(cos(pdmeans)).^2 + sum(sin(pdmeans)).^2));
+    spread = acos(1/temp);
+    electrode_spread(iElectrode) = spread;
+    rand_idx = round(rand(1,length(electrode_pds{iElectrode}(:,4)))*(length(allPDs)-1))+1;
+    randpdmeans = allPDs(rand_idx,4);
+    temp = length(randpdmeans)/(sqrt(sum(cos(randpdmeans)).^2 + sum(sin(randpdmeans)).^2));
+    spread = acos(1/temp);
+    random_spread(iElectrode) = spread;   
+end
+%%
 figure
 subplot(211)
-hist(electrode_std*180/pi)
+hist(electrode_spread*180/pi,0:1:90)
 ylabel('Count')
 title(['Multiunit PD across ' num2str(floor(allDates(end))) ' days'])
 subplot(212)
-hist(rand_std*180/pi)
-xlabel('Std (deg)')
+hist(random_spread*180/pi,0:10:90)
+xlabel('PD spread (deg)')
 ylabel('Count')
 title(['Random multiunit PD across ' num2str(floor(allDates(end))) ' days']);
 
-same_electrode_diff = zeros(1,50000);
-different_electrode_diff = zeros(1,1000000);
+%%
+same_electrode_diff = zeros(1,100000);
+different_electrode_diff = zeros(1,5000000);
 same_counter = 0;
 diff_counter = 0;
 for i = 1:length(allPDs)-1
@@ -72,14 +86,23 @@ hist(different_electrode_diff*180/pi)
 xlabel('PD difference (deg)')
 title('Different electrodes')
 
+%%
 figure;
 pdmeans= allPDs(:,4);
 pdmeans = reshape(pdmeans,96,[]);
 pdconfs =allPDs(:,5)-allPDs(:,3);
-confs = reshape(pdconfs,96,10);
+confs = reshape(pdconfs,96,[]);
 confs = mean(confs,2);
 mmm = size(pdmeans,2)./sqrt(sum(cos(pdmeans')).^2 + sum(sin(pdmeans')).^2);
-drift = acos(1./mmm);
-plot(180*confs/pi,180*drift/pi,'k.')
+spread = acos(1./mmm);
+confs_deg = 180*confs/pi;
+spread_deg = 180*spread/pi;
+plot(confs_deg,spread_deg,'k.')
+[confs_spread_fit,gof] = fit(confs_deg,spread_deg',f_linear);
+hold on
+plot(confs_spread_fit);
 xlabel('Uncertainty (deg)')
-ylabel('Drift (deg)')
+ylabel('Spread (deg)')
+legend off
+
+plot(confs_deg(confs_deg<30),spread_deg(confs_deg<30),'r.')

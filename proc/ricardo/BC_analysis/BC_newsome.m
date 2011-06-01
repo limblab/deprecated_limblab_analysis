@@ -4,8 +4,10 @@ function BC_newsome(filenames)
     fail_code = 34;
     incomplete_code = 35;
     
+    num_iter = 100000;
     fit_func = 'a+b/(1+exp(x*c+d))';
     f_sigmoid = fittype(fit_func,'independent','x');
+    f_opts = fitoptions('Method','NonlinearLeastSquares','StartPoint',[1 -1 1 0]);
 
     trial_table_concat = [];
     for iFile = 1:length(filenames)
@@ -34,7 +36,7 @@ function BC_newsome(filenames)
 %             bdf_concat.units(i).ts = [bdf_concat.units(i).ts; bdf_all(iFile).units(i).ts + sum(end_time(1:iFile-1))];
 %         end
 %     end
-%     trial_table = trial_table_concat;
+    trial_table = trial_table_concat;
 %     bdf.units = bdf_concat.units;
     
     trial_table = trial_table(trial_table(:,table_columns.result)~=abort_code,:);
@@ -69,13 +71,32 @@ function BC_newsome(filenames)
             end
         end
     end
-    
-    for iElectrodes = 1:length(stim_electrodes)
-        reward_table_temp(:,:,iElectrodes) = sum(reward_table(:,:,stim_groups{iElectrodes}),3);
-        fail_table_temp(:,:,iElectrodes) = sum(fail_table(:,:,stim_groups{iElectrodes}),3);
+    num_sigmoids = length(stim_ids);
+    if length(stim_electrodes)>1
+        for iElectrodes = 1:length(stim_electrodes)
+            reward_table_temp(:,:,iElectrodes) = sum(reward_table(:,:,stim_groups{iElectrodes}),3);
+            fail_table_temp(:,:,iElectrodes) = sum(fail_table(:,:,stim_groups{iElectrodes}),3);
+        end
+        reward_table = reward_table_temp;
+        fail_table = fail_table_temp;
+        num_sigmoids = length(stim_electrodes);
+        legend_text = stim_electrodes;
+    else
+        currents = unique(filenames.current);
+        for iCurrent = 1:length(currents)
+            current_groups{iCurrent} = filenames.codes(filenames.current == currents(iCurrent));
+            reward_table_temp(:,:,iCurrent) = sum(reward_table(:,:,current_groups{iCurrent}),3);
+            fail_table_temp(:,:,iCurrent) = sum(fail_table(:,:,current_groups{iCurrent}),3);
+        end
+
+        reward_table = reward_table_temp;
+        fail_table = fail_table_temp;
+        num_sigmoids = length(currents);
+        legend_text = currents;
+        
     end
-    reward_table = reward_table_temp;
-    fail_table = fail_table_temp;
+
+
     
 %     %arbitrarily remove largest bump
 %     reward_table = reward_table(:,1:end-1,:);
@@ -83,10 +104,10 @@ function BC_newsome(filenames)
 %     bump_magnitudes = bump_magnitudes(1:end-1);
     
     if length(bump_directions)==2
-        bump_dir1_move_target1 = squeeze(fail_table(1,:,:))';
-        bump_dir2_move_target1 = squeeze(reward_table(2,:,:))';
-        bump_dir1_move_target2 = squeeze(reward_table(1,:,:))';
-        bump_dir2_move_target2 = squeeze(fail_table(2,:,:))';
+        bump_dir1_move_target1 = reshape(fail_table(1,:,:),length(bump_magnitudes),num_sigmoids)';
+        bump_dir2_move_target1 = reshape(reward_table(2,:,:),length(bump_magnitudes),num_sigmoids)';
+        bump_dir1_move_target2 = reshape(reward_table(1,:,:),length(bump_magnitudes),num_sigmoids)';
+        bump_dir2_move_target2 = reshape(fail_table(2,:,:),length(bump_magnitudes),num_sigmoids)';
         
         moved_target1 = [bump_dir1_move_target1(:,end:-1:1) bump_dir2_move_target1]; 
         temp = moved_target1(:,end/2) + moved_target1(:,end/2+1);
@@ -112,13 +133,21 @@ function BC_newsome(filenames)
            
         end
         
+
         for iStim=1:length(stim_electrodes)
-            sigmoid_fit = fit(bumps_reordered,percent_moved_target1(iStim,:)',f_sigmoid);
+            sigmoid_fit = fit(bumps_reordered,percent_moved_target1(iStim,:)',f_sigmoid,f_opts);
             h_temp = plot(sigmoid_fit);
             set(h_temp,'LineWidth',2,'Color',colors(round(iStim*64/length(stim_ids)),:))
         end
+
+        stim_electrodes
+        percent_moved_target1
+        moved_target1
+        moved_target2
+        
+        sigmoid_fit_bootstrap(moved_target1,moved_target2,bumps_reordered,num_iter);
             
-        legend(num2str(stim_electrodes'))
+        legend(num2str(legend_text'))
         xlabel('Bump magnitude [N]')
         ylabel('Move to target 1')
         ylim([0 1])

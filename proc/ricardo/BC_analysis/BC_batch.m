@@ -2,15 +2,18 @@ function BC_batch
 
 user = 'Ricardo';
 
-% bump_raster_files(1).filenames = {'Tiki_2011-03-22_BC_002-s_multiunit','Tiki_2011-03-22_BC_003-s_multiunit'};
+% bump_raster_files(1).filenames = {'Tiki_2011-05-17_BC_001-s_thres',''};
 % bump_raster_files(1).filenames = {'Tiki_2011-05-04_BC_001-s_multiunit'};
 % bump_raster_files(2).filenames = {'Tiki_2011-03-22_BC_002-s_clear_units_only','Tiki_2011-03-22_BC_003-s_clear_units_only'};
 bump_raster_files = [];
 
-% psychophysics_files = {'Tiki_2011-04-28_BC_001-s_multiunit','Tiki_2011-04-28_BC_002-s_multiunit','Tiki_2011-04-28_BC_003-s_multiunit'};
+% psychophysics_files = {'Tiki_2011-05-19_BC_001-s_multiunit','Tiki_2011-04-28_BC_002-s_multiunit','Tiki_2011-04-28_BC_003-s_multiunit'};
 psychophysics_files = [];
 
-newsome_files(1).filenames = {'Tiki_2011-05-07_BC_001'};
+% newsome_files(1).filenames = {'Tiki_2011-05-18_BC_001','Tiki_2011-05-18_BC_002','Tiki_2011-05-18_BC_003','Tiki_2011-05-18_BC_004',...
+%     'Tiki_2011-05-18_BC_005'};
+newsome_files(1).filenames = {'Tiki_2011-05-27_BC_001'};
+% newsome_files = [];
 
 filelist = BC_experiment_list(user);
 [BC_sorted_filelist BC_non_sorted_filelist] = BC_sorted_files(filelist);

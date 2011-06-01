@@ -43,7 +43,8 @@ chan_unit = reshape([bdf.units(:).id],2,[])';
 %     unit_list_param = chan_unit(chan_unit(:,2)>0 & chan_unit(:,2)<255,:);
 % end
 if nargin==1
-    unit_list_param = chan_unit(chan_unit(:,2)>0 & chan_unit(:,2)<255,:);
+%     unit_list_param = chan_unit(chan_unit(:,2)>0 & chan_unit(:,2)<255,:);
+    unit_list_param = chan_unit(chan_unit(:,2)<255,:);
 end
 trial_table =  trial_table(trial_table(:,table_columns.result)==32,:);
 bump_table = trial_table(trial_table(:,table_columns.bump_magnitude)>0,:);
