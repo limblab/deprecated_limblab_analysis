@@ -27,7 +27,7 @@ while ~feof(fid)
     
     A(line,1) = str2double(tline(1:tabs(1)-1));
     A(line,2) = str2double(tline(tabs(1)+1:tabs(2)-1));
-    bank = double(tline(tabs(2)+1:tabs(3)-1))-double('A');
+    bank = 32*(double(tline(tabs(2)+1:tabs(3)-1))-double('A'));
     A(line,3) = str2double(tline(tabs(3)+1:tabs(4)-1))+bank;
     A(line,4) = str2double(strrep(tline(tabs(4)+1:end),'elec',''));
 
