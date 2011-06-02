@@ -10,8 +10,11 @@ chans     = unique(stim_array(:,2));
 numchans = length(chans);
 
 binnedPW = zeros(numbin,numchans);
+labels = {};
 
 for ch = 1:numchans
+    
+    labels = [labels {sprintf('ch %g',chans(ch))}];
     
     ch_idx = stim_array(:,2)==chans(ch);
     PW = stim_array(ch_idx,4);
@@ -24,3 +27,5 @@ end
 
 figure;
 bar(bin_bottom,binnedPW);
+legend(labels);
+

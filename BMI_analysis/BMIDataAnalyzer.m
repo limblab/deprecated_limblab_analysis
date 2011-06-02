@@ -484,7 +484,7 @@ function BMIDataAnalyzer()
         disp('Done.');
 
         disp('Saving Offline EMG Predictions...');
-        OLPred_FileName = [sprintf('OLPred_mfxval_-%s', Bin_FileName(1:end-4)) '.mat'];
+        OLPred_FileName = [sprintf('OLPred_mfxval_%s', Bin_FileName(1:end-4)) '.mat'];
         [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
 
         if isequal(OLPred_FileName, 0) || isequal(PathName,0)

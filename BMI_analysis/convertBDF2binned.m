@@ -399,19 +399,18 @@ else
 end
     
 %% Stimulator Commands
-% if isfield(datastruct,'stim') 
-%     if isa(datastruct.stim,'numeric')
-%         
-%         chans    = unique(datastruct.stim(:,2));
-%         numchans = length(chans);
-%
-%         %%% Bin at binsize or Stim period??
-%
-%     end
-% end
+stim = [];
+if isfield(datastruct,'stim') 
+    if isa(datastruct.stim,'numeric')
+        %%% Bin at binsize or Stim period??
+        % bin at stim period, stim[] array includes timestamps in first column
+        [binned_stim_array, stimT] = binPW_atStimFreq(stim);
+    end
+end
 
 %% Outputs
 binnedData = struct('timeframe',timeframe,...
+                    'meta',outstruct.meta,...
                     'emgguide',emgguide,...
                     'emgdatabin',emgdatabin,...
                     'forcelabels',forcelabels,...
@@ -424,7 +423,9 @@ binnedData = struct('timeframe',timeframe,...
                     'veloclabels',veloclabels,...
                     'words',words,...
                     'targets',targets,...
-                    'trialtable',tt);
+                    'trialtable',tt,...
+                    'stim',binned_stim_array,...
+                    'stimT',stimT);
                                
 %% resample function for single-precision (embeded function):
 

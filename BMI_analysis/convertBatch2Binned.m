@@ -3,7 +3,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         %varargin = BDF_FileNames, dataPath, binsize, starttime, stoptime, hpfreq,
         %lpfreq, MinFiringRate
         
-    dataPath = 'C:\Monkey\Keedoo\';
+    dataPath = 'C:\Monkey\Jaco\Data\';
         
     if nargin == 0
         [BDF_FileNames, PathName] = uigetfile( { [dataPath '\BDFStructs\*.mat']},...
