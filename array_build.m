@@ -1,6 +1,12 @@
-correspond=convertMAP2MAT('1024-0387.cmp');
-X=correspond(:,3:4);
-X=sortrows(X,1);
+function array_build(mapfile,X)
+%mapfile cmp file 
+%X : 2 columns one first column with electrode name as in cerebus, and  
+
+correspond=convertMAP2MAT(char(mapfile));
+if size(X,2)==1 
+    X(:,2)=  X(:,1);
+    X(:,1) =1:96;
+end
 for j=1:10
     for i=1: 10
         arrays(10-(i-1),10-(j-1))=i+(10*(j-1));
@@ -34,3 +40,4 @@ colormap(gray)
 set(gca,'XTick',[],'XTicklabel',[],'YTick',[],'YTicklabel',[])
 xlabel('lateral');
 ylabel('anterior')
+end
