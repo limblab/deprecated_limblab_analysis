@@ -397,7 +397,8 @@ for i = 1:folds
 %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
     vaftr(i,:)=v/100; %Divide by 100 because v is in percent
 %     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-    vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
+%     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
+    vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
 
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));

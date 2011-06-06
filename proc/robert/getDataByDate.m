@@ -1,4 +1,4 @@
-function CEBorPLX=getDataByDate(animal,dateNumber)
+function [CEBorPLX,remoteFolder,destFolder]=getDataByDate(animal,dateNumber)
 
 if ~nargin
     animal=input('name of animal: ','s');
@@ -50,6 +50,12 @@ if ~status
         end
     end
     cd(destFolder)
+    
+    remotePathBank={fullfile([remoteDriveLetter,':'],'Miller','Chewie_8I2','BDFs', ...
+        regexp(destFolder,'[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]','match','once')), ...
+        fullfile([remoteDriveLetter,':'],'Miller','Mini_7H1','bdf', ...
+        regexp(destFolder,'[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]','match','once'))};
+    remoteFolder=remotePathBank{cellfun(@isempty,regexpi(remotePathBank,animal))==0};
     if ~isempty(regexp(candidateFileLineText{5},'\.plx','once'))
         CEBorPLX='plx';
     else

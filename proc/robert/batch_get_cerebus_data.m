@@ -2,8 +2,9 @@
 % file pairs.
 
 %% folder/file info
-PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
-% PathName=pwd;
+if exist('PathName','var')~=1
+    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+end
 if sum(double(PathName))==0 || exist(PathName,'dir')~=7
     disp('folder not valid.  aborting...')
     return

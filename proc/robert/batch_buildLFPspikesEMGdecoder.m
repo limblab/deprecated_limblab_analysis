@@ -93,7 +93,7 @@ for n=1:length(MATfiles)
     nfeat=150;
     PolynomialOrder=2;
     smoothfeats=0;
-    binsize=0.1;
+    binsize=0.05;
     if exist('fnam','var')~=1
         fnam='';
     end
@@ -128,7 +128,7 @@ for n=1:length(MATfiles)
     formatstr=[formatstr, '\n'];
     
     fprintf(1,formatstr,mean(vaf,1))
-    fprintf(1,'overall mean r2 %.4f\n',mean(vaf(:)))
+    fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
 	% columns of r2matrix are: 
 	% date	file	LFP_r2	good_EMGs	spike_r2	H
@@ -138,8 +138,8 @@ for n=1:length(MATfiles)
     % FILE in it; that way if the thing has to be run > 1X because of an
     % error somewhere the loader won't choke on the new .mat files that
     % were added.
-    save([fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
-        'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats');
+    save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
+        'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 
     % clear all the outputs of the LFP predictions analysis, so there's no
     % confussion when things are re-generated for the spike prediction
@@ -184,12 +184,12 @@ for n=1:length(MATfiles)
     formatstr='EMG vaf mean across folds: ';
     for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
     formatstr=[formatstr, '\n'];
-    fprintf(1,formatstr,mean(r2,1))
-    fprintf(1,'overall mean vaf %.4f\n',mean(r2(:)))
+    fprintf(1,formatstr,mean(vaf,1))
+    fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
     r2m=r2mean;
-    save([fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
-        ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P');
+    save(['outputs\',fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
+        ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P','EMGchanNames');
     
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
@@ -199,3 +199,5 @@ end
 clear n k ans r2* 
 diary off
 % save([date,'r2results.mat'],r2LFP)
+
+copyfile('outputs','\\165.124.111.234\limblab\user_folders\Robert\data\monkey\outputs')
