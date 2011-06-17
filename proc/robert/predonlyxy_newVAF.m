@@ -69,10 +69,10 @@ if ~exist('featind','var') || (length(featind)<nfeat)
 		end
 	end
 	
-	rr=reshape(r,6,[]);
+% 	rr=reshape(r,6,[]);
 	[sr,featind]=sort(r,'descend');
 	
-	[bestf,bestc]=ind2sub(size(rr),featind(1:nfeat));
+% 	[bestf,bestc]=ind2sub(size(rr),featind(1:nfeat));
 	
 	clear r
 end

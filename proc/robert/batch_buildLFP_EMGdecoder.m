@@ -2,7 +2,9 @@
 % files containing FP and EMG data
 
 % folder/file info
-PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+if exist('PathName','var')~=1
+    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+end
 % PathName=pwd;
 if exist(PathName,'dir')~=7
     disp('folder not valid.  aborting...')
@@ -16,8 +18,7 @@ Files=dir(PathName);
 diary('LFP_EMGdecoder_results.txt');
 Files(1:2)=[];
 FileNames={Files.name};
-MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly]\.mat'))==0 & ...
-    cellfun(@isempty,regexp(FileNames,'[^poly][^0-9]\.mat'))==0);
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'[^EMGonly][^poly]\.mat'))==0);
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
