@@ -52,7 +52,7 @@ for i=1:length(MATfiles)
 		neuronind=randperm(max(nNeurons));
 		bdfTemp.units=bdfTemp.units(neuronind(1:nNeurons(n)));
 		
-		[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpoly(bdfTemp,signal, ...
+		[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpolyMOD(bdfTemp,signal, ...
 			cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
 		
 		EMGVmall=[EMGVmall;vmean];

@@ -162,7 +162,7 @@ for n=1:length(MATfiles)
     end
     
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P] = ...
-        predictions_mwstikpoly(bdf,signal,cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
+        predictions_mwstikpolyMOD(bdf,signal,cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
     close
 
     fprintf(1,'\n\n\n\n\n=====================\nspike predictions DONE\n====================\n\n\n\n')

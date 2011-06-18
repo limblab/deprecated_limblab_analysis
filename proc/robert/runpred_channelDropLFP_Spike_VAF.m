@@ -50,7 +50,7 @@ for i=1:length(MATfiles)
         emgsamplerate=bdf.emg.freq;
     end
     % bdf.emg.data should just be an array, not cells or anything.
-    sig=bdf.emg.data(:,2:end);
+    sig=double(bdf.emg.data(:,2:end));
     analog_times=bdf.emg.data(:,1);
     
     if ~isempty(find(cellfun(@isempty,regexp(fnam,badEMGdays))==0, 1))
@@ -90,54 +90,57 @@ for i=1:length(MATfiles)
     % disabled channels for LFPs and spikes won't be the same, so include
     % every channel of 1:96, just substitute NaNs for whatever isn't
     % participating in the loop this time.
-    fpchansOn=str2num(char(regexp(bdf.raw.analog.channels,'(?<=elec)[0-9]+','match','once')));
-    tmp=cat(1,bdf.units.id); unitsOn=unique(tmp(:,1));
+	LFPchansOn=str2num(char(regexp(bdf.raw.analog.channels,'(?<=elec)[0-9]+','match','once')));
 
-    chansRandInd=randperm(96);
+	randomInds=randperm(96);
     
     for numChans=2:96
         % trim the LFP channels.  Use random sample.  Make local copies for
         % each of LFP and spikes.
-        fpChansRandInd=chansRandInd;
-        if isempty(intersect(chansRandInd(numChans),fpchansOn))==0
-            fpCut=fp(chansRandInd(1:numChans),:);
-            numfp=size(fpCut,1);
-            if numfp*6 < 150
-                nfeat=numfp*6;
-            else
-                nfeat=150;
-            end
-            
-            [~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~] = predictionsfromfp5allMOD(sig,signal, ...
-                numfp,binsize,folds,numlags,numsides,samprate,fpCut,fptimes,temg,fnam,wsz,nfeat, ...
-                PolynomialOrder,Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
-            close
-            EMGVAFmallLFP=[EMGVAFmallLFP; vmean];
-            EMGVAFsdallLFP=[EMGVAFsdallLFP; vsd];
-        else
-            EMGVAFmallLFP=[EMGVAFmallLFP; NaN];
-            EMGVAFsdallLFP=[EMGVAFsdallLFP; NaN];
-        end
 
-        % trim the spike channels
-		bdfTemp=bdf;
-		fprintf(1,'%d neurons, ',nNeurons(n))
-		bdfTemp.units=bdfTemp.units(neuronind(1:chansRandInd));
 		
-		[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpoly(bdfTemp,signal, ...
-			cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);        
-        
-        
-        EMGVAFmallSpike=[];
-        EMGVAFsdallSpike=[];
+		if ~isempty(intersect(randomInds(numChans),LFPchansOn))
+			fpUse=fp(ismember(LFPchansOn,randomInds(1:numChans)),:);
+			numfp=size(fpUse,1);
+			if numfp*6 < 150
+				nfeat=numfp*6;
+			else
+				nfeat=150;
+			end
+			
+			[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~] = ...
+				predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags, ...
+				numsides,samprate,fpUse,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
+				Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+			close
+			EMGVAFmallLFP=[EMGVAFmallLFP; vmean];
+			EMGVAFsdallLFP=[EMGVAFsdallLFP; vsd];
+		else
+			EMGVAFmallLFP=[EMGVAFmallLFP; NaN];
+			EMGVAFsdallLFP=[EMGVAFsdallLFP; NaN];
+		end
 
+        % trim the spike channels.  first, figure out what's there.
+		unitChansOn=cat(1,bdf.units.id);
+
+		if ~isempty(intersect(randomInds(numChans),unitChansOn(:,1)))
+			bdfUse=bdf;
+			bdfUse.units=bdfUse.units(ismember(unitChansOn(:,1),randomInds(1:numChans)) & ...
+				unitChansOn(:,2)~=0);
+			bdfUse.emg.data=double(bdfUse.emg.data);
+			[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpolyMOD(bdfUse,signal, ...
+				cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
+			EMGVAFmallSpike=[EMGVAFmallSpike; vmean];
+			EMGVAFsdallSpike=[EMGVAFsdallSpike; vsd];
+		else
+			EMGVAFmallSpike=[EMGVAFmallSpike; NaN];
+			EMGVAFsdallSpike=[EMGVAFsdallSpike; NaN];			
+		end
+		
     end
 	
-	save(fullfile(PathName,'channel_dropping_LFP',[fnam,' chan_drop.mat']), ...
-		'EMGVmall','EMGVsdall','EMGchanNames')
-    
-    
-    
+	save(fullfile(PathName,'channel_dropping_LFP_Spike',[fnam,' chan_drop.mat']), ...
+		'EMGVAFmallLFP','EMGVAFsdallLFP','EMGVAFmallSpike','EMGVAFsdallSpike','EMGchanNames')   
 end
 
 
