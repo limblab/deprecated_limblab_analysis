@@ -3,7 +3,9 @@ function runpred_channelDropLFP_Spike_VAF(PathName)
 % is actually a batch file.
 
 % create a folder for the outputs
-mkdir('channel_dropping_LFP_Spike')
+if exist('channel_dropping_LFP_Spike','dir')==0
+	mkdir('channel_dropping_LFP_Spike')
+end
 
 % load in each BDF file, trim down the number of channels, then run
 % predictionsfromfp5all.m as if that were all the LFP channels we have.  
@@ -128,6 +130,9 @@ for i=1:length(MATfiles)
 			bdfUse.units=bdfUse.units(ismember(unitChansOn(:,1),randomInds(1:numChans)) & ...
 				unitChansOn(:,2)~=0);
 			bdfUse.emg.data=double(bdfUse.emg.data);
+			if length(bdfUse.emg.emgnames)+1 == size(bdfUse.emg.data,2)
+				bdfUse.emg.data(:,1)=[];
+			end
 			[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpolyMOD(bdfUse,signal, ...
 				cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
 			EMGVAFmallSpike=[EMGVAFmallSpike; vmean];
