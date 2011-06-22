@@ -138,6 +138,7 @@ for n=1:length(MATfiles)
     % FILE in it; that way if the thing has to be run > 1X because of an
     % error somewhere the loader won't choke on the new .mat files that
     % were added.
+    if exist('outputs','dir')==0, mkdir('outputs'), end
     save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 
@@ -158,7 +159,7 @@ for n=1:length(MATfiles)
     % s1_analysis/.../proc/marc folder is set to use the whole bdf.emg.data
     % field, so cut out the leading column if it's just times.
     if size(bdf.emg.data,2) > max(size(bdf.emg.emgnames)) && all(diff(bdf.emg.data(:,1)) > 0)
-%         bdf.emg.data(:,1)=[]; 
+        bdf.emg.data(:,1)=[]; 
     end
     
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P] = ...

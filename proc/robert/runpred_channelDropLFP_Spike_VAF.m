@@ -24,6 +24,10 @@ else
         fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
         disp('quitting...')
         return
+        
+    else 
+        contyes=input(sprintf('%d files found.  continue? (1 or 0): ',length(MATfiles)));
+        if ~contyes, return, end
     end
 end
 
@@ -99,8 +103,7 @@ for i=1:length(MATfiles)
     for numChans=2:96
         % trim the LFP channels.  Use random sample.  Make local copies for
         % each of LFP and spikes.
-
-		
+        disp(['LFP: ',num2str(numChans),' channels'])
 		if ~isempty(intersect(randomInds(numChans),LFPchansOn))
 			fpUse=fp(ismember(LFPchansOn,randomInds(1:numChans)),:);
 			numfp=size(fpUse,1);
@@ -118,11 +121,12 @@ for i=1:length(MATfiles)
 			EMGVAFmallLFP=[EMGVAFmallLFP; vmean];
 			EMGVAFsdallLFP=[EMGVAFsdallLFP; vsd];
 		else
-			EMGVAFmallLFP=[EMGVAFmallLFP; NaN];
-			EMGVAFsdallLFP=[EMGVAFsdallLFP; NaN];
+			EMGVAFmallLFP=[EMGVAFmallLFP; NaN*ones(size(EMGchanNames))];
+			EMGVAFsdallLFP=[EMGVAFsdallLFP; NaN*ones(size(EMGchanNames))];
 		end
 
         % trim the spike channels.  first, figure out what's there.
+        disp(['Spike: ',num2str(numChans),' channels'])
 		unitChansOn=cat(1,bdf.units.id);
 
 		if ~isempty(intersect(randomInds(numChans),unitChansOn(:,1)))
@@ -130,6 +134,8 @@ for i=1:length(MATfiles)
 			bdfUse.units=bdfUse.units(ismember(unitChansOn(:,1),randomInds(1:numChans)) & ...
 				unitChansOn(:,2)~=0);
 			bdfUse.emg.data=double(bdfUse.emg.data);
+            bdfUse.emg.emgnames(currBadChans)=[];
+            bdfUse.emg.data(:,[1 currBadChans+1])=[];
 			if length(bdfUse.emg.emgnames)+1 == size(bdfUse.emg.data,2)
 				bdfUse.emg.data(:,1)=[];
 			end
@@ -138,8 +144,8 @@ for i=1:length(MATfiles)
 			EMGVAFmallSpike=[EMGVAFmallSpike; vmean];
 			EMGVAFsdallSpike=[EMGVAFsdallSpike; vsd];
 		else
-			EMGVAFmallSpike=[EMGVAFmallSpike; NaN];
-			EMGVAFsdallSpike=[EMGVAFsdallSpike; NaN];			
+			EMGVAFmallSpike=[EMGVAFmallSpike; NaN*ones(size(EMGchanNames))];
+			EMGVAFsdallSpike=[EMGVAFsdallSpike; NaN*ones(size(EMGchanNames))];			
 		end
 		
     end
