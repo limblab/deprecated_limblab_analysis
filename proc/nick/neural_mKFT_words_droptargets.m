@@ -89,6 +89,7 @@ endindex = [(startindex(2:end) - 1); length(transitions)];
 
 n=0;
 for i = 1:length(startindex)
+if targets(startindex(i),1) == 0 || targets(startindex(i),1) == 8
     n=n+1;
     p = trainData.cursorposbin(startindex(i):endindex(i),:);
     v = trainData.velocbin(startindex(i):endindex(i),1:2);
@@ -103,6 +104,21 @@ for i = 1:length(startindex)
 %     X{n} = [p v ones(length(p),1) targ]; % no accel
 %     X0{n} = [p v ones(length(p),1)]; % no accel
     Z{n} = training_set(startindex(i):endindex(i),:);
+end
+%     n=n+1;
+%     p = trainData.cursorposbin(startindex(i):endindex(i),:);
+%     v = trainData.velocbin(startindex(i):endindex(i),1:2);
+%     a = [zeros(1,2); diff(v)];
+% %     v = [zeros(1,2); diff(p)];
+% %     a = [zeros(2,2); diff(diff(p))];
+%     targ = repmat(targets(startindex(i),:),length(p),1); % make target new target position
+% %     X{n} = [p v a targ];
+% %     X0{n} = [p v a];
+%     X{n} = [p v a ones(length(p),1) targ];
+%     X0{n} = [p v a ones(length(p),1)];
+% %     X{n} = [p v ones(length(p),1) targ]; % no accel
+% %     X0{n} = [p v ones(length(p),1)]; % no accel
+%     Z{n} = training_set(startindex(i):endindex(i),:);
 end
 
 fprintf('Finished building training set\n')
@@ -208,7 +224,8 @@ for prior_i = 1:11 % <--------------- for iterative testing (end at bottom)
     p2 = 1 - p1;
     priors = [p1 p2];
     
-    for r_i = 1:11 % <--------------- for iterative testing (end at bottom)
+%     for r_i = 1:11 % <--------------- for iterative testing (end at bottom)
+    for r_i = 1:7 % <--------------- for iterative testing (end at bottom)
 
         Rmult = 2^(r_i - 6);
         runthrough = runthrough + 1;
@@ -320,4 +337,4 @@ KFT_mVAF(prior_i,r_i) = getmvaf(testData.cursorposbin(startindex(1):end,:),xpred
     end
 end
 
-save('mKFTs_prior_x_Rmults',KFT_mVAF);
+save('mKFTs_prior_x_Rmults_droptargets.mat',KFT_mVAF);

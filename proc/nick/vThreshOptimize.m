@@ -6,15 +6,15 @@ UseAllInputsOption = 1;
 PolynomialOrder = 1;
 PredEMG = 0;
 PredForce = 0;
-PredCursPos = 0;
+PredCursPos = 1;
 PredVeloc = 1;
 Use_SD = 1;
 
-foldlength = 60;
+foldlength = 300;
 dataEnd = length(binnedData.timeframe);
 binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
 
-leave_center_words = binnedData.words(:,2) == 49; % create a logical array with indices of all words that represent leaving center target
+leave_center_words = (binnedData.words(:,2) >=64 & binnedData.words(:,2) < 80); % create a logical array with indices of all words that represent outter target appearance
 reward_words = binnedData.words(:,2) == 32; % create a logical array with indices of all words that represent rewards (successful trials)
 rel_times = [binnedData.words(leave_center_words,1); binnedData.words(reward_words,1)];
 
@@ -29,18 +29,21 @@ for x = 1:length(rel_times)
     end
 end
 
-for thresh = 1:5 % treshold values in cm/sec
+% test_threshes = [.5 1 1.5 2 2.5 3 4 5 6 7 8 9 10 12 14 16];
+test_threshes = [ 1  2  4  6 7 8 9 10 12  16];
+AllPredData = cell(1,length(test_threshes));
+for thresh = 1:length(test_threshes) % treshold values in cm/sec
     
-    binnedData.states = binnedData.velocbin(:,3) > thresh;
+    binnedData.states = binnedData.velocbin(:,3) > test_threshes(thresh);
     
     testData = binnedData;
     modelData = binnedData;
 
-    nfold = 1; % number of folds to test
+    nfold = 6; % number of folds to test
 
     for i = 0:nfold-1
 
-        fprintf('processing xval %d of %d for threshold %d\n',i+1,nfold,thresh);
+        fprintf('processing xval %d of %d for threshold %d of %d\n',i+1,nfold,thresh,length(test_threshes));
 
         testDataStart = round(1 + i*foldlength/binsize);      %move the test block from beginning of file up to the end,round because of floating point error
         testDataEnd = round(testDataStart + foldlength/binsize - 1);    
@@ -120,24 +123,86 @@ for thresh = 1:5 % treshold values in cm/sec
     %     testData.states = evalin('base',sprintf('test_states{1,%d}',i+1));
     %     modelData.states= evalin('base',sprintf('model_states{1,%d}',i+1));
 
-        % 2 different models, one for each state:
+
         fprintf('Model Building...\n');
-        tic;
-        filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
-        toc;
+ 
+%         %-----------------
+        
+%         % 2 different models, one for each state:
+%         tic;
+%         filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+%         toc;
+%         model.posture_decoder = filter{2};
+%         model.movement_decoder = filter{3};
+%         PredData = predictSDSignals(model, testData, Use_SD);
+%         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+%         R2(i+1,:,thresh) = CalculateR2(TestSigs,PredData.preddatabin)';
+%         vaf(i+1,:,thresh) = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
+%         mse(i+1,:,thresh) = mean((PredData.preddatabin-TestSigs).^2);
+%         SDpost(i+1,:,thresh) = std(PredData.preddatabin(testData.targetHold,:));
+%         Meanpost(i+1,:,thresh)=mean(PredData.preddatabin(testData.targetHold,:));
 
-        model.posture_decoder = filter{2};
-        model.movement_decoder = filter{3};
+%         %------------------
 
-        PredData = predictSDSignals(model, testData, Use_SD);
-    %     PredData = predictSDSignals(filter, testData, Use_SD);
+%         %Or fixed Wiener:
+%         tic;
+%         filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+%         toc;
+%         PredData = predictSignals(filter, testData);
+%         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+%        
+%         R2(i+1,:,thresh) = CalculateR2(TestSigs((end-size(PredData.preddatabin,1)+1):end,:),PredData.preddatabin)';
+%         vaf(i+1,:,thresh) = 1 - sum( (PredData.preddatabin-TestSigs((end-size(PredData.preddatabin,1)+1):end,:)).^2 ) ./ sum( (TestSigs((end-size(PredData.preddatabin,1)+1):end,:) - repmat(mean(TestSigs((end-size(PredData.preddatabin,1)+1):end,:)),size(TestSigs((end-size(PredData.preddatabin,1)+1):end,:),1),1)).^2 );
+%         mse(i+1,:,thresh) = mean((PredData.preddatabin-TestSigs((end-size(PredData.preddatabin,1)+1):end,:)).^2);
+%         SDpost(i+1,:,thresh) = std(PredData.preddatabin(testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:),:));
+
+%         %-----------------
+
+%         %fixed Wiener + Filter Posture
+        filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+        PredData = predictSDFSignals(filter, testData, Use_SD);
         TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+        R2(i+1,:,thresh) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+        vaf(i+1,:,thresh) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+            sum( (TestSigs(round(fillen/binsize):end,:) - ...
+            repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+            size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );     
+        mse(i+1,:,thresh)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
 
-        R2(i+1,:,thresh) = CalculateR2(TestSigs,PredData.preddatabin)';
-        vaf(i+1,:,thresh) = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
-        mse(i+1,:,thresh) = mean((PredData.preddatabin-TestSigs).^2);
-        SDpost(i+1,:,thresh) = std(PredData.preddatabin(testData.targetHold));
-
+        
+        %Concatenate predicted Data to save:
+        %Skip this for the first fold
+        if i == 0
+            %First fold
+            AllPredData{thresh} = PredData;
+            AllPredData{thresh}.VelThresh = test_threshes(thresh);
+            AllPredData{thresh}.states    = testData.states((end-size(PredData.preddatabin,1)+1):end,1);
+            AllPredData{thresh}.stateSTD  = StateVar(PredData.preddatabin,testData.states((end-size(PredData.preddatabin,1)+1):end,1));
+            AllPredData{thresh}.targetHold        = testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:);
+            AllPredData{thresh}.targetHoldSTD     = StateVar(PredData.preddatabin,testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:));
+            AllPredData{thresh}.targetHoldVelMean = StateMean(PredData.preddatabin,testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:));
+        else
+            %Not first fold, append new values to existing results
+            AllPredData{thresh}.timeframe       = [AllPredData{thresh}.timeframe; PredData.timeframe];
+            AllPredData{thresh}.preddatabin     = [AllPredData{thresh}.preddatabin;PredData.preddatabin];
+            AllPredData{thresh}.states          = [AllPredData{thresh}.states; testData.states((end-size(PredData.preddatabin,1)+1):end,1)];          
+            stateSTD                            = StateVar(PredData.preddatabin,testData.states((end-size(PredData.preddatabin,1)+1):end,1));
+            AllPredData{thresh}.stateSTD{1}     = [AllPredData{thresh}.stateSTD{1}; stateSTD{1}];
+            AllPredData{thresh}.stateSTD{2}     = [AllPredData{thresh}.stateSTD{2}; stateSTD{2}];
+            AllPredData{thresh}.targetHold      = [AllPredData{thresh}.targetHold; testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:)];
+            targetHoldSTD                       = StateVar(PredData.preddatabin,testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:));
+            AllPredData{thresh}.targetHoldSTD{1}= [AllPredData{thresh}.targetHoldSTD{1}; targetHoldSTD{1}];
+            AllPredData{thresh}.targetHoldSTD{2}= [AllPredData{thresh}.targetHoldSTD{2}; targetHoldSTD{2}];
+            targetHoldMean                      = StateVar(PredData.preddatabin,testData.targetHold((end-size(PredData.preddatabin,1)+1):end,:));
+            AllPredData{thresh}.targetHoldVelMean{1}= [AllPredData{thresh}.targetHoldVelMean{1}; targetHoldMean{1}];
+            AllPredData{thresh}.targetHoldVelMean{2}= [AllPredData{thresh}.targetHoldVelMean{2}; targetHoldMean{2}];
+        end
+        
     end %for i = 0:nfold-1
 
 end % for thresh = 1:16
+
+clear stateSTD targetHoldSTD targetHoldMean fillen binsize modelData testData Use_SD i thresh;
+clear PredEMG PredForce PredVeloc PredCursPos dataPath UseAllInputsOption PolynomialOrder;
+clear PredData TestSigs dataEnd filter leave_center_words rel_times reward_words testDataEnd;
+clear testDataStart x y foldlength;

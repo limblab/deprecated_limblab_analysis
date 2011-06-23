@@ -82,29 +82,31 @@ for x = window_bins:length(testData.timeframe)
 
 end
 
-model_states = zeros(length(modelData.timeframe),5);
+model_states = modelData.states;
 
-for x = window_bins:length(modelData.timeframe)
-
-    data_set = [];
-    for y = 1:window_bins
-        data_set = [data_set modelData.spikeratedata(x-(y-1),:)];
-    end
-
-    mean_data_set = mean(modelData.spikeratedata(x-(window_bins-1):x,:),1);
-    
-    if modelData.velocbin(x,3) > 8
-        model_states(x,1) = 1;
-    end
-
-    model_states(x,2) = completeBayes.predict(data_set);
-
-    model_states(x,3) = peakBayes.predict(mean_data_set);
-
-    model_states(x,4) = 0 >= data_set*completeLDAcoeffL(1,2).linear + completeLDAcoeffL(1,2).const;
-
-    model_states(x,5) = 0 >= mean_data_set*peakLDAcoeffL(1,2).linear + peakLDAcoeffL(1,2).const;
-
-end
+% model_states = zeros(length(modelData.timeframe),5);
+% 
+% for x = window_bins:length(modelData.timeframe)
+% 
+%     data_set = [];
+%     for y = 1:window_bins
+%         data_set = [data_set modelData.spikeratedata(x-(y-1),:)];
+%     end
+% 
+%     mean_data_set = mean(modelData.spikeratedata(x-(window_bins-1):x,:),1);
+%     
+%     if modelData.velocbin(x,3) > 8
+%         model_states(x,1) = 1;
+%     end
+% 
+%     model_states(x,2) = completeBayes.predict(data_set);
+% 
+%     model_states(x,3) = peakBayes.predict(mean_data_set);
+% 
+%     model_states(x,4) = 0 >= data_set*completeLDAcoeffL(1,2).linear + completeLDAcoeffL(1,2).const;
+% 
+%     model_states(x,5) = 0 >= mean_data_set*peakLDAcoeffL(1,2).linear + peakLDAcoeffL(1,2).const;
+% 
+% end
 
 end
