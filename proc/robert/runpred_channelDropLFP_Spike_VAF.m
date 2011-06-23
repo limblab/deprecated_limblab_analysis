@@ -32,12 +32,7 @@ else
 end
 
 
-for i=1:length(MATfiles)
-    EMGVAFmallLFP=[];
-    EMGVAFsdallLFP=[];
-    EMGVAFmallSpike=[];
-    EMGVAFsdallSpike=[];
-	
+for i=1:length(MATfiles)	
     FileName=MATfiles{i};
     load(FileName,'bdf')
     fnam=FileName(1:end-4);
@@ -64,6 +59,8 @@ for i=1:length(MATfiles)
         currBadChans=badChannels{find(cellfun(@isempty,regexp(fnam,badEMGdays))==0,1)};
         EMGchanNames(currBadChans)=[];
         sig(:,currBadChans)=[];
+    else
+        currBadChans=[];
     end
     
     temg=analog_times;
@@ -99,6 +96,10 @@ for i=1:length(MATfiles)
 	LFPchansOn=str2num(char(regexp(bdf.raw.analog.channels,'(?<=elec)[0-9]+','match','once')));
 
 	randomInds=randperm(96);
+    EMGVAFmallLFP=nan(95,size(EMGchanNames,2));
+    EMGVAFsdallLFP=nan(95,size(EMGchanNames,2));
+    EMGVAFmallSpike=nan(95,size(EMGchanNames,2));
+    EMGVAFsdallSpike=nan(95,size(EMGchanNames,2));
     
     for numChans=2:96
         % trim the LFP channels.  Use random sample.  Make local copies for
@@ -118,11 +119,8 @@ for i=1:length(MATfiles)
 				numsides,samprate,fpUse,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
 				Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
 			close
-			EMGVAFmallLFP=[EMGVAFmallLFP; vmean];
-			EMGVAFsdallLFP=[EMGVAFsdallLFP; vsd];
-		else
-			EMGVAFmallLFP=[EMGVAFmallLFP; NaN*ones(size(EMGchanNames))];
-			EMGVAFsdallLFP=[EMGVAFsdallLFP; NaN*ones(size(EMGchanNames))];
+			EMGVAFmallLFP(numChans,:)=vmean;
+			EMGVAFsdallLFP(numChans,:)=vsd;
 		end
 
         % trim the spike channels.  first, figure out what's there.
@@ -134,25 +132,17 @@ for i=1:length(MATfiles)
 			bdfUse.units=bdfUse.units(ismember(unitChansOn(:,1),randomInds(1:numChans)) & ...
 				unitChansOn(:,2)~=0);
 			bdfUse.emg.data=double(bdfUse.emg.data);
-			if length(bdfUse.emg.emgnames)+1 == size(bdfUse.emg.data,2)
-				bdfUse.emg.data(:,1)=[];
-			end
-			if size(bdfUse.emg.data,2) > length(bdfUse.emg.emgnames) && ...
-					all(diff(bdfUse.emg.data(:,1)) > 0)
-				bdfUse.emg.data(:,1)=[];
-			end
-            bdfUse.emg.emgnames(currBadChans)=[];
-            bdfUse.emg.data(:,[1 currBadChans+1])=[];
-			if length(bdfUse.emg.emgnames)+1 == size(bdfUse.emg.data,2)
+            if exist('currBadChans','var')==1 && ~isempty(currBadChans)
+                bdfUse.emg.emgnames(currBadChans)=[];
+                bdfUse.emg.data(:,[1 currBadChans+1])=[];
+            end
+			if size(bdfUse.emg.data,2)==(length(bdfUse.emg.emgnames)+1) && all(diff(bdfUse.emg.data(:,1)) > 0)
 				bdfUse.emg.data(:,1)=[];
 			end
 			[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpolyMOD(bdfUse,signal, ...
 				cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
-			EMGVAFmallSpike=[EMGVAFmallSpike; vmean];
-			EMGVAFsdallSpike=[EMGVAFsdallSpike; vsd];
-		else
-			EMGVAFmallSpike=[EMGVAFmallSpike; NaN*ones(size(EMGchanNames))];
-			EMGVAFsdallSpike=[EMGVAFsdallSpike; NaN*ones(size(EMGchanNames))];			
+			EMGVAFmallSpike(numChans,:)=vmean;
+			EMGVAFsdallSpike(numChans,:)=vsd;
 		end
 		
     end
@@ -161,4 +151,5 @@ for i=1:length(MATfiles)
 		'EMGVAFmallLFP','EMGVAFsdallLFP','EMGVAFmallSpike','EMGVAFsdallSpike','EMGchanNames')   
 end
 
-
+copyfile('channel_dropping_LFP_Spike','Y:\user_folders\Robert\data\monkey\outputs\channel_dropping_LFP_Spike')
+clock
