@@ -134,6 +134,13 @@ for i=1:length(MATfiles)
 			bdfUse.units=bdfUse.units(ismember(unitChansOn(:,1),randomInds(1:numChans)) & ...
 				unitChansOn(:,2)~=0);
 			bdfUse.emg.data=double(bdfUse.emg.data);
+			if length(bdfUse.emg.emgnames)+1 == size(bdfUse.emg.data,2)
+				bdfUse.emg.data(:,1)=[];
+			end
+			if size(bdfUse.emg.data,2) > length(bdfUse.emg.emgnames) && ...
+					all(diff(bdfUse.emg.data(:,1)) > 0)
+				bdfUse.emg.data(:,1)=[];
+			end
             bdfUse.emg.emgnames(currBadChans)=[];
             bdfUse.emg.data(:,[1 currBadChans+1])=[];
 			if length(bdfUse.emg.emgnames)+1 == size(bdfUse.emg.data,2)
