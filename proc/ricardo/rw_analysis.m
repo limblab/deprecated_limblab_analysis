@@ -37,6 +37,7 @@ cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 multi_units_all = [];
 single_units_all = [];
 PD_comp_all = [];
+rad2deg = 180/pi;
 
 for iFile = 1:length(filenames)
     filename = filenames{iFile};
@@ -540,14 +541,17 @@ ylabel('Position PD (deg)');
 title('Position vs Velocity PDs')
 
 %%
-subgroup_idx = multi_units_all(:,3)*rad2deg<10;
+% subgroup_idx = multi_units_all(:,3)*rad2deg<10;
+file_separators = find(diff(multi_units_all(:,1))<0);
+subgroup_idx = zeros(size(multi_units_all(:,1)));
+subgroup_idx(file_separators(9):file_separators(10)) = 1;
 
 figure;
 
 subplot(331)
 hold on
-plot(rad2deg*multi_units_all(~subgroup_idx,2),rad2deg*multi_units_all(~subgroup_idx,3),'b.')
-plot(rad2deg*multi_units_all(subgroup_idx,2),rad2deg*multi_units_all(subgroup_idx,3),'r.')
+plot(rad2deg*multi_units_all(find(~subgroup_idx),2),rad2deg*multi_units_all(find(~subgroup_idx),3),'b.')
+plot(rad2deg*multi_units_all(find(subgroup_idx),2),rad2deg*multi_units_all(find(subgroup_idx),3),'r.')
 title('Confidence vs PD')
 xlim(rad2deg*[0 2*pi])
 ylim(rad2deg*[0 pi])
@@ -556,10 +560,10 @@ ylabel('Confidence (deg)')
 
 subplot(332)
 hold on
-hist(rad2deg*multi_units_all(~subgroup_idx,2),[10:20:350])
+hist(rad2deg*multi_units_all(find(~subgroup_idx),2),[10:20:350])
 h_hist = findobj(gca,'Type','patch');
 set(h_hist,'FaceColor','b','FaceAlpha',0.5);
-hist(rad2deg*multi_units_all(subgroup_idx,2),[10:20:350]);
+hist(rad2deg*multi_units_all(find(subgroup_idx),2),[10:20:350]);
 h_hist2 = findobj(gca,'Type','patch');
 set(setxor(h_hist2,h_hist),'FaceColor','r','FaceAlpha',0.5);
 xlim([0 360])
@@ -569,8 +573,8 @@ title('PD distribution')
 
 subplot(333)
 hold on
-plot(rad2deg*multi_units_all(~subgroup_idx,2),multi_units_all(~subgroup_idx,4),'.b')
-plot(rad2deg*multi_units_all(subgroup_idx,2),multi_units_all(subgroup_idx,4),'.r')
+plot(rad2deg*multi_units_all(find(~subgroup_idx),2),multi_units_all(find(~subgroup_idx),4),'.b')
+plot(rad2deg*multi_units_all(find(subgroup_idx),2),multi_units_all(find(subgroup_idx),4),'.r')
 xlim([0 360])
 xlabel('PD (deg)')
 ylabel('Task modulation (Hz)')
@@ -578,8 +582,8 @@ title('Task modulation (max deviation from baseline) vs mean PD')
 
 subplot(334)
 hold on
-plot(rad2deg*multi_units_all(~subgroup_idx,2),multi_units_all(~subgroup_idx,5),'.b')
-plot(rad2deg*multi_units_all(subgroup_idx,2),multi_units_all(subgroup_idx,5),'.r')
+plot(rad2deg*multi_units_all(find(~subgroup_idx),2),multi_units_all(find(~subgroup_idx),5),'.b')
+plot(rad2deg*multi_units_all(find(subgroup_idx),2),multi_units_all(find(subgroup_idx),5),'.r')
 xlim([0 360])
 xlabel('PD (deg)')
 ylabel('Depth of tuning (Hz)')
@@ -587,10 +591,10 @@ title('Depth of tuning vs mean PD')
 
 subplot(335)
 hold on
-plot(multi_units_all(~subgroup_idx,7)*180/pi,...
-    min(repmat(180,sum(~subgroup_idx),1),multi_units_all(~subgroup_idx,8)*180/pi),'b.')
-plot(multi_units_all(subgroup_idx,7)*180/pi,...
-    min(repmat(180,sum(subgroup_idx),1),multi_units_all(subgroup_idx,8)*180/pi),'r.')
+plot(multi_units_all(find(~subgroup_idx),7)*180/pi,...
+    min(repmat(180,sum(~subgroup_idx),1),multi_units_all(find(~subgroup_idx),8)*180/pi),'b.')
+plot(multi_units_all(find(subgroup_idx),7)*180/pi,...
+    min(repmat(180,sum(subgroup_idx),1),multi_units_all(find(subgroup_idx),8)*180/pi),'r.')
 xlabel('Position PD (deg)');
 ylabel('Position PD confidence (deg)');
 xlim([0 360])
@@ -598,10 +602,10 @@ title('Position PD confidence vs direction')
 
 subplot(336)
 hold on
-hist(rad2deg*multi_units_all(~subgroup_idx,7),10:20:350)
+hist(rad2deg*multi_units_all(find(~subgroup_idx),7),10:20:350)
 h_hist = findobj(gca,'Type','patch');
 set(h_hist,'FaceColor','b','FaceAlpha',0.5);
-hist(rad2deg*multi_units_all(subgroup_idx,7),10:20:350);
+hist(rad2deg*multi_units_all(find(subgroup_idx),7),10:20:350);
 h_hist2 = findobj(gca,'Type','patch');
 set(setxor(h_hist2,h_hist),'FaceColor','r','FaceAlpha',0.5);
 xlim([0 360])
@@ -611,8 +615,8 @@ title('Position PD distribution')
 
 subplot(337)
 hold on
-plot(multi_units_all(~subgroup_idx,2)*180/pi,multi_units_all(~subgroup_idx,7)*180/pi,'b.')
-plot(multi_units_all(subgroup_idx,2)*180/pi,multi_units_all(subgroup_idx,7)*180/pi,'r.')
+plot(multi_units_all(find(~subgroup_idx),2)*180/pi,multi_units_all(find(~subgroup_idx),7)*180/pi,'b.')
+plot(multi_units_all(find(subgroup_idx),2)*180/pi,multi_units_all(find(subgroup_idx),7)*180/pi,'r.')
 xlabel('Velocity PD (deg)');
 ylabel('Position PD (deg)');
 title('Position vs Velocity PDs')
@@ -661,4 +665,21 @@ title(['Single and multiunit PD distribution (' num2str(length(filenames)) ' fil
 xlabel('PD (deg)')
 ylabel('Count')
 
+% %% Units crosscorrelation
+% units_concat = [];
+% for iChan = 1:length(bdf.units)
+%     if bdf.units(iChan).id(2) > 0 && bdf.units(iChan).id(2)<255
+%         units_concat = [units_concat; bdf.units(iChan).ts];
+%     end
+% end
+% units_concat = sort(units_concat);
+% concat_bins = train2bins(units_concat,0.001);
+% [autocorr lags] = xcorr(concat_bins,100);
+% % figure;
+% subplot(224)
+% plot(lags(end/2+1:end),autocorr(end/2+1:end))
+% xlabel('t (ms)')
+% ylabel('Autocorrelation')
+% title('Sorted waveforms')
 
+        
