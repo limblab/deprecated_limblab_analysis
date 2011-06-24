@@ -7,6 +7,11 @@ abort_code = 33;
 fail_code = 34;
 incomplete_code = 35;
 
+fit_func = 'Pmin + (Pmax - Pmin)/(1+exp(beta*(xthr-x)))';
+f_sigmoid = fittype(fit_func,'independent','x');
+f_opts = fitoptions('Method','NonlinearLeastSquares','StartPoint',[1 0 0.1 20],...
+    'MaxFunEvals',10000,'MaxIter',1000,'Lower',[0.3 0 0 0],'Upper',[1 0.7 inf 100]);
+
 for file_no = 1:length(filelist)
     disp(['File number: ' num2str(file_no) ' of ' num2str(length(filelist))])
     filename = filelist(file_no).name;
@@ -271,26 +276,60 @@ for file_no = 1:length(filelist)
         end
 
         if num_outer_targets == 1
-            error_bars = get_error_bounds(electrode_current_rewards,...
-                electrode_current_incompletes,boot_iter,.1);
+            if size(electrode_current_rewards,1)>1
+                error_bars = get_error_bounds(electrode_current_rewards,...
+                    electrode_current_incompletes,boot_iter,.1);%% 
 
-            figure;
-            colors = colormap(jet);
-            colors = colors(1:round(length(colors)/size(electrode_current_incompletes,1)):end,:);
-            for iPlot = 1:size(electrode_current_rewards,1)
-                plot_var = electrode_current_rewards(iPlot,:)./...
-                    (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:));
-                errorbar(cell2mat(current_groups),plot_var,...
-                    plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-plot_var,'Color',colors(iPlot,:));
-                hold on
+                figure;
+                colors = colormap(jet);
+                colors = colors(1:round(length(colors)/size(electrode_current_incompletes,1)):end,:);
+                for iPlot = 1:size(electrode_current_rewards,1) -1               
+                    plot(-1,0,'.','Color',colors(iPlot,:));
+                    hold on
+                end
+                for iPlot = 1:size(electrode_current_rewards,1)   -1             
+                    currents = cell2mat(current_groups);
+                    stim_vector = [];
+    %                 for iCurrent = 1:length(currents)
+    %                     stim_vector = [stim_vector;...
+    %                         repmat(currents(iCurrent),electrode_current_rewards(iPlot,iCurrent),1),...
+    %                         ones(electrode_current_rewards(iPlot,iCurrent),1)];
+    %                     stim_vector = [stim_vector;...
+    %                         repmat(currents(iCurrent),electrode_current_incompletes(iPlot,iCurrent),1),...
+    %                         zeros(electrode_current_incompletes(iPlot,iCurrent),1)];
+    %                 end
+                    responses = (electrode_current_rewards(iPlot,:)./...
+                        (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:)))';
+                    responses = (responses - min(responses))/(1 - min(responses));
+                    sigmoid_fit_data = fit(currents',responses,...
+                        f_sigmoid,f_opts);
+    %                 conf_temp = confint(sigmoid_fit_data);  % To get 95% confidence on each parameter
+                    thr_level = sigmoid_fit_data.Pmin + 0.5*(sigmoid_fit_data.Pmax - sigmoid_fit_data.Pmin)
+
+                    plot(currents,responses,'.','Color',colors(iPlot,:));
+                    hold on
+                    plot(linspace(currents(1),currents(end)),sigmoid_fit_data(linspace(currents(1),currents(end))),...
+                        'Color',colors(iPlot,:));
+    %                 electrode_current_rewards(iPlot,:)
+    %                 electrode_current_incompletes(iPlot,:)
+
+    %                 plot_var = electrode_current_rewards(iPlot,:)./...
+    %                     (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:));
+    %                 errorbar(cell2mat(current_groups),plot_var,...
+    %                     plot_var-error_bars(iPlot,:,1),error_bars(iPlot,:,2)-
+    %                     plot_var,'Color',colors(iPlot,:));
+                end
+                ylim([0 1])
+                xlim([0 max(currents)])
+                xlabel('Current (uA)')
+                ylabel('Rewards/(Incompletes+Rewards) Normalized')
+    %             legend(legendstrings,'Location','Southeast')
+                legend({'Electrode 54','Electrode 55'},'Location','Southeast')
+                title_temp = filelist(file_no).name;
+                title_temp = strrep(title_temp,'_','\_');
+                title(title_temp)
             end
-            ylim([0 1])
-            xlabel(plotting_parameter)
-            ylabel('Rewards/(Incompletes+Rewards)')
-            legend(legendstrings)
-            title_temp = filelist(file_no).name;
-            title_temp = strrep(title_temp,'_','\_');
-            title(title_temp)
+%%
         else
             error_bars = get_error_bounds(electrode_current_rewards,...
                 electrode_current_fails,boot_iter,.1);

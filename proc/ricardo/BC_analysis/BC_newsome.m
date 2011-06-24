@@ -1,4 +1,12 @@
-function BC_newsome(filenames)
+function results = BC_newsome(filenames)
+    results.sigmoid_fit_data = {};
+    results.xthr = [];
+    results.xthr_conf = [];
+    results.thr_level = [];
+    results.bumps_ordered = [];
+    results.currents = [];
+    results.electrodes = [];
+    
     reward_code = 32;
     abort_code = 33;
     fail_code = 34;
@@ -12,6 +20,9 @@ function BC_newsome(filenames)
     trial_table_concat = [];
     for iFile = 1:length(filenames)
         load([filenames(iFile).datapath 'Processed\' filenames(iFile).name],'bdf','trial_table','table_columns')
+        try
+            bdf = rmfield(bdf,'units');
+        end
         bdf_all(iFile) = bdf;
         table_columns_all{iFile} = table_columns;
         end_time(iFile) = bdf.pos(end,1);
@@ -42,6 +53,9 @@ function BC_newsome(filenames)
     trial_table = trial_table(trial_table(:,table_columns.result)~=abort_code,:);
     trial_table = trial_table(trial_table(:,table_columns.training)==0,:);
     
+    % Stats sanity check!  Uncomment the following line to randomize the stim_ids
+%     trial_table(:,table_columns.stim_id)  = trial_table(randperm(size(trial_table,1)),table_columns.stim_id);
+    
     bump_magnitudes = unique(trial_table(:,table_columns.bump_magnitude));
     stim_ids = unique(trial_table(:,table_columns.stim_id));
     bump_directions = unique(trial_table(:,table_columns.bump_direction));
@@ -52,7 +66,7 @@ function BC_newsome(filenames)
     codes_pds_electrodes = codes_pds_electrodes(:,tempb);
     
     stim_electrodes = unique(codes_pds_electrodes(3,:));
-    !CHECK STIM ELECTRODE ORDER!!!!
+%     !CHECK STIM ELECTRODE ORDER!!!!
     for iElectrodes = 1:length(stim_electrodes)
         stim_groups{iElectrodes} = codes_pds_electrodes(1,codes_pds_electrodes(3,:)==stim_electrodes(iElectrodes));
     end
@@ -82,9 +96,9 @@ function BC_newsome(filenames)
         num_sigmoids = length(stim_electrodes);
         legend_text = stim_electrodes;
     else
-        currents = unique(filenames.current);
+        currents = unique(filenames(1).current);
         for iCurrent = 1:length(currents)
-            current_groups{iCurrent} = filenames.codes(filenames.current == currents(iCurrent));
+            current_groups{iCurrent} = filenames(1).codes(filenames(1).current == currents(iCurrent));
             reward_table_temp(:,:,iCurrent) = sum(reward_table(:,:,current_groups{iCurrent}),3);
             fail_table_temp(:,:,iCurrent) = sum(fail_table(:,:,current_groups{iCurrent}),3);
         end
@@ -95,7 +109,6 @@ function BC_newsome(filenames)
         legend_text = currents;
         
     end
-
 
     
 %     %arbitrarily remove largest bump
@@ -125,34 +138,44 @@ function BC_newsome(filenames)
 
 %         bump_magnitudes_rearranged = 
         colors = jet;
-        figure;
-        hold on
-        
-        for iStim=1:length(stim_electrodes)
-            plot(bumps_reordered',percent_moved_target1(iStim,:),'Color',colors(round(iStim*64/length(stim_ids)),:),'LineStyle','.');
-           
-        end
-        
+%         figure;
+%         hold on
+%         
+%         for iStim=1:length(stim_electrodes)
+%             plot(bumps_reordered',percent_moved_target1(iStim,:),'Color',colors(round(iStim*64/length(stim_ids)),:),'LineStyle','.');
+%            
+%         end
+%         
+% 
+%         for iStim=1:length(stim_electrodes)
+%             sigmoid_fit = fit(bumps_reordered,percent_moved_target1(iStim,:)',f_sigmoid,f_opts);
+%             h_temp = plot(sigmoid_fit);
+%             set(h_temp,'LineWidth',2,'Color',colors(round(iStim*64/length(stim_ids)),:))
+%         end
 
-        for iStim=1:length(stim_electrodes)
-            sigmoid_fit = fit(bumps_reordered,percent_moved_target1(iStim,:)',f_sigmoid,f_opts);
-            h_temp = plot(sigmoid_fit);
-            set(h_temp,'LineWidth',2,'Color',colors(round(iStim*64/length(stim_ids)),:))
-        end
-
-        stim_electrodes
-        percent_moved_target1
-        moved_target1
-        moved_target2
+%         stim_electrodes
+%         percent_moved_target1
+%         moved_target1
+%         moved_target2
         
-        sigmoid_fit_bootstrap(moved_target1,moved_target2,bumps_reordered,num_iter);
+        results = sigmoid_fit_bootstrap(moved_target1,moved_target2,bumps_reordered,num_iter);
+        if exist('currents','var')
+            results.currents = currents;
+        else
+            results.currents = [];
+        end
+        results.electrodes = stim_electrodes;
             
-        legend(num2str(legend_text'))
+        legend([num2str(legend_text');'al'])
         xlabel('Bump magnitude [N]')
         ylabel('Move to target 1')
         ylim([0 1])
+        title(strrep(filenames(1).name(1:end-4),'_',' '))
+        text(bumps_reordered(2),0.9,{['Total trials: ' num2str(size(trial_table,1))];...
+            ['Stimulated electrodes: ' num2str(unique(filenames(1).electrodes))];...
+            ['Target 1 at ' num2str(180*bump_directions(1)/pi,3) '^o (' num2str(bump_directions(1),3) ' rad)']});
     end
-    
+        
 end
     
     

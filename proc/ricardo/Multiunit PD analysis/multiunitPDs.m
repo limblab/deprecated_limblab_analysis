@@ -1,6 +1,6 @@
-filenames = dir('*Pedro*');
+filenames = dir('*Tiki*.mat');
 
-fit_func = 'm*x';
+fit_func = 'm*x+b';
 f_linear = fittype(fit_func,'independent','x');
 
 allPDs = [];
@@ -89,20 +89,38 @@ title('Different electrodes')
 %%
 figure;
 pdmeans= allPDs(:,4);
-pdmeans = reshape(pdmeans,96,[]);
+% pdmeans = reshape(pdmeans,96,[]);
 pdconfs =allPDs(:,5)-allPDs(:,3);
-confs = reshape(pdconfs,96,[]);
-confs = mean(confs,2);
-mmm = size(pdmeans,2)./sqrt(sum(cos(pdmeans')).^2 + sum(sin(pdmeans')).^2);
-spread = acos(1./mmm);
+spread = zeros(size(electrode_list));
+confs = zeros(size(electrode_list));
+for iElectrode = 1:length(electrode_list)
+    pdmeans_temp = pdmeans(allPDs(:,1)==electrode_list(iElectrode));
+    length(pdmeans_temp)
+    if length(pdmeans_temp)>2
+        mmm = length(pdmeans_temp)./sqrt(sum(cos(pdmeans_temp')).^2 + sum(sin(pdmeans_temp')).^2);
+        spread(iElectrode) = acos(1./mmm);
+    %     pdmeans_electrode(iElectrode) = pdmeans_temp
+    else
+        spread(iElectrode) = nan;
+    end
+    confs(iElectrode) = mean(pdconfs(allPDs(:,1)==electrode_list(iElectrode)));
+end
+confs = confs(~isnan(spread));
+spread = spread(~isnan(spread));
+% confs = reshape(pdconfs,96,[]);
+% confs = mean(confs,2);
+% mmm = size(pdmeans,2)./sqrt(sum(cos(pdmeans')).^2 + sum(sin(pdmeans')).^2);
+% spread = acos(1./mmm);
 confs_deg = 180*confs/pi;
 spread_deg = 180*spread/pi;
 plot(confs_deg,spread_deg,'k.')
-[confs_spread_fit,gof] = fit(confs_deg,spread_deg',f_linear);
+[confs_spread_fit,gof] = fit(confs_deg,spread_deg,f_linear);
 hold on
 plot(confs_spread_fit);
 xlabel('Uncertainty (deg)')
 ylabel('Spread (deg)')
 legend off
+xlim([0 360])
+ylim([0 90])
 
 plot(confs_deg(confs_deg<30),spread_deg(confs_deg<30),'r.')
