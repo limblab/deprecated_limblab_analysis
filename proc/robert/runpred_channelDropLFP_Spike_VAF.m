@@ -120,8 +120,8 @@ for i=skipAhead:length(MATfiles)
 				numsides,samprate,fpUse,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
 				Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
 			close
-			EMGVAFmallLFP(numChans,:)=vmean;
-			EMGVAFsdallLFP(numChans,:)=vsd;
+			EMGVAFmallLFP(numChans-1,:)=vmean;
+			EMGVAFsdallLFP(numChans-1,:)=vsd;
 		end
 
         % trim the spike channels.  first, figure out what's there.
@@ -142,12 +142,12 @@ for i=skipAhead:length(MATfiles)
 			end
 			[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~] = predictions_mwstikpolyMOD(bdfUse,signal, ...
 				cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
-			EMGVAFmallSpike(numChans,:)=vmean;
-			EMGVAFsdallSpike(numChans,:)=vsd;
+			EMGVAFmallSpike(numChans-1,:)=vmean;
+			EMGVAFsdallSpike(numChans-1,:)=vsd;
 		end
 		
-    end
-	
+	end
+		
 	save(fullfile(PathName,'channel_dropping_LFP_Spike',[fnam,' chan_drop.mat']), ...
 		'EMGVAFmallLFP','EMGVAFsdallLFP','EMGVAFmallSpike','EMGVAFsdallSpike','EMGchanNames')   
 end
