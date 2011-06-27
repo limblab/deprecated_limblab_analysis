@@ -75,7 +75,7 @@ for n=1:length(MATfiles)
     % remain force channels or something else.  So, be smart about what gets
     % included in fp.
     fpchans=find(cellfun(@isempty,regexp(bdf.raw.analog.channels,'elec[0-9]'))==0);
-    fp=cat(2,bdf.raw.analog.data{fpchans})';
+    fp=double(cat(2,bdf.raw.analog.data{fpchans}))';
     samprate=bdf.raw.analog.adfreq(fpchans(1));
     numfp=length(fpchans);
     numsides=1;
@@ -102,7 +102,7 @@ for n=1:length(MATfiles)
     % it is substituted in its place in the input list below.
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
         featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
-        predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+        predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
         samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     close

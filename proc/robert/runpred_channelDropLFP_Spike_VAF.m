@@ -28,11 +28,12 @@ else
     else 
         contyes=input(sprintf('%d files found.  continue? (1 or 0): ',length(MATfiles)));
         if ~contyes, return, end
+        skipAhead=input(sprintf('index to start (default 1): '));
     end
 end
 
 
-for i=1:length(MATfiles)	
+for i=skipAhead:length(MATfiles)	
     FileName=MATfiles{i};
     load(FileName,'bdf')
     fnam=FileName(1:end-4);
@@ -70,7 +71,7 @@ for i=1:length(MATfiles)
     % remain force channels or something else.  So, be smart about what gets
     % included in fp.
     fpchans=find(cellfun(@isempty,regexp(bdf.raw.analog.channels,'elec[0-9]'))==0);
-    fp=cat(2,bdf.raw.analog.data{fpchans})';
+    fp=double(cat(2,bdf.raw.analog.data{fpchans}))';
     samprate=bdf.raw.analog.adfreq(fpchans(1));
 
     numsides=1;
