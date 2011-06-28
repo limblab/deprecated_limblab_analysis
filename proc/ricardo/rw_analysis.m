@@ -30,9 +30,9 @@ model = 'posvel'; % 'vel' or 'posvel'
 % filename_analyzed = [datapath 'Processed\' filename];
 multiunit = 1;  % if 1, it will combine all units (except invalidated ones - 255)
 curr_dir = pwd;
-cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
+cd 'E:\ricardo\Miller Lab\Matlab\s1_analysis';
 load_paths;
-cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
+cd 'E:\ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 
 multi_units_all = [];
 single_units_all = [];

@@ -9,7 +9,7 @@ bump_raster_files = [];
 
 % psychophysics_files = {'Tiki_2011-05-19_BC_001-s_multiunit','Tiki_2011-04-28_BC_002-s_multiunit','Tiki_2011-04-28_BC_003-s_multiunit'};
 % psychophysics_files = {'Tiki_2011-04-11_BC_001','Tiki_2011-04-13_BC_001','Tiki_2011-04-14_BC_001'};
-psychophysics_files = {'Tiki_2011-06-23_BC_002'};
+psychophysics_files = {'Tiki_2011-06-27_BC_001'};
 % psychophysics_files = [];
 newsome_files = [];
 clear newsome_results

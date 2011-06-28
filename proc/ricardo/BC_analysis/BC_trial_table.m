@@ -32,6 +32,8 @@ table_columns.training = 13;
 table_columns.num_outer_targets = 14;
 table_columns.bump_and_stim = 15;
 
+bdf.databursts = bdf.databursts(2:end,:);
+
 bdf.words = bdf.words(find(bdf.words(:,1)>bdf.databursts{1} & bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('10'),1,'first'):...
     find(bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('20'),1,'last'),:);
 

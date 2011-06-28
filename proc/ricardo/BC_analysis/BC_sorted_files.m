@@ -16,15 +16,21 @@ end
 
 BC_raw_files = [];
 BC_sorted_files = [];
-for iPaths = 1:length(datapaths)
-    BC_raw_files = [BC_raw_files; dir([cell2mat(datapaths{iPaths}) 'Raw\*_BC_*.nev'])];
-    BC_sorted_files = [BC_sorted_files; dir([cell2mat(datapaths{iPaths}) 'Sorted\*_BC_*.nev'])];
+
+if length(datapaths)==1
+    BC_raw_files = dir([datapaths{iPaths} 'Raw\*_BC_*.nev']);
+    BC_sorted_files = dir([datapaths{iPaths} 'Sorted\*_BC_*.nev']);
+else
+    for iPaths = 1:length(datapaths)
+        BC_raw_files = [BC_raw_files; dir([cell2mat(datapaths{iPaths}) 'Raw\*_BC_*.nev'])];
+        BC_sorted_files = [BC_sorted_files; dir([cell2mat(datapaths{iPaths}) 'Sorted\*_BC_*.nev'])];
+    end
 end
 
 for iRaw = 1:length(BC_raw_files)
     BC_file = BC_raw_files(iRaw).name;
     filelist_idx = find(strcmp({filelist.name},BC_file(1:end-4)));
-    BC_raw_list_temp(iRaw) = filelist(filelist_idx); %#ok<AGROW>
+    BC_raw_list_temp(iRaw) = filelist(filelist_idx); %#ok<FNDSB,AGROW>
 end
 
 % BC_raw_files = filelist;
