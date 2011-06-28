@@ -122,6 +122,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
             if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
                 l1=24.0; l2=23.5;
+            elseif isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
+                l1=25.0; l2=23.5;                
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
             end
@@ -157,7 +159,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.pos = [out_struct.raw.enc(:,1) out_struct.raw.enc(:,2)/1000 out_struct.raw.enc(:,3)/1000];
         end
     else
-        if robot_task && ~opts.nokin
+        if robot_task && opts.kin
 %            close(h);
             error('BDF:noPositionSignal','No position signal present');
         end
@@ -165,13 +167,9 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
     
 %% Force Handle Analog Signals
-    if opts.force
+    if robot_task && opts.force 
         force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
         if (~isempty(force_channels))
-            %if (verbose == 1)
-            %    progress = progress + .05;
-            %    waitbar(progress, h, sprintf('Aggregating data...\nget force'));
-            %end
 
             if opts.verbose
                 disp('Aggregating data... get force')
@@ -185,13 +183,26 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
                 force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
                 Fy_invert = -1; % old force setup was left hand coordnates.
-            else
+            elseif datenum(out_struct.meta.datetime) < datenum('6/28/2011')
                 fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
                         -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
                 rotcal = [1 0; 0 1];                
                 force_offsets = [-.73 .08 .21 -.23 .25 .44];
                 Fy_invert = 1;
-            end % datenum(out_struct.meta.datetime) < datenum('5/27/2010')
+            else
+                % Fx,Fy,scaleX,scaleY from ATI calibration file:
+                % \\citadel\limblab\Software\ATI FT - March
+                % 2011\Calibration\FT7520.cal
+                % fhcal = [Fx;Fy]./[scaleX;scaleY]
+                % force_offsets acquired empirically by recording static
+                % handle.
+                fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
+                        -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
+                rotcal = [1 0; 0 1];                
+                force_offsets = [-1888.095 -1160.662 1032.623...
+                    -998.567 809.171 2836.314];
+                Fy_invert = 1;
+            end 
             
             [b,a] = butter(4, 20/adfreq);
             raw_force = zeros(length(analog_time_base), 6);

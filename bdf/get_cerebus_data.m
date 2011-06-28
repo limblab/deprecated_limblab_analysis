@@ -22,22 +22,32 @@ function out_struct = get_cerebus_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     %initial setup
-    opts=struct('verbose',0,'progbar',0,'force',0,'kin',1,'labnum',1,'eye',0); %default to lab 1, no force, no eye
+    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0); %default to lab 1, no force, no eye
    
     % Parse arguments
     if (nargin == 1)
         filename   = varargin{1};
     else
-        filename   = varargin{1};
-        if ischar(varargin{2})
-            if strcmpi(varargin{2},'verbose')
-                opts.verbose= 1;
-            else
-                opts.verbose=0;
+        filename = varargin{1};
+        for i = 2:nargin
+            opt_str = char(varargin{i} + ...
+                (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case            
+            if strcmp(opt_str, 'verbose')
+                opts.verbose = 1;
+            elseif strcmp(opt_str, 'progbar')
+                opts.progbar = 1;
+            elseif strcmp(opt_str, 'noeye')
+                opts.eye = 0;
+            elseif strcmp(opt_str, 'noforce')
+                opts.force = 0;
+            elseif strcmp(opt_str, 'nokin')
+                opts.kin = 0;
+                opts.force = 0;
+            elseif isnumeric(varargin{i})
+                opts.labnum=varargin{i};    %Allow entering of the lab number               
+            else 
+                error('Unrecognized option: %s', opt_str);
             end
-        else
-            opts.verbose=0;
-            opts.labnum=varargin{2};
         end
     end
   
