@@ -1,6 +1,4 @@
-addpath(genpath('C:\Documents and Settings\Administrator\Desktop\RobertF\MarcSmatlabCode'))
-addpath(genpath('C:\Documents and Settings\Administrator\Desktop\RobertF\my code_mods'))
-addpath(genpath('C:\Documents and Settings\Administrator\Desktop\s1_analysis'))
-cd('C:\Documents and Settings\Administrator\Desktop\RobertF\data')
+addpath(genpath('C:\Users\Mike Scheid\Desktop\s1 analysis'))
+cd('C:\Users\Mike Scheid\Desktop\Chewie Data')
 dbstop if error
 clc;
