@@ -198,7 +198,7 @@ tic
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
 
 Pmean=mean(Pmat,3); %take mean over all times
-PA=10*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
+PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
 clear Pmat
 
 %Define freq bands

@@ -73,9 +73,18 @@ for i=skipAhead:length(MATfiles)
     fpchans=find(cellfun(@isempty,regexp(bdf.raw.analog.channels,'elec[0-9]'))==0);
     fp=double(cat(2,bdf.raw.analog.data{fpchans}))';
     samprate=bdf.raw.analog.adfreq(fpchans(1));
+    % downsample fp
+    if samprate > 1000
+        % want final fs to be 1000
+        disp('downsampling to 1 kHz')
+        samp_fact=samprate/1000;
+        downsampledTimeVector=linspace(analog_times(1),analog_times(end),length(analog_times)/samp_fact);
+        fp=interp1(analog_times,fp',downsampledTimeVector)';
+        samprate=1000;
+    end
 
     numsides=1;
-    fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
+    fptimes=1/samprate:1/samprate:size(fp,2)/samprate;
     Use_Thresh=0; words=[]; lambda=1;
 
     disp('assigning tunable parameters and building the decoder...')
@@ -116,7 +125,7 @@ for i=skipAhead:length(MATfiles)
 			end
 			
 			[~,vmean,vsd,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~] = ...
-				predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags, ...
+				predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags, ...
 				numsides,samprate,fpUse,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
 				Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
 			close

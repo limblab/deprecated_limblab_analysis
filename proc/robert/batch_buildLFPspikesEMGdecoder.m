@@ -54,7 +54,7 @@ for n=1:length(MATfiles)
         emgsamplerate=bdf.emg.freq;
     end
     % bdf.emg.data should just be an array, not cells or anything.
-    sig=bdf.emg.data(:,2:end);
+    sig=double(bdf.emg.data(:,2:end));
     analog_times=bdf.emg.data(:,1);
 %     analog_times=1/emgsamplerate:1/emgsamplerate:size(sig,1)/emgsamplerate;
     signal='emg';
@@ -77,9 +77,18 @@ for n=1:length(MATfiles)
     fpchans=find(cellfun(@isempty,regexp(bdf.raw.analog.channels,'elec[0-9]'))==0);
     fp=double(cat(2,bdf.raw.analog.data{fpchans}))';
     samprate=bdf.raw.analog.adfreq(fpchans(1));
+    % downsample fp
+    if samprate > 1000
+        % want final fs to be 1000
+        disp('downsampling to 1 kHz')
+        samp_fact=samprate/1000;
+        downsampledTimeVector=linspace(analog_times(1),analog_times(end),length(analog_times)/samp_fact);
+        fp=interp1(analog_times,fp',downsampledTimeVector)';
+        samprate=1000;
+    end
     numfp=length(fpchans);
+    fptimes=1/samprate:1/samprate:size(fp,2)/samprate;
     numsides=1;
-    fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
     fse=emgsamplerate;
 %     temg=(1/fse):(1/fse):(t2(end)+1/fse);
     temg=analog_times;
@@ -88,7 +97,7 @@ for n=1:length(MATfiles)
 
     disp('assigning tunable parameters and building the decoder...')
     folds=10;
-    numlags=10;
+    numlags=20;
     wsz=256;
     nfeat=150;
     PolynomialOrder=2;

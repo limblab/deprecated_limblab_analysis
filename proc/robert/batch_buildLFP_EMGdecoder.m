@@ -54,7 +54,7 @@ for n=1:length(MATfiles)
         emgsamplerate=bdf.emg.freq;
     end
     % bdf.emg.data should just be an array, not cells or anything.
-    sig=bdf.emg.data(:,2:end);
+    sig=double(bdf.emg.data(:,2:end));
     analog_times=bdf.emg.data(:,1);
 %     analog_times=1/emgsamplerate:1/emgsamplerate:size(sig,1)/emgsamplerate;
     temg=analog_times;
@@ -97,7 +97,7 @@ for n=1:length(MATfiles)
     
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
         featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
-        predictionsfromfp6v2(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+        predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
         samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     close
