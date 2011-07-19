@@ -81,7 +81,7 @@ clear H P
 
 fprintf(1,'\n\nRunning multi-fold analysis using predictions_mwstikpoly.m\n\n')
 
-signal='pos';
+signal='vel';
 numsides=1;
 Use_Thresh=0; lambda=1; % words=[]; 
 folds=10; 
