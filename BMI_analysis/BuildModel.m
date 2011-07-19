@@ -206,7 +206,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     end
     
     if nargout > 1
-         PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
+         PredData = struct('preddatabin', PredictedData, 'timeframe', ...
+			 binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew, ...
+			 'outnames',OutNames,'spikeguide',binnedData.spikeguide, ...
+			 'vaf',RcoeffDet(PredictedData,ActualDataNew),'actualData',ActualDataNew);
 % %          PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
         varargout(1) = {PredData};
     end
