@@ -1,4 +1,4 @@
-function STA = STA(stim_ts, signals, timeBefore, timeAfter)
+function [STA,STV] = STA(stim_ts, signals, timeBefore, timeAfter)
     % this function averages signals (e.g. EMG or Force) from timeBefore
     % and timeAfter around the time of the timestamps in stim_ts.
     % the first colomn of the signals array should be a time vector in
@@ -30,5 +30,5 @@ function STA = STA(stim_ts, signals, timeBefore, timeAfter)
     end
         
     STA(:,2:end) = mean(tempSTA(:,:,:),3);
-
+    STV(:,2:end) = var(tempSTA(:,:,:),3);
 end
