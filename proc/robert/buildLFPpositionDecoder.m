@@ -2,7 +2,7 @@
 [FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.plx');
 cd(PathName)
 %% load the file (skip if already loaded in .mat file)
-bdf=get_plexon_dataNoUnits(FileName);
+bdf=get_plexon_data(FileName);
 disp(sprintf('\n\n\n\n\n=====================\nFILE LOADED\n===================='))
 
 %% input parameters - Do not Change, just run.
@@ -18,10 +18,16 @@ end
 % for n=disJoint+1:length(bdf.raw.analog.data)
 %     bdf.raw.analog.data{n}(end)=[];
 % end
-fp=cat(2,bdf.raw.analog.data{:})';
-samprate=bdf.raw.analog.adfreq(1);
-sig=bdf.pos;
-signal='pos';
+% different possible solution
+% for n=1:disJoint
+%     bdf.raw.analog.data{n}(end)=[];
+% end
+fpchans=find(cellfun(@isempty,regexp(bdf.raw.analog.channels,'FP[0-9]+'))==0);
+fp=double(cat(2,bdf.raw.analog.data{fpchans}))';
+samprate=bdf.raw.analog.adfreq(fpchans(1));
+
+sig=bdf.vel;
+signal='vel';
 numfp=size(fp,1);
 numsides=1;
 fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
@@ -30,33 +36,32 @@ analog_times=sig(:,1);
 disp('done')
 %% Input parameters to play with.
 disp('assigning tunable parameters and building the decoder...')
-folds=10; 
+folds=2; 
 numlags=10; 
 wsz=256; 
-nfeat=100; 
+nfeat=100;
 PolynomialOrder=2; 
-smoothfeats=1;
-binsize=0.1;
+smoothfeats=0;
+binsize=0.05;
 
-[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H] = ...
-    predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags, ...
-    numsides,samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
+[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
+    featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
+    predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+    samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
     Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
 
 disp(sprintf('\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n'))
 
 % examine r2
-r2
-disp(sprintf('overall mean r2 %.4f',mean(r2(:))))
-[val,ind]=max(mean(r2,2));
-disp(sprintf('fold %d had highest mean over x and y: mean %.4f',ind,val))
-[val,ind]=max(sum(r2,2));
-disp(sprintf('fold %d had highest sum over x and y: sum %.4f',ind,val))
-[val,ind]=max(r2(:));
-[r,c]=ind2sub(size(r2),ind);
-str='xy';
-disp(sprintf('fold %d had the highest individual r2, in %s: %.4f', ...
-    r,str(c),r2(r,c)))
+
+vaf
+
+formatstr='vaf mean across folds: ';
+for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
+formatstr=[formatstr, '\n'];
+
+fprintf(1,formatstr,mean(vaf,1))
+fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
 
 %% pick a fold, and save (from EWL Convert2ReachDecoder)
@@ -77,14 +82,14 @@ chanIDs = unique(bestc');
 % 	end
 % end
 [~,~,extension,~]=fileparts(FileName);
-if isequal(extension,'.plx')
-    chanIDs=chanIDs+32;
-end
+% if isequal(extension,'.plx')
+%     chanIDs=chanIDs+32;
+% end
 
 samplingFreq = samprate;
 freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300];
 
-featmat = [bestc', bestf'];
+featmat = [bestc', bestf']; 
 nFeats = size(featmat,1);
 f_bands = cell(nChans,1);
 
@@ -119,10 +124,26 @@ end
 H_sorted = cell2mat(cH(:,3));
 filterLength=numlags*binsize;
 
-save(fullfile(PathName,[fnam,'-decoder.mat']),'FOLDTOSAVE','H','H_sorted','Hall',...
-    'PolynomialOrder','Use_Thresh','bestc','bestf','binsize','cH','chanIDs', ...
-    'f_bands','featmat','fnam','folds','freq_bands','lambda','nChans','nFeats', ...
-    'nfeat','numlags','numsides','r2','r2mean','r2sd','samplingFreq','samprate', ...
-    'signal','smoothfeats','vaf','vaftr','vmean','vsd','wsz','y_pred','y_test','filterLength')
+% I don't think the filter.xxxx are necessary.  Just the variables.
+% H has to be from 1 fold.  NxM, with M the number of outputs
+% P should be included
+% must have neuronsIDs.  Can be empty if only going to do LFP decoding.
+% fillen.
+% chanIDs.  
+% samplingFreq
+% f_bands
+%
+% yes, H should probably be sorted, because the H matrix comes out of
+% something that's ordered on the features, and the order of the features
+% is caused by correlation to pos/vel, NOT channel order.
+save(fullfile(PathName,[fnam,'-decoder.mat']))
+
+% save(fullfile(PathName,[fnam,'-decoder.mat']),'FOLDTOSAVE','H','H_sorted','Hall',...
+%     'PolynomialOrder','Use_Thresh','bestc','bestf','binsize','cH','chanIDs', ...
+%     'f_bands','featmat','fnam','folds','freq_bands','lambda','nChans','nFeats', ...
+%     'nfeat','numlags','numsides','r2','r2mean','r2sd','samplingFreq','samprate', ...
+%     'signal','smoothfeats','vaf','vaftr','vmean','vsd','wsz','y_pred','y_test','filterLength')
+
+
 
 disp(sprintf('decoder saved in %s',PathName))
