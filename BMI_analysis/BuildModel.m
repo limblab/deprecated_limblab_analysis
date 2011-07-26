@@ -49,6 +49,9 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                     if nargin > 9
                         Use_PrinComp = true;
                         numPCs = varargin{5};
+                        if nargin >10
+                            Use_Thresh   = varargin{6};
+                        end
                     end
                 end
             end
@@ -183,10 +186,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 %%%%%% Use only one of the following 2 lines:
                 %
                 %   1-Use the threshold only to find polynomial, but not in the model data
-%                 T=[]; patch=[];                
+                T=[]; patch=[];                
                 %
                 %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-                PredictedData(~IncludedDataPoints,z)= patch(z);
+%                 PredictedData(~IncludedDataPoints,z)= patch(z);
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else

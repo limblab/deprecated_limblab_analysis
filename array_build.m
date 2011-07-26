@@ -2,11 +2,9 @@ function array_build(mapfile,X)
 %mapfile cmp file 
 %X : 2 columns one first column with electrode name as in cerebus, and  
 
-correspond=convertMAP2MAT(char(mapfile));
-if size(X,2)==1 
-    X(:,2)=  X(:,1);
-    X(:,1) =1:96;
-end
+% correspond=convertMAP2MAT(char(mapfile));
+correspond = mapfile;
+
 for j=1:10
     for i=1: 10
         arrays(10-(i-1),10-(j-1))=i+(10*(j-1));
@@ -18,8 +16,8 @@ effects=-1*ones(10,10);
 
 
     for i=1: length(X) 
-        row=10-correspond(find(correspond(:,3)==X(i,1)),1)
-        col=10-correspond(find(correspond(:,3)==X(i,1)),2)
+        col=10-correspond(find(correspond(:,3)==X(1)),1);
+        row=10-correspond(find(correspond(:,3)==X(1)),2);
         effects(row,col)=X(i,2);
 
     end
@@ -38,6 +36,6 @@ end;
 colorbar
 colormap(gray)
 set(gca,'XTick',[],'XTicklabel',[],'YTick',[],'YTicklabel',[])
-xlabel('lateral');
-ylabel('anterior')
+% xlabel('lateral');
+% ylabel('anterior')
 end

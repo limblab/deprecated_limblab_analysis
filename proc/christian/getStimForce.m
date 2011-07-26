@@ -5,10 +5,10 @@ Stim   = binnedData.stim(:,chans+1);
 t_F    = binnedData.timeframe;
 F      = binnedData.forcedatabin(:,1);
 
-% 1 - Normalize
-Stim = Stim/200;
-NormFactor = prctile(binnedData.forcedatabin(:,1),98);
-F = F/NormFactor;
+% 1 - Normalize - No, prctile depends on how much the monkey worked, this would change results
+% Stim = Stim/200;
+% NormFactor = prctile(binnedData.forcedatabin(:,1),98);
+% F = F/NormFactor;
 
 
 % 2 - plot force and stim over time
@@ -23,27 +23,34 @@ end
 %peak is found at -80ms -> use average values from stim found between 40ms and 120ms before Force
 
 F_idx   = find(F);
-F_times = t_F(F_idx);
-F_ToUse = F(F_idx);
-S_ToUse = zeros(length(F_idx),size(Stim,2));
+t = t_F(F_idx);
+F = F(F_idx);
+S = zeros(length(F_idx),size(Stim,2));
 
 for i = 1:length(F_idx)
-    S_idx = t_Stim <= F_times(i)-0.04 & t_Stim >= F_times(i) -0.12;
-    S_ToUse(i,:) = mean(Stim(S_idx,:),1);
+    S_idx = t_Stim <= t(i)-0.04 & t_Stim >= t(i) -0.12;
+    if ~any(S_idx)
+        %Very beginning of file, no prior stim info, put 0 in both F and S...
+        S(i,:) = 0;
+        F(i,:) = 0;
+    else
+        S(i,:) = mean(Stim(S_idx,:),1);
+    end
 end
 
 if plotflag
     for i = 1:length(chans)
         figure;
-        plot(S_ToUse(:,i),F_ToUse,'.');
-        title('Stim chan %d',chans(i))
+        plot(S(:,i),F,'.');
+        title(sprintf('Stim chan %d',chans(i)));
     end
 
     figure;
-    plot(sum(S_ToUse,2),F_ToUse,'.');
+    plot(sum(S,2),F,'.');
+    title('Sum of all Stim chans');
 end
-    
-% 
+
+
 % subplot(3,1,1);
 % plot(binned_stim_array(:,1),binned_stim_array(:,3));
 % subplot(3,1,2);

@@ -399,8 +399,8 @@ else
 end
     
 %% Stimulator Commands
-stim = [];
-stimT =[];
+stimT= [];
+stim  =[];
 if isfield(datastruct,'stim') 
     if isa(datastruct.stim,'numeric')
         %%% Bin at binsize or Stim period??

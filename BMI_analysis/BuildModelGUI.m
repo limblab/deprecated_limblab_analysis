@@ -23,7 +23,7 @@ function varargout = BuildModelGUI(varargin)
 
 % Edit the above text to modify the response to help BuildModelGUI
 
-% Last Modified by GUIDE v2.5 12-Jan-2011 11:30:56
+% Last Modified by GUIDE v2.5 26-Jul-2011 14:15:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -84,12 +84,13 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
     Pred_CursPos = get(handles.CursPos_cbx,'Value');
     Pred_Veloc = get(handles.Veloc_cbx,'Value');
     Use_State = get(handles.States_popup,'Value')-1;
+    Use_Thresh = get(handles.useThresh_cbx,'Value');
     
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State};
+     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -253,5 +254,14 @@ function States_popup_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in useThresh_cbx.
+function useThresh_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to useThresh_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of useThresh_cbx
 
 
