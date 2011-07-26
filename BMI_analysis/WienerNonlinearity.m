@@ -34,7 +34,7 @@ if plotflag==['plot']
     %%%Evalute the polynomial using the original fit of the data.
     nonlinearity = polyval(P,Y);
     %%%Plot results
-    figure; plot(X,Z,'b.',X,nonlinearity,'g')    
+    figure; plot(X,Z,'b.',X,nonlinearity,'g.')    
     xlabel('Original Model Output')
     ylabel('Actual Training Data Values')
 end

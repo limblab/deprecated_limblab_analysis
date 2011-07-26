@@ -47,10 +47,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 if nargin > 8
                     PredVeloc = varargin{4};
                     if nargin > 9
-                        Use_PrinComp = true;
-                        numPCs = varargin{5};
+                        Use_Thresh =varargin{5};
                         if nargin >10
-                            Use_Thresh   = varargin{6};
+                            Use_PrinComp = true;
+                            numPCs = varargin{6};
                         end
                     end
                 end
