@@ -21,7 +21,16 @@ emglpf=5; %default
 if length(varargin)>0
     fnam=varargin{1};
     if length(varargin)>1
-        emglpf=varargin{2};      
+        emglpf=varargin{2}; 
+        if ~isempty(varargin(3))
+            H=varargin{3};
+            if ~isempty(varargin(4))
+                P=varargin{4};
+                if ~isempty(varargin(5))
+                    neuronIDs=varargin{5};
+                end
+            end
+        end
     end
     
 end
@@ -64,8 +73,41 @@ else
     error('Unknown signal requested');
 end
 
+k=1;
 if isempty(cells);
     cells = unit_list(bdf);
+    if size(cells,1) > size(neuronIDs,1) 
+        newcells = zeros(size(neuronIDs,1),2);
+        for i = 1:size(neuronIDs,1)
+            for j = 1:size(cells,1)
+                if cells(j,:) == neuronIDs(i,:)
+                    newcells(i,:) = neuronIDs(i,:);
+                end
+            end
+        end
+    else
+        newcells = zeros(size(cells,1),2);
+        for i = 1:size(cells,1)
+            for j = 1:size(neuronIDs,1)
+                if cells(j,:) == neuronIDs(i,:)
+                    newcells(i,:) = neuronIDs(i,:);
+                end
+            end
+        end
+    end
+    
+    for j = 1:size(newcells,1)
+        if exist('H','var')  && newcells(j,1) == 0;
+            H((j-1)*10+1:(j-1)*10+10,:) = zeros(10,2);
+        end     
+    end
+    
+    if exist('H','var') && size(cells,1) < size(neuronIDs,1)
+        H = H(1:size(newcells,1)*10,:);
+    end
+    
+    clear cells
+    cells = newcells;
 end
 
 binsamprate=floor(1/binsize); 
@@ -88,9 +130,13 @@ end
 
 x = zeros(length(y), length(cells));
 for i = 1:length(cells)
-    ts = get_unit(bdf, cells(i, 1), cells(i, 2));
-    b = train2bins(ts, t);
-    x(:,i) = b;
+    if cells(i,1) ~= 0
+        ts = get_unit(bdf, cells(i, 1), cells(i, 2));
+        b = train2bins(ts, t);
+        x(:,i) = b;
+    else
+        x(:,i) = zeros(length(y),1);
+    end
 end
 
 % filter out inactive regions
@@ -125,19 +171,34 @@ for i = 1:folds
 %     y_test{i}= y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
 %     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
 %     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
-%     
+%   
+    if ~exist('H','var')
     [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+    end
+    %If a decoder does not exist, create one
+       
+    if exist('H','var') && ~iscell(H)
+        H = num2cell(H, [1 2]);
+        H = repmat(H,folds,1);
+    end
+    %If inputting a decoder with only one fold, convert to cell array and
+    %replicate to match number of folds
+    
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
    
     %%Polynomial section
-               P=[];    
+               
+    if ~exist('P','var')
+    P=[];
+    end
+    
     T=[];
     patch = [];
     
-    if PolynomialOrder
+    if  PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity
         for z=1:size(y_pred{i},2)
-            if Use_Thresh            
+            if Use_Thresh           
                 %Find Threshold
                 T_default = 1.25*std(y_pred{i}(:,z));
                 [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
@@ -166,7 +227,7 @@ for i = 1:folds
 %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            else
+            elseif ~exist('P','var')
                 %Find and apply polynomial
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
@@ -174,7 +235,9 @@ for i = 1:folds
         end
     end
     %%
+    if exist('v','var')
     vaftr(i,:)=v/100;
+    end
 %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
 %     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
@@ -215,7 +278,12 @@ if nargout>5
     if nargout>7
         varargout{3}=r2;
         if nargout>8
-            varargout{4}=vaftr;
+            if exist('vaftr','var')
+                varargout{4}=vaftr;
+            else
+                varargout{4}=[];
+            end
+            
             if nargout>9
                 varargout{5}=H;
             end
