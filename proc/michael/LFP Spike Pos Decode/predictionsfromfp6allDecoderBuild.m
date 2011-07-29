@@ -94,7 +94,7 @@ elseif strcmpi(signal,'emg')
     EMG_hp = 50; % default high pass at 50 Hz
     EMG_lp = 5; % default low pass at 10 Hz
     if ~exist('emgsamplerate','var')
-        emgsamplerate=2000; %default
+        emgsamplerate=1000; %default
     end
 
     [bh,ah] = butter(2, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
@@ -150,7 +150,7 @@ end
 if t(1)<analog_times(1)
     t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
 end
-y = interp1(analog_times, y, t);    % This should work for all numbers of outputs 
+y = interp1(analog_times, y(:,1), t);    % This should work for all numbers of outputs 
 									% as long as they are in columns of y
 if size(y,1)==1
     y=y(:); %make sure it's a column vector
