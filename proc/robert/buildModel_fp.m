@@ -361,14 +361,15 @@ if PolynomialOrder
 	end
 end
 
-vaftr(i,:)=v/100; %Divide by 100 because v is in percent
-vaf(i,:)=RcoeffDet(y_pred,ytnew);
+vaftr=v/100; %Divide by 100 because v is in percent
+vaf=RcoeffDet(y_pred,ytnew);
+r={};
 for j=1:size(y,2)
-	r{i,j}=corrcoef(y_pred(:,j),ytnew(:,j));
-	if size(r{i,j},2)>1
-		r2(i,j)=r{i,j}(1,2)^2;
+	r{j}=corrcoef(y_pred(:,j),ytnew(:,j));
+	if size(r{j},2)>1
+		r2(j)=r{j}(1,2)^2;
 	else
-		r2(i,j)=r{i,j}^2;
+		r2(j)=r{j}^2;
 	end
 end
 
