@@ -14,7 +14,7 @@ function [beta, ci] = onset_fit( curve )
 
 frt = -.5:0.005:1;
 y = mean(curve);
-plot(frt,y,'ko');
+%plot(frt,y,'ko');
 %x = 1:find(y==max(y),1,'first'); y = y(x);
 
 %%% BEGIN NEW INDEXING %%%
@@ -44,12 +44,12 @@ opts = optimset('Display', 'off', 'MaxFunEvals', 1E5);
 [beta,rn,r,xf,out,lambda,jacobian] = lsqcurvefit(F, beta0, x, y, [], [], opts);
 ci = nlparci(beta, r, 'jacobian', jacobian);
 
-plot(x, y, 'ko', min(x):.1:max(x), F(beta,min(x):.1:max(x)), 'r-', [ci(1,1) beta(1) ci(1,2)], [beta(2) beta(2) beta(2)], 'r*')
+  plot(x, y, 'ko', min(x):.1:max(x), F(beta,min(x):.1:max(x)), 'r-', [ci(1,1) beta(1) ci(1,2)], [beta(2) beta(2) beta(2)], 'r*')
 
 [ypred,delta] = nlpredci(F,x,beta,r,'jacobian',jacobian);
-hold on
-plot(x,ypred+delta, 'k-')
-plot(x,ypred-delta, 'k-')
+  hold on
+  plot(x,ypred+delta, 'k-')
+  plot(x,ypred-delta, 'k-')
 
 tmpt = min(x):.01:max(x);
 thr = (beta(2) + F(beta,max(x)))/2;
