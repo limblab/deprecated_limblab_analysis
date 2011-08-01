@@ -1,9 +1,13 @@
-%%
-fid=fopen('/Volumes/data/Miller/Chewie_8I2/Filter files/07-25-2011/Chewie_Spike_LFP_07252011001poly3_150featsvel-decoderNoP_log.txt');
+[FileName,PathName,FilterInde]=uigetfile('/home/limblab/Desktop/models','select a file');
+fid=fopen(fullfile(PathName,FileName));
 
 array=[];
 while ~feof(fid)
-	array=[array; sscanf(fgetl(fid),'%f \t%f \t%f \t%f \t%f \t%f \t%f')'];
+    tline=fgetl(fid);
+    numbers=sscanf(tline,'%f \t%f \t%f \t%f \t%f \t%f \t%f');
+    if ~isempty(numbers)
+    	array=[array; numbers'];
+    end
 end
 
 fclose(fid);
