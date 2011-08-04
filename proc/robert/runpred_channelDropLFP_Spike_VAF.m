@@ -2,10 +2,19 @@ function runpred_channelDropLFP_Spike_VAF(PathName)
 
 % is actually a batch file.
 
-% create a folder for the outputs
-if exist('channel_dropping_LFP_Spike','dir')==0
-	mkdir('channel_dropping_LFP_Spike')
+% create a folder for the outputs.  Create them with trailing numbers that
+% will increment so that no folder is ever overwritten.
+folderStr='channel_dropping_LFP_Spike1';
+if exist(folderStr,'dir')~=0
+    D=dir(PathName);
+    folderStrNoNumbers=regexp(folderStr,'.*(?=[0-9])','match','once');
+    folderNumbers=cellfun(@(x) str2num(x),regexp({D.name}, ...
+        ['(?<=',folderStrNoNumbers,')[0-9]+'],'match','once'),'UniformOutput',0);
+    folderNew=[folderStrNoNumbers, num2str(max(cat(2,folderNumbers{:}))+1)];
+else
+    folderNew=folderStr;
 end
+mkdir(folderNew)
 
 % load in each BDF file, trim down the number of channels, then run
 % predictionsfromfp5all.m as if that were all the LFP channels we have.  
@@ -24,11 +33,11 @@ else
         fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
         disp('quitting...')
         return
-        
     else 
-        contyes=input(sprintf('%d files found.  continue? (1 or 0): ',length(MATfiles)));
-        if ~contyes, return, end
-        skipAhead=input(sprintf('index to start (default 1): '));
+%         contyes=input(sprintf('%d files found.  continue? (1 or 0): ',length(MATfiles)));
+%         if ~contyes, return, end
+%         skipAhead=input(sprintf('index to start (default 1): '));
+        skipAhead=1; contyes=1;
     end
 end
 
@@ -157,9 +166,9 @@ for i=skipAhead:length(MATfiles)
 		
 	end
 		
-	save(fullfile(PathName,'channel_dropping_LFP_Spike',[fnam,' chan_drop.mat']), ...
+	save(fullfile(PathName,folderNew,[fnam,' chan_drop.mat']), ...
 		'EMGVAFmallLFP','EMGVAFsdallLFP','EMGVAFmallSpike','EMGVAFsdallSpike','EMGchanNames')   
 end
 
-copyfile('channel_dropping_LFP_Spike','Y:\user_folders\Robert\data\monkey\outputs\channel_dropping_LFP_Spike')
+copyfile(folderNew,['Y:\user_folders\Robert\data\monkey\outputs\',folderNew])
 clock

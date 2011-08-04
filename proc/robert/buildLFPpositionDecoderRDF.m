@@ -1,14 +1,19 @@
 %% Identify the file for loading
-[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.plx');
+[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
 cd(PathName)
 diary([PathName,'decoderOutput.txt'])
-%% load the file (skip if you've just loaded in the .mat file instead of the .plx)
-% add the ability to auto-make this decision based on whether the .mat file
-% is already in the base workspace.
-out_struct=get_plexon_data(FileName);
-save([regexp(FileName,'.*(?=\.plx)','match','once'),'.mat'],'out_struct')
+%% load the file 
+%  (skip this cell entirely if you've just loaded in a .mat file instead of
+%  the .plx)
+switch FileName(end-3:end)
+    case '.mat'
+        disp(['loading BDF structure from ',FileName])
+        load(fullfile(PathName,FileName))
+    case '.plx'
+        out_struct=get_plexon_data(FileName);
+        save([regexp(FileName,'.*(?=\.plx)','match','once'),'.mat'],'out_struct')
+end
 disp(sprintf('\n\n\n\n\n=====================\nFILE LOADED\n===================='))
-
 %% input parameters - Do not Change, just run.
 disp('assigning static parameters')
 
@@ -42,7 +47,7 @@ disp('assigning tunable parameters and building the decoder...')
 numlags=10; 
 wsz=256; 
 nfeat=150;
-PolynomialOrder=0; 
+PolynomialOrder=3; 
 smoothfeats=0;
 binsize=0.05;
 
@@ -50,6 +55,7 @@ signal='vel';
 sig=out_struct.(signal);
 analog_times=sig(:,1);
 
+% to build a decoder:
 [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
@@ -118,9 +124,8 @@ H_sorted = cell2mat(cH(:,3));
 
 % the appropriate one to save is H_sorted
 H=H_sorted;
-% I don't think the filter.xxxx are necessary.  Just the variables.
 
-% yes, H should probably be sorted, because the H matrix comes out of
+% H must be sorted, because the H matrix comes out of
 % something that's ordered on the features, and the order of the features
 % is caused by correlation to pos/vel, NOT channel order.
 nameToSave=[fnam,'poly',num2str(PolynomialOrder),'_',num2str(nfeat)];
@@ -132,7 +137,48 @@ end
 nameToSave=[nameToSave,signal,'-decoder.mat'];
 save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
 	'chanIDs','samplingFreq','f_bands')
-
-
 disp(sprintf('decoder saved in %s',PathName))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
+folds=10;
+[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
+    featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
+    predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+    samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+
+
+% examine vaf
+fprintf(1,'file %s\n',fnam)
+fprintf(1,'decoding %s\n',signal)
+fprintf(1,'numlags=%d\n',numlags)
+fprintf(1,'wsz=%d\n',wsz)
+fprintf(1,'nfeat=%d\n',nfeat)
+fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+fprintf(1,'smoothfeats=%d\n',smoothfeats)
+fprintf(1,'binsize=%.2f\n',binsize)
+
+vaf
+
+formatstr='vaf mean across folds: ';
+for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
+formatstr=[formatstr, '\n'];
+
+fprintf(1,formatstr,mean(vaf,1))
+fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
+
+%% TODO: save decoder on citadel.
+% % remoteDriveLetter='Y';    % appropriate for offline sorting machine
+% remoteDriveLetter='Z';      % appropriate for GOB
+% pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\Filter files'], ...
+%     [remoteDriveLetter,':\Miller\Mini_7H1\FilterFiles']};
+% 
+% % 
+% animal=regexp(FileName,'Chewie|Mini','match','once');
+% chosenPath=pathBank{cellfun(@isempty,regexpi(pathBank,animal))==0};
+% D=dir(PathName);
+% copyfile([regexp(D(find(cellfun(@isempty,regexp({D.name},'[A-Za-z]+(?=[0-9]+\.mat)'))==0,1,'first')).name, ...
+%     '[A-Za-z]+(?=[0-9]+\.mat)','match','once'),'*.mat'],remoteFolder)
+% copyfile('LFP_EMGdecoder_results.txt',remoteFolder)
+
 diary off
