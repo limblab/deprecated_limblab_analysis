@@ -16,8 +16,14 @@ end
 disp(sprintf('\n\n\n\n\n=====================\nFILE LOADED\n===================='))
 %% input parameters - Do not Change, just run.
 disp('assigning static parameters')
-
 fnam=FileName(1:end-4);
+
+% behavior
+signal='vel';
+sig=out_struct.(signal);
+analog_times=sig(:,1);
+
+% FP
 disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)),1);
 if ~isempty(disJoint)
     disp('error, mismatched lengths in out_struct.raw.analog.data.  attempting to correct...')
@@ -30,16 +36,42 @@ disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)));
 if ~isempty(disJoint)
     disp('still mismatched lengths in out_struct.raw.analog.data.  quitting...')
 end
-% downsample?  If brainreader is operating with a wsz of 256 and a sampling
-% rate of 2000, then so should the offline decoder build I guess.  delta
-% band is going to be empty...
+
 fpchans=find(cellfun(@isempty,regexp(out_struct.raw.analog.channels,'FP[0-9]+'))==0);
 fp=double(cat(2,out_struct.raw.analog.data{fpchans}))';
 samprate=out_struct.raw.analog.adfreq(fpchans(1));
 
+% are all ts values the same for all channels?  Could be different on
+% different preamps.
+fptimes=out_struct.raw.analog.ts{1}(1):1/samprate: ...
+    (size(out_struct.raw.analog.data{1},1)/samprate+out_struct.raw.analog.ts{1}(1));
+if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
+%%
+% 1st (and last?) second of data gets eliminated by calc_from_raw for the encoder
+% timestampe (see out_struct.raw.analog.pos or .vel, so is inappropriate to
+% include them in the fp signals.
+fp(:,fptimes<1 | fptimes>analog_times(end))=[];
+fptimes(fptimes<1 | fptimes>analog_times(end))=[];
+
+%%
+% downsample, so the delta band isn't empty at wsz=256; this is a current
+% limitation of BrainReader.
+if 0%samprate > 1000
+    % want final fs to be 1000
+    disp('downsampling to 1 kHz')
+    samp_fact=samprate/1000;
+    downsampledTimeVector=linspace(fptimes(1),fptimes(end),length(fptimes)/samp_fact);
+    fp=interp1(fptimes,fp',downsampledTimeVector)';
+    fptimes=downsampledTimeVector;
+    downsampledTimeVector=linspace(analog_times(1),analog_times(end),length(analog_times)/samp_fact);
+    downSampledBehaviorSignal=interp1(analog_times,sig(:,2:3),downsampledTimeVector);
+    analog_times=downsampledTimeVector; clear downsampledTimeVector
+    sig=[rowBoat(analog_times),downSampledBehaviorSignal];
+    samprate=1000;
+end
+
 numfp=size(fp,1);
 numsides=1;
-fptimes=1/samprate:1/samprate:size(out_struct.raw.analog.data{1},1)/samprate;
 Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
 %% Input parameters to play with.
@@ -50,39 +82,43 @@ nfeat=150;
 PolynomialOrder=3; 
 smoothfeats=0;
 binsize=0.05;
-
-signal='vel';
-sig=out_struct.(signal);
-analog_times=sig(:,1);
-
+%%
 % to build a decoder:
-[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
-    featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
-    buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
-    samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
-
-disp(sprintf('\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n'))
-
-% examine vaf
-fprintf(1,'file %s\n',fnam)
-fprintf(1,'decoding %s\n',signal)
-fprintf(1,'numlags=%d\n',numlags)
-fprintf(1,'wsz=%d\n',wsz)
-fprintf(1,'nfeat=%d\n',nfeat)
-fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
-fprintf(1,'smoothfeats=%d\n',smoothfeats)
-fprintf(1,'binsize=%.2f\n',binsize)
-
-vaf
-
-formatstr='vaf mean across folds: ';
-for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
-formatstr=[formatstr, '\n'];
-
-fprintf(1,formatstr,mean(vaf,1))
-fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
-
+% for n=1:3
+%     fp=fp.*10;
+%     
+    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
+        featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
+        buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
+        samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
+        Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+    
+    disp(sprintf('\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n'))
+    
+    % examine vaf
+    fprintf(1,'file %s\n',fnam)
+    fprintf(1,'decoding %s\n',signal)
+    fprintf(1,'numlags=%d\n',numlags)
+    fprintf(1,'wsz=%d\n',wsz)
+    fprintf(1,'nfeat=%d\n',nfeat)
+    fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+    fprintf(1,'smoothfeats=%d\n',smoothfeats)
+    fprintf(1,'binsize=%.2f\n',binsize)
+    fprintf(1,'gain factor=%d\n',10^n)
+    
+    vaf
+    
+    formatstr='vaf mean across folds: ';
+    for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
+    formatstr=[formatstr, '\n'];
+    
+    fprintf(1,formatstr,mean(vaf,1))
+    fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
+    
+    [range(H(:)), mean(abs(H))]
+    close
+    fprintf(1,'\n\n\n')
+% end
 %%
 % transpose P?
 P=P';
@@ -139,6 +175,7 @@ save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
 	'chanIDs','samplingFreq','f_bands')
 disp(sprintf('decoder saved in %s',PathName))
 
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
 folds=10;
 [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
