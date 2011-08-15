@@ -123,7 +123,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
                 l1=24.0; l2=23.5;
             elseif isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
-                l1=25.0; l2=23.5;                
+                l1=24.8; l2=24;
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
             end
@@ -170,11 +170,9 @@ function out_struct = calc_from_raw(raw_struct, opts)
     if robot_task && opts.force 
         force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
         if (~isempty(force_channels))
-
             if opts.verbose
                 disp('Aggregating data... get force')
             end
-
             % Check date of recording to see if it's before or after the
             % change to force handle mounting.
             if datenum(out_struct.meta.datetime) < datenum('5/27/2010')            
@@ -199,19 +197,22 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
                         -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
                 rotcal = [1 0; 0 1];                
-                force_offsets = [-1888.095 -1160.662 1032.623...
-                    -998.567 809.171 2836.314];
+%                 force_offsets = [-1888.095 -1160.662 1032.623...
+%                     -998.567 809.171 2836.314];
+%                 force_offsets = [-17571 -1142 12253 -503 7933 3431];
+                force_offsets = [-4832.043 -1255.338 1743.942 -862.4445 4447.589 3101.556];
                 Fy_invert = 1;
             end 
             
-            [b,a] = butter(4, 20/adfreq);
+            [b,a] = butter(4, 200/adfreq);
             raw_force = zeros(length(analog_time_base), 6);
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
-                a_data = get_analog_signal(out_struct, channame);
+                a_data = double(get_analog_signal(out_struct, channame));   
+%                 mean(a_data(find(a_data(:,1)>40,1,'first'):find(a_data(:,1)<41,1,'last'),2))
                 a_data(:,2) = filtfilt(b, a, a_data(:,2));
-%                 a_data(:,2) = filtfilt(b, a, a_data(:,2));
                 a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
+                
                 raw_force(:,c) = a_data';
             end
 
@@ -230,83 +231,99 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if (robot_task)
                 warning('BDF:noForceSignal','No force handle signal found because no channel named ''ForceHandle*''');
             end
+            analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
+            if ~isempty(analog_channels)
+                out_struct.analog.ts = analog_time_base;
+                for c = 1:length(analog_channels)
+                    channame = out_struct.raw.analog.channels(c);
+                    fs = out_struct.raw.analog.adfreq(c);
+                    chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{c})/fs;
+                    a_data = double(get_analog_signal(out_struct, channame));
+                    a_data = a_data(fs:end-(out_struct.meta.duration-out_struct.vel(end,1))*fs,2);
+                    if fs~=adfreq
+                        a_data = interp1(chan_time_base, a_data, analog_time_base);
+                    end
+                    out_struct.analog.channel{c} = channame;
+                    out_struct.analog.data{c} = a_data;
+                end
+            end
         end
     end % opts.force
 
-%% Eye-Tracker (analog) data
+    %% Eye-Tracker (analog) data
 
-if opts.eye
-    eye_channels = find( strncmp(out_struct.raw.analog.channels, 'POG', 3) ); %#ok<EFIND>
-    if(~isempty(eye_channels))
-        
-%------------init matrices/get raw data-----------------------------------
-        %initialize  matrices... size = (length 2), in form [ t a ]
-        x_data  = zeros( length(analog_time_base), 2 ); %#ok<NASGU>
-        y_data  = zeros( length(analog_time_base), 2 ); %#ok<NASGU>
-        raw_eye = zeros( length(analog_time_base), 3 );
-        t = 1;      %naming "raw_eye" indices
-        x = 2;
-        y = 3;
-        b = -4;%0.4;      %blink filter lower voltage limit
-        
-        x_data = get_analog_signal(out_struct, 'POGX');
-        y_data = get_analog_signal(out_struct, 'POGY');
-        
-        raw_eye(:,t) = analog_time_base';                                 %time stamp
-        raw_eye(:,x) = x_data( 1:length(analog_time_base), 2 );           %x-coord
-        raw_eye(:,y) = y_data( 1:length(analog_time_base), 2 );           %y-coord
-%------------end initialization-------------------------------------------
- 
-%--------------------------BLINK FILTER; NO POSITION DATA IN OUTPUT-------------------
-% with variable 'filter' = 0, no boundary filter imposed
-filter = 0;
-if filter
-        t_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU>
-        x_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU> %generating null arrays in prep.
-        y_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU>
-        
-        t_valid      = raw_eye( (raw_eye(:,x) > b), t );
-        x_valid      = raw_eye( (raw_eye(:,x) > b), x ); %filtering out data from "blinks" (y-values below zero - any time no pupil diameter is detected by system)
-        y_valid      = raw_eye( (raw_eye(:,x) > b), y ); %FUTURE WORK: modify filter to interpolate POG values during blink
-        
-        % initializing low pass filter for pog
-        [b,a]        = butter(9,.4); %values from Alex's 'plot_pog' code; have not checked to see how optimal they are
-        filter       = 0;             %currently only able to change this *in the code* (right here)
+    if opts.eye
+        eye_channels = find( strncmp(out_struct.raw.analog.channels, 'POG', 3) ); %#ok<EFIND>
+        if(~isempty(eye_channels))
 
-        %applying filter if wanted //Butterworth low pass
-        if filter
-            x_valid  = filtfilt( b, a, x_valid );
-            y_valid  = filtfilt( b, a, y_valid );
-        end
-else %not filtering data at all (current process: do all filtering later; will incorporate blink filter/interpolation/etc. into this later)
-    t_valid = raw_eye(:,t);
-    x_valid = raw_eye(:,x);
-    y_valid = raw_eye(:,y);
-end
-        %Now to process the raw data (analog voltages): transform voltage
-        %levels to x/y values
-        %s_unit = 5/409.5;               %some constant used in transformation (from Alex's "plot_pog.m" code)
-        % converting coordinate systems (analog output to pog)*(to cm)
-        % Monitor size = 304.1mm x 228.1mm
-        % No. of Vertical POG Units: 240  |||  No. of Horiz. POG Units: 256
-        %x_valid      = ( (x_valid/s_unit) - 130 );% / ( 10*(304.1/256) );     %converting for screen resolution difference (E/T coords not same as behavior screen coords)
-        %y_valid      = (-1)*( (y_valid/s_unit) - 120 );% / ( 10*(228.1/240) )*(-1);
-        
-        %finalizing output values
-        out_struct.eye = [ t_valid x_valid y_valid ];
-%---------------------------END BLINK FILTER-----------------------------------------        
-        
+    %------------init matrices/get raw data-----------------------------------
+            %initialize  matrices... size = (length 2), in form [ t a ]
+            x_data  = zeros( length(analog_time_base), 2 ); %#ok<NASGU>
+            y_data  = zeros( length(analog_time_base), 2 ); %#ok<NASGU>
+            raw_eye = zeros( length(analog_time_base), 3 );
+            t = 1;      %naming "raw_eye" indices
+            x = 2;
+            y = 3;
+            b = -4;%0.4;      %blink filter lower voltage limit
 
-%-----------------------------NO BLINK FILTER; OUTPUT INCL. POSITION DATA------------        
-%     [ code has been cut out and pasted into a .txt file on David's computer; if
-%       re-inserted, must also remove "blink filter" section of this cell (which
-%       also exists in the .txt file; also, be sure to make "raw_eye" 5 columns
-%       wide in initialization]
-%-----------------------------END NO BLINK FILTER (code avail in .txt file)----------
+            x_data = get_analog_signal(out_struct, 'POGX');
+            y_data = get_analog_signal(out_struct, 'POGY');
 
-        
-    end         %ending "if(~isempty(eye_channels))"
-end             %ending "if opts.eye"
+            raw_eye(:,t) = analog_time_base';                                 %time stamp
+            raw_eye(:,x) = x_data( 1:length(analog_time_base), 2 );           %x-coord
+            raw_eye(:,y) = y_data( 1:length(analog_time_base), 2 );           %y-coord
+    %------------end initialization-------------------------------------------
+
+    %--------------------------BLINK FILTER; NO POSITION DATA IN OUTPUT-------------------
+    % with variable 'filter' = 0, no boundary filter imposed
+    filter = 0;
+    if filter
+            t_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU>
+            x_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU> %generating null arrays in prep.
+            y_valid      = zeros( length( (raw_eye(:,x) > b)), 1 );  %#ok<NASGU>
+
+            t_valid      = raw_eye( (raw_eye(:,x) > b), t );
+            x_valid      = raw_eye( (raw_eye(:,x) > b), x ); %filtering out data from "blinks" (y-values below zero - any time no pupil diameter is detected by system)
+            y_valid      = raw_eye( (raw_eye(:,x) > b), y ); %FUTURE WORK: modify filter to interpolate POG values during blink
+
+            % initializing low pass filter for pog
+            [b,a]        = butter(9,.4); %values from Alex's 'plot_pog' code; have not checked to see how optimal they are
+            filter       = 0;             %currently only able to change this *in the code* (right here)
+
+            %applying filter if wanted //Butterworth low pass
+            if filter
+                x_valid  = filtfilt( b, a, x_valid );
+                y_valid  = filtfilt( b, a, y_valid );
+            end
+    else %not filtering data at all (current process: do all filtering later; will incorporate blink filter/interpolation/etc. into this later)
+        t_valid = raw_eye(:,t);
+        x_valid = raw_eye(:,x);
+        y_valid = raw_eye(:,y);
+    end
+            %Now to process the raw data (analog voltages): transform voltage
+            %levels to x/y values
+            %s_unit = 5/409.5;               %some constant used in transformation (from Alex's "plot_pog.m" code)
+            % converting coordinate systems (analog output to pog)*(to cm)
+            % Monitor size = 304.1mm x 228.1mm
+            % No. of Vertical POG Units: 240  |||  No. of Horiz. POG Units: 256
+            %x_valid      = ( (x_valid/s_unit) - 130 );% / ( 10*(304.1/256) );     %converting for screen resolution difference (E/T coords not same as behavior screen coords)
+            %y_valid      = (-1)*( (y_valid/s_unit) - 120 );% / ( 10*(228.1/240) )*(-1);
+
+            %finalizing output values
+            out_struct.eye = [ t_valid x_valid y_valid ];
+    %---------------------------END BLINK FILTER-----------------------------------------        
+
+
+    %-----------------------------NO BLINK FILTER; OUTPUT INCL. POSITION DATA------------        
+    %     [ code has been cut out and pasted into a .txt file on David's computer; if
+    %       re-inserted, must also remove "blink filter" section of this cell (which
+    %       also exists in the .txt file; also, be sure to make "raw_eye" 5 columns
+    %       wide in initialization]
+    %-----------------------------END NO BLINK FILTER (code avail in .txt file)----------
+
+
+        end         %ending "if(~isempty(eye_channels))"
+    end             %ending "if opts.eye"
 
 %% Stimulator serial data
     if (isfield(out_struct.raw,'serial') && ~isempty(out_struct.raw.serial))
@@ -331,8 +348,8 @@ end             %ending "if opts.eye"
         burst_size = out_struct.databursts{1,2}(1);
                 
         if (wrist_flexion_task ||multi_gadget_task || center_out_task)
-%               burst_size = 34; %newest version as of 08-2010
-%               burst_size = 22; %for older files
+            % burst_size = 34; %newest version as of 08-2010
+            % burst_size = 22; %for older files
             out_struct.targets.corners = zeros(num_trials,5);
             out_struct.targets.rotation = zeros(num_trials,2);            
             for i=1:num_trials
