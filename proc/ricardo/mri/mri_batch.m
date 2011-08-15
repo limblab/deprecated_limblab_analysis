@@ -1,9 +1,8 @@
 % MRI batch
-subject = 'Tiki';
-shortpath = ['D:\Data\MRI\' subject '\'];
+subject = 'Pedro_4C2';
 switch subject
-    case 'Tiki'
-        shortpath = 'D:\Data\MRI\Tiki\';
+    case 'Tiki_4C1'
+        shortpath = 'D:\Data\Tiki_4C1\MRI\';
         longpath = 'DICOM\09070609\09420000\';
         datapath = [shortpath longpath];
         patientName = '4c1-tiki';
@@ -11,6 +10,19 @@ switch subject
         disp_options.xresolution = 1;
         disp_options.yresolution = 1;
         disp_options.zresolution = 1;
+        excel_file = 'tikimap.xls';
+        stereotax_opts.CMS=[17.1,-6.9];
+        stereotax_opts.CMM=[59.1,54.3];
+        stereotax_opts.ang=24;
+    case 'Pedro_4C2'
+        shortpath = 'D:\Data\Pedro_4C2\MRI\';
+        longpath = 'DICOM\10070609\31420001\';
+        datapath = [shortpath longpath];
+        patientName = 'PEDRO BASELINE';
+        seriesNo = 1;
+        disp_options.xresolution = 0.5;
+        disp_options.yresolution = 0.5;
+        disp_options.zresolution = 0.5;
         excel_file = 'tikimap.xls';
         stereotax_opts.CMS=[17.1,-6.9];
         stereotax_opts.CMM=[59.1,54.3];

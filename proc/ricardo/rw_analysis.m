@@ -79,7 +79,7 @@ for iFile = 1:length(filenames)
         test_params = [vel_test speed];
     end
 
-    ts = 200; % time step (ms)
+    ts = 200; % 1/time step (1/s)
     vt = bdf.vel(:,1);
     t = vt(floor(vt*ts)==vt*ts);
 
@@ -176,7 +176,9 @@ for iFile = 1:length(filenames)
     confidence_pos = zeros(num_pds,1);
     task_modulation = zeros(num_pds,1);
     glm_params = zeros(num_pds,6);
-
+    
+%     [b,a] = butter(6, [50 70]/(ts/2));  
+    [b,a] = iirnotch(60/(ts/2),0.5/35);
 
     tic;
     for i = 1:num_pds
@@ -189,7 +191,9 @@ for iFile = 1:length(filenames)
         end
         spike_times = sort(spike_times);
         spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
-        s = train2bins(spike_times, t);
+        s = train2bins(spike_times, t);       
+        s = filtfilt(b, a, s);
+        s = max(s,0);
 
         if strcmp(model,'posvel')
             glm_input = [glmx glmv sqrt(glmv(:,1).^2 + glmv(:,2).^2)];       

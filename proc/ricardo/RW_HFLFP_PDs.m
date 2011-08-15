@@ -6,9 +6,9 @@ filenames = {'Tiki_2011-06-21_RW_001-xcr-5-10-single_units'};
 extension = '.nev';
 model = 'posvel'; % 'vel' or 'posvel'
 curr_dir = pwd;
-cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
+cd 'E:\Ricardo\Miller Lab\Matlab\s1_analysis';
 load_paths;
-cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
+cd 'E:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 lfp_summary_all = [];
 
 for iFile = 1:length(filenames)
@@ -56,7 +56,7 @@ for iFile = 1:length(filenames)
     for iChan = 1:num_channels
         disp(['Channel: ' num2str(iChan) ' of ' num2str(num_channels)])
         y = double(bdf.raw.analog.data{channel_idx(iChan)});
-        y = y(bdf.vel(1,1)*10000:end-(bdf.meta.duration-bdf.vel(end,1))*fs);
+        y = y(bdf.vel(1,1)*fs:end-(bdf.meta.duration-bdf.vel(end,1))*fs);
         y_high_pass = filtfilt(filt_b,filt_a,y);
         y_rectified = abs(y_high_pass);
         y_envelope = filtfilt(low_filt_b, low_filt_a, y_rectified);
@@ -90,7 +90,7 @@ for iFile = 1:length(filenames)
     speed_comp = zeros(num_channels,1);
     task_modulation = zeros(num_channels,1);
     dm_theta = zeros(num_channels,1);
-    
+    tic
     for iChan = 1:num_channels
         et = toc;
         disp(sprintf('ET: %f (%d of %d)', et, iChan, num_channels));

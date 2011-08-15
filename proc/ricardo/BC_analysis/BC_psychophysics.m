@@ -134,6 +134,7 @@ for file_no = 1:length(filelist)
      end
     if num_outer_targets==1
         rewards_incompletes
+        rewards_incompletes(:,:,1)./(rewards_incompletes(:,:,1)+rewards_incompletes(:,:,2))
     else
         rewards_fails
     end

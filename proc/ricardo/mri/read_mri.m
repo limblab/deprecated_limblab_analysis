@@ -27,11 +27,21 @@ X = uint16(zeros([imageSize length(filenames)]));
 for p=1:length(filenames)
     filename = filenames(p).name;
     X(:,:,p) = dicomread([datapath filename]);
-    info = dicominfo([datapath filename]);
+    
     minPixels(p) = info.SmallestImagePixelValue;
     maxPixels(p) = info.LargestImagePixelValue;
+%     b = min(minPixels(p));
+%     m = 4*2^16/(max(maxPixels(p)) - b);
+%     X(:,:,p) = imlincomb(double(m), double(X(:,:,p)), -double(m * b), 'uint16');
+    
+    info = dicominfo([datapath filename]);
     slicePos = info.Private_0051_100d;
     % L is positive
+    if strcmp(slicePos(4),'A')
+        slicePos(4) = 'R';
+    elseif strcmp(slicePos(4),'P')
+        slicePos(4) = 'L';
+    end
     sliceCoord(p) = (-1)^(strcmp(slicePos(4),'L')+1)*str2num(slicePos(5:end));
 end
 
@@ -42,5 +52,8 @@ X = permute(X,[1 3 2]);
 X = X(end:-1:1,:,:);
 
 b = min(minPixels);
+% b = min(min(min(X)));
 m = 4*2^16/(max(maxPixels) - b);
-mri_mat = imlincomb(double(m), X, double(-(m * b)), 'uint16');
+
+% mri_mat = imlincomb(double(m), double(X), -double(m * b), 'uint16');
+mri_mat = X;

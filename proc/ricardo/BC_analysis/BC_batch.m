@@ -9,7 +9,7 @@ bump_raster_files = [];
 
 % psychophysics_files = {'Tiki_2011-05-19_BC_001-s_multiunit','Tiki_2011-04-28_BC_002-s_multiunit','Tiki_2011-04-28_BC_003-s_multiunit'};
 % psychophysics_files = {'Tiki_2011-04-11_BC_001','Tiki_2011-04-13_BC_001','Tiki_2011-04-14_BC_001'};
-psychophysics_files = {'Tiki_2011-06-27_BC_001'};
+psychophysics_files = {'Tiki_2011-08-15_BC_001'};
 % psychophysics_files = [];
 newsome_files = [];
 clear newsome_results
@@ -73,52 +73,52 @@ for iFileGroup = 1:length(newsome_files)
     end
     newsome_results(iFileGroup) = BC_newsome(filelist(find(newsome_files_idx)));
 end
-
-count = 0;
-count2 = 0;
-count3 = 0;
-diff_xthr_10 = [];
-diff_xthr_20 = [];
-diff_xthr_30 = [];
-for i=1:length(newsome_results)
-    if newsome_results(i).electrodes == 14
-        for j = 1:length(newsome_results(i).currents)
-            if newsome_results(i).currents(j) == 10
-                count = count+1;
-                xthr_no_stim_10 = newsome_results(i).xthr(1);
-                xthr_stim_10 = newsome_results(i).xthr(j);
-                diff_xthr_10(count) = xthr_stim_10 - xthr_no_stim_10;
-            end
-            if newsome_results(i).currents(j) == 20
-                count2 = count2+1;
-                xthr_no_stim_20 = newsome_results(i).xthr(1);
-                xthr_stim_20 = newsome_results(i).xthr(j);
-                diff_xthr_20(count2) = xthr_stim_20 - xthr_no_stim_20;
-            end
-            if newsome_results(i).currents(j) == 20
-                count3 = count3+1;
-                xthr_no_stim_30 = newsome_results(i).xthr(1);
-                xthr_stim_30 = newsome_results(i).xthr(j);
-                diff_xthr_30(count3) = xthr_stim_30 - xthr_no_stim_30;
+if ~isempty(newsome_files)
+    count = 0;
+    count2 = 0;
+    count3 = 0;
+    diff_xthr_10 = [];
+    diff_xthr_20 = [];
+    diff_xthr_30 = [];
+    for i=1:length(newsome_results)
+        if newsome_results(i).electrodes == 14
+            for j = 1:length(newsome_results(i).currents)
+                if newsome_results(i).currents(j) == 10
+                    count = count+1;
+                    xthr_no_stim_10 = newsome_results(i).xthr(1);
+                    xthr_stim_10 = newsome_results(i).xthr(j);
+                    diff_xthr_10(count) = xthr_stim_10 - xthr_no_stim_10;
+                end
+                if newsome_results(i).currents(j) == 20
+                    count2 = count2+1;
+                    xthr_no_stim_20 = newsome_results(i).xthr(1);
+                    xthr_stim_20 = newsome_results(i).xthr(j);
+                    diff_xthr_20(count2) = xthr_stim_20 - xthr_no_stim_20;
+                end
+                if newsome_results(i).currents(j) == 20
+                    count3 = count3+1;
+                    xthr_no_stim_30 = newsome_results(i).xthr(1);
+                    xthr_stim_30 = newsome_results(i).xthr(j);
+                    diff_xthr_30(count3) = xthr_stim_30 - xthr_no_stim_30;
+                end
             end
         end
     end
+    %%
+    figure;
+    hist(diff_xthr_10,linspace(-0.01,0.01,20));
+    % xlim([0 360])
+    h = findobj(gca,'Type','patch');
+    set(h,'FaceColor','b','FaceAlpha',0.5)
+    hold on
+    hist(diff_xthr_20,linspace(-0.01,0.01,20));
+    h2 = findobj(gca,'Type','patch');
+    set(h2(1),'FaceColor','r','FaceAlpha',0.5)
+    hist(diff_xthr_30,linspace(-0.01,0.01,20));
+    h3 = findobj(gca,'Type','patch');
+    set(h3(1),'FaceColor','g','FaceAlpha',0.5)
+    legend('10 uA','20 uA','30uA')
+    xlabel('Stimulus effect (N)')
+    ylabel('Count')
+    title('Newsome effect summary at 10 and 20 uA, electrode 14')
 end
-%%
-figure;
-hist(diff_xthr_10,linspace(-0.01,0.01,20));
-% xlim([0 360])
-h = findobj(gca,'Type','patch');
-set(h,'FaceColor','b','FaceAlpha',0.5)
-hold on
-hist(diff_xthr_20,linspace(-0.01,0.01,20));
-h2 = findobj(gca,'Type','patch');
-set(h2(1),'FaceColor','r','FaceAlpha',0.5)
-hist(diff_xthr_30,linspace(-0.01,0.01,20));
-h3 = findobj(gca,'Type','patch');
-set(h3(1),'FaceColor','g','FaceAlpha',0.5)
-legend('10 uA','20 uA','30uA')
-xlabel('Stimulus effect (N)')
-ylabel('Count')
-title('Newsome effect summary at 10 and 20 uA, electrode 14')
-    

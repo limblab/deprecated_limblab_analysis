@@ -35,7 +35,7 @@ if ~exist([datapath 'Processed\' fileinfo.name '.mat'],'file')
             save([datapath 'Processed\' sorted_files(iSorted).name(1:end-4)],'bdf');
         end
     else
-        bdf = get_cerebus_data([datapath 'Raw\' fileinfo.name '.nev'],2);
+        bdf = get_cerebus_data([datapath 'Raw\' fileinfo.name '.nev'],3);
         save([datapath 'Processed\' fileinfo.name],'bdf');
     end        
     cd(currdir);

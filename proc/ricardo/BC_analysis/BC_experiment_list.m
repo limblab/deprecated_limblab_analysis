@@ -1468,6 +1468,240 @@ filelist(i).delay = repmat(1,1,6);
 filelist(i).bump_duration = 0; % (ms)
 filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
 
+i = i+1;
+filelist(i).name = 'Tiki_2011-06-29_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.14,1,2);
+filelist(i).codes = 1:2;
+filelist(i).electrodes = repmat(14,1,2);
+filelist(i).pulsewidth = repmat(0.2,1,2);
+filelist(i).current = [20 0];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = repmat(120,1,2);
+filelist(i).delay = repmat(1,1,2);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-06-30_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.14,1,2);
+filelist(i).codes = 1:2;
+filelist(i).electrodes = repmat(14,1,2);
+filelist(i).pulsewidth = repmat(0.2,1,2);
+filelist(i).current = [0 35];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = repmat(120,1,2);
+filelist(i).delay = repmat(1,1,2);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-07-01_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.14,1,2);
+filelist(i).codes = 1:2;
+filelist(i).electrodes = repmat(14,1,2);
+filelist(i).pulsewidth = repmat(0.2,1,2);
+filelist(i).current = [0 35];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = repmat(120,1,2);
+filelist(i).delay = repmat(1,1,2);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-07-06_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.14,1,2);
+filelist(i).codes = 1:2;
+filelist(i).electrodes = repmat(14,1,2);
+filelist(i).pulsewidth = repmat(0.2,1,2);
+filelist(i).current = [0 50];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = repmat(120,1,2);
+filelist(i).delay = repmat(1,1,2);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-07-07_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.14,1,2);
+filelist(i).codes = 1:2;
+filelist(i).electrodes = repmat(14,1,2);
+filelist(i).pulsewidth = repmat(0.2,1,2);
+filelist(i).current = [0 50];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = repmat(120,1,2);
+filelist(i).delay = repmat(1,1,2);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-07-08_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.14,1,2);
+filelist(i).codes = 1:2;
+filelist(i).electrodes = repmat(14,1,2);
+filelist(i).pulsewidth = repmat(0.2,1,2);
+filelist(i).current = [0 50];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = repmat(120,1,2);
+filelist(i).delay = repmat(1,1,2);
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-13_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-14_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-07-19_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = 3.14;
+filelist(i).codes = 1;
+filelist(i).electrodes = 14;
+filelist(i).pulsewidth = 0.2;
+filelist(i).current = 50;
+filelist(i).period = 3.3;
+filelist(i).pulses =120;
+filelist(i).delay = 1;
+filelist(i).bump_duration = 250; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-21_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-25_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-26_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-27_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-28_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-07-29_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-08-01_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [3.14 3.14 3.14 3.14];
+filelist(i).codes = [1 1 1 2];
+filelist(i).electrodes = [4 8 14 0];
+filelist(i).pulsewidth = [0.2 0.2 0.2 0.2];
+filelist(i).current = [50 50 50 0];
+filelist(i).period = [3.3 3.3 3.3 3.3];
+filelist(i).pulses = [120 120 120 0];
+filelist(i).delay = [1 1.5 2 0];
+filelist(i).bump_duration = 250; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-08-02_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-08-03_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [3.14 3.14 3.14 3.14];
+filelist(i).codes = [1 2 3 4];
+filelist(i).electrodes = [4 8 14 0];
+filelist(i).pulsewidth = [0.2 0.2 0.2 0.2];
+filelist(i).current = [50 50 50 0];
+filelist(i).period = [3.3 3.3 3.3 3.3];
+filelist(i).pulses = [120 120 120 0];
+filelist(i).delay = [1 1.5 2 0];
+filelist(i).bump_duration = 250; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-08-04_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-08-05_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-08-08_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [3.14 3.14 3.14 3.14 3.14 3.14 3.14];
+filelist(i).codes = [1 2 3 4 4 4 5];
+filelist(i).electrodes = [4 8 14 4 8 14 0];
+filelist(i).pulsewidth = [0.2 0.2 0.2 0.2 0.2 0.2 0.2 ];
+filelist(i).current = [50 50 50 50 50 50 0];
+filelist(i).period = [3.3 3.3 3.3 3.3 3.3 3.3 3.3];
+filelist(i).pulses = [120 120 120 120 120 120 0];
+filelist(i).delay = [1 1 1 1 1.5 2 0];
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-08-09_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-08-10_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [3.14 3.14 3.14 3.14];
+filelist(i).codes = [1 1 1 2];
+filelist(i).electrodes = [4 8 14 0];
+filelist(i).pulsewidth = [0.2 0.2 0.2 0.2];
+filelist(i).current = [50 50 50 0];
+filelist(i).period = [3.3 3.3 3.3 3.3];
+filelist(i).pulses = [120 120 120 0];
+filelist(i).delay = [1 1.5 2 0];
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-08-11_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.142,1,13);
+filelist(i).codes = [1 2 3 4 4 5 5 6 6 7 7 7 8];
+filelist(i).electrodes = [4 8 14 4 8 4 14 8 14 4 8 14 0];
+filelist(i).pulsewidth = repmat(0.2,1,13);
+filelist(i).current = [repmat(50,1,12) 0];
+filelist(i).period = repmat(3.3,1,13);
+filelist(i).pulses = [repmat(120,1,12) 0];
+filelist(i).delay = [1 1 1 1 1.5 1 1.5 1 1.5 1 1.5 2 0];
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'Tiki_2011-08-12_BC_001';   % ICMS detection
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-08-15_BC_001';   % ICMS detection
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = repmat(3.142,1,13);
+filelist(i).codes = [1 2 3 4 4 5 5 6 6 7 7 7 8];
+filelist(i).electrodes = [4 8 14 4 8 4 14 8 14 4 8 14 0];
+filelist(i).pulsewidth = repmat(0.2,1,13);
+filelist(i).current = [repmat(40,1,12) 0];
+filelist(i).period = repmat(3.3,1,13);
+filelist(i).pulses = [repmat(120,1,12) 0];
+filelist(i).delay = [1 1 1 1 1.5 1 1.5 1 1.5 1 1.5 2 0];
+filelist(i).bump_duration = 0; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
 % %%%%%%%%%%%%%%%%%%% Pedro %%%%%%%%%%%%%%%%
 % i = i+1;
 % filelist(i).name = 'Pedro_2011-04-05_BC_001';  
@@ -1775,3 +2009,153 @@ filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
 % % filelist(i).delay = [];           % ms
 % % filelist(i).bump_duration = 250?;  % (ms)
 % % filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_001';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_002';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_003';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_004';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_005';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_006';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'BumpMagnitudesTest_BC_007';   % 
+filelist(i).datapath = [datapath 'TestData\'];  
+filelist(i).pd = [];
+filelist(i).codes = [];
+filelist(i).electrodes = [];
+filelist(i).pulsewidth = [];
+filelist(i).current = [];
+filelist(i).period = [];
+filelist(i).pulses = [];
+filelist(i).delay = [];
+filelist(i).bump_duration = 400; % (ms)
+filelist(i).serverdatapath = 'Z:\Miller\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_008';   % 
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_009';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_010';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_011';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_012';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_013';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_014';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_015';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_016';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_017';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_018';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_019';   %
+
+i = i+1;
+filelist(i) = filelist(i-1);
+filelist(i).name = 'BumpMagnitudesTest_BC_020';   %
