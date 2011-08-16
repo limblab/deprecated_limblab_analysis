@@ -231,7 +231,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if (robot_task)
                 warning('BDF:noForceSignal','No force handle signal found because no channel named ''ForceHandle*''');
             end
-            analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
+            analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) &...
+                ~isempty(out_struct.raw.analog.channels)); %#ok<EFIND>
             if ~isempty(analog_channels)
                 out_struct.analog.ts = analog_time_base;
                 for c = 1:length(analog_channels)
