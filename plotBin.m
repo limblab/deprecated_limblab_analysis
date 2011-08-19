@@ -76,9 +76,12 @@ if ~isempty(datastruct.forcedatabin)
     
     Force_x_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(1,:),...
                                  'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Force_chbx_Callback,1});
-    Force_y_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(2,:),...
-                                 'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Force_chbx_Callback,2});
-    
+
+    if size(datastruct.forcedatabin,2)>1
+        Force_y_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(2,:),...
+                                     'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Force_chbx_Callback,2});
+    end
+                                 
 end
 %% Words Panel
 if isfield(datastruct,'words')
