@@ -405,7 +405,7 @@ if isfield(datastruct,'stim')
     if isa(datastruct.stim,'numeric')
         %%% Bin at binsize or Stim period??
         % bin at stim period, stim[] array includes timestamps in first column
-        [stim, stimT] = binPW_atStimFreq(stim);
+        [stim, stimT] = binPW_atStimFreq(datastruct.stim);
     end
 end
 
