@@ -1,5 +1,5 @@
-[FileName,PathName,FilterInde]=uigetfile('/home/limblab/Desktop/models','select a file');
-fid=fopen(fullfile(PathName,FileName));
+[FileNameBR,PathNameBR,FilterIndexBR]=uigetfile('*.txt','select a file');
+fid=fopen(fullfile(PathNameBR,FileNameBR));
 
 array=[];
 while ~feof(fid)

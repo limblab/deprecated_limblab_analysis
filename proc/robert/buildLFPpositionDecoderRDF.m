@@ -1,6 +1,7 @@
 %% Identify the file for loading
 [FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
 cd(PathName)
+FileName
 diary([PathName,'decoderOutput.txt'])
 %% load the file 
 %  (skip this cell entirely if you've just loaded in a .mat file instead of
@@ -50,9 +51,10 @@ if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
 % 1st (and last?) second of data gets eliminated by calc_from_raw for the encoder
 % timestampe (see out_struct.raw.analog.pos or .vel, so is inappropriate to
 % include them in the fp signals.
-fp(:,fptimes<1 | fptimes>analog_times(end))=[];
-fptimes(fptimes<1 | fptimes>analog_times(end))=[];
-
+if 0
+    fp(:,fptimes<1 | fptimes>analog_times(end))=[];
+    fptimes(fptimes<1 | fptimes>analog_times(end))=[];
+end
 %%
 % downsample, so the delta band isn't empty at wsz=256; this is a current
 % limitation of BrainReader.
@@ -84,6 +86,7 @@ smoothfeats=0;
 binsize=0.05;
 %%
 % to build a decoder:
+n=1;
 % for n=1:3
 %     fp=fp.*10;
 %     
@@ -104,7 +107,7 @@ binsize=0.05;
     fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
     fprintf(1,'smoothfeats=%d\n',smoothfeats)
     fprintf(1,'binsize=%.2f\n',binsize)
-    fprintf(1,'gain factor=%d\n',10^n)
+%    fprintf(1,'gain factor=%d\n',10^n)
     
     vaf
     
@@ -115,7 +118,7 @@ binsize=0.05;
     fprintf(1,formatstr,mean(vaf,1))
     fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
     
-    [range(H(:)), mean(abs(H))]
+%     [range(H(:)), mean(abs(H))]
     close
     fprintf(1,'\n\n\n')
 % end
@@ -159,7 +162,7 @@ end
 H_sorted = cell2mat(cH(:,3));
 
 % the appropriate one to save is H_sorted
-H=H_sorted;
+% H=H_sorted;
 
 % H must be sorted, because the H matrix comes out of
 % something that's ordered on the features, and the order of the features
@@ -171,8 +174,13 @@ else
     nameToSave=[nameToSave,'feats'];
 end
 nameToSave=[nameToSave,signal,'-decoder.mat'];
-save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
-	'chanIDs','samplingFreq','f_bands')
+if ~isempty(P)
+    save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
+        'chanIDs','samplingFreq','f_bands')
+else
+    save(fullfile(PathName,nameToSave),'H','neuronIDs','fillen','binsize', ...
+        'chanIDs','samplingFreq','f_bands')
+end
 disp(sprintf('decoder saved in %s',PathName))
 
 %%
@@ -206,16 +214,14 @@ fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
 %% TODO: save decoder on citadel.
 % % remoteDriveLetter='Y';    % appropriate for offline sorting machine
-% remoteDriveLetter='Z';      % appropriate for GOB
-% pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\Filter files'], ...
-%     [remoteDriveLetter,':\Miller\Mini_7H1\FilterFiles']};
-% 
-% % 
-% animal=regexp(FileName,'Chewie|Mini','match','once');
-% chosenPath=pathBank{cellfun(@isempty,regexpi(pathBank,animal))==0};
-% D=dir(PathName);
-% copyfile([regexp(D(find(cellfun(@isempty,regexp({D.name},'[A-Za-z]+(?=[0-9]+\.mat)'))==0,1,'first')).name, ...
-%     '[A-Za-z]+(?=[0-9]+\.mat)','match','once'),'*.mat'],remoteFolder)
-% copyfile('LFP_EMGdecoder_results.txt',remoteFolder)
+remoteDriveLetter='Z';      % appropriate for GOB
+pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\Filter files'], ...
+    [remoteDriveLetter,':\Miller\Mini_7H1\FilterFiles']};
+
+animal=regexp(FileName,'Chewie|Mini','match','once');
+chosenPath=pathBank{cellfun(@isempty,regexpi(pathBank,animal))==0};
+D=dir(PathName);
+copyfile(D(find(cellfun(@isempty,regexp({D.name},'decoder\.mat'))==0,1,'first')).name ...
+    ,chosenPath)
 
 diary off

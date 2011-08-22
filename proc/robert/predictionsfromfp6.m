@@ -310,6 +310,14 @@ y_pred=y_test;
 if ~exist('lambda','var')
 lambda=1;
 end
+
+% reorder x so that it's cast back into the arrangemnt in which it will
+% ultimately be evaluated online: that of cells and bands.
+[~,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
+% the default operation of sortrows is to sort first on column 1, then do a
+% secondary sort on column 2, which is exactly what we want, so we're done.
+x=x(:,sortInd);
+
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
     fold_end = fold_start + fold_length-1;
@@ -327,11 +335,12 @@ for i = 1:folds
 %     x_train = zscore(x_train);
 %     x_test{i} = zscore(x_test{i});
 
-    if length(varargin)<5 || ~iscell(varargin{5})
-        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+    if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
+%         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
+        [H{i},v,mcc]=filMIMO3(x_train,y_train,numlags,numsides,1);
         fprintf(1,'%d,',i)
-    end
-    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
+    end                                                               % binsamprate
+    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
     %ytnew and xtnew are shifted by the length of the filter since the
     %first fillen time period is garbage prediction & gets thrown out in
     %predMIMO3 (9-24-10)

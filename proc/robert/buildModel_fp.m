@@ -132,7 +132,7 @@ if length(fp)~=length(y)
 %          fptimes=1:samp_fact:length(fp);
     if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
         fpadj=interp1(fptimes,fp',fptimesadj);
-        fp=fpadj';
+        fp=fpadj';        % comment for testing purposes.
         clear fpadj
         numbins=floor(length(fptimes)/bs);
     end
@@ -183,14 +183,14 @@ for i=1:numbins
 %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
 %     tmp=detrend(tmp);
     tmp=win.*tmp;
-   tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+    tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
 %     =tftmp(2:(wsz/2+1),:);
     clear tmp
 end
 clear fpf tftmp
 freqs=linspace(0,samprate/2,wsz/2+1);
 freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
-tvect=(1:numbins)*(bs)-bs/2;
+% tvect=(1:numbins)*(bs)-bs/2;
 disp('3rd part: calculate FFTs')
 toc
 tic
@@ -198,7 +198,7 @@ tic
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
 
 Pmean=mean(Pmat,3); %take mean over all times
-% Pmean=ones(size(Pmean));
+% Pmean=ones(size(Pmean)); % uncomment to not subtract the mean (testing purposes).
 PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
 clear Pmat
 
@@ -311,10 +311,18 @@ if ~exist('lambda','var')
 	lambda=1;
 end
 
-if length(varargin)<5 || ~iscell(varargin{5})
-	[H,v,mcc] = FILMIMO3_tik(x, y, numlags, numsides,lambda,binsamprate);
-end
-[y_pred,xtnew,ytnew] = predMIMO3(x,H,numsides,binsamprate,y);
+% reorder x so that it's cast back into the arrangemnt in which it will
+% ultimately be evaluated online: that of cells and bands.
+[~,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
+% the default operation of sortrows is to sort first on column 1, then do a
+% secondary sort on column 2, which is exactly what we want, so we're done.
+x=x(:,sortInd);
+
+if length(varargin)<5 || ~iscell(varargin{5})               % binsamprate
+% 	[H,v,mcc] = FILMIMO3_tik(x, y, numlags, numsides,lambda,1);
+    [H,v,mcc]=filMIMO3(x,y,numlags,numsides,1);
+end                                           % binsamprate
+[y_pred,xtnew,ytnew] = predMIMO3(x,H,numsides,1,y);
 %ytnew and xtnew are shifted by the length of the filter since the
 %first fillen time period is garbage prediction & gets thrown out in
 %predMIMO3 (9-24-10)

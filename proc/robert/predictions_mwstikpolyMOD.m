@@ -90,7 +90,7 @@ y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
 end
 
 x = zeros(length(y), size(cells,1));    % using length() is bad! use size(X,n) instead.
-for i = 1:length(cells)
+for i = 1:size(cells,1)
     ts = get_unit(bdf, cells(i, 1), cells(i, 2));
     b = train2bins(ts, t);
     x(:,i) = b;
