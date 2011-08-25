@@ -1,6 +1,10 @@
 %% Identify the file for loading
-[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
-cd(PathName)
+% if being called by something else, use the PathName that already exists.
+% Assume FileName also exists.
+if exist('PathName','var')~=1
+	[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
+	cd(PathName)
+end
 FileName
 diary([PathName,'decoderOutput.txt'])
 %% load the file 
@@ -212,17 +216,5 @@ formatstr=[formatstr, '\n'];
 
 fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
-
-%% TODO: save decoder on citadel.
-% % remoteDriveLetter='Y';    % appropriate for offline sorting machine
-remoteDriveLetter='Z';      % appropriate for GOB
-pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\Filter files'], ...
-    [remoteDriveLetter,':\Miller\Mini_7H1\FilterFiles']};
-
-animal=regexp(FileName,'Chewie|Mini','match','once');
-chosenPath=pathBank{cellfun(@isempty,regexpi(pathBank,animal))==0};
-D=dir(PathName);
-% copyfile(D(find(cellfun(@isempty,regexp({D.name},'decoder\.mat'))==0,1,'first')).name ...
-%     ,chosenPath)
 
 diary off

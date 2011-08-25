@@ -12,7 +12,7 @@ Files=dir(PathName);
 % diary is preferable to fopen if we want to include a simple command like
 % echoing r2 to the standard output and having it show up in the log.  On
 % the other hand, standard output messages will also show up.
-diary('LFP_EMGdecoder_results.txt');
+% diary('LFP_EMGdecoder_results.txt');
 Files(1:2)=[];
 FileNames={Files.name};
 % should exclude EMG files and output files (which usually end in
@@ -207,7 +207,7 @@ for n=1:length(MATfiles)
     
 end
 clear n k ans r2* 
-diary off
+% diary off
 % save([date,'r2results.mat'],r2LFP)
 
 copyfile('outputs','\\165.124.111.234\limblab\user_folders\Robert\data\monkey\outputs')
