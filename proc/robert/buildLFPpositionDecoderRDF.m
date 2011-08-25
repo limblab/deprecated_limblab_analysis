@@ -14,10 +14,10 @@ switch FileName(end-3:end)
         out_struct=get_plexon_data(FileName);
         save([regexp(FileName,'.*(?=\.plx)','match','once'),'.mat'],'out_struct')
 end
+fnam=FileName(1:end-4);
 disp(sprintf('\n\n\n\n\n=====================\nFILE LOADED\n===================='))
 %% input parameters - Do not Change, just run.
-disp('assigning static parameters')
-fnam=FileName(1:end-4);
+disp('assigning static variables')
 
 % behavior
 signal='vel';
@@ -47,6 +47,7 @@ samprate=out_struct.raw.analog.adfreq(fpchans(1));
 fptimes=out_struct.raw.analog.ts{1}(1):1/samprate: ...
     (size(out_struct.raw.analog.data{1},1)/samprate+out_struct.raw.analog.ts{1}(1));
 if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
+disp('static variables assigned')
 %%
 % 1st (and last?) second of data gets eliminated by calc_from_raw for the encoder
 % timestampe (see out_struct.raw.analog.pos or .vel, so is inappropriate to
@@ -176,10 +177,10 @@ end
 nameToSave=[nameToSave,signal,'-decoder.mat'];
 if ~isempty(P)
     save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
-        'chanIDs','samplingFreq','f_bands')
+        'chanIDs','samplingFreq','f_bands','bestc','bestf')
 else
     save(fullfile(PathName,nameToSave),'H','neuronIDs','fillen','binsize', ...
-        'chanIDs','samplingFreq','f_bands')
+        'chanIDs','samplingFreq','f_bands','bestc','bestf')
 end
 disp(sprintf('decoder saved in %s',PathName))
 
@@ -221,7 +222,7 @@ pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\Filter files'], ...
 animal=regexp(FileName,'Chewie|Mini','match','once');
 chosenPath=pathBank{cellfun(@isempty,regexpi(pathBank,animal))==0};
 D=dir(PathName);
-copyfile(D(find(cellfun(@isempty,regexp({D.name},'decoder\.mat'))==0,1,'first')).name ...
-    ,chosenPath)
+% copyfile(D(find(cellfun(@isempty,regexp({D.name},'decoder\.mat'))==0,1,'first')).name ...
+%     ,chosenPath)
 
 diary off

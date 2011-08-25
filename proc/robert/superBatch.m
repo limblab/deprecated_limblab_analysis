@@ -22,12 +22,10 @@ if strcmp(CEBorPLX,'ceb')
     % put EMGonly files 
     batch_buildLFP_EMGdecoder
 else
-    % need a batch_get_plexon_data
+    batch_get_plexon_data % runs as script.  uses PathName
 end
 % copy the newly deposited files into appropriate location on citadel.
 D=dir(PathName);
 copyfile([regexp(D(find(cellfun(@isempty,regexp({D.name},'[A-Za-z]+(?=[0-9]+\.mat)'))==0,1,'first')).name, ...
     '[A-Za-z]+(?=[0-9]+\.mat)','match','once'),'*.mat'],remoteFolder)
-copyfile('LFP_EMGdecoder_results.txt',remoteFolder)
-
-% remove the local copies, except for the EMGonly files
+copyfile('decoderOutput.txt',remoteFolder)
