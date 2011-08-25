@@ -24,7 +24,7 @@ for batch_get_plx_ind=1:length(PLXfiles)
 %         NS2name=[NEVname,'.ns2'];
 %         NS3name=[];
 %     end    
-    bdf=get_plexon_data(FileName);
+    out_struct=get_plexon_data(FileName);
     save(fullfile(PathName,[FileName(1:end-4),'.mat']),'out_struct')
     clear out_struct
     disp('saved out_struct')
