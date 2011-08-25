@@ -15,7 +15,7 @@ elseif nargin==1
         animal=input('name of animal: ','s');
     end
 end
-        
+
 destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
     filesep,animal];
 cd(destFolder)

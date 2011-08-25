@@ -23,9 +23,27 @@ if strcmp(CEBorPLX,'ceb')
     batch_buildLFP_EMGdecoder
 else
     batch_get_plexon_data % runs as script.  uses PathName
+    batch_buildLFPpositionDecoderRDF
 end
-% copy the newly deposited files into appropriate location on citadel.
+%% copy the newly created data into appropriate location on citadel.
+mkdir(remoteFolder)
 D=dir(PathName);
-copyfile([regexp(D(find(cellfun(@isempty,regexp({D.name},'[A-Za-z]+(?=[0-9]+\.mat)'))==0,1,'first')).name, ...
-    '[A-Za-z]+(?=[0-9]+\.mat)','match','once'),'*.mat'],remoteFolder)
-copyfile('decoderOutput.txt',remoteFolder)
+MATfiles={D(cellfun(@isempty,regexp({D.name},'(?<!poly.*)\.mat'))==0).name};
+for copyfileIndex=1:length(MATfiles)
+    copyfile(MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
+    fprintf(1,'%s copied to %s\n',MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
+end
+%% copy the decoders, and the log, into their appropriate place
+decoderFiles={D(cellfun(@isempty,regexp({D.name},'.*poly.*\.mat','match','once'))==0).name};
+if isequal(animal,'Chewie')
+    remoteFolder2=regexprep(remoteFolder,'BDFs','Filter files');
+elseif isequal(animal,'Mini')
+    remoteFolder2=retexprep(remoteFolder,'bdf','FilterFiles');
+end
+mkdir(remoteFolder2)
+for copyfileIndex=1:length(decoderFiles)
+    copyfile(decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
+    fprintf(1,'%s copied to %s\n',decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
+end
+copyfile('decoderOutput.txt',remoteFolder2)
+fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)
