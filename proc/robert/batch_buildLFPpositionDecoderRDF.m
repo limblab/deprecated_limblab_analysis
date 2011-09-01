@@ -12,13 +12,9 @@ if exist(PathName,'dir')~=7
 end
 cd(PathName)
 Files=dir(PathName);
-% diary is preferable to fopen if we want to include a simple command like
-% echoing r2 to the standard output and having it show up in the log.  On
-% the other hand, standard output messages will also show up.
 Files(1:2)=[];
 FileNames={Files.name};
-MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'(?<!poly.*)\.mat'))==0);
-MATfiles(cellfun(@isempty,regexp(MATfiles,'allFPsToPlot\.mat'))==0)=[];
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'_Spike_LFP.*(?<!poly.*)\.mat'))==0);
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')

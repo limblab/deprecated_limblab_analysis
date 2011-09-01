@@ -28,7 +28,7 @@ end
 %% copy the newly created data into appropriate location on citadel.
 mkdir(remoteFolder)
 D=dir(PathName);
-MATfiles={D(cellfun(@isempty,regexp({D.name},'(?<!poly.*)\.mat'))==0).name};
+MATfiles={D(cellfun(@isempty,regexp({D.name},'_Spike_LFP.*(?<!poly.*)\.mat'))==0).name};
 for copyfileIndex=1:length(MATfiles)
     copyfile(MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
     fprintf(1,'%s copied to %s\n',MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
@@ -38,12 +38,13 @@ decoderFiles={D(cellfun(@isempty,regexp({D.name},'.*poly.*\.mat','match','once')
 if isequal(animal,'Chewie')
     remoteFolder2=regexprep(remoteFolder,'BDFs','Filter files');
 elseif isequal(animal,'Mini')
-    remoteFolder2=retexprep(remoteFolder,'bdf','FilterFiles');
+    remoteFolder2=regexprep(remoteFolder,'bdf','FilterFiles');
 end
 mkdir(remoteFolder2)
 for copyfileIndex=1:length(decoderFiles)
     copyfile(decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
     fprintf(1,'%s copied to %s\n',decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
 end
-copyfile('decoderOutput.txt',remoteFolder2)
+diary off
+% copyfile('decoderOutput.txt',remoteFolder2)
 fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)

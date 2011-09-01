@@ -21,7 +21,7 @@ destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
 cd(destFolder)
 mkdir(datestr(dateNumber,'mm-dd-yyyy'))
 destFolder=[destFolder, filesep, datestr(dateNumber,'mm-dd-yyyy')];
-
+D=dir(destFolder);
 % remoteDriveLetter='Y';    % appropriate for offline sorting machine
 remoteDriveLetter='Z';      % appropriate for GOB
 
@@ -42,10 +42,15 @@ if ~status
         endLine=characterReference(find(characterReference==datestamps(n))+1);
         candidateFileLineText=regexp(result(datestamps(n):endLine),' *','split');
         if ~isempty(regexp(candidateFileLineText{5},'\.[nevs23plx]','once'))
-            [status1,~]=dos(['copy "',fullfile(chosenPath, ...
-                candidateFileLineText{5}(1:end-1)),'" "',destFolder,filesep,'"']);
-            if ~status1
-                fprintf(1,'%s copied successfully.\n',candidateFileLineText{5}(1:end-1))
+            % only copy over if not already found
+            if ~nnz(cellfun(@isempty,regexp({D.name},candidateFileLineText{5}(1:end-1)))==0)
+                [status1,~]=dos(['copy "',fullfile(chosenPath, ...
+                    candidateFileLineText{5}(1:end-1)),'" "',destFolder,filesep,'"']);
+                if ~status1
+                    fprintf(1,'%s copied successfully.\n',candidateFileLineText{5}(1:end-1))
+                end
+            else
+                fprintf(1,'%s not copied. found in \n%s\n',candidateFileLineText{5}(1:end-1),destFolder)
             end
         end
     end

@@ -6,7 +6,9 @@ if exist('PathName','var')~=1
 	cd(PathName)
 end
 FileName
-diary([PathName,'decoderOutput.txt'])
+if isequal(get(0,'Diary'),'off')
+    diary([PathName,'decoderOutput.txt'])
+end
 %% load the file 
 %  (skip this cell entirely if you've just loaded in a .mat file instead of
 %  the .plx)
@@ -30,6 +32,20 @@ analog_times=sig(:,1);
 
 % assign FPs, offloaded to script so it can be used in other places.
 fpAssignScript
+% look for something called CumulativeBadChannels and load it, then use it
+% to cut down the fp array.
+clear badChannels % in case this is being run as part of a batch loop
+FilesInfo=dir(PathName);
+badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
+if ~isempty(badChannelsFileInd)
+    fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
+    load(FilesInfo(badChannelsFileInd).name)
+end
+if exist('badChannels','var')==1
+    disp('zeroing bad channels...')
+    badChannels
+    fp(badChannels,:)=zeros(length(badChannels),size(fp,2));
+end
 disp('static variables assigned')
 %%
 % 1st (and last?) second of data gets eliminated by calc_from_raw for the encoder
