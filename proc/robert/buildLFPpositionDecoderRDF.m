@@ -7,7 +7,7 @@ if exist('PathName','var')~=1
 end
 FileName
 if isequal(get(0,'Diary'),'off')
-    diary([PathName,'decoderOutput.txt'])
+    diary(fullfile(PathName,'decoderOutput.txt'))
 end
 %% load the file 
 %  (skip this cell entirely if you've just loaded in a .mat file instead of
@@ -35,11 +35,19 @@ fpAssignScript
 % look for something called CumulativeBadChannels and load it, then use it
 % to cut down the fp array.
 clear badChannels % in case this is being run as part of a batch loop
-FilesInfo=dir(PathName);
+% if there is a remoteFolder2, load CumulativeBadChannels.mat from that.
+% If not, try the current directory.
+if exist('remoteFolder2','var')==1
+    [remoteParentDir,~,~,~]=fileparts(remoteFolder2);
+    FilesInfo=dir(remoteParentDir);
+else
+    remoteParentDir='';
+    FilesInfo=dir(PathName);
+end
 badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
-    load(FilesInfo(badChannelsFileInd).name)
+    load(fullfile(remoteParentDir,FilesInfo(badChannelsFileInd).name))
 end
 if exist('badChannels','var')==1
     disp('zeroing bad channels...')
