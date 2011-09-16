@@ -30,5 +30,5 @@ function [STA,STV] = STA(stim_ts, signals, timeBefore, timeAfter)
     end
         
     STA(:,2:end) = mean(tempSTA(:,:,:),3);
-    STV(:,2:end) = var(tempSTA(:,:,:),3);
+    %STV(:,2:end) = var(tempSTA(:,:,:),3);
 end

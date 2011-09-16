@@ -1,7 +1,7 @@
-function [pd, risetime, fs] = co_bump_timing_new(bdf, tt)
+function [pd, risetime, fs, an] = co_bump_timing_final(bdf, tt, prefix)
 % Draw rasters for the different bump/reach directions sorted by active PD
 
-amiw = [0 .25];  % active movement integration window
+amiw = [0 .250]; % active movement integration window
 pmiw = [0 .125]; % passive movement integration window
 
 fitopts = fitoptions('Method', 'NonlinearLeastSquares',...
@@ -10,6 +10,14 @@ fitopts = fitoptions('Method', 'NonlinearLeastSquares',...
 mdltmplt = fittype('a*cos(x-b)+c', 'options', fitopts);
 
 % get eventsc
+if nargin < 3
+    prefix = [];
+end
+
+if isempty(prefix)
+    prefix = 'X';
+end
+
 if nargin < 2
     tt = [];
 end
@@ -27,36 +35,19 @@ for dir = 0:nTargets-1
     passive_onsets{dir+1} = tt( tt(:,3)==double('H') & tt(:,2)==dir, 4);
 end
 
-%h1 = figure;
-
-%ul = unit_list(bdf);
-ul = [13 1; 34 1; 95 1; 61 1]; % example set
-%ul = [53 1];
-%ul = [17 1];
-%ul = [34 1; 88 1; 95 2];
-%ul = [5 1];
-%ul = [7 1];
-%ul = [34 1; 88 1; 95 2; 13 1; 80 2];
-%ul = [13 1];
-%ul = [34 1];
-%ul = [80 2];
-
-%ul = [30 2; 35 1; 41 1;86 1];
-%ul = [55 1];
-%ul = [61 1];
-ul = [13 1];
+ul = unit_list(bdf);
+%ul = [25 1];
 
 pd = zeros(size(ul,1),6);
 risetime = zeros(size(ul,1),6);
-fs = zeros(size(ul,1),2);
+fs = zeros(size(ul,1),5);
+an = zeros(size(ul,1), 4*nTargets);
 t = -.5:0.005:1;
 
-% for loop (eventually)
 for n = 1:size(ul,1)
     disp(n)
     chan = ul(n,1); unit = ul(n,2);
     table = cell(nTargets,1); all = cell(nTargets,1); count = cell(nTargets,1); indv_counts = cell(nTargets,1);
-    figure; suptitle(sprintf('Passive: %d-%d', chan, unit));
     for dir = 1:nTargets
         h = subplot(nTargets,1,dir);
         [table{dir}, all{dir}] = raster(get_unit(bdf, chan, unit), passive_onsets{dir}, -.75, 1.25, h);
@@ -72,30 +63,28 @@ for n = 1:size(ul,1)
         pas(i,1) = mean(indv_counts{i}) ./ (pmiw(2)-pmiw(1));
         pas(i,2) = sqrt(var(indv_counts{i}));% / sqrt(length(indv_counts{i}));
     end
-
+    
+    out = g_anova(indv_counts);
+    %anva(n,1) = out.p;
+    
     th = (2*pi*(0:nTargets-1)/nTargets)';
     mdl = fit(th, pas(:,1), mdltmplt);
-    figure; errorbar(th*180/pi, pas(:,1), pas(:,2), 'ko');
 
-    hold on;
-    plot(-45:315, mdl((-45:315).*pi./180), 'k--');
-    title(sprintf('Passive: %d-%d', chan, unit));
-
-    % Save F statistic
-    %out = g_anova(indv_counts);
-    %fs(n,2) = out.F;
+    % depth of modulation
+    aa = cell2mat(all);
+    fs(n,1) = sum(aa<0 & aa>-.5)*2/length(cell2mat(passive_onsets)); % baseline
+    %fs(n,2) = max(pas(:,1)) - min(pas(:,1));
+    fs(n,2) = max(pas(:,1)) - fs(n,1);
+    fs(n,3) = mdl.a;
     
-    %fs(n,2) = max(pas(:,1));
-    fs(n,2) = max(pas(:,1)) - min(pas(:,1));
+    for i = 1:nTargets
+        an(n,i+0) = pois_test(sum(aa<0 & aa>-.5), .5*length(cell2mat(passive_onsets)), sum(indv_counts{i}), (pmiw(2)-pmiw(1))*length(indv_counts{i}));
+        an(n,i+nTargets) = pois_test(sum(indv_counts{i}), (pmiw(2)-pmiw(1))*length(indv_counts{i}),sum(aa<0 & aa>-.5), .5*length(cell2mat(passive_onsets)));
+    end
 
     try
         pdir = find(max(cell2mat(count)) == cell2mat(count),1);
 
-        %figure(h1); 
-        %h2 = subplot(5,2,2*(n-1)+1);
-        %raster(get_unit(bdf, chan, unit), passive_onsets{pdir}, -.75, .75, h2);
-        %axis([ -.5, .5, .5, length(passive_onsets{pdir})+.5]);
-        
         ps = zeros(length(table{pdir}), length(t));
         for trial = 1:length(table{pdir})
             for spike = table{pdir}{trial}'
@@ -111,27 +100,23 @@ for n = 1:size(ul,1)
         end
 
         psbo = prctile(psb, [5 50 95]);
-        %figure; hold on; plot(t,psbo(2,:),'k-'); plot(t,psbo(1,:),'b-'); plot(t,psbo(3,:),'b-'); 
-        figure;
+
+        h=figure;
         shadedplot(t,psbo(1,:),psbo(3,:),[.5 .5 .5], [.5 .5 .5]);
         hold on;
         plot(t, psbo(2,:), 'k-');
-        
-        %stderr = sqrt(var(ps));%./sqrt(size(ps,1));
-        %figure; hold on; plot(t,mean(ps),'k-'); plot(t,mean(ps)-stderr,'b-'); plot(t,mean(ps)+stderr,'b-'); 
         title(sprintf('Passive: %d-%d', chan, unit));
-
-        figure;
-%        [beta, ci] = onset_fit(table{pdir});
+        saveas(h, sprintf('tmp/%s_%d-%d.fig',prefix, chan, unit), 'fig');
+        close all;
+        
         [beta, ci] = onset_fit(ps);
-        prise = [ci(1,1) beta(1) ci(1,2)];        
+        prise = [ci(1,1) beta(1) ci(1,2)];
     catch
         prise = [NaN NaN NaN];
     end
 
     table = cell(nTargets,1);
     all = cell(nTargets,1);
-    figure; suptitle(sprintf('Active: %d-%d', chan, unit));
     for dir = 1:nTargets
         h = subplot(nTargets,1,dir);
         [table{dir}, all{dir}] = raster(get_unit(bdf, chan, unit), active_onsets{dir}, -.75, 1.25, h);
@@ -141,36 +126,34 @@ for n = 1:size(ul,1)
     end
     res = bootstrap(@vector_sum_pd, indv_counts, 'all', 1000);
     atune = cprctile(res(:,1),[50 5 95]);
-
+    
     act = zeros(nTargets,2);
     for i = 1:nTargets
         act(i,1) = mean(indv_counts{i}) ./ (amiw(2)-amiw(1));
         act(i,2) = sqrt(var(indv_counts{i}));% / sqrt(length(indv_counts{i}));
     end
 
+    %out = g_anova(indv_counts);
+    %anva(n,2) = out.p;
+    
+    
+    
     th = (2*pi*(0:nTargets-1)/nTargets)';
     mdl = fit(th, act(:,1), mdltmplt);
-    figure; errorbar(th*180/pi, act(:,1), act(:,2), 'ko');
-    hold on;
-    plot(-45:315, mdl((-45:315).*pi./180), 'k--');
-    title(sprintf('Active: %d-%d', chan, unit));
 
-    % Save F statistic
-    %out = g_anova(indv_counts);
-    %fs(n,1) = out.F;
+    % depth of modulation
+    %fs(n,4) = max(act(:,1)) - min(act(:,1));
+    fs(n,4) = max(act(:,1)) - fs(n,1);
+    fs(n,5) = mdl.a;
     
-    %fs(n,1) = max(act(:,1));
-    fs(n,1) = max(act(:,1)) - min(act(:,1));
+    for i = 1:nTargets
+        an(n,i+2*nTargets) = pois_test(sum(aa<0 & aa>-.5), .5*length(cell2mat(passive_onsets)), sum(indv_counts{i}), (pmiw(2)-pmiw(1))*length(indv_counts{i}));
+        an(n,i+3*nTargets) = pois_test(sum(indv_counts{i}), (pmiw(2)-pmiw(1))*length(indv_counts{i}),sum(aa<0 & aa>-.5), .5*length(cell2mat(passive_onsets)));
+    end
 
     try
         pdir = find(max(cell2mat(count)) == cell2mat(count),1);
 
-        
-        %figure(h1); 
-        %h2 = subplot(5,2,2*(n-1)+2);
-        %raster(get_unit(bdf, chan, unit), active_onsets{pdir}, -.75, .75, h2);
-        %axis([ -.5, .5, .5, length(active_onsets{pdir})+.5]);
-        
         as = zeros(length(table{pdir}), length(t));
         for trial = 1:length(table{pdir})
             for spike = table{pdir}{trial}'
@@ -186,16 +169,7 @@ for n = 1:size(ul,1)
         end
 
         asbo = prctile(asb, [5 50 95]);
-        %figure; hold on; plot(t,asbo(2,:),'k-'); plot(t,asbo(1,:),'b-'); plot(t,asbo(3,:),'b-'); 
-        figure;
-        shadedplot(t,asbo(1,:),asbo(3,:),[.5 .5 .5], [.5 .5 .5]);
-        hold on;
-        plot(t, asbo(2,:), 'k-');
 
-        title(sprintf('Active: %d-%d', chan, unit));
-
-        figure;
-        %[beta, ci] = onset_fit(table{pdir});        
         [beta, ci] = onset_fit(as);
         arise = [ci(1,1) beta(1) ci(1,2)];
     catch
@@ -205,12 +179,10 @@ for n = 1:size(ul,1)
     pd(n,:) = [atune ptune];
     risetime(n,:) = [arise prise];
 
-    %close all;
-
-    %try
-    %    figure; hist(ariseb, -1:.005:1);
-    %    figure; hist(priseb, -1:.005:1);
-    %end
+%     try
+%        figure; hist(ariseb, -1:.005:1);
+%        figure; hist(priseb, -1:.005:1);
+%     end
 end
 
 f = pd(:,2) > pd(:,1);
@@ -222,3 +194,7 @@ f = pd(:,5) > pd(:,4);
 pd(f,5) = pd(f,5) - 2*pi;
 f = pd(:,6) < pd(:,4);
 pd(f,6) = pd(f,4) - 2*pi;
+
+
+
+

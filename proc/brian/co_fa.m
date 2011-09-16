@@ -1,8 +1,13 @@
-function [lambda,w] = co_fa(bdf)
+function [lambda,w] = co_fa(bdf, varargin)
+% [lambda,w] = co_fa(bdf, [tt])
 
 colors = {'k.', 'b.', 'r.', 'g.', 'ko', 'bo', 'ro', 'go'};
 
-tt = co_trial_table(bdf);
+if nargin < 2
+    tt = co_trial_table(bdf);
+else
+    tt = varargin{1};
+end
 
 % Find all delay bump trials
 %dbtrials = tt( tt(:,3) == double('D') & tt(:,10) == double('R'), :);
@@ -29,7 +34,7 @@ for reachdir = 0:3
     plot3(proj(f,1), proj(f,2), proj(f,3), colors{reachdir+1});
 end
 title('Target');
-    
+
 % Combined
 % combtrials = [bumptrials(:,4); reachtrials(:,7)+0.250];
 % trialtype = [bumptrials(:,2)+1; reachtrials(:,5)+5];

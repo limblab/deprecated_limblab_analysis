@@ -49,6 +49,7 @@ function out_struct = get_plexon_data(varargin)
 % |   |
 % |   +-- DATA     - EMG signals: [t1 emg1 emg2 ... emgN; t2 emg1 emg2 ... emgN; ... ]
 % |   +-- EMGNAMES - Names of emg signals: {'EMG_muscle1', 'EMG_muscle2',...}  
+% |
 % +-- META   - Metadata
 %     |
 %     +-- FILENAME

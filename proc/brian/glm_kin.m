@@ -27,6 +27,7 @@ if nargin < 5
 end
 
 ts = 5; % time step (ms)
+%ts = 50; % time step (ms)
 
 vt = bdf.vel(:,1);
 t = vt(floor(vt*ts)==vt*ts);
@@ -45,6 +46,8 @@ elseif strcmp(mdl, 'posvel')
     glm_input = [glmx glmv sqrt(glmv(:,1).^2 + glmv(:,2).^2)];
 elseif strcmp(mdl, 'nospeed')
     glm_input = [glmx glmv];
+elseif strcmp(mdl, 'velonly')
+    glm_input = glmv;
 else
     error('unknown model: %s', mdl);
 end
