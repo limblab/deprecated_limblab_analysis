@@ -20,15 +20,25 @@ function [STA,STV] = STA(stim_ts, signals, timeBefore, timeAfter)
     %pre-allocate
     STA = zeros(windowLength,numSignals+1);
     STA(:,1) = windowTimeFrame;
-    tempSTA = zeros(windowLength,numSignals,numStim_ok);
     
     %Average
     for i=1:numStim_ok
         low = find(signals(:,1)>=stim_ts(i)-timeBefore,1,'first');
         high= round(low) + windowLength-1;
-        tempSTA(:,:,i)= signals(low:high,2:end);
+        STA(:,2:end) = STA(:,2:end) + signals(low:high,2:end);
     end
-        
-    STA(:,2:end) = mean(tempSTA(:,:,:),3);
-    %STV(:,2:end) = var(tempSTA(:,:,:),3);
+
+    STA(:,2:end) = STA(:,2:end)/numStim_ok;
+
+    if nargout > 1
+         STV = zeros(windowLength,numSignals+1);
+         STV(:,1) = windowTimeFrame;
+         for i=1:numStim_ok
+         	low = find(signals(:,1)>=stim_ts(i)-timeBefore,1,'first');
+            high= round(low) + windowLength-1;
+            STV(:,2:end) = STV(:,2:end) + (signals(low:high,2:end)-STA(:,2:end)).^2;
+         end
+         STV(:,2:end) = STV(:,2:end)/numStim_ok;
+    end
 end
+
