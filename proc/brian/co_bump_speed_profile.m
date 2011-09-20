@@ -20,13 +20,13 @@ t = -.5:0.005:1;
 out = zeros(4,length(t));
 
 %[sta,stv] = STA(cell2mat(passive_onsets), speed, -.5, 1);
-[mp,vp] = STA2(cell2mat(passive_onsets), speed, .5, 1);
+[mp,vp] = STA(cell2mat(passive_onsets), speed, .5, 1);
 %speed(1,:) = sta;
 %speed(2,:) = sqrt(stv);
 
 
 %[sta,stv] = STA(cell2mat(active_onsets), speed, -.5, 1);
-[ma,va] = STA2(cell2mat(active_onsets), speed, .5, 1);
+[ma,va] = STA(cell2mat(active_onsets), speed, .5, 1);
 %speed(3,:) = sta;
 %speed(4,:) = sqrt(stv);
 

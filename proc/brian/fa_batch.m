@@ -15,19 +15,14 @@ for i = 1:length(vars)
 end
 clear i vars
 
-kernel_sigma = .05;
+kernel_sigma = .05;%.035;
 t = -.5:0.005:1;
-zero = find(t==0);
-ms100 = find(t>.1,1);
-ms50 = find(t>.05,1);
-nms100 = find(t>-.1,1);
-ms250 = find(t>.25,1);
 
-%tt = co_trial_table(bdf);
 ul = unit_list(bdf);
 
 nTargets = max(tt(:,5)) + 1;
 bumptrials = tt( tt(:,3) == double('H'), : );
+reachtrials = tt( tt(:,2) == -1 & tt(:,10) == double('R'), : );
 table = cell(1,nTargets);
 
 ps = cell(length(ul),nTargets);
@@ -38,6 +33,7 @@ for unitNumber = 1:length(ul)
     
     for dir = 1:nTargets
         onsets = bumptrials(bumptrials(:,2)==dir-1,4);
+        %onsets = reachtrials(reachtrials(:,5)==dir-1,7);
         table{dir} = raster(get_unit(bdf, chan, unit), onsets, -.75, 1.25, -1);
         
         ps{unitNumber,dir} = zeros(length(table{dir}), length(t));
@@ -64,23 +60,14 @@ q = [];
 for unitNumber = 1:length(ul)
     tmp = [];
     for dir = 1:nTargets
-        tmp = [tmp; ps{unitNumber,dir}(:,116)-baseline(unitNumber)];
+%        tmp = [tmp; ps{unitNumber,dir}(:,116)-baseline(unitNumber)];
+         tmp = [tmp; ps{unitNumber,dir}(:,124)-baseline(unitNumber)];
+        %tmp = [tmp; ps{unitNumber,dir}(:,180)-baseline(unitNumber)];
     end
     q = [q tmp];
 end
 
-% q = [];
-% for unitNumber = 1:length(ul)
-%     tmp = [];
-%     for timeslice = 1:length(t)
-%         for dir = 1:nTargets
-%             tmp = [tmp; ps{unitNumber,dir}(:,timeslice)];
-%         end
-%     end
-%     q = [q tmp];
-% end
-
-lambda = factoran(q,3);
+lambda = factoran([q;.01*rand(size(q))+q],3);
 
 x = [];
 y = [];
@@ -99,33 +86,30 @@ for timeslice = 1:length(t)
     x = [x proj(:,1)];
     y = [y proj(:,2)];
     z = [z proj(:,3)];
-    
-    %plot(proj(:,1), proj(:,2), 'k.');
-    %title(t(timeslice));
-    %drawnow;
 end
 
 %%
-colors = {'ko', 'bo', 'ro', 'go'};
+colors = {'ko', 'bo', 'ro', 'go', 'yo', 'co'};
 
-figure; hold on;
-for trial = 1:length(bumptrials)
-    plot(x(trial,71:151), z(trial,71:151), '-', 'Color', [.5 .5 .5]);
-    %plot3(x(trial,:), y(trial,:), z(trial,:), '-', 'Color', [.5 .5 .5]);
+%tps = [71 116 191];
+tps = [71 125 191]; % pedro bumps
+%tps = [71 180 220];
+for tp = tps
+    figure; hold on;
+    for trial = 1:length(bumptrials)
+        %plot(x(trial,71:tp), y(trial,71:tp), '-', 'Color', [.5 .5 .5]);
+        %plot3(x(trial,71:tp), y(trial,71:tp), z(trial,71:tp), '-', 'Color', [.5 .5 .5]);
+    end
+
+    for bumpdir = 0:nTargets-1
+        f = sort(bumptrials(:,2)) == bumpdir;
+        %f = sort(reachtrials(:,5)) == bumpdir;
+        %plot(x(f,tp), z(f,tp), colors{bumpdir+1});
+        plot3(x(f,tp), y(f,tp), z(f,tp), colors{bumpdir+1});
+    end
+    title(sprintf('%d ms', round(t(tp)*1000)));
+    axis square
+    %axis([-150 250 -100 150]);
+    axis([-100 150 -75 100]);
 end
-
-for bumpdir = 0:3
-    f = sort(bumptrials(:,2)) == bumpdir;
-    plot(x(f,116), z(f,116), colors{bumpdir+1});
-    %plot3(x(f,113), y(f,113), z(f,113), colors{bumpdir+1});
-end
-
-
-
-
-
-
-
-
-
 
