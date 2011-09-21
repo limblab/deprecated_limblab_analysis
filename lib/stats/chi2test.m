@@ -4,7 +4,7 @@ function p = chi2test(O)
 %   test for independence of the observations in O.  Columns represent
 %   observations, rows represent categories.
 
-E = (sum(O,1)' * sum(O,2)' / sum(sum(O)))';
+E = sum(O,2) * sum(O,1) / sum(sum(O));
 chi2 = sum(sum((O-E).^2 ./ E ));
 dof = (size(O,1) - 1) + (size(O,2) - 1);
 
