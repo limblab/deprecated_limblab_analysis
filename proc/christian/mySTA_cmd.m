@@ -1,5 +1,4 @@
 function peak2peak = STA_cmd(datastructname, command)
-    addpath /..
 
     out_struct = LoadDataStruct(datastructname,'bdf');
     

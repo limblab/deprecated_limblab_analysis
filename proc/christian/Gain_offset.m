@@ -5,7 +5,7 @@ offset = zeros(1,numEMGs);
 slope = zeros(1,numEMGs);
 
 for i=1:numEMGs
-   figure;
+    figure;
     x=binnedData.emgdatabin(numLags:end,i);
     y=OLPredData.preddatabin(:,i);
     plot(x,y,'r.');
@@ -15,7 +15,7 @@ for i=1:numEMGs
     linreg=fit(x,y,'poly1');
     offset(1,i) = linreg.p2;
     slope(1,i) = linreg.p1;
-   hold on;
-   plot(xlim,linreg(xlim))
-   legend(sprintf('offset: %g, slope: %g',offset(1,i),slope(1,i)));
+    hold on;
+    plot(xlim,linreg(xlim))
+    legend(sprintf('offset: %g, slope: %g',offset(1,i),slope(1,i)));
 end
