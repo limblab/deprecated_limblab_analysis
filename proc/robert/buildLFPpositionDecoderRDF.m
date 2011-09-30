@@ -41,6 +41,8 @@ if exist('remoteFolder2','var')==1
     [remoteParentDir,~,~,~]=fileparts(remoteFolder2);
     FilesInfo=dir(remoteParentDir);
 else
+    disp('in order to exclude bad channels from CumulativeBadChans.mat')
+    disp('you must copy it to the local directory (when building from a .mat file)')
     remoteParentDir='';
     FilesInfo=dir(PathName);
 end

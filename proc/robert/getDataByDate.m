@@ -1,4 +1,4 @@
-function [CEBorPLX,remoteFolder,destFolder]=getDataByDate(animal,dateNumber)
+function [CEBorPLX,remoteFolder,destFolder]=getDataByDate(animal,dateNumber,pathOverride)
 
 if ~nargin
     animal=input('name of animal: ','s');
@@ -16,6 +16,10 @@ elseif nargin==1
     end
 end
 
+if nargin<3
+    pathOverride='';
+end
+
 destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
     filesep,animal];
 cd(destFolder)
@@ -29,10 +33,21 @@ pathBank={[remoteDriveLetter,':\Miller\Chewie_8I2\SpikeLFP'], ...
     [remoteDriveLetter,':\Miller\Mini_7H1\', ...
     'Spikes and Local Field Potentials\MiniSpikeLFPL']};
 
-chosenPath=pathBank{cellfun(@isempty,regexpi(pathBank,animal))==0};
+%  [remoteDriveLetter,':\Miller\Chewie_8I2\Nick Datafiles\SD Data'], ...
+% todo: add the capability to look in Chewie_8I2\Nick Datafiles\SD Data\<date>
+% for the data, and to make sure the .plx files all have _LFP_ somewhere in
+% the name.   regexprep(datestr(dateNumber,23),'/','-')
+candidatePathInd=find(cellfun(@isempty,regexpi(pathBank,animal))==0);
 
-[status,result]=dos(['dir "',chosenPath,'"']);
-
+% for k=1:length(candidatePathInd)
+    k=1;
+    if isempty(pathOverride)
+        chosenPath=pathBank{candidatePathInd(k)};
+    else
+        chosenPath=pathOverride;
+    end
+    [status,result]=dos(['dir "',chosenPath,'"']);
+% end
 if ~status
     datestamps=regexp(result, datestr(dateNumber,'mm/dd/yyyy'));
     returns=regexp(result,sprintf('\n'));
