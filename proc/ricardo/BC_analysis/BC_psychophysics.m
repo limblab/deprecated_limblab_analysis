@@ -36,6 +36,7 @@ for file_no = 1:length(filelist)
     
     %remove training trials
     trial_table = trial_table(trial_table(:,table_columns.training)==0,:);
+%     trial_table = trial_table(200:end,:);
     
     fit_func = 'm*x+b';
     f_linear = fittype(fit_func,'independent','x');
@@ -193,7 +194,14 @@ for file_no = 1:length(filelist)
     
     if num_outer_targets==1
         figure;
-        plot(param_value,stim_rewards_incompletes(1,:)./sum(stim_rewards_incompletes));
+        [temp_sort sort_idx] = sort(param_value);
+        temp_rewards = stim_rewards_incompletes(1,sort_idx);
+        temp_incompletes = stim_rewards_incompletes(2,sort_idx);
+        temp_responses = temp_rewards./(temp_rewards+temp_incompletes);
+        error_bars = binoinv(repmat([0.025 0.975],size(temp_rewards,2),1),repmat(temp_rewards+temp_incompletes,2,1)',repmat(temp_responses,2,1)');
+        error_bars = error_bars./repmat(temp_rewards+temp_incompletes,2,1)';
+        errorbar(param_value(sort_idx),temp_responses,temp_responses-error_bars(:,1)',error_bars(:,2)'-temp_responses,'.')
+%         plot(param_value(sort_idx),temp_rewards./(temp_rewards+temp_incompletes));
         ylim([0 1])
         xlabel(plotting_parameter)
         ylabel('Rewards/(Incompletes+Rewards)')
@@ -202,7 +210,8 @@ for file_no = 1:length(filelist)
         title(title_temp)
     else
         figure;
-        plot(param_value,stim_rewards_fails(1,:)./sum(stim_rewards_fails));
+        [temp_sort sort_idx] = sort(param_value);
+        plot(param_value(sort_idx),stim_rewards_fails(1,sort_idx)./sum(stim_rewards_fails(:,sort_idx)));
         ylim([0 1])
         xlabel(plotting_parameter)
         ylabel('Rewards/(Fails+Rewards)')
@@ -277,7 +286,7 @@ for file_no = 1:length(filelist)
         end
 
         if num_outer_targets == 1
-            if size(electrode_current_rewards,1)>1
+            if size(electrode_current_rewards,2)>3
                 error_bars = get_error_bounds(electrode_current_rewards,...
                     electrode_current_incompletes,boot_iter,.1);%% 
 
@@ -302,6 +311,7 @@ for file_no = 1:length(filelist)
                     responses = (electrode_current_rewards(iPlot,:)./...
                         (electrode_current_rewards(iPlot,:)+electrode_current_incompletes(iPlot,:)))';
                     responses = (responses - min(responses))/(1 - min(responses));
+                    responses(isnan(responses)) = 0;
                     sigmoid_fit_data = fit(currents',responses,...
                         f_sigmoid,f_opts);
     %                 conf_temp = confint(sigmoid_fit_data);  % To get 95% confidence on each parameter

@@ -9,8 +9,12 @@ bump_raster_files = [];
 
 % psychophysics_files = {'Tiki_2011-05-19_BC_001-s_multiunit','Tiki_2011-04-28_BC_002-s_multiunit','Tiki_2011-04-28_BC_003-s_multiunit'};
 % psychophysics_files = {'Tiki_2011-04-11_BC_001','Tiki_2011-04-13_BC_001','Tiki_2011-04-14_BC_001'};
-psychophysics_files = {'Tiki_2011-08-15_BC_001'};
-% psychophysics_files = [];
+% psychophysics_files = {'Tiki_2011-09-20_BC_001'};
+psychophysics_files = [];
+
+two_alternative_files = [];
+two_alternative_files = {'Tiki_2011-10-03_BC_001'};
+
 newsome_files = [];
 clear newsome_results
 % newsome_files(end+1).filenames = {'Tiki_2011-05-06_BC_001','Tiki_2011-05-06_BC_002','Tiki_2011-05-06_BC_003'};
@@ -64,6 +68,13 @@ for iFile=1:length(psychophysics_files)
     psychophysics_idx = psychophysics_idx + strcmp({filelist.name},psychophysics_files{iFile});
 end
 BC_psychophysics(filelist(find(psychophysics_idx)))
+
+%% Two alternative analysis
+two_alternative_idx = zeros(size(filelist));
+for iFile=1:length(two_alternative_files)
+    two_alternative_idx = two_alternative_idx + strcmp({filelist.name},two_alternative_files{iFile});
+end
+BC_two_alternative(filelist(find(two_alternative_idx)))
 
 %% Newsome analysis
 for iFileGroup = 1:length(newsome_files)

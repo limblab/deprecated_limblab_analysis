@@ -12,7 +12,7 @@ function results = BC_newsome(filenames)
     fail_code = 34;
     incomplete_code = 35;
     
-    num_iter = 100000;
+    num_iter = 10;
     fit_func = 'a+b/(1+exp(x*c+d))';
     f_sigmoid = fittype(fit_func,'independent','x');
     f_opts = fitoptions('Method','NonlinearLeastSquares','StartPoint',[1 -1 1 0]);

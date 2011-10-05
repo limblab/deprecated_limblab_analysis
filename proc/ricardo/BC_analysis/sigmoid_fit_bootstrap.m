@@ -98,7 +98,7 @@ cont_bump_plot = linspace(bumps_ordered(1),bumps_ordered(end));
 stats_vector = all_vector;
 num_trials = length(stats_vector);
 unique_x = unique(stats_vector(:,1));
-num_iter = 1000;
+num_iter = 10;
 y_mean = zeros(num_iter,length(unique_x));
 
 conf_count = 0;

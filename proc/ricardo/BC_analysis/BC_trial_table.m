@@ -39,6 +39,13 @@ bdf.words = bdf.words(find(bdf.words(:,1)>bdf.databursts{1} & bitand(bdf.words(:
 
 bdf.words = bdf.words(find([diff(bdf.words(:,2))~=0;1]),:);
 
+if strcmp(filename,'D:\Data\Tiki_4C1\FMAs\Processed\Tiki_2011-10-03_BC_001.mat')
+    bdf.words = bdf.words(22:end,:);
+end
+
+% bdf.words = bdf.words(find(bdf.words(:,1)>bdf.databursts{1} & bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('10'),1,'first'):...
+%     find(bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('20'),1,'last'),:);
+
 long_pauses = find(diff(bdf.words(:,1))>100);
 words_temp = bdf.words;
 for iPauses = 1:length(long_pauses)
