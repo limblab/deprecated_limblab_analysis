@@ -13,7 +13,7 @@ bump_raster_files = [];
 psychophysics_files = [];
 
 two_alternative_files = [];
-two_alternative_files = {'Tiki_2011-10-03_BC_001'};
+two_alternative_files = {'Tiki_2011-10-10_BC_001'};
 
 newsome_files = [];
 clear newsome_results

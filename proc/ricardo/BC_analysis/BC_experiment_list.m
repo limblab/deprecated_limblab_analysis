@@ -1984,6 +1984,48 @@ filelist(i).delay = [0 1 1 1 1 1 1 1 1];
 filelist(i).bump_duration = 500; % (ms), zero magnitude
 filelist(i).serverdatapath = 'Z:\Tiki_4C1\FMAs\Raw\';
 
+i = i+1;
+filelist(i).name = 'Tiki_2011-10-06_BC_001';   % ICMS detection, BC - 2AFC.
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [0 3.142 3.142 3.142 3.142 3.142 3.142 3.142 3.142];
+filelist(i).codes = 1:9;
+filelist(i).electrodes = [0 2:2:16];
+filelist(i).pulsewidth = repmat(0.2,1,9);
+filelist(i).current = [0 -40 -40 -40 -40 -40 -40 -40 -40];
+filelist(i).period = repmat(3.3,1,9);
+filelist(i).pulses = [0 120 120 120 120 120 120 120 120];
+filelist(i).delay = [0 1 1 1 1 1 1 1 1];
+filelist(i).bump_duration = 500; % (ms), zero magnitude
+filelist(i).serverdatapath = 'Z:\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-10-07_BC_001';   % ICMS detection, BC - 2AFC.
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [0 3.142 3.142 3.142 3.142 3.142 3.142 3.142 3.142 3.142 3.142];
+filelist(i).codes = [1:9 10 10];
+filelist(i).electrodes = [0 4 4 4 4 8 8 8 8 4 8];
+filelist(i).pulsewidth = repmat(0.2,1,11);
+filelist(i).current = [0 -20 -30 -40 -50 -20 -30 -40 -50 -20 -20];
+filelist(i).period = repmat(3.3,1,11);
+filelist(i).pulses = [0 120 120 120 120 120 120 120 120 120 120];
+filelist(i).delay = [0 1 1 1 1 1 1 1 1 1 1];
+filelist(i).bump_duration = 500; % (ms), zero magnitude
+filelist(i).serverdatapath = 'Z:\Tiki_4C1\FMAs\Raw\';
+
+i = i+1;
+filelist(i).name = 'Tiki_2011-10-10_BC_001';   % ICMS detection, BC - 2AFC.
+filelist(i).datapath = [datapath 'Tiki_4C1\FMAs\'];  
+filelist(i).pd = [1.57 4.71];
+filelist(i).codes = [1 2];
+filelist(i).electrodes = [0 1];
+filelist(i).pulsewidth = [0.2 0.2];
+filelist(i).current = [0 -40];
+filelist(i).period = repmat(3.3,1,2);
+filelist(i).pulses = [0 120];
+filelist(i).delay = [0 1];
+filelist(i).bump_duration = 500; % (ms), zero magnitude
+filelist(i).serverdatapath = 'Z:\Tiki_4C1\FMAs\Raw\';
+
 % %%%%%%%%%%%%%%%%%%% Pedro %%%%%%%%%%%%%%%%
 % i = i+1;
 % filelist(i).name = 'Pedro_2011-04-05_BC_001';  
