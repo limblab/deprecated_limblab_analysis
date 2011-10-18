@@ -12,7 +12,7 @@ plotTimes=0;
 for n=1:length(cutfp)
 	plotTimes=plotTimes(end)+1+cutfp(n).times;
 	for k=1:size(cutfp(n).data,1)
-		if ~isempty(intersect(k,cutfp(n).bestc))
+		if isfield(cutfp(n),'bestc') && ~isempty(intersect(k,cutfp(n).bestc))
 			plot(plotTimes,scaleFactor*k+cutfp(n).data(k,:),'g')
 		else
 			plot(plotTimes,scaleFactor*k+cutfp(n).data(k,:),'r')

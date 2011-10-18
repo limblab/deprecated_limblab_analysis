@@ -4,6 +4,7 @@ function superBatch(animal,dateNumber,pathOverride)
 % 
 % runs as function.
 
+%% preliminary -- copy the files over.  Doesn't take too long.
 if ~nargin
     % have to run interactively
     [CEBorPLX,remoteFolder,~]=getDataByDate;
@@ -12,6 +13,12 @@ elseif nargin==1
     [CEBorPLX,remoteFolder,~]=getDataByDate(animal);
 else % the expected number of inputs (2), or even 3
      % can run by remote, if we ever figure that out.
+     if dateNumber<datenum('09-29-2011')
+         disp('superBatch.m is not valid for recordings earlier than 09/29/2011.')
+         disp('blame the data server update.')
+         return
+     end
+
     if nargin==3
         [CEBorPLX,remoteFolder,~]=getDataByDate(animal,dateNumber,pathOverride);
     else
@@ -23,7 +30,7 @@ if isequal(animal,'Chewie')
 elseif isequal(animal,'Mini')
     remoteFolder2=regexprep(remoteFolder,'bdf','FilterFiles');
 end
-
+%% the long-winded stuff.
 PathName=pwd;
 if strcmp(CEBorPLX,'ceb')
     batch_get_cerebus_data % runs as script.  uses PathName
@@ -35,26 +42,22 @@ else
     batch_buildLFPpositionDecoderRDF
 end
 %% copy the newly created data into appropriate location on citadel.
-% suspended until citadel data drive back up 09/30/2011 - RDF
-% mkdir(remoteFolder)
+mkdir(remoteFolder)
 D=dir(PathName);
 MATfiles={D(cellfun(@isempty,regexp({D.name},'_Spike_LFP.*(?<!poly.*)\.mat'))==0).name};
 for copyfileIndex=1:length(MATfiles)
-%     copyfile(MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
-%     fprintf(1,'%s copied to %s\n',MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
+    copyfile(MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
+    fprintf(1,'%s copied to %s\n',MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
 end
 %% copy the decoders, and the log, into their appropriate place
-% suspended until citadel data drive back up 09/30/2011 - RDF
 decoderFiles={D(cellfun(@isempty,regexp({D.name},'.*poly.*\.mat','match','once'))==0).name};
-% mkdir(remoteFolder2)
+mkdir(remoteFolder2)
 for copyfileIndex=1:length(decoderFiles)
-%     copyfile(decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
-%     fprintf(1,'%s copied to %s\n',decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
+    copyfile(decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
+    fprintf(1,'%s copied to %s\n',decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
 end
-% suspended until citadel data drive back up 09/30/2011 - RDF
-% copyfile('allFPsToPlot.mat',remoteFolder2)
-% fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
+copyfile('allFPsToPlot.mat',remoteFolder2)
+fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
 diary off
-% suspended until citadel data drive back up 09/30/2011 - RDF
-% copyfile('decoderOutput.txt',remoteFolder2)
-% fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)
+copyfile('decoderOutput.txt',remoteFolder2)
+fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)

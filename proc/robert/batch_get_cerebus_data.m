@@ -35,6 +35,7 @@ for n=1:length(NEVfiles)
         %     clear bdfEMGonly
         %     disp('saved EMG preview')
         fprintf(1,'loading %s...\n',NEVname)
+%         out_struct=get_cerebus_data_noCalc(FileName,1);
         out_struct=get_cerebus_data(FileName,1);
         save(fullfile(PathName,[FileName(1:end-4),'.mat']),'out_struct','FileName','PathName')
         clear out_struct
