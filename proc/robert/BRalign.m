@@ -1,8 +1,12 @@
 %% open files
+[FileName,PathName,FilterIndex] = uigetfile('/Volumes/data/Miller/Mini_7H1/BrainReader logs/*.txt','select a *.txt file');
 disp('reading online array...')
-onlineArray=readBrainReaderFile_function;
+onlineArray=readBrainReaderFile_function(fullfile(PathName,FileName));
 disp('reading psuedo-online array...')
-psoArray=readBrainReaderFile_function;
+PathName=regexprep(PathName,'online','pseudoOnline');
+D=dir(PathName);
+psoArray=readBrainReaderFile_function(fullfile(PathName,D(cellfun(@isempty,regexp({D.name}, ...
+    regexp(FileName,'.*(?=\.txt)','match','once')))==0).name));
 
 %% get rid of any lead-in data
 tmp=size(onlineArray,1);

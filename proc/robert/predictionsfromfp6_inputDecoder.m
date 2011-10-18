@@ -55,6 +55,13 @@ if length(varargin)>0
                                      lambda=varargin{8};
                                      if length(varargin)>8
                                          smoothfeats=varargin{9};
+                                         if length(varargin)>9
+                                             bestc=varargin{10};
+                                             % will actually be 
+                                             % [bestc bestf]
+                                             bestf=bestc(2);
+                                             bestc=bestc(1);
+                                         end
                                      end
                                  end
                             end
