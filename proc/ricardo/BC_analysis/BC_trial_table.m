@@ -43,6 +43,10 @@ if strcmp(filename,'D:\Data\Tiki_4C1\FMAs\Processed\Tiki_2011-10-03_BC_001.mat')
     bdf.words = bdf.words(22:end,:);
 end
 
+% if strcmp(filename,'D:\Data\Tiki_4C1\FMAs\Processed\Tiki_2011-10-12_BC_001.mat')
+%     bdf.words = bdf.words(1540:end,:);
+% end 
+
 % bdf.words = bdf.words(find(bdf.words(:,1)>bdf.databursts{1} & bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('10'),1,'first'):...
 %     find(bitand(bdf.words(:,2),hex2dec('f0'))==hex2dec('20'),1,'last'),:);
 
@@ -72,9 +76,27 @@ end
 % trial_starts = bdf.words(bdf.words(:,2) == start_trial_code, 1);
 % trial_starts = [trial_starts repmat(start_trial_code,length(trial_starts),1)];
 
-trial_starts = bdf.words(find(bdf.words(:,2)==ct_on_code)+1,:);
 trial_ends = bdf.words(bdf.words(:,2)>=reward_code &...
     bdf.words(:,2)<=incomplete_code,:);
+
+to_remove = -1;
+while ~isempty(to_remove)
+    for iTrials = 2:size(trial_starts,1)
+        to_remove = [];
+        if trial_starts(iTrials,1)<trial_ends(iTrials-1,1) 
+            iTrials
+            to_remove = find(bdf.words(:,1)<trial_starts(iTrials,1) & bdf.words(:,1)>trial_ends(iTrials-2,1));
+            bdf.words = bdf.words(setxor(1:size(bdf.words,1),to_remove),:);
+            trial_starts = bdf.words(find(bdf.words(:,2)==ct_on_code),:);
+            trial_ends = bdf.words(bdf.words(:,2)>=reward_code &...
+                bdf.words(:,2)<=incomplete_code,:);
+            break
+        end
+    end
+end   
+
+trial_starts = bdf.words(find(bdf.words(:,2)==ct_on_code)+1,:);
+   
 
 trial_table = zeros(length(trial_starts),length(fieldnames(table_columns)));
 
