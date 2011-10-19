@@ -1,17 +1,25 @@
-%% Identify the files for loading - a data file, and a decoder file.
-% if being called by something else, use the PathName that already exists.
-% Assume FileName also exists.
-if exist('PathName','var')~=1
-	[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
-	cd(PathName)
+function evalLFPpositionDecoderRDF(DecoderPath,DecoderDatenum,PathFileName)
+
+if ~nargin
+	[FileName,PathName,~] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
+	[FileNameDecoder,PathNameDecoder,~] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a decoder file','*.*');
+    DecoderPath=fullfile(PathNameDecoder,FileNameDecoder);
+else
+    % assume both are full path/file names.  DecoderPath is fine as is.
+    [PathName,FileName,ext]=fileparts(PathFileName);
+    FileName=[FileName,ext];
+    [PathNameDecoder,FileNameDecoder,decoderExt]=fileparts(DecoderPath);
+    FileNameDecoder=[FileNameDecoder,decoderExt];
 end
-FileName
+cd(PathName)
+
 if isequal(get(0,'Diary'),'off')
-    diary(fullfile(PathName,'decoderOutput.txt'))
+    % if ~nargin, this seems stupid and repetitive, but making it
+    % inconsistent would be stupider.
+    diary(fullfile(PathNameDecoder,[FileNameDecoder(1:end-4),'HCperformance_LFPcontrolDays.txt']))
 end
+fprintf(1,'evaluating %s.\n',FileName)
 %% load the file 
-%  (skip this cell entirely if you've just loaded in a .mat file instead of
-%  the .plx)
 switch FileName(end-3:end)
     case '.mat'
         disp(['loading BDF structure from ',FileName])
@@ -20,7 +28,33 @@ switch FileName(end-3:end)
         out_struct=get_plexon_data(FileName);
         save([regexp(FileName,'.*(?=\.plx)','match','once'),'.mat'],'out_struct')
 end
+if ~isfield(out_struct,'raw')
+    % if there was an error in the .plx file such that no event 257 was
+    % recorded (no handle data), then the new get_plexon_data will have 
+    % regurgitated an out_struct with only a .meta field.
+    % Whether this is being loaded in via get_plexon_data, or it is 
+    % somehow still around in .mat form, the thing to do is to cut it 
+    % out completely from the results.mat file.
+    fprintf(1,'\n\n\n===========================\n no out_struct.raw field.\nHCperformance_LFPcontrolDays_data')
+    load([DecoderPath(1:end-4),'_performance.mat'],'HCperformance_LFPcontrolDays_data')
+    fprintf(1,'being reduced from %d rows to ',size(HCperformance_LFPcontrolDays_data,1))
+    HCperformance_LFPcontrolDays_data(find(cellfun(@isempty,HCperformance_LFPcontrolDays_data(:,2)),1,'first'):end,:)=[];
+    save([DecoderPath(1:end-4),'_performance.mat'],'HCperformance_LFPcontrolDays_data')
+    fprintf(1,'%d rows.\n===========================\n',size(HCperformance_LFPcontrolDays_data,1))
+    return
+end
+disp(sprintf('\n\n\n\n\n=====================\nFILE LOADED\n===================='))
+
 fnam=FileName(1:end-4);
+% store the results in a file that can be imported to excel.  Add a blank
+% tab for the before/after_BC column, that just leaves performance
+% fid=fopen([DecoderPath(1:end-4),'_data.txt'],'a');
+% fprintf(fid,'%d\t\t',DecoderDatenum-datenum(regexp(out_struct.meta.datetime,'.*(?=\s)','match','once')))
+% fclose(fid);
+% store in a .mat file
+load([DecoderPath(1:end-4),'_performance.mat'],'HCperformance_LFPcontrolDays_data')
+HCperformance_LFPcontrolDays_data{find(cellfun(@isempty,HCperformance_LFPcontrolDays_data(:,2)),1,'first'),2}= ...
+    datenum(regexp(out_struct.meta.datetime,'.*(?=\s)','match','once'))-DecoderDatenum;
 disp(sprintf('\n\n\n\n\n=====================\nFILE LOADED\n===================='))
 %% input parameters - Do not Change, just run.
 disp('assigning static variables')
@@ -32,30 +66,10 @@ analog_times=sig(:,1);
 
 % assign FPs, offloaded to script so it can be used in other places.
 fpAssignScript
-% look for something called CumulativeBadChannels and load it, then use it
-% to cut down the fp array.
-clear badChannels % in case this is being run as part of a batch loop
-% if there is a remoteFolder2, load CumulativeBadChannels.mat from that.
-% If not, try the current directory.
-if exist('remoteFolder2','var')==1
-    [remoteParentDir,~,~,~]=fileparts(remoteFolder2);
-    FilesInfo=dir(remoteParentDir);
-else
-    disp('in order to exclude bad channels from CumulativeBadChans.mat')
-    disp('you must copy it to the local directory (when building from a .mat file)')
-    remoteParentDir='';
-    FilesInfo=dir(PathName);
-end
-badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
-if ~isempty(badChannelsFileInd)
-    fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
-    load(fullfile(remoteParentDir,FilesInfo(badChannelsFileInd).name))
-end
-if exist('badChannels','var')==1
-    disp('zeroing bad channels...')
-    badChannels
-    fp(badChannels,:)=zeros(length(badChannels),size(fp,2));
-end
+% since we are evaluating rather than building a decoder, we want to leave
+% all channels intact rather than finding & removing badChannels.  If any
+% channels are bad, we want that to be revealed by the poor performance of
+% the decoder
 disp('static variables assigned')
 %%
 % 1st (and last?) second of data gets eliminated by calc_from_raw for the encoder
@@ -99,12 +113,8 @@ binsize=0.05;
 % DecoderPath is the entire path to the file, including the file name and
 % the extension.
 disp('loading decoder file')
-if exist('DecoderPath','var')~=1
-	[FileNameDecoder,PathNameDecoder,~] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a decoder file','*.*');
-    DecoderPath=fullfile(PathNameDecoder,FileNameDecoder);
-end
 load(DecoderPath,'H','bestc','bestf')
-fprintf(1,'%s loaded',DecoderPath)
+fprintf(1,'%s loaded.\n',DecoderPath)
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
 folds=10;
@@ -114,7 +124,7 @@ Hcell=cell(1,folds);
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     predictionsfromfp6_inputDecoder(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Hcell,words,emgsamplerate,lambda,smoothfeats,[bestc bestf]);
+    Use_Thresh,Hcell,words,emgsamplerate,lambda,smoothfeats,[bestc; bestf]);
 
 
 % examine vaf
@@ -137,3 +147,9 @@ fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
 diary off
+
+HCperformance_LFPcontrolDays_data{find(cellfun(@isempty,HCperformance_LFPcontrolDays_data(:,4)),1,'first'),4}= ...
+    vaf(:,1);
+HCperformance_LFPcontrolDays_data{find(cellfun(@isempty,HCperformance_LFPcontrolDays_data(:,5)),1,'first'),5}= ...
+    vaf(:,2);
+save([DecoderPath(1:end-4),'_performance.mat'],'HCperformance_LFPcontrolDays_data')

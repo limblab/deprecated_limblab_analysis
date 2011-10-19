@@ -59,8 +59,8 @@ if length(varargin)>0
                                              bestc=varargin{10};
                                              % will actually be 
                                              % [bestc bestf]
-                                             bestf=bestc(2);
-                                             bestc=bestc(1);
+                                             bestf=bestc(2,:);
+                                             bestc=bestc(1,:);
                                          end
                                      end
                                  end
@@ -344,10 +344,6 @@ for i = 1:folds
         end
     end
 
-%     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
-    vaftr(i,:)=v/100; %Divide by 100 because v is in percent
-%     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-%     vaf(i,:) = 1 - sum( (y_pred{i}-ytnew{i}).^2 ) ./ sum( (ytnew{i} - repmat(mean(ytnew{i}),length(ytnew{i}),1)).^2 );
     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
@@ -378,7 +374,6 @@ disp('5th part: do predictions')
 
 vmean=mean(vaf);
 vsd=std(vaf,0,1);
-vaftrm=mean(vaftr);
 r2mean=mean(r2);
 r2sd=std(r2);
 
@@ -398,7 +393,7 @@ if nargout>5
     if nargout>7
         varargout{3}=r2;
         if nargout>8
-            varargout{4}=vaftr;
+            varargout{4}=[];
             if nargout>9
                 varargout{5}=bestf;
                 varargout{6}=bestc;
@@ -425,9 +420,9 @@ if nargout>5
                             varargout{14}=t;
                             if nargout>19
                                 varargout{15}=P;
-                                varargout{16}=featind;
+                                varargout{16}=[];
                                 if nargout>21
-                                    varargout{17}=sr;
+                                    varargout{17}=[];
                                 end
                             end
                         end
