@@ -1,4 +1,4 @@
-function [vaf,vmean,vsd,y_test,y_pred,varargout] = predictionsfromfp6all(sig, signal, numfp, ...
+function [vaf,vmean,vsd,y_test,y_pred,varargout] = MRSpredictionsfromfp6allDecoderBuild(sig, signal, numfp, ...
 	binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
@@ -53,19 +53,24 @@ if length(varargin)>0
                                      lambda=varargin{8};
                                      if length(varargin)>8
                                          smoothfeats=varargin{9};
+                                        if length(varargin)>9 && ~isempty(varargin{10})
+                                            featind=varargin{10};
+                                        end
                                      end
                                  end
                             end
                         end
                     else
-                        words=varargin{5};
-                        if length(varargin)>5
-                            emgsamplerate=varargin{6};
-                            if length(varargin)>6
-                                lambda=varargin{7};
-                                if length(varargin)>7
-                                    smoothfeats=varargin{8};
-                                   
+                        words=varargin{6};
+                        if length(varargin)>6
+                            emgsamplerate=varargin{7};
+                            if length(varargin)>7
+                                lambda=varargin{8};
+                                if length(varargin)>8
+                                    smoothfeats=varargin{9};
+                                    if length(varargin)>9 && ~isempty(varargin{10})
+                                        featind=varargin{10};
+                                    end
                                 end
                             end
                         end
@@ -177,8 +182,8 @@ tic
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
 tfmat=zeros(wsz,numfp,numbins,'single');
 %% Notch filter for 60 Hz noise 
- [b,a]=butter(2,[58 62]/(samprate/2),'stop');
- fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
+[b,a]=butter(2,[58 62]/(samprate/2),'stop');
+fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 fpf=double(fp);
 clear fp
 for i=1:numbins
@@ -225,6 +230,7 @@ PB(1,:,:)=LMP;
 PB(2,:,:)=mean(PA(delta,:,:),1);
 PB(3,:,:)=mean(PA(mu,:,:),1);
 PB(4,:,:)=mean(PA(gam1,:,:),1);
+%MRS 8/31/11
 PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
@@ -287,11 +293,20 @@ else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar;
 end
 r1=reshape(r,1,[]);
 r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
-[sr,featind]=sort(r1,'descend');
+
+%MRS Added 8/25/11 
+if ~exist('featind','var')
+    [sr,featind]=sort(r1,'descend');
+else 
+    [sr]=sort(r1,'descend');
+end
 [bestf,bestc]=ind2sub(size(r),featind(1:nfeat));
 bestPB=single(zeros(nfeat,length(y)));
 clear r     %clear this so we can reuse r later on
-for i=1:nfeat
+
+bestc = bestc(bestc <= numfp);
+
+for i=1:length(bestc)
     bestPB(i,:)=PB(bestf(i),bestc(i),:);
 end
 
@@ -344,7 +359,7 @@ for i = 1:folds
 %     x_train = zscore(x_train);
 %     x_test{i} = zscore(x_test{i});
 
-    if ~exist('H','var')
+    if ~exist('H','var') 
         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
         i
     end
@@ -356,6 +371,12 @@ for i = 1:folds
     end
     %If inputting a decoder with only one fold, convert to cell array and
     %replicate to match number of folds
+    
+    if exist('H','var') && length(H) < i
+        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+        i
+    end
+    %Continue filling H if creating a decoder
     
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
     %ytnew and xtnew are shifted by the length of the filter since the
@@ -402,7 +423,7 @@ for i = 1:folds
                 %Find and apply polynomial
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            y_pred{i}(:,z) = polyval(P(:,z),y_pred{i}(:,z));
         end
     end
 
