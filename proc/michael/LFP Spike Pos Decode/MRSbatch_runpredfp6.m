@@ -1,6 +1,6 @@
 %runpredfp6 
 %Uses MRSpredictionsfromfp6allDecoderBuild
-direct = 'C:\Documents and Settings\Administrator\Desktop\ChewieData\Spike LFP Pos Decoder\Mini';
+direct = 'C:\Documents and Settings\Administrator\Desktop\ChewieData\Spike LFP Pos Decoder\Chewie';
 %Set directory to desired directory
 
 cd(direct);
@@ -57,26 +57,33 @@ for i = 1:length(DaysNames)
     lambda = 1;
     %smoothfeats
     
-    for i=1:length(MATfiles)
-        if i == 2
+    for l=1:length(MATfiles)
+        if l == 4
             load([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),...
                 'poly',num2str(PolynomialOrder),'.mat']);
             BEST_ind = find(max(sum(r2,2))==sum(r2,2));
             Hbest = H{BEST_ind};
             r2best(:,:) = r2(BEST_ind,:);
+            featindBEST = featind;
             save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),...
                 'poly',num2str(PolynomialOrder),'_BEST','.mat'],'Hbest','r2best','featind');
             disp('Saved best decoder from first file');
+            clear v* y* x* r* best* H 
         end
-        fnam = MATfiles{i}
-        fname=[direct,fnam];
-        sname=[direct,fnam];
+        fnam = MATfiles{l}
+        fname=[direct,'\',DaysNames{i},'\',fnam];
+        sname=[direct,'\','LFP Decoders','\',fnam];
         load(fnam);
-
+        
+        if exist('out_struct','var')
+            bdf = out_struct;
+            clear out_struct
+        end
         %Load previous H matrix for offline predictions if desired
         %load([dir,'Chewie_Spike_LFP_08012011001tik6 velpred 100 feats lambda1poly0_BEST.mat'])
         if exist('Hbest','var')
         H = Hbest; %<- Use if inputting H matrix, also don't 'clear' H in loop
+        featind = featindBEST;
         else
         H = []; 
         featind = [];%<- Use if not inputting H matrix, and make sure featind not input to decoder fxn
@@ -120,15 +127,17 @@ for i = 1:length(DaysNames)
 
         save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),'poly',num2str(PolynomialOrder),'.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
 
-        clear sig numberOfFps samplerate fp fptimes analog_time_base fnam words...
-            v* y* x* r*
+        clear v* y* x* r* best* bdf...
+              sig numberOfFps samplerate fp fptimes analog_time_base fnam words
+              
         close all
 
     end
-    clear H sig signalType numberOfFps binsize folds numlags numsides samplerate fp...
-         fptimes analog_time_base fnam windowsize nfeat PolynomialOrder Use_Thresh H words emgsamplerate lambda featind
+    clear sig signalType numberOfFps binsize folds numlags numsides samplerate fp...
+         fptimes analog_time_base fnam windowsize nfeat PolynomialOrder Use_Thresh H...
+         Hbest words emgsamplerate lambda featind
     
-    direct = 'C:\Documents and Settings\Administrator\Desktop\ChewieData\Spike LFP Pos Decoder\Mini';
+    direct = 'C:\Documents and Settings\Administrator\Desktop\ChewieData\Spike LFP Pos Decoder\Chewie';
     %Set directory to desired directory
     cd(direct);
 
