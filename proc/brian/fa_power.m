@@ -20,6 +20,9 @@ t = -.5:0.005:1;
 
 ul = unit_list(bdf);
 
+f = bdf.force(:,[2 3]) - repmat(mean(bdf.force(:,[2 3])), length(bdf.force), 1);
+P = sum(f .* bdf.vel(:,[2 3]),2);
+
 nTargets = max(tt(:,5)) + 1;
 bumptrials = tt( tt(:,3) == double('H'), : );
 reachtrials = tt( tt(:,2) == -1 & tt(:,10) == double('R'), : );
@@ -100,6 +103,13 @@ for unit = 1:size(ul,1)
                 exp( - (t-spike).^2 / (2*kernel_sigma.^2) )./sqrt(2*pi*kernel_sigma^2);  
         end
     end
+end
+
+
+Pt = zeros(size(t,2), size(bumpreaches,1));
+for trial = 1:length(bumpreaches)
+    start = find(bumpreaches(trial,4)-.5 < bdf.vel(:,1),1,'first');
+    Pt(:,trial) = decimate( P(start:start+1500) , 5 );
 end
 
 fr_bump = zeros(size(ul,1), size(t,2), size(bumptrials,1));
@@ -268,23 +278,3 @@ plot(t,mean(v),'k-');
 plot(t,mean(vb),'b-');
 plot(t,mean(vr2),'r-');
 plot(t,mean(vb)+mean(vr2),'k--')
-
-
-
-%% best fit
-
-err = zeros(1,50);
-
-for step = 1:50
-    vr = vr-repmat(mean(vr(:,1:80),2),1,size(vr,2));
-    vb = vb-repmat(mean(vb(:,1:80),2),1,size(vr,2));
-    v = v-repmat(mean(v(:,1:80),2),1,size(vr,2));
-    vr2 = [repmat(vr(:,1),1,step) vr(:,1:end-step)];
-
-    err(step) = sum( (mean(v) - (mean(vb)+mean(vr2))).^2 );
-end
-
-figure;
-plot(.005:.005:(.005*50), err);
-
-
