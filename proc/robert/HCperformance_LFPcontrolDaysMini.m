@@ -20,8 +20,10 @@ if length(beforeAfterFlag)~=length(PathFileNames)
     return
 end
 
+% decoderFile=['C:\Documents and Settings\Administrator\Desktop\RobertF\data\Mini\08-24-2011\',...
+%         'Mini_Spike_LFPL_107poly3_150featsvel-decoder_badChansZeroed1003.mat'];
 decoderFile=['C:\Documents and Settings\Administrator\Desktop\RobertF\data\Mini\08-24-2011\',...
-        'Mini_Spike_LFPL_107poly3_150featsvel-decoder_badChansZeroed1003.mat'];
+        'Mini_Spike_LFPL_107poly3_150featsvel-decoder_badChansZeroed1003_no2ndBank.mat'];
 decoderFileDate=datenum('08-24-2011');
 
 HCperformance_LFPcontrolDays_data=cell(1,5);
@@ -56,3 +58,5 @@ for n=1:length(PathFileNames)
     evalLFPpositionDecoderRDF(decoderFile,decoderFileDate,result)
     close
 end
+
+copyfile([decoderFile(1:end-4),'_performance.mat'],'Z:\Mini_7H1\FilterFiles\')
