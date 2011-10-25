@@ -1,12 +1,16 @@
 function Fcorr = correct_tube_force_signal(t_F,F)
 
+% t_F = timeframe for force signal
+% F   = tube force signal with drift that needs to be corrected
+
+
 LP = 5; % 5Hz
 SR = round(1/(t_F(2)-t_F(1)));
 [b,a] = butter(4,LP*2/SR,'low');
 
 dF = [0; diff(F)];
 dFS= filtfilt(b,a,abs(dF));
-tol = std(dFS)/4;
+tol = std(dFS);
 wmin = 0.5*SR; % 500ms min between beginning of 2 squeezes, otherwise concatenate
 wmean = 0.5*SR; % 500ms the averaging window for detection of state transition.
 

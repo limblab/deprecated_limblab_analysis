@@ -3,7 +3,7 @@ function  [Pred_Out, Inputs_new, H_new]= predMIMOadapt7(Inputs,H,LR,Adapt_bins,A
 %   predMIMOadapt7 calculates predictions and modifies the filter H based
 %     on a learning rate (LR) by comparing signals prediction with their
 %     expected values.
-%   Adapt_bins is a 2 column array of Bin index around which to modify the
+%   Adapt_bins is a 3 column array of Bin index around which to modify the
 %     weights in H in the first column, and corresponding target x and y position
 %     the 2nd and 3rd column Adapt_bins = [Bin_index tgt_x tgt_y];
 %   Adapt_lag is the number of bins relative to ts for which to

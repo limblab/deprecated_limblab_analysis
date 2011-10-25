@@ -1,4 +1,4 @@
-%% Predict data using randomized unit dropping
+%% Predict data using randomized unit dropping and permutation
 function [res]=neuron_dropping_tests(filter, NeuronIDs, pctdrop, pctperm, rand)
 
 datapath='C:\Documents and Settings\Christian\Desktop\Adaptation2_new_sort\BinnedData\';
