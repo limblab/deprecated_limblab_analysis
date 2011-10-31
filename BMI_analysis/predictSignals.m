@@ -6,16 +6,14 @@ BinnedData   = varargin{2};
 % default values
 numPCs = 0;
 FiltPred = false;
-Adapt_Enable = false;
+Adapt.Enable = false;
 
 if nargin    >= 3
     FiltPred = varargin{3};
     if nargin > 3
-        Adapt_Enable = varargin{4};
-        LR = varargin{5};
-        Adapt_lag = varargin{6};
-        if nargin > 6
-            numPCs = varargin{7};
+        Adapt = varargin{4};
+        if nargin > 4
+            numPCs = varargin{5};
         end
     end
 end
@@ -54,8 +52,8 @@ ActualData=zeros(size(usableSpikeData));
 
 %% Use the neural filter to predict the Data
 numsides=1; fs=1;
-if Adapt_Enable
-    [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,usableSpikeData,filter.H,LR,Adapt_lag);
+if Adapt.Enable
+    [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,usableSpikeData,filter.H,Adapt);
     varargout(1) = {Hnew};
 else
     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);

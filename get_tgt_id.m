@@ -19,8 +19,8 @@ function ID = get_tgt_id(corners)
 %      6  |  8
 %         7
 
-x = corners(1)+(corners(3)-corners(1));
-y = corners(4)+(corners(2)-corners(4));
+x = corners(1)+(corners(3)-corners(1))/2;
+y = corners(4)+(corners(2)-corners(4))/2;
 
 if x > 0
 	if y > 0

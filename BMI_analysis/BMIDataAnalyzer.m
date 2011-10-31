@@ -556,21 +556,21 @@ function BMIDataAnalyzer()
 
     function Filt_PredButton_Callback(obj,event)
         disp('Predicting, please wait...');
-        [Smooth_Pred, Adapt_Enable, LR, Lag] = PredOptionsGUI();
+        [Smooth_Pred, Adapt.Enable, Adapt.LR, Adapt.Lag] = PredOptionsGUI();
         
         decoder = load(Filt_FullFileName);
         field_names = fieldnames(decoder);
         if any(strcmp(field_names,'posture_decoder'))
             Use_State = 1;
-            [OLPredData, H_new] = predictSDSignals(decoder,Bin_FullFileName,Use_State,Smooth_Pred,Adapt_Enable,LR,Lag);
+            [OLPredData, H_new] = predictSDSignals(decoder,Bin_FullFileName,Use_State,Smooth_Pred,Adapt);
         else
             Use_State = 0;
-            [OLPredData, H_new] = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt_Enable,LR,Lag);
+            [OLPredData, H_new] = predictSignals(Filt_FullFileName,Bin_FullFileName,Smooth_Pred,Adapt);
         end
         
         disp('Done.');
         
-        if Adapt_Enable %we have a new filter
+        if Adapt.Enable %we have a new filter
             disp('Saving updated prediction model...');
             Filt_FileName = [Bin_FileName(1:end-4) '_adaptFilter.mat'];
             filt_struct = LoadDataStruct(Filt_FullFileName);
@@ -605,7 +605,7 @@ function BMIDataAnalyzer()
                                       'normalized','Position',[0 .65 1 0.38]);
         end
         
-        clear Smooth_Pred Adapt_Enable LR Lag;
+        clear Smooth_Pred Adapt;
         clear OLPredData H_new;
         clear filt_struct decoder Use_State;
     end

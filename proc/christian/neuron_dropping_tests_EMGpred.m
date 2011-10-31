@@ -1,24 +1,24 @@
 %% Predict data using randomized unit dropping and permutation
-function [res]=neuron_dropping_tests(filter, NeuronIDs, pctdrop, pctperm, rand)
+function [res]=neuron_dropping_tests_EMGpred(filter, NeuronIDs, pctdrop, pctperm, EMGpatterns, rand)
 
 % pctdrop= [0,0,5,0,5,5,5];
 % pctperm= [0,0,5,0,5,5,5];
 
 datapath='C:\Documents and Settings\Christian\Desktop\Adaptation2_new_sort\BinnedData\';
 
-TestFileNames = {[datapath 'Strick_mid_7-9-10_001.mat'] ...
-                 [datapath 'Strick_mid_7-9-10_002.mat'] ...
-                 [datapath 'Strick_mid_7-10-10_001.mat'] ...
-                 [datapath 'Strick_mid_7-10-10_003.mat'] ...
-                 [datapath 'Strick_mid_7-11-10_001.mat'] ...
-                 [datapath 'Strick_mid_7-12-10_001.mat'] ...
-                 [datapath 'Strick_mid_7-13-10_001.mat'] ...
+TestFileNames = {[datapath 'Strick_mid_7-9-10_001_ext.mat'] ...
+                 [datapath 'Strick_mid_7-9-10_002_ext.mat'] ...
+                 [datapath 'Strick_mid_7-10-10_001_ext.mat'] ...
+                 [datapath 'Strick_mid_7-10-10_003_ext.mat'] ...
+                 [datapath 'Strick_mid_7-11-10_001_ext.mat'] ...
+                 [datapath 'Strick_mid_7-12-10_001_ext.mat'] ...
+                 [datapath 'Strick_mid_7-13-10_001_ext.mat'] ...
                  };
 
 %                 [datapath 'Strick_mid_7-12-10_001.mat'] ...  
 NumTestFiles = length(TestFileNames);
 
-EMGpatternFile = 'C:\Documents and Settings\Christian\Desktop\Adaptation2_new_sort\WF_EMGpatterns';
+% EMGpatternFile = 'C:\Documents and Settings\Christian\Desktop\Adaptation2_new_sort\WF_EMGpatterns';
 
 
 %% Parameters
@@ -27,31 +27,37 @@ Adapt.Lag = 0.45;
 Adapt.EMGpatterns = EMGpatterns;
 Adapt.Enable = true;
 
-foldlength = 120;
-NumLoops = 10;
+foldlength = 60;
+% NumLoops = 10;
+NumLoops = 1;
 
 % variables to store results
-R2ff = cell(NumTestFiles,NumLoops);
-R2f = cell(NumTestFiles,NumLoops);
-R2a = cell(NumTestFiles,NumLoops);
+R2ff = cell(NumTestFiles,NumLoops); %fixed decoder, no drop/perm (fixed fixed)
+R2f = cell(NumTestFiles,NumLoops);  %fixed decoder, w/ drops and perm
+R2a = cell(NumTestFiles,NumLoops);  %adapt decoder, w/ drops and perm
+R2af = cell(NumTestFiles,NumLoops); %adapt decoder, no drop/perm (adapt fixed)
 Neurons = cell(NumTestFiles,NumLoops);
 H = cell(NumTestFiles+1,NumLoops);
+Hd= cell(NumTestFiles+1,NumLoops);
 
 %% L:oo:ps
 for k = 1:NumLoops
        
     if rand
         %start with a random filter for adaptation
-        filter_rand  = randomize_weights(filter);
-        filter_adapt = filter_rand;
+        filter_rand    = randomize_weights(filter);
+        filter_adapt   = filter_rand;
+        filter_adapt_d = filter_adapt;
     else
         %start with a null filter for adaptation
-        filter_rand  = filter;
-        filter_adapt = filter_rand; 
-        filter_adapt.H = zeros(size(filter_adapt.H));
+        filter_rand     = filter;
+        filter_adapt    = filter_rand; 
+        filter_adapt.H  = zeros(size(filter_adapt.H));
+        filter_adapt_d  = filter_adapt;
     end
     
-    H{1,k}=filter_adapt.H;
+    H{1,k}  = filter_adapt.H;
+    Hd{1,k} = filter_adapt_d.H;
     dropped_units = [];
     permuted_units = [];    
     
@@ -112,35 +118,53 @@ for k = 1:NumLoops
         
         Neurons{i,k} = spikeguide2neuronIDs(TestData_d.spikeguide);
         
-        %% 4- Make predictions
-        %Fixed Model, no drop
-        [R2ff{i,k}, nfold] = mfxval_fixed_model(filter,TestData,foldlength);
+        % 4.5 (Temporary hack): for wrist flexion, use only data from extension trials (targets 8,1 and 2)
+        % To conserve neuron history, this function also duplicates and shifts neuron, so
+        % use a filter lag of 1 from now on
+%         filterLag = 10;
+%         TestData_d = splitDataFileWrtTgt(TestData_d,[1 2 8],filterLag);
+%         TestData   = splitDataFileWrtTgt(TestData  ,[1 2 8],filterLag);
+%         filter_adapt.fillen = 0.05; filter.fillen = 0.05;
+        %%% End of Temporaray section
         
-        %Model, with neuron loss or changed or random filter
+        
+        %% 5- Make predictions
+        %Fixed Model, no drop or permutation
+        [R2ff{i,k}, nfold] = mfxval_fixed_model(filter,TestData,foldlength);
+
+        %Adaptive algorithm, no drop or permutation
+        [R2af{i,k}, nfold, filter_adapt] = mfxval_fixed_model(filter_adapt,TestData,foldlength,Adapt);
+        H{i+1,k} = filter_adapt.H;        
+
+        %Fixed Model, with neuron loss
         [R2f{i,k}, nfold] = mfxval_fixed_model(filter,TestData_d,foldlength);
         
         %Adaptive algorithm with neuron loss
-%         [R2a{i,k}, nfold, filter_adapt] = mfxval_fixed_model(filter_adapt,TestData_d,foldlength,Adapt_Enable, LR, Adapt_Lag);
-        [R2a{i,k}, nfold, filter_adapt] = mfxval_fixed_model(filter_adapt,TestData_d,foldlength,Adapt);
-        H{i+1,k} = filter_adapt.H;
+        [R2a{i,k}, nfold, filter_adapt_d] = mfxval_fixed_model(filter_adapt_d,TestData_d,foldlength,Adapt);
+        Hd{i+1,k} = filter_adapt_d.H;
+        
     end
 end
 
 res.R2ff= R2ff;
 res.R2f = R2f;
 res.R2a = R2a;
+res.R2af= R2af;
 res.NumLoops = NumLoops;
 res.Neurons = Neurons;
 res.DroppedUnits = dropped_units;
 res.PermUnits = permuted_units;
 res.H = H;
+res.Hd= Hd;
 res.filter = filter;
 res.TestFileNames = TestFileNames;
-res.info = struct('PctDrop',pctdrop,'PctPerm',pctperm,'LR',LR,'Adapt_Lag',Adapt_Lag);
+res.info = struct('PctDrop',pctdrop,'PctPerm',pctperm,'LR',Adapt.LR,'Adapt_Lag',Adapt.Lag);
 
 %% Mean
 
-plot_results(res);
+% plot_results(res);
+
+
 % 
 % numpts = size(vertcat(res.R2f{:,1}),1);
 % 

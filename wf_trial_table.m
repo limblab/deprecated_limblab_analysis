@@ -10,7 +10,7 @@ function tt = wf_trial_table(bdf)
 %    7: Go cue
 %    8: Trial End time
 %    9: Trial result        -- R, A, I, or F 
-%   10: Target ID           -- Arbitrary target ID
+%   10: Target ID           -- Target ID (based on location)
 
 % $Id$
 
@@ -64,8 +64,12 @@ for trial = 1:num_trials-1
     
     % Target location
     dbidx = find(dbtimes > start_time, 1, 'first');
-    target = bdf.databursts{dbidx,2}(19:34);
+    burst_size = bdf.databursts{1,2}(1);
+    target = bdf.databursts{dbidx,2}(burst_size-15:end);
     target = bytes2float(target, 'little')';
+    
+    % Target ID
+    target_id = get_tgt_id(target);
     
     % Go cue
     go_cue_idx = find(go_cues > start_time & go_cues < stop_time, 1, 'first');
@@ -82,14 +86,15 @@ for trial = 1:num_trials-1
         ot_time, ...    % Timestamp of OT On event
         go_cue, ...     % Timestamp of Go Cue
         stop_time, ...  % End of trial
-        trial_result, 0];  % Result of trial ('R', 'A', 'I', or 'N')
+        trial_result,...% Result of trial ('R', 'A', 'I', or 'N')
+        target_id ];    % Target ID based on location
 end
-
-% Give an ID to each unique target.  Note that these are in arbitrary order
-targets = unique(tt(:,2:5), 'rows');
-for t = 1:size(targets,1)
-    mask = tt(:,2:5) == repmat(targets(t,:),length(tt),1);
-    tt(all(mask, 2),10) = t-1;
-end
+    
+% % Give an ID to each unique target.  Note that these are in arbitrary order
+% targets = unique(tt(:,2:5), 'rows');
+% for t = 1:size(targets,1)
+%     mask = tt(:,2:5) == repmat(targets(t,:),length(tt),1);
+%     tt(all(mask, 2),10) = t-1;
+% end
 
 

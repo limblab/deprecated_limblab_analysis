@@ -6,18 +6,16 @@ State_index  = varargin{3};
 
 %default values:
 Smooth_Pred = false;
-Adapt_Enable = false;
-LR = [];
-Adapt_lag = [];
+Adapt.Enable = false;
+Adapt.LR = [];
+Adapt.Lag = [];
 numPCs = 0;
 
 if nargin    >= 4
     Smooth_Pred = varargin{4};
-    Adapt_Enable = varargin{5};
-    LR = varargin{6};
-    Adapt_lag = varargin{7};
-    if nargin > 7
-        numPCs = varargin{8};
+    Adapt = varargin{5};
+    if nargin > 5
+        numPCs = varargin{6};
     end
 end
 
@@ -76,7 +74,7 @@ Outputs = zeros(size(Inputs,1),2);
 
 %% Use the neural filter to predict the Data
  numsides=1; fs=1;
-if Adapt_Enable
+if Adapt.Enable
 %     [PredictedData,spikeDataNew,Hnew] = predAdaptSD(BinnedData,usableSpikeData,filter.H,LR,Adapt_lag);
 %     varargout(1) = {Hnew};
 else

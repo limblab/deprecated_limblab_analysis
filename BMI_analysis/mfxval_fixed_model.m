@@ -4,24 +4,22 @@ function [R2, nfold, varargout] = mfxval_fixed_model(filter,binnedData,foldlengt
 %
 %       binnedData          : data structure to build model from
 %       foldlength          : fold length in seconds
+%       varargin            : [Adapt Smooth];
 
 numSig = size(filter.outnames,1);
 binsize = filter.binsize;
-Lag = 0;
 
 if nargin > 3
     Adapt = varargin{1};
-    LR    = varargin{2};
-    Lag   = varargin{3};
-    if nargin > 6
-        Smooth = varargin{7};
+    if nargin > 4
+        Smooth = varargin{2};
     else
         Smooth = false;
     end
 else
-    Adapt = false;
-    LR = 0;
-    Lag = 0;
+    Adapt.Enable = false;
+    Adapt.LR = 0;
+    Adapt.Lag = 0;
     Smooth = false;
 end
 
@@ -36,6 +34,8 @@ duration = size(binnedData.timeframe,1);
 nfold = floor(round(binsize*1000)*duration/(1000*foldlength)); % again, because of floating point errors
 dataEnd = round(nfold*foldlength/binsize);
 R2 = zeros(nfold,numSig);
+vaf= zeros(nfold,numSig);
+mse= zeros(nfold,numSig);
 
 %allocate test data
 testData = binnedData;
@@ -49,45 +49,103 @@ for i=0:nfold-1
     
     testData.timeframe = binnedData.timeframe(testDataStart:testDataEnd); 
     testData.spikeratedata = binnedData.spikeratedata(testDataStart:testDataEnd,:);
-    if ~isempty(binnedData.emgdatabin)
-        testData.emgdatabin = binnedData.emgdatabin(testDataStart:testDataEnd,:);
+    if isfield(binnedData,'emgdatabin')
+        if ~isempty(binnedData.emgdatabin)
+            testData.emgdatabin = binnedData.emgdatabin(testDataStart:testDataEnd,:);
+        end
     end
-    if ~isempty(binnedData.forcedatabin)
-        testData.forcedatabin = binnedData.forcedatabin(testDataStart:testDataEnd,:);
+    if isfield(binnedData,'forcedatabin')
+        if ~isempty(binnedData.forcedatabin)
+            testData.forcedatabin = binnedData.forcedatabin(testDataStart:testDataEnd,:);
+        end
     end
-    if ~isempty(binnedData.cursorposbin)
-        testData.cursorposbin = binnedData.cursorposbin(testDataStart:testDataEnd,:);
+    if isfield(binnedData,'cursorposbin')
+        if ~isempty(binnedData.cursorposbin)
+            testData.cursorposbin = binnedData.cursorposbin(testDataStart:testDataEnd,:);
+        end
     end
     if isfield(binnedData,'words')
-        testData.words = binnedData.words(binnedData.words(:,1)>=binnedData.timeframe(testDataStart) & ...
-                                          binnedData.words(:,1)<=binnedData.timeframe(testDataEnd) ,:);
+        if isfield(binnedData,'words')
+            testData.words = binnedData.words(binnedData.words(:,1)>=binnedData.timeframe(testDataStart) & ...
+                binnedData.words(:,1)<=binnedData.timeframe(testDataEnd) ,:);
+        end
     end
-    if ~isempty(binnedData.targets)
-        testData.targets.corners = binnedData.targets.corners(binnedData.targets.corners(:,1)>= binnedData.timeframe(testDataStart) & ...
-                                                              binnedData.targets.corners(:,1)<= binnedData.timeframe(testDataEnd), :);
+    if isfield(binnedData,'targets')
+        if ~isempty(binnedData.targets)
+            testData.targets.corners = binnedData.targets.corners(binnedData.targets.corners(:,1)>= binnedData.timeframe(testDataStart) & ...
+                binnedData.targets.corners(:,1)<= binnedData.timeframe(testDataEnd), :);
+        end
     end
-           
-        
+    if isfield(binnedData,'tt')
+        if isfield(binnedData,'tt')
+            testData.tt = binnedData.tt( binnedData.tt(:,1)>=binnedData.timeframe(testDataStart) & ...
+                binnedData.tt(:,8)<=binnedData.timeframe(testDataEnd) , :);
+        end
+    end
+
 %     PredData = predictSignals(filter, testData);
 %     Smooth = false;
 %     LR = 1e-7;
 %     lag = 0.5;
     if isfield(filter, 'PC')
         numPCs = size(filter.PC,2);
-        [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,LR,Lag,numPCs);
+        [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,numPCs);
     else
-        [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,LR,Lag);
+        [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt);
     end
-    if Adapt
+    if Adapt.Enable
         filter.H = Hnew;
     end
        
-    R2(i+1,:) = ActualvsOLPred(testData,PredData,0);
+    [R2(i+1,:), vaf(i+1,:), mse(i+1,:)] = ActualvsOLPred(testData,PredData,0);
 %     R2(i+1,:) = CalculateR2(testData.emgdatabin(round(filter.fillen/binsize):end,:),PredData.predemgbin)';
-    
+
+    %Concatenate predicted Data if we want to plot it later:
+    %Skip this for the first fold
+    if i == 0
+        AllPredData = PredData;
+    else
+        AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
+        AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
+    end
+
 end
 
-varargout = {filter};
+
+
+% keep only actual data corresponding to times
+% at which we have predictions values
+idx = false(size(binnedData.timeframe));
+for i = 1:length(AllPredData.timeframe)
+    idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
+end    
+if isfield(binnedData,'emgdatabin')
+    if ~isempty(binnedData.emgdatabin)
+        binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
+    end
+end        
+if isfield(binnedData,'forcedatabin')
+    if ~isempty(binnedData.forcedatabin)
+        binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
+    end
+end
+if isfield(binnedData,'cursorposbin')
+    if ~isempty(binnedData.cursorposbin)
+        binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
+    end
+end
+if isfield(binnedData,'velocbin')
+    if ~isempty(binnedData.velocbin)
+        binnedData.velocbin = binnedData.velocbin(idx,:);
+    end
+end
+binnedData.timeframe = binnedData.timeframe(idx);
+
+AllPredData.mfxval.R2 = R2;
+AllPredData.mfxval.vaf= vaf;
+AllPredData.mfxval.mse= mse;
+
+varargout = {filter, vaf, mse, AllPredData, binnedData};
    
     
     

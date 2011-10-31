@@ -23,30 +23,39 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
     ActSignalsFull  = zeros(length(ActualData.timeframe),numPredSignals);
     
     for i=1:numPredSignals
-        if ~isempty(ActualData.emgdatabin)
-            if all(strcmp(nonzeros(ActualData.emgguide(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignalsTrunk(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(idx,:);
-                ActSignalsFull (:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin;
+        if isfield(ActualData,'emgdatabin')
+            if ~isempty(ActualData.emgdatabin)
+                if all(strcmp(nonzeros(ActualData.emgguide(1,:)),nonzeros(PredData.outnames(i,:))))
+                    ActSignalsTrunk(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(idx,:);
+                    ActSignalsFull (:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin;
+                end
             end
         end
-        if ~isempty(ActualData.forcedatabin)
-            if all(strcmp(nonzeros(ActualData.forcelabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignalsTrunk(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(idx,:);
-                ActSignalsFull (:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin;
+        if isfield(ActualData,'forcedatabin')
+            if ~isempty(ActualData.forcedatabin)
+                if all(strcmp(nonzeros(ActualData.forcelabels(1,:)),nonzeros(PredData.outnames(i,:))))
+                    ActSignalsTrunk(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(idx,:);
+                    ActSignalsFull (:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin;
+                end
             end
         end
-        if ~isempty(ActualData.cursorposbin)
-            if all(strcmp(nonzeros(ActualData.cursorposlabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignalsTrunk(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(idx,:);
-                ActSignalsFull (:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin;
+        if isfield(ActualData,'cursorposbin')
+            if ~isempty(ActualData.cursorposbin)
+                if all(strcmp(nonzeros(ActualData.cursorposlabels(1,:)),nonzeros(PredData.outnames(i,:))))
+                    ActSignalsTrunk(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(idx,:);
+                    ActSignalsFull (:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin;
+                end
             end
-        end    
-        if ~isempty(ActualData.velocbin)
-            if all(strcmp(nonzeros(ActualData.veloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                ActSignalsTrunk(:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin(idx,:);
-                ActSignalsFull (:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin;
+        end
+
+        if isfield(ActualData,'velocbin')
+            if ~isempty(ActualData.velocbin)
+                if all(strcmp(nonzeros(ActualData.veloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
+                    ActSignalsTrunk(:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin(idx,:);
+                    ActSignalsFull (:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin;
+                end
             end
-        end          
+        end
     end
     
     R2 = CalculateR2(ActSignalsTrunk,PredData.preddatabin)';

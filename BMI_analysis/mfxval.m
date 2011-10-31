@@ -177,8 +177,6 @@ for i=0:nfold-1
 end %for i=1:nfold
 
 
-
-
 % Plot Actual and Predicted Data
 idx = false(size(binnedData.timeframe));
 for i = 1:length(AllPredData.timeframe)
