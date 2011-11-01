@@ -86,7 +86,8 @@ if ~exist('smoothfeats','var')
 end
 
 if (strcmpi(signal,'vel') || (strcmpi(signal,'pos')) || (strcmpi(signal,'acc')))
-    y=sig(:,2:3);
+%     y=sig(:,2:3);
+    y=sig(:,2:end);
 elseif strcmpi(signal,'emg')
     y=sig;
     %Rectify and filter emg
@@ -302,7 +303,8 @@ end
 x=bestPB';
 
 if smoothfeats
-    xtemp=smooth(x(:),21);      %sometimes smoothing features helps
+    disp('smoothing features with window size 50')
+    xtemp=smooth(x(:),50);      %sometimes smoothing features helps
     x=reshape(xtemp,size(x));
 end
 disp('5th part: select best features')

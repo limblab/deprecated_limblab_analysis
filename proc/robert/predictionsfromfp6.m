@@ -88,7 +88,7 @@ if ~exist('smoothfeats','var')
 end
 
 if (strcmpi(signal,'vel') || (strcmpi(signal,'pos')) || (strcmpi(signal,'acc')))
-    y=sig(:,2:3);
+    y=sig(:,2:end);
 elseif strcmpi(signal,'emg')
     y=sig;
     %Rectify and filter emg
@@ -174,8 +174,8 @@ win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibilit
 tfmat=zeros(wsz,numfp,numbins,'single');
 %% Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
-fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
-clear fp
+fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
+% clear fp
 for i=1:numbins
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
     tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
@@ -286,8 +286,8 @@ end
 % [x,mu,sigma]=zscore(bestPB');
 x=bestPB';
 
-if smoothfeats
-    xtemp=smooth(x(:),21);      %sometimes smoothing features helps
+if smoothfeats > 0
+    xtemp=smooth(x(:),smoothfeats);      %sometimes smoothing features helps
     x=reshape(xtemp,size(x));
 end
 disp('5th part: select best features')
@@ -336,8 +336,8 @@ for i = 1:folds
 %     x_test{i} = zscore(x_test{i});
 
     if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
-%         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
-        [H{i},v,mcc]=filMIMO3(x_train,y_train,numlags,numsides,1);
+        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
+%         [H{i},v,mcc]=filMIMO3(x_train,y_train,numlags,numsides,1);
         fprintf(1,'%d,',i)
     end                                                               % binsamprate
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
