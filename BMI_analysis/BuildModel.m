@@ -142,8 +142,8 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     %%%The following calculates the linear filters (H) that relate the inputs and outputs
 %     Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
 % %     H = Inputs\Outputs; 
-%    [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
-    H = MIMOCE1(Inputs,Outputs,numlags);
+   [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+%     H = MIMOCE1(Inputs,Outputs,numlags);
     
 %% Then, add non-linearity if applicable
 

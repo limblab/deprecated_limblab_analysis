@@ -150,11 +150,14 @@ else
     %Normalize EMGs        
     if NormData
         for i=1:numEMGs
-            emgdatabin(:,i) = emgdatabin(:,i)/max(emgdatabin(:,i));
+%             emgdatabin(:,i) = emgdatabin(:,i)/max(emgdatabin(:,i));
+            %dont use the max because of artefact, use 98% percentile
+            EMGNormRatio = prctile(emgdatabin(:,i),95);
+            emgdatabin(:,i) = emgdatabin(:,i)/EMGNormRatio;
         end
     end
 
-    clear tempEMG bh ah bl al emgtimebins EMGname numEMGs;
+    clear tempEMG bh ah bl al emgtimebins EMGname numEMGs EMGNormRatio;
 end
 
 %% Bin Force
@@ -163,7 +166,7 @@ if ~isfield(datastruct, 'force')
     forcedatabin = [];
     forcelabels = [];
 else
-    forcesamplerate = datastruct.force.forcefreq;   %Rate at which emg data were actually acquired.
+    forcesamplerate = datastruct.force.forcefreq;   %Rate at which force data were actually acquired.
     forcename = char(zeros(1,12));
     numforcech = length(datastruct.force.labels);
     forcelabels = char(zeros(numforcech,length(forcename)));
@@ -181,11 +184,14 @@ else
     if NormData
         %Normalize Force
         for i=1:numforcech
-            forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
+%             forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
+            %dont use the max because of possible outliars, use 98% percentile
+            forceNormRatio = prctile(abs(forcedatabin(:,i)),98);
+            forcedatabin(:,i) = forcedatabin(:,i)/forceNormRatio;
         end        
     end
 
-    clear forcesamplerate forcetimebins forcename numforcech;
+    clear forcesamplerate forcetimebins forcename numforcech forceNormRatio;
 end
 
 %% Bin Cursor Position
@@ -205,6 +211,7 @@ if NormData
     %first, calculate the ratio for cursor and use it later also for
     %target corners
     NormRatios = 1./max(abs(cursorposbin));
+
     %Normalize cursor position
     cursorposbin = cursorposbin.*repmat(NormRatios,numberbins,1);
 end
@@ -390,6 +397,8 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
         tt = bd_trial_table(datastruct);
     elseif vs_task
         tt = vs_trial_table(datastruct);
+    elseif multi_gadget_task
+        tt = mg_trial_table(datastruct);
     else
         tt = [];
     end

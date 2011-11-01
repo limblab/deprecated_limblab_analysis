@@ -28,8 +28,8 @@ Adapt.EMGpatterns = EMGpatterns;
 Adapt.Enable = true;
 
 foldlength = 60;
-% NumLoops = 10;
-NumLoops = 1;
+NumLoops = 10;
+% NumLoops = 1;
 
 % variables to store results
 R2ff = cell(NumTestFiles,NumLoops); %fixed decoder, no drop/perm (fixed fixed)
