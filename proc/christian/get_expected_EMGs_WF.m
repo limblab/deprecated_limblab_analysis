@@ -5,20 +5,17 @@ function [Go_Rew_ts_w_EMGs] = get_expected_EMGs_WF(tt, EMGpatterns)
     %
     % ts is the time at which a 'Go_Cue' or a 'Reward' word was issue
     % emg1, emg2, ..., emgn consist of the expected EMG amplitude in each
-    % of the muscles for the respectvie ts. This fixed value depends on the
-    % behavior, the gadget, the target, etc.
+    % of the muscles for the respectvie ts.
     %
-    % WF_EMGpatterns is an array that provides the information as to what EMG
-    % value is to be expected given the gadget and target
-    % It is a two dimensional array of size numTarget x numEMG.
-    %  Note: numTarget has to be 8, so that WF_EMGpatterns has 8 row
+    % Go_Rew_ts_w_EMGs is an array that provides the information as to what EMG
+    % value is to be expected at a particular time stamp
+    % It is a two dimensional array of size numTargets x numEMG.
+    %  Note: numTarget has to be 8, so that Go_Rew_ts_w_EMGs has 8 rows.
     %        targets are identified using their position (see get_tgt_id.m)
     %        row 1 has expected EMG values for tgt 1 and so on
     %
     % Note: At "Go_Cue", the expected EMG values are assumed to be 0
 
-    
-    targets = unique(tt(:,10));  
     
     % Find Go and Reward rows in tt :
     Go    = find(tt(:,7) > 0); %sometimes Go ts = -1 in tt if something was wrong
@@ -39,21 +36,5 @@ function [Go_Rew_ts_w_EMGs] = get_expected_EMGs_WF(tt, EMGpatterns)
     end
     
     Go_Rew_ts_w_EMGs = sortrows([Go_ts_w_EMGs;Rew_ts_w_EMGs],1);
-
-%     
-%     %% MG or WF? 
-%     MG_task = 1;
-%     WF_task = 2;
-%     if isempty(datastruct.words(:,2)==hex2dec('17'))
-%         task = MG_task;
-%         gadgets = unique(datastruct.tt(:,5));
-%         targets = unique(datastruct.tt(:,6));
-%     else
-%         task = WF_task;
-%         gadgets = 1;
-%         targets = unique(datastruct.tt(:,10));
-%     end
-%     numGdts = length(gadgets);    
-%     numTgts = length(targets);    
     
 

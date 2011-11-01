@@ -22,49 +22,39 @@ function [Go_Rew_ts_w_EMGs] = get_expected_EMGs_MG(tt, EMGpatterns)
     %    4: Trial Type (0:Go, 1:Catch)
     %    5: Gadget ID (0:3)
     %    6: Target ID (0:15)
-    %    12: Target UL X
+    %    7: Target UL X
     %    8: Target UL Y
     %    9: Target LR X
     %    10:Target LR Y
     %    11:Trial End time
     %    12:Trial result        -- R, A, F, or I
     
-    targets = unique(tt(:,6));
+    targets = unique(tt(tt(:,6)>=0,6)); %skip if tgt = -1, something was wrong
+    gadgets = unique(tt(tt(:,5)>=0,5)); %skip if gdt = -1, something was wrong
     
     % Find Go and Reward rows in tt :
-    Go = find(tt(:,3) > 0); %sometimes Go ts may be = -1 in tt if something was wrong
-
+    Go = find(tt(:,3) >= 0); %sometimes Go ts may be = -1 in tt if something was wrong
     Rewards = find( tt(:,12)==double('R') );
-    numRew = length(Rewards);
-    
-    % Assign expected EMGs for Go
-    % first row of EMGpatterns, even if EMGpattern is 3D, (3rd dim is for different gadgets)
-    % it should all be the same for the first row, so use dim 1
-    numEMGs = size(EMGpatterns,2);
-    Go_ts_w_EMGs = [tt(Go,3) EMGpatterns(1,:,1)];
 
-    %Assign expected EMGs for each Reward Trial:
+    numRew = length(Rewards);
+    numEMGs = size(EMGpatterns,2);
+    numGo = length(Go);
+    Go_ts_w_EMGs = zeros(numGo,numEMGs+1);
     Rew_ts_w_EMGs = zeros(numRew,numEMGs+1);
-    for i = 1:numRew
-        tgtIdx = find(targets==tt(Rewards(i),5))+1; %irst line if for Go, so +1 for 2-indexed tgtIdx
-        Rew_ts_w_EMGs(i,:) = [tt(Rewards(i),11) EMGpatterns(tgtIdx,:)];
+
+    for i = 1:numGo
+        % Assign expected EMGs for Go
+        % first row of EMGpatterns, even if EMGpattern is 3D, (3rd dim is for different gadgets)
+        % it should all be the same for the first row, so use dim 1
+        Go_ts_w_EMGs(i,:) = [tt(Go(i),3) EMGpatterns(1,:,1)];
     end
     
-    Go_Rew_ts_w_EMGs = sortrows([Go_ts_w_EMGs;Rew_ts_w_EMGs],1);
-%     
-%     %% MG or WF? 
-%     MG_task = 1;
-%     WF_task = 2;
-%     if isempty(datastruct.words(:,2)==hex2dec('17'))
-%         task = MG_task;
-%         gadgets = unique(datastruct.tt(:,5));
-%         targets = unique(datastruct.tt(:,6));
-%     else
-%         task = WF_task;
-%         gadgets = 1;
-%         targets = unique(datastruct.tt(:,10));
-%     end
-%     numGdts = length(gadgets);    
-%     numTgts = length(targets);    
-    
+    for i = 1:numRew
+        %Assign expected EMGs for each Reward Trial:
+        tgtIdx = find(targets==tt(Rewards(i),6))+1; %first line if for Go, so +1 for 2-indexed tgtIdx
+        gdtIdx = find(gadgets==tt(Rewards(i),5)); %1-indexed gdtIdx
+        Rew_ts_w_EMGs(i,:) = [tt(Rewards(i),11) EMGpatterns(tgtIdx,:,gdtIdx)];
+    end
 
+    Go_Rew_ts_w_EMGs = sortrows([Go_ts_w_EMGs;Rew_ts_w_EMGs],1);
+   
