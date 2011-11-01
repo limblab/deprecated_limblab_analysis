@@ -56,9 +56,9 @@ if Adapt.Enable
     [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,usableSpikeData,filter.H,Adapt);
     varargout(1) = {Hnew};
 else
-%     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
-    [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
-    PredictedData = PredictedData(numlags:end,:);
+    [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
+%     [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
+%     PredictedData = PredictedData(numlags:end,:);
     varargout(1) = {filter.H};
 end
 
