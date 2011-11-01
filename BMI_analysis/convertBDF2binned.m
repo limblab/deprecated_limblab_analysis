@@ -152,7 +152,7 @@ else
         for i=1:numEMGs
 %             emgdatabin(:,i) = emgdatabin(:,i)/max(emgdatabin(:,i));
             %dont use the max because of artefact, use 98% percentile
-            EMGNormRatio = prctile(emgdatabin(:,i),95);
+            EMGNormRatio = prctile(emgdatabin(:,i),98);
             emgdatabin(:,i) = emgdatabin(:,i)/EMGNormRatio;
         end
     end

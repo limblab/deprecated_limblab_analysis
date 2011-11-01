@@ -76,10 +76,11 @@ for i=0:nfold-1
                 binnedData.targets.corners(:,1)<= binnedData.timeframe(testDataEnd), :);
         end
     end
-    if isfield(binnedData,'tt')
-        if isfield(binnedData,'tt')
-            testData.tt = binnedData.tt( binnedData.tt(:,1)>=binnedData.timeframe(testDataStart) & ...
-                binnedData.tt(:,8)<=binnedData.timeframe(testDataEnd) , :);
+    if isfield(binnedData,'trialtable')
+        if isfield(binnedData,'trialtable')
+            %this will work only for MG trial table for now
+            testData.trialtable = binnedData.trialtable( binnedData.trialtable(:,1)>=binnedData.timeframe(testDataStart) & ...
+                binnedData.trialtable(:,11)<=binnedData.timeframe(testDataEnd) , :);
         end
     end
 

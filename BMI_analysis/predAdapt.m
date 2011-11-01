@@ -23,7 +23,7 @@ function [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,usableSpikeDat
 %     Adapt_ts = [Go_ts;EOT_ts];
     
 
-    Adapt_ts = get_expected_EMGs_WF(BinnedData.tt,Adapt.EMGpatterns); %includes only trials ending with a reward
+    Adapt_ts = get_expected_EMGs_MG(BinnedData.trialtable,Adapt.EMGpatterns);
 %     Adapt_ts = get_tgt_center(BinnedData); %includes only trials ending with a reward
 %     Adapt_ts = get_tgt_center_EOT(BinnedData); %includes all trials ending with Reward or Failure
 

@@ -56,9 +56,9 @@ if Adapt.Enable
     [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,usableSpikeData,filter.H,Adapt);
     varargout(1) = {Hnew};
 else
-    [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
-%     [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
-%     PredictedData = PredictedData(numlags:end,:);
+%     [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualData);
+    [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
+    PredictedData = PredictedData(numlags:end,:);
     varargout(1) = {filter.H};
 end
 
@@ -95,7 +95,6 @@ end
 fillen=nr/Nx;
 timeframeNew = BinnedData.timeframe(fillen:numpts);
 spikeDataNew = usableSpikeData(fillen:numpts,:);
-%timeframeNew = BinnedData.timeframe(fillen+1:numpts); % to account for additional bin removed at beginning of PredictedEMGs
 
 PredData = struct('timeframe', timeframeNew,...
                   'preddatabin', PredictedData,...
