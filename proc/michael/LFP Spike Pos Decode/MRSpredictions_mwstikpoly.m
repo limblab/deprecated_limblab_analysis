@@ -22,14 +22,18 @@ if length(varargin)>0
     fnam=varargin{1};
     if length(varargin)>1
         emglpf=varargin{2}; 
-        if ~isempty(varargin(3))
+        if ~isempty(varargin{3})
             H=varargin{3};
-            if ~isempty(varargin(4))
+            if ~isempty(varargin{4})
                 P=varargin{4};
-                if ~isempty(varargin(5))
+                if ~isempty(varargin{5})
                     neuronIDs=varargin{5};
                 end
             end
+        elseif ~isempty(varargin{4})
+                P=varargin{4};
+        elseif ~isempty(varargin{5})
+                neuronIDs=varargin{5};
         end
     end
     
@@ -74,7 +78,8 @@ else
 end
 
 k=1;
-if isempty(cells);
+if exist(neuronIDs,'var')
+    if isempty(cells);
     cells = unit_list(bdf);
     if size(cells,1) > size(neuronIDs,1) 
         newcells = zeros(size(neuronIDs,1),2);
@@ -89,25 +94,26 @@ if isempty(cells);
         newcells = zeros(size(cells,1),2);
         for i = 1:size(cells,1)
             for j = 1:size(neuronIDs,1)
-                if cells(j,:) == neuronIDs(i,:)
-                    newcells(i,:) = neuronIDs(i,:);
+                if cells(i,:) == neuronIDs(j,:)
+                    newcells(i,:) = neuronIDs(j,:);
                 end
             end
         end
     end
-    
+
     for j = 1:size(newcells,1)
         if exist('H','var')  && newcells(j,1) == 0;
             H((j-1)*10+1:(j-1)*10+10,:) = zeros(10,2);
         end     
     end
-    
+
     if exist('H','var') && size(cells,1) < size(neuronIDs,1)
         H = H(1:size(newcells,1)*10,:);
     end
-    
+
     clear cells
     cells = newcells;
+    end
 end
 
 binsamprate=floor(1/binsize); 
@@ -184,14 +190,15 @@ for i = 1:folds
     %If inputting a decoder with only one fold, convert to cell array and
     %replicate to match number of folds
     
+    if exist('H','var') && length(H) < i
+        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+        i
+    end
+    
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
    
     %%Polynomial section
                
-    if ~exist('P','var')
-    P=[];
-    end
-    
     T=[];
     patch = [];
     
@@ -214,8 +221,9 @@ for i = 1:folds
                 Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
 
                 %Find Polynomial to Thresholded Data
+                if exist('P','var')
                 [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-                
+                end
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%% Use only one of the following 2 lines:
@@ -231,7 +239,7 @@ for i = 1:folds
                 %Find and apply polynomial
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            y_pred{i}(:,z) = polyval(P(:,z),y_pred{i}(:,z));
         end
     end
     %%
@@ -294,8 +302,10 @@ if nargout>5
                 if nargout>12
                     varargout{8}=ytnew;
                     varargout{9}=xtnew;
-                    if nargout>14
+                    if exist('P','var') && nargout>14
                         varargout{10}=P;
+                    else
+                        varargout(10)={0};
                     end
                 end
             end
