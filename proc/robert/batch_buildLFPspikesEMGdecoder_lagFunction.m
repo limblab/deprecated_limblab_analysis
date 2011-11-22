@@ -1,8 +1,12 @@
-% this script operates on a folder that contains 1 or more .mat
-% files containing FP and EMG data
+function batch_buildLFPspikesEMGdecoder_lagFunction(PathName,numlags,outputFolder)
+
+% need two inputs but PathName can be '' and a dialog will be presented.
+% numlags must be specified.
 
 %% folder/file info
-PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+if isempty(PathName)
+    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+end
 if exist(PathName,'dir')~=7
     disp('folder not valid.  aborting...')
     return
@@ -97,7 +101,7 @@ for n=1:length(MATfiles)
 
     disp('assigning tunable parameters and building the decoder...')
     folds=10;
-    numlags=10;
+%     numlags=20;
     wsz=256;
     nfeat=150;
 %     nfeat=90; % for individual-powerband analysis only.
@@ -149,7 +153,7 @@ for n=1:length(MATfiles)
     % error somewhere the loader won't choke on the new .mat files that
     % were added.
     if exist('outputs','dir')==0, mkdir('outputs'), end
-    save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
+    save([outputFolder,'\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 
     % clear all the outputs of the LFP predictions analysis, so there's no
@@ -199,11 +203,11 @@ for n=1:length(MATfiles)
     fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
     r2m=r2mean;
-    save(['outputs\',fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
+    save([outputFolder,'\',fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
         ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P','EMGchanNames');
     
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
-    clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
+    clear folds wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
     clear H EMGchanNames Use_Thresh formatstr k lambda str words fse temg P cells uList x* y*
     
 end
@@ -211,4 +215,4 @@ clear n k ans r2*
 % diary off
 % save([date,'r2results.mat'],r2LFP)
 
-copyfile('outputs','\\165.124.111.234\limblab\user_folders\Robert\data\monkey\outputs')
+% copyfile('outputs','\\165.124.111.234\limblab\user_folders\Robert\data\monkey\outputs')

@@ -1,4 +1,4 @@
-function [vaf,vmean,vsd,y_test,y_pred,varargout] = predictionsfromfp6(sig, signal, numfp, binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
+function [vaf,vmean,vsd,y_test,y_pred,varargout] = predictionsfromfp6_alphabeta_only(sig, signal, numfp, binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
 %2009-07-10 Marc predicts MIMO from field potentials
@@ -211,19 +211,19 @@ gam3=(freqs>200)&(freqs<300);
 PB(1,:,:)=LMP;
 PB(2,:,:)=mean(PA(delta,:,:),1);
 PB(3,:,:)=mean(PA(mu,:,:),1);
-% PB(4,:,:)=mean(PA(alphabeta,:,:),1);
+PB(4,:,:)=mean(PA(alphabeta,:,:),1);
 % formerly PB(4,:,:)
-PB(4,:,:)=mean(PA(gam1,:,:),1);
+PB(5,:,:)=mean(PA(gam1,:,:),1);
 % formerly PB(5,:,:)
-PB(5,:,:)=mean(PA(gam2,:,:),1);
+PB(6,:,:)=mean(PA(gam2,:,:),1);
 % formerly PB(6,:,:)
 if samprate>600
-PB(6,:,:)=mean(PA(gam3,:,:),1);
+PB(7,:,:)=mean(PA(gam3,:,:),1);
 end
 
 % isolate powerbands for individual-band analysis.  Most times this will
 % remain commented.
-% PB([2:6],:,:)=[];
+PB([1:3 5:7],:,:)=[];
 
 
 % PB has dims freqs X chans X bins

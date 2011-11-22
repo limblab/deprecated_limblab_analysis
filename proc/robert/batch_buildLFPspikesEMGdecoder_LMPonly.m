@@ -99,8 +99,7 @@ for n=1:length(MATfiles)
     folds=10;
     numlags=10;
     wsz=256;
-    nfeat=150;
-%     nfeat=90; % for individual-powerband analysis only.
+    nfeat=90; % for individual-powerband analysis only.
     PolynomialOrder=2;
     smoothfeats=0;
     binsize=0.05;
@@ -112,7 +111,7 @@ for n=1:length(MATfiles)
     % it is substituted in its place in the input list below.
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
         featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
-        predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+        predictionsfromfp6_LMPonly(sig,signal,numfp,binsize,folds,numlags,numsides, ...
         samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     close
@@ -148,8 +147,8 @@ for n=1:length(MATfiles)
     % FILE in it; that way if the thing has to be run > 1X because of an
     % error somewhere the loader won't choke on the new .mat files that
     % were added.
-    if exist('outputs','dir')==0, mkdir('outputs'), end
-    save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
+    if exist('LMP_only','dir')==0, mkdir('LMP_only'), end
+    save(['LMP_only\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 
     % clear all the outputs of the LFP predictions analysis, so there's no

@@ -2,7 +2,9 @@
 % files containing FP and EMG data
 
 %% folder/file info
-PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+if exist('PathName','var')==0
+    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+end
 if exist(PathName,'dir')~=7
     disp('folder not valid.  aborting...')
     return
@@ -99,8 +101,7 @@ for n=1:length(MATfiles)
     folds=10;
     numlags=10;
     wsz=256;
-    nfeat=150;
-%     nfeat=90; % for individual-powerband analysis only.
+    nfeat=90; % for individual-powerband analysis only.
     PolynomialOrder=2;
     smoothfeats=0;
     binsize=0.05;
@@ -112,7 +113,7 @@ for n=1:length(MATfiles)
     % it is substituted in its place in the input list below.
     [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
         featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
-        predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+        predictionsfromfp6_alphabeta_only(sig,signal,numfp,binsize,folds,numlags,numsides, ...
         samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     close
@@ -148,67 +149,17 @@ for n=1:length(MATfiles)
     % FILE in it; that way if the thing has to be run > 1X because of an
     % error somewhere the loader won't choke on the new .mat files that
     % were added.
-    if exist('outputs','dir')==0, mkdir('outputs'), end
-    save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
+    if exist('alphabeta_only','dir')==0, mkdir('alphabeta_only'), end
+    save(['alphabeta_only\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 
     % clear all the outputs of the LFP predictions analysis, so there's no
     % confussion when things are re-generated for the spike prediction
     % analysis.
     clear vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc H bestfeat x y featMat ytnew xtnew predtbase P featind sr
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % now do spikes                                                                                                            %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
-    %% the units - take only sorted units
-    uList=unit_list(bdf);
-    bdf.units(uList(:,2)==0)=[];
-    cells=[];
-    
-    % the version of predictions_mwstikpoly.m in the
-    % s1_analysis/.../proc/marc folder is set to use the whole bdf.emg.data
-    % field, so cut out the leading column if it's just times.
-    if size(bdf.emg.data,2) > max(size(bdf.emg.emgnames)) && all(diff(bdf.emg.data(:,1)) > 0)
-        bdf.emg.data(:,1)=[]; 
-    end
-    
-    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P] = ...
-        predictions_mwstikpolyMOD(bdf,signal,cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
-    close
-
-    fprintf(1,'\n\n\n\n\n=====================\nspike predictions DONE\n====================\n\n\n\n')
-    
-    if exist('FileName','var')==1
-        disp(FileName)
-    end
-    fprintf(1,'folds=%d\n',folds)
-    fprintf(1,'numlags=%d\n',numlags)
-    fprintf(1,'\n')
-    fprintf(1,'\n')
-    fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
-    fprintf(1,'\n')
-    fprintf(1,'binsize=%.2f\n',binsize)
-    fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
-    
-    vaf
-
-    formatstr='EMG vaf mean across folds: ';
-    for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
-    formatstr=[formatstr, '\n'];
-    fprintf(1,formatstr,mean(vaf,1))
-    fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
-
-    r2m=r2mean;
-    save(['outputs\',fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
-        ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P','EMGchanNames');
-    
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
     clear H EMGchanNames Use_Thresh formatstr k lambda str words fse temg P cells uList x* y*
     
 end
 clear n k ans r2* 
-% diary off
-% save([date,'r2results.mat'],r2LFP)
-
-copyfile('outputs','\\165.124.111.234\limblab\user_folders\Robert\data\monkey\outputs')
