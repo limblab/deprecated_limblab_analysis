@@ -355,7 +355,7 @@ for i = 1:folds
     %ytnew and xtnew are shifted by the length of the filter since the
     %first fillen time period is garbage prediction & gets thrown out in
     %predMIMO3 (9-24-10)
-           P=[];    
+    P=[];
     T=[];
     patch = [];
     
