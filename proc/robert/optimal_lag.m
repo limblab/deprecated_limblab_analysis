@@ -1,4 +1,4 @@
-function optimal_lag(PathName)
+function [vaf_L,vaf_S]=optimal_lag(PathName)
 
 if ~nargin
     PathName=pwd;
