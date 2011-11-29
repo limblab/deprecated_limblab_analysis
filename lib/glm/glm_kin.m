@@ -20,7 +20,7 @@ function [b, dev, stats, L, L0] = glm_kin(bdf, chan, unit, offset, mdl)
 %         'posvel' -- full kinematic model (X, Y, Vx, Vy, sqrt(Vx^2 + Vy^2)
 %         'nospeed' -- no speed term (X, Y, Vx, Vy)
 
-% $:Id $
+% $Id$
 
 if nargin < 5
     mdl = 'posvel';
