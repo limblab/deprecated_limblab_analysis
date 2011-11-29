@@ -13,6 +13,7 @@ spikeFiles=find(cellfun(@isempty,regexp({D.name},'spikes'))==0);
 LFPfiles=LFPfiles(sortCustomRegex({D(LFPfiles).name},{'Chewie','Mini','Jaco','Thor'}));
 spikeFiles=spikeFiles(sortCustomRegex({D(spikeFiles).name},{'Chewie','Mini','Jaco','Thor'}));
 
+vaf_L=[];
 % LFP files
 for n=1:length(LFPfiles)
 	recordingName=regexp(D(LFPfiles(n)).name,['.*(?=',regexpi(D(LFPfiles(n)).name, ...
@@ -37,13 +38,15 @@ for n=1:length(LFPfiles)
 % 			'_',allEMGnamesL{n}{k}];
     end
     
-    for k=[1 5 10 15 20]
+    for k=10:-1:1                          % [1 5 10 15 20]
         shiftedY=circshift(y_L{n},k);
         [~,vaf_L{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_L{n}(k+1:end,:), ...
             shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
     end
 end
+vaf_L(:,sum(cellfun(@isempty,vaf_L),1)>0)=[];
 
+vaf_S=[];
 % spike files
 for n=1:length(spikeFiles)
 	recordingName=regexp(D(LFPfiles(n)).name,['.*(?=',regexpi(D(LFPfiles(n)).name, ...
@@ -68,13 +71,13 @@ for n=1:length(spikeFiles)
 % 			'_',allEMGnamesS{n}{k}];
     end
     
-    for k=[1 5 10 15 20]
+    for k=10:-1:10                          % [1 5 10 15 20]
         shiftedY=circshift(y_S{n},k);
         [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_S{n}(k+1:end,:), ...
             shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
     end
 end
-
+vaf_S(:,sum(cellfun(@isempty,vaf_S),1)>0)=[];
 
 
 
