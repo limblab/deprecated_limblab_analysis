@@ -29,13 +29,13 @@ end
 ts = 200; % time step (ms)
 
 vt = bdf.vel(:,1);
-t = vt(floor(vt*ts)==vt*ts);
+t = vt(1):ts/1000:vt(end);
 spike_times = get_unit(bdf,chan,unit)-offset;
 spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
 s = train2bins(spike_times, t);
 
-glmv = bdf.vel(floor(vt*ts)==vt*ts,2:3);
-glmx = bdf.pos(floor(vt*ts)==vt*ts,2:3);
+glmv = interp1(bdf.vel(:,1),bdf.vel(:,2:3),t);
+glmx = interp1(bdf.pos(:,1),bdf.pos(:,2:3),t);
 
 if strcmp(mdl, 'pos')
     glm_input = glmx;
