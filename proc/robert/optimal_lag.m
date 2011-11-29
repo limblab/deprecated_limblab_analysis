@@ -71,7 +71,7 @@ for n=1:length(spikeFiles)
 % 			'_',allEMGnamesS{n}{k}];
     end
     
-    for k=10:-1:10                          % [1 5 10 15 20]
+    for k=10:-1:1                          % [1 5 10 15 20]
         shiftedY=circshift(y_S{n},k);
         [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_S{n}(k+1:end,:), ...
             shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
