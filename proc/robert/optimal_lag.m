@@ -17,7 +17,8 @@ vaf_L=[];
 % LFP files
 for n=1:length(LFPfiles)
 	recordingName=regexp(D(LFPfiles(n)).name,['.*(?=',regexpi(D(LFPfiles(n)).name, ...
-		'sortedtik|tik','match','once'),')'],'match','once');
+		'sortedtik|tik','match','once'),')'],'match','once')
+    disp('LFPs')
     x_L{n}=load(D(LFPfiles(n)).name,'x');
     x_L{n}=x_L{n}.x;
     y_L{n}=load(D(LFPfiles(n)).name,'y');
@@ -49,11 +50,14 @@ vaf_L(:,sum(cellfun(@isempty,vaf_L),1)>0)=[];
 vaf_S=[];
 % spike files
 for n=1:length(spikeFiles)
+    % leave as LFPfiles in recordingName, for the sake of identifying the
+    % badChannels
 	recordingName=regexp(D(LFPfiles(n)).name,['.*(?=',regexpi(D(LFPfiles(n)).name, ...
-		'sortedtik|tik','match','once'),')'],'match','once');
-    x_S{n}=load(D(LFPfiles(n)).name,'x');
+		'sortedtik|tik','match','once'),')'],'match','once')
+    disp('spikes')
+    x_S{n}=load(D(spikeFiles(n)).name,'x');
     x_S{n}=x_S{n}.x;
-    y_S{n}=load(D(LFPfiles(n)).name,'y');
+    y_S{n}=load(D(spikeFiles(n)).name,'y');
     y_S{n}=y_S{n}.y;
 	allEMGnamesS{n}=load(D(spikeFiles(n)).name,'EMGchanNames');	
 	allEMGnamesS{n}=allEMGnamesS{n}.EMGchanNames;
