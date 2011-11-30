@@ -26,7 +26,12 @@ if nargin < 5
     mdl = 'posvel';
 end
 
-ts = 200; % time step (ms)
+if nargin < 4
+    offset = 0;
+end
+
+%ts = 200; % time step (ms)
+ts = 50;
 
 vt = bdf.vel(:,1);
 t = vt(1):ts/1000:vt(end);
@@ -34,8 +39,12 @@ spike_times = get_unit(bdf,chan,unit)-offset;
 spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
 s = train2bins(spike_times, t);
 
-glmv = interp1(bdf.vel(:,1),bdf.vel(:,2:3),t);
-glmx = interp1(bdf.pos(:,1),bdf.pos(:,2:3),t);
+glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
+glmv = interp1(bdf.vel(:,1), bdf.vel(:,2:3), t);
+glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
+glmp = sum(glmf .* glmv,2);
+glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
+    sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
 
 if strcmp(mdl, 'pos')
     glm_input = glmx;
@@ -45,6 +54,14 @@ elseif strcmp(mdl, 'posvel')
     glm_input = [glmx glmv sqrt(glmv(:,1).^2 + glmv(:,2).^2)];
 elseif strcmp(mdl, 'nospeed')
     glm_input = [glmx glmv];
+elseif strcmp(mdl, 'forcevel')
+    glm_input = [glmv glmf];
+elseif strcmp(mdl, 'forceposvel')
+    glm_input = [glmx glmv glmf];
+elseif strcmp(mdl, 'ppforcevel');
+    glm_input = [glmv glmf];
+elseif strcmp(mdl, 'ppforceposvel');
+    glm_input = [glmx glmv glmf];
 else
     error('unknown model: %s', mdl);
 end
