@@ -25,18 +25,13 @@ for n=1:length(LFPfiles)
     y_L{n}=y_L{n}.y;
 	allEMGnamesL{n}=load(D(LFPfiles(n)).name,'EMGchanNames');	
 	allEMGnamesL{n}=allEMGnamesL{n}.EMGchanNames;
-        
-	if ~isempty(find(cellfun(@isempty,regexp(badEMGdays,recordingName))==0, 1))
-		[~,badChannels]=badEMGdays;
-		currBadChans=badChannels{find(cellfun(@isempty,regexp(badEMGdays,recordingName))==0,1)};
-		y_L{n}(:,currBadChans)=[];
-		allEMGnamesL{n}(currBadChans)=[];
-	end
-	for k=1:length(allEMGnamesL{n})
-		[startInd,endInd]=regexp(allEMGnamesL{n}{k},'EMG_');
-		allEMGnamesL{n}{k}(startInd:endInd)='';
-% 		allEMGnamesL{n}{k}=[char(regexp(recordingName,'[A-Z]','match','once')), ...
-% 			'_',allEMGnamesL{n}{k}];
+
+    % it is a mistake to take out bad EMG days  from this function, because
+    % it takes a while to run it would be better to include all days, then
+    % exclude anything that requires exclusion only at the plotting level.
+    for k=1:length(allEMGnamesL{n})
+        [startInd,endInd]=regexp(allEMGnamesL{n}{k},'EMG_');
+        allEMGnamesL{n}{k}(startInd:endInd)='';
     end
     
     for k=10:-1:1                          % [1 5 10 15 20]
@@ -62,17 +57,9 @@ for n=1:length(spikeFiles)
 	allEMGnamesS{n}=load(D(spikeFiles(n)).name,'EMGchanNames');	
 	allEMGnamesS{n}=allEMGnamesS{n}.EMGchanNames;
     
-	if ~isempty(find(cellfun(@isempty,regexp(badEMGdays,recordingName))==0, 1))
-		[~,badChannels]=badEMGdays;
-		currBadChans=badChannels{find(cellfun(@isempty,regexp(badEMGdays,recordingName))==0,1)};
-		y_S{n}(:,currBadChans)=[];
-		allEMGnamesS{n}(currBadChans)=[];
-	end
-	for k=1:length(allEMGnamesS{n})
-		[startInd,endInd]=regexp(allEMGnamesS{n}{k},'EMG_');
-		allEMGnamesS{n}{k}(startInd:endInd)='';
-% 		allEMGnamesS{n}{k}=[char(regexp(recordingName,'[A-Z]','match','once')), ...
-% 			'_',allEMGnamesS{n}{k}];
+    for k=1:length(allEMGnamesS{n})
+        [startInd,endInd]=regexp(allEMGnamesS{n}{k},'EMG_');
+        allEMGnamesS{n}{k}(startInd:endInd)='';
     end
     
     for k=10:-1:1                          % [1 5 10 15 20]
