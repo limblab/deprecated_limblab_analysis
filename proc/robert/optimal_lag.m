@@ -1,4 +1,4 @@
-function [vaf_L,vaf_S]=optimal_lag(PathName,processFlag)
+function [vaf_L,vaf_S,lagsUsed]=optimal_lag(PathName,processFlag,lagsToUse)
 
 % processFlag is 1 for LFP only, 2 for spikes only.  3 is both, or just
 % leave the input off altogether, the default is to do both.
@@ -42,8 +42,8 @@ if processFlag~=2
             allEMGnamesL{n}{k}(startInd:endInd)='';
         end
         
-        for k=10:-1:1                          % [1 5 10 15 20]
-            shiftedY=circshift(y_L{n},k);
+        for k=1:length(lagsToUse)                          %10:-1:-5;   [1 5 10 15 20]
+            shiftedY=circshift(y_L{n},lagsToUse(k));
             [~,vaf_L{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_L{n}(k+1:end,:), ...
                 shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
         end
@@ -72,8 +72,8 @@ if processFlag > 1
             allEMGnamesS{n}{k}(startInd:endInd)='';
         end
         
-        for k=10:-1:1                          % [1 5 10 15 20]
-            shiftedY=circshift(y_S{n},k);
+        for k=1:length(lagsToUse)                          %10:-1:-5;  [1 5 10 15 20]
+            shiftedY=circshift(y_S{n},lagsToUse(k));
             [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_S{n}(k+1:end,:), ...
                 shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
         end
@@ -81,5 +81,6 @@ if processFlag > 1
     vaf_S(:,sum(cellfun(@isempty,vaf_S),1)>0)=[];
 end
 
+lagsUsed=lagsToUse;
 
 

@@ -46,7 +46,10 @@ else
     remoteParentDir='';
     FilesInfo=dir(PathName);
 end
-badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
+% badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
+% let's forget about bad channels at this point, will zero out from H
+% matrix later.
+badChannelsFileInd=[]; disp('skipping bad channels assignment.  Must zero out in H matrix!')
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
     load(fullfile(remoteParentDir,FilesInfo(badChannelsFileInd).name))
