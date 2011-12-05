@@ -5,10 +5,8 @@ function [vaf_L,vaf_S,lagsUsed]=optimal_lag(PathName,processFlag,lagsToUse)
 
 if ~nargin
     PathName=pwd;
-end
-if nargin < 2
-    % default to 'both'
     processFlag=3;
+    lagsToUse=10:-1:-5;
 end
 cd(PathName)
 % cd('/Volumes/limblab/user_folders/Robert/data/monkey/outputs/Spike_LFP_EMG/outputs_1lag')
@@ -43,9 +41,23 @@ if processFlag~=2
         end
         
         for k=1:length(lagsToUse)                          %10:-1:-5;   [1 5 10 15 20]
-            shiftedY=circshift(y_L{n},lagsToUse(k));
-            [~,vaf_L{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_L{n}(k+1:end,:), ...
-                shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
+            shiftedY=circshift(y_L{n},-lagsToUse(k));
+            x=x_L{n};
+            if lagsToUse(k) > 0
+                % must eliminate last rows of y because they no longer make
+                % sense.
+                shiftedY(end-lagsToUse(k):end,:)=[];
+                % x technically unchanged, but x and y must be the same
+                % size.
+                x(end-lagsToUse(k):end,:)=[];
+            elseif lagsToUse(k) < 0
+                % must eliminate FIRST rows of y because they no longer
+                % make sense.
+                shiftedY(1:abs(lagsToUse(k)),:)=[];
+                % x must match y in size.
+                x(1:abs(lagsToUse(k)),:)=[];
+            end % if lagsToUse(k)==0, there's no need to eliminate anything.
+            [~,vaf_L{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x,shiftedY,3,0,1,1,1,1,10,0);
         end
     end
     vaf_L(:,sum(cellfun(@isempty,vaf_L),1)>0)=[];
@@ -73,9 +85,23 @@ if processFlag > 1
         end
         
         for k=1:length(lagsToUse)                          %10:-1:-5;  [1 5 10 15 20]
-            shiftedY=circshift(y_S{n},lagsToUse(k));
-            [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x_S{n}(k+1:end,:), ...
-                shiftedY(k+1:end,:),3,0,1,1,1,1,10,0);
+            shiftedY=circshift(y_S{n},-lagsToUse(k));
+            x=x_S{n};
+            if lagsToUse(k) > 0
+                % must eliminate last rows of y because they no longer make
+                % sense.
+                shiftedY(end-lagsToUse(k):end,:)=[];
+                % x technically unchanged, but x and y must be the same
+                % size.
+                x(end-lagsToUse(k):end,:)=[];
+            elseif lagsToUse(k) < 0
+                % must eliminate FIRST rows of y because they no longer
+                % make sense.
+                shiftedY(1:abs(lagsToUse(k)),:)=[];
+                % x must match y in size.
+                x(1:abs(lagsToUse(k)),:)=[];
+            end % if lagsToUse(k)==0, there's no need to eliminate anything.
+            [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x,shiftedY,3,0,1,1,1,1,10,0);
         end
     end
     vaf_S(:,sum(cellfun(@isempty,vaf_S),1)>0)=[];
