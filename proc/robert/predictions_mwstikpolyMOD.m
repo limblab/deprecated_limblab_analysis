@@ -27,7 +27,7 @@ if length(varargin)>0
     
 end
 if strcmpi(signal, 'pos')
-    y = bdf.pos(:,2:3);
+    y = bdf.pos(:,2:end);
 elseif strcmpi(signal, 'vel')
     y = bdf.vel(:,2:3);
 elseif strcmpi(signal, 'acc')
