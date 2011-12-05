@@ -1,4 +1,4 @@
-function runpred_channelDropLFP_Spike_VAF(PathName)
+function runpred_channelDropLFP_Spike_VAF_random(PathName)
 
 % is actually a batch file.
 
