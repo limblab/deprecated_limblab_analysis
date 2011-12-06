@@ -131,6 +131,7 @@ if status
                 % this is overkill when bestc is already a unique vector,
                 % but it still should work.
                 x(:,ismember(cells(:,1),bestc(1)))=[];
+                cells(ismember(cells(:,1),bestc(1)),:)=[];
                 bestc(1)=[];
                 disp([FileName,' Spike: ',num2str(length(unique(bestc))),' channels'])
                 
