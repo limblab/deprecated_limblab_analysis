@@ -157,7 +157,7 @@ if nargout>8
                 varargout{4}=P;
                 if nargout>12
                     %                     if  exist('bestf_old','var')
-                    varargout{5}=featind;
+                    varargout{5}=[]; % feature selection was not re-done in this version
                     %                     varargout{6}=bestc;
                     %                     if nargout>14
                     %                        varargout{7}= featind;     %sort index, helps to figure out which features are saved

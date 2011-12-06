@@ -57,7 +57,7 @@ if processFlag~=2
                 % x must match y in size.
                 x(1:abs(lagsToUse(k)),:)=[];
             end % if lagsToUse(k)==0, there's no need to eliminate anything.
-            [~,vaf_L{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x,shiftedY,3,0,1,1,1,1,10,0);
+            [~,vaf_L{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x,shiftedY,2,0,1,1,1,1,10,0);
         end
     end
     vaf_L(:,sum(cellfun(@isempty,vaf_L),1)>0)=[];
@@ -101,7 +101,7 @@ if processFlag > 1
                 % x must match y in size.
                 x(1:abs(lagsToUse(k)),:)=[];
             end % if lagsToUse(k)==0, there's no need to eliminate anything.
-            [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x,shiftedY,3,0,1,1,1,1,10,0);
+            [~,vaf_S{n,k},~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(x,shiftedY,2,0,1,1,1,1,10,0);
         end
     end
     vaf_S(:,sum(cellfun(@isempty,vaf_S),1)>0)=[];
