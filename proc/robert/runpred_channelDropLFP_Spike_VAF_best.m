@@ -71,15 +71,17 @@ for i=1:length(spikeFiles)
     load(FileName,'EMGchanNames')
     
     % get the unit list from the bdf.  we'll need it.
-    BDFfilesList=dir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\sorted');
+%     BDFfilesList=dir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\sorted');
+    BDFfilesList=dir('/Users/rdflint/work/Northwestern/data/analyses_outputs/EMG decoding/channel dropping');
+
     recordingName=regexp(FileName,'.*(?=spikes tik)','match','once');
     if any(cellfun(@isempty,regexp({BDFfilesList.name},recordingName))==0)
         try
-            load(fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\sorted', ...
+            load(fullfile('/Users/rdflint/work/Northwestern/data/analyses_outputs/EMG decoding/channel dropping', ...
                 recordingName),'bdf')
         catch ME
             if strcmp(ME.identifier,'MATLAB:UndefinedFunction')
-                load(fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\sorted', ...
+                load(fullfile('/Users/rdflint/work/Northwestern/data/analyses_outputs/EMG decoding/channel dropping', ...
                     recordingName),'out_struct')
                 bdf=out_struct;
             else

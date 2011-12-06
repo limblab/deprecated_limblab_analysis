@@ -200,7 +200,7 @@ for n=1:length(MATfiles)
 
     r2m=r2mean;
     save(['outputs\',fnam,'spikes tik emgpred ',num2str(binsize*1000),'ms bins lambda',num2str(lambda), ...
-        ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P','EMGchanNames');
+        ' poly',num2str(PolynomialOrder),'.mat'],'v*','y*','r*','x*','H','P','EMGchanNames','uList');
     
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
