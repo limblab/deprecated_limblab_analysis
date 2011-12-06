@@ -113,6 +113,14 @@ vaf = zeros(folds,size(y,2));
 r2 = zeros(folds,size(y,2));
 fold_length = floor(length(y) ./ folds);
     
+% raw correlations for determining best neurons/channels
+rmat=zeros(size(x,2),size(y,2));
+for xind=1:size(x,2)
+    for yind=1:size(y,2)
+        rmat(xind,yind)=corr(x(:,xind),y(:,yind));
+    end
+end
+assignin('caller','rmat',rmat)
 
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
