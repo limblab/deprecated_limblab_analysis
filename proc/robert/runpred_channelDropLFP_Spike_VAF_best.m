@@ -130,8 +130,8 @@ if status
             while length(unique(bestc)) > 1
                 % this is overkill when bestc is already a unique vector,
                 % but it still should work.
-                x(:,ismember(bestc,bestc(1)))=[];
-                bestc(ismember(bestc,bestc(1)))=[];
+                x(:,ismember(cells(:,1),bestc(1)))=[];
+                bestc(1)=[];
                 disp([FileName,' Spike: ',num2str(length(unique(bestc))),' channels'])
                 
                 [vmean,~,~,~,~,~,~,~,~,~,~,~,~,vsd]=predonlyxy_nofeatselect(x,y,2,0,1,1,1,1,10,0);
