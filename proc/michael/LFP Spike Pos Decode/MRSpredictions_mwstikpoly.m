@@ -78,7 +78,7 @@ else
 end
 
 k=1;
-if exist(neuronIDs,'var')
+if exist('neuronIDs','var')
     if isempty(cells);
     cells = unit_list(bdf);
     if size(cells,1) > size(neuronIDs,1) 
@@ -94,8 +94,8 @@ if exist(neuronIDs,'var')
         newcells = zeros(size(cells,1),2);
         for i = 1:size(cells,1)
             for j = 1:size(neuronIDs,1)
-                if cells(i,:) == neuronIDs(j,:)
-                    newcells(i,:) = neuronIDs(j,:);
+                if cells(i,:) == neuronIDs(j,:)  && j <= size(cells,1)
+                    newcells(j,:) = neuronIDs(j,:);
                 end
             end
         end
@@ -114,6 +114,8 @@ if exist(neuronIDs,'var')
     clear cells
     cells = newcells;
     end
+else
+    cells = unit_list(bdf);
 end
 
 binsamprate=floor(1/binsize); 
