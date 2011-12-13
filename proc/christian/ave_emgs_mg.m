@@ -13,8 +13,8 @@ function [EMGpatterns, EMGLabels] = ave_emgs_mg(binnedData, timeBefore, timeAfte
 %    11:Trial End time
 %    12:Trial result        -- R, A, F, or I
 
-targets = unique(binnedData.trialtable(:,6));
-gadgets = unique(binnedData.trialtable(:,5));
+targets = unique(binnedData.trialtable(binnedData.trialtable(:,6)>=0,6));
+gadgets = unique(binnedData.trialtable(binnedData.trialtable(:,5)>=0,5));
 numTgts = length(targets);
 numGdts = length(gadgets);
 numEMGs = length(EMGvector);
@@ -30,25 +30,35 @@ for i = 1:numTrials
     start = find(binnedData.timeframe > Go_ts-timeBefore, 1, 'first');
     stop  = find(binnedData.timeframe > Go_ts+timeAfter,  1, 'first');
     
-    %average EMGs at Go_Cue: (in first row of EMGpatterns)
-    mEMG = mean(binnedData.emgdatabin(start:stop,EMGvector));
-    EMGpatterns(1,:,:) = EMGpatterns(1,:,:) + repmat(mEMG,1,numGdts);
-
-    %average EMGs after Rewards
-    %place results in EMGpatterns(2:end,:,:)
-    if binnedData.trialtable(i,12)==double('R')
+    if isempty(start) || isempty(stop)
+        warning('Trying to access out of range data, trialtable may not match binnedData');
+        numTrials = numTrials-1;
+        continue;
+    else
+        %average EMGs at Go_Cue: (in first row of EMGpatterns)
+        mEMG = mean(binnedData.emgdatabin(start:stop,EMGvector));
+        EMGpatterns(1,:,:) = EMGpatterns(1,:,:) + repmat(mEMG,1,numGdts);
+    end
+    %average EMGs after Rewards. Make sure gadget or target are not -1
+    if binnedData.trialtable(i,12)==double('R') && binnedData.trialtable(i,6) >=0 && binnedData.trialtable(i,5)>=0
+       
         tgt_id    = find(targets==binnedData.trialtable(i,6));
         gdt_id    = find(gadgets==binnedData.trialtable(i,5));
         reward_ts = binnedData.trialtable(i,11 );
 
         start = find(binnedData.timeframe > reward_ts-timeBefore, 1, 'first');
         stop  = find(binnedData.timeframe > reward_ts+timeAfter,  1, 'first');
+        
+        if isempty(start) || isempty(stop)
+            warning('Trying to access out of range data, trialtable may not match binnedData');
+        else
+            %average EMGs at Reward: (in 2nd to numTgt+1 rows of EMGpatterns)
+            % and place results in EMGpatterns(2:end,:,:)
+            mEMG = mean(binnedData.emgdatabin(start:stop,EMGvector));
+            EMGpatterns(tgt_id+1,:,gdt_id) = EMGpatterns(tgt_id+1,:,gdt_id) + mEMG;
 
-        %average EMGs at Reward: (in 2nd to numTgt+1 rows of EMGpatterns)
-        mEMG = mean(binnedData.emgdatabin(start:stop,EMGvector));
-        EMGpatterns(tgt_id+1,:,gdt_id) = EMGpatterns(tgt_id+1,:,gdt_id) + mEMG;
-
-        tgt_gdt_count(tgt_id,gdt_id) = tgt_gdt_count(tgt_id,gdt_id) + 1;
+            tgt_gdt_count(tgt_id,gdt_id) = tgt_gdt_count(tgt_id,gdt_id) + 1;
+        end
     end
 end
 

@@ -1,70 +1,44 @@
-function [Go_Rew_ts_w_tgt_centers] = get_tgt_center(out_struct)
+function [Go_Rew_ts_w_tgt_centers] = get_tgt_center(tt)
 
-    % This function returns a matrix of [ts tgt_x tgt_y]
-    % out_struct can be either a BDF or a binnedData structure (as of 4/12/10)
-    %
-    % ts is the time at which a 'Go_Cue' or a 'Reward' word was issue
-    % tgt_x and tgt_y are the coordinates of the center of the target
-    % corresponding to this trial, in "cursor position" coordinate system.
-    % Note: for "Go_Cue" trials, the target is automatically defined as being at
-    % (0,0), so it could be wrong in case the user sets a different center
-    % target.
+% This function returns a matrix of [ts tgt_x tgt_y]
+% tt is the trial table from wf task
+%
+% ts is the time at which a 'Go_Cue' or a 'Reward' word was issued
+% tgt_x and tgt_y are the coordinates of the center of the target
+% corresponding to this trial, in "cursor position" coordinate system.
+%
+% Note: for "Go_Cue" trials, the target is automatically defined as being at
+% (0,0), so it could be wrong in case the user sets a different center
+% target.
+%
+% Note 2: the arrangement of the WF trial table is as follow:
+%    1: Start time
+%  2-5: Target              -- ULx ULy LRx LRy
+%    6: OT on time
+%    7: Go cue
+%    8: Trial End time
+%    9: Trial result        -- R, A, I, or F 
+%   10: Target ID           -- Target ID (based on location)
 
-    w=WF_Words;
 
-    %% -------------%
-    % get targets id
-    % --------------%
-    numTrials = size(out_struct.targets.corners,1);
-    Tgts = zeros(16,5); % [ Tgt_Id   tgt_xul   tgt_yul   tgt_xlr   tgt_ylr   ];
-    Tgts_ts = zeros(numTrials,2); % [ ts Tgt_Id ];
-    numTgts = 0;
+    % Find Go and Reward rows in tt :
+    Go = find(tt(:,7) >= 0); %sometimes Go ts may be = -1 in tt if something was wrong
+    Rewards = find( tt(:,9)==double('R') );
 
-    for i=1:numTrials
-        current_target= out_struct.targets.corners(i,:);
-        existing_target = find( Tgts(:,2)==current_target(2) & Tgts(:,3)==current_target(3) & ...
-                                Tgts(:,4)==current_target(4) & Tgts(:,5)==current_target(5) );
-        if ~isempty(existing_target)
-            Tgts_ts(i,:)=[current_target(1) existing_target];
-        else
-            numTgts = numTgts+1;
-            Tgts(numTgts,:)=[numTgts current_target(2:5)];
-            Tgts_ts(i,:)=[current_target(1) numTgts];
-        end
+    numRew = length(Rewards);
+    numGo = length(Go);
+    Rew_ts_w_tgt = zeros(numRew,3);
+
+    % Assign expected cursor position for Go ([ts 0 0])
+    Go_ts_w_tgt = [tt(Go,7) zeros(numGo,2)];
+
+    for i = 1:numRew
+        %Assign expected cursor position for each Reward Trial ([ts tgtx tgty]):
+        corners = tt(Rewards(i),2:5);
+        tgtx = mean(corners([1 3]));
+        tgty = mean(corners([2 4]));
+        Rew_ts_w_tgt(i,:) = [tt(Rewards(i),8) tgtx tgty];
     end
 
-    Tgts = Tgts(1:numTgts,:);
-
-    %% ------------%
-    % get center ts
-    % -------------%
-    Center_ts = out_struct.words(out_struct.words(:,2)==w.Go_Cue,1);
-    Center_ts(:,2:3)=0;
-    numCenters = size(Center_ts,1);
-
-    %% -----------------------------%
-    % get Reward ts and target center pairs
-    % ------------------------------%
-    words_and_Tgts=sortrows([out_struct.words;Tgts_ts]);
-
-    Rew_ts = [];
-
-    for i=1:numTgts
-        % find the Rew_ts corresponding to target i
-        ts_pairs = Get_Words_ts_pairs(w.Start, Tgts(i,1), w.Reward, words_and_Tgts);
-%         ts_pairs = [ts_pairs; Get_Words_ts_pairs(w.Start, Tgts(i,1), w.Failure, words_and_Tgts)];
-
-        %time stamps for End Of Trials for target i in first column of EOT_ts
-        %target i x and y center coord in 2nd and 3rd columns
-        tgt_x = mean([Tgts(i,2) Tgts(i,4)]);
-        tgt_y = mean([Tgts(i,3) Tgts(i,5)]);
-        tgt_centers = ones(size(ts_pairs,1),1)*[tgt_x tgt_y];
-        Rew_ts = [Rew_ts; [ts_pairs(:,2) tgt_centers]];
-    end
-    
-    %concat and sort Center and End of Trial ts, with corresponding target center
-    Go_Rew_ts_w_tgt_centers = sortrows([Center_ts;Rew_ts],1);
-    
-end
-
+    Go_Rew_ts_w_tgt_centers = sortrows([Go_ts_w_tgt; Rew_ts_w_tgt],1);
 

@@ -168,7 +168,34 @@ if isfield(struct1, 'trialtable') && isfield(struct2, 'trialtable')
         binnedData = struct1;
         return;
     else
-        binnedData.trialtable = [struct1.trialtable; struct2.trialtable];
+        %time stamps have to be updated in struct 2. Columns containing ts depend on the task.
+        time_col_idx = false(1,size(struct1.trialtable,2));
+        
+        if isfield(struct1,'words')
+            if any(struct1.words(:,2) == hex2dec('16'))
+                %Multi-Gadget:    
+                %   tt = [1-Start_ts 2-TP_ts 3-Go_ts 4_TrialType 5-Gdt_ID 6-Tgt_ID
+                %   7:10-Tgt_Corners 11-End_ts 12-End_code]
+                time_col_idx = [1 2 3 11];
+                
+            elseif any(struct1.words(:,2) == hex2dec('17'))
+                % Wrist Flexion
+                %   tt = [1-Start_ts 2:5-Target[ULx ULy LRx LRy] 6-OT_on_ts
+                %   7-Go_ts 8-End_ts 9-End_code 10-Tgt_Id]
+                time_col_idx =[1 6 7 8];
+                
+            %Figure out time column index for other tasks here                
+            % elseif any(struct1.words(:,2) == hex2dec('xx'))
+            
+            end
+        end
+        
+        for i=1:length(time_col_idx)
+            %find only ts > 0, others should be left at -1
+            valid_idx = struct2.trialtable(:,time_col_idx(i))>0;
+            struct2.trialtable(valid_idx,time_col_idx(i)) = struct2.trialtable(valid_idx,time_col_idx(i))+t_offset;
+        end
+        binnedData.trialtable = [struct1.trialtable; struct2.trialtable];                
     end
 end
 

@@ -84,10 +84,6 @@ for i=0:nfold-1
         end
     end
 
-%     PredData = predictSignals(filter, testData);
-%     Smooth = false;
-%     LR = 1e-7;
-%     lag = 0.5;
     if isfield(filter, 'PC')
         numPCs = size(filter.PC,2);
         [PredData, Hnew] = predictSignals(filter,testData,Smooth,Adapt,numPCs);

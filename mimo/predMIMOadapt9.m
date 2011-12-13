@@ -5,8 +5,7 @@ function  [Pred_Out, Inputs_new, H_new]= predMIMOadapt9(Inputs,H,LR, ExpectedOut
 %     expected values.
 %
 %   argout: Pred_Out   : the predictions made with this adaptive algorithm
-%           Inputs_new :
-%
+%           Inputs_new : same as Inputs, but truncated at the beginning for
 %
 %   Inputs : neural activity for the whole file to analyse size:[Numbins x NumUnits]
 %
@@ -20,9 +19,8 @@ function  [Pred_Out, Inputs_new, H_new]= predMIMOadapt9(Inputs,H,LR, ExpectedOut
 %       errors, and make decoder adaptation. The remaining columns contain
 %       the expected output values for this period of time.
 %     
-%   Adapt_lag = [numBinsBefore numBinsAfter].
-%       This is the number of bins relative to the first column of ExpectedOutput
-%       over which to measure the prediction error and processing adaptation.
+%   Adapt_lag =  This is the number of bins relative to the first column of ExpectedOutput
+%                over which to measure the prediction error and processing adaptation.
 
 
 [numpts,Nin]=size(Inputs);

@@ -15,7 +15,7 @@ function [Go_Rew_ts_w_EMGs] = get_expected_EMGs_MG(tt, EMGpatterns)
     % Note: for "Go_Cue"s, the expected EMG values are assumed to be in the first
     % row of EMGpatterns, and the following rows (2:end) correspond to tgt1:tgtn
     %
-    % Note 2: the arrangement of the MG trial table is as follows:
+    % Note 2: the arrangement of the MG trial table is as follow:
     %    1: Start time
     %    2: Hand on Touch Pad
     %    3: Go cue (word = Go | Catch)
@@ -42,13 +42,11 @@ function [Go_Rew_ts_w_EMGs] = get_expected_EMGs_MG(tt, EMGpatterns)
     Go_ts_w_EMGs = zeros(numGo,numEMGs+1);
     Rew_ts_w_EMGs = zeros(numRew,numEMGs+1);
 
-    for i = 1:numGo
-        % Assign expected EMGs for Go
-        % first row of EMGpatterns, even if EMGpattern is 3D, (3rd dim is for different gadgets)
-        % it should all be the same for the first row, so use dim 1
-        Go_ts_w_EMGs(i,:) = [tt(Go(i),3) EMGpatterns(1,:,1)];
-    end
-    
+    % Assign expected EMGs for Go
+    % first row of EMGpatterns. Even if EMGpattern is 3D, 3rd dim is for different gadgets.
+    % it should all be the same for the first row, so use gdt 1 (index 1 of dim 3)
+    Go_ts_w_EMGs = [tt(Go,3) repmat(EMGpatterns(1,:,1),numGo,1)];
+
     for i = 1:numRew
         %Assign expected EMGs for each Reward Trial:
         tgtIdx = find(targets==tt(Rewards(i),6))+1; %first line if for Go, so +1 for 2-indexed tgtIdx

@@ -395,13 +395,21 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
 
     if ball_drop_task
         tt = bd_trial_table(datastruct);
+        tt = tt(tt(:,1)>=timeframe(1) & tt(:,6)<=timeframe(end),:);        
     elseif vs_task
         tt = vs_trial_table(datastruct);
     elseif multi_gadget_task
         tt = mg_trial_table(datastruct);
+        tt = tt(tt(:,1)>=timeframe(1) & tt(:,11)<=timeframe(end),:);
+    elseif wrist_flexion_task
+        tt = wf_trial_table(datastruct);
+        tt = tt(tt(:,1)>=timeframe(1) & tt(:,8)<=timeframe(end),:);
     else
         tt = [];
     end
+    
+
+    
 else
         warning('BDF:noWords','No WORDs are present');
         tt = [];

@@ -77,7 +77,7 @@ function BMIDataAnalyzer()
     
 %% Globals
     
-    dataPath = 'C:/Monkey/Jaco/Data/';
+    dataPath = 'C:\Documents and Settings\Christian\Desktop\SpikeAdapt\';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
     Use_State =0;
     

@@ -53,6 +53,7 @@ ActualData=zeros(size(usableSpikeData));
 %% Use the neural filter to predict the Data
 numsides=1; fs=1;
 if Adapt.Enable
+%     [PredictedData,spikeDataNew,Hnew] = predAdaptEMGs(BinnedData,usableSpikeData,filter.H,Adapt);
     [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,usableSpikeData,filter.H,Adapt);
     varargout(1) = {Hnew};
 else
