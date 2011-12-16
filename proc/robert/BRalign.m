@@ -18,6 +18,7 @@ psoArray(psoArray(:,7)==0,:)=[];
 fprintf(1,'deleted %d lines from pseudo-online array\n',tmp-size(psoArray,1))
 
 % scale time vector
+original_OLA_time=onlineArray(:,7);
 onlineArray(:,7)=onlineArray(:,7)/1e9;
 onlineArray(:,7)=onlineArray(:,7)-onlineArray(1,7);
 psoArray(:,7)=psoArray(:,7)/1e9;
