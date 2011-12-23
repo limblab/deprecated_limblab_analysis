@@ -14,9 +14,9 @@ elseif nargin==1
 else % the expected number of inputs (2), or even 3
      % can run by remote, if we ever figure that out.
      if dateNumber<datenum('09-29-2011')
-         disp('superBatch.m is not valid for recordings earlier than 09/29/2011.')
-         disp('blame the data server update.')
-         return
+%          disp('superBatch.m is not valid for recordings earlier than 09/29/2011.')
+%          disp('blame the data server update.')
+%          return
      end
 
     if nargin==3

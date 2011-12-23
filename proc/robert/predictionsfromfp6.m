@@ -152,6 +152,7 @@ if t(1)<analog_times(1)
     t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
 end
 y = interp1(analog_times, y, t);    %This should work for all numbers of outputs as long as they are in columns of y
+
 if size(y,1)==1
     y=y(:); %make sure it's a column vector
 end

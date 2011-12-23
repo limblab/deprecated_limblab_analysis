@@ -32,11 +32,8 @@ remoteDriveLetter='Z';      % appropriate for GOB
 pathBank={[remoteDriveLetter,':\Chewie_8I2\SpikeLFP'], ...
     [remoteDriveLetter,':\Mini_7H1\', ...
     'Spikes and Local Field Potentials\MiniSpikeLFPL']};
+% pathBank={[remoteDriveLetter,':\Chewie_8I2'],[remoteDriveLetter,':\Mini_7H1']};
 
-%  [remoteDriveLetter,':\Miller\Chewie_8I2\Nick Datafiles\SD Data'], ...
-% todo: add the capability to look in Chewie_8I2\Nick Datafiles\SD Data\<date>
-% for the data, and to make sure the .plx files all have _LFP_ somewhere in
-% the name.   regexprep(datestr(dateNumber,23),'/','-')
 candidatePathInd=find(cellfun(@isempty,regexpi(pathBank,animal))==0);
 
 % for k=1:length(candidatePathInd)
@@ -47,6 +44,9 @@ candidatePathInd=find(cellfun(@isempty,regexpi(pathBank,animal))==0);
         chosenPath=pathOverride;
     end
     [status,result]=dos(['dir "',chosenPath,'"']);
+    % in a future version, search out file names that match the date,
+    % wherever they may hide.
+%     [status,result]=dos(['dir "',chosenPath,'\*.plx" /s']);
 % end
 if ~status
     datestamps=regexp(result, datestr(dateNumber,'mm/dd/yyyy'));
