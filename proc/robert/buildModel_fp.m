@@ -287,8 +287,8 @@ end
 % [x,mu,sigma]=zscore(bestPB');
 x=bestPB';
 
-if smoothfeats
-	xtemp=smooth(x(:),21);      %sometimes smoothing features helps
+if smoothfeats > 0
+    xtemp=smooth(x(:),smoothfeats);      %sometimes smoothing features helps
 	x=reshape(xtemp,size(x));
 end
 disp('5th part: select best features')
