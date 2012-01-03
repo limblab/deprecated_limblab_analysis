@@ -68,7 +68,7 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
-    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1, 'labnum', 2);
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1, 'labnum', 2,'spike',1);
     
     if (nargin == 1)
         filename = varargin{1};
@@ -90,8 +90,10 @@ function out_struct = get_plexon_data(varargin)
                 opts.kin = 0;
                 opts.force = 0;
                 warning('GetPlxData:InvalidOption','NoKin option not currently implemented');
+            elseif strcmp(opt_str, 'nospike')
+                opts.spike = 0;              
             elseif isnumeric(varargin{i})
-                opts.labnum=varargin{i};    %Allow entering of the lab number               
+                opts.labnum=varargin{i};    %Allow entering of the lab number   
             else 
                 error('Unrecognized option: %s', opt_str);
             end
@@ -130,7 +132,9 @@ function out_struct = get_plexon_data(varargin)
         'bdf_info', '$Id$');
 
     % Extract data from plxfile
+    if opts.spike
     out_struct.units = get_units_plx(filename, opts);
+    end
     out_struct.raw = get_raw_plx(filename, opts);    
     out_struct.keyboard_events = get_keyboard_plx(filename, opts);
     
