@@ -28,7 +28,7 @@ if nargin < 5
     mdl = 'posvel';
 end
 
-ts = 200; % time step (ms)
+ts = 256; % time step (ms)
 
 vt = bdf.vel(:,1);
 samprate=bdf.raw.analog.adfreq(chan);
@@ -40,14 +40,18 @@ t = vt(1):ts/samprate:vt(end);
 % s = train2bins(spike_times, t);
 freqs=linspace(0,samprate/2,ts/2+1);
 % freqs=freqs(2:end);
-bandinds = freqs>band(1) && freqs<=band(2); %Don't use >= to avoid DC in 0-4 Hz case
+bandinds = freqs>=band(1) & freqs<=band(2); %To get 0-4 Hz case, use 0.1 instead of 0; 0 is DC
+%hanning window
+win=hanning(ts+1);
 for i=1:length(t)
     rt=t(i);
-    LFPsample=lfp((rt-offset)*samprate:(rt-offset)*samprate+ts);
+    LFPsample=lfp((rt-offset)*samprate:(rt-offset)*samprate+ts); %use hanning window
+    LFPsample=win.*LFPsample;
     ftlfp(i,:)=fft(LFPsample)';
 end
-powmat=ftlfp.*conj(ftlfp);
-
+powmat=ftlfp.*conj(ftlfp)*.75;  %factor of .75 is for hanning window
+% Pmean=mean(powmat,1);   %Take mean over all bins
+% logpow = 10*(log10(powmat));%-repmat(log10(Pmean),[length(t),1]));
 bandpow = mean(powmat(:,bandinds),2);
 glmv = interp1(bdf.vel(:,1),bdf.vel(:,2:3),t);
 glmx = interp1(bdf.pos(:,1),bdf.pos(:,2:3),t);

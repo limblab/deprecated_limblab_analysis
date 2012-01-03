@@ -14,7 +14,7 @@ for i = 1:length(chanlist)
     et = toc;
     fprintf(1, 'ET: %f (%d of %d)', et, i, length(chanlist));
     
-    [b, dev, stats] = glm_kin_fp(bdf, chanlist{i}, fband, 0, 'posvel'); %#ok<ASGLU>
+    [b, dev, stats] = glm_kin_fp(bdf, chanlist(i), fband, -0.15, 'posvel'); %#ok<ASGLU>
     bv = [b(4) b(5)];
     dbv = [stats.se(4) stats.se(5)];
     
