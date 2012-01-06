@@ -9,7 +9,12 @@
 % LFPband={'0-4';'70-115';'130-199'};%'200-300'};
 % LFPband={'70-115'};
 %1-2-12 updated to plot the true magnitude of the PD
-
+if ~exist('pathnameout','var')
+    pathnameout=[];
+end
+if ~exist('root','var')
+    root=input('Enter filename of PDfile used:','s')
+end
 for m=1: size(LFPfilesPDs{1,1},2)
     series1=[];
     series1=LFPfilesPDs{1,1}{1,m}(:,1:3);
@@ -48,7 +53,7 @@ for m=1: size(LFPfilesPDs{1,1},2)
 %     reply = 'Y';
 % end
 % if reply=='Y'||reply=='y' 
-     saveas(gcf,([pathnameout,root,char(LFPband(m)),'LFP_PDs.fig']))
+     saveas(gcf,([pathnameout,root,char(LFPband(m)),'PDplot.fig']))
 %     saveas(gcf,([pathnameout,root,char(LFPband(m)),'_300LFP_PDs.tif']))
 %       saveas(gcf,([pathnameout,char(LFPband(m)),'_300LFP_PDs.jpg']))
 %   print(gcf, '-dpdf', '-r300', [pathnameout,root,char(LFPband(m)),'_300LFP_PDs.pdf'])
