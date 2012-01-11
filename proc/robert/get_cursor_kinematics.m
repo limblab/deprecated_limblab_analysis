@@ -79,22 +79,33 @@ else
                     CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0})];
                 [status,result]=unix(['find ',pathToCitadelData,' -name "', ...
                     regexprep(bdf.meta.filename,'\.plx','\.mat" -print')]);
-                if status==0
-                    pathToBDF=result;
-                else
-                    % revert to dialog, we couldn't automagically locate the
-                    % BDF.  But now, the dialog is looking for the text file;
-                    % the pathToBDF will be reverse-lookup'd.
-                    [FileNameTxt,PathNameTxt]=uigetfile('*.mat','select a bdf file');
-                    pathToBR=fullfile(PathNameTxt,FileNameTxt);
-                    % this is stupid, but at least it keeps things consistent.
-                    % Just switch the logic on the application below.
-                    pathToBDF=regexprep(fullfile(PathNameTxt,FileNameTxt), ...
-                        {['BrainReader logs',filesep,'online'],'\.txt'},{'bdf','\.mat'});
-                end
             else
-                % PC case.  revert to dialog, or smartly determine drive
-                % letter, etc. for citadel/data
+                % PC case.  Probably running on GOB, either during a
+                % superBatch run, or stand-alone.  If stand-alone, slightly
+                % more likely that the path of the data file in will be
+                % citadel than local. If during superBatch, the network copy of the
+                % BDF almost certainly won't exist yet.  Either way, assume
+                % no local copies of brainReader logs exist.
+                % assume GOB.  Drive letter is Z:
+                remoteDriveLetter='Z:';
+                pathToCitadelData=[fullfile(remoteDriveLetter, ...
+                    CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0})];
+                [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *', ...
+                    regexprep(bdf.meta.filename,'\.plx','\.mat'),' /s /b']);
+            end
+            % evaluate, based on results of system commands to find file.
+            if status==0
+                pathToBDF=result;
+            else
+                % revert to dialog, we couldn't automagically locate the
+                % BDF.  But now, the dialog is looking for the text file;
+                % the pathToBDF will be reverse-lookup'd.
+                [FileNameTxt,PathNameTxt]=uigetfile('*.mat','select a bdf file');
+                pathToBR=fullfile(PathNameTxt,FileNameTxt);
+                % this is stupid, but at least it keeps things consistent.
+                % Just switch the logic on the application below.
+                pathToBDF=regexprep(fullfile(PathNameTxt,FileNameTxt), ...
+                    {['BrainReader logs',filesep,'online'],'\.txt'},{'bdf','\.mat'});
             end
         end
     end

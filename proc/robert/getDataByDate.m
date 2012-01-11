@@ -67,6 +67,11 @@ if ~status
             else
                 fprintf(1,'%s not copied. found in \n%s\n',candidateFileLineText{5}(1:end-1),destFolder)
             end
+            if ~isempty(regexp(candidateFileLineText{5},'\.plx','once'))
+                CEBorPLX='plx';
+            else
+                CEBorPLX='ceb';
+            end
         end
     end
     cd(destFolder)
@@ -76,9 +81,4 @@ if ~status
         fullfile([remoteDriveLetter,':'],'Mini_7H1','bdf', ...
         regexp(destFolder,'[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]','match','once'))};
     remoteFolder=remotePathBank{cellfun(@isempty,regexpi(remotePathBank,animal))==0};
-    if ~isempty(regexp(candidateFileLineText{5},'\.plx','once'))
-        CEBorPLX='plx';
-    else
-        CEBorPLX='ceb';
-    end
 end
