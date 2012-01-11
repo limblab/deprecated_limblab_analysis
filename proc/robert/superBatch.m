@@ -58,6 +58,12 @@ for copyfileIndex=1:length(decoderFiles)
 end
 copyfile('allFPsToPlot.mat',remoteFolder2)
 fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
+
+oldPathName=PathName;
+PathName=remoteFolder;
+batch_get_cursor_kinematics
+PathName=oldPathName; clear oldPathName
+
 diary off
 copyfile('decoderOutput.txt',remoteFolder2)
 fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)

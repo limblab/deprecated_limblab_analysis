@@ -36,7 +36,8 @@ for batchIndex=1:length(MATfiles)
         continue
     end
     clear S
-    % account for hand control files, which might have a 
+    % account for hand control files, which might have a brainReader log
+    % recorded for testing purposes.
     if mean(range(out_struct.vel(:,2:3))) < 10
         get_cursor_kinematics(out_struct);
     else

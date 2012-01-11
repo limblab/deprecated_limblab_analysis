@@ -114,13 +114,18 @@ pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
 
 
 % load the BrainReader file
+if ispc
+    fsep=[filesep filesep]; % because regexp chokes on 1 backslash
+else
+    fsep=filesep;
+end
 switch animal
     case 'Mini'
         pathToBR=regexprep(pathToBDF,{'bdf','\.mat'}, ...
-            {['BrainReader logs',filesep,'online'],'\.txt'});
+            {['BrainReader logs',fsep,'online'],'\.txt'});
     case 'Chewie'
         pathToBR=regexprep(pathToBDF,{'BDFs','\.mat'}, ...
-            {['BrainReader logs',filesep,'online'],'\.txt'});
+            {['BrainReader logs',fsep,'online'],'\.txt'});
 end
 % just in case
 pathToBR(regexp(pathToBR,sprintf('\n')))='';
