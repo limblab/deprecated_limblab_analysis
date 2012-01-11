@@ -29,6 +29,14 @@ while ~feof(fid)
     end
     m=m+1;
 end
-
 fclose(fid);
 
+% through a bug in the BRcode (I assume), it is actually possible to get
+% two consecutive lines with the same timestamp value.  Since this probably
+% represents some kind of infarcted behavior brought on by an out-of-range
+% decoded velocity, just delete the offending line.
+
+repeaterLines=find(diff(array(:,7))==0);
+if ~isempty(repeaterLines)
+    array(repeaterLines+1,:)=[];
+end
