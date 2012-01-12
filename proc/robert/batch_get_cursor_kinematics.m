@@ -38,12 +38,17 @@ for batchIndex=1:length(MATfiles)
     clear S
     % account for hand control files, which might have a brainReader log
     % recorded for testing purposes.
-    if mean(range(out_struct.vel(:,2:3))) < 10
+    if (exist('override','var')~=0 && override==1) || mean(range(out_struct.vel(:,2:3))) < 10 
         get_cursor_kinematics(out_struct);
+        
     else
         fprintf(1,'skipping %s because it appears to be a hand control file.\n', ...
             MATfiles{batchIndex})
     end
+    
+    
+    
+    clear out_struct
 end
 
 
