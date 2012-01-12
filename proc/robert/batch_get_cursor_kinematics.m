@@ -80,5 +80,5 @@ for batchIndex=1:length(MATfiles)
     clear out_struct decoder_age
 end
 
-
+save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
 
