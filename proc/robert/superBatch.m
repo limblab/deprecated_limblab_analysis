@@ -63,6 +63,8 @@ oldPathName=PathName;
 PathName=remoteFolder;
 batch_get_cursor_kinematics
 PathName=oldPathName; clear oldPathName
+save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
+save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
 
 diary off
 copyfile('decoderOutput.txt',remoteFolder2)

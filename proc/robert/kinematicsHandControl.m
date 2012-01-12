@@ -1,9 +1,9 @@
-function [PL,TTT,hitRate]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2]=kinematicsHandControl(out_struct,opts)
 
-% syntax PL=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
-% successful trial (RW) in a BDF-formatted out_struct
+% successful trial (RW) in a out_struct-formatted out_struct
 %
 % out_struct.words should follow something like
 %
@@ -31,6 +31,9 @@ function [PL,TTT,hitRate]=kinematicsHandControl(out_struct,opts)
 % opts should have, at minimum, the field 'version', and a number.  
 % As of 09/22/2011, version can be 1 or 2. v2 is the default.  
 % v1 requires an additional field, hold_time, to be present.
+%
+% hitRate2 is (aborts+rewards)/trials since both successfully reached
+% the target.  hitRate is just rewards/trials
 
 if nargin==1
     opts.version=2;             % assume target_entry_word is present
@@ -62,7 +65,7 @@ end
 % make sure to end with the last complete trial in the recording 
 % all of the following codes are valid trial-end codes: success (32),
 % abort (33), fail (34)
-endLastTrial=find(bdf.words(:,2)==32 | bdf.words(:,2)==33 | bdf.words(:,2)==34,1,'last');  
+endLastTrial=find(out_struct.words(:,2)==32 | out_struct.words(:,2)==33 | out_struct.words(:,2)==34,1,'last');  
 if endLastTrial < size(out_struct.words,1)
     out_struct.words(endLastTrial+1:end,:)=[];
 end
@@ -119,5 +122,7 @@ exclude_trials=find(PL==0);
 PL(exclude_trials)=[];
 TTT(exclude_trials)=[];
 
-% hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
-hitRate=length(PL)/(nnz(out_struct.words(:,2)==49)-length(exclude_trials));
+hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
+if nargout > 3
+    hitRate2=length(PL)/(nnz(out_struct.words(:,2)==49)-length(exclude_trials));
+end

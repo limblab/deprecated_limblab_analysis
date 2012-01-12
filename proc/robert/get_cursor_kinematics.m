@@ -188,6 +188,8 @@ bdf.meta.decoder_age=bdfDate-decoderDate;
 % decoder file's name whether it was spike control or LFP control, and save
 % that info in bdf.meta.brain_control, rather than just a 1.
 
+[bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf);
+
 if nargout
     varargout{1}=bdf;
 else
