@@ -59,12 +59,13 @@ beginFirstTrial=find(out_struct.words(:,2)==18,1,'first');
 if beginFirstTrial > 1
     out_struct.words(1:beginFirstTrial-1,:)=[];
 end
-% make sure to end with the last complete trial in the recording
-endLastTrial=find(out_struct.words(:,2)==32,1,'last');
+% make sure to end with the last complete trial in the recording 
+% all of the following codes are valid trial-end codes: success (32),
+% abort (33), fail (34)
+endLastTrial=find(bdf.words(:,2)==32 | bdf.words(:,2)==33 | bdf.words(:,2)==34,1,'last');  
 if endLastTrial < size(out_struct.words,1)
     out_struct.words(endLastTrial+1:end,:)=[];
 end
-hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
 
 startEndReachesMatrix=out_struct.words(sort([find(out_struct.words(:,2)==target_entry_word); ...
     find(out_struct.words(:,2)==target_entry_word)-1]),:);
@@ -111,5 +112,12 @@ for n=1:length(start_reaches)
 		TTT(n)=(end_reaches(n)-start_reaches(n))/interTargetDistance;
 	end
 end
-% PL(PL==0)=[];
-% TTT(TTT==0)=[];
+% exclude_trials corresponds to trials were length(included_points) < 2,
+% therefore indicating that the target appeared on top of the cursor or was
+% hit by it as a matter of chance most likely.  Exclude these altogether.
+exclude_trials=find(PL==0);
+PL(exclude_trials)=[];
+TTT(exclude_trials)=[];
+
+% hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
+hitRate=length(PL)/(nnz(out_struct.words(:,2)==49)-length(exclude_trials));
