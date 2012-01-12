@@ -47,16 +47,6 @@ else
     target_entry_word=160;
 end
 
-% extract times of occurrences of target_entry_word, and 1 
-% target_presentation word that preceeded each occurrence.
-
-if out_struct.words(1,2)==32
-    % account for the freak accident where the very first recorded event is
-    % a success indicator with no trial begin or target presentation
-    % preceeding it.
-    out_struct.words(1,:)=[];
-end
-
 % make sure to start with the first complete trial in the recording
 beginFirstTrial=find(out_struct.words(:,2)==18,1,'first');
 if beginFirstTrial > 1
@@ -70,8 +60,18 @@ if endLastTrial < size(out_struct.words,1)
     out_struct.words(endLastTrial+1:end,:)=[];
 end
 
-startEndReachesMatrix=out_struct.words(sort([find(out_struct.words(:,2)==target_entry_word); ...
-    find(out_struct.words(:,2)==target_entry_word)-1]),:);
+% to avoid problems in brain control files where there can be exit &
+% re-entry without a trial reset (e.g. aborts disabled), only take the
+% first trial presentation/target entry time stamps following a trial onset
+% marker
+trialOnset=find(out_struct.words(:,2)==18);
+trialOnset(out_struct.words(trialOnset+1,2)~=49)=[]; % this should never happen
+% this should happen when the first reach to the first target of a trial
+% (the only reach, in brain control) never reaches the target (i.e., a
+% fail).  This WILL NOT CUT OUT ABORT reaches.
+trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
+
+startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
 % don't let things start (or end) on the wrong note.
 if startEndReachesMatrix(1,2)==target_entry_word, startEndReachesMatrix(1,:)=[]; end
 if startEndReachesMatrix(end,2)==49, startEndReachesMatrix(end,:)=[]; end
@@ -124,5 +124,5 @@ TTT(exclude_trials)=[];
 
 hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
 if nargout > 3
-    hitRate2=length(PL)/(nnz(out_struct.words(:,2)==49)-length(exclude_trials));
+    hitRate2=length(PL)/(length(trialOnset)-length(exclude_trials));
 end

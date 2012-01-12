@@ -129,6 +129,16 @@ switch animal
 end
 % just in case
 pathToBR(regexp(pathToBR,sprintf('\n')))='';
+
+% been burned too many times.  Check to see if file exists
+if exist(pathToBR,'file')~=2
+    fprintf(1,'file not found: %s\n',pathToBR)
+    fprintf(1,'BDF unmodified\n')
+    if nargout
+        varargout{1}=bdf;
+    end
+    return
+end
 BRarray=readBrainReaderFile_function(pathToBR);
 
 % get rid of any lead-in data
@@ -189,6 +199,12 @@ bdf.meta.decoder_age=bdfDate-decoderDate;
 % that info in bdf.meta.brain_control, rather than just a 1.
 
 [bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf);
+
+[workspaceList,~]=dbstack;
+if ~isequal(workspaceList(length(workspaceList)).file,[mfilename,'.m'])
+    % means ISN'T being called from the command line
+    assignin('caller','decoder_age',bdf.meta.decoder_age)
+end
 
 if nargout
     varargout{1}=bdf;
