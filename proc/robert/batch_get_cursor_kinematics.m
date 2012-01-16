@@ -45,7 +45,8 @@ for batchIndex=1:length(MATfiles)
     % account for hand control files, which might have a brainReader log
     % recorded for testing purposes.
     if (exist('override','var')~=0 && override==1) || mean(range(out_struct.vel(:,2:3))) < 10 
-        get_cursor_kinematics(out_struct);
+        get_cursor_kinematics(out_struct);              % one to store in the remote directory
+        out_struct=get_cursor_kinematics(out_struct);   % one for the upcoming kinematics calculation
         if exist('decoder_age','var')==1
             kinStruct(batchIndex).decoder_age=decoder_age;
             [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...

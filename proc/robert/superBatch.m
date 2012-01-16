@@ -67,5 +67,5 @@ save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
 save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
 
 diary off
-copyfile('decoderOutput.txt',remoteFolder2)
+copyfile(fullfile(PathName,'decoderOutput.txt'),remoteFolder2)
 fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)
