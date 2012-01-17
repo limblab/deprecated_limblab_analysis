@@ -9,6 +9,9 @@ elseif strcmpi(signal, 'acc')
     y = bdf.acc(:,2:3);
 elseif strcmpi(signal, 'force')
     y = bdf.force(:,2:3);
+elseif strcmpi(signal, 'power')
+    y = sum(bdf.force(:,2:3)' .* bdf.vel(:,2:3)');
+    y = [y' zeros(size(y,2), size(y,1))];
 elseif strcmpi(signal, 'ppforce')
     tmpv = bdf.vel(:,2:3);
     tmpf = bdf.force(:,2:3);

@@ -2,7 +2,7 @@
 %
 % Creates a set of plots showing points of a variety of rho values.
 
-N = 30; % number of points
+N = 250; % number of points
 
 v = [.05 .2 .5 1 1.5 3];
 
@@ -22,3 +22,5 @@ for i = 1:6
 end
 
 suptitle(sprintf('%d Samples', N));
+
+

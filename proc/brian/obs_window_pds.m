@@ -39,14 +39,14 @@ for i = 1:length(keepers)
     
     % Reject paths that have too high a length to displacement ratio
     dist = sqrt( (snip(end,1)-snip(1,1)).^2 + (snip(end,2)-snip(1,2)).^2 );
-    %keepers(i) = keepers(i) & len/dist < maxLenRat;
+    keepers(i) = keepers(i) & len/dist < maxLenRat;
     
     % Reject paths that have too high a peak curvature
     k = curvature(snip);
-    %keepers(i) = keepers(i) & max(abs(k)) < kMax;
+    keepers(i) = keepers(i) & max(abs(k)) < kMax;
 end
 
-% Plot all paths to inspect our selection algorithm
+% % Plot all paths to inspect our selection algorithm
 % figure; hold on;
 % cols = {'r-', 'b-'};
 % for i = 1:length(iStart)
@@ -60,6 +60,7 @@ end
 %     plot(Wr*cos(th)+offsetx, Wr*sin(th)+offsety, 'Color', [.5 .5 .5]);
 % end
 % axis equal;
+
 
 % Dump all the rejected trajectories
 iStart = iStart(keepers);
@@ -89,7 +90,7 @@ for uid = 1:length(unit_list(bdf))
         for offsety = -2:2
             dx = 2*pi*offsetx;
             dy = 2*pi*offsety;
-            for i = 1:length(vdf)
+            for i = 1:length(thf)
                 gx = gx + la(i) * exp( -sqrt((thf(i)-xx-dx).^2 + (thv(i)-yy-dy).^2) / 2 / sig.^2 );
                 gp = gp + exp( -sqrt((thf(i)-xx-dx).^2 + (thv(i)-yy-dy).^2) / 2 / sig.^2 );
             end
