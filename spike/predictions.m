@@ -1,6 +1,4 @@
 function [vaf, vaf2, r2] = predictions(bdf, signal, cells, folds)
-% [vaf, vaf2, r2] = predictions(bdf, signal, cells, folds)
-%
 % $Id$
 
 if strcmpi(signal, 'pos')
@@ -11,6 +9,12 @@ elseif strcmpi(signal, 'acc')
     y = bdf.acc(:,2:3);
 elseif strcmpi(signal, 'force')
     y = bdf.force(:,2:3);
+elseif strcmpi(signal, 'ppforce')
+    tmpv = bdf.vel(:,2:3);
+    tmpf = bdf.force(:,2:3);
+    y = [sum( tmpf .* tmpv , 2)./sqrt(sum(tmpv.^2,2)) ...
+        sum( tmpf .* [-tmpv(:,2), tmpv(:,1)] , 2)./sqrt(sum(tmpv.^2,2))];
+    y(1,:) = [0 0];
 else
     error('Unknown signal requested');
 end

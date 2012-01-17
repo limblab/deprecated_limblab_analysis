@@ -45,6 +45,7 @@ glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
 glmp = sum(glmf .* glmv,2);
 glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
     sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
+glmpp(1,:) = [0 0];
 
 if strcmp(mdl, 'pos')
     glm_input = glmx;
@@ -59,9 +60,15 @@ elseif strcmp(mdl, 'forcevel')
 elseif strcmp(mdl, 'forceposvel')
     glm_input = [glmx glmv glmf];
 elseif strcmp(mdl, 'ppforcevel');
-    glm_input = [glmv glmf];
+    glm_input = [glmv glmpp];
 elseif strcmp(mdl, 'ppforceposvel');
-    glm_input = [glmx glmv glmf];
+    glm_input = [glmx glmv glmpp];
+elseif strcmp(mdl, 'powervel');
+    glm_input = [glmv glmp];
+elseif strcmp(mdl, 'powerposvel');
+    glm_input = [glmx glmv glmp];
+elseif strcmp(mdl, 'ppcartfvp')
+    glm_input = [glmx glmv glmf glmpp];
 else
     error('unknown model: %s', mdl);
 end
