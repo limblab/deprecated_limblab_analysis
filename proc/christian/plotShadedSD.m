@@ -5,6 +5,7 @@ xIdx  = [1:numpts numpts:-1:1];
 xarea = timeframe(xIdx,1);
 
 figure;
+plot(timeframe,Data);
 hold on;
 for i = 1:size(Data,2)
     ytop = Data(:,i) + SD(:,i);

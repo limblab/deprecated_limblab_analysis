@@ -4,8 +4,8 @@ function [PWTH,varargout] = PWTH(signals,wordsVect,wordToAve,timeBefore,timeAfte
     % the first colomn of the signals array should be a time vector in
     % seconds
 
-    binsize = signals(2,1)-signals(1,1);
-    windowTimeFrame = -timeBefore:binsize:timeAfter-binsize;
+    binsize = round(1000*(signals(2,1)-signals(1,1)))/1000;
+    windowTimeFrame = -timeBefore:binsize:timeAfter;
     windowLength = length(windowTimeFrame);
     numSignals = size(signals,2)-1;
   
