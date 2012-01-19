@@ -141,9 +141,10 @@ for n=1:length(BatchList)
     try
         VAFstruct(n)=handControl_decoderPerformance(BatchList{n});
     end
+    close
+    cd(originalPath)
+    save(fullfile(PathName,'VAFstruct.mat'),'VAFstruct')
+    assignin('base','VAFstruct',VAFstruct)
 end
 
-cd(originalPath)
-save(fullfile(PathName,'VAFstruct.mat'),'VAFstruct')
-assignin('base','VAFstruct',VAFstruct)
 
