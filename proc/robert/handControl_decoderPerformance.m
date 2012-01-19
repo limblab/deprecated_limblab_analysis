@@ -43,7 +43,7 @@ else
                 varName='bdf';
             end     % if we make it to this point we know the variable bdf exists.
         else % was a partial path.  Make the same assumptions as below.
-            pathToBDF=findBDFonCitadel(pathToBDF);
+            pathToBDF=findBDFonCitadel(pathToBDF,1);
         end
         strFlag=1;
     else                % bdf has been passed in.
@@ -113,7 +113,7 @@ for n=1:1000     % assume there are fewer than 1000 files in a folder.
         end
         nextFile(regexp(nextFile,sprintf('\n')))='';
         if status==0 && exist(nextFile,'file')==2
-            decoderDate=decoderDateFromLogFile(nextFile);
+            decoderDate=decoderDateFromLogFile(nextFile,1);
             break
         end
     end

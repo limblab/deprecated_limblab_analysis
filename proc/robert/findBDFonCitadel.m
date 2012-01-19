@@ -1,21 +1,26 @@
-function pathToBDF=findBDFonCitadel(nameIn)
+function pathToBDF=findBDFonCitadel(nameIn,suppressDialog)
 
-% syntax pathToBDF=findBDFonCitadel(nameIn)
+% syntax pathToBDF=findBDFonCitadel(nameIn,suppressDialog)
 %
 % looks for a BDF-formatted file on Citadel, making a few assumptions about
 % where such things live.
 
+if nargin < 2
+    suppressDialog=0;
+end
+
 % if the file name as a .mat extension, keep it.
 [~,~,ext]=fileparts(nameIn);
-if isequal(ext,'.plx')
+
+switch ext
+    case '.plx'
     nameIn=regexprep(nameIn,'\.plx','\.mat');
-else % assume the filename has a dot in it.  One remaining possibility: 
-     % extension is .txt
-     if isequal(ext,'.txt')
+    case '.txt'
          nameIn=regexprep(nameIn,'\.txt','\.mat');
-     else % assume it's a multi-dot name
-         nameIn=[nameIn, '.mat'];
-     end
+    case '.mat'
+        nameIn=nameIn;
+    otherwise
+        nameIn=[nameIn, '.mat'];
 end
 
 CCMbank={'Chewie_8I2','Mini_7H1'};
@@ -45,6 +50,10 @@ if status==0
 else
     % revert to dialog, we couldn't automagically locate the
     % BDF.
-    [FileName,PathName]=uigetfile('*.mat','select a bdf file');
-    pathToBDF=fullfile(PathName,FileName);
+    if ~suppressDialog
+        [FileName,PathName]=uigetfile('*.mat','select a bdf file');
+        pathToBDF=fullfile(PathName,FileName);
+    else
+        error('file not found: %s\n',nameIn)
+    end
 end

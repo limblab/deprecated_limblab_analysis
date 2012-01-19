@@ -1,19 +1,18 @@
-function decoderDate=decoderDateFromLogFile(inputPath)
+function decoderDate=decoderDateFromLogFile(inputPath,suppressInput)
 
-if nargin
+if nargin >= 1
     fid=fopen(inputPath);
 else
     [FileNameBR,PathNameBR]=uigetfile('*.txt','select a file');
     fid=fopen(fullfile(PathNameBR,FileNameBR));
 end
 
+if nargin < 2
+    suppressInput=0;
+end
 % should be the first line.
 modelLine=fgetl(fid);
 if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
-    decoderFile=regexp(modelLine,filesep,'split');
-    decoderFile=decoderFile{end};
-    
-    
     datestring=regexp(modelLine,'[0-9]*(?=poly[0-9])','match','once');
     switch length(datestring)
         case 11
@@ -29,8 +28,12 @@ if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
     end
     
     if isnan(decoderDate)
-        fprintf(1,'decoder date could not be automatically determined.\m')
-        decoderDate=input('Please enter the date of the decoder: ');
+        if ~suppressInput
+            fprintf(1,'decoder date could not be automatically determined.\m')
+            decoderDate=input('Please enter the date of the decoder: ');
+        else
+            error('decoder date could not be automatically determined\n')
+        end
     end
 else
     decoderDate=NaN;
