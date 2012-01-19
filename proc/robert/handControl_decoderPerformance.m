@@ -23,20 +23,7 @@ VAFstruct=struct('name','','decoder_age',[],'vaf',[]);
 if ~nargin                      % dialog for bdf
     [FileName,PathName]=uigetfile('*.mat','select a bdf file');
     pathToBDF=fullfile(PathName,FileName);
-    load(pathToBDF)
-    if exist('bdf','var')~=1
-        if exist('out_struct','var')~=1
-            error(['neither ''bdf'' or ''out_struct'' was found.\n', ...
-                'if %s\n contains a properly formatted bdf structure, \n', ...
-                'load it manually, then pass it as an argument.\n'])
-        else
-            bdf=out_struct;
-            clear out_struct
-            varName='out_struct';
-        end
-    else
-        varName='bdf';
-    end     % if we make it to this point we know the variable bdf exists.
+    strFlag=1;
 else
     if ischar(inputItem) % path to bdf is input
         pathToBDF=inputItem;
@@ -58,23 +45,37 @@ else
         else % was a partial path.  Make the same assumptions as below.
             pathToBDF=findBDFonCitadel(pathToBDF);
         end
+        strFlag=1;
     else                % bdf has been passed in.
         bdf=inputItem;
         clear inputItem
         varName=inputname(1);
         pathToBDF=findBDFonCitadel(bdf.meta.filename);
+        strFlag=0;
     end
 end
 
 % strip out trailing CR, if present.
 pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
 
-% account for profound mental retardation on MATLAB's part
-v=version;
-if str2double(v(1))>=7
-    [BDFpathStr,BDFname,~]=fileparts(pathToBDF);
+if strFlag
+    load(pathToBDF)
+    if exist('bdf','var')~=1
+        if exist('out_struct','var')~=1
+            error(['neither ''bdf'' or ''out_struct'' was found.\n', ...
+                'if %s\n contains a properly formatted bdf structure, \n', ...
+                'load it manually, then pass it as an argument.\n'])
+        else
+            bdf=out_struct;
+            clear out_struct
+            varName='out_struct';
+        end
+    else
+        varName='bdf';
+    end     % if we make it to this point we know the variable bdf exists.
 end
-
+    
+[BDFpathStr,BDFname,~]=fileparts(pathToBDF);
 if ispc
     fsep=[filesep filesep]; % because regexp chokes on 1 backslash
 else
@@ -134,18 +135,18 @@ end
 % doesn't hurt to calculate, but probably won't get re-saved so dead end
 [bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf,opts);
 
-[workspaceList,~]=dbstack;
-if ~isequal(workspaceList(length(workspaceList)).file,[mfilename,'.m'])
-    % ISN'T being called from the command line
-    assignin('caller','decoder_age',bdf.meta.decoder_age)
-end
+% [workspaceList,~]=dbstack;
+% if ~isequal(workspaceList(length(workspaceList)).file,[mfilename,'.m'])
+%     % ISN'T being called from the command line
+%     assignin('caller','decoder_age',bdf.meta.decoder_age)
+% end
 
 
 fid=fopen(nextFile);
 % should be the first line.
 modelLine=fgetl(fid);
 if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
-    decoderFile=regexp(modelLine,filesep,'split');
+    decoderFile=regexp(modelLine,'/','split');
     decoderFile=decoderFile(end-1:end);
     decoderFile{2}(end)=[];
 else
@@ -154,7 +155,7 @@ end
 fclose(fid);
 
 out_struct=bdf; clear bdf
-
+animal=regexp(pathToBDF,'Chewie|Mini','match','once');
 switch animal
     case 'Chewie'
         ff='Filter files';

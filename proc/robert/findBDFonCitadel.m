@@ -37,7 +37,7 @@ else
     remoteDriveLetter='Z:';
     pathToCitadelData=fullfile(remoteDriveLetter, ...
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
-    [status,result]=dos(['cd /d ',pathToCitadelData,' && dir * /s /b']);
+    [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *',nameIn,'* /s /b']);
 end
 % evaluate, based on results of system commands to find file.
 if status==0
