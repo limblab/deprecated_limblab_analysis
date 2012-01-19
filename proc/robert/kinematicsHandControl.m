@@ -69,9 +69,14 @@ trialOnset(out_struct.words(trialOnset+1,2)~=49)=[]; % this should never happen
 % this should happen when the first reach to the first target of a trial
 % (the only reach, in brain control) never reaches the target (i.e., a
 % fail).  This WILL NOT CUT OUT ABORT reaches.
-trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
+if opts.version==2
+    trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
+    startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
+else
+    startEndReachesMatrix=out_struct.words(sort([find(out_struct.words(:,2)== ...
+        target_entry_word); find(out_struct.words(:,2)==target_entry_word)-1]),:);
+end
 
-startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
 % don't let things start (or end) on the wrong note.
 if startEndReachesMatrix(1,2)==target_entry_word, startEndReachesMatrix(1,:)=[]; end
 if startEndReachesMatrix(end,2)==49, startEndReachesMatrix(end,:)=[]; end

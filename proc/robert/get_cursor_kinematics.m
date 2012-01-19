@@ -18,6 +18,7 @@ function varargout=get_cursor_kinematics(inputItem)
 %                               read in.
 %
 
+startingPath=pwd;
 
 if ~nargin                      % dialog for bdf
     [FileName,PathName]=uigetfile('*.mat','select a bdf file');
@@ -27,7 +28,7 @@ if ~nargin                      % dialog for bdf
         if exist('out_struct','var')~=1
             error(sprintf(['neither ''bdf'' or ''out_struct'' was found.\n', ...
                 'if %s\n contains a properly formatted bdf structure, \n', ...
-                'load it manually, and pass it as an argument.\n']))
+                'load it manually, then pass it as an argument.\n']))
         else
             bdf=out_struct;
             clear out_struct
@@ -216,3 +217,5 @@ else
     end
     save(pathToBDF,varName)
 end
+% make sure we end where we started.
+cd(startingPath)
