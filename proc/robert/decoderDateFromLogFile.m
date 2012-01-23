@@ -24,7 +24,12 @@ if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
                 decoderDate=NaN;
             end
         otherwise
-            decoderDate=NaN;
+            datestring=regexp(modelLine,'[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]','match','once');
+            if ~isempty(datestring)
+                decoderDate=datenum(datestring);
+            else
+                decoderDate=NaN;
+            end
     end
     
     if isnan(decoderDate)
