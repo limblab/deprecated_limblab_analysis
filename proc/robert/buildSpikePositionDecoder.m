@@ -1,29 +1,48 @@
 function filter = buildSpikePositionDecoder(BDFfileIn)
 
-disp('importing data...')
-
-if ischar(BDFfileIn)
-    bdf=load(BDFfileIn);
-	if length(fieldnames(bdf))~=1
-		disp('too many variables in the BDF file.  quitting...')
-	else
-		nameWithinFile=char(fieldnames(bdf));
-	    bdf=bdf.(nameWithinFile);
-	end
-else
-    bdf=BDFfileIn;
+if ~nargin
+    [FileName,PathName,~]=uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\', ...
+        'select data file');
+    if isnumeric(PathName) && PathName==0
+        filter=[]; return
+    end
+    if exist(fullfile(PathName,FileName),'file')~=2
+        disp('file not valid.  aborting...')
+        filter=[]; return
+    end
+    fprintf(1,'%s\n',fullfile(PathName,FileName))
+    disp('importing data...')
+    bdf=load(fullfile(PathName,FileName));
+    nameWithinFile=char(regexp(fieldnames(bdf),'bdf|out_struct','match','once'));
+    if ~isempty(nameWithinFile)
+        bdf=bdf.(nameWithinFile);
+    else
+        disp('neither "bdf" nor "out_struct" was found in the .mat file.  quitting...')
+    end
+else    
+    if ischar(BDFfileIn)
+        bdf=load(BDFfileIn);
+        if length(fieldnames(bdf))~=1
+            disp('too many variables in the BDF file.  quitting...')
+        else
+            nameWithinFile=char(fieldnames(bdf));
+            bdf=bdf.(nameWithinFile);
+        end
+    else
+        bdf=BDFfileIn;
+    end
 end
-
 % bdf.pos(:,2) = bdf.pos(:,2) - offsetx;
 % bdf.pos(:,3) = bdf.pos(:,3) - offsety;
 
 fprintf(1,'\n\nbuilding one-shot decoder using BuildModel.m\n\n')
 
 [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
+stoptime=bdf.meta.duration;
 
 disp('Converting BDF structure to binned data, please wait...');
 if ischar(BDFfileIn) % if there were >1 fieldnames we wouldn't have gotten this far
-	str=nameWithinFile;
+	str=BDFfileIn;         % nameWithinFile
 else				% was passed in as an argument from the base workspace
 	str=inputname(1);
 end
@@ -32,9 +51,15 @@ binnedData = convertBDF2binned(str,binsize,starttime,stoptime,hpfreq,lpfreq, ...
 
 [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Use_Thresh] = ...
 	BuildModelGUI(binsize,'');
-[filter,OLPredData] = BuildModel(binnedData, ...
-	'/Users/rdflint/work/Dropbox/MATLAB_code/s1_analysis', fillen, 1, PolynomialOrder, ...
-	Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
+if ismac
+    [filter,OLPredData] = BuildModel(binnedData, ...
+        '/Users/rdflint/work/Dropbox/MATLAB_code/s1_analysis', fillen, 1, PolynomialOrder, ...
+        Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
+else
+    [filter,OLPredData] = BuildModel(binnedData, ...
+        'C:\Documents and Settings\Administrator\Desktop\s1_analysis', fillen, 1, PolynomialOrder, ...
+        Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);    
+end
 % clear binnedData;
 disp('Done.');
 
@@ -64,11 +89,14 @@ OLPredData.vaf
 
 if ischar(BDFfileIn)
 	[pathstr,name,~]=fileparts(BDFfileIn);
-	save(fullfile(pathstr,[name,'decoder.mat']),'H','P','T','binsize','fillen','filter', ...
+	save(fullfile(pathstr,[name,'-spikedecoder.mat']),'H','P','T','binsize','fillen','filter', ...
 		'neuronIDs','outnames','patch');
 	fprintf(1,'saved decoder file in %s',pathstr)
 	% looking forward to next section
 	fnam=name;
+elseif ~nargin
+    save(fullfile(PathName,[regexp(FileName,'.*(?=\.mat)','match','once'),'-spikedecoder.mat']), ...
+        'H','P','T','binsize','fillen','filter','neuronIDs','outnames','patch')
 else
 	save('currentDecoder.mat','H','P','T','binsize','fillen','filter','neuronIDs', ...
 		'outnames','patch');
@@ -106,9 +134,8 @@ if MinFiringRate==0 && (length(bdf.units)~= size(binnedData.spikeratedata,2))
 end
 cells=[];
 
-[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P] = ...
-	predictions_mwstikpolyMOD(bdf,signal,cells,binsize,folds,numlags,numsides, ...
-	lambda,PolynomialOrder,Use_Thresh);
+[vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD(bdf,signal, ...
+    cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
 close
 
 fprintf(1,'folds=%d\n',folds)
@@ -130,13 +157,13 @@ fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
 
 return
-% LFP stuff
-fp=cat(2,bdf.raw.analog.data{:})';
-samprate=bdf.raw.analog.adfreq(1);
-wsz=256; 
-nfeat=100; 
-smoothfeats=1;
-numfp=size(fp,1);
-fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
-analog_times=sig(:,1);
+% % LFP stuff
+% fp=cat(2,bdf.raw.analog.data{:})';
+% samprate=bdf.raw.analog.adfreq(1);
+% wsz=256; 
+% nfeat=100; 
+% smoothfeats=1;
+% numfp=size(fp,1);
+% fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
+% analog_times=sig(:,1);
 
