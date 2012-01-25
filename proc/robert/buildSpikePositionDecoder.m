@@ -1,4 +1,4 @@
-function filter = buildSpikePositionDecoder(BDFfileIn)
+function filter = buildSpikePositionDecoder(BDFfileIn,interactive)
 
 if ~nargin
     [FileName,PathName,~]=uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\', ...
@@ -17,40 +17,56 @@ if ~nargin
     if ~isempty(nameWithinFile)
         bdf=bdf.(nameWithinFile);
     else
-        disp('neither "bdf" nor "out_struct" was found in the .mat file.  quitting...')
+        error('neither "bdf" nor "out_struct" was found in the .mat file.')
     end
+    interactive=0;
+    varStr=nameWithinFile;
+    assignin('base',nameWithinFile,bdf)
 else    
     if ischar(BDFfileIn)
         bdf=load(BDFfileIn);
-        if length(fieldnames(bdf))~=1
-            disp('too many variables in the BDF file.  quitting...')
-        else
-            nameWithinFile=char(fieldnames(bdf));
+        nameWithinFile=char(regexp(fieldnames(bdf),'bdf|out_struct','match','once'));
+        if ~isempty(nameWithinFile)
             bdf=bdf.(nameWithinFile);
+        else
+            error('neither "bdf" nor "out_struct" was found in the .mat file.')
         end
     else
         bdf=BDFfileIn;
     end
+    if nargin==1, interactive=0; end
+    if ischar(BDFfileIn)
+        varStr=BDFfileIn;
+    else				 % was passed in as an argument from the base workspace
+        varStr=inputname(1);
+    end
 end
+
 % bdf.pos(:,2) = bdf.pos(:,2) - offsetx;
 % bdf.pos(:,3) = bdf.pos(:,3) - offsety;
 
 fprintf(1,'\n\nbuilding one-shot decoder using BuildModel.m\n\n')
 
-[binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
+if interactive
+    [binsize,starttime,~,~,~,MinFiringRate,~]=convertBDF2binnedGUI;
+else
+    binsize=0.05;
+    starttime=0;
+    MinFiringRate=0;
+end
 stoptime=bdf.meta.duration;
 
 disp('Converting BDF structure to binned data, please wait...');
-if ischar(BDFfileIn) % if there were >1 fieldnames we wouldn't have gotten this far
-	str=BDFfileIn;         % nameWithinFile
-else				% was passed in as an argument from the base workspace
-	str=inputname(1);
-end
-binnedData = convertBDF2binned(str,binsize,starttime,stoptime,hpfreq,lpfreq, ...
-	MinFiringRate,NormData);
+binnedData = convertBDF2binned(varStr,binsize,starttime,stoptime);
 
-[fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Use_Thresh] = ...
-	BuildModelGUI(binsize,'');
+if interactive
+    [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Use_Thresh] = ...
+        BuildModelGUI(binsize,'');
+else
+    fillen=0.5;
+    PolynomialOrder=3;
+    Pred_EMG=0; Pred_Force=0; Pred_CursPos=0; UseThressh=0;
+end
 if ismac
     [filter,OLPredData] = BuildModel(binnedData, ...
         '/Users/rdflint/work/Dropbox/MATLAB_code/s1_analysis', fillen, 1, PolynomialOrder, ...

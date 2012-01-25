@@ -1,6 +1,6 @@
-function BDF_META
+function BDF_META(varargin)
 
-% syntax BDF_META
+% syntax BDF_META(META_struct)
 %
 % searches for all files on citadel/data in BDF-formatted .mat files
 % (currently only Chewie, Mini).  Creates a digest consisting of:
@@ -16,6 +16,16 @@ function BDF_META
 %
 % currently, only implemented for RW behavior.  Should glide over others,
 % providing file name and .meta field, and skipping over the other fields.
+%   TODO: insert NaNs instead of empties?
+%
+%       INPUTS:
+%
+%           META_struct (optional)  -   the output of a previously
+%           completed run.  If supplied, the function will skip over any
+%           files with the same names as those already represented.  It
+%           will only process the new found files, append their results to
+%           the existing results, and save a new copy of META_struct in the
+%           directory where the function was run.
 
 
 startingPath=pwd;
