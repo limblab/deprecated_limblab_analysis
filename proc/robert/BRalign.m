@@ -5,6 +5,8 @@ onlineArray=readBrainReaderFile_function(fullfile(PathName,FileName));
 disp('reading psuedo-online array...')
 PathName=regexprep(PathName,'online','pseudoOnline');
 temp=regexp(PathName,'\\'); if ~isempty(temp), temp(end)=[]; end, PathName=PathName(1:temp(end)); clear temp
+PathName = [PathName,'pseudoOnline']; %added by BDW 01/31/2012
+% PathName = 'T:\Chewie_8I2\BrainReader logs\pseudoOnline'; %hard coded string just to get it running quickly
 D=dir(PathName);
 psoArray=readBrainReaderFile_function(fullfile(PathName,D(cellfun(@isempty,regexp({D.name}, ...
     regexp(FileName,'.*(?=\.txt)','match','once')))==0).name));
