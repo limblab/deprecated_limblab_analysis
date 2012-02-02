@@ -19,8 +19,9 @@ while ~feof(fid)
     % startup tag per file (and for the fact that we might not know which
     % section of a multi-section recording we actually want).
     
-    if ~isempty(regexp(tline,'Plexon|Cerebus recording startup','once'))
-        fprintf(1,'Plexon recording startup flag detected at line %d\n',m)
+    if ~isempty(regexp(tline,'Plexon recording startup|Cerebus recording startup','once'))
+        fprintf(1,'%s recording startup flag detected at line %d\n', ...
+            regexp(tline,'Plexon|Cerebus','match','once'),m)
         array=[];
     end
     numbers=sscanf(tline,'%f \t%f \t%f \t%f \t%f \t%f \t%f');
