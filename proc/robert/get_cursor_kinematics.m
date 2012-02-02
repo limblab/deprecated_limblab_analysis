@@ -193,13 +193,31 @@ bdf.vel=[newTvector' newXvel' newYvel'];
 
 bdf.meta.brain_control=1;
 decoderDate=decoderDateFromLogFile(pathToBR);
+% could just floor the datenum, you know...
 bdfDate=datenum(regexp(bdf.meta.datetime,'\s*[0-9]+/\s*[0-9]+/[0-9]+','match','once'));
 bdf.meta.decoder_age=bdfDate-decoderDate;
 % could look into the brainReader file as it's read in, guess from the
 % decoder file's name whether it was spike control or LFP control, and save
 % that info in bdf.meta.brain_control, rather than just a 1.
 
-[bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf);
+opts=struct('version',2);
+if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
+    opts.version=1; opts.hold_time=0.1;
+    % Inside get_cursor_kinematics.m, we can assume brain control.
+    % Insert a target_entry_word into bdf.words.  Only for success trials.
+    % make sure to start with the first complete trial in the recording
+    beginFirstTrial=find(bdf.words(:,2)==18,1,'first');
+    if beginFirstTrial > 1
+        bdf.words(1:beginFirstTrial-1,:)=[];
+    end
+    successTrials=bdf.words(bdf.words(:,2)==32,:);
+    for n=1:size(successTrials,1)
+        bdfWordsPosition=find(bdf.words(:,1)<successTrials(n,1));
+        bdf.words=[bdf.words(bdfWordsPosition,:); [successTrials(n,1) 49]; ...
+            bdf.words(bdfWordsPosition(end)+1:end,:)];
+    end
+end
+[bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf,opts);
 
 [workspaceList,~]=dbstack;
 if ~isequal(workspaceList(length(workspaceList)).file,[mfilename,'.m'])

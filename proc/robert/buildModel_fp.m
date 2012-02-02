@@ -217,6 +217,10 @@ if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
 
+% for n=1:size(PB,1)
+%     PB(n,:,:)=zscore(squeeze(PB(n,:,:))')';
+% end
+% y=zscore(y);
 % temporary - to test a hypothesis 01/06
 % PB=[];
 % PB(1,:,:)=mean(PA(gam1,:,:),1);
@@ -390,7 +394,6 @@ for j=1:size(y,2)
 end
 
 disp('5th part: do predictions')
-
 
 vmean=mean(vaf);
 vsd=std(vaf,0,1);

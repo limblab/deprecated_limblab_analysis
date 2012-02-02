@@ -19,7 +19,7 @@ cd(PathName)
 Files=dir(PathName);
 Files(1:2)=[];
 FileNames={Files.name};
-MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'Spike_LFP.*(?<!poly.*)\.mat'))==0);
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'Spike_LFP.*(?<!poly.*|-spike.*)\.mat'))==0);
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
@@ -62,10 +62,14 @@ for batchIndex=1:length(MATfiles)
             fprintf(1,'%s appears to be a hand control file.\n',MATfiles{batchIndex})
             fprintf(1,'calculating handle kinematics instead...\n')
             kinStruct(batchIndex).decoder_age=NaN; % because hand control!
+            opts=struct('version',2);
+            if floor(datenum(out_struct.meta.datetime)) <= datenum('09-12-2011')
+                opts.version=1; opts.hold_time=0.1;
+            end
             [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...
-                kinStruct(batchIndex).hitRate2]=kinematicsHandControl(out_struct);
+                kinStruct(batchIndex).hitRate2]=kinematicsHandControl(out_struct,opts);
         else
-            % ... (from line 55) or, if it's a brain control file that was
+            % ... (from line 61) or, if it's a brain control file that was
             % run previously and now has pos/vel data.  Happens during
             % re-runs of folders.  Don't want to replace good data with
             % bad.  Also avoids having to re-save, by not re-running

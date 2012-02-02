@@ -10,6 +10,7 @@ if ~nargin
         disp('file not valid.  aborting...')
         filter=[]; return
     end
+    diary(fullfile(PathName,'decoderOutput.txt'))
     fprintf(1,'%s\n',fullfile(PathName,FileName))
     disp('importing data...')
     bdf=load(fullfile(PathName,FileName));
@@ -24,6 +25,8 @@ if ~nargin
     assignin('base',nameWithinFile,bdf)
 else    
     if ischar(BDFfileIn)
+        [PathName,FileName,ext,~]=fileparts(BDFfileIn);
+        diary(fullfile(PathName,'decoderOutput.txt'))
         bdf=load(BDFfileIn);
         nameWithinFile=char(regexp(fieldnames(bdf),'bdf|out_struct','match','once'));
         if ~isempty(nameWithinFile)
@@ -31,15 +34,13 @@ else
         else
             error('neither "bdf" nor "out_struct" was found in the .mat file.')
         end
-    else
-        bdf=BDFfileIn;
-    end
-    if nargin==1, interactive=0; end
-    if ischar(BDFfileIn)
         varStr=BDFfileIn;
-    else				 % was passed in as an argument from the base workspace
+    else % handed the BDF from outside the function.  Assume we're in the proper directory?
+        diary(fullfile(pwd,'decoderOutput.txt'))
+        bdf=BDFfileIn;
         varStr=inputname(1);
     end
+    if nargin==1, interactive=0; end
 end
 
 % bdf.pos(:,2) = bdf.pos(:,2) - offsetx;
@@ -60,28 +61,23 @@ disp('Converting BDF structure to binned data, please wait...');
 binnedData = convertBDF2binned(varStr,binsize,starttime,stoptime);
 
 if interactive
-    [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Use_Thresh] = ...
+    [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc] = ...
         BuildModelGUI(binsize,'');
 else
     fillen=0.5;
     PolynomialOrder=3;
-    Pred_EMG=0; Pred_Force=0; Pred_CursPos=0; UseThressh=0;
+    Pred_EMG=0; Pred_Force=0; Pred_CursPos=0; 
+    Pred_Veloc=1;
 end
-if ismac
-    [filter,OLPredData] = BuildModel(binnedData, ...
-        '/Users/rdflint/work/Dropbox/MATLAB_code/s1_analysis', fillen, 1, PolynomialOrder, ...
-        Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);
-else
-    [filter,OLPredData] = BuildModel(binnedData, ...
-        'C:\Documents and Settings\Administrator\Desktop\s1_analysis', fillen, 1, PolynomialOrder, ...
-        Pred_EMG, Pred_Force, Pred_CursPos,Use_Thresh);    
-end
+
+[filter,OLPredData] = BuildModel(binnedData, ...
+    'C:\Documents and Settings\Administrator\Desktop\s1_analysis', fillen, 1, PolynomialOrder, ...
+    Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc);
 % clear binnedData;
 disp('Done.');
 
 filter.P = filter.P';
 
-FromData='';	% eventually, the file the data came from
 H = filter.H;
 P = filter.P;
 T=filter.T;
@@ -103,21 +99,31 @@ fprintf(1,'\n')
 
 OLPredData.vaf
 
-if ischar(BDFfileIn)
+if nargin && ischar(BDFfileIn)
 	[pathstr,name,~]=fileparts(BDFfileIn);
 	save(fullfile(pathstr,[name,'-spikedecoder.mat']),'H','P','T','binsize','fillen','filter', ...
 		'neuronIDs','outnames','patch');
 	fprintf(1,'saved decoder file in %s',pathstr)
 	% looking forward to next section
-	fnam=name;
 elseif ~nargin
     save(fullfile(PathName,[regexp(FileName,'.*(?=\.mat)','match','once'),'-spikedecoder.mat']), ...
         'H','P','T','binsize','fillen','filter','neuronIDs','outnames','patch')
 else
-	save('currentDecoder.mat','H','P','T','binsize','fillen','filter','neuronIDs', ...
-		'outnames','patch');
-	fprintf(1,'saved decoder file in current directory\n')
-	fnam='current';
+    % if the path name is not provided, default to saving on the network
+    % since that's the solution we have in place for locating the bdf.
+    if exist('FileName','var')==1
+        BDFfileName=FileName;
+    else
+        BDFfileName=regexprep(bdf.meta.filename,'\.plx','\.mat');
+    end
+    if exist('PathName','var')==1
+        BDFpathName=PathName;
+    else
+        BDFpathName=findBDFonGOB(BDFfileName,1);
+    end
+    decoderPathName=regexprep(BDFpathName,'\.mat','-spikedecoder\.mat');
+    decoderPathName(regexp(decoderPathName,sprintf('\n')))='';
+	save(decoderPathName,'H','P','T','binsize','fillen','filter','neuronIDs','outnames','patch');
 end
 
 % in case we want to re-generate them, avoid confusion
@@ -171,15 +177,4 @@ formatstr=[formatstr, '\n'];
 fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
-
-return
-% % LFP stuff
-% fp=cat(2,bdf.raw.analog.data{:})';
-% samprate=bdf.raw.analog.adfreq(1);
-% wsz=256; 
-% nfeat=100; 
-% smoothfeats=1;
-% numfp=size(fp,1);
-% fptimes=1/samprate:1/samprate:size(bdf.raw.analog.data{1},1)/samprate;
-% analog_times=sig(:,1);
-
+diary off

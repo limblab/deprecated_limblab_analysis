@@ -41,8 +41,9 @@ end
 
 if opts.version==1              % if target_entry_word is not present,
     hold_time=opts.hold_time;   % must supply hold time
-    target_entry_word=32;
-else
+    target_entry_word=49;       % delay between completion of 1 reach 
+else                            % and target presentation of next has been
+                                % found to be reliable in testing.
     hold_time=0;
     target_entry_word=160;
 end
@@ -62,29 +63,26 @@ end
 
 % to avoid problems in brain control files where there can be exit &
 % re-entry without a trial reset (e.g. aborts disabled), only take the
-% first trial presentation/target entry time stamps following a trial onset
-% marker
+% first confirmed successful reach following trial initiation.
+% trial initiation:
 trialOnset=find(out_struct.words(:,2)==18);
-trialOnset(out_struct.words(trialOnset+1,2)~=49)=[]; % this should never happen
-% this should happen when the first reach to the first target of a trial
-% (the only reach, in brain control) never reaches the target (i.e., a
-% fail).  This WILL NOT CUT OUT ABORT reaches.
+% this should never happen, unless there's a glitch in the system or the
+% recording was cut off just exactly between the trial initiation word and
+% the presentation of the first target (should be exceedingly rare):
+trialOnset(out_struct.words(trialOnset+1,2)~=49)=[];
+% the first reach to the first target of a trial (the only reach, in brain 
+% control) never reached the target (i.e., an abort/fail):
+trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
+% for v1, the above code cuts out aborts on the first reach (hand control).  
+% for v2, an extra step is required to cut out aborts on the first reach.
 if opts.version==2
-    trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
-    startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
-else
-    startEndReachesMatrix=out_struct.words(sort([find(out_struct.words(:,2)== ...
-        target_entry_word); find(out_struct.words(:,2)==target_entry_word)-1]),:);
+    trialOnset(out_struct.words(trialOnset+3,2)==33)=[];
 end
+startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
 
-% don't let things start (or end) on the wrong note.
-if startEndReachesMatrix(1,2)==target_entry_word, startEndReachesMatrix(1,:)=[]; end
-if startEndReachesMatrix(end,2)==49, startEndReachesMatrix(end,:)=[]; end
-
-% start_reaches=out_struct.words(diff(out_struct.words(:,2))==0 | ...
-% 	diff(out_struct.words(:,2))==-17,1);
-% end_reaches=out_struct.words(find(diff(out_struct.words(:,2))==0 | ...
-% 	diff(out_struct.words(:,2))==-17)+1,1);
+% % don't let things start (or end) on the wrong note.
+% if startEndReachesMatrix(1,2)==target_entry_word, startEndReachesMatrix(1,:)=[]; end
+% if startEndReachesMatrix(end,2)==49, startEndReachesMatrix(end,:)=[]; end
 
 if mod(size(startEndReachesMatrix,1),2)
     error('kinematicsHandControl:badStartEndReaches', ...

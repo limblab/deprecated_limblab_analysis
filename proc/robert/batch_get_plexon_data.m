@@ -20,7 +20,7 @@ for batch_get_plx_ind=1:length(PLXfiles)
     FileName=PLXfiles{batch_get_plx_ind}; 
     if isempty(intersect(regexp(FileName,'.*(?=\.plx)','match','once'), ...
             regexp(MATfiles,'.*(?=\.mat)','match','once')))
-        out_struct=get_plexon_data(FileName,'noforce','noeye');
+        out_struct=get_plexon_data(FileName,'noforce','noeye','verbose');
         save(fullfile(PathName,[FileName(1:end-4),'.mat']),'out_struct')
         disp('saved out_struct')
     else

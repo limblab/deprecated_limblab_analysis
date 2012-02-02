@@ -39,9 +39,11 @@ if strcmp(CEBorPLX,'ceb')
 %     batch_buildLFP_EMGdecoder
 else
     batch_get_plexon_data % runs as script.  uses PathName
-    batch_buildLFPpositionDecoderRDF
+    batch_buildLFPpositionDecoderRDF    % only runs on hand-control files
+    batch_buildSpikePositionDecoderRDF  % only runs on hand-control files
 end
 %% copy the newly created data into appropriate location on citadel.
+diary(fullfile(PathName,'decoderOutput.txt'))
 mkdir(remoteFolder)
 D=dir(PathName);
 MATfiles={D(cellfun(@isempty,regexp({D.name},'_Spike_LFP.*(?<!poly.*)\.mat'))==0).name};
@@ -61,7 +63,9 @@ fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
 
 oldPathName=PathName;
 PathName=remoteFolder;
+% get cursor kinematics for brain control files
 batch_get_cursor_kinematics
+
 PathName=oldPathName; clear oldPathName
 save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
 save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')

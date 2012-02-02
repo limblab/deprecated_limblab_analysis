@@ -192,36 +192,36 @@ clear fpf tftmp
 freqs=linspace(0,samprate/2,wsz/2+1);
 freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
 tvect=(1:numbins)*(bs)-bs/2;
+assignin('base','freqs',freqs)
 disp('3rd part: calculate FFTs')
 toc
 tic
 %% Calculate bandpower
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
-
+assignin('base','Pmat',Pmat)
 Pmean=mean(Pmat,3); %take mean over all times
 PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
+assignin('base','PA',PA)
 clear Pmat
 
 %Define freq bands
 delta=freqs<4;
 mu=((freqs>7) & (freqs<20));
-alphabeta=(freqs>=20) & (freqs<70);
+% alphabeta=(freqs>=20) & (freqs<70);
 gam1=(freqs>70)&(freqs<115);
 gam2=(freqs>130)&(freqs<200);
 gam3=(freqs>200)&(freqs<300);
 PB(1,:,:)=LMP;
 PB(2,:,:)=mean(PA(delta,:,:),1);
 PB(3,:,:)=mean(PA(mu,:,:),1);
-% PB(4,:,:)=mean(PA(alphabeta,:,:),1);
-% formerly PB(4,:,:)
+% % PB(4,:,:)=mean(PA(alphabeta,:,:),1);
 PB(4,:,:)=mean(PA(gam1,:,:),1);
-% formerly PB(5,:,:)
 PB(5,:,:)=mean(PA(gam2,:,:),1);
-% formerly PB(6,:,:)
 if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
 
+assignin('base','PB',PB)
 % isolate powerbands for individual-band analysis.  Most times this will
 % remain commented.
 % PB([2:6],:,:)=[];

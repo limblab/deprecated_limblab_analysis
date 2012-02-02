@@ -34,6 +34,10 @@ analog_times=sig(:,1);
 fpAssignScript
 % look for something called CumulativeBadChannels and load it, then use it
 % to cut down the fp array.
+
+% do a bit of channel-dropping.
+% fp=fp([68 38],:);
+
 clear badChannels % in case this is being run as part of a batch loop
 % if there is a remoteFolder2, load CumulativeBadChannels.mat from that.
 % If not, try the current directory.
@@ -96,6 +100,7 @@ disp('assigning tunable parameters and building the decoder...')
 numlags=10; 
 wsz=256; 
 nfeat=150;
+% nfeat=6*size(fp,1);
 PolynomialOrder=3; 
 smoothfeats=0;
 binsize=0.05;
@@ -104,14 +109,13 @@ binsize=0.05;
 n=1;
 % for n=1:3
 %     fp=fp.*10;
-    
-    [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
-        featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
+
+    [vaf,~,~,~,~,~,~,~,~,bestf,bestc,H,~,~,~,~,ytnew_buildModel,xtnew_buildModel,~,P,~,~] = ...
         buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
         samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
     
-    disp(sprintf('\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n'))
+    fprintf(1,'\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n')
     
     % examine vaf
     fprintf(1,'file %s\n',fnam)
@@ -196,7 +200,7 @@ else
     save(fullfile(PathName,nameToSave),'H','neuronIDs','fillen','binsize', ...
         'chanIDs','samplingFreq','f_bands','bestc','bestf')
 end
-disp(sprintf('decoder saved in %s',PathName))
+fprintf(1,'decoder saved in %s',PathName)
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
