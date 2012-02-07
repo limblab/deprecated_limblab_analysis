@@ -46,13 +46,13 @@ end
 diary(fullfile(PathName,'decoderOutput.txt'))
 mkdir(remoteFolder)
 D=dir(PathName);
-MATfiles={D(cellfun(@isempty,regexp({D.name},'_Spike_LFP.*(?<!poly.*)\.mat'))==0).name};
+MATfiles={D(cellfun(@isempty,regexp({D.name},'_Spike_LFP.*(?<!poly.*|-spike.*)\.mat'))==0).name};
 for copyfileIndex=1:length(MATfiles)
     copyfile(MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
     fprintf(1,'%s copied to %s\n',MATfiles{copyfileIndex},fullfile(remoteFolder,MATfiles{copyfileIndex}))
 end
 %% copy the decoders, and the log, into their appropriate place
-decoderFiles={D(cellfun(@isempty,regexp({D.name},'.*poly.*\.mat','match','once'))==0).name};
+decoderFiles={D(cellfun(@isempty,regexp({D.name},'.*poly.*|.*-spike.*\.mat','match','once'))==0).name};
 mkdir(remoteFolder2)
 for copyfileIndex=1:length(decoderFiles)
     copyfile(decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
