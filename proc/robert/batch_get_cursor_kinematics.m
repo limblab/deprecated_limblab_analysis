@@ -117,6 +117,8 @@ for batchIndex=1:length(MATfiles)
             % re-runs of folders.  Don't want to replace good data with
             % bad.  Also avoids having to re-save, by not re-running
             % get_cursor_kinematics.m
+            fprintf(1,'%s appears to be a re-run.\n',MATfiles{batchIndex})
+            fprintf(1,'copying parameter values from bdf to kinStruct.mat.\n')
             kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
             kinStruct(batchIndex).PL=out_struct.path_length;
             kinStruct(batchIndex).TT=out_struct.time_to_target;

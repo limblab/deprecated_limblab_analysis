@@ -16,7 +16,6 @@ function BDF_META(varargin)
 %
 % currently, only implemented for RW behavior.  Should glide over others,
 % providing file name and .meta field, and skipping over the other fields.
-%   TODO: insert NaNs instead of empties?
 %
 %       INPUTS:
 %
@@ -27,6 +26,10 @@ function BDF_META(varargin)
 %           the existing results, and save a new copy of META_struct in the
 %           directory where the function was run.
 
+%   TODO:   -insert NaNs instead of empties?
+%           -type of control, including whether LFP or spike or hand
+%           -kinematics info from kinStruct by default.
+%           -option to force-recalculate kinematics, from loaded BDF.
 
 startingPath=pwd;
 
