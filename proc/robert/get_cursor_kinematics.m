@@ -200,6 +200,7 @@ bdf.meta.decoder_age=bdfDate-decoderDate;
 % decoder file's name whether it was spike control or LFP control, and save
 % that info in bdf.meta.brain_control, rather than just a 1.
 
+original_words=bdf.words;
 opts=struct('version',2);
 if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
     opts.version=1; opts.hold_time=0.1;
@@ -218,6 +219,7 @@ if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
     end
 end
 [bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf,opts);
+bdf.words=original_words;
 
 [workspaceList,~]=dbstack;
 if ~isequal(workspaceList(length(workspaceList)).file,[mfilename,'.m'])

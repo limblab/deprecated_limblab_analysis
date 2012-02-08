@@ -9,10 +9,8 @@ disp('reading online array...')
 onlineArray=readBrainReaderFile_function(fullfile(PathName,FileName));
 disp('reading psuedo-online array...')
 oldPathName=PathName;
-PathName=regexprep(PathName,'online','pseudoOnline');
-temp=regexp(PathName,'\\'); if ~isempty(temp), temp(end)=[]; end, PathName=PathName(1:temp(end)); clear temp
-% PathName = [PathName,'pseudoOnline']; %added by BDW 01/31/2012
-% PathName = 'T:\Chewie_8I2\BrainReader logs\pseudoOnline'; %hard coded string just to get it running quickly
+PathName(regexp(PathName,'online'):end)='';
+PathName=[PathName,'pseudoOnline'];
 D=dir(PathName);
 psoArray=readBrainReaderFile_function(fullfile(PathName,D(cellfun(@isempty,regexp({D.name}, ...
     regexp(FileName,'.*(?=\.txt)','match','once')))==0).name));
@@ -48,6 +46,5 @@ if min(get(h,'xdata')) > 0
     fprintf(1,['\nexclude the first %.2f seconds of data from the BR file\n', ...
         'to align with the .plx data.\n'],min(get(h,'xdata')))
     [val,loc]=min(abs(onlineArray(:,7)-min(get(h,'xdata'))));
-    original_OLA_time(loc)
-    fprintf(1,'Plexon recording startup\n')
+    fprintf(1,'Plexon recording startup\n%d\n',original_OLA_time(loc))
 end
