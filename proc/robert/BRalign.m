@@ -49,5 +49,6 @@ if min(get(h,'xdata')) > 0
     fprintf(1,['\nexclude the first %.2f seconds of data from the BR file\n', ...
         'to align with the .plx data.\n'],min(get(h,'xdata')))
     [val,loc]=min(abs(onlineArray(:,7)-min(get(h,'xdata'))));
-    fprintf(1,'Plexon recording startup\n%d\n',original_OLA_time(loc))
+    fprintf(1,'Plexon recording startup\n')
+    int64(original_OLA_time(loc))
 end
