@@ -63,7 +63,7 @@ META_struct=struct('filename','','meta',struct([]),'decoder_age',[], ...
 
 returns=[0 regexp(result,sprintf('\n'))];
 m=1;
-for n=732:length(returns)
+for n=2:length(returns)
     candidatePath=result(returns(n-1)+1:returns(n)-1);
     fprintf(1,'file:\n')
     fprintf(1,'%s\n',candidatePath)
@@ -156,6 +156,7 @@ for n=732:length(returns)
     end
 end
 cd(startingPath)
+fprintf(1,'\n\nMETA_struct.mat saved in %s\n',startingPath)
 
 
 % leave META_struct.order for an outer-level function, one which loads up

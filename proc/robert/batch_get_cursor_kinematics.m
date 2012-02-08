@@ -125,8 +125,19 @@ for batchIndex=1:length(MATfiles)
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};
-    clear out_struct decoder_age
+    clear out_struct decoder_age beginFirstTrial endLastTrial numTargets opts
+    clear rewarded_trials start_trial trial_index
 end
 
 save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
+% make sure to save a copy in FilterFiles 
+if ~isempty(regexp(pwd,'bdf|BDFs','once'))
+    % pwd is on citadel, save a copy in FilterFiles
+    if exist(regexprep(pwd,'bdf|BDFs','FilterFiles'),'dir')==7
+        save(fullfile(regexprep(pwd,'bdf|BDFs','FilterFiles'),'kinStruct.mat'),'kinStruct')
+    else
+        save(fullfile(regexprep(pwd,'bdf|BDFs','Filter files'),'kinStruct.mat'),'kinStruct')
+    end
+end
+
 
