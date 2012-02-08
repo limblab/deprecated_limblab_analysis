@@ -1,14 +1,10 @@
-function decoderType=decoderTypeFromLogFile(inputPath,suppressInput)
+function decoderType=decoderTypeFromLogFile(inputPath)
 
 if nargin >= 1
     fid=fopen(inputPath);
 else
     [FileNameBR,PathNameBR]=uigetfile('*.txt','select a file');
     fid=fopen(fullfile(PathNameBR,FileNameBR));
-end
-
-if nargin < 2
-    suppressInput=0;
 end
 
 decoderType='';

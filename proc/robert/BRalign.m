@@ -10,6 +10,9 @@ onlineArray=readBrainReaderFile_function(fullfile(PathName,FileName));
 disp('reading psuedo-online array...')
 oldPathName=PathName;
 PathName(regexp(PathName,'online'):end)='';
+% difference in path to pseudoOnline array is that all the pseudoOnlines
+% live in the top level directory under pseudoOnline; there is no
+% sub-hierarchy for date.
 PathName=[PathName,'pseudoOnline'];
 D=dir(PathName);
 psoArray=readBrainReaderFile_function(fullfile(PathName,D(cellfun(@isempty,regexp({D.name}, ...

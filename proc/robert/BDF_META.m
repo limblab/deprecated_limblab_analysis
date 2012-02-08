@@ -58,8 +58,12 @@ else
     end
 end
 
-META_struct=struct('filename','','meta',struct([]),'decoder_age',[], ...
-    'vel_range',[],'control','','meanHoldTime',[],'numTargets',[]);
+if nargin
+    META_struct=varargin{1};
+else
+    META_struct=struct('filename','','meta',struct([]),'decoder_age',[], ...
+        'vel_range',[],'control','','meanHoldTime',[],'numTargets',[]);
+end
 
 returns=[0 regexp(result,sprintf('\n'))];
 m=1;
@@ -69,6 +73,15 @@ for n=2:length(returns)
     fprintf(1,'%s\n',candidatePath)
     fprintf(1,'file %d of %d\n',n-1,length(returns)-1)
     if exist(candidatePath,'file')==2
+        [~,currentName,~]=fileparts(candidatePath);
+        if nnz(strcmp(regexp({META_struct.filename}', ...
+                '.*(?=\.nev|\.plx|\.mat)','match','once'),currentName))~=0
+            % skip the loading, etc process if we have an existing
+            % META_struct that was loaded in.
+            fprintf(1,'%s found in %s passed as input.\n',currentName,inputname(1))
+            m=m+1;
+            continue
+        end
         S=load(candidatePath);
         fname=fieldnames(S);
         fname(cellfun(@isempty,regexpi(fname,'bdf|out_struct')))=[];
@@ -126,10 +139,10 @@ for n=2:length(returns)
                     % the ranges test), or modified brain control file (if it passes the
                     % range test but the sizes are uneven).  In either case, track
                     % down the type of decoder and the age of that decoder.
-                    if ismac
-                        fsep=filesep;
-                    else
+                    if ispc
                         fsep=[filesep filesep]; % regexp chokes on backslash
+                    else
+                        fsep=filesep;                        
                     end
                     pathToBR=regexprep(candidatePath,{regexpi(candidatePath, ...
                         ['(?<=',fsep,')','bdfs*(?=',fsep,')'],'match','once'),'\.mat'}, ...
@@ -137,7 +150,7 @@ for n=2:length(returns)
                     % just in case
                     pathToBR(regexp(pathToBR,sprintf('\n')))='';
                     if exist(pathToBR,'file')==2
-                        META_struct(m).control=decoderTypeFromLogFile(pathToBR,1);
+                        META_struct(m).control=decoderTypeFromLogFile(pathToBR);
                         try
                             META_struct(m).decoder_age=floor(datenum(bdf.meta.datetime))- ...
                                 decoderDateFromLogFile(pathToBR,1);
