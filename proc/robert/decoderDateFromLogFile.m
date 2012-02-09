@@ -12,7 +12,7 @@ if nargin < 2
 end
 % should be the first line.
 modelLine=fgetl(fid);
-if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
+if ~isempty(regexp(modelLine,'Predictions made .*with model:', 'once'))
     datestring=regexp(modelLine,'[0-9]*(?=poly[0-9])','match','once');
     switch length(datestring)
         case 11
@@ -21,7 +21,13 @@ if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
             if isequal(datestring,'107')
                 decoderDate=datenum('08-24-2011');
             else
-                decoderDate=NaN;
+                % assume linux file separators in model line!
+                try
+                    decoderDate=datenum(regexp(modelLine,['(?<=(Mini|Chewie)/)', ...
+                        '[0-9][0-9]-[0-9][0-9]-','[0-9][0-9][0-9][0-9]'],'match','once'));
+                catch
+                    decoderDate=NaN;
+                end
             end
         otherwise
             datestring=regexp(modelLine,'[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]','match','once');
