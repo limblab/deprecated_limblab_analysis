@@ -37,4 +37,6 @@ for batch_get_plx_ind=1:length(PLXfiles)
     cutfp(batch_get_plx_ind).times=fptimes(1:500:end);
     clear out_struct fp fptimes
 end
-save(fullfile(PathName,'allFPsToPlot.mat'),'cutfp')
+if exist('cutfp','var')==1
+    save(fullfile(PathName,'allFPsToPlot.mat'),'cutfp')
+end

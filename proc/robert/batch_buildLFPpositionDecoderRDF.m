@@ -46,8 +46,11 @@ for batchIndex=1:length(MATfiles)
         if exist('allFPsToPlot.mat','file')==2
             load('allFPsToPlot.mat','cutfp')
             [~,nameNoExt,~,~]=fileparts(MATfiles{batchIndex});
-            cutfp(cellfun(@isempty,regexp({cutfp.name},nameNoExt))==0).bestc=bestc;
-            cutfp(cellfun(@isempty,regexp({cutfp.name},nameNoExt))==0).bestf=bestf;
+            filePos=find(cellfun(@isempty,regexp({cutfp.name},nameNoExt))==0);
+            if ~isempty(filePos)
+                cutfp(filePos).bestc=bestc;
+                cutfp(filePos).bestf=bestf;
+            end
             save('allFPsToPlot.mat','cutfp')
         end
     else

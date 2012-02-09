@@ -28,6 +28,7 @@ destFolder=[destFolder, filesep, datestr(dateNumber,'mm-dd-yyyy')];
 D=dir(destFolder);
 % remoteDriveLetter='Y';    % appropriate for offline sorting machine
 remoteDriveLetter='Z';      % appropriate for GOB
+CEBorPLX='';
 
 pathBank={[remoteDriveLetter,':\Chewie_8I2\SpikeLFP'], ...
     [remoteDriveLetter,':\Mini_7H1\', ...

@@ -32,7 +32,7 @@ elseif isequal(animal,'Mini')
 end
 %% the long-winded stuff.
 PathName=pwd;
-if strcmp(CEBorPLX,'ceb')
+if strcmp(CEBorPLX,'ceb') % this makes .plx the default
     batch_get_cerebus_data % runs as script.  uses PathName
     % put .mat files on the data server in an appropriate folder
     % put EMGonly files 
