@@ -76,6 +76,11 @@ end
 % clear binnedData;
 disp('Done.');
 
+if isempty(OLPredData)
+    disp('file skipped')
+    return
+end
+
 filter.P = filter.P';
 
 H = filter.H;
