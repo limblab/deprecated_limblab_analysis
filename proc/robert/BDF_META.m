@@ -92,6 +92,7 @@ for n=2:length(returns)
             bdf=S.(fname{1}); clear S
             
             META_struct(m).filename=bdf.meta.filename;
+            META_struct(m).path=candidatePath;
             META_struct(m).meta=bdf.meta;
             if isfield(bdf,'vel')
                 velocityField=1;
