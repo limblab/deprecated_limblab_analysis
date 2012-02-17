@@ -87,13 +87,9 @@ end
 % if there is a BR log file.
 decoderDate=NaN;
 for n=1:1000     % assume there are fewer than 1000 files in a folder.  
-    fileToCheck{1}=['*', ...
-        num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))+n), ...
-        '*'];
+    fileToCheck{1}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))+n),'*'];
     % if going up doesn't work, try going down.
-    fileToCheck{2}=['*', ...
-        num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))-n), ...
-        '*'];
+    fileToCheck{2}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))-n),'*'];
     % as n increases, the recording number should oscillate around the
     % original file's number until it hits a number where there's a 
     % BR log file, or until n reaches 1000.
@@ -113,8 +109,37 @@ for n=1:1000     % assume there are fewer than 1000 files in a folder.
         end
         nextFile(regexp(nextFile,sprintf('\n')))='';
         if status==0 && exist(nextFile,'file')==2
-            decoderDate=decoderDateFromLogFile(nextFile,1);
-            break
+            fid=fopen(nextFile);
+            % should be the first line.
+            modelLine=fgetl(fid);
+            if ~isempty(regexp(modelLine,'Predictions made.*with model:', 'once'))
+                decoderFile=regexp(modelLine,'/','split');
+                decoderFile=decoderFile(end-1:end);
+                decoderFile{2}(end)=[];
+            else
+                error('%s is not a valid BrainReader log file.\n',nextFile)
+            end
+            fclose(fid);
+            
+            animal=regexp(pathToBDF,'Chewie|Mini','match','once');
+            switch animal
+                case 'Chewie'
+                    ff='Filter files';
+                case 'Mini'
+                    ff='FilterFiles';
+            end
+            pathToDecoderMAT=regexprep(BDFpathStr,regexpi(BDFpathStr, ...
+                ['(?<=',fsep,')','bdfs*(?=',fsep,')'],'match','once'),ff);
+            
+            pathToDecoderMAT=fullfile(regexprep(pathToDecoderMAT, ...
+                '[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]',decoderFile{1}),decoderFile{2});
+            
+            if exist(pathToDecoderMAT,'file')==2
+                load(pathToDecoderMAT,'H','bestf','bestc')
+                fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
+                decoderDate=decoderDateFromLogFile(nextFile,1);
+                break
+            end
         end
     end
     if ~isnan(decoderDate)
@@ -142,39 +167,12 @@ end
 % end
 
 
-fid=fopen(nextFile);
-% should be the first line.
-modelLine=fgetl(fid);
-if ~isempty(regexp(modelLine,'Predictions made with model:', 'once'))
-    decoderFile=regexp(modelLine,'/','split');
-    decoderFile=decoderFile(end-1:end);
-    decoderFile{2}(end)=[];
-else
-    error('%s is not a valid BrainReader log file.\n',nextFile)
-end
-fclose(fid);
 
+
+
+% switch variable name since the below is copied from a different batch
+% function.
 out_struct=bdf; clear bdf
-animal=regexp(pathToBDF,'Chewie|Mini','match','once');
-switch animal
-    case 'Chewie'
-        ff='Filter files';
-    case 'Mini'
-        ff='FilterFiles';
-end
-pathToDecoderMAT=regexprep(BDFpathStr,regexpi(BDFpathStr, ...
-    ['(?<=',fsep,')','bdfs*(?=',fsep,')'],'match','once'),ff);
-
-pathToDecoderMAT=fullfile(regexprep(pathToDecoderMAT, ...
-    '[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]',decoderFile{1}),decoderFile{2});
-
-if exist(pathToDecoderMAT,'file')==2
-    load(pathToDecoderMAT,'H','bestf','bestc')
-    fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
-else
-    error('file not found: %s\n',pathToDecoderMAT)
-end
-
 disp('assigning static variables')
 % behavior
 signal='vel';
