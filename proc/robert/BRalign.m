@@ -3,7 +3,16 @@ clear, close
 %% open files
 if exist('PathName','var')~=1 || (isnumeric(PathName) && PathName==0)
     [FileName,PathName,FilterIndex] = uigetfile('Y:\*.txt','select a *.txt file');
+else % PathName exists, and consists of an actual path
+    % check for FileName.  If it exists, just run without a dialog,
+    % assuming fullfile(PathName,FileName) is the file we want (a re-run).
+    % If FileName does not exist, then we're just trying to re-use the path
+    % in order to avoid dialog calesthenics
+    if exist('FileName','var')~=1
+        [FileName,PathName,FilterIndex]=uigetfile([PathName,'*.txt'],'select a *.txt file');
+    end
 end
+% if cancelled
 if isnumeric(PathName) && PathName==0, return, end
 disp('reading online array...')
 onlineArray=readBrainReaderFile_function(fullfile(PathName,FileName));
@@ -52,3 +61,6 @@ if min(get(h,'xdata')) > 0
     fprintf(1,'Plexon recording startup\n')
     int64(original_OLA_time(loc))
 end
+
+%% 
+clear D Fi* ans loc o* p* t* v* h

@@ -18,7 +18,7 @@ function VAFstruct=handControl_decoderPerformance(inputItem)
 %
 
 startingPath=pwd;
-VAFstruct=struct('name','','decoder_age',[],'vaf',[]);
+% VAFstruct=struct('name','','decoder_age',[],'vaf',[]);
 
 if ~nargin                      % dialog for bdf
     [FileName,PathName]=uigetfile('*.mat','select a bdf file');
