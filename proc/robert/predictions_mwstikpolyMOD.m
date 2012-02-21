@@ -35,7 +35,7 @@ elseif strcmpi(signal, 'acc')
 elseif strcmpi(signal, 'force')
     y = bdf.force(:,2:3);
 elseif strcmpi(signal,'emg')
-    y=bdf.emg.data;
+    y=double(bdf.emg.data);
     %Rectify and filter emg
 
     EMG_hp = 50; % default high pass at 50 Hz
@@ -58,6 +58,11 @@ elseif strcmpi(signal,'emg')
     tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
     tempEMG = abs(tempEMG); %rectify
     y = filtfilt(bl,al,tempEMG); %lowpass filter
+    
+%     % temporary, add in a bandpass filter from 3-5 Hz (or from 5-10 Hz)
+%     [bb,ab]=butter(2,[10 20]/emgsamplerate,'bandpass');
+%     y=filtfilt(bb,ab,y);
+    
     if isfield(bdf.emg,'ts')
         temg=bdf.emg.ts;
     else

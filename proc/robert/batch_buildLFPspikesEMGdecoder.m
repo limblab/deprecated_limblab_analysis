@@ -149,6 +149,8 @@ for n=1:length(MATfiles)
     % error somewhere the loader won't choke on the new .mat files that
     % were added.
     if exist('outputs','dir')==0, mkdir('outputs'), end
+    % comment the next clear statement to do in-depth troubleshooting
+    clear PA PB Pmat
     save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 

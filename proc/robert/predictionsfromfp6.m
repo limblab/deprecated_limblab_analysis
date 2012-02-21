@@ -94,7 +94,7 @@ elseif strcmpi(signal,'emg')
     %Rectify and filter emg
 
     EMG_hp = 50; % default high pass at 50 Hz
-    EMG_lp = 5; % default low pass at 10 Hz
+    EMG_lp = 5; % default low pass at 5 Hz
     if ~exist('emgsamplerate','var')
         emgsamplerate=2000; %default
     end
@@ -108,6 +108,10 @@ elseif strcmpi(signal,'emg')
 %     if ~exist('temg','var')
 %         temg=1/emgsamplerate:(1/emgsamplerate):(length(sig)*(samprate/emgsamplerate));
 %     end
+
+%     % temporary, add in a bandpass filter from 3-5 Hz (or from 5-10 Hz)
+%     [bb,ab]=butter(2,[10 20]/emgsamplerate,'bandpass');
+%     y=filtfilt(bb,ab,y);
 else
     y=sig;
 end
