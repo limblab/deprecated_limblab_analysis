@@ -201,25 +201,31 @@ end
 
 %% Concat Words
 if isfield(struct1, 'words') && isfield(struct2, 'words')
-    w2 = [struct2.words(:,1)+t_offset struct2.words(:,2)];
-    binnedData.words = [struct1.words; w2];
-    clear w2;
+        if (~isempty(struct1.words) && ~isempty(struct2.words))
+        w2 = [struct2.words(:,1)+t_offset struct2.words(:,2)];
+        binnedData.words = [struct1.words; w2];
+        clear w2;
+    end
 end
 
 %% Concat Targets
 if isfield(struct1, 'targets') && isfield(struct2, 'targets')
     if isfield(struct1.targets, 'corners') && isfield(struct2.targets, 'corners')
-        c2 = [struct2.targets.corners(:,1)+t_offset struct2.targets.corners(:,2:end)];
-        binnedData.targets.corners = [struct1.targets.corners; c2];
-        clear c2;
+        if ~isempty(struct1.targets.corners) && ~isempty(struct2.targets.corners)
+            c2 = [struct2.targets.corners(:,1)+t_offset struct2.targets.corners(:,2:end)];
+            binnedData.targets.corners = [struct1.targets.corners; c2];
+            clear c2;
+        end
     end
 end
 
 if isfield(struct1, 'targets') && isfield(struct2, 'targets')
     if isfield(struct1.targets, 'rotation') && isfield(struct2.targets, 'rotation')
-        c2 = [struct2.targets.rotation(:,1)+t_offset struct2.targets.rotation(:,2:end)];
-        binnedData.targets.rotation = [struct1.targets.rotation; c2];
-        clear c2;
+        if ~isempty(struct1.targets.rotation) && ~isempty(struct2.targets.rotation)
+            c2 = [struct2.targets.rotation(:,1)+t_offset struct2.targets.rotation(:,2:end)];
+            binnedData.targets.rotation = [struct1.targets.rotation; c2];
+            clear c2;
+        end
     end
 end
 
