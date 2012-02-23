@@ -7,12 +7,12 @@ binsize = filter.binsize;
 neuronIDs = filter.neuronIDs;
 
 %original filter columns:
-% 1- FDS1 2-FDS2 3-FDP1 4-FDP2 5-FCR1 6-FCR2 7-FCU1 8-FCU2 9-ECRl 10-ECRb 11-ECU1 12-ECU2 13-EDCu 14-EDCr 
+% 1- FDS1 2-FDS2 3-FDP1 4-AbPL 5-FCR1 6-FCR2 7-FCU1 8-FCU2 9-ECRl 10-ECRb 11-ECU1 12-ECU2 13-FDI 14-EDCr 
 
 Notes = ['modified filter, prediction columns:'...
-            '[1-FDS1 2-FDS1 3-FDS1 4-FDS1 5-FDP1 6-FDP1 7-FDP1 8-FDP1 ]'];
+            '[1-FDS1 2-FDS1 3-FDS1 4-FDS1 5-FDP1 6-FDP1 7-FDP1 8-ECRl 9-ECRb 10-EDCr 11-AbPL]'];
 
-mod_idx = [1 1 1 1 3 3 3 3];
+mod_idx = [1 1 1 1 3 3 3 9 10 14 4];
         
         
 %modify output labels        

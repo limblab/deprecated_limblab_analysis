@@ -269,7 +269,7 @@ end
         elseif (usr_plotForce || usr_plotPos) %plot Force but no EMG
             hold off; axis auto;            
             force_handles = plot(datastruct.timeframe, [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)] );
-            [legh,objh,outh,outm]=legend(force_handles, [ForceNames(Force_to_plot,:);PosNames(Pos_to_plot)],'Location','NorthEast');
+            [legh,objh,outh,outm]=legend(force_handles, [ForceNames(Force_to_plot,:);PosNames(Pos_to_plot,:)],'Location','NorthEast');
         end
        
  

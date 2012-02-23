@@ -1,6 +1,6 @@
 function tt = mg_trial_table(bdf)
-% BD_TRIAL_TABLE - returns a table containing the key timestamps for all of
-%                  the ball device trials in BDF
+% MG_TRIAL_TABLE - returns a table containing the key timestamps for all of
+%                  multi-gadget device trials in BDF
 %
 % Each row of the table coresponds to a single trial.  Columns are as
 % follows:

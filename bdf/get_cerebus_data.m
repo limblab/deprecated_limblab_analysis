@@ -97,13 +97,13 @@ function out_struct = get_cerebus_data(varargin)
 
     % Build catalogue of entities
     [nsresult, EntityInfo] = ns_GetEntityInfo(hfile, 1:FileInfo.EntityCount);
-    unit_list    = find([EntityInfo.EntityType] == 4 & ~strncmp(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
-    stim_marker  = find([EntityInfo.EntityType] == 4 & strncmp(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
+    unit_list    = find([EntityInfo.EntityType] == 4 & ~strncmpi(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
+    stim_marker  = find([EntityInfo.EntityType] == 4 & strncmpi(deblank({EntityInfo.EntityLabel}),'Stim_', 5));
 
     % segment_list = find([EntityInfo.EntityType] == 3);
-    emg_list     = find([EntityInfo.EntityType] == 2 & strncmp(deblank({EntityInfo.EntityLabel}), 'EMG_', 4));
+    emg_list     = find([EntityInfo.EntityType] == 2 & strncmpi(deblank({EntityInfo.EntityLabel}), 'EMG_', 4));
     force_list   = find([EntityInfo.EntityType] == 2 & strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6));
-    analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmp(deblank({EntityInfo.EntityLabel}), 'EMG_', 4)...
+    analog_list  = find([EntityInfo.EntityType] == 2 & ~strncmpi(deblank({EntityInfo.EntityLabel}), 'EMG_', 4)...
                                                      & ~strncmpi(deblank({EntityInfo.EntityLabel}), 'force_', 6) );
     event_list   = find([EntityInfo.EntityType] == 1);
     digin_listID = event_list(strncmpi(deblank({EntityInfo(event_list).EntityLabel}), 'digin', 5));
@@ -163,7 +163,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.raw.analog.data{i} = single(analog_data);
+            out_struct.raw.analog.data{i} = single(analog_data); %02-22-12: removed the x4.16 gain here. Unnecessary.
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
@@ -203,7 +203,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(emg_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.emg.data(:,i+1) = single(emg_data);
+            out_struct.emg.data(:,i+1) = single(emg_data); %02-22-12: removed the x4.16 gain here. Unnecessary.
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
@@ -239,7 +239,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(force_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.force.data(:,i+1) = single(force_data);
+            out_struct.force.data(:,i+1) = single(force_data); %02-22-12: removed the x4.16 gain here. Unnecessary.
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(force_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting force...', filename));

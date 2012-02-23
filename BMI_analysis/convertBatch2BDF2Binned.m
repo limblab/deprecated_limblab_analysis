@@ -2,14 +2,14 @@ function convertBatch2BDF2Binned
 
 %% Globals
     
-    dataPath = 'C:\Monkey\Jaco\Data';
+    dataPath = 'D:\Monkey\';
     
 %% Get Cerebus Data Files
 
 %     CB_PathName = uigetdir( [dataPath 'CerebusData\'],...
 %                                            'Select Cerebus Data Folder' );
 
-    [CB_FileNames, CB_PathName] = uigetfile( { [dataPath '\CerebusData\*.nev']},...
+    [CB_FileNames, CB_PathName] = uigetfile( { [dataPath '\*.nev']},...
                                                'Open Cerebus Data File', 'MultiSelect','on' );
                                                                                    
     if isequal(CB_PathName,0)

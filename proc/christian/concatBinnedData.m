@@ -6,6 +6,7 @@ else
     neuronIDs = [];
 end
 
+%% Concat timeframe
 if round(1000*(struct1.timeframe(2)-struct1.timeframe(1)))~=round(1000*(struct2.timeframe(2)-struct2.timeframe(1)));
     disp('incompatible sampling rate - data concatenation aborted');
     binnedData = struct1;
@@ -14,6 +15,7 @@ else
     binnedData = struct1;
     
     binsize = round(1000*(struct1.timeframe(2)-struct1.timeframe(1)))/1000;
+
     t_offset = struct1.timeframe(end)+binsize;
     tf2 = struct2.timeframe-struct2.timeframe(1)+t_offset;
   %     tf2 = (0:size(struct2.timeframe,1)-1)*(binsize) + t_offset;
@@ -228,5 +230,21 @@ if isfield(struct1, 'targets') && isfield(struct2, 'targets')
         end
     end
 end
+%% Concat Stim
+if isfield(struct1, 'stim') && isfield(struct2, 'stim')
 
-    
+    if round(1000*(struct1.stim(2,1)-struct1.stim(1,1)))~=round(1000*(struct2.stim(2,1)-struct2.stim(1,1)));
+        disp('incompatible stimulation rate - data concatenation aborted');
+        binnedData = struct1;
+        return;
+    else
+
+        stimbinsize = round(1000*(struct1.stim(2,1)-struct1.stim(1,1)))/1000;
+
+        stim_t_offset = struct1.stim(end,1)+stimbinsize;
+        stim_tf2 = struct2.stim(:,1)-struct2.stim(1,1)+stim_t_offset;
+
+        binnedData.stim = [struct1.stim; [stim_tf2 struct2.stim(:,2:end)]];
+    end
+
+end

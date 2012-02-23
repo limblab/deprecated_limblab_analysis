@@ -3,10 +3,10 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         %varargin = BDF_FileNames, dataPath, binsize, starttime, stoptime, hpfreq,
         %lpfreq, MinFiringRate
         
-    dataPath = 'C:\Monkey\Jaco\Data\';
+    dataPath = 'D:\Monkey\';
         
     if nargin == 0
-        [BDF_FileNames, PathName] = uigetfile( { [dataPath '\BDFStructs\*.mat']},...
+        [BDF_FileNames, PathName] = uigetfile( { [dataPath '\*.mat']},...
                                                 'Open BDF Data File(s)', 'MultiSelect','on' );
         if ~PathName
             disp('User Action Cancelled');
