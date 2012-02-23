@@ -163,7 +163,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.raw.analog.data{i} = single(analog_data.*4.1666667); %multiplying by 4.1666667 converts analog_data in mV
+            out_struct.raw.analog.data{i} = single(analog_data);
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
@@ -203,7 +203,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(emg_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.emg.data(:,i+1) = single(emg_data.*4.1666667); %multiplying by 4.1666667 converts emg_data in mV
+            out_struct.emg.data(:,i+1) = single(emg_data);
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
@@ -213,7 +213,7 @@ function out_struct = get_cerebus_data(varargin)
         clear emg_data emg_info emgfreq;
     end
     
-%% The Force for WF & MG tasks, or whenever the force channel is nammed force_* or Force_*)
+%% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
     if ~isempty(force_list)
         
         if (opts.verbose == 1)
@@ -239,7 +239,7 @@ function out_struct = get_cerebus_data(varargin)
             if (cont_count ~= EntityInfo(force_list(i)).ItemCount)
                 warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
             end
-            out_struct.force.data(:,i+1) = single(force_data.*4.1666667); %multiplying by 4.1666667 converts force_data in mV
+            out_struct.force.data(:,i+1) = single(force_data);
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(force_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting force...', filename));
