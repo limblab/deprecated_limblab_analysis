@@ -137,14 +137,14 @@ else
 
     for E=1:numEMGs
         % Filter EMG data
-        tempEMG = datastruct.emg.data(emgtimebins,E+1);
+        tempEMG = double(datastruct.emg.data(emgtimebins,E+1));
         tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
         tempEMG = abs(tempEMG); %rectify
         tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
 
         %downsample EMG data to desired bin size
 %             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
-        emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0);
+        emgdatabin(:,E) = single(interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0));
     end
 
     %Normalize EMGs        
@@ -235,6 +235,26 @@ veloclabels(3,1:8)= 'vel_magn';
 if NormData
     %Normalize velocity from 0 to 1
     velocbin = velocbin/max(velocbin);
+end
+
+%% Bin Acceleration
+if ~isfield(datastruct, 'acc')
+    %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
+    accelbin = [];
+else
+    accelbin = single(interp1(datastruct.acc(:,1), datastruct.acc(:,2:3), timeframe,'linear',0));
+    acc_magn = sqrt(accelbin(:,1).^2+accelbin(:,2).^2);
+    accelbin = [accelbin acc_magn];
+end
+
+acclabels(1:3,1:12) = [char(zeros(1,12));char(zeros(1,12));char(zeros(1,12))];
+acclabels(1,1:5)= 'x_acc';
+acclabels(2,1:5)= 'y_acc';
+acclabels(3,1:8)= 'acc_magn';
+
+if NormData
+    %Normalize velocity from 0 to 1
+    accelbin = accelbin/max(accelbin);
 end
 
 %% Bin Spike Data

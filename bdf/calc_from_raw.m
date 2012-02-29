@@ -155,8 +155,27 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.vel = [analog_time_base'  dx'  dy'];
             out_struct.acc = [analog_time_base' ddx' ddy'];
             
-        else
-            out_struct.pos = [out_struct.raw.enc(:,1) out_struct.raw.enc(:,2)/1000 out_struct.raw.enc(:,3)/1000];
+        elseif wrist_flexion_task
+            
+            if isfield(out_struct,'force')
+                adfreq = out_struct.force.forcefreq;
+            else
+                adfreq = 1000;
+            end
+            
+            time_pos = out_struct.raw.enc(:,1);            
+            x_pos = out_struct.raw.enc(:,2)/1000;
+            y_pos = out_struct.raw.enc(:,3)/1000;
+            
+            dx = kin_diff(x_pos);
+            dy = kin_diff(y_pos);
+            ddx = kin_diff(dx);
+            ddy = kin_diff(dy);
+            
+            out_struct.pos = [time_pos x_pos  y_pos];
+            out_struct.vel = [time_pos    dx     dy];
+            out_struct.acc = [time_pos   ddx    ddy];                      
+            
         end
     else
         if robot_task && opts.kin
@@ -372,6 +391,10 @@ end             %ending "if opts.eye"
         [b, a] = butter(8, 100/adfreq);
         dx = diff(x) .* adfreq;
         dx = filtfilt(b,a,dx);
-        dx = [0 dx];
+        if size(dx,1)==1
+            dx = [0 dx];
+        else
+            dx = [0;dx];
+        end
     end
 end % close outermost function
