@@ -119,6 +119,8 @@ samp_fact=1000/samprate;
 %% Adjust the size of fp to make sure same number of samples as analog
 %% signals
 
+% assignin('base',regexprep(sprintf('%sfiltEMG%0.2dHz',fnam,EMG_lp),'-',''),y)
+
 disp('fp adjust')
 toc
 tic

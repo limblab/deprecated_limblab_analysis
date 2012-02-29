@@ -1,4 +1,4 @@
-function EMGfilt(y,emgsamplerate,wsz,EMG_lp)
+function y=EMGfilt(y,emgsamplerate,wsz,EMG_lp)
 
 % analyze raw signal?
 
