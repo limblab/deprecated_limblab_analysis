@@ -457,9 +457,6 @@ plot(ytnew{1}(:,1))
 hold
 plot(y_pred{1}(:,1),'r')
 
-snam=[fnam,signal,' pred ',num2str(nfeat),' feats ',num2str(wsz),' wsz lambda ',num2str(lambda),'.mat'];
-% save(snam,'r2*','v*','best*','x*','y*','nfeat','Poly*','Use*','num*','bin*','H','lambda','wsz')
-
 if nargout>5
     varargout{1}=r2mean;
     varargout{2}=r2sd;
@@ -504,8 +501,11 @@ if nargout>5
             end
         end
     end
-
 end
+
+snam=[fnam,signal,' pred ',num2str(nfeat),' feats ',num2str(wsz),' wsz lambda ',num2str(lambda),'.mat'];
+% save(snam,'r2*','v*','best*','feat*','x*','y*','nfeat','Poly*','Use*','num*','bin*','H','P','lambda','wsz','smoothfeats')
+
 
 function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
 

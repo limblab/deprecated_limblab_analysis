@@ -37,6 +37,7 @@ if strcmp(CEBorPLX,'ceb') % this makes .plx the default
     % put .mat files on the data server in an appropriate folder
     % put EMGonly files 
 %     batch_buildLFP_EMGdecoder
+%     batch_buildLFPpositionDecoderRDF
 else
     batch_get_plexon_data % runs as script.  uses PathName
     batch_buildLFPpositionDecoderRDF    % only runs on hand-control files

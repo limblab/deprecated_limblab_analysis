@@ -1,16 +1,22 @@
-% this is the script to run for phase randomization!
+function vafAll=batch_FPpositionDecodeOffline(PathName)
 
+% syntax vafAll=batch_FPpositionDecodeOffline(PathName);
+%
+% this is the function to run for phase randomization!
+%
 % in general, this script does the same thing as
 % batch_buildLFPpositionDecoderRDF.m, but should operate on files that were
 % output from Marc's n2matM4.m code, meaning that fp is loaded into the
 % workspace, not built from the bdf.  Also, the naming convention to
 % distinguish data files from output/decoder files is different.
 
-%% folder/file info
-PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
-if exist(PathName,'dir')~=7
-    disp('folder not valid.  aborting...')
-    return
+if ~nargin
+    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\',...
+        'select folder with data files');
+    if exist(PathName,'dir')~=7
+        disp('folder not valid.  aborting...')
+        return
+    end
 end
 cd(PathName)
 Files=dir(PathName);
@@ -21,8 +27,7 @@ FileNames={Files.name};
 % Chewie|Mini EFP ddd fp4.mat
 % where ddd are digits
 
-MATfiles=FileNames(cellfun(@isempty,...
-    regexp(FileNames,'(Chewie|Mini)EFP[0-9][0-9][0-9]fp4\.mat'))==0);
+MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'(Chewie|Mini)EFP(L?)[0-9]{3}fp4\.mat'))==0);
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.\n')
     disp('quitting...')
@@ -40,13 +45,14 @@ for n=1:length(MATfiles)
     fp=pharand(fp')';
     
     % either position or velocity
-    signal='vel';
+    signal='pos';
     sig=bdf.(signal);
     
     numfp=size(fp,1);
-    fptimes=1/samprate:1/samprate:size(fp,2)/samprate;
+    load(FileName,'fs')
+    fptimes=1/fs:1/fs:size(fp,2)/fs;
     numsides=1;
-    temg=analog_times;
+    temg=fptimes;
 
     Use_Thresh=0; words=[]; lambda=1;
 
@@ -66,8 +72,8 @@ for n=1:length(MATfiles)
     % it is substituted in its place in the input list below.
     [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~] = ...
         predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
-        samprate,fp,fptimes,temg,fnam,wsz,nfeat,PolynomialOrder, ...
-        Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+        fs,fp,fptimes,fptimes,fnam,wsz,nfeat,PolynomialOrder, ...
+        Use_Thresh,words,fs,lambda,smoothfeats);
     close
     fprintf(1,'\n\n\n\n\n=====================\nLFP predictions DONE\n====================\n\n\n\n')
     
@@ -81,7 +87,7 @@ for n=1:length(MATfiles)
     fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
     fprintf(1,'smoothfeats=%d\n',smoothfeats)
     fprintf(1,'binsize=%.2f\n',binsize)
-    fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
+    fprintf(1,'fs=%d\n',fs)
     
     vaf
     
@@ -92,19 +98,18 @@ for n=1:length(MATfiles)
     fprintf(1,formatstr,signal,mean(vaf,1))
     fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
-    if exist('outputs','dir')==0, mkdir('outputs'), end
+%     if exist('outputs','dir')==0, mkdir('outputs'), end
     % comment the next clear statement to do in-depth troubleshooting
     clear PA PB Pmat
-    save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
-        'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
+%     save(['outputs\',fnam,'tik emgpred ',num2str(nfeat),' feats lambda',num2str(lambda),' poly',num2str(PolynomialOrder),'.mat'], ...
+%         'v*','y*','x*','r*','best*','H','feat*','P*','Use*','fse','temg','binsize','sr','smoothfeats','EMGchanNames');
 
     % clear all the outputs of the LFP predictions analysis, so there's no
     % confussion when things are re-generated for the spike prediction
     % analysis.
+    vafAll{n}=vaf;
     clear vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc H bestfeat x y featMat ytnew xtnew predtbase P featind sr
     clear FileName fnam bdf emgsamplerate sig emgchans analog_times signal disJoint fpchans fp samprate numfp numsides fptimes
     clear folds numlags wsz nfeat PolynomialOrder smoothfeats binsize vaf vmean vsd y_test y_pred r2mean r2sd r2 vaftr bestf bestc
     clear H EMGchanNames Use_Thresh formatstr k lambda str words fse temg P cells uList x* y*
-    
 end
-clear n k ans r2* 

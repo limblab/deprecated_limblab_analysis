@@ -14,6 +14,15 @@ if ~isempty(disJoint)
 end
 
 fpchans=find(cellfun(@isempty,regexp(out_struct.raw.analog.channels,'FP[0-9]+'))==0);
+if isempty(fpchans)
+    fpChanNums=regexp(out_struct.raw.analog.channels,'[0-9]+(?= - [0-9]+ kS/s)','match','once');
+    if any(cellfun(@isempty,fpChanNums)==0)
+        fpchans=find(str2double(fpChanNums)<=96);
+    else
+        error(['no fp chans were found by ',mfilename])
+        % try alternate method for searching for fpchans, such as elecNN
+    end
+end
 fp=double(cat(2,out_struct.raw.analog.data{fpchans}))';
 samprate=out_struct.raw.analog.adfreq(fpchans(1));
 
