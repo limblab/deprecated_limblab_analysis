@@ -1,21 +1,22 @@
 function [vmean,vaf,vaftr,r2mean,r2sd,r2,y_pred,y_test,varargout]=predonlyxy_newVAF(x,y,PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,varargin)
-%predonlyxy.m This function runs just the prediction part of predictionsfromfp5all.m
-%useful once you have x and y matrices to run different levels of lambda
-%Modified 10/5/10 by MWS
-%Usage: [vmean,vaf,vaftr,r2mean,r2sd,r2,y_pred,y_test,ytnew,xtnew,H,bestf,bestc]=predonlyxy(x,y,2,0,0,10,1,10,10,50,bestf_old,bestc_old,H);
 
-%ytnew and xtnew are the adjusted timecourses for y_test and x, since the
-%1st filterlength samples are junk for predictions
-%bestf and bestc are best frequency and channels, respectively - Not
-%always used since we're sometimes starting with a subset of the original feature
-%matrix and can't go back to channel/freq easily.
+% predonlyxy.m This function runs just the prediction part of predictionsfromfp5all.m
+% useful once you have x and y matrices to run different levels of lambda
+% Modified 10/5/10 by MWS
+% Usage: [vmean,vaf,vaftr,r2mean,r2sd,r2,y_pred,y_test,ytnew,xtnew,H,bestf,bestc]=predonlyxy(x,y,2,0,0,10,1,10,10,50,bestf_old,bestc_old,H);
 
-%H are the filters
+% ytnew and xtnew are the adjusted timecourses for y_test and x, since the
+% 1st filterlength samples are junk for predictions
+% bestf and bestc are best frequency and channels, respectively - Not
+% always used since we're sometimes starting with a subset of the original feature
+% matrix and can't go back to channel/freq easily.
+
+% H are the filters
 fold_length = floor(length(y) ./ folds);
 
 Hinpflag=0;     %Whether H is input or not
 
-if length(varargin)>0
+if ~isempty(varargin)
     %     bestf_old=varargin{1};
     %     bestc_old=varargin{2};
     if length(varargin{1})>1
@@ -37,7 +38,7 @@ end
 if ~exist('smoothflag','var')
     smoothflag=0;
 end
-%% Smoothing
+% Smoothing
 if smoothflag
     xtemp=smooth(x(:),11,'sgolay');      %sometimes smoothing features helps
     x=reshape(xtemp,size(x));
@@ -45,9 +46,9 @@ if smoothflag
     ytemp=smooth(y(:),11,'sgolay');
     y=reshape(ytemp,size(y));
 end
-%%
-%%Allow the possibility to redo feature selection to allow improved
-%algorithms
+
+% Allow the possibility to redo feature selection to allow improved
+% algorithms
 if ~exist('featind','var') || (length(featind)<nfeat)
 	for f=1:size(x,2)
 		rt1=corrcoef(y(:,1),x(:,f));
@@ -70,10 +71,9 @@ if ~exist('featind','var') || (length(featind)<nfeat)
 	end
 	
 % 	rr=reshape(r,6,[]);
-	[sr,featind]=sort(r,'descend');
+	[~,featind]=sort(r,'descend');
 	
 % 	[bestf,bestc]=ind2sub(size(rr),featind(1:nfeat));
-	
 	clear r
 end
 
@@ -98,7 +98,7 @@ for i = 1:folds
     y_train = [y(1:fold_start,:); y(fold_end:end,:)];
     
     if ~exist('H','var') || length(H)<i
-        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
+        [H{i},v,~] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
 		fprintf(1,'%d,',i)
     end
     
