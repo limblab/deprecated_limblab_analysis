@@ -29,9 +29,15 @@ if isempty(MATfiles)
 end
 
 for n=1:length(MATfiles)
-    for k=1:100
-        CmatAll{n,k}=DCshuffle_EFPreachPaper(MATfiles{n},1);
+    % reset the seed on the random generator only once perfile, 
+    % else all runs will be identical.
+    k=1;
+    CmatAll{n,k}=DCshuffle_EFPreachPaper(MATfiles{n},1);
+    for k=2:100
+        CmatAll{n,k}=DCshuffle_EFPreachPaper(MATfiles{n},0);
     end
     close
+    fprintf(1,'\n\n\n\n%s done.\n\n\n\n',MATfiles{n})
+    pause(30)
 end
 

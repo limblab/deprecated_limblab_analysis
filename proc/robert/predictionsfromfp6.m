@@ -55,6 +55,9 @@ if length(varargin)>0
                                      lambda=varargin{8};
                                      if length(varargin)>8
                                          smoothfeats=varargin{9};
+                                         if length(varargin) > 9
+                                             bandToUse=varargin{10};
+                                         end
                                      end
                                  end
                             end
@@ -225,6 +228,10 @@ PB(4,:,:)=mean(PA(gam1,:,:),1);
 PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
+end
+
+if exist('bandToUse','var')==1 && isfinite(bandToUse) && all(bandToUse < size(PB,1))
+    PB=PB(bandToUse,:,:);
 end
 
 assignin('base','PB',PB)
