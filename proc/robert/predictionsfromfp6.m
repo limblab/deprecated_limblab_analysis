@@ -55,9 +55,6 @@ if length(varargin)>0
                                      lambda=varargin{8};
                                      if length(varargin)>8
                                          smoothfeats=varargin{9};
-                                         if length(varargin) > 9
-                                             bandToUse=varargin{10};
-                                         end
                                      end
                                  end
                             end
@@ -70,7 +67,9 @@ if length(varargin)>0
                                 lambda=varargin{7};
                                 if length(varargin)>7
                                     smoothfeats=varargin{8};
-                                   
+                                    if length(varargin) > 8
+                                        bandToUse=varargin{9};
+                                    end
                                 end
                             end
                         end

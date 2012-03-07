@@ -19,8 +19,12 @@ if isempty(fpchans)
     if any(cellfun(@isempty,fpChanNums)==0)
         fpchans=find(str2double(fpChanNums)<=96);
     else
-        error(['no fp chans were found by ',mfilename])
-        % try alternate method for searching for fpchans, such as elecNN
+        fpChanNums=regexp(out_struct.raw.analog.channels,'(?<=elec)[0-9]{1,2}','match','once');
+        if any(cellfun(@isempty,fpChanNums)==0)
+            fpchans=find(str2double(fpChanNums)<=96);
+        else
+            error(['no fp chans were found by ',mfilename])
+        end
     end
 end
 fp=double(cat(2,out_struct.raw.analog.data{fpchans}))';

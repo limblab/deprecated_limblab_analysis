@@ -61,9 +61,9 @@ for n=1:length(MATfiles)
     numlags=10;
     wsz=256;
     nfeat=150;
-    PolynomialOrder=2;
+    PolynomialOrder=3;
     smoothfeats=0;
-    binsize=0.05;
+    binsize=0.1;
     if exist('fnam','var')~=1
         fnam='';
     end
