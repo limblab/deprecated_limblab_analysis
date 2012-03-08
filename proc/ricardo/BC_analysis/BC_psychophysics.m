@@ -286,7 +286,7 @@ for file_no = 1:length(filelist)
         end
 
         if num_outer_targets == 1
-            if size(electrode_current_rewards,2)>3
+            if size(electrode_current_rewards,1)>3
                 error_bars = get_error_bounds(electrode_current_rewards,...
                     electrode_current_incompletes,boot_iter,.1);%% 
 

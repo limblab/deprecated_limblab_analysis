@@ -13,7 +13,8 @@ for file_no = 1:length(filelist)
     currents = filelist(file_no).current; 
     electrodes = filelist(file_no).electrodes; 
     no_stim_code = codes(find(currents==0));
-    stim_codes = codes(find(currents~=0));
+    stim_codes = unique(codes(find(currents~=0)));
+    unique_codes = unique(codes);
        
     stimuli_table = [codes' electrodes' currents'];
     serverdatapath = filelist(file_no).serverdatapath;    
@@ -75,11 +76,11 @@ for file_no = 1:length(filelist)
     hist_bins = hist_bins(1:end-1);
     figure;
     rewards_fails_ratio_time = zeros(length(codes),nbins);
-    for iStim = 1:length(codes)
-        rewards_stim = trial_table(trial_table(:,table_columns.stim_id)==codes(iStim) &...
+    for iStim = 1:length(unique_codes)
+        rewards_stim = trial_table(trial_table(:,table_columns.stim_id)==unique_codes(iStim) &...
             trial_table(:,table_columns.result)==reward_code,table_columns.start);
         rewards_hist = hist(rewards_stim,hist_bins);
-        fails_stim = trial_table(trial_table(:,table_columns.stim_id)==codes(iStim) &...
+        fails_stim = trial_table(trial_table(:,table_columns.stim_id)==unique_codes(iStim) &...
             trial_table(:,table_columns.result)==fail_code,table_columns.start);
         fails_hist = hist(fails_stim,hist_bins);
         rewards_fails_ratio_time(iStim,:) = rewards_hist./(rewards_hist+fails_hist);
@@ -89,7 +90,7 @@ for file_no = 1:length(filelist)
     xlabel('t (s)')
     ylabel('R/(R+F)')
     title(filename,'Interpreter','none')
-    legend(num2str(codes'))
+    legend(num2str(unique_codes'))
     
     % ROC curves
     figure;
@@ -115,8 +116,8 @@ for file_no = 1:length(filelist)
     % Results by stim code
     figure;
     hold on
-    phats = zeros(1,length(codes));
-    pcis = zeros(2,length(codes));
+    phats = zeros(1,length(unique(codes)));
+    pcis = zeros(2,length(unique(codes)));
     for iStim = 1:length(codes)
         temp_rewards = sum(trial_table(trial_table(:,table_columns.stim_id)==codes(iStim),table_columns.result)==reward_code);
         temp_fails = sum(trial_table(trial_table(:,table_columns.stim_id)==codes(iStim),table_columns.result)==fail_code);
@@ -134,12 +135,13 @@ for file_no = 1:length(filelist)
     no_stim_results = trial_table(trial_table(:,table_columns.stim_id)==no_stim_details(1,1),table_columns.result);
     no_stim_rewards = sum(no_stim_results==reward_code);
     no_stim_fails = sum(no_stim_results==fail_code);
+    [no_stim_phat,no_stim_pci] = binofit(no_stim_fails,(no_stim_rewards+no_stim_fails));
     stim_electrodes = unique(stimuli_table(stimuli_table(:,2)~=0,2));
+    
     for iElectrode = 1:length(stim_electrodes)
         temp_table = stimuli_table(stimuli_table(:,2)==stim_electrodes(iElectrode),:);
-        electrode_results{iElectrode} = zeros(size(temp_table,1)+1,6);
-        [phat,pci] = binofit(no_stim_fails,(no_stim_rewards+no_stim_fails));
-        electrode_results{iElectrode}(1,:) = [0 no_stim_rewards no_stim_fails phat pci];
+        electrode_results{iElectrode} = zeros(size(temp_table,1)+1,6);        
+        electrode_results{iElectrode}(1,:) = [0 no_stim_rewards no_stim_fails no_stim_phat no_stim_pci];
         for iCurrent = 1:size(temp_table,1)
             temp_stim_id = temp_table(iCurrent,1);
             temp_results = trial_table(trial_table(:,table_columns.stim_id)==temp_stim_id,table_columns.result);
@@ -148,10 +150,28 @@ for file_no = 1:length(filelist)
             [phat,pci] = binofit(temp_rewards,(temp_rewards+temp_fails));
             electrode_results{iElectrode}(iCurrent+1,:) = [temp_table(iCurrent,3) temp_rewards temp_fails phat pci];
         end
-%         plot(-electrode_results{iElectrode}(:,1),electrode_results{iElectrode}(:,2)./...
-%             (electrode_results{iElectrode}(:,2)+electrode_results{iElectrode}(:,3)),'.');  
         errorbar(-electrode_results{iElectrode}(:,1),electrode_results{iElectrode}(:,4),...
             electrode_results{iElectrode}(:,5)-electrode_results{iElectrode}(:,4),...
-            electrode_results{iElectrode}(:,6)-electrode_results{iElectrode}(:,4),'.');            
+            electrode_results{iElectrode}(:,6)-electrode_results{iElectrode}(:,4),'.'); 
     end        
+    xlabel('Current (uA)')
+    ylabel('P(detection)')
+    
+    % Detection by stim code
+    figure
+    hold on
+    stim_details = stimuli_table(stimuli_table(:,2)~=0,:);
+    unique_stim_codes = unique(stim_details(:,1));
+    stim_code_results = [no_stim_details(1) no_stim_fails no_stim_rewards no_stim_phat no_stim_pci];
+    for iStim = 1:length(unique_stim_codes)
+        temp_results = trial_table(trial_table(:,table_columns.stim_id)==unique_stim_codes(iStim),table_columns.result);
+        temp_rewards = sum(temp_results==reward_code);
+        temp_fails = sum(temp_results==fail_code);            
+        [phat,pci] = binofit(temp_rewards,(temp_rewards+temp_fails));
+        stim_code_results(iStim+1,:) = [unique_stim_codes(iStim) temp_rewards temp_fails phat pci];        
+    end
+    errorbar(stim_code_results(:,1),stim_code_results(:,4),stim_code_results(:,5)-stim_code_results(:,4),...
+        stim_code_results(:,6)-stim_code_results(:,4),'.')
+    xlabel('Stimulus code')
+    ylabel('P(detection)')
 end

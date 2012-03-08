@@ -10,7 +10,7 @@ for iFile = 2:length(filelist)
         end
     end
     if ~datapath_in_list
-        datapaths = {datapaths; {filelist(iFile).datapath}};
+        datapaths{end+1} = filelist(iFile).datapath;
     end
 end
 
@@ -22,8 +22,8 @@ if length(datapaths)==1
     BC_sorted_files = dir([datapaths{iPaths} 'Sorted\*_BC_*.nev']);
 else
     for iPaths = 1:length(datapaths)
-        BC_raw_files = [BC_raw_files; dir([cell2mat(datapaths{iPaths}) 'Raw\*_BC_*.nev'])];
-        BC_sorted_files = [BC_sorted_files; dir([cell2mat(datapaths{iPaths}) 'Sorted\*_BC_*.nev'])];
+        BC_raw_files = [BC_raw_files; dir([(datapaths{iPaths}) 'Raw\*_BC_*.nev'])];
+        BC_sorted_files = [BC_sorted_files; dir([(datapaths{iPaths}) 'Sorted\*_BC_*.nev'])];
     end
 end
 
