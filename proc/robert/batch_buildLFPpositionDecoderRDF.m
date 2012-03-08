@@ -16,9 +16,12 @@ Files(1:2)=[];
 FileNames={Files.name};
 MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'Spike_LFP.*(?<!poly.*)\.mat'))==0);
 if isempty(MATfiles)
-    fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
-    disp('quitting...')
-    return
+    MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'SpikeLFP.*(?<!poly.*)\.mat'))==0);
+    if isempty(MATfiles)
+        fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
+        disp('quitting...')
+        return
+    end
 end
 
 %%
@@ -41,6 +44,9 @@ for batchIndex=1:length(MATfiles)
     % recorded for testing purposes.
     if mean(range(out_struct.vel(:,2:3))) > 10
         buildLFPpositionDecoderRDF
+        H_bands{batchIndex}=H;
+        bestf_bands{batchIndex}=bestf;
+        bestc_bands{batchIndex}=bestc;
         close
         % save bestc, bestf for reference with allFPsToPlot
         if exist('allFPsToPlot.mat','file')==2
