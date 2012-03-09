@@ -1,15 +1,10 @@
-function vaf_bands=batch_FPpositionDecode_singleBand(PathName,style)
+function vaf_bands=batch_LFPpositionDecode_singleBand(PathName)
 
-% syntax vaf_bands=batch_FPpositionDecode_singleBand(PathName,style);
+% syntax vaf_bands=batch_LFPpositionDecode_singleBand(PathName);
 %
-% this is the function to run for single-band analysis.  The style input 
-% should be either 'n2MatM4' or 'get_cerebus_data'.
-%
-% in general, this script does the same thing as
-% batch_buildLFPpositionDecoderRDF.m, but should operate on files that were
-% output from Marc's n2matM4.m code, meaning that fp is loaded into the
-% workspace, not built from the bdf.  Also, the naming convention to
-% distinguish data files from output/decoder files is different.
+% this is the function to run for single-band analysis for LFPs.  It runs
+% from the BDFs, which is okay for LFP recordings because they utilize 96
+% channels and nearly all of them are good (for the LFP/EFP/Spike paper).
 
 if ~nargin
     PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\',...
@@ -24,13 +19,7 @@ Files=dir(PathName);
 Files(1:2)=[];
 FileNames={Files.name};
 
-REstr='(Chewie|Mini)(SpikeL|E)FP(L?)[0-9]{3}';
-if strcmpi(style,'n2matM4')
-    % include only files that have the pattern Chewie|Mini EFP ddd fp4.mat
-    % where ddd are digits
-    REstr=[REstr, 'fp4'];
-end
-REstr=[REstr, '\.mat'];
+REstr='(Chewie|Mini)(Spike)LFP(L?)[0-9]{3}\.mat';
 
 MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,REstr))==0);
 if isempty(MATfiles)
@@ -41,18 +30,11 @@ end
 
 for n=1:length(MATfiles)
     FileName=MATfiles{n};
-    if strcmpi(style,'n2matM4')
-        % only load the variable you want.
-        load(FileName,'bdf')
-        fnam=FileName(1:end-4);
-        load(FileName,'fp')
-        load(FileName,'fs')
-    else
-        load(FileName,'out_struct')
-        fpAssignScript
-        bdf=out_struct; clear out_struct
-        fs=bdf.raw.analog.adfreq(1);
-    end
+    fprintf(1,'loading %s.\n',FileName)
+    load(FileName,'out_struct')
+    fpAssignScript
+    bdf=out_struct; clear out_struct
+    fs=bdf.raw.analog.adfreq(1);
     
     fptimes=1/fs:1/fs:size(fp,2)/fs;
     % either position or velocity
@@ -84,7 +66,6 @@ for n=1:length(MATfiles)
     folds=10;
     numlags=10;
     wsz=256;
-%     nfeat=150;
     nfeat=90;
     PolynomialOrder=3;
     smoothfeats=0;
@@ -96,7 +77,7 @@ for n=1:length(MATfiles)
     % gonna have to be a loop to do each of the single-band iterations.
     % How to collect data into VAF?
     for m=1:6
-        [vaf_bands{n,m},~,~,~,~,~,~,~,~,~,~,H_bands{n,m},~,~,~,~,~,~,~,~,~,~] = ...
+        [vaf_bands{n,m},~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~] = ...
             predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
             fs,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
             Use_Thresh,words,fs,lambda,smoothfeats,m);
