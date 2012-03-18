@@ -44,9 +44,9 @@ for batchIndex=1:length(MATfiles)
     % recorded for testing purposes.
     if mean(range(out_struct.vel(:,2:3))) > 10
         buildLFPpositionDecoderRDF
-        H_bands{batchIndex}=H;
-        bestf_bands{batchIndex}=bestf;
-        bestc_bands{batchIndex}=bestc;
+        H_all{batchIndex}=H;
+        bestf_all{batchIndex}=bestf;
+        bestc_all{batchIndex}=bestc;
         close
         % save bestc, bestf for reference with allFPsToPlot
         if exist('allFPsToPlot.mat','file')==2

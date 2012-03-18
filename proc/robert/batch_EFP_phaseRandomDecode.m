@@ -1,8 +1,9 @@
-function vafAll=batch_FPpositionDecodeOffline(PathName)
+function vafAll=batch_EFP_phaseRandomDecode(PathName)
 
-% syntax vafAll=batch_FPpositionDecodeOffline(PathName);
+% syntax vafAll=batch_EFP_phaseRandomDecode(PathName);
 %
 % this is the function to run for phase randomization!
+%       (for EFP data)
 %
 % in general, this script does the same thing as
 % batch_buildLFPpositionDecoderRDF.m, but should operate on files that were

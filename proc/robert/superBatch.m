@@ -59,15 +59,19 @@ for copyfileIndex=1:length(decoderFiles)
     copyfile(decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
     fprintf(1,'%s copied to %s\n',decoderFiles{copyfileIndex},fullfile(remoteFolder2,decoderFiles{copyfileIndex}))
 end
-copyfile('allFPsToPlot.mat',remoteFolder2)
-fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
+if exist('allFPsToPlot.mat','file')==2
+    copyfile('allFPsToPlot.mat',remoteFolder2)
+    fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
+end
 
 oldPathName=PathName;
 PathName=remoteFolder;
 % get cursor kinematics for brain control files
 batch_get_cursor_kinematics % saves a copy on the local folder no matter what.
 PathName=oldPathName; clear oldPathName
-save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
+if exist('kinStruct.mat','file')==2
+    save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
+end
 
 diary off
 copyfile(fullfile(PathName,'decoderOutput.txt'),remoteFolder2)
