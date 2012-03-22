@@ -202,7 +202,6 @@ function BMIDataAnalyzer()
         else
             BDF_FullFileName = fullfile(PathName, BDF_FileName);
             set(BDF_BinButton,'Enable','on');
-            set(BDF_PlotButton,'Enable','on');
             set(BDF_WSButton,'Enable','on');
             
             BDF_FileLabel =  uicontrol('Parent',BDF_Panel,'Style','text','String',['BDFStruct : ' BDF_FileName],'Units',...
@@ -215,15 +214,17 @@ function BMIDataAnalyzer()
     function BDF_BinButton_Callback(obj,event)
         disp('Converting BDF structure to binned data, please wait...');
 %        Bin_UI = figure;
-        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,FindStates] = convertBDF2binnedGUI;
-        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData);
+        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData, FindStates, Unsorted, TriKernel, sig] = convertBDF2binnedGUI;  %Added Unsorted TriKernel and sig 3/14/12 SNN
+        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData, FindStates, Unsorted, TriKernel, sig);
+  
         if FindStates
             [states,statemethods] = findStates(binnedData);
             binnedData.states = states;
             binnedData.statemethods = statemethods;
             clear states statemethods;
         end
-            
+        
+        
         disp('Done.');
         
         disp('Saving binned data...');
@@ -259,6 +260,7 @@ function BMIDataAnalyzer()
         clear binnedData;
 
     end
+
 
     function BDF_PlotButton_Callback(obj,event)
         plotBDF(BDF_FullFileName);        

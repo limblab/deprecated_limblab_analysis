@@ -1,9 +1,9 @@
 function binnedData = convertBDF2binned(varargin)
-        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate, NormData)
+        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate, NormData, FindStates, Unsorted, TriKernel, sig)
 
 %% Initialization
 
-if (nargin <1 || nargin == 3 || nargin > 9)
+if (nargin <1 || nargin == 3 || nargin > 12)
     disp('Wrong number of arguments');
     disp(sprintf('Usage: \nconvertBDF2binned( datastructname, [binsize], [starttime, endtime],[EMG_hp, EMG_lp]'));
     disp('  - datastructname        : string of bdf.mat file path and name, or name of preloaded BDF structure');
@@ -13,6 +13,9 @@ if (nargin <1 || nargin == 3 || nargin > 9)
     disp('  - [minFiringRate]       : [0.0] minimum firing rate a units needs to be included in the data');
     disp('  - [NormData]            : [false] specify whether the output data is to be normalized to unity');
     disp('  - [FindStates]          : [false] Whether the data in classified in discret states');
+    disp('  - [Unsorted]            : [false] Whether to use the unsorted units in the analysis');
+    disp('  - [TriKernel]           : [false] Whether to use a triangular kernel to smooth the data');
+    disp('  - [sig]                 : [0.04] sigma value for creating triangular kernel');
     disp(sprintf('\n'));
     return;
 end
@@ -44,9 +47,12 @@ end
 stoptime = floor(duration);
 EMG_hp = 50; % default high pass at 50 Hz
 EMG_lp = 10; % default low pass at 10 Hz
-minFiringRate = 0.0; %default min firing rate to include a unit in the data
+minFiringRate = 0.5; %default min firing rate to include a unit in the data
 NormData = false;
 Find_States=false;
+Unsorted = false;
+TriKernel = false;
+sig = 0.04;
 
 %optional parameters overridding
 if (nargin >= 2)
@@ -66,7 +72,37 @@ end
 if (nargin >= 8)
     NormData = varargin{8};
 end
-        
+if (nargin >= 9)
+    FindStates = varargin{9};
+end
+if (nargin >= 10)
+    Unsorted = varargin{10};
+end
+if (nargin >= 11)
+   TriKernel = varargin{11};
+end
+if (nargin >= 12)
+   sig = varargin{12};
+end
+
+%-------------------------------------------------------------------------
+
+%Create triangular kernel for convolution with spikes  %(SHT and SNN, added 3/8/12)
+     
+%1) Initialize an array that stores the times from -support to support
+%    at binWidth resolution
+binWidth = binsize/1000;      %Double check that your units make sense!
+support = sqrt(6) * sig;
+numBins = floor(support/binWidth);
+maxTime = binWidth * numBins;
+times = -maxTime:binWidth:(maxTime+(0.1*binWidth));
+% 2) Compute the two constants
+const1 = 1 / (6 * sig^2);
+const2 = sqrt(6) * sig;
+% 3) Compute the kernel
+kernel = const1 * (const2 - abs(times));
+%--------------------------------------------------------------------------
+
 %% Validation of time parameters
     
 if (starttime <0.0 || starttime > duration-binsize) %making sure the start time is valid, must be at least 10 secs before eof    
@@ -278,10 +314,19 @@ else
         if isempty(datastruct.units(i).id)
             continue;
         end
-        % skip unsorted units, which are mostly noise. skip units id 255,
+        % If Unsorted = false, skip unsorted units, which are mostly noise. skip units id 255,
         % in autosort, I don't know what this is...
-        if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)
-            continue; 
+        if Unsorted == 0;
+            if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)
+                continue; 
+            end
+        end
+        
+        % If Unsorted = true, take into account the unsorted units
+        if Unsorted == 1;
+            if datastruct.units(i).id(2)==255
+                continue
+            end
         end
 
         num_ts = length(datastruct.units(i).ts);
@@ -309,22 +354,47 @@ else
             spikeguide(i,:)=['ee' sprintf('%02d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
         end
 
+       if TriKernel == 0; 
+            % Create the spike data matrix, using the specified bin size and
+            % identified units
+            for unit = 1:numusableunits
 
-        % Create the spike data matrix, using the specified bin size and
-        % identified units
-        for unit = 1:numusableunits
+             %get the binned data from the desired timeframe plus one bin before
+             binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,starttime:binsize:stoptime);
 
-            %get the binned data from the desired timeframe plus one bin before
-            binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,starttime:binsize:stoptime);
+             %and get rid of the extra bins at beginnning, it contains all the ts
+             %from the beginning of file that are < starttime. Here I want
+             %starttime to be the lower bound of the first bin.
+             binneddata = single(binneddata(2:end));
 
-            %and get rid of the extra bins at beginnning, it contains all the ts
-            %from the beginning of file that are < starttime. Here I want
-            %starttime to be the lower bound of the first bin.
-            binneddata = single(binneddata(2:end));
-
-            %convert to firing rate and store in spike data matrix
-            spikeratedata(:,unit) = binneddata' /binsize;
+             %convert to firing rate and store in spike data matrix
+             spikeratedata(:,unit) = binneddata' /binsize;
+             end
         end
+        
+        if TriKernel == 1;
+        BinTimes = starttime:binsize:stoptime;
+        % spikeStartTime is the initial time in the spikeArray
+        spikeStartTime = BinTimes(1);
+            for unit = 1:numusableunits
+
+                spkTimes = datastruct.units(units_to_use(unit)).ts;
+                
+                % Now fill the spikeRaster with the appropriate counts 
+
+                spikeBins = round((spkTimes - spikeStartTime) * (1/binWidth));
+                spikeBins = spikeBins(spikeBins > 0);
+                spikeBins = spikeBins(spikeBins <= numBins);
+                spikeRaster = zeros(1,length(BinTimes));
+                spikeRaster(spikeBins(unit)) = 1;
+
+                firingRate(:,unit) = conv(spikeRaster, kernel);
+                spikeratedata(:,unit) = conv(spikeRaster, kernel);
+                %firingRate = firingRate((extraBins+1):(length(firingRate) - extraBins));
+            end
+           
+        end
+                  
     end        
 end
 

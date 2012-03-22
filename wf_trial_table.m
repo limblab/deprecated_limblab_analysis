@@ -6,7 +6,7 @@ function tt = wf_trial_table(bdf)
 % follows:
 %    1: Start time
 %  2-5: Target              -- ULx ULy LRx LRy
-%    6: OT on time
+%    6: Outer target (OT) 'on' time
 %    7: Go cue
 %    8: Trial End time
 %    9: Trial result        -- R, A, I, or F 

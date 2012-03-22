@@ -22,7 +22,7 @@ function varargout = convertBDF2binnedGUI(varargin)
 
 % Edit the above text to modify the response to help convertBDF2binnedGUI
 
-% Last Modified by GUIDE v2.5 11-Jan-2011 12:34:40
+% Last Modified by GUIDE v2.5 14-Mar-2012 15:49:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -80,7 +80,10 @@ function varargout = convertBDF2binnedGUI_OutputFcn(hObject, eventdata, handles)
     MFR = get(handles.MFR_txtbx, 'Value');
     NormData = get(handles.Normalize_cbx,'Value');
     FindStates = get(handles.State_cbx,'Value');
-    varargout = {binsize startTime stopTime HP LP MFR NormData FindStates};
+    Unsorted = get(handles.Unsorted_cbx,'Value');
+    TriKernel = get(handles.Triangle_cbx,'Value');
+    sig = get(handles.Sigma_txtbx, 'Value');
+    varargout = {binsize startTime stopTime HP LP MFR NormData FindStates Unsorted TriKernel sig};
 
     close(handles.figure1);
 
@@ -261,3 +264,45 @@ function State_cbx_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of State_cbx
 
 
+
+function Sigma_txtbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Sigma_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Sigma_txtbx as text
+%        str2double(get(hObject,'String')) returns contents of Sigma_txtbx as a double
+set(handles.Sigma_txtbx, 'Value', str2double(get(hObject,'String')) );
+
+
+% --- Executes during object creation, after setting all properties.
+function Sigma_txtbx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Sigma_txtbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in Triangle_cbx.
+function Triangle_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Triangle_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Triangle_cbx
+get(hObject,'Value');
+
+
+% --- Executes on button press in Unsorted_cbx.
+function Unsorted_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to Unsorted_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of Unsorted_cbx
+get(hObject,'Value');
