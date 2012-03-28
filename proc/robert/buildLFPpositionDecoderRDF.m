@@ -103,7 +103,7 @@ nfeat=150;
 % nfeat=6*size(fp,1);
 PolynomialOrder=3; 
 smoothfeats=0;
-binsize=0.1;
+binsize=0.05;
 %%
 % to build a decoder:
 n=1;

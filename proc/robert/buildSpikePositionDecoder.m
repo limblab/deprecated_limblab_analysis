@@ -14,7 +14,14 @@ if ~nargin
     fprintf(1,'%s\n',fullfile(PathName,FileName))
     disp('importing data...')
     bdf=load(fullfile(PathName,FileName));
-    nameWithinFile=char(regexp(fieldnames(bdf),'bdf|out_struct','match','once'));
+    fieldnames_list=fieldnames(bdf);
+    bdfFound=find(cellfun(@isempty,regexp(fieldnames_list, ...
+        'bdf|out_struct','match','once'))==0,1);
+    if ~isempty(bdfFound)
+        nameWithinFile=fieldnames_list{bdfFound(1)};
+    else
+        nameWithinFile='';
+    end
     if ~isempty(nameWithinFile)
         bdf=bdf.(nameWithinFile);
     else
@@ -25,7 +32,7 @@ if ~nargin
     assignin('base',nameWithinFile,bdf)
 else    
     if ischar(BDFfileIn)
-        [PathName,FileName,ext,~]=fileparts(BDFfileIn);
+        [PathName,FileName,~,~]=fileparts(BDFfileIn);
         diary(fullfile(PathName,'decoderOutput.txt'))
         bdf=load(BDFfileIn);
         nameWithinFile=char(regexp(fieldnames(bdf),'bdf|out_struct','match','once'));
@@ -71,8 +78,8 @@ else
 end
 
 [filter,OLPredData] = BuildModel(binnedData, ...
-    'C:\Documents and Settings\Administrator\Desktop\s1_analysis', fillen, 1, PolynomialOrder, ...
-    Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc);
+    'C:\Documents and Settings\Administrator\Desktop\s1_analysis',fillen,1, ...
+    PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc);
 % clear binnedData;
 disp('Done.');
 
@@ -165,7 +172,13 @@ cells=[];
     cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
 close
 
-fprintf(1,'folds=%d\n',folds)
+if exist('FileName','var')==1
+    fprintf(1,'file %s\n',FileName)
+else
+    fprintf(1,'file %s\n',BDFfileName)
+end
+fprintf(1,'decoding %s\n',signal)
+% fprintf(1,'folds=%d\n',folds)
 fprintf(1,'numlags=%d\n',numlags)
 fprintf(1,'\n')
 fprintf(1,'\n')
@@ -182,4 +195,5 @@ formatstr=[formatstr, '\n'];
 fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 
+assignin('base','vaf',vaf)
 diary off

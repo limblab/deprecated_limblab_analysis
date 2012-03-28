@@ -184,7 +184,7 @@ tfmat=zeros(wsz,numfp,numbins,'single');
 %% Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
-% clear fp
+clear fp
 for i=1:numbins
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
     tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
@@ -198,7 +198,8 @@ for i=1:numbins
 end
 clear fpf tftmp
 freqs=linspace(0,samprate/2,wsz/2+1);
-% freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
+freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
+fprintf(1,'first frequency bin at %.3f Hz\n',freqs(1))
 tvect=(1:numbins)*(bs)-bs/2;
 assignin('base','freqs',freqs)
 disp('3rd part: calculate FFTs')
@@ -206,6 +207,7 @@ toc
 tic
 %% Calculate bandpower
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
+% for testing, when freqs=freqs(2:end) is commented out, above.
 % Pmat=tfmat(1:length(freqs)+1,:,:).*conj(tfmat(1:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
 assignin('base','Pmat',Pmat)
 Pmean=mean(Pmat,3); %take mean over all times

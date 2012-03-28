@@ -94,12 +94,25 @@ else
 y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
 end
 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % experimental HPF for binned spike data %%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% [bxh,axh] = butter(2, 0.1, 'high'); %highpass filter spike train
+
 x = zeros(length(y), size(cells,1));    % using length() is bad! use size(X,n) instead.
 for i = 1:size(cells,1)
     ts = get_unit(bdf, cells(i, 1), cells(i, 2));
     b = train2bins(ts, t);
-    x(:,i) = b;
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % % experimental HPF for binned spike data %%
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     x(:,i) = filtfilt(bxh,axh,b);
+%     if length(ts)/bdf.meta.duration > 0
+        x(:,i) = b;
+%     end
 end
+
+
 
 % filter out inactive regions
 % Find active regions

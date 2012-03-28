@@ -127,5 +127,6 @@ TTT(exclude_trials)=[];
 
 hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
 if nargout > 3
-    hitRate2=length(PL)/(length(trialOnset)-length(exclude_trials));
+    hitRate2=(length(PL)+nnz(out_struct.words(:,2)==33))/ ...
+        nnz(out_struct.words(:,2)==18);
 end
