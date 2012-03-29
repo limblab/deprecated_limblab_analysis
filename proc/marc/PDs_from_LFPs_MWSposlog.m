@@ -1,4 +1,4 @@
-function [LFPfilesPDs]=PDs_from_LFPs_MWSposlog(root,LFPs,fbandst,fbanden,startword,rewardword,shiftstart,lag,bin_size,pvallim)
+function [LFPfilesPDs,bootstrapPDS]=PDs_from_LFPs_MWSposlog(root,LFPs,fbandst,fbanden,startword,rewardword,shiftstart,lag,bin_size,pvallim)
 
 % [LFPfilesPDs]=PDs_from_LFPs('E:\Chewie\SpikeLFP\Chewie_Spike_LFP_',[1 10 95],[10,70,130,200,300],[50,110,190,290,390],18 ,32,0,0.05,0.2,0.05);
 
