@@ -5,7 +5,7 @@ close all;
 root='Pedro_2011-04-30_RW_001_LFP300'
 load([pathname,root,'.mat']);%load allfiles PDS
 % LFPband={'10-50';'70-110';'130-190';'200-260'};
-LFPband={'300-360'};
+LFPband={'130-199';'200-300'};
 
 for m=1: size(LFPfilesPDs{1,1},2)
     series1=[];

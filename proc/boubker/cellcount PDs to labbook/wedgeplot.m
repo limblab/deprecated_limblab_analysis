@@ -20,7 +20,13 @@ wedgeRad = zeros(nargs, 50);
 
 for i = 1:nargs
     dist = abs(LB(i)-RB(i));
+    if dist<1e-9
+        dist=1e-9;
+        wedgeRad(i,:)=0;
+    else
+    
     wedgeRad(i,:) = LB(i):dist/49:RB(i);
+    end
 end
 
 wedgeCart = cell(1,nargs);
