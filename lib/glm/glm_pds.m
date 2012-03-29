@@ -19,9 +19,9 @@ for i = 1:length(ul)
     bv = [b(4) b(5)];
     dbv = [stats.se(4) stats.se(5)];
     J = [-bv(2)/(bv(1)^2+bv(2)^2); bv(1)/(bv(1)^2+bv(2)^2)];
-    
+    moddepth(i) = norm(bv,2);
     pds(i,:) = atan2(bv(2), bv(1));
-    errs(i,:) = dbv'*J;
+    errs(i,:) = dbv*J;
     moddepth(i,:) = sqrt(bv(1).^2 + bv(2).^2);
 end
 
