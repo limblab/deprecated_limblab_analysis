@@ -19,7 +19,7 @@ load_paths;
 bdf = get_cerebus_data(['C:\Users\limblab\Documents\MATLAB\Paul_Uncertainty\jaco_dat\' filename],3);
 
 % CHANGE THIS PATH TO YOUR LOCAL ANALYSIS SUBDIR
-cd C:\Users\limblab\Desktop\s1_analysis\proc\Paul;
+cd C:\Users\limblab\Documents\MATLAB\Paul_Uncertainty\;
 fn =[filename(1:end-4) '.mat'];
 save(fn,'bdf');
 out_struct = bdf;
