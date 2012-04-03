@@ -79,8 +79,9 @@ num_trials = length(start_idcs);
 %   combined stats for all files
 %   *add field to 'stat_struct' containing the .mat file name
 
-%% Find time to first target for each trial
+%% Find initial time to target for each trial
 % Pretty straightforward, yeah?
+
 time2target = zeros(num_trials-1,1);
 disp(sprintf('Number of trials: %i.', num_trials));
 count = 1;
@@ -96,8 +97,6 @@ stat_struct.time2target = time2target;
 
 
 %% Find number of target entries per trial
-% Is this metric useful for RW tasks? (beyond using it to calculate path
-% lengths)
 
 num_entries = zeros(num_trials,1);
 for trial = 1:num_trials%-1
