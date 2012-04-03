@@ -26,7 +26,8 @@ if isempty(MATfiles)
     return
 end
 
-kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[]);
+kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
+    'control','num_targets',[]);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -66,11 +67,16 @@ for batchIndex=1:length(MATfiles)
         numTargets(trial_index)=nnz(out_struct.words(start_trial(trial_index): ...
             rewarded_trials(trial_index),2)==49);
     end
-
+    kinStruct(batchIndex).num_targets=floor(mean(numTargets));
+    
     if (exist('override','var')~=0 && override==1) || mean(range(out_struct.vel(:,2:3))) < 10
         % we're in brain control country.  Savor the flavor.
         get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
         out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation
+        % need a function (or other clever way) to determine whether brain
+        % or spike control.  Most obvious is by looking at the decoder
+        % line, which probably means putting it in get_cursor_kinematics
+        kinStruct(batchIndex).control=out_struct.meta.control;
         if isfield(out_struct.meta,'decoder_age')
             kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
             kinStruct(batchIndex).PL=out_struct.path_length;
@@ -89,6 +95,7 @@ for batchIndex=1:length(MATfiles)
             if floor(mean(numTargets)) < 3  % then, brain control with handle.
                 get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
                 out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation
+                kinStruct(batchIndex).control=out_struct.meta.control;
                 if isfield(out_struct.meta,'decoder_age')
                     kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
                     kinStruct(batchIndex).PL=out_struct.path_length;
@@ -104,6 +111,7 @@ for batchIndex=1:length(MATfiles)
                 fprintf(1,'%s appears to be a hand control file.\n',MATfiles{batchIndex})
                 fprintf(1,'calculating handle kinematics instead...\n')
                 kinStruct(batchIndex).decoder_age=NaN; % because hand control!
+                kinStruct(batchIndex).control='hand';
                 opts=struct('version',2);
                 if floor(datenum(out_struct.meta.datetime)) <= datenum('09-12-2011')
                     opts.version=1; opts.hold_time=0.1;
@@ -124,6 +132,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).TT=out_struct.time_to_target;
             kinStruct(batchIndex).hitRate=out_struct.hitRate;
             kinStruct(batchIndex).hitRate2=out_struct.hitRate2;
+            kinStruct(batchIndex).control=out_struct.meta.control;
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};

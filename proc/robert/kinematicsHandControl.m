@@ -1,6 +1,6 @@
-function [PL,TTT,hitRate,hitRate2]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2,speedProfile]=kinematicsHandControl(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted out_struct
@@ -34,6 +34,9 @@ function [PL,TTT,hitRate,hitRate2]=kinematicsHandControl(out_struct,opts)
 %
 % hitRate2 is (aborts+rewards)/trials since both successfully reached
 % the target.  hitRate is just rewards/trials
+%
+% speedProfile a cell array, each cell contains the speedProfile for 1
+% trial.
 
 if nargin==1
     opts.version=2;             % assume target_entry_word is present
@@ -98,6 +101,7 @@ disp('Requiring >2 time points to be included in the reach')
 
 PL=zeros(size(start_reaches));
 TTT=zeros(size(start_reaches));
+speedProfile=cell(size(start_reaches));
 for n=1:length(start_reaches)
 	included_points=find(out_struct.pos(:,1)>=start_reaches(n) & ...
 		out_struct.pos(:,1)<=end_reaches(n));
@@ -106,11 +110,16 @@ for n=1:length(start_reaches)
     % successes (where the target randomly appeared on top of where the
     % cursor already was) are not counted.
 	if length(included_points)>2
-		for k=2:length(included_points)
-			PL(n)=PL(n)+ ...
-				sqrt((out_struct.pos(included_points(k),2)-out_struct.pos(included_points(k-1),2))^2 + ...
-				(out_struct.pos(included_points(k),3)-out_struct.pos(included_points(k-1),3))^2);
-		end
+        for k=2:length(included_points)
+            PLpoint=sqrt((out_struct.pos(included_points(k),2)- ...
+                out_struct.pos(included_points(k-1),2))^2 + ...
+                (out_struct.pos(included_points(k),3)- ...
+                out_struct.pos(included_points(k-1),3))^2);
+            
+            PL(n)=PL(n)+PLpoint;
+        end
+        speedProfile{n}=sqrt((out_struct.vel(included_points,2)).^2+ ...
+            (out_struct.vel(included_points,3)).^2);
 		% normalize by the straight-line distance between the start and end
 		% points, as in Hatsopoulos paper.
 		interTargetDistance=sqrt(sum(diff(out_struct.pos(included_points([1 end]),2:3)).^2));
@@ -124,6 +133,7 @@ end
 exclude_trials=find(PL==0);
 PL(exclude_trials)=[];
 TTT(exclude_trials)=[];
+speedProfile(exclude_trials)=[];
 
 hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
 if nargout > 3

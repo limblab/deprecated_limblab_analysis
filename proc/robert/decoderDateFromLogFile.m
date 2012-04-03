@@ -30,7 +30,7 @@ if ~isempty(regexp(modelLine,'Predictions made .*with model:', 'once'))
                 end
             end
         otherwise
-            datestring=regexp(modelLine,'[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]','match','once');
+            datestring=regexp(modelLine,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once');
             if ~isempty(datestring)
                 decoderDate=datenum(datestring);
             else
@@ -49,8 +49,6 @@ if ~isempty(regexp(modelLine,'Predictions made .*with model:', 'once'))
 else
     decoderDate=NaN;
 end
-
-
 fclose(fid);
 
 

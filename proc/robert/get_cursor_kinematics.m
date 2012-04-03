@@ -193,6 +193,7 @@ bdf.vel=[newTvector' newXvel' newYvel'];
 
 bdf.meta.brain_control=1;
 decoderDate=decoderDateFromLogFile(pathToBR);
+bdf.meta.control=decoderTypeFromLogFile(pathToBR);
 % could just floor the datenum, you know...
 bdfDate=datenum(regexp(bdf.meta.datetime,'\s*[0-9]+/\s*[0-9]+/[0-9]+','match','once'));
 bdf.meta.decoder_age=bdfDate-decoderDate;
@@ -218,7 +219,8 @@ if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
             bdf.words(bdfWordsPosition(end)+1:end,:)];
     end
 end
-[bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2]=kinematicsHandControl(bdf,opts);
+[bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2,bdf.speedProfile]= ...
+    kinematicsHandControl(bdf,opts);
 bdf.words=original_words;
 
 [workspaceList,~]=dbstack;
