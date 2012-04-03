@@ -8,6 +8,7 @@ function stat_struct = BR_performance_stats(varargin)
 %   *stat_struct.time2target
 %   *stat_struct.num_entries
 %   *stat_struct.pathlength
+%   *stat_struct.firstpathlength (lengths for only initial reaches of each trial)
 %   *stat_struct.holddata
 
 %% Initialization
@@ -173,8 +174,9 @@ end
 stat_struct.pathlength = pathlength;
 
 % Plot path length efficiency
-firsttries = find(pathlength(:,4));
-firstpathlength = pathlength(firsttries,3);
+firsts = find(pathlength(:,4));
+firstpath = pathlength(firsts,3);
+stat_struct.firstpathlength = firstpath;
 % figure
 % plot(firstpathlength)
 % title('Initial Path Length Efficiency vs. Time')
