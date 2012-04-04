@@ -335,7 +335,7 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
     'Mini_Spike_LFPL_	683',...
 };
 
-BatchList=BatchListAllTargFirstFile;
+BatchList=BatchList6targAllFilesChewie;
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
