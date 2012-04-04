@@ -84,7 +84,7 @@ end
 % Identify the sequence of numbers at the end of the file name.  Check 
 % if there is a BR log file.
 decoderDate=NaN;
-for n=1:1000     % assume there are fewer than 1000 files in a folder.  
+for n=1:1000     % assume there are fewer than 1000 files in a folder.
     fileToCheck{1}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))+n),'*'];
     % if going up doesn't work, try going down.
     fileToCheck{2}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))-n),'*'];

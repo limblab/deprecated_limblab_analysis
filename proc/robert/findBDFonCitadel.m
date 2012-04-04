@@ -9,12 +9,12 @@ if nargin < 2
     suppressDialog=0;
 end
 
-% if the file name as a .mat extension, keep it.
+% if the file name has a .mat extension, keep it.
 [~,~,ext]=fileparts(nameIn);
 
 switch ext
     case '.plx'
-    nameIn=regexprep(nameIn,'\.plx','\.mat');
+        nameIn=regexprep(nameIn,'\.plx','\.mat');
     case '.txt'
          nameIn=regexprep(nameIn,'\.txt','\.mat');
     case '.mat'
