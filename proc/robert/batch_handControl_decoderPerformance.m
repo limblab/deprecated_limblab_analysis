@@ -341,7 +341,7 @@ for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
 
     try
-        VAFstruct(n)=handControl_decoderPerformance(BatchList{n});
+        VAFstruct(n)=handControl_decoderPerformance_RDF(BatchList{n});
     end
     close
     cd(originalPath)

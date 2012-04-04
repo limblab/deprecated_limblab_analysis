@@ -1,6 +1,6 @@
-function VAFstruct=handControl_decoderPerformance(inputItem)
+function VAFstruct=handControl_decoderPerformance_RDF(inputItem)
 
-% syntax varargout=handControl_decoderPerformance(inputItem)
+% syntax varargout=handControl_decoderPerformance_RDF(inputItem)
 %
 %              INPUT:
 %                   inputItem - can either be left out, or 
