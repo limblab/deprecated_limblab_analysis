@@ -27,7 +27,7 @@ if isempty(MATfiles)
 end
 
 kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
-    'control','num_targets',[]);
+    'control','','num_targets',[]);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -76,17 +76,20 @@ for batchIndex=1:length(MATfiles)
         % need a function (or other clever way) to determine whether brain
         % or spike control.  Most obvious is by looking at the decoder
         % line, which probably means putting it in get_cursor_kinematics
-        kinStruct(batchIndex).control=out_struct.meta.control;
         if isfield(out_struct.meta,'decoder_age')
             kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
             kinStruct(batchIndex).PL=out_struct.path_length;
             kinStruct(batchIndex).TT=out_struct.time_to_target;
             kinStruct(batchIndex).hitRate=out_struct.hitRate;
             kinStruct(batchIndex).hitRate2=out_struct.hitRate2;
+            kinStruct(batchIndex).control=out_struct.meta.control;
         else
             % this happens when get_cursor_kinematices was unable to modify
-            % the BDF, (e.g., there was no BR log file)
+            % the BDF, (e.g., there was no BR log file).  Can't tell
+            % decoder_age, and shouldn't assign an ID as to hand or brain
+            % control because we don't know.
             kinStruct(batchIndex).decoder_age=NaN;
+            kinStruct(batchIndex).control='';
         end
     else % if the mean range of velocities is not low, we're either in hand
          % control, or brain control with handle, or the file has been run
