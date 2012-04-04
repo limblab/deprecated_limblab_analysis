@@ -12,9 +12,7 @@ function VAFstruct=handControl_decoderPerformance(inputItem)
 %                   VAFstruct - if specified, will return a 
 %                               struct with the following 
 %                               fields: name, decoder age, 
-%                               vaf, hitRate, hitRate2,
-%                               PLreconstructed,  
-%                               TTreconstructed 
+%                               vaf
 %
 
 startingPath=pwd;
