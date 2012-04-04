@@ -1,4 +1,6 @@
-function [R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder,varargin)
+function [R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder, varargin)
+%[R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder, varargin)
+%
 %       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
 %
 %       binnedData          : data structure to build model from
@@ -7,7 +9,7 @@ function [R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, Us
 %       fillen              : filter length in seconds (tipically 0.5)
 %       UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD,plotflag} : flags to include
+%       varargin = {PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD, plotflag} : flags to include
 %       EMG, Force, CursPos, Velocity in the prediction model (0=no,1=yes) also options to use State-dependent dec.
 %       Note on Use_SD      : The value of Use_SD should be set to correspond to the column index in binnedData.states
 %                             that the user wants to use. In other words, its value determines the classification method
@@ -68,28 +70,17 @@ end
 duration = size(binnedData.timeframe,1);
 nfold = floor(round(binsize*1000)*duration/(1000*foldlength)); % again, because of floating point errors
 dataEnd = round(nfold*foldlength/binsize);
-if Use_SD
-    numStates = max(binnedData.states(:,Use_SD))-min(binnedData.states(:,Use_SD))+1;
-    numClasses= size(binnedData.states,2);
-else
-    numStates = 0;
-    numClasses= 0;
-end
 
-% R2 = zeros(nfold,numSig,numStates+1);
-% vaf= zeros(nfold,numSig,numStates+1);
-% mse= zeros(nfold,numSig,numStates+1);
-R2 = zeros(nfold,numSig,numClasses);
-vaf= zeros(nfold,numSig,numClasses);
-mse= zeros(nfold,numSig,numClasses);
-test_states = cell(1,nfold);
-model_states = cell(1,nfold);
+
+R2 = zeros(nfold,numSig);
+vaf= zeros(nfold,numSig);
+mse= zeros(nfold,numSig);
 
 %allocate structs
 testData = binnedData;
 modelData = binnedData;
 
-nfold = 1;
+% nfold = 1; % for testing
 
 for i=0:nfold-1
     
@@ -174,126 +165,93 @@ for i=0:nfold-1
         end
     end
 
-    % Create Training sets for classifiers - Train classifiers - Predict testData States
-%     fprintf('Classification...');
-%     tic;
-%     [test_states{1,i+1}, model_states{1,i+1}] = Train_and_Test_Classifiers(modelData, testData);
-%     testData.states = test_states{1,i+1};
-%     toc;
-% 
-    testData.states = evalin('base',sprintf('test_states{1,%d}',i+1));
-    modelData.states= evalin('base',sprintf('model_states{1,%d}',i+1));
-
+    if Use_SD
     
-    numClasses = size(modelData.states,2);
-    AllPredData = cell(1,numClasses);
+        % Train classifiers using modelData - Predict testData states
+        fprintf('Classification...');
+        tic;
+        [modelData.states,modelData.statemethods,modelData.classifiers] = findStates(modelData,0,Use_SD);
+        [testData.states,testData.statemethods,testData.classifiers] = testClassifiers(modelData,testData,Use_SD);
+        toc;
+
+        % Build 2 different models, one for each state:
+        fprintf('Model Building...');
+        tic;
+        filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
+        toc;
+
+        general_decoder = filter{1};
+        posture_decoder = filter{2};
+        movement_decoder= filter{3};
+
+        filter = struct('general_decoder',general_decoder,...
+                        'posture_decoder',posture_decoder,...
+                        'movement_decoder',movement_decoder);
+        tic;
+        PredData = predictSDSignals(filter, testData, Use_SD);
+        toc;
+
+    else
+
+        model = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
+        PredData = predictSignals(model, testData);
+
+    end
     
-    for j = 1:numClasses
-        Use_SD = j;
-        
-        if Use_SD
-            % 2 different models, one for each state:
-            fprintf('Model Building for Class Method %d\n',j);
-            tic;
-            filter = BuildSDModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD);
-            toc;
+    TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
+    R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+%     vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
+    vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
+        sum( (TestSigs(round(fillen/binsize):end,:) - ...
+        repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
+        size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );  
+    mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
 
-            general_decoder = filter{1};
-            posture_decoder = filter{2};
-            movement_decoder= filter{3};
-            
-            filter = struct('general_decoder',general_decoder,...
-                            'posture_decoder',posture_decoder,...
-                            'movement_decoder',movement_decoder);
-                        
-            
-            PredData = predictSDSignals(filter, testData, Use_SD);
-            TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
-
-            R2(i+1,:,j) = CalculateR2(TestSigs,PredData.preddatabin)';
-    %         vaf(i+1,:,1)= 1 - var(PredData.preddatabin - TestSigs) ./ var(TestSigs);
-            vaf(i+1,:,j) = 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ sum( (TestSigs - repmat(mean(TestSigs),size(TestSigs,1),1)).^2 );
-            mse(i+1,:,j)= mean((PredData.preddatabin-TestSigs).^2);
-%             for s = 1:numStates
-%                 State_idx = find(s-1==testData.states(:,Use_SD));
-%                 R2(i+1,:,s+1) = CalculateR2(TestSigs(State_idx,:),PredData.preddatabin(State_idx,:))';
-%                 vaf(i+1,:,s+1)= 1 - var(PredData.preddatabin(State_idx,:) - TestSigs(State_idx,:)) ./ var(TestSigs(State_idx,:));
-%                 mse(i+1,:,s+1)= mean((PredData.preddatabin(State_idx,:)-TestSigs(State_idx,:)).^2);
-%             end
-
-%     %         %% 1 model but filter only state 0 (Hold State):
-%             filter = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
-%             PredData = predictSDFSignals(filter, testData, Use_SD);
-%             TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
-%             R2(i+1,:,j) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-%     %         vaf(i+1,:,1)= 1 - (var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./ var(TestSigs(round(fillen/binsize):end,:)));
-%             vaf(i+1,:,j) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
-%                 sum( (TestSigs(round(fillen/binsize):end,:) - ...
-%                 repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
-%                 size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );     
-%             mse(i+1,:,j)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
-%     %         
-        else
-            model = BuildModel(modelData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc);
-            PredData = predictSignals(model, testData);
-            TestSigs = concatSigs(testData, PredEMG, PredForce, PredCursPos, PredVeloc); 
-            R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
-    %         vaf(i+1,:,1)= 1-var(PredData.preddatabin - TestSigs(round(fillen/binsize):end,:)) ./var(TestSigs(round(fillen/binsize):end,:));
-            vaf(i+1,:,1) = 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
-                sum( (TestSigs(round(fillen/binsize):end,:) - ...
-                repmat(mean(TestSigs(round(fillen/binsize):end,:)),...
-                size(TestSigs(round(fillen/binsize):end,:),1),1)).^2 );  
-            mse(i+1,:,1)= mean((PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2);
-        end
-
-        %Concatenate predicted Data if we want to plot it later:
-        %Skip this for the first fold
-        if i == 0
-            AllPredData{j} = PredData;
-            AllPredData{j}.states = testData.states((end-size(PredData.preddatabin,1)+1):end,:);
-        else
-            AllPredData{j}.timeframe = [AllPredData{j}.timeframe; PredData.timeframe];
-            AllPredData{j}.preddatabin=[AllPredData{j}.preddatabin;PredData.preddatabin];
-            AllPredData{j}.states = [AllPredData{j}.states; testData.states((end-size(PredData.preddatabin,1)+1):end,:)];
-        end
-
-    end %for j=1:numClasses
+    %Concatenate predicted Data if we want to plot it later:
+    %Skip this for the first fold
+    if i == 0
+        AllPredData = PredData;
+        AllPredData.states = testData.states((end-size(PredData.preddatabin,1)+1):end,:);
+    else
+        AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
+        AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
+        AllPredData.states = [AllPredData.states; testData.states((end-size(PredData.preddatabin,1)+1):end,:)];
+    end
+                
 end %for i=1:nfold
 
-assignin('base','test_states',test_states);
-assignin('base','model_states',model_states);
+
+
+
+% Plot Actual and Predicted Data
+idx = false(size(binnedData.timeframe));
+for i = 1:length(AllPredData.timeframe)
+    idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
+end    
+
+if PredEMG
+    binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
+end
+if PredForce
+    binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
+end
+if PredCursPos
+    binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
+end
+if PredVeloc
+    binnedData.velocbin = binnedData.velocbin(idx,:);
+end
+
+binnedData.timeframe = binnedData.timeframe(idx);
 
 if plotflag
-
-    % Plot Actual and Predicted Data
-    idx = false(size(binnedData.timeframe));
-    for i = 1:length(AllPredData.timeframe)
-        idx = idx | binnedData.timeframe == AllPredData{1}.timeframe(i);
-    end    
-
-    if PredEMG
-        binnedData.emgdatabin = binnedData.emgdatabin(idx,:);
-    end
-    if PredForce
-        binnedData.forcedatabin = binnedData.forcedatabin(idx,:);
-    end
-    if PredCursPos
-        binnedData.cursorposbin = binnedData.cursorposbin(idx,:);
-    end
-    if PredVeloc
-        binnedData.velocbin = binnedData.velocbin(idx,:);
-    end
-
-    binnedData.timeframe = binnedData.timeframe(idx);
-    for j=1:numClasses
-        ActualvsOLPred(binnedData,AllPredData{j},plotflag);
-    end
+    ActualvsOLPred(binnedData,AllPredData,plotflag);
 end
-    
-% AllPredData.mfxval.R2 = R2;
-% AllPredData.mfxval.vaf= vaf;
-% AllPredData.mfxval.mse= mse;
+
+AllPredData.mfxval.R2 = R2;
+AllPredData.mfxval.vaf= vaf;
+AllPredData.mfxval.mse= mse;
 
 % varargout{1} = AllPredData;
 % varargout{2} = nfold;
-varargout = {vaf, mse, AllPredData};
+varargout = {vaf, mse, AllPredData, binnedData};
