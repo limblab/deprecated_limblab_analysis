@@ -107,6 +107,11 @@ for n=1:1000     % assume there are fewer than 1000 files in a folder.
         end
         nextFile(regexp(nextFile,sprintf('\n')))='';
         if status==0 && exist(nextFile,'file')==2
+            % should kick out here if it is a spike decoder.  
+            decoderType=decoderTypeFromLogFile(nextFile);
+            if strcmp(decoderType,'Spike')
+                continue
+            end
             fid=fopen(nextFile);
             % should be the first line.
             modelLine=fgetl(fid);
