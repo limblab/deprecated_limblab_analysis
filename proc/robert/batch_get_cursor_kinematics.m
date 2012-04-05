@@ -27,7 +27,7 @@ if isempty(MATfiles)
 end
 
 kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
-    'control','','num_targets',[]);
+    'control','','num_targets',[],'duration',0);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -68,7 +68,9 @@ for batchIndex=1:length(MATfiles)
             rewarded_trials(trial_index),2)==49);
     end
     kinStruct(batchIndex).num_targets=floor(mean(numTargets));
-    
+    % regardless of what else happens, we'll always have duration.
+    kinStruct(batchIndex).duration=out_struct.meta.duration;
+
     if (exist('override','var')~=0 && override==1) || mean(range(out_struct.vel(:,2:3))) < 10
         % we're in brain control country.  Savor the flavor.
         get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
@@ -82,8 +84,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).TT=out_struct.time_to_target;
             kinStruct(batchIndex).hitRate=out_struct.hitRate;
             kinStruct(batchIndex).hitRate2=out_struct.hitRate2;
-            kinStruct(batchIndex).control=out_struct.meta.control;
-        else
+            kinStruct(batchIndex).control=out_struct.meta.control;        else
             % this happens when get_cursor_kinematices was unable to modify
             % the BDF, (e.g., there was no BR log file).  Can't tell
             % decoder_age, and shouldn't assign an ID as to hand or brain
