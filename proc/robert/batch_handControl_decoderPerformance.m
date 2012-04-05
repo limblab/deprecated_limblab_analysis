@@ -235,6 +235,7 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
 };
 
 BatchList=HC_firstOverall_6targ;
+BatchList=HC_postLFPcontrol_6targ;
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
@@ -248,4 +249,6 @@ for n=1:length(BatchList)
     assignin('base','VAFstruct',VAFstruct)
 end
 
+copyfile('VAFstruct.mat',...
+    'Y:\user_folders\Robert\data\monkey\outputs\HCperformance_LFPcontrolDays\VAFstruct.mat')
 
