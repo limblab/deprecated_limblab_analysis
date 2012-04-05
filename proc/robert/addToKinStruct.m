@@ -19,9 +19,9 @@ for n=1:length(kinStructIn)
     % brain control files, which basically means re-running
     % get_cursor_kinematics.  The hitRate2 also required a re-run.
     if verLessThan('matlab','7.11')
-        [PathName,~,~,~]=fileparts(findBDFonCitadel(kinStructIn(n).name));
+        [PathName,~,~,~]=fileparts(findBDFonGOB(kinStructIn(n).name));
     else
-        [PathName,~,~]=fileparts(findBDFonCitadel(kinStructIn(n).name));
+        [PathName,~,~]=fileparts(findBDFonGOB(kinStructIn(n).name));
     end
     batch_get_cursor_kinematics
     % if we're re-running batch_get_cursor_kinematics, then the only time
