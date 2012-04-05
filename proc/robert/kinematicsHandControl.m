@@ -51,6 +51,13 @@ else                            % and target presentation of next has been
     target_entry_word=160;
 end
 
+% % determine number of targets.  Pick the last successful trial; if the
+% % success code is there we know it completes, and being the last trial it
+% % probably has a valid beginning.
+% succesTrialEnd=find(out_struct.words(:,2)==32,1,'last');
+% succesTrialStart=find(out_struct.words(1:succesTrialEnd,2)==18,1,'last');
+% numTargets=nnz(out_struct.words(succesTrialStart:successTrialEnd,2)==target_entry_word);
+
 % make sure to start with the first complete trial in the recording
 beginFirstTrial=find(out_struct.words(:,2)==18,1,'first');
 if beginFirstTrial > 1
@@ -75,12 +82,28 @@ trialOnset=find(out_struct.words(:,2)==18);
 trialOnset(out_struct.words(trialOnset+1,2)~=49)=[];
 % the first reach to the first target of a trial (the only reach, in brain 
 % control) never reached the target (i.e., an abort/fail):
+numAfirst=nnz(out_struct.words(trialOnset+2,2)==33);
 trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
 % for v1, the above code cuts out aborts on the first reach (hand control).  
 % for v2, an extra step is required to cut out aborts on the first reach.
 if opts.version==2
+    numAfirst=nnz(out_struct.words(trialOnset+3,2)==33);
     trialOnset(out_struct.words(trialOnset+3,2)==33)=[];
 end
+% if there was an abort on the 1st trial, it will be removed from
+% trialOnset, and thus when hitRates are tallied up these trials will not
+% be counted as successes.  Leaving the flag in place means those trials
+% will be counted as aborts/fails, and the success trials + the abort/fail
+% trials should add up to all the trials.  EXCEPT...
+% if an abort occurs on a reach later than the first one (this 
+% can only happen during hand control), that trial will
+% be counted as a success (since kinematics are only calculated on the
+% first reach of a trial), but also as an abort because the 33 flag is
+% still there.  So, we want to ignore these trials.  Since
+% kinematics calculations should only depend on trialOnset, which is not
+% modified, kinematics values should be unaffected by this action.
+
+% hold_time will be subtracted below
 startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
 
 % % don't let things start (or end) on the wrong note.
@@ -135,8 +158,11 @@ PL(exclude_trials)=[];
 TTT(exclude_trials)=[];
 speedProfile(exclude_trials)=[];
 
-hitRate=nnz(out_struct.words(:,2)==32)/nnz(out_struct.words(:,2)==18);
+% success trials are success trials, whether they were successful by
+% accident or by design.  Success-by-accident never happens under hand
+% control, but it sometimes does under brain control (marked by
+% exclude_trials)
+hitRate=length(trialOnset)/nnz(out_struct.words(:,2)==18);
 if nargout > 3
-    hitRate2=(length(PL)+nnz(out_struct.words(:,2)==33))/ ...
-        nnz(out_struct.words(:,2)==18);
+    hitRate2=(length(trialOnset)+numAfirst)/nnz(out_struct.words(:,2)==18);
 end

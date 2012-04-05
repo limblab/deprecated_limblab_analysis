@@ -7,8 +7,8 @@ function kinStructOut=addToKinStruct(kinStructIn)
 % sure to incorporate the new & improved kinStruct into the output, and
 % clean up appropriately at each iteration of the loop.
 
-
-for n=1:length(kinStructIn)
+n=1;
+while n < length(kinStructIn)
     % findBDFonCitadel or findBDFonGOB is 100% a game-time decision; it
     % depends on what's being added.  Specifically, it depends on what code
     % needs to run in order to add the desired field.  For example, adding
@@ -18,10 +18,24 @@ for n=1:length(kinStructIn)
     % hand, requires looking at decoder files and decoder Types for the
     % brain control files, which basically means re-running
     % get_cursor_kinematics.  The hitRate2 also required a re-run.
-    if verLessThan('matlab','7.11')
-        [PathName,~,~,~]=fileparts(findBDFonGOB(kinStructIn(n).name));
+    if ismac
+        % this is mostly for testing/troubleshooting the code, as running
+        % batch_get_cursor_kinematics from the network files is not
+        % currently supported when we need get_cursor_kinematics to modify
+        % the brain control files.  They will be skipped, as they've
+        % already been done, and the corrected code won't have a chance to
+        % correct the values in kinStruct (and in the BDFs themselves).
+        if verLessThan('matlab','7.11')
+            [PathName,~,~,~]=fileparts(findBDFonCitadel(kinStructIn(n).name));
+        else
+            [PathName,~,~]=fileparts(findBDFonCitadel(kinStructIn(n).name));
+        end
     else
-        [PathName,~,~]=fileparts(findBDFonGOB(kinStructIn(n).name));
+        if verLessThan('matlab','7.11')
+            [PathName,~,~,~]=fileparts(findBDFonGOB(kinStructIn(n).name));
+        else
+            [PathName,~,~]=fileparts(findBDFonGOB(kinStructIn(n).name));
+        end
     end
     batch_get_cursor_kinematics
     % if we're re-running batch_get_cursor_kinematics, then the only time
@@ -29,7 +43,9 @@ for n=1:length(kinStructIn)
     % get_cursor_kinematics if we hand it the network version of the file,
     % so all we need to do after it runs is make sure the updated version
     % of kinStruct makes it out.
-    kinStructOut(n)=kinStruct;
+    [~,bigK_ind,~]=intersect({kinStructIn.name},{kinStruct.name});
+    kinStructOut(bigK_ind)=kinStruct;
+    n=n+length(kinStruct);
     % clean up
     clear kinStruct
 end
