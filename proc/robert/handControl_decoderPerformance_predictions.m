@@ -1,6 +1,6 @@
-function VAFstruct=handControl_decoderPerformance_RDF(inputItem)
+function VAFstruct=handControl_decoderPerformance_predictions(inputItem)
 
-% syntax varargout=handControl_decoderPerformance_RDF(inputItem)
+% syntax varargout=handControl_decoderPerformance_predictions(inputItem)
 %
 %              INPUT:
 %                   inputItem - can either be left out, or 
@@ -14,6 +14,12 @@ function VAFstruct=handControl_decoderPerformance_RDF(inputItem)
 %                               fields: name, decoder age, 
 %                               vaf
 %
+% this version takes a path name or a bdf (from which it will deduce a path
+% name), finds the nearest file that was under brain control (currently
+% only works with LFP control), and loads the decoder used for that brain
+% control session.  It then re-evaluates the HC data contained in the bdf
+% using the predictions code, passing in the existing H matrix and bestc, 
+% bestf variables.
 
 startingPath=pwd;
 % VAFstruct=struct('name','','decoder_age',[],'vaf',[]);

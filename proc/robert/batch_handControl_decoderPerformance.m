@@ -141,6 +141,7 @@ BatchList6targAll={...
 };
 
 BatchList6targAllFilesChewie=BatchList6targAll(~isempty(regexp(BatchList6targAll,'Chewie')));
+HC_firstOverall_6targ;
 
 % the following only goes up to 1-19-2012 or so.
 BatchListAllTargFirstFile={...              % doesn't have to be the very
@@ -238,7 +239,7 @@ for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
 
     try
-        VAFstruct(n)=handControl_decoderPerformance_RDF(BatchList{n});
+        VAFstruct(n)=handControl_decoderPerformance_predictions(BatchList{n});
     end
     close
     cd(originalPath)
