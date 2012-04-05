@@ -1,4 +1,4 @@
-function output=HC_postLFPcontrol_6targ
+function output=HC_postLFPcontrol_6targ(varargin)
 
 output={...                             % could be before spike control for that day, 
     'Chewie_Spike_LFP_09022011004';...  % or it could be there WAS no spike control
@@ -35,6 +35,10 @@ output={...                             % could be before spike control for that
     'Chewie_Spike_LFP_03212012005';...
     'Chewie_Spike_LFP_03282012005';...
     };
+
+if nargin
+    output=output(varargin{1});
+end
 
 HC_postLFPcontrolPostSpike_6targ={...
     'Chewie_Spike_LFP_01272012008';...

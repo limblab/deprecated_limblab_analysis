@@ -140,7 +140,8 @@ BatchList6targAll={...
     'Mini_Spike_LFPL_	683',...
 };
 
-BatchList6targAllFilesChewie=BatchList6targAll(~isempty(regexp(BatchList6targAll,'Chewie')));
+BatchList6targAllFilesChewie=BatchList6targAll(cellfun(@isempty, ...
+    regexp(BatchList6targAll,'Chewie')));
 HC_firstOverall_6targ;
 
 % the following only goes up to 1-19-2012 or so.
@@ -233,7 +234,7 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
     'Mini_Spike_LFPL_	683',...
 };
 
-BatchList=BatchList6targAllFilesChewie;
+BatchList=HC_firstOverall_6targ;
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
