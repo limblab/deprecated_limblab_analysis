@@ -1,4 +1,4 @@
-function kinStructOut=addToKinStruct(kinStructIn,outSoFar)
+function kinStructOut=addToKinStruct(kinStructIn,kinAddIndex)
 
 % this function is meant to be run after some change has been made to the
 % code of get_cursor_kinematics or its associated batch file.  Run through
@@ -9,11 +9,10 @@ function kinStructOut=addToKinStruct(kinStructIn,outSoFar)
 
 startFolder=pwd;
 
-if nargin > 1
-    
+if nargin < 2
+    kinAddIndex=1;
 end
 
-kinAddIndex=1;
 while kinAddIndex < length(kinStructIn)
     % findBDFonCitadel or findBDFonGOB is 100% a game-time decision; it
     % depends on what's being added.  Specifically, it depends on what code
