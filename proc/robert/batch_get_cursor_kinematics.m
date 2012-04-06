@@ -20,6 +20,9 @@ Files=dir(PathName);
 Files(1:2)=[];
 FileNames={Files.name};
 MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'Spike_LFP.*(?<!poly.*|-spike.*)\.mat'))==0);
+% get rid of other types of files that don't have the standard filename
+% pattern.
+MATfiles(cellfun(@isempty,regexp(MATfiles,'(Chewie|Mini)_Spike_LFP_[0-9]+\.mat')))=[];
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
