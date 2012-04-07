@@ -1,6 +1,6 @@
-function [PL,TTT,hitRate,hitRate2,speedProfile]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals]=kinematicsHandControl(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2,speedProfile]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted out_struct
@@ -127,12 +127,27 @@ TTT=zeros(size(start_reaches));
 speedProfile=cell(size(start_reaches));
 for n=1:length(start_reaches)
 	included_points=find(out_struct.pos(:,1)>=start_reaches(n) & ...
-		out_struct.pos(:,1)<=end_reaches(n));
+		out_struct.pos(:,1)<=end_reaches(n));    
+    
+    % for the path reversals analysis, will have need of a vector pointing
+    % from the origination point of the movement to the termination point
+    % of the movment, against which all path segments will be projected to
+    % determine their velocity along this vector.
+    PosTvx=out_struct.pos(included_points([1 length(included_points)]),2);
+    PosTvy=out_struct.pos(included_points([1 length(included_points)]),3);
+    PosTv=[diff(PosTvx) diff(PosTvy)];
+    
     % experience teaches that when normalizing PL, TTT it's necessary to
     % ensure that there are enough included_points to ensure lucky
     % successes (where the target randomly appeared on top of where the
     % cursor already was) are not counted.
 	if length(included_points)>2
+        CposAlongT=zeros(length(included_points)-1,1);
+        CvelAlongT=CposAlongT;
+
+%         figure, plot(out_struct.pos(included_points,2),out_struct.pos(included_points,3))
+%         hold on, plot(PosTvx,PosTvy,'g')
+
         for k=2:length(included_points)
             PLpoint=sqrt((out_struct.pos(included_points(k),2)- ...
                 out_struct.pos(included_points(k-1),2))^2 + ...
@@ -140,7 +155,21 @@ for n=1:length(start_reaches)
                 out_struct.pos(included_points(k-1),3))^2);
             
             PL(n)=PL(n)+PLpoint;
+            
+            % path reversals.  Find the current 2-point cursor position 
+            % vector PosCv.
+            PosCvx=out_struct.pos(included_points(k-1:k),2);
+            PosCvy=out_struct.pos(included_points(k-1:k),3);
+            PosCv=[diff(PosCvx) diff(PosCvy)];
+
+%             plot(PosCvx,PosCvy,'LineWidth',2,'Color',rand(1,3))
+
+            CposAlongT(k-1)=dot(PosCv,PosTv)/sqrt(sum(PosTv.^2));            
         end
+        CvelAlongT=rowBoat(CposAlongT)./rowBoat(diff(out_struct.pos(included_points,1)));
+        % path reversals for the trial is the number of negative-going 
+        % zero crossings
+        pathReversals(n)=nnz(CvelAlongT(2:end)<0 & CvelAlongT(1:end-1)>=0);
         speedProfile{n}=sqrt((out_struct.vel(included_points,2)).^2+ ...
             (out_struct.vel(included_points,3)).^2);
 		% normalize by the straight-line distance between the start and end
@@ -148,6 +177,7 @@ for n=1:length(start_reaches)
 		interTargetDistance=sqrt(sum(diff(out_struct.pos(included_points([1 end]),2:3)).^2));
 		PL(n)=PL(n)/interTargetDistance;
 		TTT(n)=(end_reaches(n)-start_reaches(n))/interTargetDistance;
+        pathReversals(n)=pathReversals(n)/interTargetDistance;
 	end
 end
 % exclude_trials corresponds to trials were length(included_points) < 2,
@@ -157,6 +187,7 @@ exclude_trials=find(PL==0);
 PL(exclude_trials)=[];
 TTT(exclude_trials)=[];
 speedProfile(exclude_trials)=[];
+pathReversals(exclude_trials)=[];
 
 % success trials are success trials, whether they were successful by
 % accident or by design.  Success-by-accident never happens under hand

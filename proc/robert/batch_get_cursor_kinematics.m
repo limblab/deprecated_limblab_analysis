@@ -34,19 +34,21 @@ kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRat
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
-    S=load(MATfiles{batchIndex});
-    if isfield(S,'bdf')
-        out_struct=S.bdf;
-    elseif isfield(S,'out_struct')
-        out_struct=S.out_struct;
-    else
-        % account for decoder files
-        fprintf(1,'skipping %s because it does not have a BDF-struct.\n', ...
-            MATfiles{batchIndex})
-        continue
+    if exist('out_struct','var')~=1 || ...
+            ~strcmp(regexprep(out_struct.meta.filename,'\.plx','.mat'),MATfiles{batchIndex})
+        S=load(MATfiles{batchIndex});
+        if isfield(S,'bdf')
+            out_struct=S.bdf;
+        elseif isfield(S,'out_struct')
+            out_struct=S.out_struct;
+        else
+            % account for decoder files
+            fprintf(1,'skipping %s because it does not have a BDF-struct.\n', ...
+                MATfiles{batchIndex})
+            continue
+        end
+        clear S
     end
-    clear S
-    
     % account for brain control files WITH handle.  A tiny minority,
     % but needs addressed.  Use number of targets.
     % first, always must account for bad starts/ends.
@@ -83,11 +85,14 @@ for batchIndex=1:length(MATfiles)
         % line, which probably means putting it in get_cursor_kinematics
         if isfield(out_struct.meta,'decoder_age')
             kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
-            kinStruct(batchIndex).PL=out_struct.path_length;
-            kinStruct(batchIndex).TT=out_struct.time_to_target;
-            kinStruct(batchIndex).hitRate=out_struct.hitRate;
-            kinStruct(batchIndex).hitRate2=out_struct.hitRate2;
-            kinStruct(batchIndex).control=out_struct.meta.control;        else
+            kinStruct(batchIndex).PL=out_struct.kin.path_length;
+            kinStruct(batchIndex).TT=out_struct.kin.time_to_target;
+            kinStruct(batchIndex).hitRate=out_struct.kin.hitRate;
+            kinStruct(batchIndex).hitRate2=out_struct.kin.hitRate2;
+            kinStruct(batchIndex).control=out_struct.meta.control;
+            kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
+            kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
+        else
             % this happens when get_cursor_kinematices was unable to modify
             % the BDF, (e.g., there was no BR log file).  Can't tell
             % decoder_age, and shouldn't assign an ID as to hand or brain
@@ -105,10 +110,12 @@ for batchIndex=1:length(MATfiles)
                 kinStruct(batchIndex).control=out_struct.meta.control;
                 if isfield(out_struct.meta,'decoder_age')
                     kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
-                    kinStruct(batchIndex).PL=out_struct.path_length;
-                    kinStruct(batchIndex).TT=out_struct.time_to_target;
-                    kinStruct(batchIndex).hitRate=out_struct.hitRate;
-                    kinStruct(batchIndex).hitRate2=out_struct.hitRate2;
+                    kinStruct(batchIndex).PL=out_struct.kin.path_length;
+                    kinStruct(batchIndex).TT=out_struct.kin.time_to_target;
+                    kinStruct(batchIndex).hitRate=out_struct.kin.hitRate;
+                    kinStruct(batchIndex).hitRate2=out_struct.kin.hitRate2;
+                    kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
+                    kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
                 else
                     % this happens when get_cursor_kinematices was unable to modify
                     % the BDF, (e.g., there was no BR log file)
@@ -124,7 +131,8 @@ for batchIndex=1:length(MATfiles)
                     opts.version=1; opts.hold_time=0.1;
                 end
                 [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...
-                    kinStruct(batchIndex).hitRate2]=kinematicsHandControl(out_struct,opts);
+                    kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).pathReversals]=...
+                    kinematicsHandControl(out_struct,opts);
             end
         else
             % brain control file that was
@@ -135,11 +143,13 @@ for batchIndex=1:length(MATfiles)
             fprintf(1,'%s appears to be a re-run.\n',MATfiles{batchIndex})
             fprintf(1,'copying parameter values from bdf to kinStruct.mat.\n')
             kinStruct(batchIndex).decoder_age=out_struct.meta.decoder_age;
-            kinStruct(batchIndex).PL=out_struct.path_length;
-            kinStruct(batchIndex).TT=out_struct.time_to_target;
-            kinStruct(batchIndex).hitRate=out_struct.hitRate;
-            kinStruct(batchIndex).hitRate2=out_struct.hitRate2;
+            kinStruct(batchIndex).PL=out_struct.kin.path_length;
+            kinStruct(batchIndex).TT=out_struct.kin.time_to_target;
+            kinStruct(batchIndex).hitRate=out_struct.kin.hitRate;
+            kinStruct(batchIndex).hitRate2=out_struct.kin.hitRate2;
             kinStruct(batchIndex).control=out_struct.meta.control;
+            kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
+            kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};
@@ -148,7 +158,8 @@ for batchIndex=1:length(MATfiles)
 end
 
 save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
-% make sure to save a copy in FilterFiles 
+% make sure to save a copy in FilterFiles, if we're operating on the
+% network.
 if ~isempty(regexp(pwd,'bdf|BDFs','once'))
     % pwd is on citadel, save a copy in FilterFiles
     if exist(regexprep(pwd,'bdf|BDFs','FilterFiles'),'dir')==7

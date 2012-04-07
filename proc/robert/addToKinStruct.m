@@ -51,6 +51,14 @@ while kinAddIndex < length(kinStructIn)
     [~,bigK_ind,littleK_ind]=intersect({kinStructIn.name},{kinStruct.name});
     kinStructOut(bigK_ind)=kinStruct(littleK_ind);
     kinAddIndex=kinAddIndex+length(bigK_ind);
+    
+    % put a copy of kinStruct on citadel.
+    if exist(regexprep(PathName,'bdf|BDFs','FilterFiles'),'dir')==7
+        save(fullfile(regexprep(PathName,'bdf|BDFs','FilterFiles'),'kinStruct.mat'),'kinStruct')
+    else
+        save(fullfile(regexprep(PathName,'bdf|BDFs','Filter files'),'kinStruct.mat'),'kinStruct')
+    end
+
     % clean up
     clear kinStruct FileNames Files MATfiles PathName batchIndex 
     cd(startFolder), save(['kinStructAll_',datestr(today),'.mat'],'kinStructOut')

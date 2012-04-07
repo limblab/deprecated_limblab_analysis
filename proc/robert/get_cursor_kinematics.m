@@ -26,9 +26,9 @@ if ~nargin                      % dialog for bdf
     load(pathToBDF)
     if exist('bdf','var')~=1
         if exist('out_struct','var')~=1
-            error(sprintf(['neither ''bdf'' or ''out_struct'' was found.\n', ...
+            error(['neither ''bdf'' or ''out_struct'' was found.\n', ...
                 'if %s\n contains a properly formatted bdf structure, \n', ...
-                'load it manually, then pass it as an argument.\n']))
+                'load it manually, then pass it as an argument.\n'])
         else
             bdf=out_struct;
             clear out_struct
@@ -38,14 +38,14 @@ if ~nargin                      % dialog for bdf
         varName='bdf';
     end     % if we make it to this point we know the variable bdf exists.
 else
-    if isstr(inputItem) % path to bdf is input
+    if ischar(inputItem) % path to bdf is input
         pathToBDF=inputItem;
         load(pathToBDF)
         if exist('bdf','var')~=1
             if exist('out_struct','var')~=1
-                error(sprintf(['neither ''bdf'' or ''out_struct'' was found.\n', ...
+                error(['neither ''bdf'' or ''out_struct'' was found.\n', ...
                     'if %s\n contains a properly formatted bdf structure, \n', ...
-                    'load it manually, and pass it as an argument.\n']))
+                    'load it manually, and pass it as an argument.\n'])
             else
                 bdf=out_struct;
                 clear out_struct
@@ -74,8 +74,8 @@ else
         else
             if ismac
                 % automagically, assuming /Volumes is the mount point for data.
-                pathToCitadelData=[fullfile('/Volumes','data', ...
-                    CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0})];
+                pathToCitadelData=fullfile('/Volumes','data', ...
+                    CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
                 [status,result]=unix(['find ',pathToCitadelData,' -name "', ...
                     regexprep(bdf.meta.filename,'\.plx','\.mat" -print')]);
             else
@@ -87,8 +87,8 @@ else
                 % no local copies of brainReader logs exist.
                 % assume GOB.  Drive letter is Z:
                 remoteDriveLetter='Z:';
-                pathToCitadelData=[fullfile(remoteDriveLetter, ...
-                    CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0})];
+                pathToCitadelData=fullfile(remoteDriveLetter, ...
+                    CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
                 [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *', ...
                     regexprep(bdf.meta.filename,'\.plx','\.mat'),' /s /b']);
             end
@@ -219,8 +219,8 @@ if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
             bdf.words(bdfWordsPosition(end)+1:end,:)];
     end
 end
-[bdf.path_length,bdf.time_to_target,bdf.hitRate,bdf.hitRate2,bdf.speedProfile]= ...
-    kinematicsHandControl(bdf,opts);
+[bdf.kin.path_length,bdf.kin.time_to_target,bdf.kin.hitRate,bdf.kin.hitRate2, ...
+    bdf.kin.speedProfile,bdf.kin.pathReversals]=kinematicsHandControl(bdf,opts);
 bdf.words=original_words;
 
 [workspaceList,~]=dbstack;
