@@ -125,23 +125,24 @@ disp('Requiring >2 time points to be included in the reach')
 PL=zeros(size(start_reaches));
 TTT=zeros(size(start_reaches));
 speedProfile=cell(size(start_reaches));
+pathReversals=zeros(size(start_reaches));
 for n=1:length(start_reaches)
 	included_points=find(out_struct.pos(:,1)>=start_reaches(n) & ...
 		out_struct.pos(:,1)<=end_reaches(n));    
-    
-    % for the path reversals analysis, will have need of a vector pointing
-    % from the origination point of the movement to the termination point
-    % of the movment, against which all path segments will be projected to
-    % determine their velocity along this vector.
-    PosTvx=out_struct.pos(included_points([1 length(included_points)]),2);
-    PosTvy=out_struct.pos(included_points([1 length(included_points)]),3);
-    PosTv=[diff(PosTvx) diff(PosTvy)];
     
     % experience teaches that when normalizing PL, TTT it's necessary to
     % ensure that there are enough included_points to ensure lucky
     % successes (where the target randomly appeared on top of where the
     % cursor already was) are not counted.
 	if length(included_points)>2
+        % for the path reversals analysis, will have need of a vector pointing
+        % from the origination point of the movement to the termination point
+        % of the movment, against which all path segments will be projected to
+        % determine their velocity along this vector.
+        PosTvx=out_struct.pos(included_points([1 length(included_points)]),2);
+        PosTvy=out_struct.pos(included_points([1 length(included_points)]),3);
+        PosTv=[diff(PosTvx) diff(PosTvy)];
+    
         CposAlongT=zeros(length(included_points)-1,1);
         CvelAlongT=CposAlongT;
 

@@ -22,7 +22,7 @@ FileNames={Files.name};
 MATfiles=FileNames(cellfun(@isempty,regexp(FileNames,'Spike_LFP.*(?<!poly.*|-spike.*)\.mat'))==0);
 % get rid of other types of files that don't have the standard filename
 % pattern.
-MATfiles(cellfun(@isempty,regexp(MATfiles,'(Chewie|Mini)_Spike_LFP_[0-9]+\.mat')))=[];
+MATfiles(cellfun(@isempty,regexp(MATfiles,'(Chewie|Mini)_Spike_(LFP|LFPL)_[0-9]+\.mat')))=[];
 if isempty(MATfiles)
     fprintf(1,'no MAT files found.  Make sure no files have ''only'' in the filename\n.')
     disp('quitting...')
@@ -30,7 +30,7 @@ if isempty(MATfiles)
 end
 
 kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
-    'control','','num_targets',[],'duration',0);
+    'control','','num_targets',[],'duration',0,'speedProfile',[],'pathReversals',[]);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -131,8 +131,8 @@ for batchIndex=1:length(MATfiles)
                     opts.version=1; opts.hold_time=0.1;
                 end
                 [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...
-                    kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).pathReversals]=...
-                    kinematicsHandControl(out_struct,opts);
+                    kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).speedProfile, ...
+                    kinStruct(batchIndex).pathReversals]=kinematicsHandControl(out_struct,opts);
             end
         else
             % brain control file that was

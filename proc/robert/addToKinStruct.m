@@ -1,5 +1,10 @@
-function kinStructOut=addToKinStruct(kinStructIn,kinAddIndex)
+function kinStructOut=addToKinStruct(kinStructIn,toAdd)
 
+% syntax kinStructOut=addToKinStruct(kinStructIn,toAdd)
+%
+%       INPUTS: kinStructIn
+%               toAdd           - 2 element vector, [startIndex stopIndex]
+%
 % this function is meant to be run after some change has been made to the
 % code of get_cursor_kinematics or its associated batch file.  Run through
 % all the days in the current kinStruct, but just let it flow.  The
@@ -7,22 +12,26 @@ function kinStructOut=addToKinStruct(kinStructIn,kinAddIndex)
 % sure to incorporate the new & improved kinStruct into the output, and
 % clean up appropriately at each iteration of the loop.
 
-startFolder=pwd;
+addToKinStruct_startFolder=pwd;
 
 if nargin < 2
     kinAddIndex=1;
+    kinStopIndex=length(kinStructIn);
+else
+    kinAddIndex=toAdd(1);
+    kinStopIndex=toAdd(end);
 end
 
-while kinAddIndex < length(kinStructIn)
+while kinAddIndex <= kinStopIndex
     % findBDFonCitadel or findBDFonGOB is 100% a game-time decision; it
     % depends on what's being added.  Specifically, it depends on what code
     % needs to run in order to add the desired field.  For example, adding
     % in a .duration field to the kinStruct would not require re-running
     % get_cursor_kinematics at all, so can use findBDFonCitadel which will
-    % skip the existing BC files.  Adding in a .control field, on the other
-    % hand, requires looking at decoder files and decoder Types for the
-    % brain control files, which basically means re-running
-    % get_cursor_kinematics.  The hitRate2 also required a re-run.
+    % skip get_cursor_kinematics for the existing BC files.  Adding in 
+    % a .control field, on the other hand, requires looking at decoder 
+    % files and decoder Types for the brain control files, which basically 
+    % means re-running get_cursor_kinematics.  hitRate2 also required a re-run.
     if ismac
         % this is mostly for testing/troubleshooting the code, as running
         % batch_get_cursor_kinematics from the network files is not
@@ -61,5 +70,6 @@ while kinAddIndex < length(kinStructIn)
 
     % clean up
     clear kinStruct FileNames Files MATfiles PathName batchIndex 
-    cd(startFolder), save(['kinStructAll_',datestr(today),'.mat'],'kinStructOut')
+    cd(addToKinStruct_startFolder)
+    save(['kinStructAll_',datestr(today),'.mat'],'kinStructOut')
 end
