@@ -24,7 +24,8 @@ function [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,Inputs,H,Adapt
     %             EMG values for each muscles in the columns 2:end
     %
 %     Adapt_ts = get_tgt_center(BinnedData.trialtable);
-    Adapt_ts = get_expected_EMGs_MG(BinnedData.trialtable,Adapt.EMGpatterns);
+%     Adapt_ts = get_expected_EMGs_MG(BinnedData.trialtable,Adapt.EMGpatterns);
+    Adapt_ts = get_expected_EMGs_WF(BinnedData.trialtable,Adapt.EMGpatterns);
     
 %     %%Temp: hack-normalize target heights
 %     Adapt_ts(:,2) = 0.65* (Adapt_ts(:,2)/max(Adapt_ts(:,2)));

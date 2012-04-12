@@ -18,7 +18,7 @@ for k = 1:NumIter
         filter_adapt   = randomize_weights(filter);
         filter_adapt_d = filter_adapt;
     elseif initType == 2
-        %start with the linear filterres
+        %start with the linear filter
         filter_adapt   = filter;
         filter_adapt_d = filter;
     else
@@ -40,40 +40,47 @@ for k = 1:NumIter
     % Permute then drop units
     for i = 1:length(DP_bins)
         % 1- permute units
+        if pctPerm
             DPData = TestData_d;
             DPData.spikeratedata = TestData_d.spikeratedata(DP_bins(i):end,:);
             DPData = rand_perm_units(DPData,pctPerm);
+        end
+        if pctDrop
         % 2-drop units (nul firing rate from DP_bins until end of data)
             [DPData, dropped_units] = rand_null_unit(DPData,pctDrop,dropped_units);
             TestData_d.spikeratedata(DP_bins(i):end,:) = DPData.spikeratedata;
+        end
     end
     
     disp(sprintf('Iteration %d of %d',k,NumIter));
     disp('Beginning Predictions - ');
     
-%     %% 5- Make predictions
-%     %Fixed Model, no drop or permutation
-%     disp('Predictions for Linear Model, no drop/perm...');
-%     [R2ff{1,k}] = PeriodicR2(filter,TestData,foldlength);
-% %     disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2ff{1,k}))]);
-% 
-%     disp('Predictions for Adaptive Model, no drop/perm...');
-%     %Adaptive algorithm, no drop or permutation
-%     [R2af{1,k}, filter_adapt] = PeriodicR2(filter_adapt,TestData,foldlength,Adapt);
-%     H{2,k} = filter_adapt.H;
-%     disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2af{1,k}))]);
-    
-    disp('Predictions for Linear Model, with drop/perm...');
-    %Fixed Model, with neuron loss
-    [R2f{1,k}] = PeriodicR2(filter,TestData_d,foldlength);
-    disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2f{1,k}))]);
-    
-    disp('Predictions for Adaptive Model, with drop/perm...');
-    %Adaptive algorithm with neuron loss
-    [R2a{1,k}, filter_adapt_d] = PeriodicR2(filter_adapt_d,TestData_d,foldlength,Adapt);
-    Hd{2,k} = filter_adapt_d.H;
-    disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2a{1,k}))]);
-    
+    %% 5- Make predictions
+
+    if ~(pctDrop || pctPerm)
+        %Fixed Model, no drop or permutation
+        disp('Predictions for Linear Model, no drop/perm...');
+        [R2ff{1,k}] = PeriodicR2(filter,TestData,foldlength);
+        disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2ff{1,k}))]);
+
+        %Adaptive algorithm, no drop or permutation
+        disp('Predictions for Adaptive Model, no drop/perm...');
+        [R2af{1,k}, filter_adapt] = PeriodicR2(filter_adapt,TestData,foldlength,Adapt);
+        H{2,k} = filter_adapt.H;
+        disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2af{1,k}))]);
+    else
+        disp('Predictions for Linear Model, with drop/perm...');
+        %Fixed Model, with neuron loss
+        [R2f{1,k}] = PeriodicR2(filter,TestData_d,foldlength);
+        disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2f{1,k}))]);
+
+        disp('Predictions for Adaptive Model, with drop/perm...');
+        %Adaptive algorithm with neuron loss
+        [R2a{1,k}, filter_adapt_d] = PeriodicR2(filter_adapt_d,TestData_d,foldlength,Adapt);
+        Hd{2,k} = filter_adapt_d.H;
+        disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2a{1,k}))]);
+    end
+        
     disp(sprintf('End of Iteration %d',k));
 
 end

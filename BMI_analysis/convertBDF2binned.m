@@ -13,7 +13,7 @@ if (nargin <1 || nargin == 3 || nargin > 12)
     disp('  - [minFiringRate]       : [0.0] minimum firing rate a units needs to be included in the data');
     disp('  - [NormData]            : [false] specify whether the output data is to be normalized to unity');
     disp('  - [FindStates]          : [false] Whether the data in classified in discret states');
-    disp('  - [Unsorted]            : [false] Whether to use the unsorted units in the analysis');
+    disp('  - [ThreshOnly]          : [false] Whether to use the unsorted units in the analysis');
     disp('  - [TriKernel]           : [false] Whether to use a triangular kernel to smooth the data');
     disp('  - [sig]                 : [0.04] sigma value for creating triangular kernel');
     disp(sprintf('\n'));
@@ -331,7 +331,7 @@ else
 
         num_ts = length(datastruct.units(i).ts);
 
-        if num_ts > minimumspikenumber
+        if num_ts >= minimumspikenumber
             numusableunits = numusableunits+1;
             units_to_use(numusableunits) = i;
             maxnum_ts = max(num_ts, maxnum_ts);
@@ -388,7 +388,7 @@ else
                 spikeRaster = zeros(1,length(BinTimes));
                 spikeRaster(spikeBins(unit)) = 1;
 
-                firingRate(:,unit) = conv(spikeRaster, kernel);
+%                 firingRate(:,unit) = conv(spikeRaster, kernel);
                 spikeratedata(:,unit) = conv(spikeRaster, kernel);
                 %firingRate = firingRate((extraBins+1):(length(firingRate) - extraBins));
             end

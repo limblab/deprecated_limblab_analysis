@@ -2,7 +2,13 @@ function plot_results(res)
 
 %% Mean
 numpts  = size(vertcat(res.R2f{:,1}),1);
+numpts  = max(numpts,size(vertcat(res.R2ff{:,1}),1));
+numpts  = max(numpts,size(vertcat(res.R2a{:,1}),1));
+numpts  = max(numpts,size(vertcat(res.R2af{:,1}),1));
 numOuts = size(res.R2f{1,1},2); 
+numOuts = max(numOuts,size(res.R2ff{1,1},2)); 
+numOuts = max(numOuts,size(res.R2a{1,1},2));
+numOuts = max(numOuts,size(res.R2af{1,1},2));
 
 R2fc = zeros(numpts, numOuts, res.NumIter);  %R2 for fixed model with drops and permutation
 R2ac = zeros(numpts, numOuts, res.NumIter);  %R2 for adaptive model with drops and permutation
@@ -11,10 +17,18 @@ R2afc = zeros(numpts,numOuts, res.NumIter);  %R2 for adaptive model no drop or p
 
 %this extracts the cell R2 results into a (numpts x numOut x numLoops) array of double
 for i = 1:res.NumIter
-    R2fc(:,:,i) = vertcat(res.R2f{:,i});
-    R2ac(:,:,i) = vertcat(res.R2a{:,i});
-%     R2ffc(:,:,i) = vertcat(res.R2ff{:,i});
-%     R2afc(:,:,i) = vertcat(res.R2af{:,i});
+    if size(res.R2f{:,i})
+        R2fc(:,:,i) = vertcat(res.R2f{:,i});
+    end
+    if size(res.R2a{:,i})
+        R2ac(:,:,i) = vertcat(res.R2a{:,i});
+    end
+    if size(res.R2ff{:,i})
+        R2ffc(:,:,i) = vertcat(res.R2ff{:,i});
+    end
+    if size(res.R2af{:,i})
+        R2afc(:,:,i) = vertcat(res.R2af{:,i});
+    end
 end
 
 %mean and std for each output accross iterations

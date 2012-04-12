@@ -232,19 +232,22 @@ if isfield(struct1, 'targets') && isfield(struct2, 'targets')
 end
 %% Concat Stim
 if isfield(struct1, 'stim') && isfield(struct2, 'stim')
+    
+    if ~isempty(struct1.stim) && ~isempty(struct2.stim)
 
-    if round(1000*(struct1.stim(2,1)-struct1.stim(1,1)))~=round(1000*(struct2.stim(2,1)-struct2.stim(1,1)));
-        disp('incompatible stimulation rate - data concatenation aborted');
-        binnedData = struct1;
-        return;
-    else
+        if round(1000*(struct1.stim(2,1)-struct1.stim(1,1)))~=round(1000*(struct2.stim(2,1)-struct2.stim(1,1)));
+            disp('incompatible stimulation rate - data concatenation aborted');
+            binnedData = struct1;
+            return;
+        else
 
-        stimbinsize = round(1000*(struct1.stim(2,1)-struct1.stim(1,1)))/1000;
+            stimbinsize = round(1000*(struct1.stim(2,1)-struct1.stim(1,1)))/1000;
 
-        stim_t_offset = struct1.stim(end,1)+stimbinsize;
-        stim_tf2 = struct2.stim(:,1)-struct2.stim(1,1)+stim_t_offset;
+            stim_t_offset = struct1.stim(end,1)+stimbinsize;
+            stim_tf2 = struct2.stim(:,1)-struct2.stim(1,1)+stim_t_offset;
 
-        binnedData.stim = [struct1.stim; [stim_tf2 struct2.stim(:,2:end)]];
+            binnedData.stim = [struct1.stim; [stim_tf2 struct2.stim(:,2:end)]];
+        end
     end
 
 end

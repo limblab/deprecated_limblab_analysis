@@ -33,7 +33,7 @@ function convertBatch2BDF2Binned
         end
 %% Get Data Binning Parameters
 
-    [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData] = convertBDF2binnedGUI;
+    [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,FindStates, Unsorted, TriKernel, sig] = convertBDF2binnedGUI;
 
 %% Convert Cerebus to BDF
 
@@ -45,6 +45,6 @@ function convertBatch2BDF2Binned
 
 %% Convert BDF Structures to binned data
 
-    convertBatch2Binned(BDF_FileNames, BDFsavePath, binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,BINsavePath);
+    convertBatch2Binned(BDF_FileNames, BDFsavePath, binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData,FindStates, Unsorted, TriKernel, sig,BINsavePath);
     
 end
