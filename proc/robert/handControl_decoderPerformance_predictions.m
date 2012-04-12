@@ -1,12 +1,15 @@
-function VAFstruct=handControl_decoderPerformance_predictions(inputItem)
+function VAFstruct=handControl_decoderPerformance_predictions(inputItem,inputDecoder)
 
-% syntax varargout=handControl_decoderPerformance_predictions(inputItem)
+% syntax varargout=handControl_decoderPerformance_predictions(inputItem,inputDecoder)
 %
 %              INPUT:
 %                   inputItem - can either be left out, or 
 %                               a path to the BDF-formatted
 %                               .mat file, or a BDF-formatted
 %                               struct from the workspace
+%                   inputDecoder - optional.  If supplied, the function
+%                                  will load the decoder at the specified
+%                                  path, rather than seeking one out.
 %                               
 %              OUTPUT:
 %                   VAFstruct - if specified, will return a 
@@ -15,9 +18,10 @@ function VAFstruct=handControl_decoderPerformance_predictions(inputItem)
 %                               vaf
 %
 % this version takes a path name or a bdf (from which it will deduce a path
-% name), finds the nearest file that was under brain control (currently
-% only works with LFP control), and loads the decoder used for that brain
-% control session.  It then re-evaluates the HC data contained in the bdf
+% name), then (if inputDecoder is not supplied, it will find the nearest 
+% file chronologically that was under brain control (currently
+% only works with LFP control), and load the decoder used for that brain
+% control session.  It will then re-evaluate the HC data contained in the bdf
 % using the predictions code, passing in the existing H matrix and bestc, 
 % bestf variables.
 
@@ -157,6 +161,17 @@ for n=1:1000     % assume there are fewer than 1000 files in a folder.
 end
 if n == 1000
     error('file not found: %s\n',BDFpathStr)
+end
+
+if nargin==2
+    fprintf(1,'overriding decoder %s...\n',pathToDecoderMAT)
+    pathToDecoderMAT=inputDecoder;
+    if exist(pathToDecoderMAT,'file')==2
+        fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
+        decoderDate=decoderDateFromLogFile(pathToDecoderMAT,1);
+    else
+        error('decoder %s could not be loaded',pathToDecoderMAT)
+    end
 end
 
 bdfDate=datenum(regexp(bdf.meta.datetime,'\s*[0-9]+/\s*[0-9]+/[0-9]+','match','once'));

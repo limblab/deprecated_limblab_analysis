@@ -1,4 +1,4 @@
-function batch_handControl_decoderPerformance
+function batch_handControl_decoderPerformance(decoderIn)
 
 originalPath=pwd;
 
@@ -235,13 +235,18 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
 };
 
 BatchList=HC_firstOverall_6targ;
-BatchList=HC_postLFPcontrol_6targ;
+% BatchList=HC_postLFPcontrol_6targ;
+
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
 
     try
-        VAFstruct(n)=handControl_decoderPerformance_predictions(BatchList{n});
+        if ~nargin
+            VAFstruct(n)=handControl_decoderPerformance_predictions(BatchList{n});
+        else
+            VAFstruct(n)=handControl_decoderPerformance_predictions(BatchList{n},decoderIn);
+        end
     end
     close
     cd(originalPath)
