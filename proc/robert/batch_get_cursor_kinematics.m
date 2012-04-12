@@ -92,6 +92,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).control=out_struct.meta.control;
             kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
             kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
+            kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
         else
             % this happens when get_cursor_kinematices was unable to modify
             % the BDF, (e.g., there was no BR log file).  Can't tell
@@ -116,6 +117,7 @@ for batchIndex=1:length(MATfiles)
                     kinStruct(batchIndex).hitRate2=out_struct.kin.hitRate2;
                     kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
                     kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
+                    kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
                 else
                     % this happens when get_cursor_kinematices was unable to modify
                     % the BDF, (e.g., there was no BR log file)
@@ -132,7 +134,8 @@ for batchIndex=1:length(MATfiles)
                 end
                 [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...
                     kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).speedProfile, ...
-                    kinStruct(batchIndex).pathReversals]=kinematicsHandControl(out_struct,opts);
+                    kinStruct(batchIndex).pathReversals,kinStruct(batchIndex).trialTS]= ...
+                    kinematicsHandControl(out_struct,opts);
             end
         else
             % brain control file that was
@@ -150,6 +153,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).control=out_struct.meta.control;
             kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
             kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
+            kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};
