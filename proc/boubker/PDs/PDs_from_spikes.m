@@ -1,4 +1,4 @@
-function [filePDs]=PDs_from_spikes(root,startword ,rewardword,shiftstart,lag,timeaft,pvallim)
+function [filePDs,bootstrapPDS]=PDs_from_spikes(root,startword,rewardword,shiftstart,lag,timeaft,pvallim)
 
 
 %Example:
@@ -47,7 +47,7 @@ degres=30;%if you change degres here change it also in vector_sum_PDs
 filePDs=cell(3,1);
    
     data=LoadDataStruct([root,'.mat']);
-    
+    data.raw.analog=[];
     degres=degres * pi / 180;
     os=-pi:degres:pi;
     
