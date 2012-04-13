@@ -165,12 +165,12 @@ end
 
 if nargin==2
     fprintf(1,'overriding decoder %s...\n',pathToDecoderMAT)
-    pathToDecoderMAT=inputDecoder;
-    if exist(pathToDecoderMAT,'file')==2
-        fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
-        decoderDate=decoderDateFromLogFile(pathToDecoderMAT,1);
+    if exist(inputDecoder,'file')==2
+        load(inputDecoder,'H','bestf','bestc')
+        fprintf(1,'successfully loaded %s\n',inputDecoder)
+        decoderDate=decoderDateFromLogFile(inputDecoder,1);
     else
-        error('decoder %s could not be loaded',pathToDecoderMAT)
+        error('decoder %s could not be loaded',inputDecoder)
     end
 end
 
@@ -197,6 +197,7 @@ end
 % switch variable name since the below is copied from a different batch
 % function.
 out_struct=bdf; clear bdf
+%%
 disp('assigning static variables')
 % behavior
 signal='vel';
@@ -223,7 +224,7 @@ nfeat=150;
 PolynomialOrder=3; 
 smoothfeats=0;
 binsize=0.05;
-
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
 folds=10;
 Hcell=cell(1,folds);
@@ -252,7 +253,7 @@ formatstr=[formatstr, '\n'];
 
 fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
-
+%%
 VAFstruct=struct('name',BDFname,'decoder_age',bdfDate-decoderDate, ...
     'vaf',vaf);
 

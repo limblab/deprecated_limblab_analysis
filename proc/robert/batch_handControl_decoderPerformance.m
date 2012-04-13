@@ -235,8 +235,10 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
 };
 
 BatchList=HC_firstOverall_6targ;
-% BatchList=HC_postLFPcontrol_6targ;
+BatchList=HC_postLFPcontrol_6targ;
 
+BatchList=BatchList(datenum(regexp(BatchList,'[0-9]{8}','match','once'),'mmddyyyy') >= ...
+    datenum('12272011','mmddyyyy'));
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
@@ -254,6 +256,6 @@ for n=1:length(BatchList)
     assignin('base','VAFstruct',VAFstruct)
 end
 
-copyfile('VAFstruct.mat',...
-    'Y:\user_folders\Robert\data\monkey\outputs\HCperformance_LFPcontrolDays\VAFstruct.mat')
+% copyfile('VAFstruct.mat',...
+%     'Y:\user_folders\Robert\data\monkey\outputs\HCperformance_LFPcontrolDays\VAFstruct.mat')
 
