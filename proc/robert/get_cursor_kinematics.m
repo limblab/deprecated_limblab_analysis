@@ -181,12 +181,11 @@ BRarray(:,7)=BRarray(:,7)-BRarray(1,7);
 % point.
 
 if isfield(bdf.raw, 'analog') && ~isempty(bdf.raw.analog.data)
-    
     % The highest analog sample rate (local copy)
     adfreq = max(bdf.raw.analog.adfreq);
     
-    start_time = floor(1.0 + bdf.raw.analog.ts{1});
-    last_analog_time = min([bdf.raw.analog.ts{:}] + ...
+    start_time = floor(1.0 + bdf.raw.analog.ts{1}(1));
+    last_analog_time = min(cellfun(@(x) x(1),bdf.raw.analog.ts) + ...
         cellfun('length',bdf.raw.analog.data) / bdf.raw.analog.adfreq);
     if isfield(bdf.raw,'enc') && ~isempty(bdf.raw.enc)
         last_enc_time = bdf.raw.enc(end,1);
@@ -208,13 +207,9 @@ else
     analog_time_base = start_time:1/adfreq:stop_time;
 end
 
-BRarray(BRarray(:,7) < analog_time_base(1),:)=[];
-BRarray(BRarray(:,7) > analog_time_base(end),:)=[];
-newTvector=analog_time_base(1):0.05:0.05*(size(BRarray,1)-1);
-
-
 % interpolate BRarray to 50msec bins before substituting in for bdf.pos.
 % newTvector=0:0.05:0.05*(size(BRarray,1)-1);
+newTvector=start_time:0.05:stop_time;
 
 newXpos=interp1(BRarray(:,7),BRarray(:,3),newTvector);
 newYpos=interp1(BRarray(:,7),BRarray(:,4),newTvector);
