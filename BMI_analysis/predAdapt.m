@@ -15,9 +15,6 @@ function [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,Inputs,H,Adapt
     % calculating binsize of e.g. 0.0499999s instead of 0.05s
     binsize = round(1000*(BinnedData.timeframe(2)-BinnedData.timeframe(1)))/1000;
     
-    % How many bins should we look back to measure error:
-    Lag_bins =  round(Adapt.Lag/(BinnedData.timeframe(2)-BinnedData.timeframe(1)))-1;    
-
     % Find times at which error detection should occur.
     %  Adapt_ts : is an array of size (num_ts x numEMGs+1), containing all the valid "Reward"
     %             and "Go" time stamp in the first column, and the corresponding expected
@@ -26,15 +23,11 @@ function [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,Inputs,H,Adapt
 %     Adapt_ts = get_tgt_center(BinnedData.trialtable);
 %     Adapt_ts = get_expected_EMGs_MG(BinnedData.trialtable,Adapt.EMGpatterns);
     Adapt_ts = get_expected_EMGs_WF(BinnedData.trialtable,Adapt.EMGpatterns);
-    
-%     %%Temp: hack-normalize target heights
-%     Adapt_ts(:,2) = 0.65* (Adapt_ts(:,2)/max(Adapt_ts(:,2)));
-%     Adapt_ts(:,3) = 0.65* (Adapt_ts(:,3)/max(Adapt_ts(:,3)));    
         
     %convert first column of Adapt_ts to bins
     Adapt_bins = [ceil((Adapt_ts(:,1)-BinnedData.timeframe(1))/binsize) Adapt_ts(:,2:end)];
     %remove first adapt step if too early
-    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Lag_bins,:); 
+    Adapt_bins = Adapt_bins(Adapt_bins(:,1)>Adapt.Lag,:); 
 
     %Predict data, remove 
     [PredictedData,spikeDataNew,Hnew]= predMIMOadapt10(Inputs, Adapt_bins, H, Adapt);

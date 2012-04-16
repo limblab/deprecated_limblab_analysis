@@ -12,9 +12,15 @@ numPredSigs = size(filter.outnames,1);
 binsize = filter.binsize;
 numlags = round(filter.fillen/binsize);
 numpts  = size(binnedData.timeframe,1);
+numNeur = size(filter.NeuronIDs,1);
 
 if nargin > 3
     Adapt = varargin{1};
+    % sliding window of input R2 every Adapt.NeurWindow bins
+    numCorrSteps   = floor(numpts/Adapt.NcorrWindow);
+    NR2 = NaN(numCorrSteps,numNeur);
+    NPred = zeros(Adapt.NcorrWindow,numNeur);
+    
     if nargin > 4
         Smooth = varargin{2};
     else
@@ -22,8 +28,6 @@ if nargin > 3
     end
 else
     Adapt.Enable = false;
-    Adapt.LR = 0;
-    Adapt.Lag = 0;
     Smooth = false;
 end
 
@@ -36,7 +40,42 @@ else
     foldlength = round(foldlength/binsize);
 end
 
-% First make predictions:
+
+%% Generate a control signal for learning rate
+if Adapt.Enable && Adapt.NeuralControl
+
+
+    
+    for currentCorr = 1:numCorrSteps
+        windowStart = 1+(currentCorr-1)*Adapt.NcorrWindow;
+        windowEnd   = windowStart+Adapt.NcorrWindow-1;
+
+        % Make inputs predictions for current time window:
+        for n = 1:numNeur
+            if n==1
+                otherNs = 2:numNeur;
+            elseif n==numNeur
+                otherNs = 1:numNeur-1;
+            else
+                otherNs = [1:n-1 n+1:numNeur];
+            end
+            %acutal prediction for neuron n
+            NPred(:,n) = glmval(B(:,n),round(binnedData.spikeratedata(windowStart:windowEnd,otherNs)*binsize),'log');
+            
+            %Calculate correlation between pred and actual spike count for this neuron
+            NR2(currentCorr,n) = calculateR2(NPred(windowStart:windowEnd,:),binnedData.spi(start:stop,:));
+        end
+        
+        if mean(NR2(currentCorr,:),2)<Adapt.NcorrThresh
+            %adapt
+            %rebuild glm
+        end 
+        
+    end
+end
+        
+
+% Make outputs predictions:
 if isfield(filter, 'PC')
     numPCs = size(filter.PC,2);
     [PredData, Hnew] = predictSignals(filter,binnedData,Smooth,Adapt,numPCs);
