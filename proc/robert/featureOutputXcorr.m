@@ -28,9 +28,9 @@ for k=1:size(FMindexed,2)
         [XCx(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,2),numlags);
         [XCy(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,3),numlags);
     end
-    [~,indx]=max(XCx(:,k));
+    [~,indx]=max(abs(XCx(:,k)));
     peakInd_x(k)=timelags(indx);
-    [~,indy]=max(XCy(:,k));
+    [~,indy]=max(abs(XCy(:,k)));
     peakInd_y(k)=timelags(indy);
 end
 XCx=double(XCx);
