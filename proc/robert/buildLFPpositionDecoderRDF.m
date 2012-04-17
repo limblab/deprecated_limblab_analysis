@@ -66,14 +66,7 @@ if exist('badChannels','var')==1
     fp(badChannels,:)=zeros(length(badChannels),size(fp,2));
 end
 disp('static variables assigned')
-%%
-% 1st (and last?) second of data gets eliminated by calc_from_raw for the encoder
-% timestampe (see out_struct.raw.analog.pos or .vel, so is inappropriate to
-% include them in the fp signals.
-if 0
-    fp(:,fptimes<1 | fptimes>analog_times(end))=[];
-    fptimes(fptimes<1 | fptimes>analog_times(end))=[];
-end
+
 %%
 % downsample, so the delta band isn't empty at wsz=256; this is a current
 % limitation of BrainReader.
