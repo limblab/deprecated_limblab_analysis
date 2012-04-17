@@ -1,13 +1,13 @@
 function [XCx,XCy]=featureOutputXcorr(nameIn)
 
-[BDFpathIn,BDFnameIn,ext,~]=fileparts(nameIn);
+[BDFpathIn,BDFnameIn,ext,~]=FileParts(nameIn);
 
 if isempty(BDFpathIn)
     BDFfullPath=findBDFonCitadel([BDFnameIn,ext]);
 else
-    BDFfullPathIn=nameIn;
+    BDFfullPath=nameIn;
 end
-load(BDFfullPathIn)
+load(BDFfullPath)
 fpAssignScript
 wsz=256;
 binsize=0.05;

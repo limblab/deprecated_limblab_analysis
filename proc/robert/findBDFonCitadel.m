@@ -47,6 +47,7 @@ end
 % evaluate, based on results of system commands to find file.
 if status==0
     pathToBDF=result;
+    pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
 else
     % revert to dialog, we couldn't automagically locate the
     % BDF.
