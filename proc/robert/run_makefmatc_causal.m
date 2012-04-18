@@ -29,13 +29,16 @@ analog_times=sig(:,1);
 [featMat,sigTrimmed,~]=makefmatc_causal(fp,fptimes,numfp,binsize,samprate,analog_times,wsz,sig);
 
 if nargin > 1
-    [~,~,timelags,peakInd_x,peakInd_y]=featureOutputXcorr(out_struct,numlags,featMat,sigTrimmed,numfp);
+    [~,~,timelags,peakInd_x,peakInd_y,peakVal_x,peakVal_y]= ...
+        featureOutputXcorr(out_struct,numlags,featMat,sigTrimmed,numfp);
     assignin('base','out_struct',out_struct)
     assignin('base','featMat',featMat)
     assignin('base','sigTrimmed',sigTrimmed)
     assignin('base','timelags',timelags)
     assignin('base','peakInd_x',peakInd_x)
     assignin('base','peakInd_y',peakInd_y)
+    assignin('base','peakVal_x',peakVal_x)
+    assignin('base','peakVal_y',peakVal_y)
 end
  
  

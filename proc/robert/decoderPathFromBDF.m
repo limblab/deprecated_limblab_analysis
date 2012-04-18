@@ -1,6 +1,6 @@
-function pathToDecoderMAT=decoderPathFromBDF(inputItem)
+function [pathToDecoderMAT,fileChosenPath]=decoderPathFromBDF(inputItem)
 
-% syntax pathToDecoderMAT=decoderPathFromBDF(inputItem)
+% syntax [pathToDecoderMAT,fileChosenPath]=decoderPathFromBDF(inputItem)
 %
 %              INPUT:
 %                   inputItem - a path to the BDF-formatted
@@ -11,6 +11,8 @@ function pathToDecoderMAT=decoderPathFromBDF(inputItem)
 %                   pathToDecoderMAT - the path to the decoder used for
 %                                      any brain-control file on that same
 %                                      day.
+%                   fileChosen       - path the file that ended up being
+%                                      identified as the closest BC file.
 %
 % this version takes a path name or a bdf (from which it will deduce a path
 % name), then (if inputDecoder is not supplied, it will find the nearest 
@@ -121,6 +123,9 @@ for n=0:1000
         end
         nextFile(regexp(nextFile,sprintf('\n')))='';
         if status==0 && exist(nextFile,'file')==2
+            if nargout > 1
+                fileChosenPath=nextFile;
+            end
             % should kick out here if it is a spike decoder.  
             decoderType=decoderTypeFromLogFile(nextFile);
             if strcmp(decoderType,'Spike')
