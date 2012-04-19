@@ -13,12 +13,15 @@ days={...
 
 peakIndAll_x=[]; peakIndAll_y=[]; peakValAll_x=[]; peakValAll_y=[];
 BDFlist_all=[];
+originalDir=pwd;
+if isempty(regexp(pwd,'featMats','once')), mkdir('featMats'), end
 for n=1:length(days)
     % take a day, find the kinStruct, and identifies all the
     % files of the given control type that were included.
     BDFlist=findBDF_withControl('Chewie',days{n},'LFP');
     BDFlist_all=[BDFlist_all; BDFlist'];
     for k=1:length(BDFlist)
+        if isempty(regexp(pwd,'featMats','once')), cd('featMats'), end
         run_makefmatc_causal(BDFlist{k},500)
         peakIndAll_x=[peakIndAll_x; evalin('base','peakInd_x')];
         peakIndAll_y=[peakIndAll_y; evalin('base','peakInd_y')];
@@ -26,3 +29,4 @@ for n=1:length(days)
         peakValAll_y=[peakValAll_y; evalin('base','peakVal_y')];
     end
 end
+cd(originalDir)

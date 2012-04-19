@@ -12,7 +12,7 @@ function run_makefmatc_causal(nameIn,numlags)
 if isempty(BDFpathIn)
     BDFfullPath=findBDFonCitadel([BDFnameIn,ext]);
 else
-    BDFfullPath=nameIn;
+    BDFfullPath=[nameIn ext];
 end
 load(BDFfullPath)
 fpAssignScript
@@ -27,6 +27,9 @@ analog_times=sig(:,1);
 
 % calculate features of the fps as they happened during this brain-control file.
 [featMat,sigTrimmed,~]=makefmatc_causal(fp,fptimes,numfp,binsize,samprate,analog_times,wsz,sig);
+% can depend on BDFnameIn to be the name without extension, regardless of
+% what was passed in as nameIn
+save([BDFnameIn,'featMat.mat'],'featMat')
 
 if nargin > 1
     [~,~,timelags,peakInd_x,peakInd_y,peakVal_x,peakVal_y]= ...

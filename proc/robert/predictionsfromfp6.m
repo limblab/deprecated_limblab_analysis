@@ -513,7 +513,7 @@ if nargout>5
 end
 
 snam=[fnam,signal,' pred ',num2str(nfeat),' feats ',num2str(wsz),' wsz lambda ',num2str(lambda),'.mat'];
-save(snam,'r2*','v*','best*','feat*','x*','y*','nfeat','Poly*','Use*','num*','bin*','H','P','lambda','wsz','smoothfeats')
+% save(snam,'r2*','v*','best*','feat*','x*','y*','nfeat','Poly*','Use*','num*','bin*','H','P','lambda','wsz','smoothfeats')
 
 
 function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
