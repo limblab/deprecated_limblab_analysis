@@ -136,6 +136,18 @@ for batchIndex=1:length(MATfiles)
                     kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).speedProfile, ...
                     kinStruct(batchIndex).pathReversals,kinStruct(batchIndex).trialTS]= ...
                     kinematicsHandControl(out_struct,opts);
+                % if we're running inside superBatch.m, then VAF_all should
+                % exist.  If not, create it.
+                if exist('VAF_all','var')==1
+                    % could be 1 or 2 matches to VAF_all.filename,
+                    % depending on whether LFP or spike decoding was
+                    % performed.
+                    strcmp(kinStruct(batchIndex).name,{VAF_all.filename});
+                else
+                    VAF_all=seekVAFinDecoderLog(kinStruct(batchIndex).name);
+                    kinStruct(batchIndex).LFP_vaf;
+                    kinStruct(batchIndex).Spike_vaf;
+                end
             end
         else
             % brain control file that was

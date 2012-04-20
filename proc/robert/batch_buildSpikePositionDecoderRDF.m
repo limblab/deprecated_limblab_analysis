@@ -22,6 +22,12 @@ if isempty(MATfiles)
 end
 
 %%
+if exist('VAF_all','var')~=1
+    VAF_all=struct('filename','','type','','vaf',[]);
+    buildedVAF_all=1;
+else
+    buildedVAF_all=0;
+end
 for batchIndex=1:length(MATfiles)
 	FileName=MATfiles{batchIndex};
     
@@ -49,19 +55,17 @@ for batchIndex=1:length(MATfiles)
     if mean(range(out_struct.vel(:,2:3))) > 10
         % FUNCTION NOT A SCRIPT.  Trying to get smarter with time.
         buildSpikePositionDecoder(out_struct,0);
+        [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
+        VAF_all=[VAFall; struct('filename',tempNameafkdlj, ...
+            'type','Spike','vaf',evalin('base','vaf'))];
+        clear tempNameafkdlj
+
         close
-        % no bestc/bestf for spike decoders, right?
-%         % save bestc, bestf for reference with allFPsToPlot
-%         if exist('allFPsToPlot.mat','file')==2
-%             load('allFPsToPlot.mat','cutfp')
-%             [~,nameNoExt,~,~]=fileparts(MATfiles{batchIndex});
-%             cutfp(cellfun(@isempty,regexp({cutfp.name},nameNoExt))==0).bestc=bestc;
-%             cutfp(cellfun(@isempty,regexp({cutfp.name},nameNoExt))==0).bestf=bestf;
-%             save('allFPsToPlot.mat','cutfp')
-%         end
     else
         fprintf(1,'skipping %s because it appears to be a brain control file.\n', ...
             MATfiles{batchIndex})
     end
 end
-
+if buildedVAF_all
+    VAF_all(1)=[];
+end

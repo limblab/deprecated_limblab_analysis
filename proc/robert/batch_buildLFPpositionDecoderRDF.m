@@ -25,7 +25,12 @@ if isempty(MATfiles)
 end
 
 %%
-for batchIndex=1:length(MATfiles)
+if exist('VAF_all','var')~=1
+    VAF_all=struct('filename','','type','','vaf',[]);
+    buildedVAF_all=1;
+else
+    buildedVAF_all=0;
+endfor batchIndex=1:length(MATfiles)
 	FileName=MATfiles{batchIndex};
     
     S=load(MATfiles{batchIndex});
@@ -44,6 +49,9 @@ for batchIndex=1:length(MATfiles)
     % recorded for testing purposes.
     if mean(range(out_struct.vel(:,2:3))) > 10
         buildLFPpositionDecoderRDF
+        [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
+        VAF_all=[VAFall; struct('filename',tempNameafkdlj,'type','LFP','vaf',vaf)];
+        clear tempNameafkdlj
         H_all{batchIndex}=H;
         bestf_all{batchIndex}=bestf;
         bestc_all{batchIndex}=bestc;
@@ -51,7 +59,7 @@ for batchIndex=1:length(MATfiles)
         % save bestc, bestf for reference with allFPsToPlot
         if exist('allFPsToPlot.mat','file')==2
             load('allFPsToPlot.mat','cutfp')
-            [~,nameNoExt,~,~]=fileparts(MATfiles{batchIndex});
+            [~,nameNoExt,~]=FileParts(MATfiles{batchIndex});
             filePos=find(cellfun(@isempty,regexp({cutfp.name},nameNoExt))==0);
             if ~isempty(filePos)
                 cutfp(filePos).bestc=bestc;
@@ -64,4 +72,6 @@ for batchIndex=1:length(MATfiles)
             MATfiles{batchIndex})
     end
 end
-
+if buildedVAF_all
+    VAF_all(1)=[];
+end
