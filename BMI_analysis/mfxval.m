@@ -23,7 +23,9 @@ PredForce = 0;
 PredCursPos = 0;
 PredVeloc = 0;
 plotflag = 0;
-numSig    = 0;
+numSig    = size(binnedData.emgguide,1);
+Use_SD =0;
+
 
 %overwrite if specified in arguments
 if nargin > 6
