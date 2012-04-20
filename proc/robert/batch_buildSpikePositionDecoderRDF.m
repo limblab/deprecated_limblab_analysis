@@ -56,7 +56,7 @@ for batchIndex=1:length(MATfiles)
         % FUNCTION NOT A SCRIPT.  Trying to get smarter with time.
         buildSpikePositionDecoder(out_struct,0);
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
-        VAF_all=[VAFall; struct('filename',tempNameafkdlj, ...
+        VAF_all=[VAF_all; struct('filename',tempNameafkdlj, ...
             'type','Spike','vaf',evalin('base','vaf'))];
         clear tempNameafkdlj
 

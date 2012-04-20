@@ -30,7 +30,8 @@ if isempty(MATfiles)
 end
 
 kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
-    'control','','num_targets',[],'duration',0,'speedProfile',[],'pathReversals',[]);
+    'control','','num_targets',[],'duration',0,'speedProfile',[],'pathReversals',[],...
+    'LFP_vaf',[],'Spike_vaf',[]);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -138,16 +139,17 @@ for batchIndex=1:length(MATfiles)
                     kinematicsHandControl(out_struct,opts);
                 % if we're running inside superBatch.m, then VAF_all should
                 % exist.  If not, create it.
-                if exist('VAF_all','var')==1
-                    % could be 1 or 2 matches to VAF_all.filename,
-                    % depending on whether LFP or spike decoding was
-                    % performed.
-                    strcmp(kinStruct(batchIndex).name,{VAF_all.filename});
-                else
-                    VAF_all=seekVAFinDecoderLog(kinStruct(batchIndex).name);
-                    kinStruct(batchIndex).LFP_vaf;
-                    kinStruct(batchIndex).Spike_vaf;
+                tic
+                if exist('VAF_all','var')~=1
+                    VAF_all=seekVAFinDecoderLog(MATfiles{batchIndex});
                 end
+                toc
+                kinStruct(batchIndex).LFP_vaf=VAF_all(find(cellfun(@isempty,regexp({VAF_all.filename},...
+                    regexprep(MATfiles{batchIndex},'\.mat','')))==0 & ...
+                    strcmp({VAF_all.type},'LFP')),1,'first').vaf;
+                kinStruct(batchIndex).Spike_vaf=VAF_all(find(cellfun(@isempty,regexp({VAF_all.filename},...
+                    regexprep(MATfiles{batchIndex},'\.mat','')))==0 & ...
+                    strcmp({VAF_all.type},'Spike')),1,'first').vaf;
             end
         else
             % brain control file that was

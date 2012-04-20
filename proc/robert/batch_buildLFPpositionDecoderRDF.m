@@ -30,7 +30,8 @@ if exist('VAF_all','var')~=1
     buildedVAF_all=1;
 else
     buildedVAF_all=0;
-endfor batchIndex=1:length(MATfiles)
+end
+for batchIndex=1:length(MATfiles)
 	FileName=MATfiles{batchIndex};
     
     S=load(MATfiles{batchIndex});
@@ -50,7 +51,7 @@ endfor batchIndex=1:length(MATfiles)
     if mean(range(out_struct.vel(:,2:3))) > 10
         buildLFPpositionDecoderRDF
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
-        VAF_all=[VAFall; struct('filename',tempNameafkdlj,'type','LFP','vaf',vaf)];
+        VAF_all=[VAF_all; struct('filename',tempNameafkdlj,'type','LFP','vaf',vaf)];
         clear tempNameafkdlj
         H_all{batchIndex}=H;
         bestf_all{batchIndex}=bestf;

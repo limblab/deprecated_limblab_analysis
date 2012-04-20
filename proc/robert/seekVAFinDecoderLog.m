@@ -45,9 +45,9 @@ for n=1:length(dayLineNum)
             if isempty(regexp(logText,['(?<=',sprintf('\n'), ...
                     num2str(dayLineNum(n)),'.*)wsz(?=.*', ...
                     sprintf('\n'),num2str(lineNumSeek),')'],'once'))
-                VAF_all=[VAF_all; struct('name',filenameIn,'type','Spike','vaf',vaf)];
+                VAF_all=[VAF_all; struct('filename',filenameIn,'type','Spike','vaf',vaf)];
             else
-                VAF_all=[VAF_all; struct('name',filenameIn,'type','LFP','vaf',vaf)];
+                VAF_all=[VAF_all; struct('filename',filenameIn,'type','LFP','vaf',vaf)];
             end
             break
         end
