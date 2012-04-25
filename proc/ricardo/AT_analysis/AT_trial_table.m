@@ -11,13 +11,17 @@ tc.t_bump_2_onset = 7;
 tc.t_ot_on = 8;
 tc.t_trial_end = 9;
 tc.result = 10;
-tc.bump_magnitude = 11;
-tc.bump_1_direction = 12;
-tc.bump_2_direction = 13;
+tc.bump_direction = 11;
+tc.bump_1_magnitude = 12;
+tc.bump_2_magnitude = 13;
 tc.visual_1_size = 14;
 tc.visual_2_size = 15;
 tc.training = 16;
 tc.catch = 17;
+tc.staircase_id = 18;
+tc.bias_force_mag = 19;
+tc.bias_force_dir = 20;
+tc.bump_duration = 21;
 
 databurst_version = bdf.databursts{1,2}(2);
 
@@ -75,13 +79,18 @@ end
 
 for iTrial = 1:num_trials
     trial_table(iTrial,tc.trial_type) = bdf.databursts{iTrial,2}(15);
-    trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(17:20));
-    trial_table(iTrial,tc.bump_1_direction) = bytes2float(bdf.databursts{iTrial,2}(21:24));
-    trial_table(iTrial,tc.bump_2_direction) = bytes2float(bdf.databursts{iTrial,2}(25:28));
-    trial_table(iTrial,tc.visual_1_size) = bytes2float(bdf.databursts{iTrial,2}(29:32));
-    trial_table(iTrial,tc.visual_2_size) = bytes2float(bdf.databursts{iTrial,2}(33:36));
-    trial_table(iTrial,tc.training) = bdf.databursts{iTrial,2}(16);
-    trial_table(iTrial,tc.catch) = bdf.databursts{iTrial,2}(57);
+    trial_table(iTrial,tc.staircase_id) = bdf.databursts{iTrial,2}(16);
+    trial_table(iTrial,tc.training) = bdf.databursts{iTrial,2}(17);        
+    trial_table(iTrial,tc.catch) = bdf.databursts{iTrial,2}(18);
+    trial_table(iTrial,tc.bump_1_magnitude) = bytes2float(bdf.databursts{iTrial,2}(19:22));
+    trial_table(iTrial,tc.bump_2_magnitude) = bytes2float(bdf.databursts{iTrial,2}(23:26));
+    trial_table(iTrial,tc.bump_direction) = bytes2float(bdf.databursts{iTrial,2}(27:30));
+    trial_table(iTrial,tc.bump_duration) = bytes2float(bdf.databursts{iTrial,2}(31:34));
+    trial_table(iTrial,tc.visual_1_size) = bytes2float(bdf.databursts{iTrial,2}(35:38));
+    trial_table(iTrial,tc.visual_2_size) = bytes2float(bdf.databursts{iTrial,2}(39:42));
+    trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(55:58));
+    trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(59:62));
+
 end
 
 save(filename,'trial_table','tc','-append')
