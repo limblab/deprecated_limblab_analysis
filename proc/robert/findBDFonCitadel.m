@@ -58,3 +58,4 @@ else
         error('file not found: %s\n',nameIn)
     end
 end
+pathToBDF(regexp(pathToBDF,sprintf('\n')))='';

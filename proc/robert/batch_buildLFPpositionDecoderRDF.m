@@ -47,8 +47,11 @@ for batchIndex=1:length(MATfiles)
     end
     clear S
     % account for hand control files, which might have a brainReader log
-    % recorded for testing purposes.
-    if mean(range(out_struct.vel(:,2:3))) > 10
+    % recorded for testing purposes.  the range of output velocities might
+    % not be enough, if there is a transient in the position of the handle
+    % halfway through the recording (e.g. it was bumped by the experimenter
+    % accidentally).
+    if mean(range(out_struct.vel(:,2:3)))>10 && floor(mean(getNumTargets(out_struct)))>1
         buildLFPpositionDecoderRDF
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
         VAF_all=[VAF_all; struct('filename',tempNameafkdlj,'type','LFP','vaf',vaf)];

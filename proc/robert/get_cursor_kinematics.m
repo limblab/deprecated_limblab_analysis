@@ -187,9 +187,10 @@ if isfield(bdf.raw, 'analog') && ~isempty(bdf.raw.analog.data)
     start_time = floor(1.0 + bdf.raw.analog.ts{1}(1));
     last_analog_time = min(cellfun(@(x) x(1),bdf.raw.analog.ts) + ...
         cellfun('length',bdf.raw.analog.data) / bdf.raw.analog.adfreq);
+    last_BR_time=BRarray(end,7);
     if isfield(bdf.raw,'enc') && ~isempty(bdf.raw.enc)
         last_enc_time = bdf.raw.enc(end,1);
-        stop_time = floor( min( [last_enc_time last_analog_time] ) ) - 1;
+        stop_time = floor( min( [last_enc_time last_analog_time last_BR_time] ) ) - 1;
     else
         stop_time = floor(last_analog_time)-1;
     end
