@@ -4,7 +4,8 @@ function numTargets=getNumTargets(out_struct)
 %
 % returns the number of targets hit for each rewarded trial of a BDF.
 % Useful for determining what the parameter was set to in the behavior
-% code.
+% code.  Currently, only works for RW end-trial codes (32,33,34, should
+% there be a 35?).
 
 % first, always must account for bad starts/ends.
 % make sure to start with the first complete trial in the recording
