@@ -5,7 +5,7 @@ function tt = wf_trial_table(bdf)
 % Each row of the table coresponds to a single trial.  Columns are as
 % follows:
 %    1: Start time
-%  2-5: Target              -- ULx ULy LRx LRy
+%    2-5: Target              -- ULx ULy LRx LRy
 %    6: Outer target (OT) 'on' time
 %    7: Go cue
 %    8: Trial End time
@@ -22,10 +22,6 @@ result_codes = 'RAFI------------';
 word_start = hex2dec('17');
 start_words = words(words(:,2) == word_start, 1);
 num_trials = length(start_words);
-
-word_ot_on = hex2dec('40');
-ot_on_words = words( bitand(hex2dec('f0'),words(:,2)) == word_ot_on, 1);
-ot_on_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_ot_on, 2);
 
 word_go = hex2dec('31');
 go_cues = words(words(:,2) == word_go, 1);
@@ -53,13 +49,11 @@ for trial = 1:num_trials-1
     end
        
     % Outer target
-    ot_idx = find(ot_on_words > start_time & ot_on_words < stop_time, 1, 'first');
+    ot_idx = find(go_cues > start_time & go_cues < stop_time, 1, 'first');
     if isempty(ot_idx)
         ot_time = -1;
-        ot_dir = -1;
     else
-        ot_time = ot_on_words(ot_idx);
-        ot_dir = bitand(hex2dec('0f'), ot_on_codes(ot_idx));
+        ot_time = go_cues(ot_idx);
     end
     
     % Target location
