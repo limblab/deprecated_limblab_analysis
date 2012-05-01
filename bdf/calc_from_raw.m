@@ -69,6 +69,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 robot_task = 1;
             elseif start_trial_code == hex2dec('1E')
                 robot_task = 1;
+            elseif start_trial_code == hex2dec('1F')
+                robot_task = 1;
             else
                 %close(h);
                 error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
