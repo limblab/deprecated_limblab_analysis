@@ -88,13 +88,13 @@ if ~exist('smoothfeats','var')
 end
 
 if (strcmpi(signal,'vel') || (strcmpi(signal,'pos')) || (strcmpi(signal,'acc')))
-    y=sig(:,2:3);
+    y=sig(:,2:end);
 elseif strcmpi(signal,'emg')
     y=sig;
     %Rectify and filter emg
 
     EMG_hp = 50; % default high pass at 50 Hz
-    EMG_lp = 5; % default low pass at 10 Hz
+    EMG_lp = 5; % default low pass at 5 Hz
     if ~exist('emgsamplerate','var')
         emgsamplerate=2000; %default
     end
@@ -132,7 +132,7 @@ if length(fp)~=length(y)
 %          fptimes=1:samp_fact:length(fp);
     if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
         fpadj=interp1(fptimes,fp',fptimesadj);
-        fp=fpadj';        % comment for testing purposes.
+        fp=fpadj';
         clear fpadj
         numbins=floor(length(fptimes)/bs);
     end
@@ -152,6 +152,7 @@ if t(1)<analog_times(1)
     t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
 end
 y = interp1(analog_times, y, t);    %This should work for all numbers of outputs as long as they are in columns of y
+
 if size(y,1)==1
     y=y(:); %make sure it's a column vector
 end
@@ -174,17 +175,17 @@ win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibilit
 tfmat=zeros(wsz,numfp,numbins,'single');
 % Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
-fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
+fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 clear fp
 for i=1:numbins
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
     tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
     LMP(:,i)=mean(tmp',2);
-%     tmp=tmp-repmat(mean(tmp,1),wsz,1);
-%     tmp=detrend(tmp);
+    %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
+    %     tmp=detrend(tmp);
     tmp=win.*tmp;
     tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
-%     =tftmp(2:(wsz/2+1),:);
+    %     =tftmp(2:(wsz/2+1),:);
     clear tmp
 end
 clear fpf tftmp

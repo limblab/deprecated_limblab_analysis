@@ -1,63 +1,106 @@
-%% file info
-[FileName,PathName,FilterIndex] = uigetfile([humanDataFolder,'/*.dat'],'select a *.dat file');
-cd(PathName)
-fnam=FileName(1:end-4);
-%% load the file (BCI2000)
-if ~isempty(regexpi(PathName,'force'))
-	[fpAll,~]=bci2fparrMOD(fnam,'force',1000,2000);
-else
-	[fpAll,~]=bci2fparrMOD(fnam,'',1000,2000);
+
+%% set up, and define globals.
+cd('E:\monkey data\RobertF'), RDFstartup
+
+SIGNALTOUSE='force';
+% FPIND is the index of all ECoG (fp) signals recorded in the signal array.
+%  Not to be confused with the index of fps to use for building the
+%  decoder, which is always a game-time decision.
+FPIND=1:32;
+
+%% find file, set up environment.
+[FileName,PathName,FilterIndex] = uigetfile('E:\ECoG_Data\*.dat');
+if isnumeric(PathName) && PathName==0
+    disp('cancelled.')
+    return
 end
-close
-%% input parameters - Do not Change, just run.
-fprange=input(sprintf('enter the range of signals to include in the analysis (%d total): ',size(fpAll,1)));
-emgrange=input(sprintf('enter the range of emgs to include (out of %d): ',size(emgAll,2)));
-disp('assigning static parameters')
-fp=fpAll(fprange,:);
-emg=emgAll(:,emgrange);
-sig=double(emg);
-signal='emg';
-numfp=size(fp,1);
-numsides=1;
-fptimes=ttlTDT_time_vector;
-Use_Thresh=0; words=[]; lambda=1;
-analog_times=ttlTDT_time_vector;
-emgsamplerate=1000;
-disp('done')
-%% Input parameters to play with.
-disp('assigning tunable parameters and building the decoder...')
-folds=10; 
-numlags=10; 
+cd(PathName)
+%% load into memory
+fprintf(1,'loading %s...\n',FileName)
+[signal,states,parameters,N]=load_bcidat(fullfile(PathName,FileName));
+fprintf(1,'load complete\n')
+clear N
+%% get fp array from signal array
+fp=signal(:,FPIND)'; % fp should be numfp X [numSamples]
+% this is where we'll get the CG info & do the PCA (function?)
+
+sig=getSigFromBCI2000(signal,parameters,SIGNALTOUSE);
+%% set parameters, and build the feature matrix.  go ahead and include all the fps.
 wsz=256;
-% with 16 channels nfeat must be <= 96
-nfeat=70;
-PolynomialOrder=2;
-smoothfeats=1;
-binsize=0.1;
+samprate=1000;
+binsize=0.05;
+[featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize);
+% featMat that comes out of here is unsorted!  needs feature
+% selection/ranking.
+%% index the fps 
+FPSTOUSE=17:32;
+clear x
+x=zeros(size(featMat,1),length(FPSTOUSE)*6);
+% there is a tricky interplay between x and FPSTOUSE, because x is used to
+% calculate H, and H must take into account 3 things:
+%   -which channels are meant to serve as inputs
+%   -of those, which channels score high (& therefore are part of
+%    bestc,bestf)
+%   
+for n=1:length(FPSTOUSE)
+    x(:,(n-1)*6+1:n*6)=featMat(:,(FPSTOUSE(n)-1)*6+1:FPSTOUSE(n)*6);
+end, clear n
+% If a bad channel needs to be taken out, consider using the spatial filter to
+% do it.  Currently it's not in either of the brain control setups (force
+% or Triangle) but it could be added.
 
-[vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H] = ...
-    predictionsfromfp5allMOD(sig,signal,numfp,binsize,folds,numlags, ...
-    numsides,samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+%% assign parameters.
+Use_Thresh=0; lambda=1; 
+PolynomialOrder=3; numlags=10; numsides=1; binsamprate=floor(1/0.05); folds=10; nfeat=75;
+if nfeat>(size(featMat,1)*size(featMat,2))
+    fprintf(1,'setting nfeat to %d\n',size(featMat,1)*size(featMat,2))
+    nfeat=size(featMat,1)*size(featMat,2);
+end
+%% evaluate fps offline use cross-validated predictions code.
+disp('evaluating feature matrix using selected ECoG channels')
+[vaf,ytnew,y_pred,bestc,bestf,featind,H]=predonlyxy_ECoG(x,FPSTOUSE,sig,PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat);
+vaf
+fprintf(1,'mean vaf across folds: ')
+fprintf(1,'%.4f\t',mean(vaf,1))
+fprintf(1,'\n')
+%%
 close
+figure, set(gcf,'Position',[88         378        1324         420])
+for n=1:folds
+    leftEdge=(n-1)*length(ytnew{1})+1;
+    rightEdge=n*length(ytnew{1});
+    hold on
+    plot(leftEdge:rightEdge,ytnew{n}(:,1),leftEdge:rightEdge,y_pred{n}(:,1),'g')
+    if n==1, set(gca,'Position',[0.0415    0.1100    0.9366    0.8150]), end
+    plot([0 0]+rightEdge,get(gca,'Ylim'),'LineStyle','--','Color',[0 0 0]+0.25)
+    text(leftEdge+(rightEdge-leftEdge)/2,max(get(gca,'Ylim')),sprintf('vaf=\n%.3f',vaf(n,1)),...
+        'VerticalAlignment','top','HorizontalAlignment','center')
+end, clear n leftEdge rightEdge
+title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f', ...
+    PolynomialOrder,mean(vaf(:,1))))
 
-disp(sprintf('\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n'))
+%% (don't forget to choose the best fps) build a decoder and save.
+% at this point, bestc & bestf are sorted by channel, while featind is
+% still sorted by feature correlation rank.
+[vaf,ytnew,y_pred,bestc,bestf,H]=buildModel_ECoG(x,FPSTOUSE,sig,PolynomialOrder,Use_Thresh, ...
+    lambda,numlags,numsides,binsamprate,featind,nfeat);
+%%
+% bestc must be re-cast so that it properly indexes the full 32-channel
+% possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
+% adjusted once loaded into BCI2000.
+bestc=FPSTOUSE(bestc);
+% save bestc,bestf,H
+bestcf=[rowBoat(bestc), rowBoat(bestf)];
+if size(H,2)<2
+    H=[zeros(size(H)), H];
+end
+save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
+    [regexp(FileName,'.*(?=\.dat)','match','once'),'_H.txt']),'H','-ascii','-tabs','-double')
+save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
+    [regexp(FileName,'.*(?=\.dat)','match','once'),'_bestcf.txt']),'bestcf','-ascii','-tabs','-double')
 
-%% examine r2
-r2
-% disp(FileName)
-disp(sprintf('overall mean r2 %.4f',mean(r2(:))))
-% junk=r2(:,4:6);
-% disp(sprintf('mean r2 over %s, %s, and %s: %.4f',EMGchanList{4},EMGchanList{5}, ...
-% 	EMGchanList{6},mean(junk(:))))
-[val,ind]=max(mean(r2,2));
-disp(sprintf('fold %d had highest mean over all EMGs: mean %.4f',ind,val))
-[val,ind]=max(sum(r2,2));
-disp(sprintf('fold %d had highest sum over all EMGs: sum %.4f',ind,val))
-[val,ind]=max(r2(:));
-[r,c]=ind2sub(size(r2),ind);
-disp(sprintf('fold %d had the highest individual r2, in %s: %.4f', ...
-    r,EMGchanList{emgrange(c)},r2(r,c)))
-[~,c]=max(mean(r2));
-disp(sprintf('the best muscle was %s, with mean %.4f across folds', ...
-	EMGchanList{emgrange(c)},mean(r2(:,c))))
+%%
+close
+figure, set(gcf,'Position',[88         378        1324         420])
+plot(ytnew(:,1)), hold on, plot(y_pred,'g')
+set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])

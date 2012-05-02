@@ -178,10 +178,10 @@ toc
 LMP=zeros(numfp,length(y));
 
 tic
-%% Calculate LMP
+% Calculate LMP
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
 tfmat=zeros(wsz,numfp,numbins,'single');
-%% Notch filter for 60 Hz noise
+% Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 clear fp
@@ -189,11 +189,11 @@ for i=1:numbins
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
     tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
     LMP(:,i)=mean(tmp',2);
-%     tmp=tmp-repmat(mean(tmp,1),wsz,1);
-%     tmp=detrend(tmp);
+    %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
+    %     tmp=detrend(tmp);
     tmp=win.*tmp;
-   tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
-%     =tftmp(2:(wsz/2+1),:);
+    tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+    %     =tftmp(2:(wsz/2+1),:);
     clear tmp
 end
 clear fpf tftmp
@@ -205,7 +205,7 @@ assignin('base','freqs',freqs)
 disp('3rd part: calculate FFTs')
 toc
 tic
-%% Calculate bandpower
+% Calculate bandpower
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
 % for testing, when freqs=freqs(2:end) is commented out, above.
 % Pmat=tfmat(1:length(freqs)+1,:,:).*conj(tfmat(1:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
@@ -252,8 +252,8 @@ assignin('base','PB',PB)
 disp('4th part: calculate bandpower')
 toc
 tic
-%% Select best Nfeat freq band/channel combos based on R2 value c/w 1st component
-%%of y
+% Select best Nfeat freq band/channel combos based on R2 value c/w 1st component
+% of y
 
 if ~exist('nfeat','var')
     nfeat=100;
@@ -309,7 +309,7 @@ for i=1:nfeat
     bestPB(i,:)=PB(bestf(i),bestc(i),:);
 end
 
-%% convert x to freq bands
+% convert x to freq bands
 if exist('PB','var')
     numfreq=size(PB,1); %#frequency bands
 else
@@ -327,7 +327,7 @@ disp('5th part: select best features')
 disp(['selected best ',num2str(nfeat),' features, time: '])
 toc
 tic
-%% continue with predictions
+% continue with predictions
 x = x(q==1,:);
 y = y(q==1,:);
 
