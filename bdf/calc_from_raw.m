@@ -127,7 +127,9 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
                 l1=24.0; l2=23.5;
             elseif isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
-                l1=24.8; l2=24;
+                l1=24.75; l2=23.6;
+%                 l1 = 26.7;
+%                 l2 = 30.6;
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
             end
