@@ -91,7 +91,7 @@ vy(neg_limY) = n_limY;
 vx = bin_size*round(vx/bin_size);
 vy = bin_size*round(vy/bin_size);
 %   Account for offset that occurs if 'vmax' is not a multiple of 'bin_size'
-%   For some reason this doesn't seem to be doing its job
+%   ...For some reason this doesn't seem to be doing its job
 offset = vmax - bin_size*round(vmax/bin_size);
 vx = vx - offset;
 vy = vy - offset;

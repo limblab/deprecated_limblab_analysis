@@ -31,7 +31,7 @@ end
 % CONVERT WINDOWED SPIKE COUNTS INTO Hz
 spike_wins = spike_wins/win_length;
 
-%% compile spiking data for each channel
+%% compile spiking means for each channel
 
 %MAYBE CALCULATE THIS ONLY IN 'plot_spike_windows'? OR WHERE? EITHER WAY,
 %IT HAS TO HAPPEN POST-PD-FILTERING
