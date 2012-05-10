@@ -1,4 +1,4 @@
-function vel_heat_maps = vel_spikemap(binnedData)
+function [vel_heat_maps,chans] = vel_spikemap(binnedData)
 % Creates a series of heat maps, each containing firing rates for a given
 % unit spanning a specified bin (default: 50ms), showing firing rates for a
 % range of binned x/y velocities.
@@ -37,9 +37,8 @@ ts  = binnedData.timeframe;
 mov_start = 0.5; %(seconds) time before kinematic timepoint at which the movie will start
 mov_end   = 0.3; %(seconds) time after kinematic timepoint at which movie will end
 bin_size  = ts(2)-ts(1); %(seconds) length of one bin
-mov_pause = 0.3; %(seconds) determines framerate by pausing between each frame renewal
 %-convert from seconds to bins
-bin_start = round(mov_start/bin_size);
+bin_start = round(mov_start/bin_size)+1;
 bin_end   = round(mov_end/bin_size);
 num_bins  = bin_start + bin_end; %number of bins to run through
 %-velocity binning parameters
@@ -104,6 +103,10 @@ xidcs  = zeros(size(vx)); % arrays to store indices of relevant velocities
 yidcs  = zeros(size(vy));
 zz_vel = zeros(size(vx)); % assumes vx and vy are same size
 disp('Calculating mean firing rates based on velocity for...');
+vel_heat_maps = cell(num_units, num_bins);
+verbose = 1;
+E = 1;
+tic
 for unit = 1:num_units
     
     if verbose
@@ -111,55 +114,69 @@ for unit = 1:num_units
     end
     heat_map = zeros(num_vbins); % square matrix to store mean spike rates
     spikes   = binned_spikes(:,unit);
-    
-    % ugly nested loops, but let's do this
-    % run through each velocity bin and find associated values
-    for xx = 1:num_vbins
-        
-        xidcs = xidcs & zz_vel; % reset xidcs to zero
-        X = (xx-1)*vbin_size - vmax; % convert to velocity bin
-        if (X==0)
-            xidcs(vx==X) = 1;
-        else
-            xidcs(vx==X) = vx(vx==X);
-        end
-        xidcs = logical(xidcs);
-        for yy = 1:num_vbins
-            
-            yidcs = yidcs & zz_vel; % reset yidcs to zero
-            Y = (yy-1)*vbin_size - vmax; % convert to velocity bin
-            if (Y==0)
-                yidcs(vy==Y) = 1;
-            else
-                yidcs(vy==Y) = vy(vy==Y);
+    % get heat map for each bin on this unit
+    for i = 1:num_bins
+        % ugly nested loops, but let's do this
+        % run through each velocity bin and find associated values
+        for xx = 1:num_vbins
+            % GET INDICES FOR CURRENT X-VELOCITY BIN
+            xidcs = xidcs & zz_vel; % reset xidcs to zero
+            X = (xx-1)*vbin_size - vmax; % convert to velocity bin
+            if (X==0), xidcs(vx==X) = 1; else xidcs(vx==X) = vx(vx==X); end
+            xidcs = logical(xidcs);
+            for yy = 1:num_vbins
+                % GET INDICES FOR CURRENT Y-VELOCITY BIN
+                yidcs = yidcs & zz_vel; % reset yidcs to zero
+                Y = (yy-1)*vbin_size - vmax; % convert to velocity bin
+                if (Y==0), yidcs(vy==Y) = 1; else yidcs(vy==Y) = vy(vy==Y); end
+                yidcs = logical(yidcs);
+                idcs = xidcs & yidcs;
+                % SHIFT INDICES BY OFFSET AS DEFINED BY CURRENT TIME BIN
+                pre_kin_idcs = get_binned_rate(idcs,length(spikes),i,bin_start,bin_end);                
+                if ~isempty(find(pre_kin_idcs,1))
+                    heat_map(xx,yy) = mean(spikes(pre_kin_idcs));
+                else % so we don't return NaN if no spikes are found
+                    heat_map(xx,yy) = 0;
+                    if E
+                        disp(sprintf('idcs is empty. vx = %i, vy = %i.',X,Y));
+                        E = 0;
+                    end
+                end                 
             end
-            yidcs = logical(yidcs);
-            idcs = xidcs & yidcs;
-            pre_idcs = get_binned_rate(spikes,bin,idcs);
-            if ~isempty(find(pre_idcs,1))
-                heat_map(xx,yy) = mean(spikes(pre_idcs));
-            else % so we don't return NaN if no spikes are found
-                heat_map(xx,yy) = 0;
-                if E
-                    disp(sprintf('idcs is empty. vx = %i, vy = %i.',X,Y));
-                    E = 0;
-                end
-            end
-            
         end
+        vel_heat_maps{unit,i} = heat_map;
     end
-    %CHANGE TO 2-D CELL ARRAY TO TAKE SERIES OF MAPS
-    vel_heat_maps{unit} = heat_map;
-    
+    toc
 end
 
 %% Internal functions
 
-function pre_idcs = get_binned_rate(binned_spikes,bin,idcs)
+function pre_kin_idcs = get_binned_rate(idcs,spike_len,i,bin_start,bin_end)
 % Returns a set of indices corresponding to the appropriate bin relative to
 % the given kinematic timepoint (defined by the velocity bin we're looking
 % at)
 
+pre_kin_idcs = zeros(size(idcs));
+bin_offset = i - bin_start;
+
+
+if ~isempty(idcs)
+    % it's not particularly elegant, but this will avoid negative/out-of-bounds indexing errors
+    init_range = 1 + bin_start;
+    end_range  = spike_len - bin_end;
+    pre_kin_idcs(init_range:end_range) = idcs(init_range+bin_offset:end_range+bin_offset);
+else
+    pre_kin_idcs = idcs;
+    disp('empty idcs');
+end
+pre_kin_idcs = logical(pre_kin_idcs);
+
+% function idx = get_first_idx(idcs,bin_offset,spike_len)
+% f = 1:spike_len;
+% f = f';
+% f_idcs = f(idcs);
+% f_idx = find(f_idcs > abs(bin_offset), 1, 'first');
+% idx = find(f==f_idx);
 
 
 %% 'pre_kin_windows' code
