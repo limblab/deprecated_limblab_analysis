@@ -41,10 +41,10 @@ s = train2bins(spike_times, t);
 
 glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
 glmv = interp1(bdf.vel(:,1), bdf.vel(:,2:3), t);
-glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
-glmp = sum(glmf .* glmv,2);
-glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
-    sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
+%glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
+%glmp = sum(glmf .* glmv,2);
+%glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
+%    sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
 glmpp(1,:) = [0 0];
 
 if strcmp(mdl, 'pos')
@@ -57,6 +57,8 @@ elseif strcmp(mdl, 'nospeed')
     glm_input = [glmx glmv];
 elseif strcmp(mdl, 'forcevel')
     glm_input = [glmv glmf];
+elseif strcmp(mdl, 'forceonly')
+    glm_input = [glmf];
 elseif strcmp(mdl, 'forceposvel')
     glm_input = [glmx glmv glmf];
 elseif strcmp(mdl, 'ppforcevel');

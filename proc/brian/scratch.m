@@ -19,4 +19,3 @@ for f = 1:length(files)
     peaks(f,:) = [min(llrs) t(find(min(llrs) == llrs, 1, 'first'))];
 end
 
-    

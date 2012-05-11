@@ -32,7 +32,7 @@ for i=1:length(weights)
     axis([-.1 2*pi+.1 0 200]);
     suptitle(sprintf('w = %f', w));
 end
-    
+
 
 
 

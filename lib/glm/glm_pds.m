@@ -13,7 +13,7 @@ moddepth = zeros(length(ul),1);
 tic;
 for i = 1:length(ul)
     et = toc;
-    fprintf(1, 'ET: %f (%d of %d)', et, i, length(ul));
+    fprintf(1, 'ET: %f (%d of %d)\n', et, i, length(ul));
     
     [b, dev, stats] = glm_kin(bdf, ul(i,1), ul(i,2), 0, 'posvel'); %#ok<ASGLU>
     bv = [b(4) b(5)];

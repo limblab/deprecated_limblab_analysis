@@ -76,7 +76,7 @@ function out_struct = get_cerebus_data(varargin)
     % Load the file
     [nsresult, hfile] = ns_OpenFile(filename);
     if (nsresult ~= 0)
-        close(h);
+%        close(h);
         error('Error opening file!');
     end
 
@@ -212,7 +212,7 @@ function out_struct = get_cerebus_data(varargin)
         out_struct.emg.data(:,1) = single(0:1/emgfreq:(length(emg_data)-1)/emgfreq);
         clear emg_data emg_info emgfreq;
     end
-    
+
 %% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
     if ~isempty(force_list)
         
@@ -295,25 +295,28 @@ function out_struct = get_cerebus_data(varargin)
             % 15-8) and the ENCODER is on the
             % low byte (bits 8-1).
             all_words = [event_ts, bitshift(bitand(hex2dec('FF00'),event_data),-8)];
+            all_words = all_words(logical(all_words(:,2)),:);
             all_enc = [event_ts, bitand(hex2dec('00FF'),event_data)];
         end             
 
         % Remove all zero words.
         actual_words = all_words(logical(all_words(:,2)),:);
         % Remove all repeated words (due to encoder data timing)
-        
+
         word_indices_remove = find(diff(actual_words(:,1))<0.0005 & diff(actual_words(:,2))==0)+1;
 
         if ~isempty(word_indices_remove)
             word_indices_keep = setxor(word_indices_remove,1:length(actual_words));
             actual_words = actual_words(word_indices_keep,:);
         end
-        
+
         out_struct.raw.words = actual_words; %#ok<FNDSB>
 
-        % and encoder data       
-        out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
-        
+        % and encoder data
+        if (opts.kin)
+            out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
+        end
+
         % Grab the serial data -- event ID 146
 %         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,146,1:EntityInfo(146).ItemCount);
          [nsresult,event_ts,event_data] = ns_GetEventData(hfile,serial_listID,1:EntityInfo(serial_listID).ItemCount);
@@ -328,7 +331,7 @@ function out_struct = get_cerebus_data(varargin)
     ns_CloseFile(hfile);
 
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
-    
+
 %     rmpath ./lib_cb
 %     rmpath ./event_decoders
     

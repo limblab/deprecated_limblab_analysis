@@ -18,3 +18,6 @@ for i = 1:L
         list = [list; data.units(i).id];
     end
 end
+
+list = list(list(:,2)~=255,:);
+list = list(list(:,2)~=0,:);
