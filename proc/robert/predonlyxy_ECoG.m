@@ -34,10 +34,10 @@ if ~exist('smoothflag','var')
 end
 % Smoothing
 if smoothflag
-    xtemp=smooth(x(:),11,'sgolay');      %sometimes smoothing features helps
+    xtemp=smooth(x(:),50,'sgolay');      %sometimes smoothing features helps
     x=reshape(xtemp,size(x));
     ytemp=y(:);
-    ytemp=smooth(y(:),11,'sgolay');
+    ytemp=smooth(y(:),50,'sgolay');
     y=reshape(ytemp,size(y));
 end
 

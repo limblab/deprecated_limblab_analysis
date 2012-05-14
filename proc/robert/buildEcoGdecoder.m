@@ -1,6 +1,8 @@
 
 %% set up, and define globals.
-cd('E:\monkey data\RobertF'), RDFstartup
+if ispc
+    cd('E:\monkey data\RobertF'), RDFstartup
+end
 
 SIGNALTOUSE='force';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
@@ -9,7 +11,9 @@ SIGNALTOUSE='force';
 FPIND=1:32;
 
 %% find file, set up environment.
-[FileName,PathName,FilterIndex] = uigetfile('E:\ECoG_Data\*.dat');
+if ~exist('PathName','var')
+    [FileName,PathName,FilterIndex] = uigetfile('E:\ECoG_Data\*.dat');
+end
 if isnumeric(PathName) && PathName==0
     disp('cancelled.')
     return
@@ -41,7 +45,7 @@ x=zeros(size(featMat,1),length(FPSTOUSE)*6);
 %   -which channels are meant to serve as inputs
 %   -of those, which channels score high (& therefore are part of
 %    bestc,bestf)
-%   
+%
 for n=1:length(FPSTOUSE)
     x(:,(n-1)*6+1:n*6)=featMat(:,(FPSTOUSE(n)-1)*6+1:FPSTOUSE(n)*6);
 end, clear n
@@ -64,20 +68,21 @@ fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf,1))
 fprintf(1,'\n')
 %%
-close
+% close
 figure, set(gcf,'Position',[88         378        1324         420])
+col=1;
 for n=1:folds
-    leftEdge=(n-1)*length(ytnew{1})+1;
-    rightEdge=n*length(ytnew{1});
+    leftEdge=(n-1)*length(ytnew{1}(:,col))+1;
+    rightEdge=n*length(ytnew{1}(:,col));
     hold on
-    plot(leftEdge:rightEdge,ytnew{n}(:,1),leftEdge:rightEdge,y_pred{n}(:,1),'g')
+    plot(leftEdge:rightEdge,ytnew{n}(:,col),leftEdge:rightEdge,y_pred{n}(:,col),'g')
     if n==1, set(gca,'Position',[0.0415    0.1100    0.9366    0.8150]), end
     plot([0 0]+rightEdge,get(gca,'Ylim'),'LineStyle','--','Color',[0 0 0]+0.25)
-    text(leftEdge+(rightEdge-leftEdge)/2,max(get(gca,'Ylim')),sprintf('vaf=\n%.3f',vaf(n,1)),...
+    text(leftEdge+(rightEdge-leftEdge)/2,max(get(gca,'Ylim')),sprintf('vaf=\n%.3f',vaf(n,col)),...
         'VerticalAlignment','top','HorizontalAlignment','center')
 end, clear n leftEdge rightEdge
 title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f', ...
-    PolynomialOrder,mean(vaf(:,1))))
+    PolynomialOrder,mean(vaf(:,col))))
 
 %% (don't forget to choose the best fps) build a decoder and save.
 % at this point, bestc & bestf are sorted by channel, while featind is

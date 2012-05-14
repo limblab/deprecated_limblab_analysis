@@ -420,6 +420,7 @@ for i = 1:folds
             y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
         end
     end
+    
 
 %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
     vaftr(i,:)=v/100; %Divide by 100 because v is in percent

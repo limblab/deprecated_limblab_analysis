@@ -42,6 +42,11 @@ fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 clear fp
 for i=1:numbins
     tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
+%     if i==1 % to test with BCI2000 code.
+%         disp('calculating LMP/tfmat causally for first bin.')
+%         tmp(wsz-mod(wsz,bs)+1:end,:)=[];
+%         tmp=[zeros(mod(wsz,bs),size(tmp,2)); tmp];
+%     end
     LMP(:,i)=mean(tmp',2);
     tmp=win.*tmp;
     tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
@@ -63,9 +68,11 @@ Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;
 clear tfmat
 Pmean=mean(Pmat,3); %take mean over all times
 PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
+% disp('mean PA not being subtracted!!!')
+% PA=Pmat; % to test with BCI2000 code
 clear Pmat
 
-%Define freq bands
+%% Define freq bands
 delta=freqs<4;
 mu=((freqs>7) & (freqs<20));
 gam1=(freqs>70)&(freqs<115);
@@ -79,6 +86,8 @@ PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
     PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
+% for testing with BCI2000 code
+temp=PB(:,:,1); assignin('base','PB',temp)
 
 pbrot=shiftdim(PB,2);
 featMat=reshape(pbrot,[],size(PB,1)*size(PB,2));
