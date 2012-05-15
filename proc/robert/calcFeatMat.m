@@ -31,7 +31,7 @@ end
 if t(1)<analog_times(1)
     t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
 end
-y=[rowBoat(t), rowBoat(interp1(analog_times,y,t))]; 
+y=rowBoat(interp1(analog_times,y,t));
 
 LMP=zeros(numfp,length(y));
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
