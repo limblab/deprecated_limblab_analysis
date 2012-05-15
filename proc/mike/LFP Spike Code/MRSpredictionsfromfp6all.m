@@ -184,31 +184,69 @@ q = interp1(analog_times, q, t);
 
 disp('2nd part:assign t,y,q')
 toc
-LMP=zeros(numfp,length(y));
+%LMP=zeros(numfp,length(y));
 
 tic
 %% Calculate LMP
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
 tfmat=zeros(wsz,numfp,numbins,'single');
-%% Notch filter for 60 Hz noise 
+%% Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
-fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
+fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
 clear fp
+itemp=1:10;
+firstind=find(bs*itemp>wsz,1,'first');
 for i=1:numbins
+    ishift=i-firstind+1;
+    if ishift<=0
+        continue
+    elseif ishift == 1
+        LMP=zeros(numfp,length(y)-firstind+1);
+    end
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
-    tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
-    LMP(:,i)=mean(tmp',2);
-%    tmp=tmp-repmat(mean(tmp,1),wsz,1);
+    tmp=fpf(:,(bs*i-wsz+1:bs*i))';    %Make tmp samples X channels
+    LMP(:,ishift)=mean(tmp',2);
+%     tmp=tmp-repmat(mean(tmp,1),wsz,1);
 %     tmp=detrend(tmp);
     tmp=win.*tmp;
-    tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
-    %     =tftmp(2:(wsz/2+1),:);
-    clear tmp
+     tfmat(:,:,ishift)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+    clear tmp tftmp
 end
-clear fpf tftmp
+%Now need to clean up tfmat to account for cutting off the firstind bins
+tfmat(:,:,(ishift+1:end))=[];
+numbins=numbins-firstind+1;
+
+% t=t(1:numbins-firstind+1);
+t=t(1:numbins);
+y(ishift+1:end,:)=[];
+q(:,ishift+1:end)=[];
+clear fpf
 freqs=linspace(0,samprate/2,wsz/2+1);
 freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
-tvect=(1:numbins)*(bs)-bs/2;
+tvect=(firstind:numbins)*(bs)-bs/2;
+
+% %% Calculate LMP
+% win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
+% tfmat=zeros(wsz,numfp,numbins,'single');
+% %% Notch filter for 60 Hz noise 
+% [b,a]=butter(2,[58 62]/(samprate/2),'stop');
+% fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
+% clear fp
+% for i=1:numbins
+%     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
+%     tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
+%     LMP(:,i)=mean(tmp',2);
+% %    tmp=tmp-repmat(mean(tmp,1),wsz,1);
+% %     tmp=detrend(tmp);
+%     tmp=win.*tmp;
+%     tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+%     %     =tftmp(2:(wsz/2+1),:);
+%     clear tmp
+% end
+% clear fpf tftmp
+% freqs=linspace(0,samprate/2,wsz/2+1);
+% freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
+% tvect=(1:numbins)*(bs)-bs/2;
 disp('3rd part: calculate FFTs')
 toc
 tic
@@ -240,7 +278,7 @@ PB(4,:,:)=mean(PA(gam1,:,:),1);
 %MRS 8/31/11
 PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
-PB(6,:,:)=mean(PA(gam3,:,:),1);
+    PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
@@ -314,19 +352,11 @@ bestPB=single(zeros(nfeat,length(y)));
 
 clear r     %clear this so we can reuse r later on
 
-bestc = bestc(bestc <= numfp);
+
+% bestc = bestc(bestc <= numfp);
 
 for i=1:length(bestc)     
     bestPB(i,:)=PB(bestf(i),bestc(i),:);
-end
-
-% MRS Added 4/2012 (sometime in April)
-% If inputting a decoder from online LFP control reorder inputs to match the order of
-% the filter weights
-if exist('H','var') && length(featind) == nfeat
-    [~,sortInd]=sort(featind);
-
-    bestPB = bestPB(sortInd,:);
 end
 
 %% convert x to freq bands
@@ -354,6 +384,17 @@ y = y(q==1,:);
 vaf = zeros(folds,size(y,2));
 r2 = zeros(folds,2);
 fold_length = floor(length(y) ./ folds);
+
+% MRS added 5/1/12 to build H sorted by channels to match how brain reader
+% accepts H
+[C,sortInd]=sortrows([bestc' bestf']);
+bestc = C(:,1);
+bestf = C(:,2);
+% the default operation of sortrows is to sort first on column 1, then do a
+% secondary sort on column 2, which is exactly what we want, so we're done.
+x=x(:,sortInd);
+
+
 
 x_test=cell(folds,1);
 y_test=x_test;
