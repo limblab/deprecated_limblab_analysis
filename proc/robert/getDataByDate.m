@@ -20,14 +20,39 @@ if nargin<3
     pathOverride='';
 end
 
-destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
-    filesep,animal];
+
+[status,result]=dos('ipconfig /all');
+if status==0
+    nCharPerLine = diff([0 find(result == char(10)) numel(result)]);
+    cellData = strtrim(mat2cell(result,1,nCharPerLine));
+    nameLine=find(cellfun(@isempty,regexpi(cellData,'(?<=Host Name.*: ).*'))==0, 1);
+    if ~isempty(nameLine)
+        machineName=regexpi(cellData{nameLine},'(?<=Host Name.*: ).*','match','once');
+    else
+        error('ipconfi /all was not able to resolve the machine name')
+    end
+else
+    error('ipconfig /all was not able to resolve the machine name')
+end
+
+
+switch lower(machineName)
+    case 'gob'
+        destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
+            filesep,animal];
+        remoteDriveLetter='Z';      % appropriate for GOB
+    case 'bumblebeeman'
+        destFolder=['E:\monkey data',filesep,animal];
+        remoteDriveLetter='Z';      % by coincidence
+    otherwise
+        error('I''ve never been on this computer before!! Help!!')
+        % need to set a destFolder for the current computer name
+end
+
 cd(destFolder)
 mkdir(datestr(dateNumber,'mm-dd-yyyy'))
 destFolder=[destFolder, filesep, datestr(dateNumber,'mm-dd-yyyy')];
 D=dir(destFolder);
-% remoteDriveLetter='Y';    % appropriate for offline sorting machine
-remoteDriveLetter='Z';      % appropriate for GOB
 CEBorPLX='';
 
 pathBank={[remoteDriveLetter,':\Chewie_8I2\SpikeLFP'], ...

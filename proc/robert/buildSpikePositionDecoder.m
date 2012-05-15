@@ -131,7 +131,9 @@ else
     if exist('PathName','var')==1
         BDFpathName=PathName;
     else
-        BDFpathName=findBDFonGOB(BDFfileName,1);
+        % need to put in a findOnBumbleBee.m
+%         BDFpathName=findBDFonGOB(BDFfileName,1);
+        BDFpathName=findBDFonBumbleBeeMan(BDFfileName,1);
     end
     decoderPathName=regexprep(BDFpathName,'\.mat','-spikedecoder\.mat');
     decoderPathName(regexp(decoderPathName,sprintf('\n')))='';

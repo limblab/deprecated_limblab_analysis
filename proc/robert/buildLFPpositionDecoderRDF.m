@@ -42,7 +42,7 @@ clear badChannels % in case this is being run as part of a batch loop
 % if there is a remoteFolder2, load CumulativeBadChannels.mat from that.
 % If not, try the current directory.
 if exist('remoteFolder2','var')==1
-    [remoteParentDir,~,~,~]=fileparts(remoteFolder2);
+    [remoteParentDir,~,~,~]=FileParts(remoteFolder2);
     FilesInfo=dir(remoteParentDir);
 else
     disp('in order to exclude bad channels from CumulativeBadChans.mat')
@@ -53,7 +53,7 @@ end
 badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
 % let's forget about bad channels at this point, will zero out from H
 % matrix later.
-% badChannelsFileInd=[]; 
+badChannelsFileInd=[]; 
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
     load(fullfile(remoteParentDir,FilesInfo(badChannelsFileInd).name))

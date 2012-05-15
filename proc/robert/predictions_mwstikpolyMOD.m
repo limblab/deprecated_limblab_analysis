@@ -119,7 +119,7 @@ end
 
 if ~strcmpi(signal,'emg')
 q = find_active_regions_words(bdf.words,bdf.vel(:,1));
-q = interp1(bdf.vel(:,1), q, t);
+q = interp1(bdf.vel(:,1), double(q), t);
 else
     q=ones(size(t))';
 end
