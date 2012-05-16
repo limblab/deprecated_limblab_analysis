@@ -3,7 +3,10 @@
 input = 2;
 %Use 1 if loading files from folder structure, use 2 if using list of
 %filenames and obtaining path from citadel
+
 if input == 1 % Remember to clear featind if building decoders on diff feat
+    % Need proper folder structure if using input = 1
+    
     direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
     %Set directory to desired directory
     cd(direct);
@@ -11,14 +14,16 @@ if input == 1 % Remember to clear featind if building decoders on diff feat
     Days=dir(direct);
     Days(1:2)=[];
     DaysNames={Days.name};
+    
 elseif input == 2
+    % Need to start out with list of file names if using input =2
     DaysNames = [{kinStructOut.name}' {kinStructOut.decoder_age}'];
-    DaysNames = DaysNames(cellfun(@isnan,{kinStructOut.decoder_age})==0);
+    DaysNames = DaysNames(cellfun(@isnan,{kinStructOut.decoder_age})==0,:);
     direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
+    
 end
 
-for i = [1:20 length(DaysNames)-20:length(DaysNames)]
-    %Convert plx to bdf
+for i = [1:5 length(DaysNames)-5:length(DaysNames)]
     if input == 1
         DayName = [direct,'\',DaysNames{i},'\'];
         cd(DayName);
@@ -35,11 +40,8 @@ for i = [1:20 length(DaysNames)-20:length(DaysNames)]
     
     else
         MATfiles = 1;
-        
+        DecoderAge = DaysNames{i,2};
     end
-        
-    %Set file to desired filename(s)
-
     
     %Variables are declared inside and outside loop the same order they are input
     %to fxn: MRSpredictionsfromfp6allDecoderBuild
@@ -51,8 +53,8 @@ for i = [1:20 length(DaysNames)-20:length(DaysNames)]
     signalType = 'vel';
     %numberOfFps
     binsize = .05;
-    folds = 1;
-    numlags = 10;
+    folds = 5;
+    numlags = 20;
     numsides = 1;
     %samprate
     %fp
@@ -74,14 +76,27 @@ for i = [1:20 length(DaysNames)-20:length(DaysNames)]
     for l=1:length(MATfiles)
         
         if input == 1
-        fnam = MATfiles{l}
-        fname=[direct,'\',DaysNames{i},'\',fnam];
-        load(fnam);
+            fnam = MATfiles{l}
+            fname=[direct,'\',DaysNames{i},'\',fnam];
+            load(fnam);
+            if exist('featindBEST','var')
+                featind = featindBEST;
+                nfeat = length(featind);
+                disp('Warning: featureind already exists or was not cleared in loop')
+            end
         
         elseif input == 2
-        fnam =  findBDFonCitadel(DaysNames{i})
-        load(fnam)
-        featind = featindBEST;
+            fnam =  MRSfindBDFonCitadel(DaysNames{i})
+            load(fnam)
+
+            if max(abs(out_struct.vel(:,3))) > 100 || max(abs(out_struct.vel(:,2))) > 100
+                continue
+            end
+            if exist('featindBEST','var')
+                featind = featindBEST;
+                nfeat = length(featind);
+                disp('Warning: featureind already exists or was not cleared in loop')
+            end
         end
             
         %else
@@ -122,19 +137,22 @@ for i = [1:20 length(DaysNames)-20:length(DaysNames)]
             bdf = out_struct;
             clear out_struct
         end
-        %Load previous H matrix for offline predictions if desired
-        %load([dir,'Chewie_Spike_LFP_08012011001tik6 velpred 100 feats lambda1poly0_BEST.mat'])
+        
+        
         if exist('Hbest','var')
-        H = Hbest; %<- Use if inputting H matrix, also don't 'clear' H in loop
-        featind = featindBEST;
-        elseif exist('featindBEST','var')
-        H = []; % <- Use if not inputting H matrix but using the same features to build decoder
-        P = [];
-        else
-        H = [];%<- Use if not inputting H matrix, and make sure featind not input to decoder fxn 
-        featind = [];
-        P = [];
+            H = Hbest; %<- Use if inputting H matrix, also don't 'clear' H in loop
+            featind = featindBEST;
+            
+        elseif exist('featindBEST','var')% <- If not inputting H matrix but using the same features to build decoder
+            H = []; 
+            P = [];
+            
+        else %<- If not inputting H matrix, and make sure featind not input to decoder fxn 
+            H = [];
+            featind = [];
+            P = [];
         end
+        
         %Declare input variables within loop that vary in each loop iteration:
         sig = bdf.vel;
         samplerate= bdf.raw.analog.adfreq(1,1);
@@ -174,17 +192,20 @@ for i = [1:20 length(DaysNames)-20:length(DaysNames)]
          Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P);
      
         %save([sname,'velpred Using LFP Decoder from first HC file.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
-        save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),'poly',num2str(PolynomialOrder),'.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
-        
-        clear H v* y* x* r* best* bdf out_struct...%featind 
+        if exist('DecoderAge','var')
+            save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),'poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize','DecoderAge');
+        else
+            save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),'poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
+        end
+        clear H v* y* x* r* best* bdf out_struct featind... 
               sig numberOfFps samplerate fp fptimes analog_time_base fnam words
               
         close all
 
     end
-    clear H Hbest  sig signalType numberOfFps binsize folds numlags...
+    clear H Hbest sig signalType numberOfFps binsize folds numlags...
         numsides samplerate fp fptimes analog_time_base fnam windowsize nfeat...
-        PolynomialOrder Use_Thresh words emgsamplerate lambda bestc bestf P %<--Clear bestc bestf & P 
+        PolynomialOrder Use_Thresh words emgsamplerate lambda bestc bestf P featindBEST featind %<--Clear bestc bestf & P 
                                                                             %if using decoder from online LFP control 
                                                                             % Clear featindBEST & featind if building decoders 
                                                                             % on different features
