@@ -29,7 +29,7 @@ analog_times=sig(:,1);
 [featMat,sigTrimmed,~]=makefmatc_causal(fp,fptimes,numfp,binsize,samprate,analog_times,wsz,sig);
 % can depend on BDFnameIn to be the name without extension, regardless of
 % what was passed in as nameIn
-save([BDFnameIn,'featMat.mat'],'featMat')
+save([BDFnameIn,'featMat.mat'],'featMat','sigTrimmed')
 
 if nargin > 1
     [~,~,timelags,peakInd_x,peakInd_y,peakVal_x,peakVal_y]= ...

@@ -21,15 +21,16 @@ featind=sub2ind([6,numfp],bestfeats(:,2),bestfeats(:,1));
 FMindexed=featMat;
 
 % from the set of selected features, calculate the cross-correlation with
-% outputs.  
+% outputs.  Set 'coeff' option to produce normalized cross-correlation
+% sequences.
 for k=1:size(FMindexed,2)
     if k==1
-        [XCx(:,k),lags]=xcorr(FMindexed(:,k),sigTrimmed(:,2),numlags);
-        [XCy(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,3),numlags);
+        [XCx(:,k),lags]=xcorr(FMindexed(:,k),sigTrimmed(:,2),numlags,'coeff');
+        [XCy(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,3),numlags,'coeff');
         timelags=-1*length(lags)*0.05/2:0.05:(length(lags)*0.05/2-0.05);
     else
-        [XCx(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,2),numlags);
-        [XCy(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,3),numlags);
+        [XCx(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,2),numlags,'coeff');
+        [XCy(:,k)]=xcorr(FMindexed(:,k),sigTrimmed(:,3),numlags,'coeff');
     end
     [peakVal_x(k),indx]=max(abs(XCx(:,k)));
     peakInd_x(k)=timelags(indx);

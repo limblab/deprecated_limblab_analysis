@@ -1,5 +1,7 @@
 function batch_handControl_decoderPerformance(decoderIn)
 
+% decoderIn is a path, not a matrix of some kind.
+
 originalPath=pwd;
 
 BatchList6targAll={...
@@ -239,6 +241,10 @@ BatchList=HC_postLFPcontrol_6targ;
 
 BatchList=BatchList(datenum(regexp(BatchList,'[0-9]{8}','match','once'),'mmddyyyy') >= ...
     datenum('12272011','mmddyyyy'));
+
+load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Chewie_firstFiles0412decoder.mat')
+
+load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Mini_firstFiles0411decoder')
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 

@@ -14,12 +14,26 @@ function BDFlist=findBDF_withControl(animal,dayIn,controlType)
 % do tiresome calculation(?), figure out controlType.  
 % see code below the return statement
 
-% Going to need to do on GOB because, 1) the featMat-generating code 
-% needs to run on GOB, and 2) the kinStruct's on GOB are the freshest 
-% (due to addToKinStruct.m modifying the local copy of kinStruct.m but 
-% not necessarily the network copy).
-kinStructPath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
-    animal,dayIn,'kinStruct.mat');
+% eventually, citadel will be the location of most recent, most accurate
+% kinStruct.mat file.  Right now, not so much.
+switch lower(machineName)
+    case 'gob'
+        kinStructPath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
+            animal,dayIn,'kinStruct.mat');
+    case 'bumblebeeman'
+        kinStructPath=fullfile('E:\personnel\RobertF\monkey_analyzed', ...
+            animal,dayIn,'kinStruct.mat');        
+    otherwise
+        error('can not determine path to data files on %s',machineName)
+end
+
+if 0 % waiting for the day when we get the kinStruc.mat files straightened up...
+    pathBank={'Chewie_8I2','Mini_7H1'};
+    ff={'Filter files','FilterFiles'};
+    animus=cellfun(@isempty,regexp(pathBank,animal))==0;
+    kinStructPath=fullfile('Z:',pathBank{animus},ff{animus},dayIn,'kinStruct.mat');
+end
+    
 if exist(kinStructPath,'file')==2
     load(kinStructPath)
     BDFlist={kinStruct(cellfun(@isempty,regexp({kinStruct.control},controlType))==0).name};
