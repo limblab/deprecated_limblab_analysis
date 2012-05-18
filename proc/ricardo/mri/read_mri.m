@@ -1,4 +1,4 @@
-function mri_mat = read_mri(datapath,patientName,seriesNo)
+function [mri_mat filenames] = read_mri(datapath,patientName,seriesNo)
 
 % datapath = 'G:\DICOM\09070608\38380000\';
 % patientName = '4c1-tiki';
@@ -46,6 +46,7 @@ for p=1:length(filenames)
 end
 
 [slice sortInd] = sort(sliceCoord);
+filenames = filenames(sortInd);
 
 X = X(:,:,sortInd);
 X = permute(X,[1 3 2]);

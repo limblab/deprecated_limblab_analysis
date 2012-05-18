@@ -23,12 +23,12 @@ midline = [];
 curslice=1;
 measstr=[];
 hfigure = figure('Units','normalized');
-hslider = uicontrol('Style','slider','Units','normalized','Position',[.25 .85 .5 .03],'Parent',hfigure,'Value',2,...
+hslider = uicontrol('Style','slider','Units','normalized','Position',[.25 .95 .5 .03],'Parent',hfigure,'Value',2,...
     'SliderStep',[1/nslices 10/nslices],'Min',1,'Max',nslices);
 hbuttonDone = uicontrol('Style','togglebutton','Parent',hfigure,'String','Done','Units','normalized',...
-    'Position',[0.05 .9 .2 .05],'HandleVisibility','off','Value',0);
+    'Position',[0.02 .95 .2 .05],'HandleVisibility','off','Value',0);
 
-hpanel = uipanel('Parent',hfigure,'Position',[.1 .05 .8 .15],'Units','normalized');
+hpanel = uipanel('Parent',hfigure,'Position',[.1 .01 .8 .1],'Units','normalized');
 
 hbuttons = uibuttongroup('Parent',hpanel,'Position',[0 0 1 1]);
 % Create three radio buttons in the button group.
