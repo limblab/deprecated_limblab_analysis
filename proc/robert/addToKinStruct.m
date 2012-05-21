@@ -39,35 +39,22 @@ while kinAddIndex <= kinStopIndex
         % the brain control files.  They will be skipped, as they've
         % already been done, and the corrected code won't have a chance to
         % correct the values in kinStruct (and in the BDFs themselves).
-        if verLessThan('matlab','7.11')
-            [PathName,~,~,~]=fileparts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
-        else
-            [PathName,~,~]=fileparts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
-        end
+        [PathName,~,~]=FileParts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
     else
-        if verLessThan('matlab','7.11')
-            [PathName,~,~,~]=fileparts(findBDFonGOB(kinStructIn(kinAddIndex).name));
-        else
-            [PathName,~,~]=fileparts(findBDFonGOB(kinStructIn(kinAddIndex).name));
-        end
+        [PathName,~,~]=FileParts(findBDFonBumbleBeeMan(kinStructIn(kinAddIndex).name));
     end
     batch_get_cursor_kinematics
-    % if we're re-running batch_get_cursor_kinematics, then the only time
-    % needed should be to load up the file.  It won't actually re-run
-    % get_cursor_kinematics if we hand it the network version of the file,
-    % so all we need to do after it runs is make sure the updated version
-    % of kinStruct makes it out.
     [~,bigK_ind,littleK_ind]=intersect({kinStructIn.name},{kinStruct.name});
     kinStructOut(bigK_ind)=kinStruct(littleK_ind);
-    kinAddIndex=kinAddIndex+length(bigK_ind);
-    
     % put a copy of kinStruct on citadel.
-    if exist(regexprep(PathName,'bdf|BDFs','FilterFiles'),'dir')==7
-        save(fullfile(regexprep(PathName,'bdf|BDFs','FilterFiles'),'kinStruct.mat'),'kinStruct')
+    [remoteFolder2,~,~]=FileParts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
+    if exist(regexprep(remoteFolder2,'bdf|BDFs','FilterFiles'),'dir')==7
+        save(fullfile(regexprep(remoteFolder2,'bdf|BDFs','FilterFiles'),'kinStruct.mat'),'kinStruct')
     else
-        save(fullfile(regexprep(PathName,'bdf|BDFs','Filter files'),'kinStruct.mat'),'kinStruct')
+        save(fullfile(regexprep(remoteFolder2,'bdf|BDFs','Filter files'),'kinStruct.mat'),'kinStruct')
     end
-
+    
+    kinAddIndex=kinAddIndex+length(bigK_ind);
     % clean up
     clear kinStruct FileNames Files MATfiles PathName batchIndex 
     cd(addToKinStruct_startFolder)

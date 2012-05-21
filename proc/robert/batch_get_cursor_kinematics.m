@@ -31,7 +31,7 @@ end
 
 kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
     'control','','num_targets',[],'duration',0,'speedProfile',[],'pathReversals',[],...
-    'LFP_vaf',[],'Spike_vaf',[],'TrialTS',[]);
+    'LFP_vaf',[],'Spike_vaf',[],'trialTS',[]);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -170,7 +170,7 @@ end
 
 
 fprintf(1,['%s no longer saves a copy of kinStruct.mat.\nIt ',...
-    'is now the responsibility of the calling script/function'],mfilename)
+    'is now the responsibility of the calling script/function.\n'],mfilename)
 return
 
 save(fullfile(PathName,'kinStruct.mat'),'kinStruct')

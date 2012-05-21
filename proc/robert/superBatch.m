@@ -73,14 +73,14 @@ try
         fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
     end
     
-    oldPathName=PathName;
-    PathName=remoteFolder;
-    % get cursor kinematics for brain control files
-    batch_get_cursor_kinematics % saves a copy on the local folder no matter what.
-    PathName=oldPathName; clear oldPathName
-    if exist('kinStruct.mat','file')==2
-        save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
-    end
+    % get cursor kinematics for brain control files.  Was previously
+    % attempting to be clever with this, but was forgetting the fact that in
+    % superBatch, the network copies of the files are going to be
+    % overwritten every time, because that's what superBatch does.  So, by
+    % the time we get to this point we'll need to re-run
+    % batch_get_cursor_kinematics using scratch files anyway.
+    batch_get_cursor_kinematics
+    save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
     
     diary off
     copyfile(fullfile(PathName,'decoderOutput.txt'),remoteFolder2)

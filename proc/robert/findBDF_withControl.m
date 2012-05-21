@@ -27,7 +27,7 @@ switch lower(machineName)
         error('can not determine path to data files on %s',machineName)
 end
 
-if 0 % waiting for the day when we get the kinStruc.mat files straightened up...
+if 0 % waiting for the day when we get the kinStruct.mat files straightened up...
     pathBank={'Chewie_8I2','Mini_7H1'};
     ff={'Filter files','FilterFiles'};
     animus=cellfun(@isempty,regexp(pathBank,animal))==0;
