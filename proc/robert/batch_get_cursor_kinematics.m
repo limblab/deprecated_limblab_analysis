@@ -31,7 +31,7 @@ end
 
 kinStruct=struct('name','','decoder_age',[],'PL',[],'TT',[],'hitRate',[],'hitRate2',[],...
     'control','','num_targets',[],'duration',0,'speedProfile',[],'pathReversals',[],...
-    'LFP_vaf',[],'Spike_vaf',[]);
+    'LFP_vaf',[],'Spike_vaf',[],'TrialTS',[]);
 %%
 for batchIndex=1:length(MATfiles)
     fprintf(1,'getting cursor kinematics for %s.\n',MATfiles{batchIndex})
@@ -125,7 +125,12 @@ for batchIndex=1:length(MATfiles)
                     kinStruct(batchIndex).pathReversals,kinStruct(batchIndex).trialTS]= ...
                     kinematicsHandControl(out_struct,opts);
                 % if we're running inside superBatch.m, then VAF_all should
-                % exist.  If not, create it.
+                % exist.  If not, create it.  This will override any stored
+                % .LFP_vaf or .Spike_vaf values that might have been
+                % created at superBatch time, when
+                % batch_get_cursor_kinematics is re-run.  That's why we
+                % need an offline way, such as seekVAFinDecoderLog, but
+                % something that isn't so ridiculously time-consuming.
                 if exist('VAF_all','var')~=1
                     % VAF_all=seekVAFinDecoderLog(MATfiles{batchIndex});
                     disp('skipping VAF seeking operation because it takes too long')
@@ -161,6 +166,12 @@ for batchIndex=1:length(MATfiles)
     clear out_struct decoder_age beginFirstTrial endLastTrial numTargets opts
     clear rewarded_trials start_trial trial_index
 end
+
+
+
+fprintf(1,['%s no longer saves a copy of kinStruct.mat.\nIt ',...
+    'is now the responsibility of the calling script/function'],mfilename)
+return
 
 save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
 % make sure to save a copy in FilterFiles, if we're operating on the
