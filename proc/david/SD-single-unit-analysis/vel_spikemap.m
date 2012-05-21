@@ -34,19 +34,19 @@ chans = binnedData.spikeguide;
 vel = binnedData.velocbin;
 ts  = binnedData.timeframe;
 %-animation parameters
-mov_start = 0.5; %(seconds) time before kinematic timepoint at which the movie will start
-mov_end   = 0.3; %(seconds) time after kinematic timepoint at which movie will end
+mov_start = 0.4; %(seconds) time before kinematic timepoint at which the movie will start
+mov_end   = 0;%.1; %(seconds) time after kinematic timepoint at which movie will end
 bin_size  = ts(2)-ts(1); %(seconds) length of one bin
 %-convert from seconds to bins
 bin_start = round(mov_start/bin_size)+1;
 bin_end   = round(mov_end/bin_size);
-num_bins  = bin_start + bin_end; %number of bins to run through
+num_bins  = bin_start + bin_end %number of bins to run through
 %-velocity binning parameters
 vbin_size = 4; %(cm/s) velocity bin size
 vmax = 40; %(cm/s) limit of range we'll bother to look at
 vx = vel(:,1);
 vy = vel(:,2);
-%% Planned function structure
+%% function structure
 % *Bin velocity
 % *Create cell array to hold array maps
 %   -dim 1: unit
@@ -104,11 +104,18 @@ yidcs  = zeros(size(vy));
 zz_vel = zeros(size(vx)); % assumes vx and vy are same size
 disp('Calculating mean firing rates based on velocity for...');
 vel_heat_maps = cell(num_units, num_bins);
-verbose = 1;
 E = 1;
+progbar = zeros(2,num_units);
+figure
+axis([ 0 num_units 0 1]);
+verbose = 0;%1;
 tic
 for unit = 1:num_units
     
+    progbar(:,unit) = progbar(:,unit)+1;
+    surf(progbar);
+    view(0,90);
+    pause(0.01);
     if verbose
         disp(strcat([sprintf('...unit %i of %i: ',unit,num_units) chans(unit,:)]));
     end
@@ -146,8 +153,8 @@ for unit = 1:num_units
         end
         vel_heat_maps{unit,i} = heat_map;
     end
-    toc
 end
+toc
 
 %% Internal functions
 
