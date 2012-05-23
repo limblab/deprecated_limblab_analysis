@@ -5,7 +5,7 @@ function [pathToDecoderMAT,fileChosenPath]=decoderPathFromBDF(inputItem)
 %              INPUT:
 %                   inputItem - a path to the BDF-formatted
 %                               .mat file, or a BDF-formatted
-%                               struct from the workspace.  Sould be 
+%                               struct from the workspace.  Could be 
 %                               a hand-control file.
 %              OUTPUT:
 %                   pathToDecoderMAT - the path to the decoder used for

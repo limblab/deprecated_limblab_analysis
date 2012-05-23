@@ -1,3 +1,22 @@
+% this is the base decoder date to use.  Will go into regexp, so is
+% actually a regular expression.  In other words, for decoder1 use
+%
+% BASE_DECODER_DATE='(08242011)|(09012011)';
+%
+% for decoder2 (NON causal) alone, use
+%
+BASE_DECODER_DATE='041(1|2)2012(?!.*causal)';
+%
+% for decoder2 (causal) alone, use
+%
+% BASE_DECODER_DATE='041(1|2)2012(?=.*causal)';
+%
+% to accept either, just remove the lookaround operator from the regular
+% expression.
+
+originalDir='E:\personnel\RobertF\monkey_analyzed\LFPcontrol\Xcorr';
+cd(originalDir)
+
 days={...
     '09-02-2011', ...
     '09-06-2011', ...
@@ -49,9 +68,6 @@ Chewie_decoder1days={...
     '04-02-2012', ...
     };
 
-% with decoder2, it becomes more complicated, since there can be more than
-% 1 type of LFP control in a given day.  Therefore, findBDF_withControl is
-% not going to be good enough in its current form.
 Chewie_decoder2days={...
     '04-13-2012', ...
     '04-16-2012', ...
@@ -74,18 +90,42 @@ Chewie_decoder2days={...
     '05-11-2012', ...       % mixed with causal decoder2
     };
 
+Chewie_days=Chewie_decoder2days;
+
 peakIndAll_x_Chewie=[]; peakIndAll_y_Chewie=[];
 peakValAll_x_Chewie=[]; peakValAll_y_Chewie=[];
 BDFlist_all=[];
-originalDir=pwd;
 if isempty(regexp(pwd,'featMats','once')), mkdir('featMats'), end
 for n=1:length(Chewie_days)
     % take a day, find the kinStruct, and identifies all the
     % files of the given control type that were included.
     BDFlist=findBDF_withControl('Chewie',Chewie_days{n},'LFP');
+    % beginning with the use of decoder2, it is possible to have 2
+    % kinds of (e.g.) LFP control on a given day.  with tools at
+    % hand, ferret out the actual decoder used for each file.  If
+    % it matches a pattern, keep it in the list.
+    for k=1:length(BDFlist)
+        fprintf(1,'finding path to %s...\n',BDFlist{k})
+        pathToBDF=findBDFonCitadel(BDFlist{k});
+        pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
+        fprintf(1,'finding path to decoder...\n')
+        pathToDecoder=decoderPathFromBDF(pathToBDF);
+        pathToDecoder(regexp(pathToDecoder,sprintf('\n')))='';
+        [~,decoderName,~]=FileParts(pathToDecoder);
+        fprintf(1,'decoder file was %s.\n',decoderName)
+        % match against pattern.
+        if isempty(regexp(decoderName,BASE_DECODER_DATE,'once'))
+            fprintf(1,'eliminating %s...\n',BDFlist{k})
+            BDFlist{k}='';
+        else
+            fprintf(1,'%s accepted.\n',BDFlist{k})
+        end
+    end
+    BDFlist(cellfun(@isempty,BDFlist))=[];
+            
     BDFlist_all=[BDFlist_all; BDFlist'];
     for k=1:length(BDFlist)
-        if isempty(regexp(pwd,'featMats','once')), cd('featMats'), end
+%         if isempty(regexp(pwd,'featMats','once')), cd('featMats'), end
 %         if ~exist(BDFlist{k},'file')~=2
             run_makefmatc_causal(BDFlist{k},500)
             peakIndAll_x_Chewie=[peakIndAll_x_Chewie; evalin('base','peakInd_x')];
@@ -104,7 +144,7 @@ end
 
 % save('C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie','peak*')
 cd(originalDir)
-return
+
 peakIndAll_x_Mini=[]; peakIndAll_y_Mini=[];
 peakValAll_x_Mini=[]; peakValAll_y_Mini=[];
 % days for Mini
@@ -120,21 +160,70 @@ Mini_days={...
     '03-30-2012', ...
     '04-02-2012', ...
     };
-% for n=1:length(Mini_days)
-%     % take a day, find the kinStruct, and identifies all the
-%     % files of the given control type that were included.
-%     BDFlist=findBDF_withControl('Mini',Mini_days{n},'LFP');
-%     BDFlist_all=[BDFlist_all; BDFlist'];
-%     for k=1:length(BDFlist)
-%         if isempty(regexp(pwd,'featMats','once')), cd('featMats'), end
-%         run_makefmatc_causal(BDFlist{k},500)
-%         peakIndAll_x_Mini=[peakIndAll_x_Mini; evalin('base','peakInd_x')];
-%         peakIndAll_y_Mini=[peakIndAll_y_Mini; evalin('base','peakInd_y')];
-%         peakValAll_x_Mini=[peakValAll_x_Mini; evalin('base','peakVal_x')];
-%         peakValAll_y_Mini=[peakValAll_y_Mini; evalin('base','peakVal_y')];
-%     end
-% end
-% cd(originalDir)
+
+Mini_decoder2days={...
+    '04-13-2012', ...
+    '04-16-2012', ...
+    '04-17-2012', ...
+    '04-18-2012', ...
+    '04-19-2012', ...       % mixed with decoder1
+    '04-20-2012', ...       % mixed with decoder1
+    '04-23-2012', ...
+    '04-24-2012', ...       % mixed with decoder1
+    '04-25-2012', ...       % mixed with decoder1
+    '04-26-2012', ...       % mixed with decoder1
+    '04-27-2012', ...       % mixed with decoder1
+    '04-30-2012', ...       % mixed with decoder1
+    '05-01-2012', ...       % mixed with decoder1
+    '05-02-2012', ...       % mixed with decoder1
+    '05-03-2012', ...       % mixed with decoder1
+    '05-04-2012', ...       % mixed with decoder2 causal
+    '05-11-2012', ...       % mixed with decoder2 causal
+    '05-23-2012', ...       % mixed with decoder3
+%     '05-08-2012', ...       % mixed with decoder2 causal
+    };
+
+Mini_days=Mini_decoder2days;
+
+for n=1:length(Mini_days)
+    % take a day, find the kinStruct, and identifies all the
+    % files of the given control type that were included.
+    BDFlist=findBDF_withControl('Mini',Mini_days{n},'LFP');
+    
+    % beginning with the use of decoder2, it is possible to have 2
+    % kinds of (e.g.) LFP control on a given day.  with tools at
+    % hand, ferret out the actual decoder used for each file.  If
+    % it matches a pattern, keep it in the list.
+    for k=1:length(BDFlist)
+        fprintf(1,'finding path to %s...\n',BDFlist{k})
+        pathToBDF=findBDFonCitadel(BDFlist{k});
+        pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
+        fprintf(1,'finding path to decoder...\n')
+        pathToDecoder=decoderPathFromBDF(pathToBDF);
+        pathToDecoder(regexp(pathToDecoder,sprintf('\n')))='';
+        [~,decoderName,~]=FileParts(pathToDecoder);
+        fprintf(1,'decoder file was %s.\n',decoderName)
+        % match against pattern.
+        if isempty(regexp(decoderName,BASE_DECODER_DATE,'once'))
+            fprintf(1,'eliminating %s...\n',BDFlist{k})
+            BDFlist{k}='';
+        else
+            fprintf(1,'%s accepted.\n',BDFlist{k})
+        end
+    end
+    BDFlist(cellfun(@isempty,BDFlist))=[];
+    
+    BDFlist_all=[BDFlist_all; BDFlist'];
+    for k=1:length(BDFlist)
+        if isempty(regexp(pwd,'featMats','once')), cd('featMats'), end
+        run_makefmatc_causal(BDFlist{k},500)
+        peakIndAll_x_Mini=[peakIndAll_x_Mini; evalin('base','peakInd_x')];
+        peakIndAll_y_Mini=[peakIndAll_y_Mini; evalin('base','peakInd_y')];
+        peakValAll_x_Mini=[peakValAll_x_Mini; evalin('base','peakVal_x')];
+        peakValAll_y_Mini=[peakValAll_y_Mini; evalin('base','peakVal_y')];
+    end
+end
+cd(originalDir)
 
 % save('Y:\user_folders\Robert\data\monkey\outputs\LFPcontrol\Xcorr stuff\XCcorr_batch_peakVal_All.mat', ...
 %     'peakIndAll_x_Chewie','peakIndAll_y_Chewie','peakValAll_x_Chewie', ...
