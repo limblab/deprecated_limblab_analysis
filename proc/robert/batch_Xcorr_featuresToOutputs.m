@@ -48,6 +48,12 @@ Chewie_days={...
     '03-30-2012', ...
     };
 
+Chewie_days={...
+    '03-28-2012', ...
+    '03-30-2012', ...
+    '04-02-2012', ...
+    };
+
 peakIndAll_x_Chewie=[]; peakIndAll_y_Chewie=[];
 peakValAll_x_Chewie=[]; peakValAll_y_Chewie=[];
 BDFlist_all=[];
@@ -78,7 +84,7 @@ end
 
 % save('C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie','peak*')
 cd(originalDir)
-
+return
 peakIndAll_x_Mini=[]; peakIndAll_y_Mini=[];
 peakValAll_x_Mini=[]; peakValAll_y_Mini=[];
 % days for Mini
