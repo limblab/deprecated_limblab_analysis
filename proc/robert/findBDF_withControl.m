@@ -1,6 +1,6 @@
 function BDFlist=findBDF_withControl(animal,dayIn,controlType)
 
-% syntax BDFlist=findBDF_withControl(dayIn,controlType)
+% syntax BDFlist=findBDF_withControl(animal,dayIn,controlType)
 %
 % takes a day, finds the kinStruct, and identifies all the
 % files of the given control type that were included.
