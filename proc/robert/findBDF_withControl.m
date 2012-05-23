@@ -14,25 +14,26 @@ function BDFlist=findBDF_withControl(animal,dayIn,controlType)
 % do tiresome calculation(?), figure out controlType.  
 % see code below the return statement
 
-% eventually, citadel will be the location of most recent, most accurate
-% kinStruct.mat file.  Right now, not so much.
-switch lower(machineName)
-    case 'gob'
-        kinStructPath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
-            animal,dayIn,'kinStruct.mat');
-    case 'bumblebeeman'
-        kinStructPath=fullfile('E:\personnel\RobertF\monkey_analyzed', ...
-            animal,dayIn,'kinStruct.mat');        
-    otherwise
-        error('can not determine path to data files on %s',machineName)
+% switching to citadel-based...
+if 0
+    % eventually, citadel will be the location of most recent, most accurate
+    % kinStruct.mat file.  Right now, not so much.
+    switch lower(machineName)
+        case 'gob'
+            kinStructPath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
+                animal,dayIn,'kinStruct.mat');
+        case 'bumblebeeman'
+            kinStructPath=fullfile('E:\personnel\RobertF\monkey_analyzed', ...
+                animal,dayIn,'kinStruct.mat');
+        otherwise
+            error('can not determine path to data files on %s',machineName)
+    end
 end
 
-if 0 % waiting for the day when we get the kinStruct.mat files straightened up...
-    pathBank={'Chewie_8I2','Mini_7H1'};
-    ff={'Filter files','FilterFiles'};
-    animus=cellfun(@isempty,regexp(pathBank,animal))==0;
-    kinStructPath=fullfile('Z:',pathBank{animus},ff{animus},dayIn,'kinStruct.mat');
-end
+pathBank={'Chewie_8I2','Mini_7H1'};
+ff={'Filter files','FilterFiles'};
+animus=cellfun(@isempty,regexp(pathBank,animal))==0;
+kinStructPath=fullfile('Z:',pathBank{animus},ff{animus},dayIn,'kinStruct.mat');
     
 if exist(kinStructPath,'file')==2
     load(kinStructPath)

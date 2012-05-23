@@ -32,26 +32,31 @@ while kinAddIndex <= kinStopIndex
     % a .control field, on the other hand, requires looking at decoder 
     % files and decoder Types for the brain control files, which basically 
     % means re-running get_cursor_kinematics.  hitRate2 also required a re-run.
-    if ismac
-        % this is mostly for testing/troubleshooting the code, as running
-        % batch_get_cursor_kinematics from the network files is not
-        % currently supported when we need get_cursor_kinematics to modify
-        % the brain control files.  They will be skipped, as they've
-        % already been done, and the corrected code won't have a chance to
-        % correct the values in kinStruct (and in the BDFs themselves).
-        [PathName,~,~]=FileParts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
-    else
-        [PathName,~,~]=FileParts(findBDFonBumbleBeeMan(kinStructIn(kinAddIndex).name));
-    end
-    batch_get_cursor_kinematics
-    [~,bigK_ind,littleK_ind]=intersect({kinStructIn.name},{kinStruct.name});
-    kinStructOut(bigK_ind)=kinStruct(littleK_ind);
-    % put a copy of kinStruct on citadel.
-    [remoteFolder2,~,~]=FileParts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
-    if exist(regexprep(remoteFolder2,'bdf|BDFs','FilterFiles'),'dir')==7
-        save(fullfile(regexprep(remoteFolder2,'bdf|BDFs','FilterFiles'),'kinStruct.mat'),'kinStruct')
-    else
-        save(fullfile(regexprep(remoteFolder2,'bdf|BDFs','Filter files'),'kinStruct.mat'),'kinStruct')
+    try
+        if ismac
+            % this is mostly for testing/troubleshooting the code, as running
+            % batch_get_cursor_kinematics from the network files is not
+            % currently supported when we need get_cursor_kinematics to modify
+            % the brain control files.  They will be skipped, as they've
+            % already been done, and the corrected code won't have a chance to
+            % correct the values in kinStruct (and in the BDFs themselves).
+            [PathName,~,~]=FileParts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
+        else
+            [PathName,~,~]=FileParts(findBDFonBumbleBeeMan(kinStructIn(kinAddIndex).name,1));
+        end
+        batch_get_cursor_kinematics
+        [~,bigK_ind,littleK_ind]=intersect({kinStructIn.name},{kinStruct.name});
+        kinStructOut(bigK_ind)=kinStruct(littleK_ind);
+        % put a copy of kinStruct on citadel.
+        [remoteFolder2,~,~]=FileParts(findBDFonCitadel(kinStructIn(kinAddIndex).name));
+        if exist(regexprep(remoteFolder2,'bdf|BDFs','FilterFiles'),'dir')==7
+            save(fullfile(regexprep(remoteFolder2,'bdf|BDFs','FilterFiles'),'kinStruct.mat'),'kinStruct')
+        else
+            save(fullfile(regexprep(remoteFolder2,'bdf|BDFs','Filter files'),'kinStruct.mat'),'kinStruct')
+        end
+    catch ME
+        kinAddIndex=kinAddIndex+1;
+        continue
     end
     
     kinAddIndex=kinAddIndex+length(bigK_ind);

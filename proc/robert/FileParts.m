@@ -1,6 +1,6 @@
 function varargout=FileParts(nameIn)
 
-% syntax [pathstr,namestr,ext,[version?]]=FileParths(nameIn)
+% syntax [pathstr,namestr,ext,[version?]]=FileParts(nameIn)
 %
 % the entire reason this exists is to make up for a retarded shortcoming of
 % MATLAB, where they changed the number of outputs supported by
