@@ -1,4 +1,4 @@
-function [vel_heat_maps,chans] = vel_spikemap(binnedData)
+function [vel_heat_maps,chans,empties,vels] = vel_spikemap(binnedData)
 % Creates a series of heat maps, each containing firing rates for a given
 % unit spanning a specified bin (default: 50ms), showing firing rates for a
 % range of binned x/y velocities.
@@ -40,12 +40,14 @@ bin_size  = ts(2)-ts(1); %(seconds) length of one bin
 %-convert from seconds to bins
 bin_start = round(mov_start/bin_size)+1;
 bin_end   = round(mov_end/bin_size);
-num_bins  = bin_start + bin_end %number of bins to run through
+num_bins  = bin_start + bin_end; %number of bins to run through
+sprintf('Number of time bins: %d',num_bins)
 %-velocity binning parameters
 vbin_size = 4; %(cm/s) velocity bin size
-vmax = 40; %(cm/s) limit of range we'll bother to look at
+vmax = 20; %(cm/s) limit of range we'll bother to look at
 vx = vel(:,1);
 vy = vel(:,2);
+vels = [vx vy];
 %% function structure
 % *Bin velocity
 % *Create cell array to hold array maps
@@ -102,18 +104,20 @@ num_vbins = floor( (2*vmax + 1)/vbin_size );
 xidcs  = zeros(size(vx)); % arrays to store indices of relevant velocities
 yidcs  = zeros(size(vy));
 zz_vel = zeros(size(vx)); % assumes vx and vy are same size
-disp('Calculating mean firing rates based on velocity for...');
+disp('Calculating mean firing rates based on velocity...');
 vel_heat_maps = cell(num_units, num_bins);
-E = 1;
 progbar = zeros(2,num_units);
-figure
+h = figure;
 axis([ 0 num_units 0 1]);
 verbose = 0;%1;
 tic
+empt = ones(num_vbins);
 for unit = 1:num_units
     
     progbar(:,unit) = progbar(:,unit)+1;
-    surf(progbar);
+    subplot(3,1,2)
+    title('Progress...')
+    surf(progbar)
     view(0,90);
     pause(0.01);
     if verbose
@@ -144,9 +148,10 @@ for unit = 1:num_units
                     heat_map(xx,yy) = mean(spikes(pre_kin_idcs));
                 else % so we don't return NaN if no spikes are found
                     heat_map(xx,yy) = 0;
-                    if E
-                        disp(sprintf('idcs is empty. vx = %i, vy = %i.',X,Y));
-                        E = 0;
+                    if unit==1 %E && unit==1
+                        empt(xx,yy) = 0;
+                        %disp(sprintf('idcs is empty. vx = %i, vy = %i.',X,Y));
+                        %E = 0;
                     end
                 end                 
             end
@@ -155,6 +160,14 @@ for unit = 1:num_units
     end
 end
 toc
+close(h)
+
+ex = size(empt,2);
+ey = size(empt,1);
+empties = zeros(ex,ey,3);
+empties(:,:,1) = empt;
+empties(:,:,2) = empt;
+empties(:,:,3) = empt;
 
 %% Internal functions
 
