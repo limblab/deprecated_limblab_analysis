@@ -115,10 +115,12 @@ for n=1:length(Chewie_days)
         fprintf(1,'decoder file was %s.\n',decoderName)
         % match against pattern.
         if isempty(regexp(decoderName,BASE_DECODER_DATE,'once'))
-            fprintf(1,'eliminating %s...\n',BDFlist{k})
+            fprintf(1,'%s ',BDFlist{k})
+            cprintf('Errors','eliminated.\n')
             BDFlist{k}='';
         else
-            fprintf(1,'%s accepted.\n',BDFlist{k})
+            fprintf(1,'%s ',BDFlist{k})
+            cprintf('Comments','accepted.\n')
         end
     end
     BDFlist(cellfun(@isempty,BDFlist))=[];
@@ -205,10 +207,12 @@ for n=1:length(Mini_days)
         fprintf(1,'decoder file was %s.\n',decoderName)
         % match against pattern.
         if isempty(regexp(decoderName,BASE_DECODER_DATE,'once'))
-            fprintf(1,'eliminating %s...\n',BDFlist{k})
+            fprintf(1,'%s ',BDFlist{k})
+            cprintf('Errors','eliminated.\n')
             BDFlist{k}='';
         else
-            fprintf(1,'%s accepted.\n',BDFlist{k})
+            fprintf(1,'%s ',BDFlist{k})
+            cprintf('Comments','accepted.\n')
         end
     end
     BDFlist(cellfun(@isempty,BDFlist))=[];
