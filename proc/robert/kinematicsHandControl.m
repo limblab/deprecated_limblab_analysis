@@ -122,6 +122,9 @@ disp('Normalizing path length, time-to-target')
 disp('Requiring >2 time points to be included in the reach')
 % see below
 
+% assignin('caller','start_reaches',start_reaches)
+% assignin('caller','end_reaches',end_reaches)
+
 PL=zeros(size(start_reaches));
 TTT=zeros(size(start_reaches));
 speedProfile=cell(size(start_reaches));

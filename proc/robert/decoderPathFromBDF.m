@@ -28,6 +28,13 @@ function [pathToDecoderMAT,fileChosenPath]=decoderPathFromBDF(inputItem)
 % file that is input has a corresponding BR log, that will be used.  Only
 % if the file that is input does not have a BR log will it go looking for
 % nearby files.
+%
+% modified 5/26/2012 - was not setting the strFlag properly.  TODO: use a
+% function that checks an argument to see if it is a bdf struct or rather a
+% path (full or just a name) to a bdf-struct.  Regardless of which, it
+% returns the bdf-struct.  If a partial path is given, then that will guide
+% the choice of whether a local copy of bdf-struct or a remote copy is the
+% one loaded.  
 
 startingPath=pwd;
 % VAFstruct=struct('name','','decoder_age',[],'vaf',[]);
@@ -54,10 +61,11 @@ else
             else
                 varName='bdf';
             end     % if we make it to this point we know the variable bdf exists.
+            strFlag=0;
         else % was a partial path.  Make the same assumptions as below.
             pathToBDF=findBDFonCitadel(pathToBDF,1);
+            strFlag=1;
         end
-        strFlag=1;
     else                % bdf has been passed in.
         bdf=inputItem;
         clear inputItem

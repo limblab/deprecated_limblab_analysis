@@ -185,6 +185,9 @@ if isfield(bdf.raw, 'analog') && ~isempty(bdf.raw.analog.data)
     adfreq = max(bdf.raw.analog.adfreq);
     
     start_time = floor(1.0 + bdf.raw.analog.ts{1}(1));
+    % By taking the min here, we should be accounting for the situation
+    % where Reach stops writing its file, well before SortClient, either
+    % because it was stopped by the user or because it crashed.
     last_analog_time = min(cellfun(@(x) x(1),bdf.raw.analog.ts) + ...
         cellfun('length',bdf.raw.analog.data) / bdf.raw.analog.adfreq);
     last_BR_time=BRarray(end,7);
@@ -210,6 +213,10 @@ end
 
 % interpolate BRarray to 50msec bins before substituting in for bdf.pos.
 % newTvector=0:0.05:0.05*(size(BRarray,1)-1);
+% if Reach crashed at the end, e.g. because the linux box ran out of
+% memory, the gaps between successive time points will be wider than 50
+% msec.  Does this have an effect on predicted velocities?  If so, we need
+% to account for that effect when looking at the velocty values.
 newTvector=start_time:0.05:stop_time;
 
 newXpos=interp1(BRarray(:,7),BRarray(:,3),newTvector);
