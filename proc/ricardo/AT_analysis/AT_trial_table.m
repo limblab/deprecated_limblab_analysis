@@ -36,7 +36,7 @@ fail_code = hex2dec('22');
 incomplete_code = hex2dec('23');
 
 ct_on_code = hex2dec('30');
-ct_hold_code = hex2dec('40');
+ct_hold_code = hex2dec('A0');
 ot_on_code = hex2dec('80');
 
 bump_code = hex2dec('50');
@@ -64,7 +64,7 @@ for iTrial = 1:num_trials
                 column = tc.t_ct_on;                
             case ct_hold_code
                 column = tc.t_ct_hold_on;
-            case bump_code+1
+            case bump_code
                 column = tc.t_stimuli_onset;
             case ot_on_code
                 column = tc.t_ot_on;
@@ -91,8 +91,8 @@ for iTrial = 1:num_trials
     trial_table(iTrial,tc.moving_dots_speed) = bytes2float(bdf.databursts{iTrial,2}(47:50));
     trial_table(iTrial,tc.moving_dots_num_dots) = bytes2float(bdf.databursts{iTrial,2}(51:54));
     trial_table(iTrial,tc.moving_dots_movement_type) = bytes2float(bdf.databursts{iTrial,2}(59:62));
-    trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(65:68));
-    trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(69:72));
+    trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(71:74));
+    trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(75:78));
 
 end
 

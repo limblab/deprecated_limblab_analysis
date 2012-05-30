@@ -1,9 +1,10 @@
-Newsome_mode = 0;
+Newsome_mode = 1;
 coherence = 80; % percent of coherent dots
-direction = 2*pi*rand;
-speed = 1; % display units/s
+iDir = iDir+1;
+direction = iDir*pi/8;
+speed = 1.5; % display units/s
 num_dots = 10;
-dot_size = 20;
+dot_size = 30;
 
 frame_rate = 20;
 duration = 5; % seconds
@@ -29,10 +30,16 @@ for iFrame=2:num_frames;
         end
     else
         rand_dir = 2*pi*rand(num_dots,1);
-        displacement_x = 0.01*coherence*cos(direction) + (1-0.01*coherence)*cos(rand_dir);
-        displacement_y = 0.01*coherence*sin(direction) + (1-0.01*coherence)*sin(rand_dir);
+%         displacement_x = 0.01*coherence*cos(direction) + (1-0.01*coherence)*cos(rand_dir);
+%         displacement_y = 0.01*coherence*sin(direction) + (1-0.01*coherence)*sin(rand_dir);
+%         displacement_x = (speed/frame_rate)*displacement_x./(sqrt(displacement_x.^2+displacement_y.^2));
+%         displacement_y = (speed/frame_rate)*displacement_y./(sqrt(displacement_x.^2+displacement_y.^2));
+        
+        displacement_x = sqrt(0.01*coherence)*cos(direction) + sqrt(1-0.01*coherence)*cos(rand_dir);
+        displacement_y = sqrt(0.01*coherence)*sin(direction) + sqrt(1-0.01*coherence)*sin(rand_dir);
         displacement_x = (speed/frame_rate)*displacement_x./(sqrt(displacement_x.^2+displacement_y.^2));
         displacement_y = (speed/frame_rate)*displacement_y./(sqrt(displacement_x.^2+displacement_y.^2));
+        
         dotx(:,iFrame) = dotx(:,iFrame-1)+displacement_x;
         doty(:,iFrame) = doty(:,iFrame-1)+displacement_y;
         
