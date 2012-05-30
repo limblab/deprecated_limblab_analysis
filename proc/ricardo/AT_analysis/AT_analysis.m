@@ -4,9 +4,9 @@ cd('..\..\..\')
 load_paths;
 cd(curr_dir)
 
-filename = 'Bump_test_003';
+filename = 'AT_CPP_test_001';
 fileExt = '.nev';
-filepath = 'Z:\TestData\Bump magnitudes\';
+filepath = 'Z:\TestData\Attention cpp\';
 
 temp = dir([filepath filename '_bdf.mat']);
 if isempty(temp)

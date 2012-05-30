@@ -4,24 +4,27 @@ load(filename)
 tc.trial_type = 1;
 tc.t_trial_start = 2;
 tc.t_ct_on = 3;
-tc.t_visual_1_onset = 4;
-tc.t_bump_1_onset = 5;
-tc.t_visual_2_onset = 6;
-tc.t_bump_2_onset = 7;
-tc.t_ot_on = 8;
-tc.t_trial_end = 9;
-tc.result = 10;
-tc.bump_direction = 11;
-tc.bump_1_magnitude = 12;
-tc.bump_2_magnitude = 13;
-tc.visual_1_diameter = 14;
-tc.visual_2_diameter = 15;
-tc.training = 16;
-tc.catch = 17;
-tc.staircase_id = 18;
-tc.bias_force_mag = 19;
-tc.bias_force_dir = 20;
-tc.bump_duration = 21;
+tc.t_stimuli_onset = 4;
+tc.t_ct_hold_on = 5;
+tc.t_ot_on = 6;
+tc.t_trial_end = 7;
+tc.result = 8;
+tc.bump_direction = 9;
+tc.bump_magnitude = 10;
+tc.moving_dots_target_size = 11;
+tc.moving_dots_coherence = 12;
+tc.moving_dots_direction = 13;
+tc.moving_dots_speed = 14;
+tc.moving_dots_num_dots = 15;
+tc.moving_dots_dot_radius = 16;
+tc.moving_dots_movement_type = 17;
+tc.training = 18;
+tc.catch = 19;
+tc.staircase_id = 20;
+tc.bias_force_mag = 21;
+tc.bias_force_dir = 22;
+tc.bump_duration = 23;
+tc.main_direction = 24;
 
 databurst_version = bdf.databursts{1,2}(2);
 
@@ -33,8 +36,8 @@ fail_code = hex2dec('22');
 incomplete_code = hex2dec('23');
 
 ct_on_code = hex2dec('30');
-ct_hold_code = hex2dec('A0');
-ot_on_code = hex2dec('40');
+ct_hold_code = hex2dec('40');
+ot_on_code = hex2dec('80');
 
 bump_code = hex2dec('50');
 
@@ -59,15 +62,11 @@ for iTrial = 1:num_trials
         switch temp_words(iWord,2)
             case ct_on_code
                 column = tc.t_ct_on;                
-            case ot_on_code+1
-                column = tc.t_visual_1_onset;
+            case ct_hold_code
+                column = tc.t_ct_hold_on;
             case bump_code+1
-                column = tc.t_bump_1_onset;
-            case ot_on_code+2
-                column = tc.t_visual_2_onset;
-            case bump_code+2
-                column = tc.t_bump_2_onset;
-            case ot_on_code+3
+                column = tc.t_stimuli_onset;
+            case ot_on_code
                 column = tc.t_ot_on;
             otherwise 
                 column = [];
@@ -82,14 +81,18 @@ for iTrial = 1:num_trials
     trial_table(iTrial,tc.staircase_id) = bdf.databursts{iTrial,2}(16);
     trial_table(iTrial,tc.training) = bdf.databursts{iTrial,2}(17);        
     trial_table(iTrial,tc.catch) = bdf.databursts{iTrial,2}(18);
-    trial_table(iTrial,tc.bump_1_magnitude) = bytes2float(bdf.databursts{iTrial,2}(19:22));
-    trial_table(iTrial,tc.bump_2_magnitude) = bytes2float(bdf.databursts{iTrial,2}(23:26));
+    trial_table(iTrial,tc.main_direction) = bytes2float(bdf.databursts{iTrial,2}(19:22));
+    trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(23:26));
     trial_table(iTrial,tc.bump_direction) = bytes2float(bdf.databursts{iTrial,2}(27:30));
     trial_table(iTrial,tc.bump_duration) = bytes2float(bdf.databursts{iTrial,2}(31:34));
-    trial_table(iTrial,tc.visual_1_diameter) = 2*bytes2float(bdf.databursts{iTrial,2}(35:38));
-    trial_table(iTrial,tc.visual_2_diameter) = 2*bytes2float(bdf.databursts{iTrial,2}(39:42));
-    trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(55:58));
-    trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(59:62));
+    trial_table(iTrial,tc.moving_dots_target_size) = bytes2float(bdf.databursts{iTrial,2}(35:38));
+    trial_table(iTrial,tc.moving_dots_coherence) = bytes2float(bdf.databursts{iTrial,2}(39:42));
+    trial_table(iTrial,tc.moving_dots_direction) = bytes2float(bdf.databursts{iTrial,2}(43:46));
+    trial_table(iTrial,tc.moving_dots_speed) = bytes2float(bdf.databursts{iTrial,2}(47:50));
+    trial_table(iTrial,tc.moving_dots_num_dots) = bytes2float(bdf.databursts{iTrial,2}(51:54));
+    trial_table(iTrial,tc.moving_dots_movement_type) = bytes2float(bdf.databursts{iTrial,2}(59:62));
+    trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(65:68));
+    trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(69:72));
 
 end
 
