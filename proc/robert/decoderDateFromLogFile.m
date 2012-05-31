@@ -10,6 +10,9 @@ end
 if nargin < 2
     suppressInput=0;
 end
+
+fullfile(PathNameBR,FileNameBR)
+
 % should be the first line.
 modelLine=fgetl(fid);
 if ~isempty(regexp(modelLine,'Predictions made .*with model:', 'once'))

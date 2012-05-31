@@ -1,4 +1,8 @@
-function plotCutFPall(cutfp)
+function plotCutFPall(cutfp,badChannels)
+
+if nargin < 2
+    badChannels=[];
+end
 
 figure, set(gcf,'Position',[1         0        1440         801])
 % second monitor
@@ -10,6 +14,7 @@ hold off
 
 plotTimes=0;
 for n=1:length(cutfp)
+    cutfp(n).data(badChannels,:)=[];
 	plotTimes=plotTimes(end)+1+cutfp(n).times;
 	for k=1:size(cutfp(n).data,1)
 		if isfield(cutfp(n),'bestc') && ~isempty(intersect(k,cutfp(n).bestc))
