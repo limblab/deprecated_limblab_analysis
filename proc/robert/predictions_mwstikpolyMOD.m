@@ -1,4 +1,4 @@
-function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpoly(bdf, signal, ...
+function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpolyMOD(bdf, signal, ...
 	cells, binsize, folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,varargin)
 
 % $Id: predictions_mwstikpoly.m 385 2011-02-20 19:05:39Z marc $
@@ -19,7 +19,7 @@ function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpoly(bdf, 
 % 2: emglpf emg low pass filter
 
 emglpf=5; %default 
-if length(varargin)>0
+if ~isempty(varargin)
     fnam=varargin{1};
     if length(varargin)>1
         emglpf=varargin{2};      
@@ -91,7 +91,7 @@ if strcmpi(signal,'emg')
     end
     y=interp1(temg',y,t);   %if y is a nby 4 matrix then interp will work
 else
-y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
+    y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
 end
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,8 +118,8 @@ end
 % Find active regions
 
 if ~strcmpi(signal,'emg')
-q = find_active_regions_words(bdf.words,bdf.vel(:,1));
-q = interp1(bdf.vel(:,1), double(q), t);
+    q = find_active_regions_words(bdf.words,bdf.vel(:,1));
+    q = interp1(bdf.vel(:,1), double(q), t);
 else
     q=ones(size(t))';
 end
@@ -159,9 +159,9 @@ for i = 1:folds
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
    
     %%Polynomial section
-               P=[];    
+    P=[];
     T=[];
-    patch = [];
+    patch=[];
     
     if PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity

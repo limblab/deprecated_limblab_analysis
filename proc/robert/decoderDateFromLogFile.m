@@ -5,13 +5,12 @@ if nargin >= 1
 else
     [FileNameBR,PathNameBR]=uigetfile('*.txt','select a file');
     fid=fopen(fullfile(PathNameBR,FileNameBR));
+    fullfile(PathNameBR,FileNameBR)
 end
 
 if nargin < 2
     suppressInput=0;
 end
-
-fullfile(PathNameBR,FileNameBR)
 
 % should be the first line.
 modelLine=fgetl(fid);

@@ -40,7 +40,8 @@ if exist(kinStructPath,'file')==2
     BDFlist={kinStruct(cellfun(@isempty,regexp({kinStruct.control},controlType))==0).name};
 else
     [pathStrBAD,filenameBAD,~,~]=FileParts(kinStructPath);
-    error('file not found: %s\nlooked in %s',filenameBAD,pathStrBAD)
+    error('findBDF_withControl:nokinStruct','file not found: %s\nlooked in %s', ...
+        filenameBAD,pathStrBAD)
 end
 
 return

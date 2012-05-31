@@ -32,7 +32,7 @@ if ~nargin
     assignin('base',nameWithinFile,bdf)
 else    
     if ischar(BDFfileIn)
-        [PathName,FileName,~,~]=fileparts(BDFfileIn);
+        [PathName,FileName,~,~]=FileParts(BDFfileIn);
         diary(fullfile(PathName,'decoderOutput.txt'))
         bdf=load(BDFfileIn);
         nameWithinFile=char(regexp(fieldnames(bdf),'bdf|out_struct','match','once'));
