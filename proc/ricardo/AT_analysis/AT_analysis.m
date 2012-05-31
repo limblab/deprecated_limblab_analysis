@@ -4,7 +4,7 @@ cd('..\..\..\')
 load_paths;
 cd(curr_dir)
 
-filename = 'AT_CPP_test_001';
+filename = 'AT_test_005';
 fileExt = '.nev';
 filepath = 'Z:\TestData\Attention cpp\';
 

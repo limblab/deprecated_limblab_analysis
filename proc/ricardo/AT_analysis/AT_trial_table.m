@@ -37,7 +37,7 @@ incomplete_code = hex2dec('23');
 
 ct_on_code = hex2dec('30');
 ct_hold_code = hex2dec('A0');
-ot_on_code = hex2dec('80');
+ot_on_code = hex2dec('40');
 
 bump_code = hex2dec('50');
 
