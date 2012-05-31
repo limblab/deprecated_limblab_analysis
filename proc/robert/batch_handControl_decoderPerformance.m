@@ -237,14 +237,14 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
 };
 
 BatchList=HC_firstOverall_6targ;
-BatchList=HC_postLFPcontrol_6targ;
+% BatchList=HC_postLFPcontrol_6targ;
 
-BatchList=BatchList(datenum(regexp(BatchList,'[0-9]{8}','match','once'),'mmddyyyy') >= ...
-    datenum('12272011','mmddyyyy'));
+% BatchList=BatchList(datenum(regexp(BatchList,'[0-9]{8}','match','once'),'mmddyyyy') >= ...
+%     datenum('12272011','mmddyyyy'));
 
-load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Chewie_firstFiles0412decoder.mat')
-
-load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Mini_firstFiles0411decoder')
+% load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Chewie_firstFiles0412decoder.mat')
+% 
+% load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Mini_firstFiles0411decoder')
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 

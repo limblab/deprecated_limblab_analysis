@@ -169,7 +169,7 @@ if exist('words','var') && ~isempty(words)
 else
     q=ones(1,length(analog_times));   %Temp kludge b/c find_active_regions gives too long of a vector back
 end
-q = interp1(analog_times, q, t);
+q = interp1(analog_times, double(q), t);
 
 disp('2nd part:assign t,y,q')
 toc
@@ -340,6 +340,7 @@ for i = 1:folds
                 %Find and apply polynomial
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
+            P=evalin('base','P')';
             y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
         end
     end
