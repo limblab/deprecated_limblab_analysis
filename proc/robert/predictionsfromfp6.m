@@ -232,7 +232,7 @@ if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
 
-if exist('bandToUse','var')==1 && isfinite(bandToUse) && all(bandToUse < size(PB,1))
+if exist('bandToUse','var')==1 && all(isfinite(bandToUse)) && all(bandToUse <= size(PB,1))
     PB=PB(bandToUse,:,:);
 end
 

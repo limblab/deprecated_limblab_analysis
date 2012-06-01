@@ -80,7 +80,9 @@ try
     % the time we get to this point we'll need to re-run
     % batch_get_cursor_kinematics using scratch files anyway.
     batch_get_cursor_kinematics
-    save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
+    if exist('kinStruct','var')==1
+        save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
+    end
     
     diary off
     copyfile(fullfile(PathName,'decoderOutput.txt'),remoteFolder2)

@@ -1,11 +1,11 @@
 % this is the base decoder date to use.  Will go into regexp, so is
 % actually a regular expression.  In other words, for decoder1 use
 %
-% BASE_DECODER_DATE='(08242011)|(09012011)';
+BASE_DECODER_DATE='(08242011)|(09012011)';
 %
 % for decoder2 (NON causal) alone, use
 %
-BASE_DECODER_DATE='041(1|2)2012(?!.*causal)';
+% BASE_DECODER_DATE='041(1|2)2012(?!.*causal)';
 %
 % for decoder2 (causal) alone, use
 %
@@ -90,7 +90,7 @@ Chewie_decoder2days={...
     '05-11-2012', ...       % mixed with causal decoder2
     };
 
-Chewie_days=Chewie_decoder2days;
+% Chewie_days=Chewie_decoder2days;
 
 peakIndAll_x_Chewie=[]; peakIndAll_y_Chewie=[];
 peakValAll_x_Chewie=[]; peakValAll_y_Chewie=[];
@@ -183,7 +183,7 @@ Mini_decoder2days={...
 %     '05-08-2012', ...       % mixed with decoder2 causal
     };
 
-Mini_days=Mini_decoder2days;
+% Mini_days=Mini_decoder2days;
 
 for n=1:length(Mini_days)
     % take a day, find the kinStruct, and identifies all the

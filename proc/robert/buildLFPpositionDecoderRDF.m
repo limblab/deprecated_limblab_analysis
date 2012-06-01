@@ -51,8 +51,7 @@ else
     FilesInfo=dir(PathName);
 end
 badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
-% let's forget about bad channels at this point, will zero out from H
-% matrix later.
+% to include all channels, uncomment the next line:
 badChannelsFileInd=[]; 
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
@@ -202,7 +201,9 @@ folds=10;
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:6);
+                                                      % this is bandsToUse,
+                                                      % can be omitted.
 
 
 % examine vaf

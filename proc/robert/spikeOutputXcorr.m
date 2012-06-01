@@ -25,26 +25,3 @@ for k=1:size(fullX,2)
 end
 XCx=double(XCx);
 XCy=double(XCy);
-
-
-return
-
-% some script stuff for doing testing...
-%%
-fullX=featMat;
-sigTrimmed=evalin('base','sigTrimmed');
-[~,~,~,~,~,~,~]=kinematicsHandControl(out_struct);
-%sigTrimmed=out_struct.vel;
-sigInd=false(size(sigTrimmed,1),1);
-for n=1:length(start_reaches)
-    sigInd(sigTrimmed(:,1)>=start_reaches(n) & sigTrimmed(:,1)<=end_reaches(n))=1;
-end, clear n
-
-fullX=fullX(sigInd,:);
-sigTrimmed=sigTrimmed(sigInd,:);
-
-%%
-fullX=featMat;
-sigTrimmed=evalin('base','sigTrimmed');
-fullX=fullX(~sigInd,:);
-sigTrimmed=sigTrimmed(~sigInd,:);

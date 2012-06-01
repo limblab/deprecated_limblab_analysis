@@ -6,6 +6,18 @@ function [XCx,XCy,timelags,peakInd_x,peakInd_y,peakVal_x,peakVal_y]=...
 %
 % 
 
+
+% needed: a function that takes a single argument, and simply returns it if
+% it is a bdf-struct, but if it is a path, it loads the bdf and then
+% returns that.
+
+% 2nd prong: a function tha takes a single argument KNOWN TO BE a bdf, and
+% finds the path to it on citadel.  Running the first function and then
+% this one would be a loop if the input to the first function was a path,
+% but if it was a bdf, would return the path to the bdf on citadel (this
+% might be findBDFonCitadel?
+
+
 % find the decoder that was used, pull from it bestc,bestf.  Use these to
 % index above-calculated feature matrix.  NO SORTING OF featMat, since
 % makefmatc_causal doens't re-do the feature selection, featMat is still in
