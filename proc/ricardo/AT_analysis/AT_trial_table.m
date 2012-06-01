@@ -90,6 +90,7 @@ for iTrial = 1:num_trials
     trial_table(iTrial,tc.moving_dots_direction) = bytes2float(bdf.databursts{iTrial,2}(43:46));
     trial_table(iTrial,tc.moving_dots_speed) = bytes2float(bdf.databursts{iTrial,2}(47:50));
     trial_table(iTrial,tc.moving_dots_num_dots) = bytes2float(bdf.databursts{iTrial,2}(51:54));
+    trial_table(iTrial,tc.moving_dots_dot_radius) = bytes2float(bdf.databursts{iTrial,2}(55:58));
     trial_table(iTrial,tc.moving_dots_movement_type) = bytes2float(bdf.databursts{iTrial,2}(59:62));
     trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(71:74));
     trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(75:78));
