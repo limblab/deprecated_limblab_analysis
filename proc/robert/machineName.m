@@ -9,7 +9,7 @@ if ispc
         if ~isempty(nameLine)
             name=regexpi(cellData{nameLine},'(?<=Host Name.*: ).*','match','once');
         else
-            error('ipconfi /all was not able to resolve the machine name')
+            error('ipconfig /all was not able to resolve the machine name')
         end
     else
         error('ipconfig /all was not able to resolve the machine name')
