@@ -32,7 +32,7 @@ if ismac
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=unix(['find ',pathToCitadelData,' -name "',nameIn,'" -print']);
 else
-    % PC case.  Probably running on GOB, either during a
+    % PC case.  Probably running on GOB/BumbleBeeMan, either during a
     % superBatch run, or stand-alone.  If stand-alone, slightly
     % more likely that the path of the data file in will be
     % citadel than local. If during superBatch, the network copy of the
