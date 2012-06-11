@@ -1,6 +1,6 @@
-function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance]=kinematicsHandControl(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTSinterTargetDistance]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted out_struct
@@ -51,6 +51,9 @@ else                            % and target presentation of next has been
     target_entry_word=160;
 end
 
+if nargout < 8
+    % don't worry about it
+end
 % % determine number of targets.  Pick the last successful trial; if the
 % % success code is there we know it completes, and being the last trial it
 % % probably has a valid beginning.
@@ -129,6 +132,7 @@ PL=zeros(size(start_reaches));
 TTT=zeros(size(start_reaches));
 speedProfile=cell(size(start_reaches));
 pathReversals=zeros(size(start_reaches));
+interTargetDistance=zeros(size(start_reaches));
 for n=1:length(start_reaches)
 	included_points=find(out_struct.pos(:,1)>=start_reaches(n) & ...
 		out_struct.pos(:,1)<=end_reaches(n));    
@@ -178,10 +182,10 @@ for n=1:length(start_reaches)
             (out_struct.vel(included_points,3)).^2);
 		% normalize by the straight-line distance between the start and end
 		% points, as in Hatsopoulos paper.
-		interTargetDistance=sqrt(sum(diff(out_struct.pos(included_points([1 end]),2:3)).^2));
-		PL(n)=PL(n)/interTargetDistance;
-		TTT(n)=(end_reaches(n)-start_reaches(n))/interTargetDistance;
-        pathReversals(n)=pathReversals(n)/interTargetDistance;
+		interTargetDistance(n)=sqrt(sum(diff(out_struct.pos(included_points([1 end]),2:3)).^2));
+		PL(n)=PL(n)/interTargetDistance(n);
+		TTT(n)=(end_reaches(n)-start_reaches(n))/interTargetDistance(n);
+        pathReversals(n)=pathReversals(n)/interTargetDistance(n);
 	end
 end
 % exclude_trials corresponds to trials were length(included_points) < 2,
@@ -192,6 +196,7 @@ PL(exclude_trials)=[];
 TTT(exclude_trials)=[];
 speedProfile(exclude_trials)=[];
 pathReversals(exclude_trials)=[];
+interTargetDistance(exclude_trials)=[];
 
 % success trials are success trials, whether they were successful by
 % accident or by design.  Success-by-accident never happens under hand

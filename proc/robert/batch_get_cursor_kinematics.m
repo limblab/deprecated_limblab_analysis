@@ -74,6 +74,12 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
             kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
+            kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
+            % Fitts' Law calculations.  un-normalized time to target...
+            unTT=bdf.kin.time_to_target./bdf.kin.intertarget_distance;
+            % and Index of Difficulty
+            IndDiff=log2(kinStruct(batchIndex).interTargetDistance/4 + 1);
+            % coefficients of the fit will be: ab=polyfit(IndDiff,unTT,1);
         else
             % this happens when get_cursor_kinematices was unable to modify
             % the BDF, (e.g., there was no BR log file).  Can't tell
@@ -106,6 +112,8 @@ for batchIndex=1:length(MATfiles)
                     kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
                     kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
                     kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
+                    kinStruct(batchIndex).interTargetDistance= ...
+                        out_struct.kin.intertarget_distance;
                 else
                     % this happens when get_cursor_kinematices was unable to modify
                     % the BDF, (e.g., there was no BR log file)
@@ -122,7 +130,8 @@ for batchIndex=1:length(MATfiles)
                 end
                 [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...
                     kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).speedProfile, ...
-                    kinStruct(batchIndex).pathReversals,kinStruct(batchIndex).trialTS]= ...
+                    kinStruct(batchIndex).pathReversals,kinStruct(batchIndex).trialTS, ...
+                    kinStruct(batchIndex).interTargetDistance]= ...
                     kinematicsHandControl(out_struct,opts);
                 % if we're running inside superBatch.m, then VAF_all should
                 % exist.  If not, create it.  This will override any stored
@@ -160,6 +169,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).speedProfile=out_struct.kin.speedProfile;
             kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
+            kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};

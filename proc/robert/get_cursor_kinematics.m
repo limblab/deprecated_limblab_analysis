@@ -257,7 +257,8 @@ if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
     end
 end
 [bdf.kin.path_length,bdf.kin.time_to_target,bdf.kin.hitRate,bdf.kin.hitRate2, ...
-    bdf.kin.speedProfile,bdf.kin.pathReversals,bdf.kin.trialTS]=kinematicsHandControl(bdf,opts);
+    bdf.kin.speedProfile,bdf.kin.pathReversals,bdf.kin.trialTS, ...
+    bdf.kin.intertarget_distance]=kinematicsHandControl(bdf,opts);
 bdf.words=original_words;
 
 [workspaceList,~]=dbstack;
