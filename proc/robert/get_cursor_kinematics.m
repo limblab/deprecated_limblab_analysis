@@ -206,7 +206,7 @@ else
     % the encoder
     adfreq = 1000; %Arbitrarily 1KHz
     start_time = 1.0;
-    last_enc_time = out_struct.raw.enc(end,1);
+    last_enc_time = bdf.raw.enc(end,1);
     stop_time = floor(last_enc_time) - 1;
     analog_time_base = start_time:1/adfreq:stop_time;
 end

@@ -16,8 +16,8 @@ function BDFlist=findBDF_withControl(animal,dayIn,controlType)
 
 % switching to citadel-based...
 if 0
-    % eventually, citadel will be the location of most recent, most accurate
-    % kinStruct.mat file.  Right now, not so much.
+    % currently implementing the assumption that citadel is the location of
+    % the most recent information re: kinStruct.mat files
     switch lower(machineName)
         case 'gob'
             kinStructPath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...

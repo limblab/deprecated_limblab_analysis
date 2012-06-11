@@ -18,7 +18,7 @@ function VAFstruct=handControl_decoderPerformance_predictions(inputItem,inputDec
 %                               vaf
 %
 % this version takes a path name or a bdf (from which it will deduce a path
-% name), then (if inputDecoder is not supplied, it will find the nearest 
+% name), then, if inputDecoder is not supplied, it will find the nearest 
 % file chronologically that was under brain control (currently
 % only works with LFP control), and load the decoder used for that brain
 % control session.  It will then re-evaluate the HC data contained in the bdf
@@ -90,9 +90,8 @@ else
     fsep=filesep;
 end
 
-% get the path to the next-higher-number file that's in that same folder.
-% Identify the sequence of numbers at the end of the file name.  Check 
-% if there is a BR log file.
+% look for the closest brain-control file that uses the same TYPE of
+% decoder as the original decoder that was passed in.
 decoderDate=NaN;
 for n=1:1000     % assume there are fewer than 1000 files in a folder.
     fileToCheck{1}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))+n),'*'];

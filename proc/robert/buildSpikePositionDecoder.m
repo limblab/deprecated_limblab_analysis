@@ -133,7 +133,8 @@ else
     else
         % need to put in a findOnBumbleBee.m
 %         BDFpathName=findBDFonGOB(BDFfileName,1);
-        BDFpathName=findBDFonBumbleBeeMan(BDFfileName,1);
+%         BDFpathName=findBDFonBumbleBeeMan(BDFfileName,1);
+        BDFpathName=findBDF_local(BDFfileName,1);
     end
     decoderPathName=regexprep(BDFpathName,'\.mat','-spikedecoder\.mat');
     decoderPathName(regexp(decoderPathName,sprintf('\n')))='';

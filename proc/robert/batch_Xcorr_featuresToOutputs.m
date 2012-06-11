@@ -199,6 +199,10 @@ for n=1:length(Mini_days)
         pathToBDF=findBDFonCitadel(BDFlist{k});
         pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
         fprintf(1,'finding path to decoder...\n')
+        % this is dumb.  should be a simple find operation, since we
+        % already know (from findBDF_withControl), that we're dealing with
+        % LFP control files.  decoderPathFromBDF is only genuinely
+        % necessary when finding which decoder was used that day.
         pathToDecoder=decoderPathFromBDF(pathToBDF);
         pathToDecoder(regexp(pathToDecoder,sprintf('\n')))='';
         [~,decoderName,~]=FileParts(pathToDecoder);

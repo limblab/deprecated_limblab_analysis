@@ -61,6 +61,9 @@ if length(varargin)>0
                                              % [bestc bestf]
                                              bestf=bestc(2,:);
                                              bestc=bestc(1,:);
+                                             if length(varargin)>10
+                                                 P=varargin{11};
+                                             end
                                          end
                                      end
                                  end
@@ -323,8 +326,8 @@ for i = 1:folds
                 Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
 
                 %Find Polynomial to Thresholded Data
-                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-                
+                % comment since P is input
+                % [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%% Use only one of the following 2 lines:
@@ -337,10 +340,9 @@ for i = 1:folds
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
-                %Find and apply polynomial
-                [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+                % comment since P is input
+                % [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
-            P=evalin('base','P')';
             y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
         end
     end

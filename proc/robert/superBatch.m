@@ -87,6 +87,26 @@ try
     diary off
     copyfile(fullfile(PathName,'decoderOutput.txt'),remoteFolder2)
     fprintf(1,'decoderOutput.txt copied successfully to %s\n',remoteFolder2)
+    
+    try
+        % if we're on BumblebeeMan, clean up...
+        if strcmpi(machineName,'bumblebeeman')
+            localAnalysisFolder=fullfile(['E:\personnel\RobertF\',...
+                'monkey_analyzed'],animal,datestr(dateNumber,'mm-dd-yyyy'));
+            mkdir(localAnalysisFolder)
+            movefile('allFPsToPlot.mat',fullfile(localAnalysisFolder, ...
+                'allFPsToPlot.mat'))
+            for moveFileIndex=1:length(decoderFiles)
+                movefile(decoderFiles{moveFileIndex}, ...
+                    fullfile(localAnalysisFolder,decoderFiles{moveFileIndex}))
+                fprintf(1,'%s copied to %s\n',decoderFiles{moveFileIndex}, ...
+                    fullfile(localAnalysisFolder,decoderFiles{moveFileIndex}))
+            end
+            movefile('decoderOutput.txt', ...
+                fullfile(localAnalysisFolder,'decoderOutput.txt'))
+        end
+    end
+    
 catch ME
     fprintf(1,'\nThe time of the error was %s.\n',datestr(now))
     rethrow(ME)

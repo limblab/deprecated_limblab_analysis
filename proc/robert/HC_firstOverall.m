@@ -9,7 +9,7 @@ if nargin
     animal=regexp(decoderName,'Chewie|Mini','match','once');
     decoderDay=datenum(regexp(decoderPath,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once'),'mm-dd-yyyy');
     m=1;
-    for timeTravelIndex=decoderDay:today
+    for timeTravelIndex=decoderDay+1:today
         try
             BDFlist_HC=findBDF_withControl(animal,datestr(timeTravelIndex,'mm-dd-yyyy'),'hand');
             BDFlist_LFP=findBDF_withControl(animal,datestr(timeTravelIndex,'mm-dd-yyyy'),'LFP');
