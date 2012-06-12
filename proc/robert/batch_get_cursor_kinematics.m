@@ -76,7 +76,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
             kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
             % Fitts' Law calculations.  un-normalized time to target...
-            unTT=bdf.kin.time_to_target./bdf.kin.intertarget_distance;
+            unTT=kinStruct(batchIndex).TT./kinStruct(batchIndex).interTargetDistance;
             % and Index of Difficulty
             IndDiff=log2(kinStruct(batchIndex).interTargetDistance/4 + 1);
             % coefficients of the fit will be: ab=polyfit(IndDiff,unTT,1);
