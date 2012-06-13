@@ -346,6 +346,10 @@ for i = 1:folds
                 % [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
             % y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            % since we're not using the offset of P, must apply the other
+            % coefficients by hand.
+            y_pred{i}(:,z) = y_pred{i}(:,z).^3 * P(1,z) + y_pred{i}(:,z).^2 * P(2,z) + ...
+                y_pred{i}(:,z) * P(3,z);
         end
     end
 
