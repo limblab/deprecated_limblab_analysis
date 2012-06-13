@@ -291,10 +291,10 @@ for i = 1:folds
     %%Try z-score instead of mean sub
 %     y_train = zscore(y_train);
 %     y_test{i} = zscore(y_test{i});
-    y_test{i} = y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
+%     y_test{i} = y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
 %     x_train = zscore(x_train);
 %     x_test{i} = zscore(x_test{i});
-    x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
+%     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
     % mechanism is already in place to have H input.
     if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
 %         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
@@ -353,6 +353,9 @@ for i = 1:folds
         end
     end
 
+    % instead of the offset from P, subtract the baseline mean
+    ytnew{i}=ytnew{i}-repmat(mean(ytnew{i},1),size(ytnew{i},1),1);
+    y_pred{i}=y_pred{i}-repmat(mean(y_pred{i},1),size(y_pred{i},1),1);
     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));

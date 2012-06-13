@@ -141,7 +141,7 @@ bdfDate=datenum(regexp(bdf.meta.datetime,'\s*[0-9]+/\s*[0-9]+/[0-9]+','match','o
 signal='vel';
 numsides=1;
 numlags=10;
-PolynomialOrder=0;
+PolynomialOrder=3;
 binsize=0.05;
 Use_Thresh=0; lambda=1;
 folds=10;
