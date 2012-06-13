@@ -291,8 +291,10 @@ for i = 1:folds
     %%Try z-score instead of mean sub
 %     y_train = zscore(y_train);
 %     y_test{i} = zscore(y_test{i});
+    y_test{i} = y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
 %     x_train = zscore(x_train);
 %     x_test{i} = zscore(x_test{i});
+    x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
     % mechanism is already in place to have H input.
     if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
 %         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
@@ -303,7 +305,7 @@ for i = 1:folds
     %ytnew and xtnew are shifted by the length of the filter since the
     %first fillen time period is garbage prediction & gets thrown out in
     %predMIMO3 (9-24-10)
-           P=[];    
+    %       P=[];    
     T=[];
     patch = [];
     
@@ -343,7 +345,7 @@ for i = 1:folds
                 % comment since P is input
                 % [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            % y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
         end
     end
 

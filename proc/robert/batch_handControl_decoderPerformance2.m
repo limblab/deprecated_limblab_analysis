@@ -19,6 +19,10 @@ for n=1:length(BatchList)
         else
             VAFstruct(n)=handControl_decoderPerformance_predictions2(out_struct,decoderIn);
         end
+    catch ME
+        fprintf(2,['\n\n\n\n************************************', ...
+            '\n*\n* %s\t*\n*\n************************************\n\n\n'],ME.message)
+        continue
     end
     close
     cd(originalPath)

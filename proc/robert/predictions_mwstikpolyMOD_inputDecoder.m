@@ -156,13 +156,14 @@ for i = 1:folds
     y_train = [y(1:fold_start,:); y(fold_end:end,:)];
    %% subtract off the mean to reduce offset
 %     y_train = y_train - repmat(mean(y_train),size(y_train,1),1);
-%     y_test{i}= y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
-%     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
+    y_test{i} = y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
+    x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
 %     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
 %     
     % since H is input
     % [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
-    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
+                                                                      % binsamprate
+    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
    
     %%Polynomial section
     % P=[];
@@ -212,7 +213,7 @@ for i = 1:folds
 %     vaftr(i,:)=v/100;
 %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
 %     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-	vaf(i,:) = RcoeffDet(y_pred{i}(:,1:2),ytnew{i});
+	vaf(i,:) = RcoeffDet(y_pred{i}(:,1:2)*binsamprate,ytnew{i});
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
         if size(r{i,j},2)>1

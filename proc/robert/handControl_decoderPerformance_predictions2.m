@@ -53,11 +53,14 @@ end
 switch animal
     case 'Mini'
         BDF_MF='bdf';
+        ff='FilterFiles';
     case 'Chewie'
         BDF_MF='BDFs';
+        ff='Filter files';
 end
 
-[decoderPath_path,decoderName,decoderExt]=FileParts(decoderPath);
+[~,decoderName,~]=FileParts(decoderPath);
+
 for n=1:length(BDFlist)
     bdfPathTemp=findBDFonCitadel(BDFlist{n});
     bdfBRpath=regexprep(bdfPathTemp,{BDF_MF,'\.mat'}, ...
@@ -72,18 +75,41 @@ for n=1:length(BDFlist)
     modelLine=fgetl(fid);
     fclose(fid);
     [~,modelName,~]=FileParts(modelLine);
+    decoderFile=regexp(modelLine,'/','split');
+    decoderFile=decoderFile(end-1:end);
+    decoderFile{2}(end)=[];
     % for now, exclude causal.  We're going to have to make it a special
     % case if we really want to optionally allow it.
-    if ~isempty(regexp(modelName,[decoderName,'(?!causal)'],'once'))
+    baseDecoderName=regexp(decoderName,'.*decoder','match','once');
+    baseModelName=regexp(modelName,'.*decoder','match','once');
+    if (isempty(regexp(baseDecoderName,'causal','once')) && ...
+            isempty(regexp(baseModelName,'causal','once'))) && ...
+            strcmp(baseDecoderName,baseModelName)
         break
     end
 end
 
-% DON'T HAVE THE CODE IN PLACE TO RUN SPIKE-BASED PREDICTIONS!!!!
-% NEED TO IMPLEMENT.
+if n==length(BDFlist) && ~strcmp(baseDecoderName,baseModelName)
+    % options when no brain control files with the proper decoder can be
+    % found in the current day:
+    %       - default to original (input) decoder
+    %       - throw error
+    %
+    % this will let us re-default to the input decoder...
+    decoderFile=regexp(decoderPath,fsep,'split');
+    decoderFile=decoderFile(end-1:end);
+    decoderFile{2}(end)=[];
+    % ... but to begin with, just throw error.  get current date folder.
+    error('could not find a brain control file on %s that used \n %s', ...
+        dayStr,baseDecoderName)
+end
+[BDFpathStr,BDFname,~]=fileparts(pathToBDF);
+pathToDecoderMAT=regexprep(BDFpathStr,regexpi(BDFpathStr, ...
+    ['(?<=',fsep,')','bdfs*(?=',fsep,')'],'match','once'),ff);
+pathToDecoderMAT=fullfile(regexprep(pathToDecoderMAT, ...
+    '[0-9]{2}-[0-9]{2}-[0-9]{4}',decoderFile{1}),decoderFile{2});
 
 
-pathToDecoderMAT=fullfile(decoderPath_path,[decoderName,decoderExt]);
 fprintf(1,'overriding decoder %s...\n',decoderPath)
 if exist(pathToDecoderMAT,'file')==2
     if strcmp(controlType,'LFP')
@@ -92,7 +118,19 @@ if exist(pathToDecoderMAT,'file')==2
         load(pathToDecoderMAT,'H','P')
     end
     fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
-    decoderDate=decoderDateFromLogFile(bdfBRpath,1);
+    try % to use the actual file from that day
+        decoderDate=decoderDateFromLogFile(bdfBRpath,1);
+    catch ME 
+        % if no bdfBRpath, use decoderPath
+        if strcmp(ME.identifier,'MATLAB:UndefinedFunction')
+            decoderDateStr=regexp(decoderPath,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once');
+            if ~isempty(decoderDateStr)
+                decoderDate=datenum(decoderDateStr,'mm-dd-yyyy');
+            else
+                rethrow(ME)
+            end
+        end
+    end
 else
     error('decoder %s could not be loaded',pathToDecoderMAT)
 end
@@ -103,13 +141,14 @@ bdfDate=datenum(regexp(bdf.meta.datetime,'\s*[0-9]+/\s*[0-9]+/[0-9]+','match','o
 signal='vel';
 numsides=1;
 numlags=10;
-PolynomialOrder=3;
+PolynomialOrder=0;
 binsize=0.05;
 Use_Thresh=0; lambda=1;
 folds=10;
-BDFname=bdf.meta.filename(1:end-4);
+% BDFname=bdf.meta.filename(1:end-4);
 Hcell=cell(1,folds);
 [Hcell{1:folds}]=deal(H);
+% P(1:(size(P,1)-1),:)=zeros(size(P,1)-1,size(P,2));
 
 if strcmp(controlType,'LFP')
     % switch variable name since the below is copied from a different batch
@@ -173,8 +212,8 @@ else    % controlType is 'Spike'
     cells=[];
     
     [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD_inputDecoder(bdf,signal, ...
-        cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,BDFname,5,Hcell,P);
-    close                                                                               % input_H,P
+        cells,binsize,folds,numlags,numsides,lambda,0,Use_Thresh,BDFname,5,Hcell,P);
+    close                                            % PolynomialOrder
     
     % examine vaf
     fprintf(1,'file %s\n',BDFname)
