@@ -147,7 +147,7 @@ for n=1:1000     % assume there are fewer than 1000 files in a folder.
                 '[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]',decoderFile{1}),decoderFile{2});
             
             if exist(pathToDecoderMAT,'file')==2
-                load(pathToDecoderMAT,'H','bestf','bestc')
+                load(pathToDecoderMAT,'H','bestf','bestc','P')
                 fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
                 decoderDate=decoderDateFromLogFile(nextFile,1);
                 break
@@ -165,9 +165,9 @@ end
 if nargin==2
     fprintf(1,'overriding decoder %s...\n',pathToDecoderMAT)
     if exist(inputDecoder,'file')==2
-        load(inputDecoder,'H','bestf','bestc')
+        load(inputDecoder,'H','bestf','bestc','P')
         fprintf(1,'successfully loaded %s\n',inputDecoder)
-        decoderDate=decoderDateFromLogFile(inputDecoder,1);
+        decoderDate=datenum(regexp(inputDecoder,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once'));
     else
         error('decoder %s could not be loaded',inputDecoder)
     end
@@ -228,11 +228,15 @@ binsize=0.05;
 folds=10;
 Hcell=cell(1,folds);
 [Hcell{1:folds}]=deal(H);
-[vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,ytnew,~,~,~,~,~] = ...
+% [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,ytnew,~,~,~,~,~] = ...
+%     predictionsfromfp6_inputDecoder(sig,signal,numfp,binsize,folds,numlags,numsides, ...
+%     samprate,fp,fptimes,analog_times,BDFname,wsz,nfeat,PolynomialOrder, ...
+%     Use_Thresh,Hcell,words,emgsamplerate,lambda,smoothfeats,[bestc; bestf]);
+
+[vaf,~,~,~,~,~,~,r2,~,~,~,~,~,~,~,~,ytnew,~,~,~,~,~,bankRatio] = ...
     predictionsfromfp6_inputDecoder(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,BDFname,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,Hcell,words,emgsamplerate,lambda,smoothfeats,[bestc; bestf]);
-
+    Use_Thresh,Hcell,words,emgsamplerate,lambda,smoothfeats,[bestc; bestf],P);
 
 % examine vaf
 fprintf(1,'file %s\n',BDFname)
@@ -254,7 +258,7 @@ fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
 %%
 VAFstruct=struct('name',BDFname,'decoder_age',bdfDate-decoderDate, ...
-    'vaf',vaf);
+    'vaf',vaf,'r2',r2,'bankRatio',bankRatio);
 
 
 % to get predicted position from predicted velocity, could do a simple

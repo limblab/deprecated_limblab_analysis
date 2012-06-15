@@ -38,6 +38,19 @@ kinStructPath=fullfile('Z:',pathBank{animus},ff{animus},dayIn,'kinStruct.mat');
 if exist(kinStructPath,'file')==2
     load(kinStructPath)
     BDFlist={kinStruct(cellfun(@isempty,regexp({kinStruct.control},controlType))==0).name};
+%     if find(animus)==2
+%         % if animal is Mini, and if recording is before mid-February(?), this
+%         % will be important: give a datename list that corresponds to
+%         % BDFlist.  First, find date in kinStructPath.
+%         datestring=regexprep(regexp(kinStructPath,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once'),'-','');
+%         for m=1:length(kinStruct)
+%             datenames{p}=['Mini_Spike_LFPL_',datestring,sprintf('%03d',m),'.mat'];
+%             filenames{p}=kinStruct(m).name;
+%             p=p+1;
+%         end
+%     else
+%         
+%     end
 else
     [pathStrBAD,filenameBAD,~,~]=FileParts(kinStructPath);
     error('findBDF_withControl:nokinStruct','file not found: %s\nlooked in %s', ...

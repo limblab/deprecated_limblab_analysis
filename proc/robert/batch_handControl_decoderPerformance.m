@@ -236,15 +236,44 @@ BatchListAllTargFirstFile={...              % doesn't have to be the very
     'Mini_Spike_LFPL_	683',...
 };
 
-BatchList=HC_firstOverall_6targ;
+BatchList=[BatchListAllTargFirstFile'; HC_firstOverall_6targ];
+BatchList(cellfun(@isempty,regexp(BatchList,'Chewie')))=[];
+BatchList=unique(BatchList);
+[~,sortInd]=sort(datenum(regexp(BatchList,'[0-9]{8}(?=[0-9]{3})','match','once'),'mmddyyyy'));
+BatchList=BatchList(sortInd);
+BatchList(find(cellfun(@isempty,regexp(BatchList,'_04122012'))==0,1,'first'):end)=[];
+
+% for Mini
+BatchList=[BatchListAllTargFirstFile'; HC_firstOverall_6targ];
+BatchList(cellfun(@isempty,regexp(BatchList,'Mini')))=[];
+BatchList=regexprep(BatchList,'\.mat','');
+BatchList=unique(BatchList);
+BatchList=regexprep(BatchList,'\t','');
+temp3=find(cellfun(@isempty,regexp(BatchList,'(?<=_)[0-9]{3}$'))==0);
+[~,sortInd3]=sort(cellfun(@str2double,regexp(BatchList(temp3),'(?<=_)[0-9]{3}$','match','once')));
+
+temp8=BatchList(cellfun(@isempty,regexp(BatchList,'[0-9]{8}(?=[0-9]{3})'))==0);
+[~,sortInd8]=sort(datenum(regexp(temp8,'[0-9]{8}(?=[0-9]{3})','match','once'),'mmddyyyy'));
+
+BatchList=[BatchList(temp3(sortInd3)); temp8(sortInd8)];
+BatchList(find(cellfun(@isempty,regexp(BatchList,'_04112012'))==0,1,'first'):end)=[];
+
+% BatchList=HC_firstOverall_6targ;
 % BatchList=HC_postLFPcontrol_6targ;
 
 % BatchList=BatchList(datenum(regexp(BatchList,'[0-9]{8}','match','once'),'mmddyyyy') >= ...
 %     datenum('12272011','mmddyyyy'));
+% TEMP!!!
+% for Chewie
+% BatchList([1:20 108:end])=[];
+% for Mini
+% BatchList=BatchList(134:end);
 
 % load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Chewie_firstFiles0412decoder.mat')
 % 
 % load('E:\personnel\RobertF\monkey_analyzed\LFPcontrol\HCoffline_withLFPdecoder\BatchList_Mini_firstFiles0411decoder')
+
+
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
@@ -255,6 +284,10 @@ for n=1:length(BatchList)
         else
             VAFstruct(n)=handControl_decoderPerformance_predictions(BatchList{n},decoderIn);
         end
+    catch ME
+%         rethrow(ME)
+        fprintf(2,ME.message)
+        continue
     end
     close
     cd(originalPath)

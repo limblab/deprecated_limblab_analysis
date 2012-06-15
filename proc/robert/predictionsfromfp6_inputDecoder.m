@@ -125,6 +125,12 @@ samp_fact=1000/samprate;
 %% Adjust the size of fp to make sure same number of samples as analog
 %% signals
 
+badChannels=mean(abs(fp),2)>=std(mean(abs(fp),2))*2+mean(mean(abs(fp),2));
+fp(badChannels,:)=zeros(nnz(badChannels),size(fp,2));
+
+bankRatio=mean(mean(abs(fp(33:64,:)),2))/mean(mean(abs(fp(1:32,:)),2));
+fprintf(1,'\n\nThe ratio of bank2 to bank1 is %.4f\n\n\n',bankRatio)
+
 disp('fp adjust')
 toc
 tic
@@ -209,6 +215,8 @@ Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0
 
 Pmean=mean(Pmat,3); %take mean over all times
 PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
+% take care of NaN, Inf that can creep in due to zeroing channels, etc.
+PA(isnan(PA) | isinf(PA))=0;
 clear Pmat
 
 %Define freq bands
@@ -217,6 +225,7 @@ mu=((freqs>7) & (freqs<20));
 gam1=(freqs>70)&(freqs<115);
 gam2=(freqs>130)&(freqs<200);
 gam3=(freqs>200)&(freqs<300);
+% PB(1,:,:)=zscore(LMP,0,2);
 PB(1,:,:)=LMP;
 PB(2,:,:)=mean(PA(delta,:,:),1);
 PB(3,:,:)=mean(PA(mu,:,:),1);
@@ -353,7 +362,7 @@ for i = 1:folds
         end
     end
 
-    % instead of the offset from P, subtract the baseline mean
+%     % instead of the offset from P, subtract the baseline mean
     ytnew{i}=ytnew{i}-repmat(mean(ytnew{i},1),size(ytnew{i},1),1);
     y_pred{i}=y_pred{i}-repmat(mean(y_pred{i},1),size(y_pred{i},1),1);
     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
@@ -435,6 +444,9 @@ if nargout>5
                                 varargout{16}=[];
                                 if nargout>21
                                     varargout{17}=[];
+                                    if nargout>22
+                                        varargout{18}=bankRatio;
+                                    end
                                 end
                             end
                         end

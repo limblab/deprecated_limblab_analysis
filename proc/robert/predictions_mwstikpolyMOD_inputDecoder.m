@@ -128,6 +128,10 @@ if ~strcmpi(signal,'emg')
 else
     q=ones(size(t))';
 end
+% the first bin of x tends to have outlier-ish sized values, because the
+% first element of t is 1.0, and so therefore b in train2bins (above) sums
+% all the spike times in the first 1.0 s.  So, eliminate that one point.
+q(1)=0;
 
 x = x(q==1,:);
 y = y(q==1,:);
@@ -156,14 +160,14 @@ for i = 1:folds
     y_train = [y(1:fold_start,:); y(fold_end:end,:)];
    %% subtract off the mean to reduce offset
 %     y_train = y_train - repmat(mean(y_train),size(y_train,1),1);
-    y_test{i} = y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
-    x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
+%     y_test{i} = y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
+%     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
 %     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
 %     
     % since H is input
     % [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
-                                                                      % binsamprate
-    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
+                                                                      % 1 if no P, 1/binsamprate if P
+    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1/binsamprate,y_test{i});
    
     %%Polynomial section
     % P=[];
@@ -206,14 +210,21 @@ for i = 1:folds
                 % comment since P is input
                 % [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            % y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            % since we're not using the offset of P, must apply the other
+            % coefficients by hand.
+            y_pred{i}(:,z) = y_pred{i}(:,z).^3 * P(1,z) + y_pred{i}(:,z).^2 * P(2,z) + ...
+                y_pred{i}(:,z) * P(3,z);            
         end
     end
-    %%
+    % instead of the offset from P, subtract the baseline mean
+    ytnew{i}=ytnew{i}-repmat(mean(ytnew{i},1),size(ytnew{i},1),1);
+    y_pred{i}=y_pred{i}-repmat(mean(y_pred{i},1),size(y_pred{i},1),1);
+    
 %     vaftr(i,:)=v/100;
 %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
 %     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-	vaf(i,:) = RcoeffDet(y_pred{i}(:,1:2)*binsamprate,ytnew{i});
+	vaf(i,:) = RcoeffDet(y_pred{i}(:,1:2),ytnew{i});
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
         if size(r{i,j},2)>1

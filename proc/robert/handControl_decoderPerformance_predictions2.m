@@ -89,7 +89,7 @@ for n=1:length(BDFlist)
     end
 end
 
-if n==length(BDFlist) && ~strcmp(baseDecoderName,baseModelName)
+if isempty(n) || n==length(BDFlist) && ~strcmp(baseDecoderName,baseModelName)
     % options when no brain control files with the proper decoder can be
     % found in the current day:
     %       - default to original (input) decoder
@@ -98,10 +98,10 @@ if n==length(BDFlist) && ~strcmp(baseDecoderName,baseModelName)
     % this will let us re-default to the input decoder...
     decoderFile=regexp(decoderPath,fsep,'split');
     decoderFile=decoderFile(end-1:end);
-    decoderFile{2}(end)=[];
+%     decoderFile{2}(end)=[];
     % ... but to begin with, just throw error.  get current date folder.
-    error('could not find a brain control file on %s that used \n %s', ...
-        dayStr,baseDecoderName)
+%     error('could not find a brain control file on %s that used \n %s', ...
+%         dayStr,decoderName)
 end
 [BDFpathStr,BDFname,~]=fileparts(pathToBDF);
 pathToDecoderMAT=regexprep(BDFpathStr,regexpi(BDFpathStr, ...
@@ -180,7 +180,7 @@ if strcmp(controlType,'LFP')
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
     % predictionsfromfp6_inputDecoder needs to be modified so that the P is
     % input as well.
-    [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~,~,ytnew,~,~,~,~,~] = ...
+    [vaf,~,~,~,~,~,~,r2,~,~,~,~,~,~,~,~,ytnew,~,~,~,~,~,bankRatio] = ...
         predictionsfromfp6_inputDecoder(sig,signal,numfp,binsize,folds,numlags,numsides, ...
         samprate,fp,fptimes,analog_times,BDFname,wsz,nfeat,PolynomialOrder, ...
         Use_Thresh,Hcell,words,emgsamplerate,lambda,smoothfeats,[bestc; bestf],P);
@@ -211,9 +211,9 @@ else    % controlType is 'Spike'
     bdf.units(size(cat(1,bdf.units.id),1)+1:end)=[];
     cells=[];
     
-    [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD_inputDecoder(bdf,signal, ...
-        cells,binsize,folds,numlags,numsides,lambda,0,Use_Thresh,BDFname,5,Hcell,P);
-    close                                            % PolynomialOrder
+    [vaf,~,~,~,~,~,~,r2,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD_inputDecoder(bdf,signal, ...
+        cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,BDFname,5,Hcell,P);
+    close                                            
     
     % examine vaf
     fprintf(1,'file %s\n',BDFname)
@@ -235,8 +235,12 @@ else    % controlType is 'Spike'
     fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))    
 end
 
+if exist('bankRatio','var')~=1
+    bankRatio=[];
+end
+
 VAFstruct=struct('name',BDFname,'decoder_age',bdfDate-decoderDate, ...
-    'vaf',vaf);
+    'vaf',vaf,'r2',r2,'bankRatio',bankRatio);
 
 
 % to get predicted position from predicted velocity, could do a simple
