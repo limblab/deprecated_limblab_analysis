@@ -1,15 +1,25 @@
-Newsome_mode = 1;
-coherence = 80; % percent of coherent dots
-iDir = iDir+1;
-direction = iDir*pi/8;
-speed = 1.5; % display units/s
-num_dots = 10;
-dot_size = 30;
+% CoherentDots
+% Ricardo Ruiz Torres (ricardort@gmail.com)
+% Miller Limb Lab
+% Northwestern University
+% Generate and display moving dots with a certain level of coherence.
 
-frame_rate = 20;
+% Newsome mode creates dots as those found in William Newsome's website:
+% http://monkeybiz.stanford.edu/research.html
+% Non-Newsome mode creates dots that move in a random walk (shaky) manner.
+
+Newsome_mode = 0; % Set to 0 or 1.  See comments above.
+coherence = 70; % percent of coherent dots
+direction = rand*2*pi;
+% direction = 0;
+speed = .5; % display units/s
+num_dots = 100;
+dot_size = 10;
+
+frame_rate = 20; % frames/s
 duration = 5; % seconds
 
-red_dot = 1;
+red_dot = 1; % if 1, make one of the dots red
 
 num_frames = frame_rate*duration;
 dotx = zeros(num_dots,num_frames);
@@ -28,26 +38,21 @@ for iFrame=2:num_frames;
             dotx(num_coherent_dots+1:end,iFrame) = rand(length(dotx(num_coherent_dots+1:end,iFrame)),1);
             doty(num_coherent_dots+1:end,iFrame) = rand(length(doty(num_coherent_dots+1:end,iFrame)),1);
         end
+        displacement_x = nan;
+        displacement_y = nan;
     else
         rand_dir = 2*pi*rand(num_dots,1);
-%         displacement_x = 0.01*coherence*cos(direction) + (1-0.01*coherence)*cos(rand_dir);
-%         displacement_y = 0.01*coherence*sin(direction) + (1-0.01*coherence)*sin(rand_dir);
-%         displacement_x = (speed/frame_rate)*displacement_x./(sqrt(displacement_x.^2+displacement_y.^2));
-%         displacement_y = (speed/frame_rate)*displacement_y./(sqrt(displacement_x.^2+displacement_y.^2));
         
         displacement_x = sqrt(0.01*coherence)*cos(direction) + sqrt(1-0.01*coherence)*cos(rand_dir);
         displacement_y = sqrt(0.01*coherence)*sin(direction) + sqrt(1-0.01*coherence)*sin(rand_dir);
-        displacement_x = (speed/frame_rate)*displacement_x./(sqrt(displacement_x.^2+displacement_y.^2));
-        displacement_y = (speed/frame_rate)*displacement_y./(sqrt(displacement_x.^2+displacement_y.^2));
+        displacement_mag = sqrt(displacement_x.^2 + displacement_y.^2);
+        displacement_x = (speed/frame_rate)*displacement_x./displacement_mag;
+        displacement_y = (speed/frame_rate)*displacement_y./displacement_mag;
         
         dotx(:,iFrame) = dotx(:,iFrame-1)+displacement_x;
         doty(:,iFrame) = doty(:,iFrame-1)+displacement_y;
-        
-%         dotx(:,iFrame) = dotx(:,iFrame-1)+speed*cos(direction)/frame_rate+...
-%             (1-0.01*coherence)*speed*cos(rand_dir)/frame_rate;
-%         doty(:,iFrame) = doty(:,iFrame-1)+speed*sin(direction)/frame_rate+...
-%             (1-0.01*coherence)*speed*sin(rand_dir)/frame_rate;
     end
+    % Roll-over the dots
     for iDot = 1:num_dots
         if dotx(iDot,iFrame)<=0
             dotx(iDot,iFrame) = 1-dotx(iDot,iFrame);
@@ -64,12 +69,9 @@ for iFrame=2:num_frames;
             dotx(iDot,iFrame) = rand;
         end
     end
-%     dotx(dotx(:,iFrame)>1,iFrame) = rand(sum(dotx(:,iFrame)>1),1);
-%     dotx(dotx(:,iFrame)<0,iFrame) = rand(sum(dotx(:,iFrame)<0),1);
-%     doty(doty(:,iFrame)>1,iFrame) = rand(sum(doty(:,iFrame)>1),1);
-%     doty(doty(:,iFrame)<0,iFrame) = rand(sum(doty(:,iFrame)<0),1);
 end
 
+% Display the dots
 figure(1);
 total_time_start = clock;
 for iFrame=1:num_frames

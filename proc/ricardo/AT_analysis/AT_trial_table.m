@@ -4,8 +4,8 @@ load(filename)
 tc.trial_type = 1;
 tc.t_trial_start = 2;
 tc.t_ct_on = 3;
-tc.t_stimuli_onset = 4;
-tc.t_ct_hold_on = 5;
+tc.t_ct_hold_on = 4;
+tc.t_stimuli_onset = 5;
 tc.t_ot_on = 6;
 tc.t_trial_end = 7;
 tc.result = 8;
@@ -25,6 +25,8 @@ tc.bias_force_mag = 21;
 tc.bias_force_dir = 22;
 tc.bump_duration = 23;
 tc.main_direction = 24;
+tc.x_offset = 25;
+tc.y_offset = 26;
 
 databurst_version = bdf.databursts{1,2}(2);
 
@@ -50,6 +52,14 @@ bdf.databursts = bdf.databursts([bdf.databursts{:,1}]<end_time,:);
 trial_starts = [bdf.databursts{:,1}]';
 trial_ends = bdf.words(bitand(bdf.words(:,2),repmat(hex2dec('F0'),size(bdf.words(:,2)),1))==end_code,1);
 num_trials = size(trial_starts,1);
+
+% if (length(trial_starts)>length(trial_ends))
+%     for iTrial = 1:length(trial_ends)
+%         if trial_starts(iTrial+1)<trial_ends(iTrial)
+%             trial_starts_temp = trial_starts([1:iTrial iTrial+2:end]);
+%         end
+%     end
+% end
 
 trial_table = nan(num_trials,length(fieldnames(tc)));
 trial_table(:,tc.t_trial_start) = trial_starts;
@@ -94,7 +104,30 @@ for iTrial = 1:num_trials
     trial_table(iTrial,tc.moving_dots_movement_type) = bytes2float(bdf.databursts{iTrial,2}(59:62));
     trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(71:74));
     trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(75:78));
-
+    trial_table(iTrial,tc.x_offset) = bytes2float(bdf.databursts{iTrial,2}(7:10));
+    trial_table(iTrial,tc.y_offset) = bytes2float(bdf.databursts{iTrial,2}(11:14));
 end
+
+remove_index = [];
+for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
+    [tempa tempb] = hist(trial_table(:,iCol),1000);
+    cumsum_temp = cumsum(tempa/sum(tempa));
+    remove_under = tempb(find(cumsum_temp<0.02,1,'last'));
+    if ~isempty(remove_under)
+        remove_under_idx = find(trial_table(:,iCol)<remove_under);
+        if length(remove_under_idx)/size(trial_table,1)<0.02
+            remove_index = [remove_index find(trial_table(:,iCol)<remove_under)'];
+        end
+    end
+    remove_above = tempb(find(cumsum_temp>0.98,1,'first'));
+    if ~isempty(remove_above)
+        remove_above_idx = find(trial_table(:,iCol)>remove_above);
+        if length(remove_above_idx)/size(trial_table,1)<0.02
+            remove_index = [remove_index find(trial_table(:,iCol)>remove_above)'];
+        end
+    end
+end
+remove_index = unique(remove_index);
+trial_table(remove_index,:) = [];
 
 save(filename,'trial_table','tc','-append')

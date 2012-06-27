@@ -139,8 +139,16 @@ function out_struct = calc_from_raw(raw_struct, opts)
 
             th_1 = out_struct.raw.enc(:,2) * 2 * pi / 18000;
             th_2 = out_struct.raw.enc(:,3) * 2 * pi / 18000;
-            th_1_adj = filtfilt(b, a, interp1(th_t, th_1, analog_time_base));
-            th_2_adj = filtfilt(b, a, interp1(th_t, th_2, analog_time_base));
+            th_1_adj = interp1(th_t, th_1, analog_time_base);
+            th_2_adj = interp1(th_t, th_2, analog_time_base);
+            
+            th_1_adj(isnan(th_1_adj)) = th_1_adj(find(~isnan(th_1_adj),1,'first')); % when datafile started before encoders were zeroed.
+            th_2_adj(isnan(th_2_adj)) = th_2_adj(find(~isnan(th_2_adj),1,'first'));
+            
+            th_1_adj = filtfilt(b, a, th_1_adj);
+            th_2_adj = filtfilt(b, a, th_2_adj);
+            
+
             
             th_1_adj = smooth(th_1_adj, 51)';
             th_2_adj = smooth(th_2_adj, 51)';
