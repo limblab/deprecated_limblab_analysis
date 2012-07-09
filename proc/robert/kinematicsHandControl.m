@@ -1,6 +1,6 @@
 function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance]=kinematicsHandControl(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTSinterTargetDistance]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted out_struct
@@ -83,11 +83,15 @@ trialOnset=find(out_struct.words(:,2)==18);
 % recording was cut off just exactly between the trial initiation word and
 % the presentation of the first target (should be exceedingly rare):
 trialOnset(out_struct.words(trialOnset+1,2)~=49)=[];
+TO_original=trialOnset;
 % the first reach to the first target of a trial (the only reach, in brain 
-% control) never reached the target (i.e., an abort/fail):
+% control) was not a success.  Horrors!
+% for v1, this code tracks aborts.
 numAfirst=nnz(out_struct.words(trialOnset+2,2)==33);
+% This line cuts out fails for everybody (a fail is the only time that the
+% target_entry_word will be completely absent during a reach).
 trialOnset(out_struct.words(trialOnset+2,2)~=target_entry_word)=[];
-% for v1, the above code cuts out aborts on the first reach (hand control).  
+TO_nofail=trialOnset;
 % for v2, an extra step is required to cut out aborts on the first reach.
 if opts.version==2
     numAfirst=nnz(out_struct.words(trialOnset+3,2)==33);
@@ -98,13 +102,25 @@ end
 % be counted as successes.  Leaving the flag in place means those trials
 % will be counted as aborts/fails, and the success trials + the abort/fail
 % trials should add up to all the trials.  EXCEPT...
-% if an abort occurs on a reach later than the first one (this 
-% can only happen during hand control), that trial will
+% if an abort occurs on a reach later than the first one, but still within
+% the first trial (this can only happen during hand control), that trial will
 % be counted as a success (since kinematics are only calculated on the
 % first reach of a trial), but also as an abort because the 33 flag is
 % still there.  So, we want to ignore these trials.  Since
 % kinematics calculations should only depend on trialOnset, which is not
 % modified, kinematics values should be unaffected by this action.
+
+
+% compute a sliding window average of succeses
+windowSize=20;
+slidingAccuracy=zeros(numel(TO_original)-windowSize,1);
+slidingTime=slidingAccuracy;
+for n=windowSize:length(TO_original)
+    slidingAccuracy(n-windowSize+1)= ...              % TO_nofail  
+        length(intersect(TO_original(n-windowSize+1:n),trialOnset))/windowSize;
+    slidingTime(n-windowSize+1)= ...
+        mean(out_struct.words(TO_original(n-windowSize+1:n),1));
+end
 
 % hold_time will be subtracted below
 startEndReachesMatrix=out_struct.words(sort([trialOnset+1; trialOnset+2]),:);
@@ -190,7 +206,8 @@ for n=1:length(start_reaches)
 end
 % exclude_trials corresponds to trials were length(included_points) < 2,
 % therefore indicating that the target appeared on top of the cursor or was
-% hit by it as a matter of chance most likely.  Exclude these altogether.
+% hit by it as a matter of chance most likely.  Exclude these from
+% consideration for kinematics properties.
 exclude_trials=find(PL==0);
 PL(exclude_trials)=[];
 TTT(exclude_trials)=[];
@@ -199,14 +216,13 @@ pathReversals(exclude_trials)=[];
 interTargetDistance(exclude_trials)=[];
 
 % success trials are success trials, whether they were successful by
-% accident or by design.  Success-by-accident never happens under hand
-% control, but it sometimes does under brain control (marked by
-% exclude_trials)
+% accident or by design.  Use quantities that pre-date exclude_trials in
+% order to score hitRates
 hitRate=length(trialOnset)/nnz(out_struct.words(:,2)==18);
 if nargout > 3
     hitRate2=(length(trialOnset)+numAfirst)/nnz(out_struct.words(:,2)==18);
 end
 
-trialTS=out_struct.words(trialOnset,1);
+trialTS=[out_struct.words(trialOnset,1) start_reaches end_reaches];
 % check
-trialTS(exclude_trials)=[];
+trialTS(exclude_trials,:)=[];

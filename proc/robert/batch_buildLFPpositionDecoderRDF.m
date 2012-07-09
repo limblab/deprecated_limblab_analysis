@@ -51,7 +51,8 @@ for batchIndex=1:length(MATfiles)
     % not be enough, if there is a transient in the position of the handle
     % halfway through the recording (e.g. it was bumped by the experimenter
     % accidentally).
-    if mean(range(out_struct.vel(:,2:3)))>10 && floor(mean(getNumTargets(out_struct)))>1
+    if mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 10 ...
+            && floor(mean(getNumTargets(out_struct)))>1
         buildLFPpositionDecoderRDF
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
         VAF_all=[VAF_all; struct('filename',tempNameafkdlj,'type','LFP','vaf',vaf)];

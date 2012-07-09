@@ -1,5 +1,8 @@
 function decoderType=decoderTypeFromLogFile(inputPath)
 
+% syntax decoderType=decoderTypeFromLogFile(inputPath)
+
+
 if nargin >= 1
     fid=fopen(inputPath);
 else

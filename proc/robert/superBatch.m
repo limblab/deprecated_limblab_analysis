@@ -4,6 +4,7 @@ function superBatch(animal,dateNumber,pathOverride)
 % 
 % runs as function.
 
+diary off
 
 % because this takes a long time to run, it is useful to know when any
 % errors occurred, independently of information about what the error
@@ -39,6 +40,7 @@ try
     
     % the long-winded stuff.
     PathName=pwd;
+    diary(fullfile(PathName,'decoderOutput.txt'))
     if strcmp(CEBorPLX,'ceb') % this makes .plx the default
         batch_get_cerebus_data % runs as script.  uses PathName
         % put .mat files on the data server in an appropriate folder

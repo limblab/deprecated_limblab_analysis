@@ -98,6 +98,7 @@ if isempty(n) || n==length(BDFlist) && ~strcmp(baseDecoderName,baseModelName)
     % this will let us re-default to the input decoder...
     decoderFile=regexp(decoderPath,fsep,'split');
     decoderFile=decoderFile(end-1:end);
+    clear bdfBRpath
 %     decoderFile{2}(end)=[];
     % ... but to begin with, just throw error.  get current date folder.
 %     error('could not find a brain control file on %s that used \n %s', ...
@@ -122,7 +123,8 @@ if exist(pathToDecoderMAT,'file')==2
         decoderDate=decoderDateFromLogFile(bdfBRpath,1);
     catch ME 
         % if no bdfBRpath, use decoderPath
-        if strcmp(ME.identifier,'MATLAB:UndefinedFunction')
+        if strcmp(ME.identifier,'MATLAB:UndefinedFunction') || ...
+            strcmp(ME.identifier,'MATLAB:refClearedVar')
             decoderDateStr=regexp(decoderPath,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once');
             if ~isempty(decoderDateStr)
                 decoderDate=datenum(decoderDateStr,'mm-dd-yyyy');
@@ -240,7 +242,7 @@ if exist('bankRatio','var')~=1
 end
 
 VAFstruct=struct('name',BDFname,'decoder_age',bdfDate-decoderDate, ...
-    'vaf',vaf,'r2',r2,'bankRatio',bankRatio);
+    'vaf',vaf,'r2',r2,'bankRatio',bankRatio,'decoder_path',pathToDecoderMAT);
 
 
 % to get predicted position from predicted velocity, could do a simple

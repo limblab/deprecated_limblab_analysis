@@ -57,7 +57,11 @@ for batchIndex=1:length(MATfiles)
     % regardless of what else happens, we'll always have duration.
     kinStruct(batchIndex).duration=out_struct.meta.duration;
 
-    if (exist('override','var')~=0 && override==1) || mean(range(out_struct.vel(:,2:3))) < 10
+    % don't use the range function because it is terrible.  relies on some
+    % damn license that's always crapping out because of too many
+    % concurrent users.
+    if (exist('override','var')~=0 && override==1) || ...
+            mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 10
         % we're in brain control country.  Savor the flavor.
         get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
         out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation

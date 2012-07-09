@@ -6,8 +6,13 @@ function BatchList=HC_firstOverall(decoderIn)
 if nargin
     % go semi-dumb for now, at least in terms of assumptions.
     [decoderPath,decoderName,~]=FileParts(decoderIn);
-    D=dir(decoderPath);
+    % this is to use the date on which the handed-in version of the decoder
+    % was actually built (differs from the stated date in cases of zeroing
+    % channels, or other later manipulations).
+%     D=dir(decoderPath);
 %     decoderDay=floor(datenum(D(strcmp([decoderName,'.mat'],{D.name})).date));
+    % this is to use the decoder's "stated" date, i.e. the date of the hand control
+    % data file that serves as the original basis for the decoder.
     decoderDay=datenum(regexp(decoderPath,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once'),'mm-dd-yyyy');
     animal=regexp(decoderName,'Chewie|Mini','match','once');
     m=1;

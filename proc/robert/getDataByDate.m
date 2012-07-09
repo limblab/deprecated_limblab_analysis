@@ -38,6 +38,7 @@ cd(destFolder)
 mkdir(datestr(dateNumber,'mm-dd-yyyy'))
 destFolder=[destFolder, filesep, datestr(dateNumber,'mm-dd-yyyy')];
 D=dir(destFolder);
+diary(fullfile(destFolder,'decoderOutput.txt'))
 CEBorPLX='';
 
 pathBank={[remoteDriveLetter,':\Chewie_8I2\SpikeLFP'], ...
