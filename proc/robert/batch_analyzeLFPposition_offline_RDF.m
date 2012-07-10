@@ -32,7 +32,7 @@ for batchIndex=1:length(MATfiles)
     FileName=findBDFonCitadel(MATfiles{batchIndex},1);
     FileName(regexp(FileName,sprintf('\n')))=[];
     
-    [~,name,~,~]=fileparts(FileName);
+    [~,name,~,~]=FileParts(FileName);
     % check to see if something with a similar name exists in the current
     % directory
     [status,result]=dos(['dir *',name,'* /s /b']);
