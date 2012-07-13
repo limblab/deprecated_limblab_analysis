@@ -18,10 +18,8 @@ clear strData nCharPerLine
 %%
 fileHeader=cellData{1};
 channelsInfo=cellData{2};
-TimePoints=str2double(regexp(fileHeader, ...
-    '(?<=TimePoints=)[0-9]+','match','once'));
-numChans=str2double(regexp(fileHeader, ...
-    '(?<=Channels=)[0-9]+','match','once'));
+TimePoints=str2double(regexp(fileHeader,'(?<=TimePoints=)[0-9]+','match','once'));
+numChans=str2double(regexp(fileHeader,'(?<=Channels=)[0-9]+','match','once'));
 remainder=channelsInfo;
 n=1;
 while ~isempty(remainder)
