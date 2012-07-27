@@ -1,17 +1,20 @@
 function spikemap_plot(vel_heat_maps,chans,chan_to_plot)
 % Plays animation of spiking heat map created by 'vel_spikemap.m' for unit
 % 'chan_to_plot'
+%
+% vel_heat_maps{unit,i} = heat_map(1:num_vbins,1:num_vbins);
+% where 'i' indexes through all the time bins of that unit
 
 %% to-do
 %-scale somehow so all plots for the plotted unit are on same color scale
 %(so the subplot coloration is all the same relative to other time bins on
-%that same figure)
+%that same figure) ===> this functionality will be in 'chng2img'
 
 %% Normalize/Scale so relative output across subplots is all the same
 
 % Scales all values within each unit so they span the colormap range and
 % changes to an image
-%vmaps = chng2image(vel_heat_maps);
+%vmaps = chng2img(vel_heat_maps);
 vmaps = vel_heat_maps;
 
 %% plot
@@ -63,12 +66,42 @@ end
 
 
 %% Internal functions
-function vmaps = chng2image(vel_heat_maps)
+function vmaps = chng2img(vel_heat_maps)
 % Steps to take:
 %   -for each unit, read min and max values, normalize values in each time
 %   bin to the range present across all time bins of that unit
 %   -add 3rd dim. to firing rate matrix so it can represent an RGB image,
 %   change subplotting to "image" instead of "surf"
+
+vhm = vel_heat_maps; %let's make later typing a little easier...
+num_units = size(vhm,1); %number of units
+num_bins  = size(vhm,2); %number of time bins
+dim_x = size(vhm{1,1},2);
+dim_y = size(vhm{1,1},1);
+unit_stats = (-1)*ones(num_units,4); % [ min  max  mean  median ] - may later remove mean or median
+
+% GET MAX/MIN VALUES FOR EACH UNIT
+num_els = dim_x*dim_y;
+disp('Calculating min and max values for each unit');
+for unit = 1:num_units
+    
+    all_vals = zeros(dim_y,dim_x*num_bins); %and one array to hold them all
+    for bin = 1:num_bins    
+        init = num_els*(bin-1) + 1;
+        fin  = num_els*bin;
+        all_vals(init:fin) = vhm{unit,bin};%(1:end);
+    end
+    unit_stats(unit,:) = [ min(min(all_vals)) max(max(all_vals))...
+                           mean(mean(all_vals)) median(median(all_vals)) ];
+                       
+    vhm{unit,:} = scale_unit(vhm{unit,:});
+    
+end
+
+
+
+function scaled_unit = scale_unit(unit_vhms)
+
 
 
 function s_plots = init_subplot(num_bins)

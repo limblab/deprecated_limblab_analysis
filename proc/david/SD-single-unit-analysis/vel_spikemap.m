@@ -125,7 +125,7 @@ for unit = 1:num_units
     end
     heat_map = zeros(num_vbins); % square matrix to store mean spike rates
     spikes   = binned_spikes(:,unit);
-    % get heat map for each bin on this unit
+    % get heat map for each time bin on this unit
     for i = 1:num_bins
         % ugly nested loops, but let's do this
         % run through each velocity bin and find associated values
