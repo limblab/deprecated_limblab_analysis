@@ -116,7 +116,7 @@ if exist(pathToDecoderMAT,'file')==2
     if strcmp(controlType,'LFP')
         load(pathToDecoderMAT,'H','P','bestf','bestc')
     else
-        load(pathToDecoderMAT,'H','P')
+        load(pathToDecoderMAT,'H','P','neuronIDs')
     end
     fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
     try % to use the actual file from that day
@@ -211,10 +211,29 @@ else    % controlType is 'Spike'
     bdf.units(uList(:,2)==0)=[];
     % 2nd way to try
     bdf.units(size(cat(1,bdf.units.id),1)+1:end)=[];
-    cells=[];
-    
+    % the decoder is under constraint to accept no unit that fired at less
+    % than 0.5 Hz.  Therefore, must trim such units from the bdf, lest the
+    % bdf not match the input decoder.
+    bdf.units((cellfun(@length,{bdf.units.ts})/bdf.meta.duration <= 0.5))=[];
+    cells=unit_list(bdf);
+
+    [commonVals,cellsGoodInds,NeuronIDgoodInds]=intersect(cells,neuronIDs,'rows');
+    badNeuronIDvals=setdiff(neuronIDs,neuronIDs(NeuronIDgoodInds,:),'rows');
+    if ~isempty(badNeuronIDvals)
+        badChannelInds=find(ismember(neuronIDs,badNeuronIDvals,'rows'))';    
+        badChannelStartInds=(badChannelInds-1)*numlags+1;
+        indMat=repmat(badChannelStartInds,numlags,1)+repmat((0:9)',1,length(badChannelInds));
+        for innerInd=1:length(Hcell)
+            Hcell{innerInd}(indMat(:),:)=[];
+        end
+    end
+    badCellVals=setdiff(cells,cells(cellsGoodInds,:),'rows');
+    if ~isempty(badCellVals)
+        bdf.units(ismember(cells,badCellVals,'rows'))=[];
+    end
+
     [vaf,~,~,~,~,~,~,r2,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD_inputDecoder(bdf,signal, ...
-        cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,BDFname,5,Hcell,P);
+        commonVals,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh,BDFname,5,Hcell,P);
     close                                            
     
     % examine vaf

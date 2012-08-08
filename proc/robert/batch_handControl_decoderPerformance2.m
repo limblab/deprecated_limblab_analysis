@@ -1,6 +1,15 @@
-function VAFstruct=batch_handControl_decoderPerformance2(decoderIn)
+function VAFstruct=batch_handControl_decoderPerformance2(decoderIn,targetNumX)
 
+% syntax VAFstruct=batch_handControl_decoderPerformance2(decoderIn,targetNumX)
+%
 % decoderIn is a path, not a matrix of some kind.
+% targetNumX is optional; should be a number of targets that is too few.
+% default is <5 will be excluded (essentially restricts to 6-target files,
+% with a small bit of slop in case there is an off trial at the beginning
+% or end or something.  Set to 2 to take all HC files including 3-target
+% files.
+
+if nargin < 2, targetNumX=5; end
 
 originalPath=pwd;
 
@@ -38,15 +47,18 @@ for n=1:length(BatchList)
                 BatchList{n},out_struct.meta.duration)
             continue
         end
-        if numTargets(n) <= 3
+        if numTargets(n) < targetNumX
             fprintf(1,'\n\n%s has %d targets.  skipping...\n\n',...
                 BatchList{n},numTargets(n))
             continue
         end
         % if spike decoder is being used, make sure the number of units in
         % the current file is the same as the number of units in the
-        % original file.
-        out_struct=alignSpikeUnits(out_struct,out_structOriginal);
+        % original file.  TODO: improve intelligence of test for spike or
+        % LFP decoder.
+        if isempty(regexpi(decoderIn,'feats'))
+            out_struct=alignSpikeUnits(out_struct,out_structOriginal);
+        end
         if ~nargin
             VAFstruct(n)=handControl_decoderPerformance_predictions2(out_struct);
         else

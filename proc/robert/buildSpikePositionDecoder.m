@@ -60,12 +60,12 @@ if interactive
 else
     binsize=0.05;
     starttime=0;
-    MinFiringRate=0;
+    MinFiringRate=0.5;
 end
 stoptime=bdf.meta.duration;
 
 disp('Converting BDF structure to binned data, please wait...');
-binnedData = convertBDF2binned(varStr,binsize,starttime,stoptime);
+binnedData = convertBDF2binned(varStr,binsize,starttime,stoptime,5,0,MinFiringRate);
 
 if interactive
     [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc] = ...

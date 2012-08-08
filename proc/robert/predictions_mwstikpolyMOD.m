@@ -264,6 +264,8 @@ if nargout>5
     
 end
 
+assignin('base','ytnew',ytnew)
+assignin('base','y_pred',y_pred)
 
 function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
 

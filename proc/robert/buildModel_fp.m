@@ -163,7 +163,7 @@ if exist('words','var') && ~isempty(words)
 else
     q=ones(1,length(analog_times));   %Temp kludge b/c find_active_regions gives too long of a vector back
 end
-q = interp1(analog_times, q, t);
+q = interp1(analog_times, double(q), t);
 
 disp('2nd part:assign t,y,q')
 toc

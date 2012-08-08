@@ -19,4 +19,12 @@ if ~isempty(diffMaker)
     end
 end
 
-
+diffMaker=setdiff(uListCurrent,uListOriginal,'rows');
+if ~isempty(diffMaker)
+    for n=1:size(diffMaker,1)
+        fprintf(1,'\nremoving unit [%d,%d] from %s\n',diffMaker(n,1),diffMaker(n,2),...
+            out_structCurrent.meta.filename)
+        breakPoint=find(uListCurrent(:,1)<diffMaker(n,1),1,'last')+1;
+        out_structCurrent.units(breakPoint)=[];        
+    end
+end
