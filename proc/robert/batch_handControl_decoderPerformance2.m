@@ -31,14 +31,22 @@ else
     load('BatchList.mat')
 end
 
-load(findBDF_local(BatchList{1}))
+if ispc
+    load(findBDF_local(BatchList{1}))
+else
+    load(findBDFonCitadel(BatchList{1}))
+end
 out_structOriginal=out_struct;
 
 for n=1:length(BatchList)
     BatchList{n}=regexprep(BatchList{n},'\t',''); 
     try
         % if they're hand control, load the local copy, save some time
-        load(findBDF_local(BatchList{n}))
+        if ispc
+            load(findBDF_local(BatchList{n}))
+        else
+            load(findBDFonCitadel(BatchList{n}))
+        end
         numTargets(n)=floor(mean(getNumTargets(out_struct)));
         if out_struct.meta.duration < 510
             % require at least an 8.5 min file.  should there be other

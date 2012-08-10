@@ -1,5 +1,8 @@
 function commonIntersection=intersect_regex(matchPattern)
 
+% syntax commonIntersection=intersect_regex(matchPattern)
+
+
 S=evalin('caller','whos');
 
 S(cellfun(@isempty,regexp({S.name},matchPattern)))=[];

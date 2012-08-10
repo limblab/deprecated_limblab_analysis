@@ -34,7 +34,12 @@ function [BDFlist,datenames]=findBDF_withControl(animal,dayIn,controlType)
 pathBank={'Chewie_8I2','Mini_7H1'};
 ff={'Filter files','FilterFiles'};
 animus=cellfun(@isempty,regexp(pathBank,animal))==0;
-kinStructPath=fullfile('Z:',pathBank{animus},ff{animus},dayIn,'kinStruct.mat');
+if ispc
+    remoteDriveLetter='Z:';
+else
+    remoteDriveLetter='/Volumes/data';
+end
+kinStructPath=fullfile(remoteDriveLetter,pathBank{animus},ff{animus},dayIn,'kinStruct.mat');
     
 if exist(kinStructPath,'file')==2
     load(kinStructPath)

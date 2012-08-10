@@ -26,5 +26,5 @@ Hout=Hin;
 
 badChannelInds=find(ismember(sort(bestc),badChannels));
 badChannelStartInds=(badChannelInds-1)*numlags+1;
-indMat=repmat(badChannelStartInds,numlags,1)+repmat([0:9]',1,length(badChannelInds));
+indMat=repmat(badChannelStartInds,numlags,1)+repmat((0:9)',1,length(badChannelInds));
 Hout(indMat(:),:)=0;
