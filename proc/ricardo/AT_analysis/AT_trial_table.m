@@ -109,8 +109,9 @@ for iTrial = 1:num_trials
 end
 
 remove_index = [];
-for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
-    [tempa tempb] = hist(trial_table(:,iCol),1000);
+% for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
+for iCol = [1 2]
+    [tempa tempb] = hist(log(trial_table(:,iCol)),1000);
     cumsum_temp = cumsum(tempa/sum(tempa));
     remove_under = tempb(find(cumsum_temp<0.02,1,'last'));
     if ~isempty(remove_under)
@@ -126,6 +127,9 @@ for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
             remove_index = [remove_index find(trial_table(:,iCol)>remove_above)'];
         end
     end
+    
+    temp = find(trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10);
+    remove_index = [remove_index temp];
 end
 remove_index = unique(remove_index);
 trial_table(remove_index,:) = [];
