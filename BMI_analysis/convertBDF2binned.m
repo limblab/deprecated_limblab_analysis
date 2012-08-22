@@ -42,6 +42,11 @@ elseif isfield(datastruct,'pos')
     duration = double(datastruct.pos(end,1)-datastruct.pos(1,1));
 else
     warning('BDF2BIN: no emg or force field present in input structure');
+    numUnits = size(datastruct.units,2);
+    duration = 0;
+    for i = 1:numUnits
+        duration = max(duration,datastruct.units(1,i).ts(end));
+    end
 end
 
 stoptime = floor(duration);
@@ -234,7 +239,7 @@ end
 if ~isfield(datastruct, 'pos')
     %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     cursorposbin = [];
-else
+elseif ~isempty(datastruct.pos)
     cursorposbin = single(interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0));
 end
 
@@ -492,8 +497,8 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
         tt = mg_trial_table(datastruct);
         tt = tt(tt(:,1)>=timeframe(1) & tt(:,11)<=timeframe(end),:);
     elseif wrist_flexion_task
-        tt = wf_trial_table(datastruct);
-        tt = tt(tt(:,1)>=timeframe(1) & tt(:,8)<=timeframe(end),:);
+         tt = wf_trial_table(datastruct);
+         tt = tt(tt(:,1)>=timeframe(1) & tt(:,8)<=timeframe(end),:);
     else
         tt = [];
     end
