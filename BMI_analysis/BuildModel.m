@@ -198,6 +198,9 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
             end
             PredictedData(:,z) = polyval(P(z,:),PredictedData(:,z));
         end
+        %Transpose P to make it consistent with other arrays, and
+        %compatible with Brain Reader
+        P = P';
     end
   
 %% Outputs
