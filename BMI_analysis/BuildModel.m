@@ -179,7 +179,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 Act_patches = mean(ActualDataNew(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
 
                 %Find Polynomial to Thresholded Data
-                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+                [P(:,z)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
                 
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -194,13 +194,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
-                [P(z,:)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
             end
-            PredictedData(:,z) = polyval(P(z,:),PredictedData(:,z));
+            PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
         end
-        %Transpose P to make it consistent with other arrays, and
-        %compatible with Brain Reader
-        P = P';
     end
   
 %% Outputs

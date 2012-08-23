@@ -79,7 +79,7 @@ end
 if ~isempty(filter.P)
     Ynonlinear=zeros(size(PredictedData));
     for z=1:size(PredictedData,2);
-        Ynonlinear(:,z) = polyval(filter.P(z,:),PredictedData(:,z));
+        Ynonlinear(:,z) = polyval(filter.P(:,z),PredictedData(:,z));
     end
     PredictedData=Ynonlinear;
 end
