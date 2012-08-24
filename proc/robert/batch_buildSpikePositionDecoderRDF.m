@@ -52,7 +52,7 @@ for batchIndex=1:length(MATfiles)
     assignin('base','out_struct',out_struct)
     % account for hand control files, which might have a brainReader log
     % recorded for testing purposes.
-    if mean(range(out_struct.vel(:,2:3))) > 10
+    if mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 10
         % FUNCTION NOT A SCRIPT.  Trying to get smarter with time.
         buildSpikePositionDecoder(out_struct,0);
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
