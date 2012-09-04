@@ -8,14 +8,14 @@ filename = 'AT_test_020';
 fileExt = '.nev';
 filepath = 'Y:\TestData\Attention cpp\';
 
-% temp = dir([filepath filename '_bdf.mat']);
-% if isempty(temp)
-%     bdf = get_cerebus_data([filepath filename fileExt],3);
-%     save([filepath filename '_bdf'],'bdf');
-% else
-%     load([filepath filename '_bdf.mat'])
-% end
-% [trial_table tc] = AT_trial_table([filepath filename '_bdf']);
+temp = dir([filepath filename '_bdf.mat']);
+if isempty(temp)
+    bdf = get_cerebus_data([filepath filename fileExt],3);
+    save([filepath filename '_bdf'],'bdf');
+else
+    load([filepath filename '_bdf.mat'])
+end
+[trial_table tc] = AT_trial_table([filepath filename '_bdf']);
 
 
 trial_table = trial_table(trial_table(:,tc.result)~=33,:);
