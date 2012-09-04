@@ -1,4 +1,4 @@
-function out = plot_staircase(bdf)
+function plot_staircase(bdf)
 
 tt = bc_trial_table(bdf);
 tt = tt(tt(:,7) == double('R') | tt(:,7)==double('F'),:);
