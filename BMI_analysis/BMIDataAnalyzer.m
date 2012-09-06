@@ -340,11 +340,12 @@ function BMIDataAnalyzer()
             statemethods = mat2cell(binnedData.statemethods,ones(1,m),n);
         end
         
-        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State, Use_Thresh ] = BuildModelGUI(binsize,statemethods);
+        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State, Use_Thresh Use_Ridge] = BuildModelGUI(binsize,statemethods);
         if Use_State
             [filt_struct] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State);
-        else
-            [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_Thresh);
+        elseif Use_Ridge
+            [filt_struct] = BuildRidgeModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State);
+        else [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_Thresh);
         end
         disp('Done.');
         

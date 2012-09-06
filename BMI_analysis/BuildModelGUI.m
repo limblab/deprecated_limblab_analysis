@@ -23,7 +23,7 @@ function varargout = BuildModelGUI(varargin)
 
 % Edit the above text to modify the response to help BuildModelGUI
 
-% Last Modified by GUIDE v2.5 26-Jul-2011 14:15:47
+% Last Modified by GUIDE v2.5 05-Sep-2012 10:04:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -85,12 +85,13 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
     Pred_Veloc = get(handles.Veloc_cbx,'Value');
     Use_State = get(handles.States_popup,'Value')-1;
     Use_Thresh = get(handles.useThresh_cbx,'Value');
+    Use_Ridge = get(handles.Ridge_popup,'Value')-1;
     
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh};
+     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh Use_Ridge};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -265,3 +266,24 @@ function useThresh_cbx_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of useThresh_cbx
 
 
+% --- Executes on selection change in Ridge_popup.
+function Ridge_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to Ridge_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns Ridge_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from Ridge_popup
+
+
+% --- Executes during object creation, after setting all properties.
+function Ridge_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Ridge_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
