@@ -17,7 +17,7 @@ function convertCerebusToBDF(dataPath,convertFolders,rewriteFiles)
 % Hard code some defaults for my own development use...
 if nargin < 2
     dataPath = 'Z:\Jaco_8I1\'; % Set a base directory
-    convertFolders = {'08-30-12'}; % Define what dates to convert data for
+    convertFolders = {'Afferent Removal\09-05-12'}; % Define what dates to convert data for
 end
 %%%%%
 
@@ -28,7 +28,7 @@ end
 
 for iFolder = 1:length(convertFolders)
     disp(['Converting Cerebus data files from ' convertFolders{iFolder} '...']);
-    dirCB = fullfile(dataPath,'\CerebusData\Afferent Removal\',convertFolders{iFolder},'\');
+    dirCB = fullfile(dataPath,'\CerebusData\',convertFolders{iFolder},'\');
     dirBDF = fullfile(dataPath,'\BDFStructs\',convertFolders{iFolder},'\');
     
     % If there isn't a BDF directory yet, create it

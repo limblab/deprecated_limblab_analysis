@@ -54,7 +54,7 @@ rectangle('Position',[0-(targetLengthX/2), 0-(targetLengthY/2),targetLengthX,tar
 
 % Plot the path length from GoCue to the last target entrance 
 % before the hold period
-hold on; plot(SingleTrialPositionsX(1:LastTargetContact(N)+1),SingleTrialPositionsY(1:LastTargetContact(N)+1),'w');
+%hold on; plot(SingleTrialPositionsX(1:LastTargetContact(N)+1),SingleTrialPositionsY(1:LastTargetContact(N)+1),'w');
 
 % Make the background black and the axes equal
 set(subplot(1,1,1),'Color',[0.5 0.5 0.5])

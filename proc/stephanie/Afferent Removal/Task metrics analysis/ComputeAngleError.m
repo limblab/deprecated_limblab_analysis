@@ -71,4 +71,4 @@ end
 AngleErrorStruct.AngleErrorSummary(NumOfTargets+1,1) = mean(AngleErrorFull(:,1));
 AngleErrorStruct.AngleErrorFull = AngleErrorFull;
 
-
+end

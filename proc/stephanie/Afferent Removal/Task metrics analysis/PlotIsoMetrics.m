@@ -13,7 +13,8 @@ for N =1:NumOfTargets
     theGroup = [theGroup; N*ones(length(IsoTaskMetrics.Time2Target.(['Target' num2str(N)])),1)];
 end
 
-figure; boxplot(theData,theGroup); title('Time to Target')
+%figure; 
+boxplot(theData,theGroup); title('Time to Target')
 
 
 theData = [];
