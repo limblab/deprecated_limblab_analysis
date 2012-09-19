@@ -1,0 +1,5 @@
+"Copssh requires a dedicated service account 
+for full functionality..."
+
+user: SvcCOPSSH
+pw: Xx9HciJtSt2526
