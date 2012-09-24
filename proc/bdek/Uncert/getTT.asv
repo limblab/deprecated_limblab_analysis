@@ -1,4 +1,4 @@
-function tt = getTT(bdf)
+function tt = getTT(bdf,varargin)
 % getTT - returns a table containing the key timestamps 
 %                   for all of the 1D Uncertainty trials in BDF
 %
@@ -175,5 +175,11 @@ for trial_i=1:length(all_trial_word_inds)
     dropTrial=false;
 end
 cd C:\Users\limblab\Desktop\s1_analysis\proc\bdek\Uncert\;
+
+if length(varargin) > 1
+    eval([sprintf('tt_%I',varargin{1}), '=tt;']);
+end
+
 save(fn,'tt');
+
 return;
