@@ -103,32 +103,32 @@ for trial = 1:num_trials-1
 %  */
         db = bdf.databursts{trial,2};
 
-        staircase_id=db(9);
-        target_angle=bytes2float(db(14:17));
-        bump_dir=bytes2float(db(18:21));
-        random_tgt_flag=db(22);
-        tgt_dir_floor=bytes2int(db(23:26));
-        tgt_dir_ceil=bytes2fint(db(27:30));
-        bump_mag=bytes2float(db(31:34));
-        bump_dur=bytes2float(db(35:38));
-        bump_ramp=bytes2float(db(39:42));
-        rand_bump_flag=db(43);
-        bump_floor=bytes2float(db(44:47));
-        bump_ceil=bytes2float(db(48:51));
-        staircase_ratio=bytes2int(db(52:55));
-        stim_trial_flag=db(56);
-        training_trial_freq=bytes2float(db(57:60));
-        stim_freq=bytes2float(db(61:64));
-        recenter_cursor_flag=db(65);
-        tgt_radius=bytes2float(db(66:69));
-        tgt_size=bytes2float(db(70:73));
-        intertrial_time=bytes2float(db(74:77));
-        penalty_time=bytes2float(db(78:81));
-        bump_hold_time=bytes2float(db(82:85));
-        ct_hold_time=bytes2float(db(86:89));
-        ot_delay_time=bytes2float(db(90:93));
-        bump_rate_skew=bytes2float(db(94:97));
-        targets_during_bump_flag=db(98);
+        staircase_id=db(10);
+        target_angle=bytes2float(db(15:18));
+        bump_dir=bytes2float(db(19:22));
+        random_tgt_flag=db(23);
+        tgt_dir_floor=bytes2float(db(24:27));
+        tgt_dir_ceil=bytes2float(db(28:31));
+        bump_mag=bytes2float(db(32:35));
+        bump_dur=bytes2float(db(36:39));
+        bump_ramp=bytes2float(db(40:43));
+        rand_bump_flag=db(44);
+        bump_floor=bytes2float(db(45:48));
+        bump_ceil=bytes2float(db(49:52));
+        staircase_ratio=bytes2float(db(53:56));
+        stim_trial_flag=db(57);
+        training_trial_freq=bytes2float(db(58:61));
+        stim_freq=bytes2float(db(62:65));
+        recenter_cursor_flag=db(66);
+        tgt_radius=bytes2float(db(67:70));
+        tgt_size=bytes2float(db(71:74));
+        intertrial_time=bytes2float(db(75:78));
+        penalty_time=bytes2float(db(79:82));
+        bump_hold_time=bytes2float(db(83:86));
+        ct_hold_time=bytes2float(db(87:90));
+        ot_delay_time=bytes2float(db(91:94));
+        bump_rate_skew=bytes2float(db(95:98));
+        targets_during_bump_flag=db(99);
         
         tt(trial,:) = [start_time, bump_time, go_cue, end_time, ct_hold_time, bump_hold_time, ot_delay_time, penalty_time, intertrial_time, ... 9 elements
             random_tgt_flag, rand_bump_flag, stim_trial_flag, recenter_cursor_flag, targets_during_bump_flag, ... 5 elements
@@ -136,12 +136,12 @@ for trial = 1:num_trials-1
             staircase_id, staircase_ratio, bump_rate_skew, bump_floor, bump_ceil, bump_mag, bump_dur, bump_ramp, bump_dir, ... 9 elements
             training_trial_freq, stim_freq, trial_result ];
 
-%     catch
-%         tt(trial,:) = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
-%                        NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
-%                        NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
-%                        NaN];
-%     end
+      catch
+          tt(trial,:) = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
+                         NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
+                         NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
+                         NaN];
+      end
 end
 
 tt = tt(~isnan(tt(:,1)),:);
