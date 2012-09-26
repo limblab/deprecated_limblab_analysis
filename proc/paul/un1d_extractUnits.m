@@ -1,3 +1,4 @@
+function sortedunits =  un1d_extractUnits(bdf)
 % this is very quick and dirty
 
 numunits=size(bdf.units,2);
@@ -15,3 +16,5 @@ for suidx=sorted_ids
    sortedunits(count).ts = bdf.units(suidx).ts;
    count=count+1;
 end
+
+return;
