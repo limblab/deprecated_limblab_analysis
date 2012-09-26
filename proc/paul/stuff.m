@@ -1,2 +1,0 @@
-disp('What up, yo?');
-
