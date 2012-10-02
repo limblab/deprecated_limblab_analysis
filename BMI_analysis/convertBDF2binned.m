@@ -192,8 +192,8 @@ else
     if NormData
         for i=1:numEMGs
 %             emgdatabin(:,i) = emgdatabin(:,i)/max(emgdatabin(:,i));
-            %dont use the max because of artefact, use 98% percentile
-            EMGNormRatio = prctile(emgdatabin(:,i),98);
+            %dont use the max because of artefact, use 99% percentile
+            EMGNormRatio = prctile(emgdatabin(:,i),99);
             emgdatabin(:,i) = emgdatabin(:,i)/EMGNormRatio;
         end
     end
@@ -226,8 +226,8 @@ else
         %Normalize Force
         for i=1:numforcech
 %             forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
-            %dont use the max because of possible outliars, use 98% percentile
-            forceNormRatio = prctile(abs(forcedatabin(:,i)),98);
+            %dont use the max because of possible outliars, use 99% percentile
+            forceNormRatio = prctile(abs(forcedatabin(:,i)),99);
             forcedatabin(:,i) = forcedatabin(:,i)/forceNormRatio;
         end        
     end
@@ -247,15 +247,15 @@ cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
 cursposlabels(1,1:5)= 'x_pos';
 cursposlabels(2,1:5)= 'y_pos';
 
-if NormData
-    %Normalize Cursor and Target position with same x and y ratios
-    %first, calculate the ratio for cursor and use it later also for
-    %target corners
-    NormRatios = 1./max(abs(cursorposbin));
-
-    %Normalize cursor position
-    cursorposbin = cursorposbin.*repmat(NormRatios,numberbins,1);
-end
+% if NormData
+%     Normalize Cursor and Target position with same x and y ratios
+%     first, calculate the ratio for cursor and use it later also for
+%     target corners
+%     NormRatios = 1./max(abs(cursorposbin));
+% 
+%     Normalize cursor position
+%     cursorposbin = cursorposbin.*repmat(NormRatios,numberbins,1);
+% end
 
 
 %% Bin Velocity
@@ -272,11 +272,11 @@ veloclabels(1:3,1:12) = [char(zeros(1,12));char(zeros(1,12));char(zeros(1,12))];
 veloclabels(1,1:5)= 'x_vel';
 veloclabels(2,1:5)= 'y_vel';
 veloclabels(3,1:8)= 'vel_magn';
-
-if NormData
-    %Normalize velocity from 0 to 1
-    velocbin = velocbin/max(velocbin);
-end
+% 
+% if NormData
+%     %Normalize velocity from 0 to 1
+%     velocbin = velocbin/max(velocbin);
+% end
 
 %% Bin Acceleration
 if ~isfield(datastruct, 'acc')
@@ -293,10 +293,10 @@ acclabels(1,1:5)= 'x_acc';
 acclabels(2,1:5)= 'y_acc';
 acclabels(3,1:8)= 'acc_magn';
 
-if NormData
-    %Normalize velocity from 0 to 1
-    accelbin = accelbin/max(accelbin);
-end
+% if NormData
+%     %Normalize velocity from 0 to 1
+%     accelbin = accelbin/max(accelbin);
+% end
 
 %% Bin Spike Data
 
@@ -432,32 +432,26 @@ else
                                                         datastruct.targets.rotation(:,1)<=timeframe(end),: );
      end
 
-    %Normalize Cursor and Target position with same x and y ratios     
-    if NormData && isfield(datastruct.targets, 'corners')
-        %target x corners
-        targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
-        %target y corners
-        targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
-    end
-    
-    if NormData && isfield(datastruct.targets, 'centers')
-        numtgt = (size(targets.corners,2)-1)/2;
-        %target x centers
-        targets.centers(:,2:2:(2+2*(numtgt-1))) = targets.centers(:,2:2:(2+2*(numtgt-1)))*NormRatios(1);
-        %target y centers
-        targets.centers(:,3:2:(3+2*(numtgt-1))) = targets.centers(:,3:2:(3+2*(numtgt-1)))*NormRatios(1);
-    end
+%     %Normalize Cursor and Target position with same x and y ratios     
+%     if NormData && isfield(datastruct.targets, 'corners')
+%         %target x corners
+%         targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
+%         %target y corners
+%         targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
+%     end
+%     
+%     if NormData && isfield(datastruct.targets, 'centers')
+%         numtgt = (size(targets.corners,2)-1)/2;
+%         %target x centers
+%         targets.centers(:,2:2:(2+2*(numtgt-1))) = targets.centers(:,2:2:(2+2*(numtgt-1)))*NormRatios(1);
+%         %target y centers
+%         targets.centers(:,3:2:(3+2*(numtgt-1))) = targets.centers(:,3:2:(3+2*(numtgt-1)))*NormRatios(1);
+%     end
 end
 
 %% Trial Table
 if (isfield(datastruct,'words') && ~isempty(datastruct.words))
-    center_out_task=0;
-    robot_task = 0;
-    wrist_flexion_task =0;
-    ball_drop_task = 0;
-    multi_gadget_task=0;
-    random_walk_task=0;
-    vs_task = 0;
+    tt = [];
     
     start_trial_words = datastruct.words( bitand(hex2dec('f0'),datastruct.words(:,2)) == hex2dec('10') ,2);
     if ~isempty(start_trial_words)
@@ -467,43 +461,28 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
         end
 
         if start_trial_code == hex2dec('17')
-            wrist_flexion_task = 1;
-        elseif (start_trial_code >= hex2dec('11') && start_trial_code <= hex2dec('15')) ||...
-                start_trial_code == hex2dec('1a') || start_trial_code == hex2dec('1c')
-            robot_task = 1;
-            if start_trial_code == hex2dec('11')
-                center_out_task = 1;
-            elseif start_trial_code == hex2dec('12')
-                random_walk_task = 1;
-            end
+            % wrist_flexion_task
+            tt = wf_trial_table(datastruct);
+            tt = tt(tt(:,1)>=timeframe(1) & tt(:,8)<=timeframe(end),:);
+        elseif start_trial_code == hex2dec('11')
+            %center_out_task
+        elseif start_trial_code == hex2dec('12')
+            %random_walk_task
+        elseif start_trial_code == hex2dec('1b')
+            %visual search task
+            tt = vs_trial_table(datastruct);                
         elseif start_trial_code == hex2dec('19')
-            ball_drop_task = 1;
+            %ball_drop_task
+            tt = bd_trial_table(datastruct);
+            tt = tt(tt(:,1)>=timeframe(1) & tt(:,6)<=timeframe(end),:);       
         elseif start_trial_code == hex2dec('16')
-            multi_gadget_task = 1;
-        elseif start_trial_code == hex2dec('1B')
-            robot_task =1;
-            vs_task = 1;
+            %multi_gadget_task
+            tt = mg_trial_table(datastruct);
+            tt = tt(tt(:,1)>=timeframe(1) & tt(:,11)<=timeframe(end),:);
         else
-            error('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
+            warning('BDF:unkownTask','Unknown behavior task with start trial code 0x%X',start_trial_code);
         end
     end
-
-    if ball_drop_task
-        tt = bd_trial_table(datastruct);
-        tt = tt(tt(:,1)>=timeframe(1) & tt(:,6)<=timeframe(end),:);        
-    elseif vs_task
-        tt = vs_trial_table(datastruct);
-    elseif multi_gadget_task
-        tt = mg_trial_table(datastruct);
-        tt = tt(tt(:,1)>=timeframe(1) & tt(:,11)<=timeframe(end),:);
-    elseif wrist_flexion_task
-         tt = wf_trial_table(datastruct);
-         tt = tt(tt(:,1)>=timeframe(1) & tt(:,8)<=timeframe(end),:);
-    else
-        tt = [];
-    end
-    
-
     
 else
         warning('BDF:noWords','No WORDs are present');

@@ -255,7 +255,7 @@ end
             [AX,H1,H2]=plotyy(datastruct.timeframe, datastruct.emgdatabin(:,EMGs_to_plot),...
                               datastruct.timeframe, [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)] );
             [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot,:),'Location','NorthWest');
-            [leghf,objhf,outhf,outmf]=legend(AX(2),[ForceNames(Force_to_plot,:); PosNames(Pos_to_plot)],'Location','NorthEast');
+            [leghf,objhf,outhf,outmf]=legend(AX(2),[ForceNames(Force_to_plot,:); PosNames(Pos_to_plot,:)],'Location','NorthEast');
             legh = [leghe; leghf];
             outm = outme; outh = outhe;
             emg_handles = H1;

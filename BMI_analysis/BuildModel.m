@@ -49,8 +49,11 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                     if nargin > 9
                         Use_Thresh =varargin{5};
                         if nargin >10
-                            Use_PrinComp = true;
-                            numPCs = varargin{6};
+                            Use_EMGs = varargin{6};
+                            if nargin > 11
+                                Use_PrinComp = true;
+                                numPCs = varargin{7};
+                            end
                         end
                     end
                 end
@@ -100,28 +103,31 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 
 %% Calculate the filter
 
-    numlags= round(fillen/binsize); %%%Designate the length of the filters/number of time lags
-        %% round helps getting rid of floating point error but care should
-        %% be taken in making sure fillen is a multiple of binsize.
-    numsides=1;     %%%For a one-sided or causal filter
-
-    Inputs = binnedData.spikeratedata(:,desiredInputs);
-
-%     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
+    numlags= round(fillen/binsize);%Designate the length of the filters/number of time lags
+                                   % round helps getting rid of floating point error but care should
+                                   % be taken in making sure fillen is a multiple of binsize.
     
-    %Uncomment next line to use EMG as inputs for predictions
-%     Inputs = binnedData.emgdatabin;
+    numsides=1;    %For a one-sided or causal filter
 
-    %Uncomment next block to use PCs as inputs for predictions
-    if Use_PrinComp
-
+    %Select decoder inputs:
+    if Use_EMGs
+        Inputs = binnedData.emgdatabin;
+        input_type = 'EMG';
+    elseif Use_PrinComp
         [PCoeffs,Inputs] = princomp(zscore(Inputs));
         Inputs = Inputs(:,1:numPCs);
+        input_type = 'princomp';
+    else
+        Inputs = binnedData.spikeratedata(:,desiredInputs);
+        input_type = 'spike';
     end
-        
+
+%     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
+           
     Outputs = [];
     OutNames = [];
     
+    %Decoder Outputs:
     if PredEMG
        Outputs= [Outputs binnedData.emgdatabin];
        OutNames = [OutNames binnedData.emgguide];
@@ -202,7 +208,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
   
 %% Outputs
 
-    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize);
+    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize, 'input_type',input_type);
 
     if Use_PrinComp
         filter.PC = PCoeffs(:,1:numPCs);
@@ -214,7 +220,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 			 'outnames',OutNames,'spikeguide',binnedData.spikeguide, ...
 			 'vaf',RcoeffDet(PredictedData,ActualDataNew),'actualData',ActualDataNew);
 % %          PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
-        varargout(1) = {PredData};
+        varargout{1} = PredData;
     end
     
     

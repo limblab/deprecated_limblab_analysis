@@ -23,7 +23,7 @@ function varargout = BuildModelGUI(varargin)
 
 % Edit the above text to modify the response to help BuildModelGUI
 
-% Last Modified by GUIDE v2.5 05-Sep-2012 10:04:31
+% Last Modified by GUIDE v2.5 01-Oct-2012 17:06:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -57,12 +57,16 @@ function BuildModelGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 handles.binsize = varargin{1};
 handles.statelabels = varargin{2};
+handles.OK = 0;
 
 % Update handles structure
 guidata(hObject, handles);
 
 set(handles.binsize_txt,'String',[ 'BinnedData binsize : ' num2str(handles.binsize*1000) ' ms' ]);
 set(handles.States_popup,'String', [{'Don''t use State Dep'}; handles.statelabels]);
+
+% UIWAIT makes BuildModelGUI wait for user response (see UIRESUME)
+uiwait(handles.figure1);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles) 
@@ -72,28 +76,31 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-
-    % UIWAIT makes BuildModelGUI wait for user response (see UIRESUME)
-    uiwait(handles.figure1);
-
-    lagtime = get(handles.fillen_txtbx,'Value');
-    Inputs = get(handles.Inputs_popup,'Value')-1;
-    Polyn_Order = get(handles.Polyn_Order_txtbx,'Value');
-    Pred_EMG = get(handles.EMG_cbx,'Value');
-    Pred_Force = get(handles.Force_cbx,'Value');
+    
+    lagtime      = get(handles.fillen_txtbx,'Value');
+    Inputs       = get(handles.Inputs_popup,'Value')-1;
+    Polyn_Order  = get(handles.Polyn_Order_txtbx,'Value');
+    Pred_EMG     = get(handles.EMG_cbx,'Value');
+    Pred_Force   = get(handles.Force_cbx,'Value');
     Pred_CursPos = get(handles.CursPos_cbx,'Value');
-    Pred_Veloc = get(handles.Veloc_cbx,'Value');
-    Use_State = get(handles.States_popup,'Value')-1;
-    Use_Thresh = get(handles.useThresh_cbx,'Value');
-    Use_Ridge = get(handles.Ridge_popup,'Value')-1;
+    Pred_Veloc   = get(handles.Veloc_cbx,'Value');
+    Use_State    = get(handles.States_popup,'Value')-1;
+    Use_Thresh   = get(handles.useThresh_cbx,'Value');
+    Use_Ridge    = get(handles.Ridge_popup,'Value')-1;
+    Use_EMGs     = get(handles.EMGsInputRadio,'Value');
     
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
      
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh Use_Ridge};
-      
-    set(handles.figure1,'Visible','off');
+%     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh};
+    if handles.OK
+        varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh,Use_Ridge,Use_EMGs};
+    else
+        for i = 1:nargout
+            varargout{i} = [];
+        end
+    end    
     close(handles.figure1);
 
 % --- Executes on button press in OK_Button.
@@ -109,10 +116,20 @@ function OK_Button_Callback(hObject, eventdata, handles)
     elseif get(handles.Polyn_Order_txtbx,'Value')>8 || get(handles.Polyn_Order_txtbx,'Value') <0
         %2- check that the polynomial order is within reasonable limits
         errordlg('Polynomial Order must be between 0 and 8','Stop farting around!');
-    else      
+    else
+        handles.OK =1;
+        % Update handles structure
+        guidata(hObject, handles);
         uiresume(handles.figure1);
     end
 
+% --- Executes on button press in CancelButton.
+function CancelButton_Callback(hObject, eventdata, handles)
+% hObject    handle to CancelButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+uiresume(handles.figure1); 
+    
 function fillen_txtbx_Callback(hObject, eventdata, handles)
 % hObject    handle to fillen_txtbx (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -266,7 +283,12 @@ function useThresh_cbx_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of useThresh_cbx
 
 
-% --- Executes on selection change in Ridge_popup.
+% --------------------------------------------------------------------
+function uipanel1_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to uipanel1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
 function Ridge_popup_Callback(hObject, eventdata, handles)
 % hObject    handle to Ridge_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB

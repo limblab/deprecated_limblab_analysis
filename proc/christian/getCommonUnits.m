@@ -1,24 +1,34 @@
-function NeuronIDs = getCommonUnits()
+function NeuronIDs = getCommonUnits(varargin)
 
-    [FileNames, PathNames] = getMultipleFiles();
 
-    if isempty(FileNames)
-        NeuronIDs = [];
-        return;
+    if ~nargin
+        [FileNames, PathNames] = getMultipleFiles();
+
+        if isempty(FileNames)
+            NeuronIDs = [];
+            return;
+        end
+
+        NumFiles = size(FileNames,2);
+
+        all_unit_IDs = cell(1,NumFiles);
+
+        for i=1:NumFiles
+            tmpstruct = LoadDataStruct([PathNames{i} FileNames{i}],'binned');
+            all_unit_IDs(i) = {tmpstruct.spikeguide};
+        end
+
+        matching_units = [];
+    else
+        NumFiles = nargin;
+        all_unit_IDs = cell(1,NumFiles);
+        
+        for i=1:NumFiles
+            tmpstruct = varargin{1};
+            all_unit_IDs(i) = {tmpstruct.spikeguide};
+        end
     end
-
-    NumFiles = size(FileNames,2);
-
-    all_unit_IDs = cell(1,NumFiles);
-
-    for i=1:NumFiles
-        struct = LoadDataStruct([PathNames{i} FileNames{i}],'binned');
-        all_unit_IDs(i) = {struct.spikeguide};
-    end
-
-    clear struct;
-    matching_units = [];
-
+        
     for u = 1:size(all_unit_IDs{1},1)
         COMMON_FLAG = 1;
         for f = 2:NumFiles

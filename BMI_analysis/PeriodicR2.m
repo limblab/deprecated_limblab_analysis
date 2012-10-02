@@ -12,7 +12,7 @@ numPredSigs = size(filter.outnames,1);
 binsize = filter.binsize;
 numlags = round(filter.fillen/binsize);
 numpts  = size(binnedData.timeframe,1);
-numNeur = size(filter.NeuronIDs,1);
+numNeur = size(filter.neuronIDs,1);
 
 if nargin > 3
     Adapt = varargin{1};
