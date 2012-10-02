@@ -233,7 +233,8 @@ function out_struct = calc_from_raw(raw_struct, opts)
 %                 force_offsets = [-1888.095 -1160.662 1032.623...
 %                     -998.567 809.171 2836.314];
 %                 force_offsets = [-17571 -1142 12253 -503 7933 3431];
-                force_offsets = [-4832.043 -1255.338 1743.942 -862.4445 4447.589 3101.556];
+%                force_offsets = [-4832.043 -1255.338 1743.942 -862.4445 4447.589 3101.556];
+                force_offsets = [0.8037 4.4688 -2.7120 0.8098 -2.0340 1.5826];%these offsets computed oct 2, 2012
                 Fy_invert = 1;
             end 
             
