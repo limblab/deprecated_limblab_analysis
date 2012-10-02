@@ -21,7 +21,7 @@ for i = 1:length(ul)
     J = [-bv(2)/(bv(1)^2+bv(2)^2); bv(1)/(bv(1)^2+bv(2)^2)];
     moddepth(i) = norm(bv,2);
     pds(i,:) = atan2(bv(2), bv(1));
-    errs(i,:) = dbv*J;
+    errs(i,:) = dbv*J; % Error on either side of the mean, to get confidence interval multiply by 1.96.
     moddepth(i,:) = sqrt(bv(1).^2 + bv(2).^2);
 end
 

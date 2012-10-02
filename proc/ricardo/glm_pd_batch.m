@@ -1,16 +1,16 @@
 % Find PDs
 
-filename = 'D:\Data\Pedro\Pedro_S1_043-s_multiunit';
+filename = 'E:\Data\Pedro\Pedro_S1_043-s_multiunit';
 % filename = 'D:\Data\Tiki_B\tiki_S1_b_006-presort';
 
 curr_dir = pwd;
-cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis';
-addpath('D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo');
+cd 'E:\Ricardo\Miller Lab\Matlab\s1_analysis';
+% addpath('D:\Ricardo\Miller Lab\Matlab\s1_analysis\proc\ricardo');
 load_paths;
-cd 'D:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
+cd 'E:\Ricardo\Miller Lab\Matlab\s1_analysis\bdf';
 if ~exist([filename '.mat'],'file')
    
-    bdf = get_plexon_data([filename '.plx'],2);
+    bdf = get_cerebus_data([filename '.plx'],2);
     save(filename,'bdf');
     
 end

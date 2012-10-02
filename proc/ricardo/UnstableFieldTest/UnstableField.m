@@ -1,12 +1,14 @@
 % function UnstableField()
 
-theta = 0;
-Fx_offset = 10;
-Fy_offset = 10;
+theta = .7853;
+F_offset = 0.02;
+F_offset_theta = 0;
+% Fx_offset = 10;
+% Fy_offset = 10;
 x_offset = 0;
 y_offset = 0;
-neg_stiffness = 3;
-pos_stiffness = 5;
+neg_stiffness = 0.008;
+pos_stiffness = 0.16;
 axis_lim = 10;
 
 [X,Y] = meshgrid(-axis_lim:axis_lim/5:axis_lim);
@@ -18,9 +20,12 @@ X = X_new;
 Y = Y_new;
 
 Fx_prime = neg_stiffness*((X-x_offset)*cos(theta) + (Y-y_offset)*sin(theta))*cos(theta) +...
-    pos_stiffness*(-(X-x_offset)*sin(theta) + (Y-y_offset)*cos(theta))*sin(theta) + Fx_offset;
+    pos_stiffness*(-(X-x_offset)*sin(theta) + (Y-y_offset)*cos(theta))*sin(theta) +...
+    F_offset*cos(F_offset_theta);
 Fy_prime = neg_stiffness*((X-x_offset)*cos(theta) + (Y-y_offset)*sin(theta))*sin(theta) -...
-    pos_stiffness*(-(X-x_offset)*sin(theta) + (Y-y_offset)*cos(theta))*cos(theta) + Fy_offset;
+    pos_stiffness*(-(X-x_offset)*sin(theta) + (Y-y_offset)*cos(theta))*cos(theta) +...
+    F_offset*sin(F_offset_theta);
+
 
 X_target = 4*cos(0:.1:2*pi);
 Y_target = 4*sin(0:.1:2*pi);
@@ -35,6 +40,6 @@ quiver(X,Y,Fx_prime,Fy_prime,'k')
 xlim([-15 15])
 ylim([-15 15])
 axis square
-set(gca,'ytick',[],'xtick',[])
+% set(gca,'ytick',[],'xtick',[])
 
 
