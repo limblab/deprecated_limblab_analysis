@@ -14,6 +14,7 @@ end
    count=1;
 for suidx=sorted_ids
    sortedunits(count).ts = bdf.units(suidx).ts;
+   sortedunits(count).id = bdf.units(suidx).id;
    count=count+1;
 end
 

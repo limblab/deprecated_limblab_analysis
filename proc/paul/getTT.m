@@ -8,8 +8,8 @@ function tt = getTT(bdf)
 %    2: Trial Prior  Perturbation (shift or rotation)
 %    3: Trial Feedback Uncertainty
 %    4: Trial Center Timestamp
-%    5: Trial Target Timestamp
-%    6: Trial Go     Timestamp (i.e. Movement Start)  NaN if not R or F
+%    5: Trial Target Timestamp (NaN for ABORT trials)
+%    6: Trial Go     Timestamp (NaN for ABORT trials)
 %    7: Trial End    Timestamp
 %    8: Trial End  Result   -- R (32), A (33), F (34),
 %                              I (35), or NaN
@@ -43,11 +43,11 @@ dtb_start_ind = find(dtb_ts>=1.0,1,'first');
 %% Load and Process Words
 
 % Find the first databurst time and truncate any words preceding it
-words_first_ind = find(bdf.words(:,1) > dtb_ts(dtb_start_ind),1,'first');
+words_first_ind = find(bdf.words(:,1) >= dtb_ts(dtb_start_ind),1,'first');
 
 %Find last trial end code index
 words_end_ind=find(bdf.words(:,2)==hex2dec('20')|bdf.words(:,2)==hex2dec('21')|bdf.words(:,2)==hex2dec('22')|bdf.words(:,2)==hex2dec('23'),1,'last');
-words_end_ts = bdf.words(words_end_ind,1);% last trial end time
+words_end_ts = bdf.words(words_end_ind,1);% last trial end time stamp
 
 % Truncate Words
 wds = bdf.words(words_first_ind:words_end_ind,:);
@@ -56,15 +56,15 @@ wds_codes = wds(:,2);
 
 %% Process Full Databurst
 % Truncate Databursts following the last end code time (if necessary)
-dtb_last_ind = find(dtb_ts < words_end_ts,1,'last');
-dtb_range = [dtb_start_ind:dtb_last_ind];
+dtb_last_ind = find(dtb_ts <= words_end_ts,1,'last');
+dtb_range    = [dtb_start_ind:dtb_last_ind];
 
-dtb_ts = dtb_ts(dtb_range);
+dtb_ts    = dtb_ts(dtb_range);
 dtb_perts = dtb_perts(dtb_range);
 
 %% Process each trial
 all_trial_word_inds = find(wds_codes>=32 & wds_codes<=35);
-all_trial_word_ts = wds_ts(all_trial_word_inds);
+all_trial_word_ts   = wds_ts(all_trial_word_inds);
 
 % CENTER LOC   x30
 % OUTER TARGET x40
@@ -83,7 +83,7 @@ failure_code_inds    = find(wds_codes==hex2dec('22'));
 incomplete_code_inds = find(wds_codes==hex2dec('23'));
 
 center_ts       = wds_ts(center_code_inds);
-outer_ts       = wds_ts(outer_code_inds);
+outer_ts        = wds_ts(outer_code_inds);
 go_ts           = wds_ts(go_code_inds);
 reward_ts       = wds_ts(reward_code_inds);
 failure_ts      = wds_ts(failure_code_inds);
@@ -97,11 +97,12 @@ incomplete_ts   = wds_ts(incomplete_code_inds);
 % follows:
 %    1: Trial Databurst Timestamp
 %    2: Trial Prior  Perturbation (shift or rotation)
-%    3: Trial Center Timestamp
-%    4: Trial Target Timestamp
-%    5: Trial Go     Timestamp (i.e. Movement Start)  NaN if not R or F
-%    6: Trial End    Timestamp
-%    7: Trial End  Result   -- R (32), A (33), F (34),
+%    3: Trial Feedback Uncertainty
+%    4: Trial Center Timestamp
+%    5: Trial Target Timestamp
+%    6: Trial Go     Timestamp (i.e. Movement Start)
+%    7: Trial End    Timestamp
+%    8: Trial End  Result   -- R (32), A (33), F (34),
 %                              I (35), or NaN
 
 dropTrial = false;
@@ -110,11 +111,11 @@ trial_counter=1;
 for trial_i=1:length(all_trial_word_inds)
     
     %Output 1 and 2
-    dtb_ind = find(dtb_ts < all_trial_word_ts(trial_i),1,'last');
+    dtb_ind = find(dtb_ts <= all_trial_word_ts(trial_i),1,'last');
     if ~isempty(dtb_ind)
-        out_dtb_ts = dtb_ts(dtb_ind);
-        out_dtb_pert = dtb_perts(dtb_ind);
-        out_dtb_fb_sig = dtb_fb_sig(dtb_ind);
+        out_dtb_ts      = dtb_ts(dtb_ind);
+        out_dtb_pert    = dtb_perts(dtb_ind);
+        out_dtb_fb_sig  = dtb_fb_sig(dtb_ind);
     else
         out_dtb_ts = NaN;
         out_dtb_pert = NaN;
@@ -124,25 +125,26 @@ for trial_i=1:length(all_trial_word_inds)
     
     out_end_ts = floor(1000*wds_ts(all_trial_word_inds(trial_i)))/1000;
     result_code = wds_codes(all_trial_word_inds(trial_i));
+    
     if result_code==hex2dec('20')
-        out_result = result_code;
-        out_go_ts = go_ts(find(go_ts<out_end_ts,1,'last'));
+        out_result  = result_code;
+        out_go_ts   = go_ts(find(go_ts<out_end_ts,1,'last'));
         out_targ_ts = outer_ts(find(outer_ts<out_end_ts,1,'last'));
     elseif result_code==hex2dec('22')
-        out_result = result_code;     
-        out_go_ts = go_ts(find(go_ts<out_end_ts,1,'last'));        
+        out_result  = result_code;     
+        out_go_ts   = go_ts(find(go_ts<out_end_ts,1,'last'));        
         out_targ_ts = outer_ts(find(outer_ts<out_end_ts,1,'last'));    
     elseif result_code==hex2dec('21')
-        out_result = result_code;
-        out_go_ts = NaN;
-        out_targ_ts = NaN;
+        out_result   = result_code;
+        out_go_ts    = NaN;        
+        out_targ_ts  = NaN;    
     elseif result_code==hex2dec('23')
-        out_result = result_code;
-        out_go_ts = NaN;
-        out_targ_ts = NaN;
+        out_result  = result_code;
+        out_go_ts   = go_ts(find(go_ts<out_end_ts,1,'last'));        
+        out_targ_ts = outer_ts(find(outer_ts<out_end_ts,1,'last'));    
     else
-        out_result = NaN;
-        out_go_ts = NaN;
+        out_result  = NaN;
+        out_go_ts   = NaN;
         out_targ_ts = NaN; 
     end
     if isempty(out_go_ts)

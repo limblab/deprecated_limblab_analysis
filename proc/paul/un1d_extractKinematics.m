@@ -1,48 +1,51 @@
-function traj = un1d_extractKinematics(monkeyName, brainArea,dateStamp, setR, targetDir, midMove)
-%UN1D_PULLKINEMATICS
+function kin = un1d_extractKinematics(monkeyName, brainArea,dateStamp, fileID, targetDir, feedbackOn, extrahandleoffset)
+%UN1D_EXTRACTKINEMATICS
 %
-%   extracts individual movements corresponding to the trial table timing
-%   returns a .mat with the individual trajectories, velocities,
-%   acceleration data, and a combined trial table for all the files
+%   Extracts individual movements corresponding to the trial table timing.
+%
+%   Returns a structure with the parsed kinematics info and other goodies.
 %
 %   monkeyName = string with ID used in filename, i.e. 'Jaco' or 'MrT'
 %   brainArea  = string with ID used in filename, i.e. 'M1' or 'PMd' or
-%   'Behavior'
+%   'Behavior' or 'M1sorted'
 %   dateStamp  = string with datestamp used in filename, i.e. '04052012'
-%   setRange   = vector with file numbers, i.e. [1 2 4 5]
+%   fileID     = file number i.e. 1 or 5
 %   targetDir  = which direction was the target, i.e. 0, 90, 180, 270
+%   feedbackOn = where does the feedback turn on?
+%   extrahandleoffset = [x y];
 %
-%   last updated: 08/14/2012 - pwanda
+%   last updated: 08/28/2012 - pwanda
 %
 
-%% Initialize
-close all;
-color_sigs = ['rbgmk'];
 
-% Vectors used to accumulate total data across all sets in the range
-pos_x_all = [];         % x position all trials
-pos_y_all = [];         % y position all trials
-shift_all = [];         % prior shift all trials
-feedback_sig_all = [];  % feedback (dot) condition all trials
+%%
+cloud_clr = ['rbgmk'];
 
-% % Mini Plexon Offsets
-% x_offset = -5;
-% y_offset = 34;
+% Use the proper offset for the animal/lab
+if strcmp(monkeyName,'Mini')
+    % Mini Plexon
+    x_offset = -5;
+    y_offset = 34;
+elseif  strcmp(monkeyName,'MrT') ||  strcmp(monkeyName,'Mihili')
+    % MRT Cerebus Offset
+    x_offset = -2;
+    y_offset = 32.5;
+end
 
-% MRT Cerebus Offset
-x_offset = -2;
-y_offset = 32.5;
-
-other_x_offset = 0;
-other_y_offset = 7;
+% additional offset from the uncertainty1d panel
+un1d_x_offset = extrahandleoffset(1);
+un1d_y_offset = extrahandleoffset(2);
 
 %% operate over each set in the specified range
 
-% Load bdf and trial table for first set
-fn_bdf = ['bdf/bdf_' monkeyName '_' brainArea '_' dateStamp '_UN1D_00' int2str(setR) '.mat'];
-fn_tt  = ['tt/tt_'   monkeyName '_' brainArea '_' dateStamp '_UN1D_00' int2str(setR) '.mat'];
+% Load bdf and trial table
+sprintf('Loading bdf and trial table\n');
+fn_bdf = ['bdf/bdf_' monkeyName '_' brainArea '_' dateStamp '_UN1D_00' int2str(fileID) '.mat'];
 load(fn_bdf);
+fn_tt  = ['tt/tt_'   monkeyName '_' brainArea '_' dateStamp '_UN1D_00' int2str(fileID) '.mat'];
 load(fn_tt);
+sprintf('Loading Completed\n');
+
 
 % This chunk of code extracts filename prefix
 %  (used for figure titles and saving new figures)
@@ -57,13 +60,9 @@ fn_prefix = [tmp '- '];  % the function tag to prefix the titles
 clear tmp tok;
 
 
-
-%
-%%Load data
-%
-% Load position data and correct for center offset
-pos_x = bdf.pos(:,2)+x_offset+other_x_offset;
-pos_y = bdf.pos(:,3)+y_offset+other_y_offset;
+% Load position data and correct for the offsets
+pos_x = bdf.pos(:,2)+x_offset-un1d_x_offset;
+pos_y = bdf.pos(:,3)+y_offset-un1d_y_offset;
 
 % Load velocity data
 vel_x = bdf.vel(:,2);
@@ -73,24 +72,18 @@ vel_y = bdf.vel(:,3);
 acc_x = bdf.acc(:,2);
 acc_y = bdf.acc(:,3);
 
-% The timer for each kinematic sample
+% The time stamps for each kinematic sample
 kin_ts = bdf.pos(:,1);
 
 %% Pull timing information from the trial table (corresponds to databurst)
-
-trial_dtb_ts       = tt(:,1);    % databurst timestamps
 trial_shifts       = tt(:,2);    % shift values for each trial
 trial_feedback_sig = tt(:,3);    % feedback condition for each trial
 center_ts          = tt(:,4);    % timestamp of center target on
-targ_ts            = tt(:,5);    % timestamp of outer target on
+outer_ts           = tt(:,5);    % timestamp of center target on
 go_ts              = tt(:,6);    % timestamp of go cue
 end_ts             = tt(:,7);    % timestamp of trial complete
 end_codes          = tt(:,8);    % code for trial complete
 % R 32   A 33   F 34   I 35    Other NaN
-
-% Extract the unique feedback conditions (cloud sizes)
-feedback_sig_conditions = unique(trial_feedback_sig(find(isnan(trial_feedback_sig)==0)));
-
 
 %% Only process "COMPLETED" trials
 % Find the trials where the outcome was REWARD and FAIL
@@ -103,101 +96,135 @@ feedback_sigs_complete_trials     = trial_feedback_sig(complete_trials_code_idx)
 end_ts_complete_trials            = end_ts(complete_trials_code_idx);
 end_codes_complete_trials         = end_codes(complete_trials_code_idx);
 
-% pull out the indices for the kinematics vectors that correspond
-% to the timestamps for the state codes
-kin_center_idx = [];
-for ri=1:length(center_ts)
-    kin_center_idx(ri) = find(kin_ts<center_ts(ri),1,'last');
-end
-
-moved_ts = go_ts(~isnan(go_ts)); % make sure the go cue was given (bug)
-kin_go_idx=[];
-for ri=1:length(moved_ts)
-    kin_go_idx(ri) = find(kin_ts<moved_ts(ri),1,'last');
-end
-
-kin_complete_trials_idx = [];
+% pull out the indices from the trial kinematics that correspond
+% to the timestamps for the state codes (only for Completed Trials)
+kin_end_complete_trials_idx = [];
 for ri=1:length(end_ts_complete_trials)
-    kin_complete_trials_idx(ri) = find(kin_ts<end_ts_complete_trials(ri),1,'last');
+    kin_end_complete_trials_idx(ri) = find(kin_ts<=end_ts_complete_trials(ri),1,'last');
+end
+
+kin_center_complete_trials_idx = [];
+for ri=1:length(end_ts_complete_trials)
+    center_ts_complete_trials(ri) = center_ts(find(center_ts<=end_ts_complete_trials(ri),1,'last'));
+    kin_center_complete_trials_idx(ri) = find(kin_ts<=center_ts_complete_trials(ri),1,'last');
+end
+
+kin_outer_complete_trials_idx = [];
+for ri=1:length(end_ts_complete_trials)
+    outer_ts_complete_trials(ri) = outer_ts(find(outer_ts<=end_ts_complete_trials(ri),1,'last'));
+    kin_outer_complete_trials_idx(ri) = find(kin_ts<=outer_ts_complete_trials(ri),1,'last');
+end
+
+kin_go_complete_trials_idx=[];
+for ri=1:length(end_ts_complete_trials)
+    go_ts_complete_trials(ri) = go_ts(find(go_ts<=end_ts_complete_trials(ri),1,'last'));
+    kin_go_complete_trials_idx(ri) = find(kin_ts<= go_ts_complete_trials(ri),1,'last');
 end
 
 % position at GO
-pos_x_go = pos_x(kin_go_idx);
-pos_y_go = pos_y(kin_go_idx);
+pos_x_go = pos_x(kin_go_complete_trials_idx);
+pos_y_go = pos_y(kin_go_complete_trials_idx);
 
-vel_x_go = vel_x(kin_go_idx);
-vel_y_go = vel_y(kin_go_idx);
+vel_x_go = vel_x(kin_go_complete_trials_idx);
+vel_y_go = vel_y(kin_go_complete_trials_idx);
 
-acc_x_go = acc_x(kin_go_idx);
-acc_y_go = acc_y(kin_go_idx);
+acc_x_go = acc_x(kin_go_complete_trials_idx);
+acc_y_go = acc_y(kin_go_complete_trials_idx);
 
 
 % position at REWARD OR FAIL
-pos_x_comp = pos_x(kin_complete_trials_idx);
-pos_y_comp = pos_y(kin_complete_trials_idx);
+pos_x_comp = pos_x(kin_end_complete_trials_idx);
+pos_y_comp = pos_y(kin_end_complete_trials_idx);
 
-vel_x_comp = vel_x(kin_complete_trials_idx);
-vel_y_comp = vel_y(kin_complete_trials_idx);
+vel_x_comp = vel_x(kin_end_complete_trials_idx);
+vel_y_comp = vel_y(kin_end_complete_trials_idx);
 
-acc_x_comp = acc_x(kin_complete_trials_idx);
-acc_y_comp = acc_y(kin_complete_trials_idx);
+acc_x_comp = acc_x(kin_end_complete_trials_idx);
+acc_y_comp = acc_y(kin_end_complete_trials_idx);
 
 
+MAXSAMPLES = 5000;
 
-% pull out trajectories
-ts_traj = NaN*ones(length(kin_go_idx),4000);
-pos_traj_x=NaN*ones(length(kin_go_idx),4000);
-pos_traj_y=NaN*ones(length(kin_go_idx),4000);
-vel_traj_x=NaN*ones(length(kin_go_idx),4000);
-vel_traj_y=NaN*ones(length(kin_go_idx),4000);
-acc_traj_x=NaN*ones(length(kin_go_idx),4000);
-acc_traj_y=NaN*ones(length(kin_go_idx),4000);
-for ri=1:length(kin_go_idx)
-    if((1+kin_complete_trials_idx(ri)-kin_go_idx(ri))<4000)
-        ts_traj(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=kin_ts(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        pos_traj_x(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=pos_x(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        pos_traj_y(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=pos_y(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        vel_traj_x(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=vel_x(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        vel_traj_y(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=vel_y(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        acc_traj_x(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=acc_x(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        acc_traj_y(ri,1:(1+kin_complete_trials_idx(ri)-kin_go_idx(ri)))=acc_y(kin_go_idx(ri):kin_complete_trials_idx(ri));
-        
+
+ts_kin   =NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+pos_kin_x=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+pos_kin_y=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+vel_kin_x=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+vel_kin_y=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+speed_kin=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+acc_kin_x=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+acc_kin_y=NaN*ones(length(kin_go_complete_trials_idx),MAXSAMPLES);
+
+% pull out kinectories
+for ri=1:length(kin_end_complete_trials_idx)
+    tlength=kin_end_complete_trials_idx(ri)-kin_outer_complete_trials_idx(ri)+1;
+    if(tlength<=MAXSAMPLES)
+        ts_kin(ri,1:tlength)    = kin_ts(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
+        pos_kin_x(ri,1:tlength) = pos_x(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
+        pos_kin_y(ri,1:tlength) = pos_y(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
+        vel_kin_x(ri,1:tlength) = vel_x(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
+        vel_kin_y(ri,1:tlength) = vel_y(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
+        acc_kin_x(ri,1:tlength) = acc_x(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
+        acc_kin_y(ri,1:tlength) = acc_y(kin_outer_complete_trials_idx(ri):kin_end_complete_trials_idx(ri));
     end
+    clear tlength;
 end
 
-for ri=1:length(kin_go_idx)
-    z = find(pos_traj_y(ri,:)< pos_y_comp(ri)-midMove,1,'last');
-    if ~isempty(z)
-        mid_idx(ri) = z;
-        pos_x_mid(ri) = pos_traj_x(ri,mid_idx(ri));
-        pos_y_mid(ri) = pos_traj_y(ri,mid_idx(ri));
-        
-    else
-        mid_idx(ri) = NaN;
-        pos_x_mid(ri) = NaN;
-        pos_y_mid(ri) = NaN;
-        
+speed_kin = sqrt(vel_kin_x.^2+vel_kin_y.^2);
+
+for ri=1:length(kin_end_complete_trials_idx)
+    tlength=kin_end_complete_trials_idx(ri)-kin_outer_complete_trials_idx(ri)+1;
+
+    if(tlength<=MAXSAMPLES)
+        z = find(pos_kin_y(ri,1:tlength)<= feedbackOn, 1, 'last');
+        if ~isempty(z)
+            cloud_idx(ri) = z;
+            pos_x_cloud(ri) = pos_kin_x(ri,cloud_idx(ri));
+            pos_y_cloud(ri) = pos_kin_y(ri,cloud_idx(ri));
+            ts_cloud(ri)    = ts_kin(ri,cloud_idx(ri));
+            
+        else
+            cloud_idx(ri) = NaN;
+            pos_x_cloud(ri) = NaN;
+            pos_y_cloud(ri) = NaN;
+            ts_cloud(ri) = NaN;
+        end
     end
+    clear tlength;
 end
 
-traj.ts = ts_traj;
-traj.pos_x = pos_traj_x;
-traj.pos_y = pos_traj_y;
-traj.vel_x = vel_traj_x;
-traj.vel_y = vel_traj_y;
-traj.acc_x = acc_traj_x;
-traj.acc_y = acc_traj_y;
-traj.pos_x_comp = pos_x_comp;
-traj.pos_y_comp = pos_y_comp;
-traj.pos_x_mid = pos_x_mid';
-traj.pos_y_mid = pos_y_mid';
-traj.pos_x_go = pos_x_go;
-traj.pos_y_go = pos_y_go;
 
-traj.go_ts = moved_ts;
-traj.end_ts = end_ts_complete_trials;
-traj.shifts = shifts_complete_trials;
-traj.feedback = feedback_sigs_complete_trials;
+kin.meta.monkeyName = monkeyName;
+kin.meta.brainArea = brainArea;
+kin.meta.dateStamp = dateStamp;
+kin.meta.fileID = fileID;
+kin.meta.un1d_origin_offset = extrahandleoffset;
+
+kin.targetDirection = targetDir;
+kin.cloudPosition = feedbackOn;
+kin.ts = ts_kin;
+kin.pos_x = pos_kin_x;
+kin.pos_y = pos_kin_y;
+kin.vel_x = vel_kin_x;
+kin.vel_y = vel_kin_y;
+kin.acc_x = acc_kin_x;
+kin.acc_y = acc_kin_y;
+kin.speed = speed_kin;
+kin.pos_x_go = pos_x_go;
+kin.pos_y_go = pos_y_go;
+kin.pos_x_cloud = pos_x_cloud';
+kin.pos_y_cloud = pos_y_cloud';
+kin.pos_x_end = pos_x_comp;
+kin.pos_y_end = pos_y_comp;
+
+kin.center_ts       = center_ts_complete_trials';
+kin.outer_ts        = outer_ts_complete_trials';
+kin.go_ts           = go_ts_complete_trials';
+kin.cloud_on_ts     = ts_cloud';
+kin.endpoint_ts     = end_ts_complete_trials;
+kin.endcode_by_trial= end_codes_complete_trials;
+kin.visualShift     = shifts_complete_trials;
+kin.cloudVar  = feedback_sigs_complete_trials;
 
 
 return;
