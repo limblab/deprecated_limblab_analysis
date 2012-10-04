@@ -4,23 +4,24 @@
 %firing rate to the unit sub elements
 
 
-bdf.tt=co_trial_table2(bdf);
+[bdf.tt,bdf.tt_hdr]=bc_trial_table2(bdf);
 
 ts = 50;
 offset=0;
 
-vt = bdf.vel(:,1);
-t = vt(1):ts/1000:vt(end);
+if isfield(bdf,'units')
+    vt = bdf.vel(:,1);
+    t = vt(1):ts/1000:vt(end);
 
-for unit=1:length(bdf.units)
-    if isempty(bdf.units(unit).id)
-        bdf.units(unit).id=[];
-    else
-        spike_times = get_unit(bdf,bdf.units(unit).id(1),bdf.units(unit).id(2))-offset;
-        spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
-        bdf.units(unit).fr = [t;train2bins(spike_times, t)]';
+    for unit=1:length(bdf.units)
+        if isempty(bdf.units(unit).id)
+            bdf.units(unit).id=[];
+        else
+            spike_times = get_unit(bdf,bdf.units(unit).id(1),bdf.units(unit).id(2))-offset;
+            spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
+            bdf.units(unit).fr = [t;train2bins(spike_times, t)]';
+        end
     end
 end
-
 
 %tdf_bump=get_sub_trials(bdf, bdf)
