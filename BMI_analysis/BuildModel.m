@@ -35,7 +35,8 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     PredVeloc    = 0;
     Use_Thresh   = 0;
     Use_PrinComp = 0;
-    
+    Use_EMGs     = 0;
+    Use_Ridge    = 0;
     
     %overwrite if specified in arguments
     if nargin > 5
@@ -50,9 +51,12 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                         Use_Thresh =varargin{5};
                         if nargin >10
                             Use_EMGs = varargin{6};
-                            if nargin > 11
-                                Use_PrinComp = true;
-                                numPCs = varargin{7};
+                            if nargin >11
+                                Use_Ridge = varargin{7};
+                                if nargin > 12
+                                    Use_PrinComp = true;
+                                    numPCs = varargin{8};
+                                end
                             end
                         end
                     end
@@ -145,17 +149,32 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         OutNames = [OutNames;  binnedData.veloclabels];
     end 
         
-    %%%The following calculates the linear filters (H) that relate the inputs and outputs
+    %The following calculates the linear filters (H) that relate the inputs and outputs
+    if Use_Ridge
+        % Specify condition desired
+        condition_desired = 10^4;
+        % Duplicate and shift
+        Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
+        % Train ridge model
+        H = train_ridge(Inputs',Outputs',condition_desired);
+    else
+        [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+%     H = MIMOCE1(Inputs,Outputs,numlags);\
+%     H = Inputs\Outputs;
 %     Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
-% %     H = Inputs\Outputs; 
-   [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
-%     H = MIMOCE1(Inputs,Outputs,numlags);
+    end
+
     
 %% Then, add non-linearity if applicable
 
     fs=1; numsides=1;
-    
-    [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
+
+    if Use_Ridge
+        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs',H,numsides,fs,Outputs');
+    else
+        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
+    end
+
 % %     PredictedData = Inputs*H;
 % %     LP = 5; %10 Hz low pass...
 % %     PredictedData = FiltPred(PredictedData,1/binsize,LP);

@@ -22,7 +22,7 @@ function varargout = convertBDF2binnedGUI(varargin)
 
 % Edit the above text to modify the response to help convertBDF2binnedGUI
 
-% Last Modified by GUIDE v2.5 14-Mar-2012 15:49:35
+% Last Modified by GUIDE v2.5 02-Oct-2012 11:11:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,6 +54,7 @@ function convertBDF2binnedGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for convertBDF2binnedGUI
 handles.output = hObject;
+handles.OK = 0;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -71,20 +72,25 @@ function varargout = convertBDF2binnedGUI_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 
-
-    binsize = get(handles.binsize_txtbx,'Value');
-    startTime = get(handles.startTime_txtbx, 'Value');
-    stopTime = get(handles.stopTime_txtbx, 'Value');
-    HP = get(handles.HP_txtbx, 'Value');
-    LP = get(handles.LP_txtbx, 'Value');
-    MFR = get(handles.MFR_txtbx, 'Value');
-    NormData = get(handles.Normalize_cbx,'Value');
-    FindStates = get(handles.State_cbx,'Value');
-    Unsorted = get(handles.Unsorted_cbx,'Value');
-    TriKernel = get(handles.Triangle_cbx,'Value');
-    sig = get(handles.Sigma_txtbx, 'Value');
-    varargout = {binsize startTime stopTime HP LP MFR NormData FindStates Unsorted TriKernel sig};
-
+    if handles.OK
+        binsize = get(handles.binsize_txtbx,'Value');
+        startTime = get(handles.startTime_txtbx, 'Value');
+        stopTime = get(handles.stopTime_txtbx, 'Value');
+        HP = get(handles.HP_txtbx, 'Value');
+        LP = get(handles.LP_txtbx, 'Value');
+        MFR = get(handles.MFR_txtbx, 'Value');
+        NormData = get(handles.Normalize_cbx,'Value');
+        FindStates = get(handles.State_cbx,'Value');
+        Unsorted = get(handles.Unsorted_cbx,'Value');
+        TriKernel = get(handles.Triangle_cbx,'Value');
+        sig = get(handles.Sigma_txtbx, 'Value');
+        varargout = {binsize startTime stopTime HP LP MFR NormData FindStates Unsorted TriKernel sig};
+    else
+        for i=1:nargout
+            varargout{i} = [];
+        end
+    end
+    
     close(handles.figure1);
 
 
@@ -118,6 +124,9 @@ function OK_Button_Callback(hObject, eventdata, handles)
 % hObject    handle to OK_Button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+    handles.OK = 1;
+    % Update handles structure
+    guidata(hObject, handles);
     uiresume(handles.figure1);
 
 
@@ -222,8 +231,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
    
 
-
-
 function MFR_txtbx_Callback(hObject, eventdata, handles)
 % hObject    handle to MFR_txtbx (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -306,3 +313,11 @@ function Unsorted_cbx_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of Unsorted_cbx
 get(hObject,'Value');
+
+
+% --- Executes on button press in CancelButton.
+function CancelButton_Callback(hObject, eventdata, handles)
+% hObject    handle to CancelButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+uiresume(handles.figure1);

@@ -108,7 +108,7 @@ function BMIDataAnalyzer()
     CB_DataPanel = uipanel('Parent',UI,'Title','nev/plx Data','Position',[0.015 PanelsPos(7) .97 .13]);
     BDF_Panel = uipanel('Parent',UI,'Title','BDF Struct','Position', [0.015 PanelsPos(6) 0.97 .13]);
     Bin_Panel =uipanel('Parent',UI,'Title','BinnedData','Position',[0.015 PanelsPos(5) 0.97 .13]);
-    Filt_Panel =uipanel('Parent',UI,'Title','Filter','Position',[0.015 PanelsPos(4) 0.97 .13]);
+    Filt_Panel =uipanel('Parent',UI,'Title','Decoder','Position',[0.015 PanelsPos(4) 0.97 .13]);
     OLPred_Panel =uipanel('Parent',UI,'Title','Offline EMG Predictions','Position',[0.015 PanelsPos(3) 0.97 .13]);
     RTPred_Panel = uipanel('Parent',UI,'Title','Real-Time EMG Predictions','Position',[0.015 PanelsPos(2) 0.97 .13]);
     SC_Panel =uipanel('Parent',UI,'Title','Stimulator PW Commands','Position',[0.015 PanelsPos(1) 0.97 .13]);
@@ -212,9 +212,13 @@ function BMIDataAnalyzer()
     end
         
     function BDF_BinButton_Callback(obj,event)
-        disp('Converting BDF structure to binned data, please wait...');
 %        Bin_UI = figure;
         [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData, FindStates, Unsorted, TriKernel, sig] = convertBDF2binnedGUI;  %Added Unsorted TriKernel and sig 3/14/12 SNN
+        if isempty(binsize)
+            disp('Cancelled');
+            return;
+        end
+        disp('Converting BDF structure to binned data, please wait...');
         binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData, FindStates, Unsorted, TriKernel, sig);
   
         if FindStates
@@ -277,10 +281,10 @@ function BMIDataAnalyzer()
 
     %Buttons
     Bin_LoadButton = uicontrol('Parent', Bin_Panel, 'String', 'LOAD', 'Units','normalized',...
-                            'Position', [.1 .2 .15 .3],'Callback',@Bin_LoadButton_Callback,'Enable','on');
+                            'Position', [.1 .2 .12 .3],'Callback',@Bin_LoadButton_Callback,'Enable','on');
 
-    Bin_BuildButton = uicontrol('Parent', Bin_Panel, 'String', 'Build Model', 'Units','normalized',...
-                            'Position', [.2625 .2 .15 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
+    Bin_BuildButton = uicontrol('Parent', Bin_Panel, 'String', 'Build Decoder', 'Units','normalized',...
+                            'Position', [.2325 .2 .18 .3],'Callback',@Bin_BuildButton_Callback,'Enable','off');    
 
     Bin_ClassButton = uicontrol('Parent', Bin_Panel, 'String', 'Classify', 'Units','normalized',...
                             'Position', [.425 .2 .15 .3],'Callback',@Bin_ClassButton_Callback,'Enable','off');                            
@@ -340,7 +344,7 @@ function BMIDataAnalyzer()
             statemethods = mat2cell(binnedData.statemethods,ones(1,m),n);
         end
         
-        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc,Use_State,Use_Thresh,Use_Ridge,Use_EMGs] = BuildModelGUI(binsize,statemethods);
+        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc,Use_State,Use_Thresh,Use_EMGs,Use_Ridge] = BuildModelGUI(binsize,statemethods);
         if isempty(fillen)
             %user hit cancel
             disp('Cancelled');
@@ -348,9 +352,7 @@ function BMIDataAnalyzer()
         end
         if Use_State
             [filt_struct] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State);
-        elseif Use_Ridge
-            [filt_struct] = BuildRidgeModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State);
-        else [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_Thresh, Use_EMGs);
+        else [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_Thresh, Use_EMGs, Use_Ridge);
         end
         disp('Done.');
         

@@ -95,7 +95,7 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
 %     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh};
     if handles.OK
-        varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh,Use_Ridge,Use_EMGs};
+        varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh,Use_EMGs,Use_Ridge};
     else
         for i = 1:nargout
             varargout{i} = [];
