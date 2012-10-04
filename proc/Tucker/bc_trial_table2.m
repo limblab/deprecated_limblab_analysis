@@ -37,6 +37,10 @@ end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
 tt = zeros(num_trials-1, 41);
 
+disp('composing trial table assuming db v 1')
+disp(strcat('db version:',num2str(bdf.databursts{1,2}(2))))
+disp('If actual db version does not match assumed version, fix the trial table code')
+
 for trial = 1:num_trials-1
       try
         start_time = start_words(trial);
@@ -161,9 +165,6 @@ for trial = 1:num_trials-1
        end
 end
 
-disp('composing trial table assuming db v 1')
-disp(strcat('db version:',num2str(bdf.databursts{trial,2}(2))))
-disp('If actual db version does not match assumed version, fix the trial table code')
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
