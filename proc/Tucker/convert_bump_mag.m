@@ -20,7 +20,7 @@ function bumps=convert_bump_mag(tdf)
             bump_rise=(1-cos(pi*t/bump_rise_time))*bump_hold(1,1)/2;
             %composite bump
             
-            bump_amplitude=[bump_rise; bump_hold; flipud(bump_rise)]*(-50);
+            bump_amplitude=[bump_rise; bump_hold; flipud(bump_rise)]*(-45);
 %            plot(bump_amplitude)
             %insert into bumps array:     
             bump_ang=tdf.tt(trial,tdf.tt_hdr.bump_angle)+tdf.tt(trial,tdf.tt_hdr.tgt_angle);
