@@ -10,14 +10,19 @@ function [arr_map, cer_map] = get_array_mapping(filepath)
 %       for each electrode as they are outputted by unit_list.m. CER_MAP
 %       returns the 10x10 matrix with the electrode numbers assigned by
 %       Blackrock and as they are visible in Central's Spike Panel.
+%   Example:
+%   [ARR,CERB]=get_array_mapping('\\citadel.physiology.northwestern.edu\limblab\lab_folder\Animal-Miscellany\_Implant Miscellany\Blackrock Array Info\Array Map Files\1025-0597.cmp')
+%   returns the array mapping in ARR, and the Blackrock assigned labels in
+%   CERB
 
 
 fileID = fopen(filepath,'r');
-arr_map = zeros(10,10);
+arr_map = zeros(10,10); % I assume blackrock arrays are all 10x10
+cer_map = zeros(size(arr_map));
 
-while ~feof(fileID) % while feof does not return 1 (it does when the end of the file is reached
+while ~feof(fileID) % while feof does not return 1 (it does when the end of the file is reached)
     tline = fgets(fileID); % move down the file, ignore headers
-        if (length(tline)>15) && (strcmp(tline(1:15),'Cerebus mapping')) % after this line the real array info starts
+        if (length(tline)>14) && (strcmp(tline(1:15),'Cerebus mapping')) % after this line the real array info starts
         while ~feof(fileID)
             tline = fgets(fileID) ;
             temp = textscan(tline,'%s');
