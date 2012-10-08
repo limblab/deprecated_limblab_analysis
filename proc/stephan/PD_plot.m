@@ -2,16 +2,22 @@ function PD_plot(varargin)
 
 % PD_PLOT = PD_plot(BDF,ARRAY_MAP_FILEPATH,INCLUDE_UNSORTED,INCLUDE_HISTOGRAMS)
 %       generates PD plots. BDF is data in the bdf structure. ARRAY_MAP_FILEPATH
-%       should be a string ; the filepath of the array mapping.
+%       should be a string ; the filepath of the array mapping, or the name
+%       of your monkey (only Kramer added now).
 %       INCLUDE_UNSORTED allows the inclusion of unsorted units in the PD
 %       calculation of different from 0. INCLUDE_HISTOGRAMS plots several
 %       histograms if different from 0. 
 
 % 
+if strcmp(varargin{2},'Kramer')
+    cerebus_array_map_filepath = '\\citadel.physiology.northwestern.edu\limblab\lab_folder\Animal-Miscellany\_Implant Miscellany\Blackrock Array Info\Array Map Files\6251-0922.cmp';
+else
+    cerebus_array_map_filepath = varargin{2}; 
+end
 
 
 bdf = varargin{1};
-cerebus_array_map_filepath = varargin{2}; 
+
 if length(varargin)<3
     include_unsorted = 0;
 else
