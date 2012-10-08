@@ -25,7 +25,7 @@ end
 [pds, errs, moddepth] = glm_pds(bdf,include_unsorted); 
 
 %% PD map plot. 
-% This plots polar plots showing the PDs and errorbounds in the location of their respective channels
+% This plots polar plots showing the PDs and confidence intervals in the location of their respective channels
 
 [chan_list,cer_list] = get_array_mapping(cerebus_array_map_filepath);
 [r,c] = size(chan_list);
@@ -45,7 +45,7 @@ h_up = figure('name','PDs upper half of array');
 h_low = figure('name','PDs lower half of array');
 
 for iPD = 1:length(u1(:,1))
-    r = 0.001:0.01:moddepth(iPD)/max(moddepth);
+    r = 0.001:0.01:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
@@ -61,9 +61,9 @@ for iPD = 1:length(u1(:,1))
             '-or','String','150','-or','String','210','-or','String','240',...
             '-or','String','300','-or','String','330','-or','String','  0.2',...
             '-or','String','  0.1','-or','String','  0.5','-or','String','  0.25',...
-            '-or','String','  0.1','-or','String','  1') ,'String', ' ');
+            '-or','String','  0.1','-or','String','  1') ,'String', ' '); % remove a bunch of labels from the polar plot; radial and tangential
         set(h1,'linewidth',2);
-        [x1,y1]=pol2cart(angle,r); 
+        [x1,y1]=pol2cart(angle,r); % needed to fill up the space between the two CI
         [x2,y2]=pol2cart(err_up,r);
         [x3,y3]=pol2cart(err_down,r);
         
