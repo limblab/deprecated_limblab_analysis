@@ -162,7 +162,8 @@ end
 if plot_histogram
     % plot confidence interval histograms
     figure('name','95% CI'); 
-    hist(abs(errs*180/pi)*1.96*2,30)
+    hist(abs(errs*180/pi)*1.96*2,36)
+    xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')
     title('Histogram of 95% confidence interval on PDs')
@@ -170,6 +171,7 @@ if plot_histogram
     % plot PD histograms
     figure('name','PDs')
     hist(pds*180/pi,30)
+%     xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')
     title('Histogram of PDs')
