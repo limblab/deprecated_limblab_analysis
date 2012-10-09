@@ -35,7 +35,7 @@ word_end = hex2dec('20');
 end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
 end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
-tt = zeros(num_trials-1, 41);
+tt = zeros(num_trials-1, 40);
 
 disp('composing trial table assuming db v 2')
 disp(strcat('db version:',num2str(bdf.databursts{1,2}(2))))
