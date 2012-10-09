@@ -37,7 +37,7 @@ end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
 tt = zeros(num_trials-1, 41);
 
-disp('composing trial table assuming db v 1')
+disp('composing trial table assuming db v 2')
 disp(strcat('db version:',num2str(bdf.databursts{1,2}(2))))
 disp('If actual db version does not match assumed version, fix the trial table code')
 
@@ -144,7 +144,7 @@ for trial = 1:num_trials-1
         ct_hold_time=bytes2float(db(88:71));
         ot_delay_time=bytes2float(db(92:95));
         bump_rate_skew=bytes2float(db(96:99));
-        targets_during_bump_flag=db(100);
+        %targets_during_bump_flag=db(100);
         
          tt(trial,:)= [     numbytes,                   db_version,                 two,                        b,                          c, ...
                             behavior_version_maj,       behavior_version_minor,     behavior_version_micro1,    behavior_version_micro2,    staircase_id,...
@@ -153,15 +153,13 @@ for trial = 1:num_trials-1
                             bump_ceil,                  staircase_ratio,            stim_trial_flag,            training_trial_flag,        training_trial_freq, ...
                             stim_freq,                  recenter_cursor_flag,       tgt_radius,                 tgt_size,                   intertrial_time,  ...
                             penalty_time,               bump_hold_time,             ct_hold_time,               ot_delay_time,              bump_rate_skew, ...
-                            targets_during_bump_flag,   start_time,                 bump_time,                  go_cue,                     end_time,  ...
-                            trial_result];
+                            trial_result                start_time,                 bump_time,                  go_cue,                     end_time  ];
         
        catch
            tt(trial,:) = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
                           NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
                           NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
-                          NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, ...
-                          NaN];
+                          NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN];
        end
 end
 
@@ -206,10 +204,9 @@ hdr.bump_hold_time          =   33;%    bump_hold_time=bytes2float(db(84:87));
 hdr.ct_hold_time            =   34;%    ct_hold_time=bytes2float(db(88:71));
 hdr.ot_delay_time           =   35;%    ot_delay_time=bytes2float(db(92:95));
 hdr.bump_rate_skew          =   36;%    bump_rate_skew=bytes2float(db(96:99));
-hdr.targets_during_bump     =   37;%    targets_during_bump_flag=db(100);
-hdr.start_time              =   38;%    start time
-hdr.bump_time               =   39;%    bump time
-hdr.go_cue                  =   40;%    time of the go cue
-hdr.end_time                =   41;%    time the trial ended
-hdr.trial_result            =   42;%    result of the trial
+hdr.start_time              =   37;%    start time
+hdr.bump_time               =   38;%    bump time
+hdr.go_cue                  =   39;%    time of the go cue
+hdr.end_time                =   40;%    time the trial ended
+hdr.trial_result            =   41;%    result of the trial
 
