@@ -169,6 +169,7 @@ for iPD = 1:length(u1(:,1))
     end
 end
 
+%% plot histograms
 
 if plot_histogram
     % plot confidence interval histograms
