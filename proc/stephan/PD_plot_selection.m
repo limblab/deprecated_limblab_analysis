@@ -28,7 +28,7 @@ str = strtrim(cellstr(int2str(channel_selection.')));
 
 for iChan=1:length(channel_selection)
     iPD = find(u1 == channel_selection(iChan),1,'first');
-    r = 0.001:0.01:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
+    r = 0.001:0.01:moddepth(iPD); % /max(moddepth); % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
@@ -55,6 +55,6 @@ for iChan=1:length(channel_selection)
     x_fill = [x2(end), x1(end), x3(end), 0];
     y_fill = [y2(end), y1(end), y3(end), 0];
     patch(x_fill,y_fill,'b','facealpha',0.3);
-    text(x1(end)+sign(x1(end))*0.05,y1(end)+sign(y1(end))*0.05,str{iChan});
+    text(x1(end)+x1(end)/5,y1(end)+y1(end)/5,str{iChan});
  
 end
