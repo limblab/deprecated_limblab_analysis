@@ -1,6 +1,8 @@
 % clear all
 datapath = 'D:\Data\Kevin_12A2';
-filenames = dir([datapath '\Kevin_2012-10-02*.nev']);
+% datapath = 'D:\Data\TestData\Raw';
+filenames = dir([datapath '\Kevin_2012-10-05_UF_002*.nev']);
+% filenames = dir([datapath '\Velocity_bump_test_004.nev']);
 % filenames(end+1) = dir([datapath '\Kevin_2012-09-18*.nev']);
 
 trial_table = [];
@@ -192,7 +194,7 @@ for i = 1:2
 %     std_y_force = std(initial_y_force);
 %     temp = ~(initial_y_force > mean_y_force-2*std_y_force & initial_y_force < mean_y_force+2*std_y_force);
 %     outliers = or(outliers,temp);
-
+%     outliers = [];
     x_pos = x_pos(~outliers,:);
     y_pos = y_pos(~outliers,:);
     x_vel = x_vel(~outliers,:);
@@ -684,10 +686,13 @@ for iField = 1:length(field_orientations)
         temp_t = [t_axis t_axis(end:-1:1)];
         area(temp_t,temp_std,'FaceColor',min(colors_field(iField,:)*1,[1 1 1]),'LineStyle','none') 
         plot(t_axis,mean(values_matrix(idx,:)),'Color',colors_field(iField,:))
-%         plot(t_axis,values_matrix(idx,:));
+        plot(t_axis,values_matrix(idx,:));
         xlim(x_limit)
         ylim(y_limit)
         alpha(.1)
+        ylabel('Force (?)')
+        xlabel('t (s)')
+        title(['Force parallel to bump at ' num2str(180*bump_directions(iBump)/pi) '^o'])
     end
     
 end

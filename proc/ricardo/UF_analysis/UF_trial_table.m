@@ -17,7 +17,11 @@ tc.t_bump_onset = iCol; iCol=iCol+1;
 tc.t_trial_end = iCol; iCol=iCol+1;
 tc.result = iCol; iCol=iCol+1;
 tc.bump_direction = iCol; iCol=iCol+1;
-tc.bump_magnitude = iCol; iCol=iCol+1;
+if databurst_version >= 3
+    tc.bump_velocity = iCol; iCol=iCol+1;
+else
+    tc.bump_magnitude = iCol; iCol=iCol+1;
+end
 if databurst_version >= 1
     tc.bump_duration = iCol; iCol=iCol+1;
 end
@@ -92,8 +96,11 @@ for iTrial = 1:num_trials
     temp_idx = 7:10;
     trial_table(iTrial,tc.x_offset) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
     trial_table(iTrial,tc.y_offset) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    
-    trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+    if databurst_version <= 2
+        trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+    else
+        trial_table(iTrial,tc.bump_velocity) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+    end
     trial_table(iTrial,tc.bump_direction) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
     if databurst_version > 0
         trial_table(iTrial,tc.bump_duration) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
