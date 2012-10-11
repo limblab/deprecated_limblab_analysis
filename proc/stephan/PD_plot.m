@@ -46,12 +46,22 @@ end
 
 % include_unsorted = 1 ; 
 % cerebus_array_map_filepath = 'D:\My Documents\Uni\Master\Delft\stage\inhoud\data\Kramer implant array map\6251-0922.cmp';
+% bdf = data;
 
 %% get pds, standard errors and modulation depth and unit list
 [pds, errs, moddepth] = glm_pds(bdf,include_unsorted);
 
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
+
+%% get out badly fitted channels
+for iChan = 1:length(u1)
+    if moddepth(iChan)>1
+        moddepth(iChan)= 0;
+        deselected_chan = [u1(iChan), deselected_chan];
+    end
+end
+disp(['Deselected channels (manually or because moddepth > 1 ): ' num2str(deselected_chan)])
 
 %% make deselected channel pds, errs and moddepth zero.
 % deselected_chan = [96];
@@ -80,8 +90,9 @@ CI = errs*1.96; % confidence bounds
 h_up = figure('name','PDs upper half of array');
 h_low = figure('name','PDs lower half of array');
 
+iPD =2 ; 
 for iPD = 1:length(u1(:,1))
-    r = 0.001:0.01:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
+    r = 0.0001:0.001:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
