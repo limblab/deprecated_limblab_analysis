@@ -46,3 +46,10 @@
 %   -> will plot the PDs with their CIs of channels 45, 47, and 53 from
 %   bdf sunday7102012 in one polar plot, including if they are unsorted
 %   channels or not.
+
+%% also play with
+% [pds, errs, moddepth]=glm_pds(BDF,1) -> it will give the pds,
+% errs and modulation depth for the bdf BDF.
+% u1 = unit_list(BDF,1) -> will give the channel numbers and have the same
+% length as pds, errs and moddepth --> use this to find out what PD in pds
+% belongs with what channel.

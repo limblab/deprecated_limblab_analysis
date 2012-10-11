@@ -16,6 +16,7 @@ function PD_plot(varargin)
 %       The area between two 95% confidence bounds will be shaded. 
 
 
+
 %% sort out inputs 
 if strcmp(varargin{2},'Kramer')
     cerebus_array_map_filepath = '\\citadel.physiology.northwestern.edu\limblab\lab_folder\Animal-Miscellany\_Implant Miscellany\Blackrock Array Info\Array Map Files\6251-0922.cmp';
@@ -92,7 +93,7 @@ h_low = figure('name','PDs lower half of array');
 
 iPD =2 ; 
 for iPD = 1:length(u1(:,1))
-    r = 0.0001:0.001:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
+    r = 0.0001:0.0001:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound

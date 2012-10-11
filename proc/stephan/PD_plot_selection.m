@@ -26,15 +26,25 @@ figure('name','PDs of selected channels')
 
 str = strtrim(cellstr(int2str(channel_selection.')));
 
+% to set scaling of polar plot so that the largest of the modulation depths
+% that we'll plot is shown, we need this:
 for iChan=1:length(channel_selection)
     iPD = find(u1 == channel_selection(iChan),1,'first');
-    r = 0.001:0.01:moddepth(iPD); % /max(moddepth); % the length of the radial line is normalized by the modulation depth
+    moddepth_scaling(iChan) = moddepth(iPD);
+end
+scaling_factor = max(moddepth_scaling); 
+
+% actual plot
+for iChan=1:length(channel_selection)
+    iPD = find(u1 == channel_selection(iChan),1,'first');
+    r = 0.0001:0.0001:moddepth(iPD); % /max(moddepth); % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
     
-    h1 = polar(angle,r);
+    h0 = polar(pi,scaling_factor);
     hold on
+    h1 = polar(angle,r);
     h2 = polar(err_up,r);
     h3 = polar(err_down,r);
     set(findall(gcf, 'String', '30', '-or','String','60','-or','String','120',...
