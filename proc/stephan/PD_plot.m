@@ -47,7 +47,7 @@ end
 
 % include_unsorted = 1 ; 
 % cerebus_array_map_filepath = 'D:\My Documents\Uni\Master\Delft\stage\inhoud\data\Kramer implant array map\6251-0922.cmp';
-% bdf = data;
+% bdf = sun710;
 
 %% get pds, standard errors and modulation depth and unit list
 [pds, errs, moddepth] = glm_pds(bdf,include_unsorted);
@@ -67,9 +67,9 @@ disp(['Deselected channels (manually or because moddepth > 1 ): ' num2str(desele
 %% make deselected channel pds, errs and moddepth zero.
 % deselected_chan = [96];
     
-pds(find(ismember(u1,deselected_chan))) = 0 ; 
-errs(find(ismember(u1,deselected_chan))) = 0 ; 
-moddepth(find(ismember(u1,deselected_chan))) = 0 ; 
+pds(find(ismember(u1,deselected_chan))) = NaN ; 
+errs(find(ismember(u1,deselected_chan))) = NaN ; 
+moddepth(find(ismember(u1,deselected_chan))) = NaN ; 
 
 
 %% PD map plot. 
@@ -175,7 +175,7 @@ end
 if plot_histogram
     % plot confidence interval histograms
     figure('name','95% CI'); 
-    hist(abs(errs*180/pi)*1.96*2,36)
+    hist(abs(errs(errs~=NaN)*180/pi)*1.96*2,36)
     xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')
@@ -183,7 +183,7 @@ if plot_histogram
     
     % plot PD histograms
     figure('name','PDs')
-    hist(pds*180/pi,30)
+    hist(pds(pds~=NaN)*180/pi,30)
 %     xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')
@@ -191,7 +191,7 @@ if plot_histogram
     
     % plot modulation depth histogram
     figure('name','modulation depth')
-    hist(moddepth,30)
+    hist(moddepth(moddepth~=NaN),30)
     xlabel('sqrt(a^2+b^2) where a and b are the GLM weights on x and y velocity')
     ylabel('PD counts')
     title('Histogram of PD modulation depth')
