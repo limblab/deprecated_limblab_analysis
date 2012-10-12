@@ -15,9 +15,9 @@
 [out_struct Goodtrialtable xCenter yCenter GoCueIndex EndTrialIndex] = Initializations(out_struct);
  
 
-%plotmin = 1; plotmax = 54;
+plotmin = 1; plotmax = 2;
 %Plot Paths from go cue to the start of the hold period
-%PlotTruncatedPaths(out_struct, plotmin, plotmax)
+PlotTruncatedPaths(out_struct, plotmin, plotmax)
 
 % Put data into a struct
 IsoTaskMetrics.PercentofSuccessfulTrials =  TrialSuccessPercentage(out_struct);
