@@ -175,7 +175,7 @@ end
 if plot_histogram
     % plot confidence interval histograms
     figure('name','95% CI'); 
-    hist(abs(errs(errs~=NaN)*180/pi)*1.96*2,36)
+    hist(abs(errs(~isnan(errs))*180/pi)*1.96*2,[5:10:360]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
     xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')
@@ -183,7 +183,7 @@ if plot_histogram
     
     % plot PD histograms
     figure('name','PDs')
-    hist(pds(pds~=NaN)*180/pi,30)
+    hist(pds(~isnan(pds))*180/pi,[-175:20:180]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
 %     xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')
@@ -191,7 +191,7 @@ if plot_histogram
     
     % plot modulation depth histogram
     figure('name','modulation depth')
-    hist(moddepth(moddepth~=NaN),30)
+    hist(moddepth(~isnan(moddepth)),30) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
     xlabel('sqrt(a^2+b^2) where a and b are the GLM weights on x and y velocity')
     ylabel('PD counts')
     title('Histogram of PD modulation depth')
