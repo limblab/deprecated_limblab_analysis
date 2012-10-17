@@ -21,6 +21,8 @@ for i = 1:length(targets)
     relInds = find(trialTable(:,10)==targets(i));
     totalForce = zeros(length(relInds),1);
     peakForce = zeros(length(relInds),1);
+    meanForce = zeros(length(relInds),1);
+    stdForce = zeros(length(relInds),1);
     % For each movement to that target, find the total force applied
     for ind = 1:length(relInds)
         tempForce = force.data(force.data(:,1) >= trialTable(relInds(ind),interval) & force.data(:,1) <= trialTable(relInds(ind),8),:);
@@ -28,11 +30,13 @@ for i = 1:length(targets)
         DeltaY = diff(tempForce(:,3));
         totalForce(ind) = sum(sqrt(DeltaX.^2 + DeltaY.^2));
         peakForce(ind) = max(sqrt(DeltaX.^2 + DeltaY.^2));
+        meanForce(ind) = mean(sqrt(DeltaX.^2 + DeltaY.^2));
+        stdForce(ind) = std(sqrt(DeltaX.^2 + DeltaY.^2));
     end
     
     % add the forces to the trial table
     tempTable = trialTable(relInds,:);
-    targetData.(['Target' num2str(targets(i))]) = [tempTable totalForce peakForce];
+    targetData.(['Target' num2str(targets(i))]) = [tempTable totalForce peakForce meanForce stdForce];
     
     % Find the mean force for each of the three conditions
     indsHC = find(tempTable(:,11) == 0);
