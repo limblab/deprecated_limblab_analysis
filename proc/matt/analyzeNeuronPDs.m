@@ -1,4 +1,4 @@
-function analyzeNeuronPDs(fileList)
+function [meanPDs] = analyzeNeuronPDs(fileList)
 
 % This is a temporary hack
 bcfileList = fileList(2);
@@ -6,9 +6,9 @@ fileList = fileList(1);
         
 % Pool together all of the data
 %  HC, CT, and BC all get their own pds array
-[trialTable, pdsHC, pdsCT, pdsBC] = poolNeuronPDs(fileList);
+[trialTable, pdsHC, pdsCT, pdsBC, pdmagsHC, pdmagsCT, pdmagsBC] = poolNeuronPDs(fileList);
 load(bcfileList{1});
-pdsBC = computeNeuronPDs(out_struct,false);
+[pdsBC, pdmagsBC] = computeNeuronPDs(out_struct,false);
 clear out_struct;
 
 % Get indices for HC, CT, BC
@@ -37,3 +37,5 @@ meanPDs = [mean(pdsHC(:,2)), mean(pdsCT(:,2)), mean(pdsBC(:,2))];
 % Make summary box plot
 figure;
 plotPDBox(pdsHC, pdsCT, pdsBC);
+figure;
+plotPDBox(pdmagsHC, pdmagsCT, pdmagsBC);

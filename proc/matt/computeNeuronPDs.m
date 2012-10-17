@@ -1,4 +1,4 @@
-function pds = computeNeuronPDs(bdf,doPlot,useIndices, useUnsorted)
+function [pds, pdmags] = computeNeuronPDs(bdf,doPlot,useIndices, useUnsorted)
 % Returns a Nx3 array where N is the number of units with 
 % bdf: BDF struct
 % doPlot: bool whether or not to display plots
@@ -59,6 +59,7 @@ for unit = 1:length(unitList)
     
     tuning_curve = [targMap(:,1) f];
     tuning_curve = sortrows(tuning_curve,1);
+    pdmags(unit,:) = max(tuning_curve(:,2));
 
     % Start a new figure after a certain amount
     if doPlot
@@ -74,3 +75,4 @@ for unit = 1:length(unitList)
 end % foreach unit
 
 pds = [unitList(:,1) pds];
+pdmags = [unitList(:,1) pdmags];

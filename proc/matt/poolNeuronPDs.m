@@ -1,10 +1,14 @@
-function [trialTable, pdsHC, pdsCT, pdsBC] = poolNeuronPDs(fileList)
+function [trialTable, pdsHC, pdsCT, pdsBC, pdmagsHC, pdmagsCT, pdmagsBC] = poolNeuronPDs(fileList)
 
 [trialTable,~] = poolCatchTrialData(fileList);
 
 pdsHC = [];
 pdsCT = [];
 pdsBC = [];
+
+pdmagsHC = [];
+pdmagsCT = [];
+pdmagsBC = [];
 
 maxIDHC = 0;
 maxIDCT = 0;
@@ -29,17 +33,17 @@ for iFile = 1:length(fileList)
 end
 
     if any(indsHC)
-        pds = computeNeuronPDs(out_struct,false,indsHC);
+        [pds, pdmagsHC] = computeNeuronPDs(out_struct,false,indsHC);
         pdsHC = combinePDs(pdsHC, pds);
     end
     
     if any(indsCT)
-        pds = computeNeuronPDs(out_struct,false,indsCT);
+        [pds, pdmagsCT] = computeNeuronPDs(out_struct,false,indsCT);
         pdsCT = combinePDs(pdsCT, pds);
     end
     
     if any(indsBC)
-        pds = computeNeuronPDs(out_struct,false,indsBC);
+        [pds, pdmagsBC] = computeNeuronPDs(out_struct,false,indsBC);
         pdsBC = combinePDs(pdsBC, pds);
     end
 
