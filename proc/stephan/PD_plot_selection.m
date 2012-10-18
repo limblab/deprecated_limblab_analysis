@@ -70,7 +70,7 @@ for iBdf = 1:length(varargin)-2
     
     for iChan=1:length(channel_selection)
         iPD = find(u == channel_selection(iChan),1,'first');
-        r = 0.0001:0.0001:moddepth(iPD); % /max(moddepth); % the length of the radial line is normalized by the modulation depth
+        r = 0.0001:0.0001:moddepth(iPD); % length of the radial line reflects the modulation depth
         angle = repmat(pds_here(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
         err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
         err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
@@ -94,7 +94,7 @@ for iBdf = 1:length(varargin)-2
         [x1,y1]=pol2cart(angle,r); % needed to fill up the space between the two CI
         [x2,y2]=pol2cart(err_up,r);
         [x3,y3]=pol2cart(err_down,r);
-        [x0,y0]=pol2cart(bdf_label_angle,scaling_factor+scaling_factor/4);
+        [x0,y0]=pol2cart(bdf_label_angle,scaling_factor+scaling_factor/4); % for putting the bdf labels in the correct spot
         
         x_fill = [x2(end), x1(end), x3(end), 0];
         y_fill = [y2(end), y1(end), y3(end), 0];
