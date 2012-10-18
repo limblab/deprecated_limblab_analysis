@@ -14,8 +14,11 @@ function doCTAnalysis()
 plotPDSummary = false;
 
 % Specify folders in which to look for data
-fileList = {'Y:\Jaco_8I1\BDFStructs\09-19-12\Jaco_IsoHC_BCCatch_09-19-12_002.mat',...
-            'Y:\Jaco_8I1\BDFStructs\09-19-12\Jaco_IsoBC_09-19-12_003.mat'};
+%fileList = {'Y:\Jaco_8I1\BDFStructs\09-19-12\Jaco_IsoHC_BCCatch_09-19-12_002.mat',...
+%'Y:\Jaco_8I1\BDFStructs\09-19-12\Jaco_IsoBC_09-19-12_003.mat'};
+
+fileList = {'/Users/Matt/Desktop/lab/data/Jaco_IsoHC_BCCatch_09-19-12_002.mat',...
+            '/Users/Matt/Desktop/lab/data/Jaco_IsoBC_09-19-12_003.mat'};
 
 % total force
 fHC = [];
