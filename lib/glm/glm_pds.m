@@ -23,7 +23,7 @@ for i = 1:length(ul)
     et = toc;
     fprintf(1, 'ET: %f (%d of %d)\n', et, i, length(ul));
     
-    [b, dev, stats] = glm_kin(bdf, ul(i,1), ul(i,2), 0, 'posvel'); %#ok<ASGLU>
+    [b, dev, stats] = glm_kin(bdf, ul(i,1), ul(i,2), 0, 'posvel'); %#ok<ASGLU> 
     bv = [b(4) b(5)]; % glm weights on x and y velocity
     dbv = [stats.se(4) stats.se(5)];
     J = [-bv(2)/(bv(1)^2+bv(2)^2); bv(1)/(bv(1)^2+bv(2)^2)];
