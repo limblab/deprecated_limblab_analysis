@@ -42,3 +42,4 @@ for n=1:size(out_struct.pos,1)
     title(num2str(out_struct.pos(n,1)))
 %     pause(0.05)
 end
+close

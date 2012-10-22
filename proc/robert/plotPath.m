@@ -1,14 +1,29 @@
 function plotPath(out_struct,timeRange)
 
+% syntax plotPath(out_struct,timeRange)
+%
+% timeRange is a 2-element vector, [tmin tmax], that determines how many
+% trials to include.  optionally, it could also be 'all' to plot every
+% trial in out_struct.  This does not seem advisable.
+%
+% if no second input is provided, the function will plot a summary figure
+% to assist in choosing a time range, then exit.
+
+smFactor=10;
+out_struct.pos(:,2:3)=filtfilt(ones(1,smFactor)/smFactor,1,out_struct.pos(:,2:3));
+out_struct.vel(:,2:3)=filtfilt(ones(1,smFactor)/smFactor,1,out_struct.vel(:,2:3));
+
+
 [PL,~,~,~,speedProfile,~,trialTS,~]=kinematicsHandControl(out_struct,struct('version',2));
 
-
-% also make plots of the speedProfiles for each trial?
-% smooth for plot?
-
-
-
-
+if nargin < 2
+    figure
+    plot(trialTS(:,1),cumsum(PL-mean(PL)),'.')
+    return
+end
+if ischar(timeRange) && strcmpi(timeRange,'all')
+    timeRange=[0 out_struct.meta.duration];
+end
 
 % find the place in the position vector that meets the timeRange criteria
 trials=find(trialTS(:,1)>=min(timeRange) & trialTS(:,1)<=max(timeRange));
@@ -54,5 +69,25 @@ for n=2:length(trials)
 end
 
 assignin('base','PLselect',PL(trials))
+
+
+% plots of the velocity profiles
+figure
+clf
+set(gcf,'Color',[1 1 1],'Position',[50 70 700 700])
+for n=2:length(trials) % to keep the number of plots the same
+    subplot(sqrt(numPlots),sqrt(numPlots),n)
+    plot(speedProfile{trials(n)},'k','LineWidth',1.5)
+    set(gca,'TickLength',[0 0],'XTick',[],'YTick',[])
+    axis square
+end
+% [ylimits{1:(length(trials)-1)}]=deal([0 ...
+%     max(cellfun(@max,get(findobj(gcf,'Type','Axes'),'Ylim')))]);
+
+for n=2:length(trials)
+    subplot(sqrt(numPlots),sqrt(numPlots),n)
+    set(gca,'Ylim',[0 max(cellfun(@max,get(findobj(gcf,'Type','Axes'),'Ylim')))])
+end
+
 
 
