@@ -262,7 +262,7 @@ function out_struct = get_cerebus_data(varargin)
         
         if (opts.verbose == 1)
             progress = progress + entity_extraction_weight*EntityInfo(stim_marker(i)).ItemCount/relevant_entity_count;
-            waitbar(progress,h,spintf('Opening: %s\nExtracting Stim Marker', filename));
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting Stim Marker', filename));
         end
     end   
         
