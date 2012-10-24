@@ -4,7 +4,7 @@
 %firing rate to the unit sub elements
 
 
-[bdf.tt,bdf.tt_hdr]=bc_trial_table2(bdf);
+[bdf.tt,bdf.tt_hdr]=bc_trial_table3(bdf);
 
 ts = 50;
 offset=0;
