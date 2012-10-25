@@ -1,6 +1,6 @@
 function SNRout=fp_spikeSNR(bdfNameIn)
 
-% syntax SNRout=fp_spikeSNR(bdfNameIn)
+% syntax SNRout=fp_spikeSNR(bdfNameIn);
 
 fsep=[filesep filesep];
 if ~ispc, fsep(1)=''; end

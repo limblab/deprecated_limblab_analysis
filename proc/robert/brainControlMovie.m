@@ -1,15 +1,20 @@
-function F=brainControlMovie(out_struct)
+function F=brainControlMovie(out_struct,encodeFlag)
 
+todayDateStr=regexp(out_struct.meta.filename,'[0-9]{8}(?=[0-9]{3})','match','once');
+if ~isempty(todayDateStr)
+    todayDateStr=[todayDateStr(1:2),'/',todayDateStr(3:4),'/',todayDateStr(5:end)];
+end
 
 targInd=1;
 intarget=0; intargetCutoff=0; failTargetCutoff=0;
 face=[]; target=[];
 out_struct.targets.centers(out_struct.targets.centers(:,1)<1,:)=[];
-figure, % set(gcf,'Color',[0 0 0])
+figure, set(gcf,'Color',[0 0 0])
 set(gca,'Ylim',[min(out_struct.pos(:,3)) max(out_struct.pos(:,3))], ...
-    'Xlim',[min(out_struct.pos(:,2)) max(out_struct.pos(:,2))]) % 'XTick',[],'YTick',[],'Color',[0 0 0]
+    'Xlim',[min(out_struct.pos(:,2)) max(out_struct.pos(:,2))], ...
+    'XTick',[],'YTick',[],'Color',[0 0 0])
 hold on
-
+tic
 for n=1:size(out_struct.pos,1)
     if out_struct.pos(n,1) >= out_struct.targets.centers(targInd,1)
         % if for some crazy reason the old target hasn't gotten
@@ -20,7 +25,7 @@ for n=1:size(out_struct.pos,1)
             out_struct.targets.centers(targInd,4)+[-2 2 2 -2],'r', ...
             'EdgeColor','none');
         targInd=targInd+1;
-        failTargetCutoff=n+190;
+        failTargetCutoff=n+190;  % makes for a cutoff time of 9.5s for safety margin
     end
     delete(face)
     face=plot(out_struct.pos(n,2),out_struct.pos(n,3),'o', ...
@@ -39,17 +44,26 @@ for n=1:size(out_struct.pos,1)
         delete(target)
         target=[];
     end
-    title(num2str(out_struct.pos(n,1)))
+    title([todayDateStr,' time= ',num2str(out_struct.pos(n,1))],'Color','w','HorizontalAlignment','left')
 %     pause(0.05)
+    if targInd > size(out_struct.targets.centers,1)
+        break
+    end
+end
+toc
+close
+
+if nargin==1 || encodeFlag==0
+    return
 end
 
-
-
-return
-
-% code to encode the movie
-avobj=VideoWriter('avifile2.avi','Motion JPEG AVI');
+%% to just encode the movie
+disp('encoding movie...')
+tic
+avobj=VideoWriter(regexprep(out_struct.meta.filename,'\.plx','.avi'),'Motion JPEG AVI');
 avobj.FrameRate=20;
 open(avobj)
 writeVideo(avobj,F)
 close(avobj)
+toc
+disp('done')
