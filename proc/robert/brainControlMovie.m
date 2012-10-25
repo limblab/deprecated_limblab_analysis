@@ -5,9 +5,9 @@ targInd=1;
 intarget=0; intargetCutoff=0; failTargetCutoff=0;
 face=[]; target=[];
 out_struct.targets.centers(out_struct.targets.centers(:,1)<1,:)=[];
-figure
+figure, % set(gcf,'Color',[0 0 0])
 set(gca,'Ylim',[min(out_struct.pos(:,3)) max(out_struct.pos(:,3))], ...
-    'Xlim',[min(out_struct.pos(:,2)) max(out_struct.pos(:,2))])
+    'Xlim',[min(out_struct.pos(:,2)) max(out_struct.pos(:,2))]) % 'XTick',[],'YTick',[],'Color',[0 0 0]
 hold on
 
 for n=1:size(out_struct.pos,1)
@@ -42,4 +42,14 @@ for n=1:size(out_struct.pos,1)
     title(num2str(out_struct.pos(n,1)))
 %     pause(0.05)
 end
-close
+
+
+
+return
+
+% code to encode the movie
+avobj=VideoWriter('avifile2.avi','Motion JPEG AVI');
+avobj.FrameRate=20;
+open(avobj)
+writeVideo(avobj,F)
+close(avobj)
