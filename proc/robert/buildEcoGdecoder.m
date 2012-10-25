@@ -3,7 +3,7 @@
 
 %% set up, and define constants.
 if ispc
-    cd('E:\monkey data\RobertF'), RDFstartup
+    cd('E:\personnel\RobertF'), RDFstartup
 end
 
 SIGNALTOUSE='force';

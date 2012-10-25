@@ -282,7 +282,7 @@ end
 r1=reshape(r,1,[]);
 r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 [sr,featind]=sort(r1,'descend');
-[bestf,bestc]=ind2sub(size(r),featind(1:nfeat));
+[bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
 bestPB=single(zeros(nfeat,length(y)));
 clear r     %clear this so we can reuse r later on
 for i=1:nfeat

@@ -51,11 +51,11 @@ else
     FilesInfo=dir(PathName);
 end
 badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
-% to include all channels, uncomment the next line:
-badChannelsFileInd=[]; 
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
-    load(fullfile(remoteParentDir,FilesInfo(badChannelsFileInd).name))
+    try
+        load(fullfile(remoteParentDir,FilesInfo(badChannelsFileInd).name))
+    end
 else
     disp('skipping bad channels assignment.  Must zero out in H matrix!')
 end
