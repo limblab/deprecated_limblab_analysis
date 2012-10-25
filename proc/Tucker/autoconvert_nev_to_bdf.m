@@ -1,13 +1,10 @@
 % check a directory and run the bdf converter if unconverted files are
 % there
 
-%restoredefaultpath;matlabrc
-%clear datapath
-%cd C:\Userslimblab\Desktop\s1_analysis
-%load_paths
+%
 %set the mount drive to scan and convert
-folderpath='z:\Kramer_10I1\BumpDirection';
-
+folderpath='C:\Documents and Settings\Administrator\Desktop\Tucker\trial_data_set\';
+%addpath(folderpath);
 foldercontents=dir(folderpath);
 fnames={foldercontents.name};%extracts just the names from the foldercontents
 for i=1:length(foldercontents)
@@ -19,8 +16,11 @@ for i=1:length(foldercontents)
 
                 disp(strcat('Working on: ',folderpath, fnames{i}))
 
-                bdf=get_cerebus_data(strcat(folderpath, fnames{i}));
-                save strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat') bdf
+                bdf=get_cerebus_data(strcat(folderpath, fnames{i}),'verbose','noforce','nokin','noeye');
+
+                [bdf.tt, bdf.tt_hdr]= bc_trial_table3(bdf);
+                savename=strcat(folderpath, fnames{i}(1:(length(fnames{i})-4)), '_tt_only.mat');
+                save(savename,  'bdf');
                 clear bdf
             end
         end
