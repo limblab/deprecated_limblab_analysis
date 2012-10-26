@@ -21,21 +21,22 @@ tgt_count = zeros(numTgts,1);
 EMGLabels = binnedData.emgguide(EMGvector,:);
 
 for i = 1:numTrials
-    
-    %average EMGs after touch pad hold (go tone)
-    %place results in EMGpatterns(1,:,:)
-    Go_ts = binnedData.trialtable(i,7);
-    start = find(binnedData.timeframe > Go_ts-timeBefore, 1, 'first');
-    stop  = find(binnedData.timeframe > Go_ts+timeAfter,  1, 'first');
-        
-    if isempty(start) || isempty(stop)
-        warning('Trying to access out of range data, trialtable may not match binnedData');
-        numTrials = numTrials-1;
-        continue;
-    else
-        %average EMGs at Go_Cue: (in first row of EMGpatterns)
-        mEMG = mean(binnedData.emgdatabin(start:stop,EMGvector));
-        EMGpatterns(1,:) = EMGpatterns(1,:) + mEMG;
+    if(binnedData.trialtable(i,7)>=0)
+        %average EMGs after touch pad hold (go tone)
+        %place results in EMGpatterns(1,:,:)
+        Go_ts = binnedData.trialtable(i,7);
+        start = find(binnedData.timeframe > Go_ts-timeBefore, 1, 'first');
+        stop  = find(binnedData.timeframe > Go_ts+timeAfter,  1, 'first');
+
+        if isempty(start) || isempty(stop)
+            warning('Trying to access out of range data, trialtable may not match binnedData');
+            numTrials = numTrials-1;
+            continue;
+        else
+            %average EMGs at Go_Cue: (in first row of EMGpatterns)
+            mEMG = mean(binnedData.emgdatabin(start:stop,EMGvector));
+            EMGpatterns(1,:) = EMGpatterns(1,:) + mEMG;
+        end
     end
  
     %average EMGs after Rewards. Make sure target ID is not -1
