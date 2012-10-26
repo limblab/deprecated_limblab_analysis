@@ -171,20 +171,23 @@ function out_struct = calc_from_raw(raw_struct, opts)
             
         elseif wrist_flexion_task
             
-            if isfield(out_struct,'force')
-                adfreq = out_struct.force.forcefreq;
-            else
-                adfreq = 1000;
-            end
+            enc_freq = 1000;
             
             time_pos = out_struct.raw.enc(:,1);            
             x_pos = out_struct.raw.enc(:,2)/1000;
             y_pos = out_struct.raw.enc(:,3)/1000;
             
-            dx = kin_diff(x_pos);
-            dy = kin_diff(y_pos);
-            ddx = kin_diff(dx);
-            ddy = kin_diff(dy);
+            %LP filter at 100 Hz:
+            [b, a] = butter(8, 100*2/enc_freq);
+            
+            dx = [0; diff(x_pos)./diff(time_pos)];
+            dx = filtfilt(b,a,dx);
+            dy = [0; diff(y_pos) .* enc_freq];
+            dy = filtfilt(b,a,dy);
+            ddx = [0; diff(dx)./diff(time_pos)];
+            ddx = filtfilt(b,a,ddx);
+            ddy = [0; diff(dy) .* enc_freq];
+            ddy = filtfilt(b,a,ddy);
             
             out_struct.pos = [time_pos x_pos  y_pos];
             out_struct.vel = [time_pos    dx     dy];
