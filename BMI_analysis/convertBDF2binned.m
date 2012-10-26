@@ -161,7 +161,7 @@ else
     EMGname = char(zeros(1,12));
     numEMGs = length(datastruct.emg.emgnames);
     emgguide = char(zeros(numEMGs,length(EMGname)));
-    emgtimebins = single(starttime*emgsamplerate+1:stoptime*emgsamplerate);
+    emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
 
 
     for i=1:numEMGs
@@ -170,7 +170,8 @@ else
     end
 
     %Pre-allocate matrix for binned EMG -- single precision!
-    emgdatabin = zeros(numberbins,numEMGs,'single');
+    %Matlab doesnt like singles too much after all, back to doubles!
+    emgdatabin = zeros(numberbins,numEMGs);
 
     % Filter EMG data
     [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
@@ -185,7 +186,7 @@ else
 
         %downsample EMG data to desired bin size
 %             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
-        emgdatabin(:,E) = single(interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0));
+        emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0);
     end
 
     %Normalize EMGs        
@@ -211,7 +212,7 @@ else
     forcename = char(zeros(1,12));
     numforcech = length(datastruct.force.labels);
     forcelabels = char(zeros(numforcech,length(forcename)));
-    forcetimebins = single(starttime*forcesamplerate+1:stoptime*forcesamplerate);
+    forcetimebins = starttime*forcesamplerate+1:stoptime*forcesamplerate;
 
     for i=numforcech:-1:1
         forcename = char(datastruct.force.labels(i));
@@ -240,7 +241,7 @@ if ~isfield(datastruct, 'pos')
     %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     cursorposbin = [];
 elseif ~isempty(datastruct.pos)
-    cursorposbin = single(interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0));
+    cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0);
 end
 
 cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
@@ -263,7 +264,7 @@ if ~isfield(datastruct, 'vel')
     %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     velocbin = [];
 else
-    velocbin = single(interp1(datastruct.vel(:,1), datastruct.vel(:,2:3), timeframe,'linear',0));
+    velocbin = interp1(datastruct.vel(:,1), datastruct.vel(:,2:3), timeframe,'linear',0);
     vel_magn = sqrt(velocbin(:,1).^2+velocbin(:,2).^2);
     velocbin = [velocbin vel_magn];
 end
@@ -283,7 +284,7 @@ if ~isfield(datastruct, 'acc')
     %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     accelbin = [];
 else
-    accelbin = single(interp1(datastruct.acc(:,1), datastruct.acc(:,2:3), timeframe,'linear',0));
+    accelbin = interp1(datastruct.acc(:,1), datastruct.acc(:,2:3), timeframe,'linear',0);
     acc_magn = sqrt(accelbin(:,1).^2+accelbin(:,2).^2);
     accelbin = [accelbin acc_magn];
 end
@@ -350,9 +351,9 @@ else
         spikeguide = [];
     else   
 
-        % Pre-allocate accordingly - singles!
+        % Pre-allocate accordingly!
         spikeguide= char(zeros(numusableunits,length('ee00u0'))); %preallocate space for spikeguide
-        spikeratedata=zeros(numberbins,numusableunits,'single');
+        spikeratedata=zeros(numberbins,numusableunits);
 
         % Create the spikeguide with electrode names
         for i=1:numusableunits
@@ -370,7 +371,7 @@ else
              %and get rid of the extra bins at beginnning, it contains all the ts
              %from the beginning of file that are < starttime. Here I want
              %starttime to be the lower bound of the first bin.
-             binneddata = single(binneddata(2:end));
+             binneddata = binneddata(2:end);
 
              %convert to firing rate and store in spike data matrix
              spikeratedata(:,unit) = binneddata' /binsize;
@@ -517,17 +518,6 @@ binnedData = struct('timeframe',timeframe,...
                     'targets',targets,...
                     'trialtable',tt,...
                     'stim',stim,...
-                    'stimT',stimT);
-                               
-%% resample function for single-precision (embeded function):
-
-function Y = downSample(X,NewSR,OrigSR)
-   % downSample the sequence in vector X at NewSR/OrigSR times the original sample rate.
-   % OrigSR must be a multiple of NewSR
-
-    binsToKeep = int32(1:round(OrigSR/NewSR):length(X));
-    Y = X(binsToKeep);
-end
-        
+                    'stimT',stimT);        
         
 end
