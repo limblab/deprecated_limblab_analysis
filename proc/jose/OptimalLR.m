@@ -1,8 +1,10 @@
 %% Adapt: Init optimal filter:
 Adapt.Enable = true;
 Adapt.jtype = 2;
-step_LR = 1e-10;
-LR_vals = 1e-10:step_LR:2e-8
+% step_LR = 1e-10;
+% LR_vals = 1e-10:step_LR:2e-
+% LR_vals =[1e-11 1e-10 1e-9 1e-8 1e-7 1e-6]
+LR_vals =[5e-9 1e-8 5e-8]
 iter = length(LR_vals);
 R2_t = zeros(iter,1);
 for i=1:iter
