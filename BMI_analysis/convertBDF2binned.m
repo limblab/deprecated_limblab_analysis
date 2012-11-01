@@ -261,8 +261,16 @@ cursposlabels(2,1:5)= 'y_pos';
 
 %% Bin Velocity
 if ~isfield(datastruct, 'vel')
-    %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
-    velocbin = [];
+    if isfield(datastruct,'pos')
+        %derive freshly binned pos data
+        dx = [0; diff(cursorposbin(:,1))./ binsize];
+        dy = [0; diff(cursorposbin(:,2))./ binsize];
+        magn = sqrt(dx.^2 + dy.^2);
+        velocbin = [dx dy magn];
+    else
+        %disp(sprintf('No cursor/velocity data is found in structure " %s " ',datastructname));
+        velocbin = [];
+    end
 else
     velocbin = interp1(datastruct.vel(:,1), datastruct.vel(:,2:3), timeframe,'linear',0);
     vel_magn = sqrt(velocbin(:,1).^2+velocbin(:,2).^2);
@@ -281,8 +289,16 @@ veloclabels(3,1:8)= 'vel_magn';
 
 %% Bin Acceleration
 if ~isfield(datastruct, 'acc')
-    %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
-    accelbin = [];
+    if isfield(datastruct,'vel')
+        %derive freshly binned vel data
+        ddx = [0; diff(velocbin(:,1))./ binsize];
+        ddy = [0; diff(velocbin(:,2))./ binsize];
+        magn = sqrt(ddx.^2 + ddy.^2);
+        accelbin = [ddx ddy magn];
+    else
+        %disp(sprintf('No cursor/acceleration data is found in structure " %s " ',datastructname));
+        accelbin = [];
+    end
 else
     accelbin = interp1(datastruct.acc(:,1), datastruct.acc(:,2:3), timeframe,'linear',0);
     acc_magn = sqrt(accelbin(:,1).^2+accelbin(:,2).^2);
@@ -514,6 +530,8 @@ binnedData = struct('timeframe',timeframe,...
                     'cursorposbin',cursorposbin,...
                     'velocbin',velocbin,...
                     'veloclabels',veloclabels,...
+                    'accelbin',accelbin,...
+                    'acclabels',acclabels,...
                     'words',words,...
                     'targets',targets,...
                     'trialtable',tt,...

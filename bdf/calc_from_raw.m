@@ -171,27 +171,27 @@ function out_struct = calc_from_raw(raw_struct, opts)
             
         elseif wrist_flexion_task
             
-            enc_freq = 1000;
+%             enc_freq = 1000;
             
             time_pos = out_struct.raw.enc(:,1);            
             x_pos = out_struct.raw.enc(:,2)/1000;
             y_pos = out_struct.raw.enc(:,3)/1000;
             
-            %LP filter at 100 Hz:
-            [b, a] = butter(8, 100*2/enc_freq);
-            
-            dx = [0; diff(x_pos)./diff(time_pos)];
-            dx = filtfilt(b,a,dx);
-            dy = [0; diff(y_pos) .* enc_freq];
-            dy = filtfilt(b,a,dy);
-            ddx = [0; diff(dx)./diff(time_pos)];
-            ddx = filtfilt(b,a,ddx);
-            ddy = [0; diff(dy) .* enc_freq];
-            ddy = filtfilt(b,a,ddy);
+%             %LP filter at 100 Hz:
+%             [b, a] = butter(8, 100*2/enc_freq);
+%             
+%             dx = [0; diff(x_pos)./diff(time_pos)];
+%             dx = filtfilt(b,a,dx);
+%             dy = [0; diff(y_pos) .* enc_freq];
+%             dy = filtfilt(b,a,dy);
+%             ddx = [0; diff(dx)./diff(time_pos)];
+%             ddx = filtfilt(b,a,ddx);
+%             ddy = [0; diff(dy) .* enc_freq];
+%             ddy = filtfilt(b,a,ddy);
             
             out_struct.pos = [time_pos x_pos  y_pos];
-            out_struct.vel = [time_pos    dx     dy];
-            out_struct.acc = [time_pos   ddx    ddy];                      
+%             out_struct.vel = [time_pos    dx     dy];
+%             out_struct.acc = [time_pos   ddx    ddy];                      
             
         end
     else
