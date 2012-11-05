@@ -78,7 +78,8 @@ if all((x_HC(:,1)== x_N2E2P(:,1)) & (x_HC(:,1) == x_N2P(:,1)))
     plot(t_HC(:,1),t_HC(:,2),'b*'); hold on
     plot(t_N2E2P(:,1),t_N2E2P(:,2),'r*')
     plot(t_N2P(:,1),t_N2P(:,2),'g*'); 
-    axis([0 10 0 5])
+    axis([0 10 0 5]);
+    axis equal;
     title(sprintf('Time to reach each table'));
     xlabel('target'); ylabel('time (sec)');
     legend('Hand Control','Cascade Decoder', 'N2P Decoder')
