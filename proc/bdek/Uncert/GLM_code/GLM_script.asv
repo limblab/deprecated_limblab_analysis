@@ -1,0 +1,18 @@
+Monkey = 'MrT';
+
+month = '09';
+day   = '24';
+year  = '2012';
+
+prepare_vars4GLM(Monkey,[month day year]);
+fprintf('Preparing 
+
+pva.pos = bdf.pos; pva.vel  = bdf.vel; pva.acc = bdf.acc;
+
+[X,y,feed,trialinds,min_inds] = construct_GLM(trains,trials2,pva,ts_low);
+
+[X2_p MODEL_1 MODEL_2 preds] = run_GLM(X,y);
+
+aligntype = 1;
+
+plot_GLM(X,y,MODEL_1,MODEL_2,trials2,feed,min_inds,trialinds,aligntype,X2_p);

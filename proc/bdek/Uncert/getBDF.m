@@ -26,7 +26,7 @@ cd('C:\Users\limblab\Desktop\s1_analysis\');
 load_paths;
 
 % CHANGE THE PATH HERE TO WHERE YOUR .nev FILES ARE STORED
-bdf = get_cerebus_data(['\\165.124.111.182\data\MrT_9I4\M1\' filename],3);
+bdf = get_cerebus_data(['C:\Users\limblab\Desktop\NEV\' filename],3);
 
 % CHANGE THIS PATH TO YOUR ANALYSIS SUBDIR WHERE YOU WANT THE BDF SAVED
 % IF DIFFERENT FROM ORIGINAL PATH

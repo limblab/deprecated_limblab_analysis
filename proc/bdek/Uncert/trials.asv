@@ -1,10 +1,15 @@
 %- PARAMETERS -------------------------------------------------------------
+MAKE_PLOTS = 0;
+
+NATURE_PLOT = 1;
+Date = '10/03';
+
 pof = -3; % Position of Feedback (Where in y the cursor appears)
 yoff = -7; % Global y offset of center target
 target_rad = 15; % Target radius
 target_size = 3; % Target size
-shift_m = -2; % Shift mean
-shift_v = 1.5; % Shift variance
+shift_m = 2; % Shift mean
+shift_v = 3; % Shift variance
 
 % Screen offsets
 x_off = -2; 
@@ -17,6 +22,8 @@ mid2end = target_rad - (pof - yoff) - 0.5*target_size;
 BDF = bdf;
 BDF.pos(:,2) = BDF.pos(:,2) + x_off;
 BDF.pos(:,3) = BDF.pos(:,3) + y_off; 
+
+tt(isnan(tt(:,5)),:) = [];
 
 comp_tt = tt(tt(:,8)==32 | tt(:,8)==34,:);
 
@@ -40,6 +47,8 @@ S_M_F_high = zeros(length(high_trials),3);
 Nature_low = zeros(length(low_trials),2);
 
 %figure; hold on;
+max_vel_low = zeros(length(low_trials),2);
+max_vel_high = zeros(length(high_trials),2);
 
 for i = 1:length(low_trials)
     % find indices
@@ -70,8 +79,8 @@ for i = 1:length(low_trials)
     
 %     %plot(BDF.vel(start_v:last_v,1)-BDF.vel(start_v,1),vy,'b'); 
 %     
-%     max_y_vel = max(BDF.vel(start_v:mid_ind + 500,3));
-%     max_vel_ind = find(BDF.vel(start_v:mid_ind+500,3)==max_y_vel);
+    max_y_vel = max(BDF.vel(start_v:mid_ind + 100,3));
+    max_vel_ind = find(BDF.vel(start_v:mid_ind + 100,3)==max_y_vel);
 %     
 %     %plot(BDF.vel(max_vel_ind + start_v,1)-BDF.vel(start_v,1),BDF.vel(max_vel_ind + start_v,3),'ko');
 %     
@@ -80,9 +89,10 @@ for i = 1:length(low_trials)
 %     
 %     target_appr_ind = find(dv_y(low_vel_ind:end) < 0,1,'first');
 %     target_appr_ind = target_appr_ind + start_v + max_vel_ind + low_vel_ind;
-%     
+%      
+%     max_vel_low(i,:) = BDF.vel(target_appr_ind,2:3);
 %     %plot(BDF.vel(target_appr_ind,1) - BDF.vel(start_v,1),BDF.vel(target_appr_ind,3),'go');
-%     
+    
 %     work_range = target_appr_ind - 50:target_appr_ind + 50;
 %     takeoff_fit = polyfit(BDF.pos(work_range,2),BDF.pos(work_range,3),1);
 %     
@@ -112,7 +122,6 @@ for i = 1:length(high_trials)
     vy = BDF.vel(start_v:last_v,3);
     v = sqrt(vx.^2 + vy.^2);
     
-    
     pert = comp_tt(high_var(i),2); 
     px = BDF.pos(start_v:last_v,2) + pert;
     py = BDF.pos(start_v:last_v,3);
@@ -133,8 +142,8 @@ for i = 1:length(high_trials)
     
 %     %plot(BDF.vel(start_v:last_v,1)-BDF.vel(start_v,1),vy,'b'); 
 %     
-%     max_y_vel = max(BDF.vel(start_v:mid_ind + 500,3));
-%     max_vel_ind = find(BDF.vel(start_v:mid_ind+500,3)==max_y_vel);
+%     max_y_vel = max(BDF.vel(start_v:mid_ind + 100,3));
+%     max_vel_ind = find(BDF.vel(start_v:mid_ind+100,3)==max_y_vel);
 %     
 %     %plot(BDF.vel(max_vel_ind + start_v,1)-BDF.vel(start_v,1),BDF.vel(max_vel_ind + start_v,3),'ko');
 %     
@@ -144,8 +153,10 @@ for i = 1:length(high_trials)
 %     target_appr_ind = find(dv_y(low_vel_ind:end) < 0,1,'first');
 %     target_appr_ind = target_appr_ind + start_v + max_vel_ind + low_vel_ind;
 %     
-%     %plot(BDF.vel(target_appr_ind,1) - BDF.vel(start_v,1),BDF.vel(target_appr_ind,3),'go');
+%     max_vel_high(i,:) = BDF.vel(target_appr_ind,2:3);
 %     
+%     %plot(BDF.vel(target_appr_ind,1) - BDF.vel(start_v,1),BDF.vel(target_appr_ind,3),'go');
+    
 %     work_range = target_appr_ind - 50:target_appr_ind + 50;
 %     takeoff_fit = polyfit(BDF.pos(work_range,2),BDF.pos(work_range,3),1);
 %     
@@ -163,27 +174,30 @@ for i = 1:length(high_trials)
            nec_correction act_correction perc_corr;   
 end
 
-figure; hold on;
-plot(PC_low(:,1),PC_low(:,2),'b.');
-plot(PC_high(:,1),PC_high(:,2),'r.');
+if MAKE_PLOTS == 1
 
-PC_all = [PC_low; PC_high];
+    figure; hold on;
+    plot(PC_low(:,1),PC_low(:,2),'b.');
+    plot(PC_high(:,1),PC_high(:,2),'r.');
 
-p_low = polyfit(PC_low(:,1),PC_low(:,2),1);
-p_high = polyfit(PC_high(:,1),PC_high(:,2),1);
+    PC_all = [PC_low; PC_high];
 
-plot([min(PC_all(:,1)) max(PC_all(:,1))],...
-    [p_low(1)*min(PC_all(:,1))+ p_low(2) p_low(1)*max(PC_all(:,1)) + p_low(2)],'b');
+    p_low = polyfit(PC_low(:,1),PC_low(:,2),1);
+    p_high = polyfit(PC_high(:,1),PC_high(:,2),1);
 
-plot([min(PC_all(:,1)) max(PC_all(:,1))],...
-    [p_high(1)*min(PC_all(:,1))+ p_high(2) p_high(1)*max(PC_all(:,1)) + p_high(2)],'r');
+    plot([min(PC_all(:,1)) max(PC_all(:,1))],...
+        [p_low(1)*min(PC_all(:,1))+ p_low(2) p_low(1)*max(PC_all(:,1)) + p_low(2)],'b');
 
-legend(sprintf('Fit Slope = %.3f\nCloud var = %.2f',p_low(1),min(comp_tt(:,3))),...
-       sprintf('Fit Slope = %.3f\nCloud var = %.2f',p_high(1),max(comp_tt(:,3))));
+    plot([min(PC_all(:,1)) max(PC_all(:,1))],...
+        [p_high(1)*min(PC_all(:,1))+ p_high(2) p_high(1)*max(PC_all(:,1)) + p_high(2)],'r');
 
-title('Use of Feedback','FontSize',18);
-xlabel('Necessary Compensatory X Movement','FontSize',12);
-ylabel('Actual Compensatory X Movement','FontSize',12);
+    legend(sprintf('Fit Slope = %.3f\nCloud var = %.2f',p_low(1),min(comp_tt(:,3))),...
+           sprintf('Fit Slope = %.3f\nCloud var = %.2f',p_high(1),max(comp_tt(:,3))));
+
+    title('Use of Feedback','FontSize',18);
+    xlabel('Necessary Compensatory X Movement','FontSize',12);
+    ylabel('Actual Compensatory X Movement','FontSize',12);
+end
 
 feed_start = zeros(length(comp_tt),1);
 for i = 1:length(all_trials)
@@ -231,23 +245,25 @@ for i = 1:num_blocks
     
 end
    
-figure; hold on; 
-subplot(1,2,1); hold on;
-plot(100*(1:num_blocks)./num_blocks,shift_means,'b');
-xlabel('Percentage of Trials Complete');
-ylabel('Feedback Appearance location mean');
-axis([50/num_blocks 100+50/num_blocks max(min(0 max([shift_means;shift_m])+0.5]);
-plot([-100 200], [shift_m shift_m],'k--','LineWidth',2);
+if MAKE_PLOTS == 1
+    figure; hold on; 
+    subplot(1,2,1); hold on;
+    plot(100*(1:num_blocks)./num_blocks,shift_means,'b');
+    xlabel('Percentage of Trials Complete');
+    ylabel('Feedback Appearance location mean');
+    axis([50/num_blocks 100+50/num_blocks ...
+        1.1*min([min([shift_means;shift_m]) 0]) max([shift_means;shift_m])+0.5]);
 
-sigcount = 0;
-if ~isempty(find(mean_sigs,1))
-    for i = find(mean_sigs)'
-        sigcount = sigcount + 1;
-        plot([100/num_blocks (i+1)*100/num_blocks], [max(shift_means) + sigcount*0.1 max(shift_means)+sigcount*0.1],'k+-');
-        text(mean([100/num_blocks (i+1)*100/num_blocks]),max(shift_means) + sigcount*0.1 + 0.05, '*');
+    plot([-100 200], [shift_m shift_m],'k--','LineWidth',2);
+    sigcount = 0;
+    if ~isempty(find(mean_sigs,1))
+        for i = find(mean_sigs)'
+            sigcount = sigcount + 1;
+            plot([100/num_blocks (i+1)*100/num_blocks], [max(shift_means) + sigcount*0.1 max(shift_means)+sigcount*0.1],'k+-');
+            text(mean([100/num_blocks (i+1)*100/num_blocks]),max(shift_means) + sigcount*0.1 + 0.05, '*');
+        end
     end
-end
-
+    
 subplot(1,2,2);
 bar(100*(1:num_blocks)./num_blocks,shift_vars,'r'); hold on;
 xlabel('Percentage of Trials Complete');
@@ -261,22 +277,26 @@ h = title('Compensation for Prior','FontSize',18);
 set(gca,'Visible','off');
 set(h,'Visible','on');
 
+end
 %%%% Nature plot %%%%
-Nature_all = [Nature_low;Nature_high];
 
-figure; plot(Nature_low(:,1),Nature_low(:,2),'b.');
-hold on; title('Shift v. End Location','FontSize',18);
-xlabel('Y Shift'); ylabel('End Location');
-plot(Nature_high(:,1),Nature_high(:,2),'r.');
+if NATURE_PLOT == 1 || MAKE_PLOTS == 1
+    Nature_all = [Nature_low;Nature_high];
 
-slope_low = polyfit(Nature_low(:,1),Nature_low(:,2),1);
-slope_high = polyfit(Nature_high(:,1),Nature_high(:,2),1);
+    figure; plot(Nature_low(:,1),Nature_low(:,2),'b.');
+    hold on; title(['Shift v. End Location' '  ' Date],'FontSize',18);
+    xlabel('Y Shift'); ylabel('End Location');
+    plot(Nature_high(:,1),Nature_high(:,2),'r.');
 
-plot([min(Nature_all(:,1)) max(Nature_all(:,1))],...
-    [slope_low(1)*min(Nature_all(:,1))+ slope_low(2) slope_low(1)*max(Nature_all(:,1)) + slope_low(2)],'b');
+    slope_low = polyfit(Nature_low(:,1),Nature_low(:,2),1);
+    slope_high = polyfit(Nature_high(:,1),Nature_high(:,2),1);
 
-plot([min(Nature_all(:,1)) max(Nature_all(:,1))],...
-    [slope_high(1)*min(Nature_all(:,1))+ slope_high(2) slope_high(1)*max(Nature_all(:,1)) + slope_high(2)],'r');
+    plot([min(Nature_all(:,1)) max(Nature_all(:,1))],...
+        [slope_low(1)*min(Nature_all(:,1))+ slope_low(2) slope_low(1)*max(Nature_all(:,1)) + slope_low(2)],'b');
 
-legend(sprintf('Fit Slope = %.3f\nCloud var = %.2f',slope_low(1),min(comp_tt(:,3))),...
-       sprintf('Fit Slope = %.3f\nCloud var = %.2f',slope_high(1),max(comp_tt(:,3))));
+    plot([min(Nature_all(:,1)) max(Nature_all(:,1))],...
+        [slope_high(1)*min(Nature_all(:,1))+ slope_high(2) slope_high(1)*max(Nature_all(:,1)) + slope_high(2)],'r');
+
+    legend(sprintf('Fit Slope = %.3f\nCloud var = %.2f',slope_low(1),min(comp_tt(:,3))),...
+           sprintf('Fit Slope = %.3f\nCloud var = %.2f',slope_high(1),max(comp_tt(:,3))));
+end
