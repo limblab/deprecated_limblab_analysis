@@ -13,8 +13,8 @@ x_pos = binnedData.cursorposbin(:,1);
 y_pos = binnedData.cursorposbin(:,2);
 
 pos2T_wf = zeros(length(tgts),size(binnedData.cursorposbin,2))
-colors = ['r' 'k' 'b' 'c' 'm' 'r' 'b' 'm'];
-
+colors = ['r' 'm' 'b' 'c' 'm' 'r' 'b' 'm'];
+i=2
 for i=1:length(tgts)
     a2t = tt(:,10)==i;
     go_t = round(tt(a2t,7)/binsize) - lag/2;
@@ -32,6 +32,7 @@ for i=1:length(tgts)
         title(sprintf('Paths from go cue to targets'));
         xlabel('X position');
         ylabel('Y position'); 
+        axis equal
     end
 end
 

@@ -4,7 +4,8 @@ function plot_path2T_GUI()
 % Update at 11-01/12 ... By Jose
 
 %% GUI
-dataPath = 'C:\Users\Jose Luis\Desktop\Spike\replicate_RealData\'; 
+
+dataPath = 'C:\Users\Jose Luis\Desktop\Spike\replicate_RealData\CascadevsN2P\'; 
 % Call GUI
 [FileName_tmp, PathName] = uigetfile( [dataPath '*.mat'], 'Choose Hand Control BinnedData File');
 datafile = fullfile(PathName,FileName_tmp);
@@ -53,17 +54,26 @@ end
 [t_N2E2P x_N2E2P y_N2E2P] = get_path_WF(N2E2PData);
 [t_N2P x_N2P y_N2P] = get_path_WF(N2PData);
 
+length_HC = get_length_path_WF(HCData);
+length_N2E2P = get_length_path_WF(N2E2PData);
+length_N2P = get_length_path_WF(N2PData);
+
 if all((x_HC(:,1)== x_N2E2P(:,1)) & (x_HC(:,1) == x_N2P(:,1)))
     targets = x_HC(:,1);
     for i = 1:length(targets)
-    figure(i)
-    plot(x_HC(targets(i),2:end),y_HC(targets(i),2:end),'b'); hold on
-    plot(x_N2E2P(targets(i),2:end),y_N2E2P(targets(i),2:end),'r')
-    plot(x_N2P(targets(i),2:end),y_N2P(targets(i),2:end),'k'); 
+    h=figure(i)
+    plot(x_HC(targets(i),2:end),y_HC(targets(i),2:end),'b','LineWidth',2); hold on
+    plot(x_N2E2P(targets(i),2:end),y_N2E2P(targets(i),2:end),'r','LineWidth',2)
+    plot(x_N2P(targets(i),2:end),y_N2P(targets(i),2:end),'k','LineWidth',2); 
+    trials_HC = sum(t_HC(:,i)~=0);
+    trials_N2E2P = sum(t_N2E2P(:,i)~=0);
+    trials_N2P = sum(t_N2P(:,i)~=0);
     axis([-12 12 -12 12])
     title(sprintf('Path from center to target %i',i));
     xlabel('x (cm)'); ylabel('y (cm)');
-    legend('Hand Control','Cascade Decoder', 'N2P Decoder')
+    legend(['Hand Control: ',num2str(trials_HC),' trials'],...
+        ['FES Control: ',num2str(trials_N2E2P),' trials'],...
+        ['N2F Control: ',num2str(trials_N2P),' trials'])
     rectangle('Position',[-2,-2,4,4],'EdgeColor','cyan')
     rectangle('Position',[5,-2,4,4],'EdgeColor','magenta')
     rectangle('Position',[2.95,2.95,4,4],'EdgeColor','magenta')
@@ -73,15 +83,11 @@ if all((x_HC(:,1)== x_N2E2P(:,1)) & (x_HC(:,1) == x_N2P(:,1)))
     rectangle('Position',[-6.95,-6.95,4,4],'EdgeColor','magenta')
     rectangle('Position',[-2,-9,4,4],'EdgeColor','magenta')
     rectangle('Position',[2.95,-6.95,4,4],'EdgeColor','magenta')
-    end
-    figure(9)
-    plot(t_HC(:,1),t_HC(:,2),'b*'); hold on
-    plot(t_N2E2P(:,1),t_N2E2P(:,2),'r*')
-    plot(t_N2P(:,1),t_N2P(:,2),'g*'); 
-    axis([0 10 0 5]);
-    axis equal;
-    title(sprintf('Time to reach each table'));
-    xlabel('target'); ylabel('time (sec)');
-    legend('Hand Control','Cascade Decoder', 'N2P Decoder')
+    axis equal;        
+    saveas(h,['paths_target',num2str(targets(i))],'fig'); %name is a string
+    end    
+       
+    boxplot_compareDecoders(t_HC,t_N2E2P,t_N2P,'Time to reach a target')
+    boxplot_compareDecoders(length_HC,length_N2E2P,length_N2P,'Total length to reach a target')
 end
 
