@@ -1,6 +1,19 @@
-function [g]=get_ml_fit(dirs,num_reaches,number_reaches)
-
-    optifun = @(data) nllik(dirs,num_reaches,number_reaches,data);
+function [g]=get_ml_fit(dirs,num_left_reaches,number_reaches)
+    %returns a maximum likelyhood fit for a psychometric curve to bump
+    %choice data. 
+    %Inputs are:
+    %a vector of reach directions: dirs
+    %a vector containing the number of leftward reaches at each bump direction
+    %a vector containing the total number of reaches at each bump direction
+    %outputs are a single vector containing the optimal parameters a,b,c
+    %and d of the curve function:
+    %y = a + b*erf(c*(x-d))
+    %where y is the left-reaching rate, and x is the bump direction
+    
+    %generate a function handle which allows us to wrap the cost function
+    %so that our optimization only optimizes the function parameters, and
+    %ignores our input data vectors
+    optifun = @(params) nllik(dirs,num_left_reaches,number_reaches,params);
     g = fminsearch(optifun, [.45 .4 .05 90]);
     
     function nl = nllik(dirs, x, n, th)
