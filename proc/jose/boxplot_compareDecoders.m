@@ -19,7 +19,7 @@ if(size(v_HC,2)==size(v_N2E2P,2) && size(v_HC,2)==size(v_N2P,2))
         c = v_N2P(v_N2P(:,i)~=0,i);
 
         aux_data = [a;b;c];
-        g1 = [repmat('HC ',length(a),1);repmat('FES',length(b),1);repmat('N2F',length(c),1)];
+        g1 = [repmat('HC ',length(a),1);repmat('CD ',length(b),1);repmat('N2F',length(c),1)];
         g2 = [repmat(['            Target',char(48+i)],size(g1,1),1)];
 
         class1 = [class1;g1];
@@ -29,14 +29,14 @@ if(size(v_HC,2)==size(v_N2E2P,2) && size(v_HC,2)==size(v_N2P,2))
 
     % Get average for all trials per decoder
     % sum(double(class1),2) ... converting to get double values of
-    % HC (171) , FES(222) ,N2F(198)
+    % HC (171) , CD (167) ,N2F(198)
 
     all_HC  = data(sum(double(class1),2)==171); % get all trials for HC
-    all_FES = data(sum(double(class1),2)==222); % get all trials for FES
+    all_FES = data(sum(double(class1),2)==167); % get all trials for FES
     all_N2F = data(sum(double(class1),2)==198); % get all trials for N2F
     data = [data;all_HC;all_FES;all_N2F];
 
-    g1 = [repmat('HC ',length(all_HC),1);repmat('FES',length(all_FES),1);...
+    g1 = [repmat('HC ',length(all_HC),1);repmat('CD ',length(all_FES),1);...
             repmat('N2F',length(all_N2F),1)];
     g2 = [repmat('            Average',size(g1,1),1)];
     class1 = [class1;g1];
