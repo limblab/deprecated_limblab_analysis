@@ -3,13 +3,12 @@
 
 %
 %set the mount drive to scan and convert
-folderpath='Z:\Kramer_10I1\BumpDirection\Data Raw\Post-implant\';
-date='10262012';
+folderpath='C:\Users\limblab\Desktop\dail_data\11082012\randomwalk\';
 foldercontents=dir(folderpath);
 fnames={foldercontents.name};%extracts just the names from the foldercontents
 for i=1:length(foldercontents)
     if (length(fnames{i})>3)
-        if (strcmp(fnames{i}((length(fnames{i})-3):end),'.nev') & ~isempty( strfind(fnames{i},date)))
+        if (strcmp(fnames{i}((length(fnames{i})-3):end),'.nev') )
             
             if isempty(strmatch( strcat( fnames{i}(1:(length(fnames{i})-3)), 'mat'),fnames))
                 %if we haven't found a .mat file to match the .nev then make

@@ -5,8 +5,8 @@
 
 %
 %set the mount drive to scan and convert
-folderpath='C:\Documents and Settings\Administrator\Desktop\Tucker\trial_data_set\10242012\';
-savestring='test_full_tt';
+folderpath='C:\Users\limblab\Desktop\dail_data\11092012\';
+savestring='11092012_full_tt';
 %addpath(folderpath);
 foldercontents=dir(folderpath);
 fnames={foldercontents.name};%extracts just the names from the foldercontents
@@ -21,6 +21,7 @@ for i=1:length(foldercontents)
                 load(strcat(folderpath, fnames{i}));
                 %append trials from the newly opened file to the full tt 
                 %first offset the timestamps:
+                make_tdf
                 if isempty(full_tt)
                     full_tt=bdf.tt;
                     tt_hdr=bdf.tt_hdr;

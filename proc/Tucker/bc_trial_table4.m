@@ -24,14 +24,20 @@ word_go = hex2dec('31');
 go_cues = words(words(:,2) == word_go, 1);
 
 word_end = hex2dec('20');
-end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
+end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);%hex2dec('f0') is a bitwise mask for the leading bit
 end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
-tt = zeros(num_trials-1, 39);
+word_stim=hex2dec('60');
+stim_words=words( bitand(hex2dec('f0'),words(:,2)) == word_stim,1);
+stim_codes=words( bitand(hex2dec('f0'),words(:,2)) == word_stim,2);
 
-disp('composing trial table assuming db v 3')
+disp('composing trial table assuming db v 4')
 disp(strcat('db version:',num2str(bdf.databursts{1,2}(2))))
 disp('If actual db version does not match assumed version, fix the trial table code')
+
+
+
+tt = zeros(num_trials-1, 40);
 
 for trial = 1:num_trials-1
         start_time = start_words(trial);
@@ -57,6 +63,13 @@ for trial = 1:num_trials-1
             go_cue = go_cues(idx);
         else
             go_cue = 0;
+        end
+        
+        idx = find(stim_words > start_time & stim_words < end_time,1);
+        if ~isempty(idx)
+            stim_code = bitand(hex2dec('0f'),stim_codes(idx));%hex2dec('0f') is a bitwise mask for the trailing bit of the word
+        else
+            stim_code = -1;
         end
 % % * Databurst version descriptions
 %  * ==============================
@@ -138,7 +151,7 @@ for trial = 1:num_trials-1
                             training_trial_flag,        training_trial_freq,        stim_freq,                  recenter_cursor_flag,       tgt_radius,...
                             tgt_size,                   intertrial_time,            penalty_time,               bump_hold_time,             ct_hold_time,...
                             bump_delay_time,            targets_during_bump,        bump_increment,             primary_target_flag,        trial_result,...
-                            start_time,                 bump_time,                  go_cue,                     end_time];
+                            start_time,                 bump_time,                  go_cue,                     end_time                    stim_code];
 
 end
 
@@ -186,5 +199,6 @@ hdr.start_time              =   36;%    start time
 hdr.bump_time               =   37;%    bump time
 hdr.go_cue                  =   38;%    time of the go cue
 hdr.end_time                =   39;%    time the trial ended
+hdr.stim_code               =   40;%    the code for the stimulus with the base stim word removed
 
 
