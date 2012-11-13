@@ -27,6 +27,13 @@ for i = 1:L
 end
 
 list = list(list(:,2)~=255,:);
+
 if ~include_unsorted
     list = list(list(:,2)~=0,:);
+elseif include_unsorted==2
+    list = list(list(:,2)==0,:);
+elseif include_unsorted==1
+    %do nothing.
+else
+    disp('unrecognized code for including unsorted spikes')
 end
