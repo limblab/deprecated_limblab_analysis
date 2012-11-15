@@ -227,6 +227,9 @@ end
 % PB(1,:,:)=mean(PA(gam1,:,:),1);
 % PB(2,:,:)=mean(PA(gam2,:,:),1);
 % PB(3,:,:)=mean(PA(gam3,:,:),1);
+% % test a combined gamma band.
+% PB(4:6,:,:)=[];
+% PB(4,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
@@ -282,7 +285,7 @@ end
 r1=reshape(r,1,[]);
 r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 [sr,featind]=sort(r1,'descend');
-assignin('base','sr',sr)
+assignin('base','featind',featind)
 assignin('base','R',r1)
 [bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
 bestPB=single(zeros(nfeat,length(y)));
