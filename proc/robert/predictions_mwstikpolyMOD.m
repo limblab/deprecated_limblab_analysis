@@ -102,7 +102,15 @@ end
 x = zeros(length(y), size(cells,1));    % using length() is bad! use size(X,n) instead.
 for i = 1:size(cells,1)
     ts = get_unit(bdf, cells(i, 1), cells(i, 2));
-    b = train2bins(ts, t);
+    try
+        b = train2bins(ts, t);
+    catch Merror
+        if isequal(Merror.identifier,'MATLAB:UndefinedFunction')
+            b=train2bins_mod(ts,t);
+        else
+            rethrow(Merror)
+        end
+    end
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % % experimental HPF for binned spike data %%
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

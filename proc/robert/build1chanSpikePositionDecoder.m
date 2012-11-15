@@ -1,14 +1,14 @@
-function filter = build1chanSpikePositionDecoder(BDFfileIn,chanToUse)
+function vaf = build1chanSpikePositionDecoder(BDFfileIn,chanToUse,binsize,PolynomialOrder)
 
 if ~nargin
     [FileName,PathName,~]=uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\', ...
         'select data file');
     if isnumeric(PathName) && PathName==0
-        filter=[]; return
+        return
     end
     if exist(fullfile(PathName,FileName),'file')~=2
         disp('file not valid.  aborting...')
-        filter=[]; return
+        return
     end
     diary(fullfile(PathName,'decoderOutput.txt'))
     fprintf(1,'%s\n',fullfile(PathName,FileName))
@@ -67,19 +67,14 @@ bdf.units(uList(:,2)==0)=[];
 
 % THIS IS THE LINE THAT DIFFERENTIATES THIS FUNCTION FROM
 % buildSpikePositionDecoder.m
-bdf.units(setdiff(
+bdf.units(setdiff(1:length(bdf.units),chanToUse))=[];
 
 cells=[];
 
 [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD(bdf,signal, ...
     cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
-close
+close 
 
-if exist('FileName','var')==1
-    fprintf(1,'file %s\n',FileName)
-else
-    fprintf(1,'file %s\n',BDFfileName)
-end
 fprintf(1,'decoding %s\n',signal)
 % fprintf(1,'folds=%d\n',folds)
 fprintf(1,'numlags=%d\n',numlags)
