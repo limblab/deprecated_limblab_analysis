@@ -8,8 +8,8 @@ function send_mail_message(id,subject,message,attachment)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Your gmail ID and password 
 %(from which email ID you would like to send the mail)
-mail = 'ricardort@gmail.com';    %Your GMail email address
-password = '';          %Your GMail password
+mail = 'miller.limblab@gmail.com';    %Your GMail email address
+password = 'mvemjlht';          %Your GMail password
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargin == 1
