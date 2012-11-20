@@ -1,8 +1,8 @@
 % clear all
 datapath = 'D:\Data\Kevin_12A2';
 % datapath = 'D:\Data\TestData\Raw';
-filenames = dir([datapath '\Kevin_2012-10-05_UF_002*.nev']);
-% filenames = dir([datapath '\Velocity_bump_test_004.nev']);
+filenames = dir([datapath '\Kevin_2012-10-24_UF_*2.nev']);
+% filenames = dir([datapath '\PD_bump_test_004.nev']);
 % filenames(end+1) = dir([datapath '\Kevin_2012-09-18*.nev']);
 
 trial_table = [];

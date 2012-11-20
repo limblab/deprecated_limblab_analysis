@@ -3,8 +3,10 @@ function [trial_table tc] = UF_trial_table(bdf)
 databurst_version = zeros(size(bdf.databursts,1),1);
 for iDataburst = 1:size(bdf.databursts,1)
     databurst_version(iDataburst) = bdf.databursts{iDataburst,2}(2);
+    databurst_length(iDataburst) = length(bdf.databursts{iDataburst,2});
 end
 databurst_version = mode(databurst_version);
+databurst_length = mode(databurst_length);
 if databurst_version == 2
     databurst_length = 50;
 end
@@ -93,27 +95,30 @@ for iTrial = 1:num_trials
 end
 
 for iTrial = 1:num_trials
-    temp_idx = 7:10;
-    trial_table(iTrial,tc.x_offset) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    trial_table(iTrial,tc.y_offset) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    if databurst_version <= 2
-        trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    else
-        trial_table(iTrial,tc.bump_velocity) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    end
-    trial_table(iTrial,tc.bump_direction) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    if databurst_version > 0
-        trial_table(iTrial,tc.bump_duration) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    end    
-    trial_table(iTrial,tc.negative_stiffness) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    trial_table(iTrial,tc.positive_stiffness) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    trial_table(iTrial,tc.field_orientation) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
-    trial_table(iTrial,tc.force_target_diameter) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+    if length(bdf.databursts{iTrial,2})==databurst_length
+        temp_idx = 7:10;
+        trial_table(iTrial,tc.x_offset) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        trial_table(iTrial,tc.y_offset) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        if databurst_version <= 2
+            trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        else
+            trial_table(iTrial,tc.bump_velocity) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        end
+        trial_table(iTrial,tc.bump_direction) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        if databurst_version > 0
+            trial_table(iTrial,tc.bump_duration) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        end    
+        trial_table(iTrial,tc.negative_stiffness) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        trial_table(iTrial,tc.positive_stiffness) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        trial_table(iTrial,tc.field_orientation) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        trial_table(iTrial,tc.force_target_diameter) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+    end        
 end
 
 remove_index = [];
+remove_index = find(isnan(trial_table(:,tc.x_offset)));
 for iCol = 7:length(fieldnames(tc))    
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
     remove_index = [remove_index temp'];
