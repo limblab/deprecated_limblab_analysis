@@ -127,9 +127,11 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
                 l1=24.0; l2=23.5;
             elseif isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
-                l1=24.75; l2=23.6;
-%                 l1 = 26.7;
-%                 l2 = 30.6;
+                if datenum(out_struct.meta.datetime) < datenum('10/05/2012')
+                    l1=24.75; l2=23.6;
+                else                
+                  l1 = 24.765; l2 = 24.13;
+                end
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
             end
@@ -145,13 +147,12 @@ function out_struct = calc_from_raw(raw_struct, opts)
             th_1_adj(isnan(th_1_adj)) = th_1_adj(find(~isnan(th_1_adj),1,'first')); % when datafile started before encoders were zeroed.
             th_2_adj(isnan(th_2_adj)) = th_2_adj(find(~isnan(th_2_adj),1,'first'));
             
-            th_1_adj = filtfilt(b, a, th_1_adj);
-            th_2_adj = filtfilt(b, a, th_2_adj);
-            
-
-            
-            th_1_adj = smooth(th_1_adj, 51)';
-            th_2_adj = smooth(th_2_adj, 51)';
+            % Removed encoder filtering, unnecessary.  Still filtering
+            % velocity and acceleration
+%             th_1_adj = filtfilt(b, a, th_1_adj);
+%             th_2_adj = filtfilt(b, a, th_2_adj);      
+%             th_1_adj = smooth(th_1_adj, 51)';
+%             th_2_adj = smooth(th_2_adj, 51)';
             
             % convert to x and y
             x = - l1 * sin( th_1_adj ) + l2 * cos( -th_2_adj );
@@ -257,7 +258,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
             clear force_offsets; % cleanup a little
             out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
-            for p = 1:size(out_struct.force, 1)
+            for p = 1:size(out_struct.force, 1)                
                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
                 out_struct.force(p,:) = out_struct.force(p,:) * r;
             end
