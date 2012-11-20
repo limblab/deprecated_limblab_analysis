@@ -1,21 +1,23 @@
 % load file
-curr_dir = pwd;
-cd('..\..\..\')
-load_paths;
-cd(curr_dir)
+% curr_dir = pwd;
+% cd('..\..\..\')
+% load_paths;
+% cd(curr_dir)
 
-filename = 'AT_test_020';
+% filename = 'Handle_force_callibration_015';
+filepath = 'D:\Data\Kevin_12A2\Data';
+filename = '\Kevin_2012-11-07_AT_001';
 fileExt = '.nev';
-filepath = 'Y:\TestData\Attention cpp\';
+% filepath = 'D:\Data\TestData\Raw\';
 
-temp = dir([filepath filename '_bdf.mat']);
+temp = dir([filepath filename '.mat']);
 if isempty(temp)
     bdf = get_cerebus_data([filepath filename fileExt],3);
-    save([filepath filename '_bdf'],'bdf');
+    save([filepath filename ''],'bdf');
 else
-    load([filepath filename '_bdf.mat'])
+    load([filepath filename '.mat'])
 end
-[trial_table tc] = AT_trial_table([filepath filename '_bdf']);
+[trial_table tc] = AT_trial_table([filepath filename]);
 
 
 trial_table = trial_table(trial_table(:,tc.result)~=33,:);
@@ -37,7 +39,7 @@ num_trials = size(trial_table,1);
 dt = diff(bdf.force(:,1));
 dt = dt(1);
 t_axis = -.1:dt:bump_duration+.1;
-t_bias_force = -.1:dt:3;
+t_bias_force = -.1:dt:.3;
 t_axis = t_axis(1:end-1);
 x_forces = zeros(num_trials,length(t_axis));
 y_forces = zeros(num_trials,length(t_axis));
@@ -48,7 +50,7 @@ t_absolute = zeros(num_trials,length(t_axis));
 force_offset_x = zeros(num_trials,length(t_bias_force));
 force_offset_y = zeros(num_trials,length(t_bias_force));
 
-for iTrial = 1:num_trials
+for iTrial = 1:num_trials-1
     bias_force_onset = trial_table(iTrial,tc.t_ct_hold_on);
     force_offset_idx = find(bdf.force(:,1)>=bias_force_onset-0.1,length(t_bias_force),'first');
     force_offset_x(iTrial,:) = bdf.force(force_offset_idx,2);
@@ -124,6 +126,11 @@ averaged_y_position_visual = zeros(length(unique_bump_directions),length(t_axis)
 averaged_x_position_proprio = zeros(length(unique_bump_directions),length(t_axis));
 averaged_y_position_proprio = zeros(length(unique_bump_directions),length(t_axis));
 
+averaged_x_forces_visual = zeros(length(unique_bump_directions),length(t_axis));
+averaged_y_forces_visual = zeros(length(unique_bump_directions),length(t_axis));
+averaged_x_forces_proprio = zeros(length(unique_bump_directions),length(t_axis));
+averaged_y_forces_proprio = zeros(length(unique_bump_directions),length(t_axis));
+
 averaged_x_projection_visual = zeros(length(unique_bump_directions),length(t_axis));
 averaged_y_projection_visual = zeros(length(unique_bump_directions),length(t_axis));
 averaged_x_projection_proprio = zeros(length(unique_bump_directions),length(t_axis));
@@ -152,6 +159,11 @@ for iBumpDir = 1:length(unique_bump_directions)
     averaged_y_position_visual(iBumpDir,:) = mean(y_position(visual_idx{iBumpDir},:),1);
     averaged_x_position_proprio(iBumpDir,:) = mean(x_position(proprio_idx{iBumpDir},:),1);
     averaged_y_position_proprio(iBumpDir,:) = mean(y_position(proprio_idx{iBumpDir},:),1);
+    
+    averaged_x_forces_visual(iBumpDir,:) = mean(x_forces(visual_idx{iBumpDir},:),1);
+    averaged_y_forces_visual(iBumpDir,:) = mean(y_forces(visual_idx{iBumpDir},:),1);
+    averaged_x_forces_proprio(iBumpDir,:) = mean(x_forces(proprio_idx{iBumpDir},:),1);
+    averaged_y_forces_proprio(iBumpDir,:) = mean(y_forces(proprio_idx{iBumpDir},:),1);
     
     averaged_x_projection_visual(iBumpDir,:) = mean(x_projection(visual_idx{iBumpDir},:),1);
     averaged_y_projection_visual(iBumpDir,:) = mean(y_projection(visual_idx{iBumpDir},:),1);
@@ -240,3 +252,32 @@ hold on
 plot(cos(unique_bump_directions).*stiffness_proprio,sin(unique_bump_directions).*stiffness_proprio,'.r')
 plot(cos(0:.05:2*pi),sin(0:0.05:2*pi),'k-')
 axis equal
+
+%% Forces test
+force_magnitude = sqrt(x_forces.^2+y_forces.^2);
+force_direction = atan2(y_forces,x_forces);
+bump_directions = unique(trial_table(:,tc.bump_direction));
+mean_bump = zeros(length(bump_directions),1);
+mean_dir = zeros(length(bump_directions),1);
+for i=1:length(bump_directions)
+    mean_bump(i) = mean(mean(force_magnitude(trial_table(:,tc.bump_direction)==bump_directions(i),150:249)));
+    mean_dir(i) = mean(mean(force_direction(trial_table(:,tc.bump_direction)==bump_directions(i),150:249)))+pi;
+end
+figure; plot(bump_directions*180/pi,mean_bump,'.')
+% figure; plot(cos(bump_directions).*mean_bump,sin(bump_directions).*mean_bump,'.')
+% axis equal
+cos_fun = 'a+b*sin(2*x+c)';
+fit_bumps = fit(bump_directions,mean_bump,cos_fun);
+hold on
+plot_fit_bumps = fit_bumps(0:.1:2*pi);
+plot(180/pi*(0:.1:2*pi),plot_fit_bumps,'-')
+figure
+plot(bump_directions,mean_dir','.')
+axis equal
+
+%% Overall performance
+figure; 
+plot(trial_table(:,tc.t_trial_start),100*smooth(trial_table(:,tc.result)==32,50))
+xlabel('t (s)')
+ylabel('Percent correct (smoothed)')
+title('Performance')

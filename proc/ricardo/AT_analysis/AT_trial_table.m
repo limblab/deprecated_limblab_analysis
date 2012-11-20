@@ -1,6 +1,14 @@
 function [trial_table tc] = AT_trial_table(filename)
 load(filename)
 
+databurst_version = zeros(size(bdf.databursts,1),1);
+for iDataburst = 1:size(bdf.databursts,1)
+    databurst_version(iDataburst) = bdf.databursts{iDataburst,2}(2);
+    databurst_length(iDataburst) = length(bdf.databursts{iDataburst,2});
+end
+databurst_version = mode(databurst_version);
+databurst_length = mode(databurst_length);
+
 tc.trial_type = 1;
 tc.t_trial_start = 2;
 tc.t_ct_on = 3;
@@ -109,29 +117,38 @@ for iTrial = 1:num_trials
 end
 
 remove_index = [];
-% for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
-for iCol = [1 2]
-    [tempa tempb] = hist(log(trial_table(:,iCol)),1000);
-    cumsum_temp = cumsum(tempa/sum(tempa));
-    remove_under = tempb(find(cumsum_temp<0.02,1,'last'));
-    if ~isempty(remove_under)
-        remove_under_idx = find(trial_table(:,iCol)<remove_under);
-        if length(remove_under_idx)/size(trial_table,1)<0.02
-            remove_index = [remove_index find(trial_table(:,iCol)<remove_under)'];
-        end
-    end
-    remove_above = tempb(find(cumsum_temp>0.98,1,'first'));
-    if ~isempty(remove_above)
-        remove_above_idx = find(trial_table(:,iCol)>remove_above);
-        if length(remove_above_idx)/size(trial_table,1)<0.02
-            remove_index = [remove_index find(trial_table(:,iCol)>remove_above)'];
-        end
-    end
-    
-    temp = find(trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10);
-    remove_index = [remove_index temp];
+remove_index = find(isnan(trial_table(:,tc.x_offset)));
+for iCol = 9:length(fieldnames(tc))    
+    temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
+    remove_index = [remove_index temp'];
 end
 remove_index = unique(remove_index);
 trial_table(remove_index,:) = [];
+
+% remove_index = [];
+% for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
+% % for iCol = [1 2]
+%     [tempa tempb] = hist(log(trial_table(:,iCol)),1000);
+%     cumsum_temp = cumsum(tempa/sum(tempa));
+%     remove_under = tempb(find(cumsum_temp<0.02,1,'last'));
+%     if ~isempty(remove_under)
+%         remove_under_idx = find(trial_table(:,iCol)<remove_under);
+%         if length(remove_under_idx)/size(trial_table,1)<0.02
+%             remove_index = [remove_index find(trial_table(:,iCol)<remove_under)'];
+%         end
+%     end
+%     remove_above = tempb(find(cumsum_temp>0.98,1,'first'));
+%     if ~isempty(remove_above)
+%         remove_above_idx = find(trial_table(:,iCol)>remove_above);
+%         if length(remove_above_idx)/size(trial_table,1)<0.02
+%             remove_index = [remove_index find(trial_table(:,iCol)>remove_above)'];
+%         end
+%     end
+%     
+%     temp = find(trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10);
+%     remove_index = [remove_index temp];
+% end
+% remove_index = unique(remove_index);
+% trial_table(remove_index,:) = [];
 
 save(filename,'trial_table','tc','-append')
