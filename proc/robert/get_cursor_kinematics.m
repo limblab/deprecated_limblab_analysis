@@ -99,7 +99,7 @@ else
                 % revert to dialog, we couldn't automagically locate the
                 % BDF.  But now, the dialog is looking for the text file;
                 % the pathToBDF will be reverse-lookup'd.
-                [FileNameTxt,PathNameTxt]=uigetfile('*.mat','select a bdf file');
+                [FileNameTxt,PathNameTxt]=uigetfile('*.txt','select a txt file');
                 pathToBR=fullfile(PathNameTxt,FileNameTxt);
                 % this is stupid, but at least it keeps things consistent.
                 % Just switch the logic on the application below.
