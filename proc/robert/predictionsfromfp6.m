@@ -246,9 +246,9 @@ end
 % PB(1,:,:)=mean(PA(gam1,:,:),1);
 % PB(2,:,:)=mean(PA(gam2,:,:),1);
 % PB(3,:,:)=mean(PA(gam3,:,:),1);
-% % test a combined gamma band.
-% PB(4:6,:,:)=[];
-% PB(4,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
+% test a combined gamma band alone.
+PB=[];
+PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
 assignin('base','PB',PB)
 
 % PB has dims freqs X chans X bins
