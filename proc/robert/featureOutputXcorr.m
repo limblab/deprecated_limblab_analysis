@@ -59,7 +59,7 @@ return
 %%
 FMindexed=featMat;
 sigTrimmed=evalin('base','sigTrimmed');
-[~,~,~,~,~,~,~]=kinematicsHandControl(out_struct);
+[~,~,~,~,~,~,~,~,~]=kinematicsHandControl(out_struct);
 %sigTrimmed=out_struct.vel;
 sigInd=false(size(sigTrimmed,1),1);
 for n=1:length(start_reaches)

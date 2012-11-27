@@ -14,7 +14,7 @@ out_struct.pos(:,2:3)=filtfilt(ones(1,smFactor)/smFactor,1,out_struct.pos(:,2:3)
 out_struct.vel(:,2:3)=filtfilt(ones(1,smFactor)/smFactor,1,out_struct.vel(:,2:3));
 
 
-[PL,~,~,~,speedProfile,~,trialTS,~]=kinematicsHandControl(out_struct,struct('version',2));
+[PL,~,~,~,speedProfile,~,trialTS,~,~]=kinematicsHandControl(out_struct,struct('version',2));
 
 if nargin < 2
     figure

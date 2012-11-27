@@ -1,6 +1,6 @@
-function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy]=kinematicsHandControl(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted out_struct
@@ -37,6 +37,9 @@ function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTarget
 %
 % speedProfile a cell array, each cell contains the speedProfile for 1
 % trial.
+%
+% slidingAccuracy is a moving average of sucesses, with a window size of
+% 20.
 
 if nargin==1
     opts.version=2;             % assume target_entry_word is present
