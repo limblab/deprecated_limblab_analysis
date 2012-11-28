@@ -15,13 +15,20 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     %error flag switches this to plot the success rate rather than the
     %error rate. if the plot_error flag is 0, then the invert_error flag is
     %ignored
+    %if the catch_trial flag is 1 the function will ignore the stimcode,
+    %and look for trials where the bump magnitude is 0
 
     % exclude aborts
     tt = tt( ( tt(:,tt_hdr.trial_result) ~= 1 ) ,  :); 
 
+
     %get only stim trials
     tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
+
+    
+    
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'))
+    disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
     %get a list of the bump directions durign stim
     dirs_stim = sort(unique(tt_stim(:,tt_hdr.bump_angle)));
     disp(strcat('Found ',num2str(length(dirs_stim)),' bump directions during stim'))
@@ -261,15 +268,21 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     subplot(2,1,1),polar(dd*pi/180,reach_fit_no_stim,'b')
 
     subplot(2,1,2),plot(dirs_no_stim,number_reaches_no_stim,'bo')
+    %fix the axes so that the psychometric and the reach counts use the
+    %same x axis
+    max_reaches=max(max(number_reaches_no_stim),max(number_reaches_stim));
+    axis([0,370,0,10*(floor(max_reaches/10)+1)])
     
     figure(H_2); %cartesian plot
     subplot(2,1,1),plot(dirs_no_stim,proportion_no_stim,'bo')
     hold on;
 
     subplot(2,1,1),plot(dd,reach_fit_no_stim,'b')
-
+    axis([0,370,-0.5,1.5])
     subplot(2,1,2),plot(dirs_no_stim,number_reaches_no_stim,'bo')
-
+    %fix the axes so that the psychometric and the reach counts use the
+    %same x axis
+    axis([0,370,0,10*(floor(max_reaches/10)+1)])
     disp(strcat('Mean reaches per direction without stim: ',num2str(mean(number_reaches_no_stim))))
     disp(strcat('Min reaches per direction without stim: ',num2str(min(number_reaches_no_stim))))
 

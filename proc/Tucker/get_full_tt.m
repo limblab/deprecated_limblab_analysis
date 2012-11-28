@@ -5,8 +5,8 @@
 
 %
 %set the mount drive to scan and convert
-folderpath='C:\Users\limblab\Desktop\dail_data\11092012\';
-savestring='11092012_full_tt';
+folderpath='C:\Users\limblab\Desktop\dail_data\11232012\';
+savestring='11222012_full_tt';
 %addpath(folderpath);
 foldercontents=dir(folderpath);
 fnames={foldercontents.name};%extracts just the names from the foldercontents

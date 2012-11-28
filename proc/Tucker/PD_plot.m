@@ -56,8 +56,11 @@ u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
 
 %% get out badly fitted channels
+mean(moddepth)
+
 for iChan = 1:length(u1)
     if moddepth(iChan)<mean(moddepth)
+        moddepth(iChan)
         moddepth(iChan)= 0;
         deselected_chan = [u1(iChan), deselected_chan];
     end
@@ -167,6 +170,7 @@ for iPD = 1:length(u1(:,1))
         title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))])
     else
         disp('Error: channel not found in channel list')
+        disp(u1(iPD,1))
     end
 end
 
