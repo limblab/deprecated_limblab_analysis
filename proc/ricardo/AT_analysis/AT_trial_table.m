@@ -61,33 +61,37 @@ trial_starts = [bdf.databursts{:,1}]';
 trial_ends = bdf.words(bitand(bdf.words(:,2),repmat(hex2dec('F0'),size(bdf.words(:,2)),1))==end_code,1);
 num_trials = size(trial_starts,1);
 
-% if (length(trial_starts)>length(trial_ends))
-%     for iTrial = 1:length(trial_ends)
-%         if trial_starts(iTrial+1)<trial_ends(iTrial)
-%             trial_starts_temp = trial_starts([1:iTrial iTrial+2:end]);
-%         end
-%     end
-% end
-
 trial_table = nan(num_trials,length(fieldnames(tc)));
 trial_table(:,tc.t_trial_start) = trial_starts;
-trial_table(:,tc.t_trial_end) = trial_ends;
+% trial_table(:,tc.t_trial_end) = trial_ends;
 
 for iTrial = 1:num_trials
-    temp_words = bdf.words(bdf.words(:,1)>trial_table(iTrial,tc.t_trial_start) &...
-        bdf.words(:,1)<=trial_table(iTrial,tc.t_trial_end),:);
-    for iWord = 1:size(temp_words,1)        
-        switch temp_words(iWord,2)
-            case ct_on_code
-                column = tc.t_ct_on;                
-            case ct_hold_code
-                column = tc.t_ct_hold_on;
-            case bump_code
-                column = tc.t_stimuli_onset;
-            case ot_on_code
-                column = tc.t_ot_on;
-            otherwise 
-                column = [];
+    temp_words = bdf.words(find(bdf.words(:,1)>trial_table(iTrial,tc.t_trial_start),1,'first'):...
+        find(bdf.words(:,1)==trial_ends(find(trial_ends>trial_table(iTrial,tc.t_trial_start),1,'first'))),:);
+    
+%     temp_words = bdf.words(bdf.words(:,1)>trial_table(iTrial,tc.t_trial_start) &...
+%         bdf.words(:,1)<=trial_table(iTrial,tc.t_trial_end),:);
+    for iWord = 1:size(temp_words,1)   
+        if bitand(temp_words(iWord,2),hex2dec('F0'))==end_code
+            temp_words_end = 1;
+        else
+            temp_words_end = 0;
+            switch temp_words(iWord,2)
+                case ct_on_code
+                    column = tc.t_ct_on;                
+                case ct_hold_code
+                    column = tc.t_ct_hold_on;
+                case bump_code
+                    column = tc.t_stimuli_onset;
+                case ot_on_code
+                    column = tc.t_ot_on;
+                otherwise 
+                    column = [];
+            end
+        end        
+        
+        if temp_words_end
+            column = tc.t_trial_end;
         end
         trial_table(iTrial,column) = temp_words(iWord,1);
     end
@@ -117,7 +121,7 @@ for iTrial = 1:num_trials
 end
 
 remove_index = [];
-remove_index = find(isnan(trial_table(:,tc.x_offset)));
+remove_index = find(isnan(trial_table(:,tc.x_offset)) | isnan(trial_table(:,tc.t_ct_on)));
 for iCol = 9:length(fieldnames(tc))    
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
     remove_index = [remove_index temp'];

@@ -6,7 +6,7 @@
 
 % filename = 'Handle_force_callibration_015';
 filepath = 'D:\Data\Kevin_12A2\Data';
-filename = '\Kevin_2012-11-07_AT_001';
+filename = '\Kevin_2012-11-28_AT_001';
 fileExt = '.nev';
 % filepath = 'D:\Data\TestData\Raw\';
 

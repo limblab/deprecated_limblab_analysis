@@ -1,7 +1,9 @@
 % clear all
-datapath = 'D:\Data\Kevin_12A2';
+datapath = 'D:\Data\Kevin_12A2\Data';
+% datapath = 'D:\Data\Kramer_10I1';
 % datapath = 'D:\Data\TestData\Raw';
-filenames = dir([datapath '\Kevin_2012-10-24_UF_*2.nev']);
+filenames = dir([datapath '\Kevin_2012-11-28_UF_*.nev']);
+% filenames = dir([datapath '\Kramer_2012-11-28_UF_*.nev']);
 % filenames = dir([datapath '\PD_bump_test_004.nev']);
 % filenames(end+1) = dir([datapath '\Kevin_2012-09-18*.nev']);
 
@@ -78,7 +80,12 @@ rewarded_trials = find(trial_table(:,table_columns.result)==32);
 aborted_trials = find(trial_table(:,table_columns.result)==33);
 field_indexes = cell(1,length(field_orientations));
 bump_indexes = cell(1,length(bump_directions));
-trial_range = [-.2 .5];
+trial_range = [-.4 .5];
+if isstruct(bdf.emg)
+    num_emg = size(bdf.emg.emgnames,2);
+else
+    num_emg = 0;
+end
 
 %% Adjust kinematics
 
@@ -93,18 +100,10 @@ vel(:,1) = bdf.pos(:,1);
 vel(:,2) = [0 ; diff(bdf.pos(:,2))*fs];
 vel(:,3) = [0 ; diff(bdf.pos(:,3))*fs];
 
-% [b,a] = butter(8, 200/fs);
-% vel(:,2) = filtfilt(b, a, vel(:,2));
-% vel(:,3) = filtfilt(b, a, vel(:,3));
-
 acc = zeros(size(bdf.pos));
 acc(:,1) = bdf.pos(:,1);
 acc(:,2) = [0 ; diff(vel(:,2))*fs];
 acc(:,3) = [0 ; diff(vel(:,3))*fs];
-
-% [b,a] = butter(8, 400/fs);
-% acc(:,2) = filtfilt(b, a, acc(:,2));
-% acc(:,3) = filtfilt(b, a, acc(:,3));
 
 % Remove force offset
 xy_movement = sqrt(diff(bdf.pos(:,2)).^2+diff(bdf.pos(:,3)).^2);
@@ -125,6 +124,13 @@ y_force_offset = mean(bdf.force(handle_not_moving_idx,3));
 bdf.force(:,2) = bdf.force(:,2) - x_force_offset;
 bdf.force(:,3) = bdf.force(:,3) - y_force_offset;
 
+% Copy EMG
+if num_emg>0
+    emg = bdf.emg.data;
+else
+    emg = [];
+end
+
 trial_table_temp = trial_table(rewarded_trials,:);
 
 x_pos = zeros(size(trial_table_temp,1),length(find(bdf.pos(:,1)>trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1) &...
@@ -136,6 +142,8 @@ x_acc = x_pos;
 y_acc = x_pos;
 x_force = x_pos;
 y_force = x_pos;
+
+emg_all = zeros([num_emg size(x_pos)]);
 % s_enc = x_pos;
 % e_enc = x_pos;
 
@@ -149,8 +157,19 @@ for iTrial = 1:size(trial_table_temp,1)
     x_acc(iTrial,:) = acc(idx,2);
     y_acc(iTrial,:) = acc(idx,3);
     x_force(iTrial,:) = bdf.force(idx,2);
-    y_force(iTrial,:) = bdf.force(idx,3);        
+    y_force(iTrial,:) = bdf.force(idx,3);  
+    emg_idx = find(bdf.emg.data(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first'):...
+        find(bdf.emg.data(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first')+size(x_pos,2)-1;
+    for iEMG = 1:num_emg
+        emg_all(iEMG,iTrial,:) = emg(emg_idx,iEMG+1);
+    end
 end
+
+% Process EMG
+for iEMG = 1:size(emg_all,1)
+    emg_all(iEMG,:,:) = abs(emg_all(iEMG,:,:)-mean(mean(emg_all(iEMG,:,:))));
+end
+    
 t_axis = (1/fs:1/fs:size(x_pos,2)/fs)+trial_range(1);
 [t_zero t_zero_idx] = min(abs(t_axis));
 % rotate position traces with field orientation and remove outliers
@@ -695,6 +714,28 @@ for iField = 1:length(field_orientations)
         title(['Force parallel to bump at ' num2str(180*bump_directions(iBump)/pi) '^o'])
     end
     
+end
+
+%% EMG
+
+for iEMG = 1:num_emg
+    figure
+    temp_emg = squeeze(emg_all(iEMG,:,:));
+    t_axis = (1/fs:1/fs:size(value_matrix,2)/fs)+trial_range(1);
+    for iField = 1:length(field_indexes)
+        for iBump = 1:length(bump_indexes)
+            idx = intersect(field_indexes{iField},bump_indexes{iBump});      
+            [a t_idx] = min(abs(t_axis-t_lim));
+            subplot(1,length(bump_indexes),iBump)            
+            hold on
+            plot(t_axis,smooth(mean(temp_emg(idx,:))),'Color',colors_field(iField,:),5)
+            title([bdf.emg.emgnames{iEMG} ' B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
+            xlabel('t (s)')
+            ylabel('EMG (V)')
+        end
+        legend_str{iField} = ['F: ' num2str(field_orientations(iField)*180/pi) ' deg'];
+    end      
+    legend(legend_str,'interpreter','none')
 end
 
 %% TODO
