@@ -5,7 +5,7 @@
 % 
 % close all;
 % root='Chewie_Spike_LFP_09012011003_pdsallchans'
-% load([pathname,root,'.mat']);%load allfiles PDS
+
 % LFPband={'0-4';'70-115';'130-199'};%'200-300'};
 % LFPband={'70-115'};
 %1-2-12 updated to plot the true magnitude of the PD
@@ -14,6 +14,10 @@ if ~exist('pathnameout','var')
 end
 if ~exist('root','var')
     root=input('Enter filename of PDfile used:','s')
+end
+if ~exist('LFPfilesPDs','var')
+    pathname=[];
+        load([pathname,root,'.mat']);%load allfiles PDS
 end
 for m=1: size(LFPfilesPDs{1,1},2)
     series1=[];

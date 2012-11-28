@@ -171,7 +171,7 @@ for i=1: length(starts)
     end
 end
 disp('End getting direction for each trial');toc
-for r=1:size(LFPs,2)
+for r=1:length(LFPs)
     for k=1:length(fbandst)
         chLFP=LFPall{1,k}(:,r);
         
@@ -187,9 +187,9 @@ upCI=100-pvallim/2;
 
 for k=1:length(fbandst)
     disp(['band',int2str(k),'/',int2str(length(fbandst))]);toc
-    for x = 1:size(LFPs,2)
+    for x = 1:length(LFPs)
         
-        disp(['LFP',int2str(x),'/',int2str(size(LFPs,2))]);toc
+        disp(['LFP',int2str(x),'/',int2str(length(LFPs))]);toc
         bootstrapPDS{x,k} = bootstrap(@vector_sum_PDs_LFPs,LFP_counts{x,k}, 'all', 1000);
         ss=bootstrapPDS{x,k}(:,1);
         ss(find(ss<0))=ss(find(ss<0))+2*pi;
@@ -202,7 +202,7 @@ end
 
 for k=1:length(fbandst)
     
-    for x = 1:size(LFPs,2)
+    for x = 1:length(LFPs)
         
         
         PDMatrix{1,k}(x,5)= LFPs(x);
