@@ -1,4 +1,4 @@
-function [filePDs,bootstrapPDS]=PDs_from_spikes(root,startword,rewardword,shiftstart,lag,timeaft,pvallim)
+function [filePDs,bootstrapPDS,spike_counts]=PDs_from_spikes(root,startword,rewardword,shiftstart,lag,timeaft,pvallim)
 
 
 %Example:

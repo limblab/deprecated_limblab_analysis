@@ -330,7 +330,7 @@ end
 
 % reorder x so that it's cast back into the arrangemnt in which it will
 % ultimately be evaluated online: that of cells and bands.
-[~,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
+[~,sortInd]=sortrows([bestc(:), bestf(:)]);
 % the default operation of sortrows is to sort first on column 1, then do a
 % secondary sort on column 2, which is exactly what we want, so we're done.
 x=x(:,sortInd);

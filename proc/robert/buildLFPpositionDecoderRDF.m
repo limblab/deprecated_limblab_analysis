@@ -79,7 +79,7 @@ if 0%samprate > 1000
     downsampledTimeVector=linspace(analog_times(1),analog_times(end),length(analog_times)/samp_fact);
     downSampledBehaviorSignal=interp1(analog_times,sig(:,2:3),downsampledTimeVector);
     analog_times=downsampledTimeVector; clear downsampledTimeVector
-    sig=[rowBoat(analog_times),downSampledBehaviorSignal];
+    sig=[analog_times(:),downSampledBehaviorSignal];
     samprate=1000;
 end
 

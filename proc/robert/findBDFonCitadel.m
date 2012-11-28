@@ -39,7 +39,7 @@ else
     % BDF almost certainly won't exist yet.  Either way, assume
     % no local copies of brainReader logs exist.
     % assume GOB.  Drive letter is Z:
-    remoteDriveLetter='Z:';
+    remoteDriveLetter='Y:';
     pathToCitadelData=fullfile(remoteDriveLetter, ...
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *',nameIn,'* /s /b']);
