@@ -6,7 +6,7 @@
 
 % filename = 'Handle_force_callibration_015';
 filepath = 'D:\Data\Kevin_12A2\Data';
-filename = '\Kevin_2012-11-28_AT_001';
+filename = '\Kevin_2012-11-30_AT_001';
 fileExt = '.nev';
 % filepath = 'D:\Data\TestData\Raw\';
 
@@ -281,3 +281,8 @@ plot(trial_table(:,tc.t_trial_start),100*smooth(trial_table(:,tc.result)==32,50)
 xlabel('t (s)')
 ylabel('Percent correct (smoothed)')
 title('Performance')
+
+%% Directional performance
+% Visual trials
+figure;
+plot(180*trial_table(:,tc.moving_dots_direction)/pi,trial_table(:,tc.result)==32,'.')
