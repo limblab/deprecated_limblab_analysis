@@ -57,9 +57,20 @@ for iFile = 1:length(filenames)
                 bdf_temp.databursts{iTrial,1} = bdf_temp.databursts{iTrial,1} + old_end_time;
             end
             bdf_all.databursts = [bdf_all.databursts; bdf_temp.databursts];
-            for iUnit = 1:size(bdf_temp.units,2)
-                bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(iUnit).ts + old_end_time];
+            for iUnit = 1:size(bdf_all.units,2)
+                unit_id = bdf_all.units(iUnit).id;
+                temp_units = reshape([bdf_temp.units.id],2,[])';
+                [~,~,unit_idx] = intersect(unit_id,temp_units,'rows');
+                if ~isempty(unit_idx)
+                    bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(unit_idx).ts + old_end_time];
+                else
+                    warning('Neuron dropped from recording') %#ok<WNTAG>
+                end
             end
+            
+%             for iUnit = 1:size(bdf_temp.units,2)
+%                 bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(iUnit).ts + old_end_time];
+%             end
         else
             error('Poop')
         end
@@ -765,11 +776,13 @@ for iUnit = 1:length(units)
 %     unit_idx_temp = find(bin_t>=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1),1,'first'):...
 %         find(bin_t>=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1),1,'first')+size(x_pos,2)-1;
     unit_all_trials = zeros(size(trial_table_temp,1),length(neuron_t_axis));
+    spikes_vector = [];
     for iTrial = 1:size(trial_table_temp,1)-1
         spikes_temp = bdf.units(unit_idx).ts(bdf.units(unit_idx).ts>trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1) &...
             bdf.units(unit_idx).ts < trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(2));
         spikes_temp = spikes_temp - trial_table_temp(iTrial,table_columns.t_bump_onset);
-        unit_all_trials(iTrial,:) = spikes2fr(spikes_temp,neuron_t_axis,.05);
+        spikes_vector = [spikes_vector [spikes_temp';repmat(iTrial,1,length(spikes_temp))]];
+        unit_all_trials(iTrial,:) = spikes2fr(spikes_temp,neuron_t_axis,.01);
 %         unit_idx = find(bin_t>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first'):...
 %         find(bin_t>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first')+size(x_pos,2)-1;
 %         unit_all_trials(iTrial,:) = count(unit_idx);
@@ -781,16 +794,42 @@ for iUnit = 1:length(units)
         for iBump = 1:length(bump_indexes)
             idx = intersect(field_indexes{iField},bump_indexes{iBump});
             subplot(1,length(bump_indexes),iBump)               
-            plot(neuron_t_axis,mean(unit_all_trials(idx,:),1)/length(idx),'Color',colors_field(iField,:))
+            spikes_idx = [];
+            for iTrial = 1:length(idx)
+                spikes_idx = [spikes_idx find(spikes_vector(2,:)==idx(iTrial))];
+            end
+%             [~,spikes_idx,~] = intersect(spikes_vector(2,:),idx);
+            plot(spikes_vector(1,spikes_idx),.5*spikes_vector(2,spikes_idx),'.','Color',min([1,1,1],colors_field(iField,:)+.5),'MarkerSize',5)
             hold on
-        %     ylim([0 150])
-            title(['B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
+%             plot(neuron_t_axis,mean(unit_all_trials(idx,:),1),'Color',colors_field(iField,:),'LineWidth',2)
+%             title(['B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
+%             ylim([0 size(trial_table_temp,1)/2])
         end
         legend_str{iField} = ['F: ' num2str(field_orientations(iField)*180/pi) ' deg'];
     end
     
+    for iField = 1:length(field_indexes)
+        for iBump = 1:length(bump_indexes)
+            idx = intersect(field_indexes{iField},bump_indexes{iBump});
+            subplot(1,length(bump_indexes),iBump)               
+%             spikes_idx = [];
+%             for iTrial = 1:length(idx)
+%                 spikes_idx = [spikes_idx find(spikes_vector(2,:)==idx(iTrial))];
+%             end
+% %             [~,spikes_idx,~] = intersect(spikes_vector(2,:),idx);
+%             plot(spikes_vector(1,spikes_idx),.5*spikes_vector(2,spikes_idx),'.','Color',min([1,1,1],colors_field(iField,:)+.5),'MarkerSize',5)
+%             hold on
+            plot(neuron_t_axis,mean(unit_all_trials(idx,:),1),'Color',colors_field(iField,:),'LineWidth',2)
+            title(['B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
+            ylim([0 size(trial_table_temp,1)/2])
+            ylabel('Firing rate (1/s)')
+            xlabel('t (s)')
+        end
+        legend_str{iField} = ['Field: ' num2str(field_orientations(iField)*180/pi) ' deg'];
+    end
+    
     legend(legend_str,'interpreter','none')
-    set(gcf,'name',['Unit: ' num2str(units(iUnit,1))],'numbertitle','off')
+    set(gcf,'name',['Channel: ' num2str(units(iUnit,1))],'numbertitle','off')
     drawnow
     pause             
 end
