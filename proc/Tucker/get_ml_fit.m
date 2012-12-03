@@ -14,7 +14,7 @@ function [g]=get_ml_fit(dirs,num_left_reaches,number_reaches)
     %so that our optimization only optimizes the function parameters, and
     %ignores our input data vectors
     optifun = @(params) nllik(dirs,num_left_reaches,number_reaches,params);
-    g = fminsearch(optifun, [.45 .4 .05 90]);
+    g = fminsearch(optifun, [.45 .4 .5 90]);
     
     function nl = nllik(dirs, x, n, th)
         %implements a cost function, such that the cost is inverseley
