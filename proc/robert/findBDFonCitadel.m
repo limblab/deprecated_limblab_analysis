@@ -38,8 +38,27 @@ else
     % citadel than local. If during superBatch, the network copy of the
     % BDF almost certainly won't exist yet.  Either way, assume
     % no local copies of brainReader logs exist.
-    % assume GOB.  Drive letter is Z:
-    remoteDriveLetter='Y:';
+    [status,result]=dos('net use');
+    % if successful, will output something like this:
+    %
+    %     result =
+    %
+    %     New connections will be remembered.
+    %
+    %
+    %     Status       Local     Remote                    Network
+    %
+    %     -------------------------------------------------------------------------------
+    %     OK           Y:        \\citadel\limblab         Microsoft Windows Network
+    %     OK           Z:        \\citadel\data            Microsoft Windows Network
+    %     The command completed successfully.
+    %
+    % therefore, use the structure to your advantage.
+    if status==0
+        remoteDriveLetter=[result(regexp(result,'[A-Z](?=:\s+\\\\citadel\\data)')),':'];
+    else % take a guess.
+        remoteDriveLetter='Z:';
+    end
     pathToCitadelData=fullfile(remoteDriveLetter, ...
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *',nameIn,'* /s /b']);
