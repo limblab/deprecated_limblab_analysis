@@ -88,7 +88,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
         adfreq = max(out_struct.raw.analog.adfreq);
         
         start_time = floor(1.0 + out_struct.raw.analog.ts{1});
-        last_analog_time = min([out_struct.raw.analog.ts{:}] + ...
+        last_analog_time = min(cellfun(@(x) x(1),out_struct.raw.analog.ts) + ...
             cellfun('length',out_struct.raw.analog.data) / out_struct.raw.analog.adfreq);
         if isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc)
             last_enc_time = out_struct.raw.enc(end,1);
@@ -134,6 +134,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 end
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
+            end
+            % account for mangled encoder timestamps (non-monotonic)
+            while ~isempty(out_struct.raw.enc(:,1)) && nnz(diff(out_struct.raw.enc(:,1))<0)
+                out_struct.raw.enc(find(diff(out_struct.raw.enc(:,1))<0,1,'last'),:)=[];
             end
             th_t = out_struct.raw.enc(:,1); % encoder time stamps
 
@@ -353,7 +357,7 @@ end             %ending "if opts.eye"
         
         num_trials = size(out_struct.databursts,1);
         num_burst = 0;
-        burst_size = out_struct.databursts{1,2}(1);
+        burst_size = median(cellfun(@numel,out_struct.databursts(:,2)));
                 
         if (wrist_flexion_task ||multi_gadget_task || center_out_task)
             % burst_size = 34; %newest version as of 08-2010
