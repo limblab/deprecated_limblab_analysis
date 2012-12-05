@@ -1,4 +1,4 @@
-function [vaf,vmean,vsd,y_test,y_pred,varargout] = predictionsfromfp6(sig, signal, numfp, binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
+function [vaf,vmean,vsd,y_test,y_pred,varargout] = predictionsfromfp6_KF(sig, signal, numfp, binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
 %2009-07-10 Marc predicts MIMO from field potentials
@@ -69,6 +69,14 @@ if length(varargin)>0
                                     smoothfeats=varargin{8};
                                     if length(varargin) > 8
                                         bandToUse=varargin{9};
+                                        if length(varargin) > 9
+                                            A=varargin{10};
+                                            C=varargin{11};
+                                            Q=varargin{12};
+                                            R=varargin{13};
+                                            bestc=varargin{14};
+                                            bestf=varargin{15};
+                                        end
                                     end
                                 end
                             end
@@ -136,6 +144,9 @@ end
 % Using binsize ms bins
 if length(fp)~=length(y)
     stop_time = min(length(y),length(fp))/samprate;
+    if stop_time < 60
+        stop_time = length(fp)/samprate;
+    end
     fptimesadj = analog_times(1):1/samprate:stop_time;
 %          fptimes=1:samp_fact:length(fp);
     if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
@@ -153,6 +164,9 @@ end
 %Align numbins correctly
 if length(t)>numbins
     t=t(1:numbins);
+end
+if numbins > length(t)
+    numbins=length(t);
 end
 %     y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
 % if size(y,2)>1
@@ -237,77 +251,12 @@ if exist('bandToUse','var')==1 && all(isfinite(bandToUse)) && all(bandToUse <= s
 end
 
 
-% isolate powerbands for individual-band analysis.  Most times this will
-% remain commented.
-% PB([2:6],:,:)=[];
-
-% % temporary - to test a hypothesis 01/06
-% PB=[];
-% PB(1,:,:)=mean(PA(gam1,:,:),1);
-% PB(2,:,:)=mean(PA(gam2,:,:),1);
-% PB(3,:,:)=mean(PA(gam3,:,:),1);
-% test a combined gamma band alone.
-% PB=[];
-% PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
-assignin('base','PB',PB)
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
 toc
 tic
-% Select best Nfeat freq band/channel combos based on R2 value c/w 1st component
-% of y
 
-if ~exist('nfeat','var')
-    nfeat=100;
-end
-if ~verLessThan('matlab','7.7.0') || size(y,2)>1 
-    for c=1:size(PB,2)
-        for f=1:size(PB,1)
-            rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-            if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use ALL outputs in calculating bestfeat (orig modified 12/13/10 for 2 outputs)
-                rsum=abs(rt1);
-                for n=2:size(y,2)
-                    rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                    rsum=rsum+abs(rtemp);
-                end
-                rt=rsum/n;
-%                 rt=(abs(rt1)+abs(rt2))/2;
-            else
-                rt=rt1;
-            end
-            if size(rt,2)>1
-            r(f,c)=rt(1,2);    %take absolute value of r
-            else
-                r(f,c)=abs(rt);
-            end
-        end
-    end
-else %if older versions than 2008 (7.7.0), corrcoef outputs a scalar; in newer versions it outputs matrix for vectors
-    for c=1:size(PB,2)
-        for f=1:size(PB,1)
-            rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-            if size(y,2)>1
-               rsum=abs(rt1);
-                for n=2:size(y,2)
-                    rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                    rsum=rsum+abs(rtemp);
-                end
-                rt=rsum/n;
-            else
-                rt=rt1;
-            end
-
-            r(f,c)=abs(rt);    %take absolute value of r
-        end
-    end
-end
-r1=reshape(r,1,[]);
-r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
-[sr,featind]=sort(r1,'descend');
-[bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
-bestPB=single(zeros(nfeat,length(y)));
-clear r     %clear this so we can reuse r later on
 for i=1:nfeat
     bestPB(i,:)=PB(bestf(i),bestc(i),:);
 end
@@ -334,154 +283,149 @@ tic
 x = x(q==1,:);
 y = y(q==1,:);
 
-vaf = zeros(folds,size(y,2));
-r2 = zeros(folds,2);
-fold_length = floor(length(y) ./ folds);
-
-fprintf(1,'fold ')
-
-x_test=cell(folds,1);
-y_test=x_test;
-y_pred=y_test;
-if ~exist('lambda','var')
-lambda=1;
-end
-
 % reorder x so that it's cast back into the arrangemnt in which it will
 % ultimately be evaluated online: that of cells and bands.
 [~,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
 % the default operation of sortrows is to sort first on column 1, then do a
 % secondary sort on column 2, which is exactly what we want, so we're done.
 x=x(:,sortInd);
+tic
+      % V,VV,loglik
+[y_pred,~,~ ,~]=kalman_filter(x',A,C,Q,R,y(1,:)',Q);
 
-for i = 1:folds
-    fold_start = (i-1) * fold_length + 1;
-    fold_end = fold_start + fold_length-1;
-
-    x_test{i} = x(fold_start:fold_end,:);
-    y_test{i} = y(fold_start:fold_end,:);
-
-    x_train = [x(1:fold_start,:); x(fold_end:end,:)];
-    y_train = [y(1:fold_start,:); y(fold_end:end,:)];
-
-    %%
-    %%Try z-score instead of mean sub
-%     y_train = zscore(y_train);
-%     y_test{i} = zscore(y_test{i});
-%     x_train = zscore(x_train);
-%     x_test{i} = zscore(x_test{i});
-
-    if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
-        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
-%         [H{i},v,mcc]=filMIMO3(x_train,y_train,numlags,numsides,1);
-        fprintf(1,'%d,',i)
-    end                                                               % binsamprate
-    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
-    %ytnew and xtnew are shifted by the length of the filter since the
-    %first fillen time period is garbage prediction & gets thrown out in
-    %predMIMO3 (9-24-10)
-    P=[];
-    T=[];
-    patch = [];
-    
-    if PolynomialOrder
-        %%%Find a Wiener Cascade Nonlinearity
-        for z=1:size(y_pred{i},2)
-            if Use_Thresh            
-                %Find Threshold
-                T_default = 1.25*std(y_pred{i}(:,z));
-                [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
-                IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
-
-                %Apply Threshold to linear predictions and Actual Data
-                PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
-                ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
-
-                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
-                Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
-                                 (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
-                Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
-
-                %Find Polynomial to Thresholded Data
-                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-                
-                
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %%%%%% Use only one of the following 2 lines:
-                %
-                %   1-Use the threshold only to find polynomial, but not in the model data
-                T=[]; patch=[];                
-                %
-                %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
-                %
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            else
-                %Find and apply polynomial
-                [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
-            end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
-        end
-    end
-    
-
-%     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
-    vaftr(i,:)=v/100; %Divide by 100 because v is in percent
-%     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-%     vaf(i,:) = 1 - sum( (y_pred{i}-ytnew{i}).^2 ) ./ sum( (ytnew{i} - repmat(mean(ytnew{i}),length(ytnew{i}),1)).^2 );
-    vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
-    for j=1:size(y,2)
-        r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
-%         
-%     for j=1:size(y,2)
-%         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
-        if size(r{i,j},2)>1
-            r2(i,j)=r{i,j}(1,2)^2;
-        else
-            r2(i,j)=r{i,j}^2;
-        end
-    end
-    %
-    %     rx{i}=corrcoef(y_pred{i}(:,1),y_test{i}(:,1));
-    %     if size(y,2)>1
-    %         ry{i}=corrcoef(y_pred{i}(:,2),y_test{i}(:,2));
-    %         r2y(i)=ry{i}(1,2)^2;
-    %         r2x(i)=rx{i}(1,2)^2;
-    %     else
-    %         r2x(i)=rx{i}^2;
-    %     end
-    %
-
-
+for n=1:size(y,2)
+    vaf(n)=RcoeffDet(y_pred(n,:)',y(:,n));
 end
+vmean=[]; vsd=[]; y_test=[];
+
+% for i = 1:folds
+%     fold_start = (i-1) * fold_length + 1;
+%     fold_end = fold_start + fold_length-1;
+% 
+%     x_test{i} = x(fold_start:fold_end,:);
+%     y_test{i} = y(fold_start:fold_end,:);
+% 
+%     x_train = [x(1:fold_start,:); x(fold_end:end,:)];
+%     y_train = [y(1:fold_start,:); y(fold_end:end,:)];
+% 
+%     %%
+%     %%Try z-score instead of mean sub
+% %     y_train = zscore(y_train);
+% %     y_test{i} = zscore(y_test{i});
+% %     x_train = zscore(x_train);
+% %     x_test{i} = zscore(x_test{i});
+% 
+%     if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
+%         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
+% %         [H{i},v,mcc]=filMIMO3(x_train,y_train,numlags,numsides,1);
+%         fprintf(1,'%d,',i)
+%     end                                                               % binsamprate
+%     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
+%     %ytnew and xtnew are shifted by the length of the filter since the
+%     %first fillen time period is garbage prediction & gets thrown out in
+%     %predMIMO3 (9-24-10)
+%     P=[];
+%     T=[];
+%     patch = [];
+%     
+%     if PolynomialOrder
+%         %%%Find a Wiener Cascade Nonlinearity
+%         for z=1:size(y_pred{i},2)
+%             if Use_Thresh            
+%                 %Find Threshold
+%                 T_default = 1.25*std(y_pred{i}(:,z));
+%                 [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
+%                 IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
+% 
+%                 %Apply Threshold to linear predictions and Actual Data
+%                 PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
+%                 ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
+% 
+%                 %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
+%                 Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
+%                                  (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
+%                 Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
+% 
+%                 %Find Polynomial to Thresholded Data
+%                 [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+%                 
+%                 
+%                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                 %%%%%% Use only one of the following 2 lines:
+%                 %
+%                 %   1-Use the threshold only to find polynomial, but not in the model data
+%                 T=[]; patch=[];                
+%                 %
+%                 %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
+% %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
+%                 %
+%                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             else
+%                 %Find and apply polynomial
+%                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+%             end
+%             y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+%         end
+%     end
+%     
+% 
+% %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
+%     vaftr(i,:)=v/100; %Divide by 100 because v is in percent
+% %     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
+% %     vaf(i,:) = 1 - sum( (y_pred{i}-ytnew{i}).^2 ) ./ sum( (ytnew{i} - repmat(mean(ytnew{i}),length(ytnew{i}),1)).^2 );
+%     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
+%     for j=1:size(y,2)
+%         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
+% %         
+% %     for j=1:size(y,2)
+% %         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
+%         if size(r{i,j},2)>1
+%             r2(i,j)=r{i,j}(1,2)^2;
+%         else
+%             r2(i,j)=r{i,j}^2;
+%         end
+%     end
+%     %
+%     %     rx{i}=corrcoef(y_pred{i}(:,1),y_test{i}(:,1));
+%     %     if size(y,2)>1
+%     %         ry{i}=corrcoef(y_pred{i}(:,2),y_test{i}(:,2));
+%     %         r2y(i)=ry{i}(1,2)^2;
+%     %         r2x(i)=rx{i}(1,2)^2;
+%     %     else
+%     %         r2x(i)=rx{i}^2;
+%     %     end
+%     %
+% 
+% 
+% end
 disp('5th part: do predictions')
 
 
-vmean=mean(vaf);
-vsd=std(vaf,0,1);
-vaftrm=mean(vaftr);
-r2mean=mean(r2);
-r2sd=std(r2);
+% vmean=mean(vaf);
+% vsd=std(vaf,0,1);
+% vaftrm=mean(vaftr);
+% r2mean=mean(r2);
+% r2sd=std(r2);
 
 toc
 
 figure
-plot(ytnew{1}(:,1))
+plot(y(:,end))
 hold
-plot(y_pred{1}(:,1),'r')
+h=plot(y_pred(end,:),'r');
 
 if nargout>5
-    varargout{1}=r2mean;
-    varargout{2}=r2sd;
+%     varargout{1}=r2mean;
+%     varargout{2}=r2sd;
     if nargout>7
-        varargout{3}=r2;
+%         varargout{3}=r2;
         if nargout>8
-            varargout{4}=vaftr;
+%             varargout{4}=vaftr;
             if nargout>9
                 varargout{5}=bestf;
                 varargout{6}=bestc;
                 if nargout>11
-                    varargout{7}=H;
+%                     varargout{7}=H;
                 end
                 if nargout>12
                     varargout{8}=bestPB;
@@ -498,14 +442,14 @@ if nargout>5
                         varargout{10}=y;
                         varargout{11}=featMat;
                         if nargout>16
-                            varargout{12}=ytnew;
-                            varargout{13}=xtnew;
-                            varargout{14}=t;
+%                             varargout{12}=ytnew;
+%                             varargout{13}=xtnew;
+%                             varargout{14}=t;
                             if nargout>19
-                                varargout{15}=P;
-                                varargout{16}=featind;
+%                                 varargout{15}=P;
+%                                 varargout{16}=featind;
                                 if nargout>21
-                                    varargout{17}=sr;
+%                                     varargout{17}=sr;
                                 end
                             end
                         end

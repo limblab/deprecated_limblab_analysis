@@ -43,6 +43,7 @@ kinStructPath=fullfile(remoteDriveLetter,pathBank{animus},ff{animus},dayIn,'kinS
     
 if exist(kinStructPath,'file')==2
     load(kinStructPath)
+    kinStruct(cellfun(@isempty,{kinStruct.control}))=[];
     BDFlist={kinStruct(cellfun(@isempty,regexp({kinStruct.control},controlType))==0).name};
     if find(animus)==2 && nargin>1
         % if animal is Mini, and if recording is before mid-February(?), this

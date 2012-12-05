@@ -228,8 +228,8 @@ end
 % PB(2,:,:)=mean(PA(gam2,:,:),1);
 % PB(3,:,:)=mean(PA(gam3,:,:),1);
 % test a combined gamma band alone (11/13/2012).
-PB=[];
-PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
+% PB=[];
+% PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
@@ -287,7 +287,13 @@ r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 [sr,featind]=sort(r1,'descend');
 assignin('base','featind',featind)
 assignin('base','R',r1)
-[bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
+try
+    [bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
+catch ME
+    if strcmp(ME.identifier,'MATLAB:badsubscript')
+        error('too many features requested.  check number of enabled channels')
+    end
+end
 bestPB=single(zeros(nfeat,length(y)));
 clear r     %clear this so we can reuse r later on
 for i=1:nfeat

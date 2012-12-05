@@ -1,4 +1,4 @@
-function [vaf,vmean,vsd,y_test,y_pred,varargout] = predictionsfromfp6(sig, signal, numfp, binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
+function [A, C, Q, R,bestf,bestc] = buildModel_fp_KF(sig, signal, numfp, binsize,~,~,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
 %2009-07-10 Marc predicts MIMO from field potentials
@@ -67,9 +67,7 @@ if length(varargin)>0
                                 lambda=varargin{7};
                                 if length(varargin)>7
                                     smoothfeats=varargin{8};
-                                    if length(varargin) > 8
-                                        bandToUse=varargin{9};
-                                    end
+                                   
                                 end
                             end
                         end
@@ -110,18 +108,12 @@ elseif strcmpi(signal,'emg')
 %     if ~exist('temg','var')
 %         temg=1/emgsamplerate:(1/emgsamplerate):(length(sig)*(samprate/emgsamplerate));
 %     end
-
-%     % temporary, add in a bandpass filter from 3-5 Hz (or from 5-10 Hz)
-%     [bb,ab]=butter(2,[10 20]/emgsamplerate,'bandpass');
-%     y=filtfilt(bb,ab,y);
 else
     y=sig;
 end
 samp_fact=1000/samprate;
-%% Adjust the size of fp to make sure same number of samples as analog
-%% signals
-
-% assignin('base',regexprep(sprintf('%sfiltEMG%0.2dHz',fnam,EMG_lp),'-',''),y)
+% Adjust the size of fp to make sure same number of samples as analog
+% signals
 
 disp('fp adjust')
 toc
@@ -199,57 +191,45 @@ end
 clear fpf tftmp
 freqs=linspace(0,samprate/2,wsz/2+1);
 freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
-fprintf(1,'first frequency bin at %.3f Hz\n',freqs(1))
 % tvect=(1:numbins)*(bs)-bs/2;
-assignin('base','freqs',freqs)
 disp('3rd part: calculate FFTs')
 toc
 tic
 % Calculate bandpower
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
-% for testing, when freqs=freqs(2:end) is commented out, above.
-% Pmat=tfmat(1:length(freqs)+1,:,:).*conj(tfmat(1:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
-assignin('base','Pmat',Pmat)
+
 Pmean=mean(Pmat,3); %take mean over all times
+% Pmean=ones(size(Pmean)); % uncomment to not subtract the mean (testing purposes).
 PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
-assignin('base','PA',PA)
 clear Pmat
 
 %Define freq bands
 delta=freqs<4;
 mu=((freqs>7) & (freqs<20));
-% alphabeta=(freqs>=20) & (freqs<70);
 gam1=(freqs>70)&(freqs<115);
 gam2=(freqs>130)&(freqs<200);
 gam3=(freqs>200)&(freqs<300);
 PB(1,:,:)=LMP;
 PB(2,:,:)=mean(PA(delta,:,:),1);
 PB(3,:,:)=mean(PA(mu,:,:),1);
-% % PB(4,:,:)=mean(PA(alphabeta,:,:),1);
 PB(4,:,:)=mean(PA(gam1,:,:),1);
 PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
 
-if exist('bandToUse','var')==1 && all(isfinite(bandToUse)) && all(bandToUse <= size(PB,1))
-    PB=PB(bandToUse,:,:);
-end
-
-
-% isolate powerbands for individual-band analysis.  Most times this will
-% remain commented.
-% PB([2:6],:,:)=[];
-
-% % temporary - to test a hypothesis 01/06
+% for n=1:size(PB,1)
+%     PB(n,:,:)=zscore(squeeze(PB(n,:,:))')';
+% end
+% y=zscore(y);
+% temporary - to test a hypothesis 01/06
 % PB=[];
 % PB(1,:,:)=mean(PA(gam1,:,:),1);
 % PB(2,:,:)=mean(PA(gam2,:,:),1);
 % PB(3,:,:)=mean(PA(gam3,:,:),1);
-% test a combined gamma band alone.
-% PB=[];
-% PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
-assignin('base','PB',PB)
+% % test a combined gamma band.
+% PB(4:6,:,:)=[];
+% PB(4,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
@@ -305,6 +285,8 @@ end
 r1=reshape(r,1,[]);
 r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 [sr,featind]=sort(r1,'descend');
+assignin('base','featind',featind)
+assignin('base','R',r1)
 [bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
 bestPB=single(zeros(nfeat,length(y)));
 clear r     %clear this so we can reuse r later on
@@ -314,7 +296,7 @@ end
 
 % convert x to freq bands
 if exist('PB','var')
-    numfreq=size(PB,1); % #frequency bands
+    numfreq=size(PB,1); %#frequency bands
 else
     numfreq=0;
 end
@@ -324,7 +306,7 @@ x=bestPB';
 
 if smoothfeats > 0
     xtemp=smooth(x(:),smoothfeats);      %sometimes smoothing features helps
-    x=reshape(xtemp,size(x));
+	x=reshape(xtemp,size(x));
 end
 disp('5th part: select best features')
 disp(['selected best ',num2str(nfeat),' features, time: '])
@@ -334,17 +316,16 @@ tic
 x = x(q==1,:);
 y = y(q==1,:);
 
-vaf = zeros(folds,size(y,2));
-r2 = zeros(folds,2);
-fold_length = floor(length(y) ./ folds);
+% from here, different from predictionsfromfp6.m
+vaf = zeros(1,size(y,2));
+r2 = zeros(1,2);
+fold_length = length(y);
 
-fprintf(1,'fold ')
-
-x_test=cell(folds,1);
+x_test=cell(1,1);
 y_test=x_test;
 y_pred=y_test;
 if ~exist('lambda','var')
-lambda=1;
+	lambda=1;
 end
 
 % reorder x so that it's cast back into the arrangemnt in which it will
@@ -354,108 +335,49 @@ end
 % secondary sort on column 2, which is exactly what we want, so we're done.
 x=x(:,sortInd);
 
-for i = 1:folds
-    fold_start = (i-1) * fold_length + 1;
-    fold_end = fold_start + fold_length-1;
+% above this point, should stay the same as buildModel_fp.m
+% now, implement the Kalman filter instead of the Wiener filter.
+% appending ones after the pos/vel was something that Amy did in order to
+% account for non-zero mean firing rates of neurons.  PB (and therefore x)
+% should be zero mean?  check out why any feature would have non-zero mean.
 
-    x_test{i} = x(fold_start:fold_end,:);
-    y_test{i} = y(fold_start:fold_end,:);
-
-    x_train = [x(1:fold_start,:); x(fold_end:end,:)];
-    y_train = [y(1:fold_start,:); y(fold_end:end,:)];
-
-    %%
-    %%Try z-score instead of mean sub
-%     y_train = zscore(y_train);
-%     y_test{i} = zscore(y_test{i});
-%     x_train = zscore(x_train);
-%     x_test{i} = zscore(x_test{i});
-
-    if length(varargin)<5 || ~iscell(varargin{5})                              % binsamprate
-        [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1);
-%         [H{i},v,mcc]=filMIMO3(x_train,y_train,numlags,numsides,1);
-        fprintf(1,'%d,',i)
-    end                                                               % binsamprate
-    [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
-    %ytnew and xtnew are shifted by the length of the filter since the
-    %first fillen time period is garbage prediction & gets thrown out in
-    %predMIMO3 (9-24-10)
-    P=[];
-    T=[];
-    patch = [];
-    
-    if PolynomialOrder
-        %%%Find a Wiener Cascade Nonlinearity
-        for z=1:size(y_pred{i},2)
-            if Use_Thresh            
-                %Find Threshold
-                T_default = 1.25*std(y_pred{i}(:,z));
-                [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
-                IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
-
-                %Apply Threshold to linear predictions and Actual Data
-                PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
-                ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
-
-                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
-                Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
-                                 (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
-                Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
-
-                %Find Polynomial to Thresholded Data
-                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-                
-                
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %%%%%% Use only one of the following 2 lines:
-                %
-                %   1-Use the threshold only to find polynomial, but not in the model data
-                T=[]; patch=[];                
-                %
-                %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
-                %
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            else
-                %Find and apply polynomial
-                [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
-            end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
-        end
-    end
-    
-
-%     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
-    vaftr(i,:)=v/100; %Divide by 100 because v is in percent
-%     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-%     vaf(i,:) = 1 - sum( (y_pred{i}-ytnew{i}).^2 ) ./ sum( (ytnew{i} - repmat(mean(ytnew{i}),length(ytnew{i}),1)).^2 );
-    vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
-    for j=1:size(y,2)
-        r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
-%         
-%     for j=1:size(y,2)
-%         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
-        if size(r{i,j},2)>1
-            r2(i,j)=r{i,j}(1,2)^2;
-        else
-            r2(i,j)=r{i,j}^2;
-        end
-    end
-    %
-    %     rx{i}=corrcoef(y_pred{i}(:,1),y_test{i}(:,1));
-    %     if size(y,2)>1
-    %         ry{i}=corrcoef(y_pred{i}(:,2),y_test{i}(:,2));
-    %         r2y(i)=ry{i}(1,2)^2;
-    %         r2x(i)=rx{i}(1,2)^2;
-    %     else
-    %         r2x(i)=rx{i}^2;
-    %     end
-    %
+% This would be what I would classically do.
+% [A, C, Q, R] = train_kf([y, ones(size(y,1),1)],x);
+% ...however, this leads to Q and R matrices that are of less than 
+% full rank.  In particular, Q ends up being 4 rather than 5 and R
+% ends up somewhere around 139 instead of 150.  Eliminating the 
+% appended 1s column takes care of Q (Amy O's stated reason for adding
+% this column in the first place was to account for nonzero basline 
+% firing rates in the neurons; however, we're dealing with continuous
+% time signals that should in theory at least, have zero mean.
+% To keep R as full rank, we want to limit x to around 100(?) features
+% instead of 150
+[A, C, Q, R] = train_kf(y,x);
 
 
+% with these values, the model would be
+% y(t) = A*y(t-1) + w(t)
+% x(t) = C*y(t) + q(t)
+% where
+% w(t) ~ N(0,Q)
+% q(t) ~ N(0,R)
+
+
+return
+
+vaftr=v/100; %Divide by 100 because v is in percent
+vaf=RcoeffDet(y_pred,ytnew);
+r={};
+for j=1:size(y,2)
+	r{j}=corrcoef(y_pred(:,j),ytnew(:,j));
+	if size(r{j},2)>1
+		r2(j)=r{j}(1,2)^2;
+	else
+		r2(j)=r{j}^2;
+	end
 end
-disp('5th part: do predictions')
 
+disp('5th part: do predictions')
 
 vmean=mean(vaf);
 vsd=std(vaf,0,1);
@@ -466,9 +388,12 @@ r2sd=std(r2);
 toc
 
 figure
-plot(ytnew{1}(:,1))
+plot(ytnew(:,1))
 hold
-plot(y_pred{1}(:,1),'r')
+plot(y_pred(:,1),'r')
+
+snam=[fnam,signal,' pred ',num2str(nfeat),' feats ',num2str(wsz),' wsz lambda ',num2str(lambda),'.mat'];
+% save(snam,'r2*','v*','best*','x*','y*','nfeat','Poly*','Use*','num*','bin*','H','lambda','wsz')
 
 if nargout>5
     varargout{1}=r2mean;
@@ -514,11 +439,8 @@ if nargout>5
             end
         end
     end
+
 end
-
-snam=[fnam,signal,' pred ',num2str(nfeat),' feats ',num2str(wsz),' wsz lambda ',num2str(lambda),'.mat'];
-% save(snam,'r2*','v*','best*','feat*','x*','y*','nfeat','Poly*','Use*','num*','bin*','H','P','lambda','wsz','smoothfeats')
-
 
 function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
 

@@ -167,7 +167,13 @@ if nargin==2
     if exist(inputDecoder,'file')==2
         load(inputDecoder,'H','bestf','bestc','P')
         fprintf(1,'successfully loaded %s\n',inputDecoder)
-        decoderDate=datenum(regexp(inputDecoder,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once'));
+        date_as_string=regexp(inputDecoder,'[0-9]{8}(?=[0-9]{3})','match','once');
+        if isempty(date_as_string)
+            date_as_string=regexp(pathToDecoderMAT,'[0-9]{2}-[0-9]{2}-[0-9]{4}','match','once');
+            decoderDate=datenum(date_as_string,'mm-dd-yyyy');
+        else
+            decoderDate=datenum(date_as_string,'mmddyyyy');
+        end
     else
         error('decoder %s could not be loaded',inputDecoder)
     end
@@ -220,7 +226,7 @@ disp('assigning tunable parameters and building the decoder...')
 numlags=10; 
 wsz=256; 
 nfeat=150;
-PolynomialOrder=3; 
+PolynomialOrder=0; 
 smoothfeats=0;
 binsize=0.05;
 %%
