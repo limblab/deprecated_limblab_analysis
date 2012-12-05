@@ -1,0 +1,38 @@
+% % getting .nse data into matlab:
+% 
+%  % NLX2MATSPIKE Imports data from Neuralynx NSE, NST and NTT files to Matlab variables.
+%  
+%     [Timestamps, ScNumbers, CellNumbers, Features, Samples, Header] =
+%                        Nlx2MatSpike( Filename, FieldSelectionFlags,
+%                        HeaderExtractionFlag, ExtractMode, ExtractionModeVector);
+%                        
+% %NLX2MATEV Imports data from Neuralynx NEV files to Matlab variables.
+%  
+%     [TimeStamps, EventIDs, TTLs, Extras, EventStrings, Header] =
+%                        Nlx2MatEV( Filename, FieldSelection, ExtractHeader,
+%                                   ExtractMode, ModeArray );
+%                                   
+%                                   
+%                                   
+%                                   
+%                                   
+%                                   
+%
+
+
+%% read in plexon data 
+[fname,fpath]=uigetfile('*.plx', 'Select file to convert');
+filename=strcat(fpath,fname);
+fullread=1;%bool setteing whether to scan the whole file or just the header
+%read basic file information:
+[tscounts, wfcounts, evcounts] = plx_info(filename, fullread);
+%extract number of channels and units from basic info:
+[chans, units]=size(tscounts)
+[n, npw, ts, wave] = plx_waves(filename, channel, unit);
+
+
+%%format data for export
+%concatenate 
+
+
+%%export data to .nlx file
