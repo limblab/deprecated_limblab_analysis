@@ -30,18 +30,22 @@ if nargin < 4
     offset = 0;
 end
 
-%ts = 200; % time step (ms)
-ts = 50;
+if isfield(bdf.units,'fr')
+    %if the firing rate is already a field in bdf.units
+    [s,t]=get_fr(bdf,chan,unit);
+else
+    %ts = 200; % time step (ms)
+    ts = 50;
 
-vt = bdf.vel(:,1);
-t = vt(1):ts/1000:vt(end);
-spike_times = get_unit(bdf,chan,unit)-offset;
-spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
-s = train2bins(spike_times, t);
-
+    vt = bdf.vel(:,1);
+    t = vt(1):ts/1000:vt(end);
+    spike_times = get_unit(bdf,chan,unit)-offset;
+    spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
+    s = train2bins(spike_times, t);
+end
 glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
 glmv = interp1(bdf.vel(:,1), bdf.vel(:,2:3), t);
-%glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
+glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
 %glmp = sum(glmf .* glmv,2);
 %glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
 %    sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
