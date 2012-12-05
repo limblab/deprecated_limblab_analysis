@@ -50,7 +50,8 @@ end
 % bdf = sun710;
 
 %% get pds, standard errors and modulation depth and unit list
-[pds, errs, moddepth] = glm_pds(bdf,include_unsorted);
+model='posvel';
+[pds, errs, moddepth] = glm_pds(bdf,include_unsorted,model);
 
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel

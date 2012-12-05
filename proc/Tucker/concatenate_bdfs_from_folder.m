@@ -11,7 +11,7 @@ function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring)
     full_bdf=[];
     for i=1:length(foldercontents)
         if (length(fnames{i})>3)
-            if strcmp(fnames{i}((length(fnames{i})-3):end),'.mat' & ~isempty(strfind(fnames{i},matchstring)))
+            if (strcmp(fnames{i}((length(fnames{i})-3):end),'.mat') & ~isempty(strfind(fnames{i},matchstring)))
                 %if we have a .mat file
                 disp(strcat('Working on: ',folderpath, fnames{i}))
                 load(strcat(folderpath, fnames{i}));

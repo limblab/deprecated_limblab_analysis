@@ -17,9 +17,6 @@ all_bumps = words(words(:,2) >= (bump_word_base) & words(:,2) <= (bump_word_base
 word_start = hex2dec('1F');
 start_words = words(words(:,2) == word_start, 1);
 
-num_trials = length(start_words);
-disp(strcat('Found: ',num2str(num_trials),' trials'))
-
 word_go = hex2dec('31');
 go_cues = words(words(:,2) == word_go, 1);
 
@@ -31,6 +28,14 @@ word_stim=hex2dec('60');
 stim_words=words( bitand(hex2dec('f0'),words(:,2)) == word_stim,1);
 stim_codes=words( bitand(hex2dec('f0'),words(:,2)) == word_stim,2);
 
+
+burst_times=zeros(length(bdf.databursts),1);
+for i=1:length(burst_times)
+    burst_times(i)=bdf.databursts{i,1};
+end
+num_trials = length(burst_times);
+disp(strcat('Found: ',num2str(num_trials),' trials'))
+
 disp('composing trial table assuming db v 4')
 disp(strcat('db version:',num2str(bdf.databursts{1,2}(2))))
 disp('If actual db version does not match assumed version, fix the trial table code')
@@ -38,10 +43,26 @@ disp('If actual db version does not match assumed version, fix the trial table c
 
 
 tt = zeros(num_trials-1, 40);
-
+skip_counter=0;
 for trial = 1:num_trials-1
+
         start_time = start_words(trial);
         next_trial_start = start_words(trial+1);
+        
+        burstindex= find((burst_times > start_time) & (burst_times < next_trial_start));
+        
+        if ( isempty(burstindex) ) %if we don't have a databurst, or the databurst is empty
+            skip_counter=skip_counter+1;
+            continue
+        else
+            
+            if isnan(bdf.databursts{burstindex,2})
+                skip_counter=skip_counter+1;
+                continue
+            else
+                db = bdf.databursts{ burstindex,2};
+            end
+        end
         trial_end_idx = find(end_words > start_time & end_words < next_trial_start, 1, 'first');
         if isempty(trial_end_idx)
             end_time = next_trial_start - .001;
@@ -55,14 +76,14 @@ for trial = 1:num_trials-1
         if ~isempty(idx)
             bump_time = all_bumps(idx);
         else
-            bump_time = 0;
+            bump_time = -1;
         end
 
         idx = find(go_cues > start_time & go_cues < end_time, 1);
         if ~isempty(idx)
             go_cue = go_cues(idx);
         else
-            go_cue = 0;
+            go_cue = -1;
         end
         
         idx = find(stim_words > start_time & stim_words < end_time,1);
@@ -106,7 +127,7 @@ for trial = 1:num_trials-1
 %  * bytes 85-88:   float		=> bump incriment
 %  * byte  89:      uchar		=> is primary target
 %  */
-        db = bdf.databursts{trial,2};
+
 
         numbytes=db(1);
         db_version=db(2);
@@ -144,7 +165,7 @@ for trial = 1:num_trials-1
         bump_increment=bytes2float(db(87:90));
         primary_target_flag=db(91);
         
-        tt(trial,:)=  [     numbytes,                   db_version,                 two,                        b,                          c, ...%5
+        temprow =  [     numbytes,                   db_version,                 two,                        b,                          c, ...%5
                             behavior_version_maj,       behavior_version_minor,     behavior_version_micro1,    behavior_version_micro2,    target_angle,...%5
                             bump_dir,                   random_tgt_flag,            tgt_dir_floor,              tgt_dir_ceil,               bump_mag,... %5
                             bump_dur,                   bump_ramp,                  bump_floor,                 bump_ceil,                  stim_trial_flag,...
@@ -152,10 +173,15 @@ for trial = 1:num_trials-1
                             tgt_size,                   intertrial_time,            penalty_time,               bump_hold_time,             ct_hold_time,...
                             bump_delay_time,            targets_during_bump,        bump_increment,             primary_target_flag,        trial_result,...
                             start_time,                 bump_time,                  go_cue,                     end_time                    stim_code];
-
+        if ~isempty(find(abs(temprow)>100000000000))
+            skip_counter=skip_counter+1;
+            continue
+        else
+            tt(trial-skip_counter,:)=temprow;
+        end
 end
 
-
+disp(strcat('Found ',num2str(skip_counter),' bad databursts. Trials associated with these databursts were skipped'))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %build hdr object with associated column numbers

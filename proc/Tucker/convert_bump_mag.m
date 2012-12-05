@@ -1,9 +1,16 @@
 function bumps=convert_bump_mag(tdf)
-    %generates the commanded force for each trial
+    %generates the commanded force for each trial. starting from a tdf
+    %object (bdf extended with trial table and trial table  header fields)
+    %if there is no force field in the bdf one will be created with the
+    %same sample rate as the kinematics
 
-    bumps=[tdf.force(:,1),zeros(length(tdf.force),2)];
-    time_step=mean(diff(tdf.force(:,1)));
-    
+    if isfield(tdf,'force')
+        bumps=[tdf.force(:,1),zeros(length(tdf.force),2)];
+        time_step=mean(diff(tdf.force(:,1)));
+    else
+        bumps=[tdf.pos(:,1),zeros(length(tdf.pos),2)];
+        time_step=mean(diff(tdf.pos(:,1)));
+    end
     for trial=1:length(tdf.tt)
         if tdf.tt(trial,tdf.tt_hdr.bump_time)>0
             %find the index of the bump for this trial

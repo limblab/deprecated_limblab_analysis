@@ -3,8 +3,8 @@
 
 %
 %set the mount drive to scan and convert
-folderpath='Z:\Kramer_10I1\BumpDirection\Data Raw\Post-implant\';
-matchstring='11092012';
+folderpath='C:\Users\limblab\Desktop\dail_data\10302012\';
+matchstring='10302012';
 foldercontents=dir(folderpath);
 fnames={foldercontents.name};%extracts just the names from the foldercontents
 for i=1:length(foldercontents)

@@ -1,7 +1,7 @@
-function [sub_bdf]=get_sub_trials(bdf,times)
+ function [sub_bdf]=get_sub_trials(bdf,times)
     %takes in the bdf and the start and end times for the block to be used
     %from each trial. times should be a nx2 matrix where n is the number of
-    %trials in the session. The first column should be the start time of 
+    %events in the session. The first column should be the start time of 
     %the event of interest within the trial specified by the row. the 
     %second column should be the ending time of the event. If there is no 
     %event of interest during a given trial the first column should contain
@@ -23,7 +23,7 @@ function [sub_bdf]=get_sub_trials(bdf,times)
     
     %loop through the trials
     for trial=1:length(times)
-        %disp(strcat('Working on trial #: ',num2str(trial)))
+        disp(strcat('Working on trial #: ',num2str(trial)))
         if ~(times(trial,1)==0)
             %find kinematics timestamps between the start and end times and
             %concatenate data to the end of the kinematics data in the
