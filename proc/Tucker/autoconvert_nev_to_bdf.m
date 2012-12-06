@@ -1,10 +1,11 @@
+function autoconvert_nev_to_bdf(folderpath,matchstring)
 % check a directory and run the bdf converter if unconverted files are
 % there
 
 %
-%set the mount drive to scan and convert
-folderpath='C:\Users\limblab\Desktop\dail_data\10302012\';
-matchstring='10302012';
+% %set the mount drive to scan and convert
+% folderpath='C:\Users\limblab\Desktop\dail_data\10302012\';
+% matchstring='10302012';
 foldercontents=dir(folderpath);
 fnames={foldercontents.name};%extracts just the names from the foldercontents
 for i=1:length(foldercontents)
