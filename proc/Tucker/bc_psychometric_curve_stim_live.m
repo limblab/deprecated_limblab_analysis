@@ -23,12 +23,18 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
 
 
     %get only stim trials
-    tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
+    if stimcode ~= -1
+        tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
+    else
+        tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1) ,  :);
+    end
 
     
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'))
-    disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
-    %get a list of the bump directions durign stim
+    if stimcode ~= -1
+        disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
+    end
+    %get a list of the bump directions during stim
     dirs_stim = sort(unique(tt_stim(:,tt_hdr.bump_angle)));
     disp(strcat('Found ',num2str(length(dirs_stim)),' bump directions during stim'))
     
@@ -107,12 +113,12 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
 
     
 %    H_2=figure; %cartesian plot
-    subplot(2,1,1), h1 = plot(dirs_stim,proportion_stim,'rx')
+    subplot(2,1,1), h1 = plot(dirs_stim,proportion_stim,'rx');
     hold on
 
-    subplot(2,1,1), h2 = plot(dd,reach_fit_stim,'r')
+    subplot(2,1,1), h2 = plot(dd,reach_fit_stim,'r');
 
-    subplot(2,1,2), h3 = plot(dirs_stim,number_reaches_stim,'rx')
+    subplot(2,1,2), h3 = plot(dirs_stim,number_reaches_stim,'rx');
     hold on
     
     
@@ -207,17 +213,17 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
 
     
 %    figure(H_2); %cartesian plot
-    subplot(2,1,1), h4 = plot(dirs_no_stim,proportion_no_stim,'bo')
+    subplot(2,1,1), h4 = plot(dirs_no_stim,proportion_no_stim,'bo');
     hold on;
 
-    subplot(2,1,1), h5 = plot(dd,reach_fit_no_stim,'b')
+    subplot(2,1,1), h5 = plot(dd,reach_fit_no_stim,'b');
     axis([0,370,-0.5,1.5])
-    subplot(2,1,2), h6 = plot(dirs_no_stim,number_reaches_no_stim,'bo')
+    subplot(2,1,2), h6 = plot(dirs_no_stim,number_reaches_no_stim,'bo');
     %fix the axes so that the psychometric and the reach counts use the
     %same x axis
 %    axis([0,370,0,10*(floor(max_reaches/10)+1)])
     disp(strcat('Mean reaches per direction without stim: ',num2str(mean(number_reaches_no_stim))))
     disp(strcat('Min reaches per direction without stim: ',num2str(min(number_reaches_no_stim))))
 
-    g=[h1 h2 h3 h4 h5 h6]
+    g=[h1 h2 h3 h4 h5 h6];
 end
