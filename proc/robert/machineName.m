@@ -14,4 +14,11 @@ if ispc
     else
         error('ipconfig /all was not able to resolve the machine name')
     end
+elseif ismac
+    [status,result]=unix('scutil --get ComputerName');
+    if status==0
+        name=result;
+    else
+        name='';
+    end
 end
