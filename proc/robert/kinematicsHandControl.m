@@ -152,6 +152,8 @@ TTT=zeros(size(start_reaches));
 speedProfile=cell(size(start_reaches));
 pathReversals=zeros(size(start_reaches));
 interTargetDistance=zeros(size(start_reaches));
+%temporary
+assignin('base','kinReachTimes',end_reaches)
 for n=1:length(start_reaches)
 	included_points=find(out_struct.pos(:,1)>=start_reaches(n) & ...
 		out_struct.pos(:,1)<=end_reaches(n));    

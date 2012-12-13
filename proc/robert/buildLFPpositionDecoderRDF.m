@@ -89,7 +89,7 @@ Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
 %% Input parameters to play with.
 disp('assigning tunable parameters and building the decoder...')
-numlags=10; 
+numlags=1; 
 wsz=256; 
 nfeat=150;
 % nfeat=6*size(fp,1);

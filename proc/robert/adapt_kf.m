@@ -3,14 +3,12 @@ function [adaptC,adaptR]=adapt_kf(y,init_x,init_V,A,C,Q,R,targets,binsize,words)
 % syntax [adaptC,adaptR]=adapt_kf(y,init_x,init_V,A,C,Q,R,targets,binsize,words);
 %
 %               INPUTS
-%                       y       - neural signals (currently geared for fp
-%                                 power matrix; 1 step of data).
+%                       y       - neural signals
 %                       init_x  - cursor position/velocity data from a BC
 %                                 file (1 step of data).
 %                       init_V  - initial state covariance (Q, right?)
 %                       A,C,Q,R - kalman params
 %                       targets - the target information from the BC file.
-%                                 (only next target according to time?
 %                       binsize - in seconds
 %                       words   - from the bdf struct
 %               OUTPUTS
@@ -99,11 +97,12 @@ for t=1:T
     % re-aim, for adaptation.  Recall that x is the predicted pos/vel for
     % this step.
     most_recent_word=find(words(:,1)<=binTimes(t),1,'last');
-    X_batch(1:2,batch_ctr)=x(1:2,t); % intended position always = actual position
+    X_batch([1:2 5],batch_ctr)=x([1:2 5],t); % intended position always = actual position
     Y_batch(:,batch_ctr)=y(:,t);     % neural data is just the neural data
-    if ~isempty(most_recent_word) && words(most_recent_word,2)==160 && ...
-            words(most_recent_word-1,2)==49
-        % holding.  intended velocity is zero.  
+    if ~isempty(most_recent_word) && ...    % most_recent_word must exist.  Then,
+            ((words(most_recent_word,2)==160 && words(most_recent_word-1,2)==49) || ...
+            (most_recent_word >= size(words,1))) % if between 49<->160 OR if past last word...
+        % intended holding.  intended velocity is zero.
         X_batch(3:4,batch_ctr)=[0 0]';
     else
         % aiming at the next target (i.e. not holding).  Currently only
@@ -115,25 +114,25 @@ for t=1:T
     % if we've collected enough data for a new batch update, then retrain
     % the C,R matrices.
     if batch_ctr >= batch_size
-%         updateFlag=1;
+        %         updateFlag=1;
         batch_ctr=1;
         
         % adapt C
         C_hat = Y_batch*X_batch' / (X_batch*X_batch'); %MaxLikelihood-estimate of H
-        C     = C_rho*C + (1-C_rho)*C_hat;             %sliding window average of H        
+        C     = C_rho*C + (1-C_rho)*C_hat;             %sliding window average of H
         % adapt R
         R_hat = (Y_batch - C*X_batch)*(Y_batch - C*X_batch)' / batch_size; %MaxLikelihood-estimate of Q
         R     = R_rho*R + (1-R_rho)*R_hat;                                 %sliding window average of Q
-
-%         % store X and Y data
-%         track_X(updCnt,:,:) = X_batch;
-%         track_Y(updCnt,:,:) = Y_batch;
-          
-          % updCnt is only for tracking X_batch and Y_batch
-%         updCnt = updCnt+1;
-%     else
-%         updateFlag=0;
-    end    
+        
+        %         % store X and Y data
+        %         track_X(updCnt,:,:) = X_batch;
+        %         track_Y(updCnt,:,:) = Y_batch;
+        
+        % updCnt is only for tracking X_batch and Y_batch
+        %         updCnt = updCnt+1;
+        %     else
+        %         updateFlag=0;
+    end
   else
     if isempty(ndx)
       [x(:,t), V(:,:,t), LL, VV(:,:,t)] = ...

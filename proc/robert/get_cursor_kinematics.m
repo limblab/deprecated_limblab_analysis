@@ -53,7 +53,10 @@ else
             end
         else
             varName='bdf';
-        end     % if we make it to this point we know the variable bdf exists.        
+        end     % if we make it to this point we know the variable bdf exists. 
+        animal=regexp(bdf.meta.filename,'Chewie|Mini','match','once');
+        % now, re-direct to the BDF that's on citadel
+        pathToBDF=findBDFonCitadel(regexprep(bdf.meta.filename,'\.plx','.mat'));
     else                % bdf has been passed in.
         bdf=inputItem;
         clear inputItem
