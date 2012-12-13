@@ -9,11 +9,10 @@ if ~isempty(todayDateStr)
     todayDateStr=[todayDateStr(1:2),'/',todayDateStr(3:4),'/',todayDateStr(5:end)];
 end
 
-targInd=1; hitRate=0; hitTimes=[]; hitOn=0;
-hitRate2=0; hitOn2=1; hitTimes2=[];
-intarget=0; intargetCutoff=0; failTargetCutoff=0;
+targInd=1; hitRate=0; hitTimes=[];
+hitRate2=0; hitTimes2=[];
 out_struct.targets.centers(out_struct.targets.centers(:,1)<1,:)=[];
-hitThat=zeros(size(out_struct.targets.centers,1),1);
+% hitThat=zeros(size(out_struct.targets.centers,1),1);
 face=[]; target=[];
 if showPlot
     fig=figure; set(fig,'Color',[0 0 0])
@@ -57,7 +56,7 @@ for n=1:size(out_struct.pos,1)
                 'EdgeColor','none');
         end
         targInd=targInd+1;
-        failTargetCutoff=n+190;  % makes for a cutoff time of 9.5s for safety margin
+%         failTargetCutoff=n+190;  % makes for a cutoff time of 9.5s for safety margin
     end
     
     % to take into account circumstances where the new target shows up 
