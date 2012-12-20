@@ -264,7 +264,7 @@ while running
     % now seek the next entry that either has a different code, or is inc
     % (30) time units +-1 later, whichever comes first. If a different code
     % comes first this is too soon, abort.
-    while dbI(ii) < st_time+INC...% current time is within INC-1 later than start
+    while dbI(ii) < (st_time+INC) ...% current time is within INC-1 later than start
             && (maybeC == was) &&...   % code is unchanged
             (ii < MAXraw)        % did not yet use up the raw data
         ii=ii+1;
@@ -277,7 +277,8 @@ while running
     cki=[cki ii];   % debugging variable
 
     if dbI(ii) < st_time+INC-1 && ii ~= MAXraw%
-        toosoon=1; fprintf('*code change early: %d\n',dbI(ii)-st_time) %possible error?
+        toosoon=1; 
+        %fprintf('*Index %d-%d-%d, code change early: %d\n',ii,jj,kk,dbI(ii)-st_time) %possible error?
     else
         toosoon=0;% time to pick out these nibbles
     end
