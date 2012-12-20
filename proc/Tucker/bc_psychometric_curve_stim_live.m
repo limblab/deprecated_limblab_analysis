@@ -1,4 +1,4 @@
-function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_error)
+function g = bc_psychometric_curve_stim_live(tt,tt_hdr,stimcode,plot_error,invert_error)
     % tt                Trial Table: each row is deroved frpm a databurst
     % tt_hdr         Trial Table Header: list of names and indices for the Trial Table.
     %                       Must include the fields bump_angle, trial_result and 
@@ -30,13 +30,13 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     end
 
     
-    disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'))
+    disp(['Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'])
     if stimcode ~= -1
-        disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
+        disp(['Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)])
     end
     %get a list of the bump directions during stim
     dirs_stim = sort(unique(tt_stim(:,tt_hdr.bump_angle)));
-    disp(strcat('Found ',num2str(length(dirs_stim)),' bump directions during stim'))
+    disp(['Found ',num2str(length(dirs_stim)),' bump directions during stim'])
     
     %generate a vector containing a 1 if the reach was leftward along the
     %target axis, and zero if the reach was rightward
@@ -124,16 +124,16 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     
     %display number of reach stats so the user can estimate the quality of
     %the fits
-    disp(strcat('Mean reaches per direction under stim: ',num2str(mean(number_reaches_stim))))
-    disp(strcat('Min reaches per direction under stim: ',num2str(min(number_reaches_stim))))
+    disp(['Mean reaches per direction under stim: ',num2str(mean(number_reaches_stim))])
+    disp(['Min reaches per direction under stim: ',num2str(min(number_reaches_stim))])
     
   
     %get non stim trials
     tt_no_stim=tt(( tt(:,tt_hdr.stim_trial) ~= 1 ) ,  :);
-    disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) ~= 1)),' stim trials'))
+    disp(['Found ',num2str(sum(tt(:,tt_hdr.stim_trial) ~= 1)),' stim trials'])
     
     dirs_no_stim = sort(unique(tt_no_stim(:,tt_hdr.bump_angle)));
-    disp(strcat('Found ',num2str(length(dirs_no_stim)),' bump directions during no stim'))
+    disp(['Found ',num2str(length(dirs_no_stim)),' bump directions during no stim'])
     %generate a vector containing a 1 if the reach was leftward along the
     %target axis, and zero if the reach was rightward
     %note: the following computation for the number of leftward reaches
@@ -222,8 +222,8 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     %fix the axes so that the psychometric and the reach counts use the
     %same x axis
 %    axis([0,370,0,10*(floor(max_reaches/10)+1)])
-    disp(strcat('Mean reaches per direction without stim: ',num2str(mean(number_reaches_no_stim))))
-    disp(strcat('Min reaches per direction without stim: ',num2str(min(number_reaches_no_stim))))
+    disp(['Mean reaches per direction without stim: ',num2str(mean(number_reaches_no_stim))])
+    disp(['Min reaches per direction without stim: ',num2str(min(number_reaches_no_stim))])
 
     g=[h1 h2 h3 h4 h5 h6];
 end

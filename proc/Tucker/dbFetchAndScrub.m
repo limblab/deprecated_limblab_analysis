@@ -31,7 +31,7 @@ DATABURSTSIZE=91;
 global CHAN;
 CHAN=151;
 global testclk;
-
+testclk = 0;
 fragcnt=0;
 INTERVAL = 1;       % Repeat interval for fetching raw data (seconds).
                     % This can be changed as convenient, as long as
@@ -92,7 +92,7 @@ switch mode
         try
             isstruct(Pending);
         catch
-            error 'Cannot call for update without first calling for open'
+            error 'Cannot call FetchAndScrub() for update without first calling for open'
         end
     otherwise
         help FetchAndScrub
@@ -100,7 +100,7 @@ switch mode
 end
 
 collect_time = INTERVAL; % collect samples for this many seconds
-myWait = 1;
+myWait = 1; % Number of seconds between each sub-collection interval
 t_col0 = tic; % collection timer begins
 bCollect = true; % do we need to collect?
 
@@ -118,15 +118,21 @@ while (bCollect)
         end
         raw.ts=trialdata{CHAN,2};
         raw.codes=trialdata{CHAN,3};
-        if Pending.Start_ts > 0
-            testcol=toc(testclk);
+        if Pending.Start_ts > 0 % there was previously a fragment
+            if testclk
+                testcol=toc(testclk);
+            else
+                testcol = 0;
+            end
             if min(find(raw.codes>hex2dec('F000'))) > 20
                 % there is no DATA code in the first 20 nibbles, BAIL
+                fprintf('**Had a fragment, but next data absent\n')
                 Pending = InitPending;
             else
                 % Now stitch pending and new raw data together
                 raw.ts=[Pending.ts; raw.ts+Pending.ts(numel(Pending.ts))];
                 raw.codes=[Pending.codes; raw.codes];
+                fprintf('*Stitch pending and new databurst fragments\n')
             end
         end
         % Now convert raw stream of nibbles to actual databurst
@@ -143,7 +149,7 @@ while (bCollect)
                 continue
             otherwise
                 if size(cooked,1) ~= DATABURSTSIZE
-                    fprintf('bad Databurst size = %d\n', size(cooked,1))
+                    fprintf('**bad Databurst size = %d\n', size(cooked,1))
                     Status='Discard';
                 else
                     Result = ParseData(cooked,dbFormat);
@@ -188,20 +194,21 @@ global testclk;
 INC = 30;
 Status='Success';
 cooked = [];    % Buffer for output: reconstructed databurst words
-kk=1;           % Index into cooked buffer
+kk=1;           % Index into cooked buffer, for multiple planes
 
 RawIndices = find(raw.codes>hex2dec('F000'));
 if size(RawIndices,1)==0
     Status = 'Discard';   % There are no data words in this sample
     return
 end
-if RawIndices(1)==1
+if raw.ts(RawIndices(1))<= INC
     % The first element is a databurst; this raw buffer is a fragment
     Fragment = true;
     if Pending.Start_ts == -1
         % This is NOT a continuation run; discard databurst fragment with
         % unknown beginning
         Status = 'Discard';
+        fprintf('**Discard non-continuation databurst at start of data\n')
         return
     end
 else
@@ -213,11 +220,11 @@ if raw.ts(RawIndices(numel(RawIndices))) < Pending.Start_ts + ...
         (DATABURSTSIZE-1)*INC*2
     % Here for an ending fragment. Just return, scrub this databurst after
     % it's completed via next acquisition
-    fprintf('ending fragment\n')
+    fprintf('*ending fragment\n')
     Status='Fragment';
     Pending.ts = raw.ts;
     Pending.codes = raw.codes;
-    Status='Discard';   % TODO: fix it (This mode is not working yet)
+%    Status='Discard';   % If This is not working enable the Discard option
     return
 end
 
@@ -246,43 +253,49 @@ dbI=raw.ts(RawIndices);
 running = true;
 ii = 1; % index into databurst nibble list
 jj=1;   % index into reconstructed databurst byte stream
-looking4upper = true;
+looking4upper = true;   % Each databurst byte is transmitted as 2 nibbles, lower first
 MAXraw = size(dbc,1);
-lower = dbc(ii);
+lower = dbc(ii);    % The first nibble of the first byte of the next databurst
 was = lower;
 cki=ii;     % debugging variable
 st_time = dbI(ii);  % timestamp to begin analysis for the next nibble 
-maybeC = dbc(ii);
+maybeC = dbc(ii);   % initialize the candidate for the next nibble
 while running
-    % now seek for next entry that either has a different code, or is inc
+    % now seek the next entry that either has a different code, or is inc
     % (30) time units +-1 later, whichever comes first. If a different code
     % comes first this is too soon, abort.
-    while dbI(ii) < st_time+INC-1 ...% current time is within INC-1 later than start
+    while dbI(ii) < st_time+INC...% current time is within INC-1 later than start
             && (maybeC == was) &&...   % code is unchanged
             (ii < MAXraw)        % did not yet use up the raw data
         ii=ii+1;
         maybeC = dbc(ii);
     end
-    
+    % Here when either there is a new code nibble value, or the time for
+    % the next databurst nibble is up, or the last DATA word has been
+    % copied. In all cases, maybeC now contains the next candidate code
+    % nibble.
     cki=[cki ii];   % debugging variable
-    if  ii == MAXraw  % have scrubbed all available raw data
-        Pending = InitPending();
-        if size(cooked,1) < DATABURSTSIZE
-            fprintf('cooked smaller than expected: %d\n',size(cooked,1))
+
+    if dbI(ii) < st_time+INC-1 && ii ~= MAXraw%
+        toosoon=1; fprintf('*code change early: %d\n',dbI(ii)-st_time) %possible error?
+    else
+        toosoon=0;% time to pick out these nibbles
+    end
+    
+    if dbI(ii) > st_time + 4*INC    % next raw data is for NEXT databurst
+        % Validate the previously processed "cooked" buffer
+        if jj < DATABURSTSIZE   % this is an error case
+            fprintf('**cooked smaller than expected (continuing): %d\n',jj)
             Status = 'Discard';
         end
-        return
-    end
-    % Exit loop when current time is EITHER too soon (error) or too late
-    % (next databurst)
-    if ii<MAXraw && dbI(ii) > st_time + 4*INC    % next raw data is for NEXT databurst
+        
         % save the timestamp value for start of next databurst
         Pending.Start_ts = dbI(ii);
         
         % If the remaining raw data do not make a complete databurst,
-        % put the balance of the raw buffer into Pending and return.
+        % put the raw buffer into Pending and return.
         if dbI(MAXraw) < Pending.Start_ts+(DATABURSTSIZE-1)*INC*2
-            disp('Fragment in second databurst')
+            disp('*Fragment in second databurst')
             testclk=tic;
             StartPendingIdx = find(raw.ts==dbI(ii));
             Pending.ts = raw.ts(StartPendingIdx:numel(raw.ts));
@@ -291,30 +304,58 @@ while running
             return
         end
         
-        % Here to scrub next databurst and put it in the buffer
-        jj = 1;     % Begin the next plane of the cooked buffer 
-        kk=kk+1;    
-        cooked(:,kk) = zeros(numel(cooked,1));
+        % Here begin scrub of next databurst
+        jj = 1;     % Begin the next plane of the cooked buffer
+        kk=kk+1;
+        cooked(1,kk) = 0;
         % Return to loop and process next databurst, continuing from the
         % current ii value
         % TODO: check that looking4uppper is correct on each return case
+        
+        looking4upper = true;   % Each databurst byte is transmitted as 2 nibbles, lower first
+        MAXraw = size(dbc,1);
+        lower = dbc(ii);    % The first nibble of the first byte of the next databurst
+        was = lower;
+        cki=ii;     % debugging variable
+        st_time = dbI(ii);  % timestamp to begin analysis for the next nibble
+        maybeC = dbc(ii);   % initialize the candidate for the next nibble
+        
+        continue
     end
-    if dbI(ii) < st_time+INC-1 %
-        toosoon=1; %disp('code change comes too soon')
-    else
-        toosoon=0;% time to pick out these nibbles
-    end
+    
+    % Now process the code nibble just retrieved from dbc(ii)
     if looking4upper
+        if jj > DATABURSTSIZE   % databurst is too big, abort
+            fprintf('**databurst too big: %d\n', jj)
+            status = 'Discard';
+            return
+        end
         was = maybeC;
-        cooked(jj,kk) = lower + 2^4*maybeC;
-        jj=jj+1;
+        cooked(jj,kk) = lower + bitshift(maybeC,4);
+        jj=jj+1;    % increment the "cooked" index
         looking4upper=false;
     else
         was = maybeC;
         lower = maybeC;
         looking4upper = true;
     end
-    st_time = dbI(ii);  % timestamp to begin analysis for the next nibble 
+    
+    % Exit loop when current time is EITHER too soon (error) or too late
+    % (next databurst)
+    if  ii == MAXraw  % have scrubbed all available raw data
+        % Note that the scenario of a starting fragment of a databurst was
+        % handled above, where status='Fragment' was returned
+        Pending = InitPending();
+        if jj < DATABURSTSIZE   % this is an error case
+            fprintf('**cooked smaller than expected (end): %d\n',jj)
+            Status = 'Discard';
+        end
+        return
+    end
+
+    st_time = dbI(ii);  % timestamp for last nibble analyzed
+    ii = ii+1;  % get next raw item for "while" loop above
+    maybeC = dbc(ii);
 end
 
 end     % END FUNCTION ScrubData()
