@@ -78,7 +78,7 @@ for ii=1:MAXCOUNT
     tt1(:,jj)=zeros(TT_HDR_SIZE,1);
     [tt, Pending] = dbFetchAndScrub('update',dbfmt, Pending);
     tt1(1:size(tt,1),jj:jj+size(tt,2)-1)= tt;
-    %% Now generate psychometric plots. Not evey handle is populated at each call.    
+    %% Now generate psychometric plots. Not every handle is populated at each call.    
     handle_list = bc_psychometric_curve_stim_live(tt1', tt_hdr,0,0,0);
     LINELIST(ii,1:numel(handle_list)) = handle_list;
     % Only keep the last KEEPCOUNT plots
