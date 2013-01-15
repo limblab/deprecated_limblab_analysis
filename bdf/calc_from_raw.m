@@ -238,11 +238,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
                         -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
                 rotcal = [1 0; 0 1];                
-%                 force_offsets = [-1888.095 -1160.662 1032.623...
-%                     -998.567 809.171 2836.314];
-%                 force_offsets = [-17571 -1142 12253 -503 7933 3431];
-%                force_offsets = [-4832.043 -1255.338 1743.942 -862.4445 4447.589 3101.556];
-                force_offsets = [0.8037 4.4688 -2.7120 0.8098 -2.0340 1.5826];%these offsets computed oct 2, 2012
+                force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
                 Fy_invert = 1;
             end 
             
@@ -251,7 +247,6 @@ function out_struct = calc_from_raw(raw_struct, opts)
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
                 a_data = double(get_analog_signal(out_struct, channame));   
-%                 mean(a_data(find(a_data(:,1)>40,1,'first'):find(a_data(:,1)<41,1,'last'),2))
                 a_data(:,2) = filtfilt(b, a, a_data(:,2));
                 a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
                 
@@ -263,7 +258,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
             clear force_offsets; % cleanup a little
             out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
             for p = 1:size(out_struct.force, 1)                
-                r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
+                r = [cos(-th_2_adj(p)) sin(th_2_adj(p)); -sin(th_2_adj(p)) cos(th_2_adj(p))];
+                % Modified rotation matrix on Jan 15, 2013. Old matrix was
+                % incorrect, rotating handle force with respect to shoulder
+                % and not elbow as it should.
                 out_struct.force(p,:) = out_struct.force(p,:) * r;
             end
 
