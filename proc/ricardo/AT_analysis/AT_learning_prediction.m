@@ -3,8 +3,8 @@ percent_training = 0;
 training_step = 0;
 last_percent_training = zeros(num_repetitions,1);
 reward_ratio = zeros(num_repetitions,1);
-actual_rewards = 212;
-actual_fails = 185;
+actual_rewards = 188;
+actual_fails = 86;
 num_trials = actual_rewards+actual_fails;
 
 for iRep = 1:num_repetitions
@@ -40,7 +40,7 @@ learned_ratio = bins_reward(find(cum_reward_ratio>.95,1,'first'));
 actual_ratio = actual_rewards/num_trials;
 hold on
 plot([actual_ratio actual_ratio],[0 1],'-r')
-p_learned = cum_reward_ratio(find(cum_reward_ratio>actual_ratio,1,'first'))
+p_learned = cum_reward_ratio(find(actual_ratio>cum_reward_ratio,1,'last'))
 plot([std_bounds(1) std_bounds(1)],[0 1],'-b')
 plot([std_bounds(2) std_bounds(2)],[0 1],'-b')
 % std(reward_ratio)

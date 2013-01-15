@@ -121,13 +121,24 @@ for iTrial = 1:num_trials
 end
 
 remove_index = [];
-remove_index = find(isnan(trial_table(:,tc.x_offset)) | isnan(trial_table(:,tc.t_ct_on)));
+remove_index = find(isnan(trial_table(:,tc.x_offset)) | isnan(trial_table(:,tc.t_ct_on)) |...
+    (trial_table(:,tc.result)==32 & isnan(trial_table(:,tc.t_ct_hold_on))));
 for iCol = 9:length(fieldnames(tc))    
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
     remove_index = [remove_index temp'];
 end
 remove_index = unique(remove_index);
 trial_table(remove_index,:) = [];
+
+trial_table(:,tc.bump_direction) = mod(trial_table(:,tc.bump_direction),2*pi);
+temp = round(trial_table(:,tc.bump_direction)*180/pi);
+temp(temp==360) = 0;
+trial_table(:,tc.bump_direction) = temp*pi/180;
+
+trial_table(:,tc.moving_dots_direction) = mod(trial_table(:,tc.moving_dots_direction),2*pi);
+temp = round(trial_table(:,tc.moving_dots_direction)*180/pi);
+temp(temp==360) = 0;
+trial_table(:,tc.moving_dots_direction) = temp*pi/180;
 
 % remove_index = [];
 % for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
