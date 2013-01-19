@@ -8,7 +8,7 @@ Batchinput = 2;
 Usefeatmat = 0;
 %Usefeatmat = 1 if loading featMat for decoding
 
-Monkeys = [{Chewie_LFP1filenames}];
+Monkeys = [{Mini_LFP1filenames}];
 
 direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
 %Set directory to desired directory
@@ -32,148 +32,148 @@ lambda = 1;
 %%% Begin building Single Feature Decoders %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for m = 1%:length(Monkeys)
+for m = 2%:length(Monkeys)
     
     featindBEST = Onlinefeatind(:,m);
     
-    if Batchinput == 1 % Remember to clear featind if building decoders on diff feat
-        
-        
-        direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
-        Set directory to desired directory
-        cd(direct);
-        
-        Days=dir(direct);
-        Days(1:2)=[];
-        DaysNames={Days.name};
-        
+%     if Batchinput == 1 % Remember to clear featind if building decoders on diff feat
+%         
+%         
+%         direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
+%         Set directory to desired directory
+%         cd(direct);
+%         
+%         Days=dir(direct);
+%         Days(1:2)=[];
+%         DaysNames={Days.name};
+%         
+%         MATfiles = DaysNames;
+%         
+%     elseif Batchinput == 2
+%         %
+%         %         DaysNames = [{kinStructOut.name}'
+%         %         {kinStructOut.decoder_age}'];
+        DaysNames = Monkeys{1};
         MATfiles = DaysNames;
-        
-    elseif Batchinput == 2
-        %
-        %         DaysNames = [{kinStructOut.name}'
-        %         {kinStructOut.decoder_age}'];
-        DaysNames = Monkeys{m};
-        MATfiles = DaysNames;
-        %         DaysNames = DaysNames(cellfun(@isnan,{kinStructOut.decoder_age})==0,:); % %
-        %         direct = 'C:\Documents andSettings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
-        
-    end
-    
-    %% Begin iterating through files
-    
-    for l=1%:length(MATfiles)
-        if Batchinput == 1
-            fnam = MATfiles{l}
-            sname=[direct,'\','Decoders','\',fnam];
-            load(fnam);
-            
-        elseif Batchinput == 2
-            fnam =  findBDFonCitadel(DaysNames{l})
-            sname=[direct,'\',DaysNames{l}];
-            try
-                load(fnam)
-            catch exception
-                continue
-            end
-            
-        end
-        
-        if exist('out_struct','var')
-            bdf = out_struct;
-            clear out_struct
-        end
-        
-        if Usefeatmat == 0
-            try
-                [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,...
-                    fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
-            catch exception
-                continue
-            end
-        elseif Usefeatmat == 1
-            if exist('featindBEST','var')
-                featMat = featMat(:,featindBEST(1:nfeat))';
-            end
-            sig = y;
-            adfreq = 2000;
-            samplerate = 2000;
-            fp = [];
-            numberOfFps = 94;
-            fp_start_time = [];
-            fp_stop_time = [];
-            fptimes = [];
-            analog_time_base = [];
-        end
-        
-        %% Create directory for decoder outputs
-        if Batchinput == 1 && l == 1
-            mkdir('Decoders')
-            sname=[direct,'\','Decoders','\',fnam];
-            
-        elseif Batchinput == 1 && l ~= 1
-            sname=[direct,'\','Decoders','\',fnam];
-            
-        elseif Batchinput == 2
-            sname=[direct,'\',DaysNames{l}];
-        end
-        
-        %% Determine which type of decoding is being done
-        
-        if exist('Hbest','var') && exist('featindBEST','var')
-            % Use if inputting a decoder, also don't 'clear' H in loop
-            H = Hbest;
-            featind = featindBEST;
-            P = Pbest;
-            disp('Warning: A decoder already exists and is being Batchinput for predictions')
-            
-        elseif exist('featindBEST','var') && ~exist('Hbest','var')
-            % If not inputting H matrix but using the same features to
-            % build decoder (pseudo decoder case)
-            H = [];
-            P = [];
-            featind = featindBEST;
-            nfeat = length(featind);
-            disp('Warning: featureind already exists or was not cleared in loop')
-            
-        else
-            % If not Batchinputting H matrix, and make sure featind is not input to decoder fxn
-            H = [];
-            featind = [];
-            P = [];
-        end
-        
-        %% Run Prediction Code
-        [vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,...
-            y,featMat,ytnew,xtnew,predtbase,~,featind] =... %,sr]...
-            MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
-            samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-            Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,[]);
-        
-        H_SingleUnits(:,l,m) = H';
-        %P_SingleUnits{l} = P;
-        
-        %% Save output
-        save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),'poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize','predtbase');
-        
-        clear v* y* x* r* best* bdf out_struct featind...
-            sig numberOfFps samplerate fp fptimes analog_time_base fnam words
-        
-        clear H featind P
-        %clear Hbest featindBEST Pbest if building decoders on different
-        % features/decoders
-        close all
-        
-    end
-    
-    clear featind H
-    %if using decoder from online LFP control/building pseudo decoders
-    
-    %clear Hbest & featindBEST & Pbest if building decoders on different
-    %features/decoders
-    
-    clear sig fp fptimes analog_time_base fnam words
-    
+%         %         DaysNames = DaysNames(cellfun(@isnan,{kinStructOut.decoder_age})==0,:); % %
+%         %         direct = 'C:\Documents andSettings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
+%         
+%     end
+%     
+%     %% Begin iterating through files
+%     
+%     for l=1%:length(MATfiles)
+%         if Batchinput == 1
+%             fnam = MATfiles{l}
+%             sname=[direct,'\','Decoders','\',fnam];
+%             load(fnam);
+%             
+%         elseif Batchinput == 2
+%             fnam =  findBDFonCitadel(DaysNames{l})
+%             sname=[direct,'\',DaysNames{l}];
+%             try
+%                 load(fnam)
+%             catch exception
+%                 continue
+%             end
+%             
+%         end
+%         
+%         if exist('out_struct','var')
+%             bdf = out_struct;
+%             clear out_struct
+%         end
+%         
+%         if Usefeatmat == 0
+%             try
+%                 [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,...
+%                     fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
+%             catch exception
+%                 continue
+%             end
+%         elseif Usefeatmat == 1
+%             if exist('featindBEST','var')
+%                 featMat = featMat(:,featindBEST(1:nfeat))';
+%             end
+%             sig = y;
+%             adfreq = 2000;
+%             samplerate = 2000;
+%             fp = [];
+%             numberOfFps = 94;
+%             fp_start_time = [];
+%             fp_stop_time = [];
+%             fptimes = [];
+%             analog_time_base = [];
+%         end
+%         
+%         %% Create directory for decoder outputs
+%         if Batchinput == 1 && l == 1
+%             mkdir('Decoders')
+%             sname=[direct,'\','Decoders','\',fnam];
+%             
+%         elseif Batchinput == 1 && l ~= 1
+%             sname=[direct,'\','Decoders','\',fnam];
+%             
+%         elseif Batchinput == 2
+%             sname=[direct,'\',DaysNames{l}];
+%         end
+%         
+%         %% Determine which type of decoding is being done
+%         
+%         if exist('Hbest','var') && exist('featindBEST','var')
+%             % Use if inputting a decoder, also don't 'clear' H in loop
+%             H = Hbest;
+%             featind = featindBEST;
+%             P = Pbest;
+%             disp('Warning: A decoder already exists and is being Batchinput for predictions')
+%             
+%         elseif exist('featindBEST','var') && ~exist('Hbest','var')
+%             % If not inputting H matrix but using the same features to
+%             % build decoder (pseudo decoder case)
+%             H = [];
+%             P = [];
+%             featind = featindBEST;
+%             nfeat = length(featind);
+%             disp('Warning: featureind already exists or was not cleared in loop')
+%             
+%         else
+%             % If not Batchinputting H matrix, and make sure featind is not input to decoder fxn
+%             H = [];
+%             featind = [];
+%             P = [];
+%         end
+%         
+%         %% Run Prediction Code
+%         [vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,...
+%             y,featMat,ytnew,xtnew,predtbase,~,featind] =... %,sr]...
+%             MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
+%             samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
+%             Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,[]);
+%         
+%         H_SingleUnits(:,l,m) = H';
+%         %P_SingleUnits{l} = P;
+%         
+%         %% Save output
+%         save([sname,'tik6 velpred ',num2str(nfeat),' feats lambda',num2str(lambda),'poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize','predtbase');
+%         
+%         clear v* y* x* r* best* bdf out_struct featind...
+%             sig numberOfFps samplerate fp fptimes analog_time_base fnam words
+%         
+%         clear H featind P
+%         %clear Hbest featindBEST Pbest if building decoders on different
+%         % features/decoders
+%         close all
+%         
+%     end
+%     
+%     clear featind H
+%     %if using decoder from online LFP control/building pseudo decoders
+%     
+%     %clear Hbest & featindBEST & Pbest if building decoders on different
+%     %features/decoders
+%     
+%     clear sig fp fptimes analog_time_base fnam words
+%     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Test single feature decoders on test set %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -212,7 +212,7 @@ for m = 1%:length(Monkeys)
             y,featMat,ytnew,xtnew,predtbase,P,featind] =... %,sr]...
             MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
             samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-            Use_Thresh,H_SingleUnits(:,1,m),words,emgsamplerate,lambda,0,featind,0,[]);
+            Use_Thresh,H_SingleUnits(:,1,1),words,emgsamplerate,lambda,0,featind,0,[]);
         
         close all
         
@@ -227,7 +227,7 @@ for m = 1%:length(Monkeys)
     end
 end
 
-%%% Plot code
+%% Plot code
 
 for q = 1:size(Onlinefeatind,2)
     
@@ -262,10 +262,10 @@ r2_Y_SingleUnitsFirstFileDec1_HC = [r2_Y_SingleUnitsFirstFile bestf_bychan(:,1)]
 
 r2_X_SingleUnitsFirstFileDec1_HCSorted = sortrows(r2_X_SingleUnitsFirstFileDec1_HC,[size(r2_X_SingleUnitsFirstFileDec1_HC,2) -1]);
 r2_Y_SingleUnitsFirstFileDec1_HCSorted = sortrows(r2_Y_SingleUnitsFirstFileDec1_HC,[size(r2_Y_SingleUnitsFirstFileDec1_HC,2) -1]);
-imagesc(sqrt(r2_X_SingleUnitsFirstFileDec1_HCSorted(:,1:end-1)));figure(gcf);
+imagesc(sqrt(r2_X_SingleUnitsFirstFileDec1_HCSorted(:,1:end-2)));figure(gcf);
 title('X Vel Single Feature Dec 1 First File Performance Hand Control-- Chewie')
 
-imagesc(sqrt(r2_X_SingleUnitsFirstFileDec1_HCSorted(:,First_File_Index(:))));figure(gcf);
+%imagesc(sqrt(r2_X_SingleUnitsFirstFileDec1_HCSorted(:,First_File_Index(:))));figure(gcf);
 % set(gca,'YTick',[1,78,98,123],'YTickLabel',{'LMP','Delta','130-200','200-300'})
 % set(gca,'YTick',[1,84,124,126,138],'YTickLabel',{'LMP','Delta','Mu','130-200','200-300'})
 % set(gca,'YTick',[1,87,124,128,137],'YTickLabel',{'LMP','Delta','70-110','130-200','200-300'})
@@ -276,9 +276,9 @@ caxis([0 .6])
 % set(gca,'YTick',[1,72,121,137],'YTickLabel',{'LMP','Delta','130-200','200-300'})
 figure;
 %r2_Y_SingleUnitsFirstFileAvgDec1_HCSorted = sortrows(r2_Y_SingleUnitsFirstFileAvgDec1_HC,[length(r2_Y_SingleUnitsFirstFileAvgDec1_HC) -8]);
-imagesc(sqrt(r2_Y_SingleUnitsFirstFileDec1_HCSorted(:,1:end-1)));figure(gcf);
-figure;
-imagesc(sqrt(r2_Y_SingleUnitsFirstFileDec1_HCSorted(:,First_File_Index(:))));figure(gcf);
+imagesc(sqrt(r2_Y_SingleUnitsFirstFileDec1_HCSorted(:,1:end-2)));figure(gcf);
+%figure;
+%imagesc(sqrt(r2_Y_SingleUnitsFirstFileDec1_HCSorted(:,First_File_Index(:))));figure(gcf);
 title('Y Vel Single Feature Dec 1 First File Performance Hand Control -- Chewie')
 % set(gca,'YTick',[1,72,121,137],'YTickLabel',{'LMP','Delta','130-200','200-300'})
 % set(gca,'XTick',[1:4:96],'XTickLabel',{Chewie_LFP1_FirstFileNames{1:4:96,2}})

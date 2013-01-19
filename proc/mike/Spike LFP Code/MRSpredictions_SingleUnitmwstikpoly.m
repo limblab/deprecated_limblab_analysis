@@ -17,11 +17,11 @@ function [vaf, vmean,vsd,y_test,y_pred,varargout] = predictions_mwstikpoly(bdf, 
 % 1: fnam
 % 2: emglpf emg low pass filter
 
-emglpf=5; %default 
+emglpf=5; %default
 if length(varargin)>0
     fnam=varargin{1};
     if length(varargin)>1
-        emglpf=varargin{2}; 
+        emglpf=varargin{2};
         if ~isempty(varargin{3})
             H=varargin{3};
             if ~isempty(varargin{4})
@@ -31,9 +31,9 @@ if length(varargin)>0
                 end
             end
         elseif ~isempty(varargin{4})
-                P=varargin{4};
+            P=varargin{4};
         elseif ~isempty(varargin{5})
-                neuronIDs=varargin{5};
+            neuronIDs=varargin{5};
         end
     end
     
@@ -50,7 +50,7 @@ elseif strcmpi(signal, 'force')
 elseif strcmpi(signal,'emg')
     y=bdf.emg.data(:,2:end);
     %Rectify and filter emg
-
+    
     EMG_hp = 50; % default high pass at 50 Hz
     EMG_lp = emglpf; % default low pass at 10 Hz
     if isfield(bdf.emg,'emgfreq')
@@ -71,7 +71,7 @@ elseif strcmpi(signal,'emg')
     if isfield(bdf.emg,'ts')
         temg=bdf.emg.ts;
     else
-    temg=(1/emgsamplerate):(1/emgsamplerate):(bdf.meta.duration);   %emg time vector
+        temg=(1/emgsamplerate):(1/emgsamplerate):(bdf.meta.duration);   %emg time vector
     end
 else
     error('Unknown signal requested');
@@ -80,60 +80,109 @@ end
 k=1;
 if exist('neuronIDs','var')
     if isempty(cells);
-    cells = unit_list(bdf);
-    if size(cells,1) > size(neuronIDs,1) 
-        newcells = zeros(size(neuronIDs,1),2);
-        for i = 1:size(neuronIDs,1)
-            for j = 1:size(cells,1)
-                if cells(j,:) == neuronIDs(i,:)
-                    newcells(i,:) = neuronIDs(i,:);
+        cells = unit_list(bdf,0);
+        if size(cells,1) > size(neuronIDs,1)
+            newcells = zeros(size(neuronIDs,1),2);
+            for i = 1:size(neuronIDs,1)
+                for j = 1:size(cells,1)
+                    if cells(j,:) == neuronIDs(i,:)
+                        newcells(i,:) = neuronIDs(i,:);
+                    end
+                end
+            end
+        else
+            newcells = zeros(size(cells,1),2);
+            for i = 1:size(cells,1)
+                for j = 1:size(neuronIDs,1)
+                    if (cells(i,1) == neuronIDs(j,1)) && (cells(i,2) == neuronIDs(j,2)) && (j <= size(cells,1))
+                        newcells(j,:) = neuronIDs(j,:);
+                    end
                 end
             end
         end
+        
+        for j = 1:size(newcells,1)
+            if exist('H','var')  && newcells(j,1) == 0;
+                if iscell(H)
+                    H{j} = zeros(10,2);
+                else
+                    H((j-1)*10+1:(j-1)*10+10,:) = zeros(10,2);
+                end
+            end
+        end
+        
+        if exist('H','var') && size(cells,1) < size(neuronIDs,1)
+            if iscell(H)
+                H = H(1:size(newcells,1));
+            else
+                H = H(1:size(newcells,1)*10,:);
+            end
+        end
+        
+        clear cells
+        cells = newcells;
     else
-        newcells = zeros(size(cells,1),2);
-        for i = 1:size(cells,1)
-            for j = 1:size(neuronIDs,1)
-                if (cells(i,1) == neuronIDs(j,1)) && (cells(i,2) == neuronIDs(j,2)) && (j <= size(cells,1))
-                    newcells(j,:) = neuronIDs(j,:);
+        if size(cells,1) > size(neuronIDs,1)
+            newcells = zeros(size(neuronIDs,1),2);
+            for i = 1:size(neuronIDs,1)
+                for j = 1:size(cells,1)
+                    if cells(j,:) == neuronIDs(i,:)
+                        newcells(i,:) = neuronIDs(i,:);
+                    end
+                end
+            end
+        else
+            newcells = zeros(size(cells,1),2);
+            for i = 1:size(cells,1)
+                for j = 1:size(neuronIDs,1)
+                    if (cells(i,1) == neuronIDs(j,1)) && (cells(i,2) == neuronIDs(j,2)) && (j <= size(cells,1))
+                        newcells(j,:) = neuronIDs(j,:);
+                    end
                 end
             end
         end
-    end
-
-    for j = 1:size(newcells,1)
-        if exist('H','var')  && newcells(j,1) == 0;
-            H((j-1)*10+1:(j-1)*10+10,:) = zeros(10,2);
-        end     
-    end
-
-    if exist('H','var') && size(cells,1) < size(neuronIDs,1)
-        H = H(1:size(newcells,1)*10,:);
-    end
-
-    clear cells
-    cells = newcells;
+        
+        for j = 1:size(newcells,1)
+            if exist('H','var')  && newcells(j,1) == 0;
+                if iscell(H)
+                    H{j} = zeros(10,2);
+                else
+                    H((j-1)*10+1:(j-1)*10+10,:) = zeros(10,2);
+                end
+            end
+        end
+        
+        if exist('H','var') && size(cells,1) < size(neuronIDs,1)
+            if iscell(H)
+                H = H(1:size(newcells,1));
+            else
+                H = H(1:size(newcells,1)*10,:);
+            end
+        end
+        
+        clear cells
+        cells = newcells;
     end
 else
     cells = unit_list(bdf);
 end
 
-binsamprate=floor(1/binsize); 
+binsamprate=floor(1/binsize);
 % Using binsize ms bins
 
 if strcmpi(signal,'vel') ||  strcmpi(signal, 'pos') ||  strcmpi(signal, 'acc')
-t = bdf.vel(1,1):binsize:bdf.vel(end,1);
+    t = bdf.vel(1,1):binsize:bdf.vel(end,1);
 end
 if strcmpi(signal,'emg')
-%     if isfield(bdf.emg,'ts')
-%     t = bdf.emg.ts(1):binsize:bdf.emg.ts(end);
+    %     if isfield(bdf.emg,'ts')
+    %     t = bdf.emg.ts(1):binsize:bdf.emg.ts(end);
     t=temg(1):binsize:temg(end);
     if t(1)<temg(1)
         t(1)=temg(1);   %Do this to avoid NaNs when interpolating
     end
     y=interp1(temg',y,t);   %if y is a n by 4 matrix then interp will work
 else
-y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
+    y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
 end
 
 x = zeros(length(y), length(cells));
@@ -151,8 +200,8 @@ end
 % Find active regions
 
 if ~strcmpi(signal,'emg')
-q = find_active_regions_words(bdf.words,bdf.vel(:,1));
-q = interp1(bdf.vel(:,1), q, t);
+    q = find_active_regions_words(bdf.words,bdf.vel(:,1));
+    q = interp1(bdf.vel(:,1), q, t);
 else
     q=ones(size(t))';
 end
@@ -164,7 +213,7 @@ t = t(:,q==1)';
 vaf = zeros(folds,size(y,2));
 r2 = zeros(folds,size(y,2));
 fold_length = floor(length(y) ./ folds);
-    
+
 t_final = zeros(length(t)-9*folds,1);
 
 for i = 1:size(x,2)
@@ -176,63 +225,63 @@ for i = 1:size(x,2)
     t_fold = t;
     
     %% subtract off the mean to reduce offset
-%     y_train = y_train - repmat(mean(y_train),size(y_train,1),1);
-%     y_test{i}= y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
-%     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
-%     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
-%   
+    %     y_train = y_train - repmat(mean(y_train),size(y_train,1),1);
+    %     y_test{i}= y_test{i} - repmat(mean(y_test{i}),size(y_test{i},1),1);
+    %     x_test{i} = x_test{i} - repmat(mean(x_test{i}),size(x_test{i},1),1);
+    %     x_train = x_train - repmat(mean(x_train),size(x_train,1),1);
+    %
     if ~exist('H','var')
         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
-    
+        
         [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test,H{i},numsides,binsamprate,y_test);
-    
+        
     elseif exist('H','var') && length(H) < i
         
         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,binsamprate);
-    
+        
         [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test,H{i},numsides,binsamprate,y_test);
-    
+        
     else
         
         [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test,H{i},numsides,binsamprate,y_test);
-    
+        
     end
     %%Polynomial section
-               
+    
     T=[];
     patch = [];
     
     if  PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity
         for z=1:size(y_pred{i},2)
-            if Use_Thresh           
+            if Use_Thresh
                 %Find Threshold
                 T_default = 1.25*std(y_pred{i}(:,z));
                 [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
                 IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
-
+                
                 %Apply Threshold to linear predictions and Actual Data
                 PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
                 ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
-
-                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
+                
+                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial
                 Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
-                                 (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
+                    (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
                 Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
-
+                
                 %Find Polynomial to Thresholded Data
                 if exist('P','var')
-                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+                    [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
                 end
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%% Use only one of the following 2 lines:
                 %
                 %   1-Use the threshold only to find polynomial, but not in the model data
-                T=[]; patch=[];                
+                T=[]; patch=[];
                 %
                 %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
+                %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             elseif ~exist('P','var')
@@ -244,12 +293,12 @@ for i = 1:size(x,2)
     end
     %%
     if exist('v','var')
-    vaftr(i,:)=v/100;
+        vaftr(i,:)=v/100;
     end
-%     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
-%     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
+    %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
+    %     vaf(i,:) = 1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
-
+    
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
         if size(r{i,j},2)>1
@@ -258,14 +307,14 @@ for i = 1:size(x,2)
             r2(i,j)=r{i,j}^2;
         end
     end
-
+    
 end
 
 t_final = t_final(t_final~=0,1);
 
 if (vaf(9,1)-vaf(10,1))>0.5
-vmean=mean(vaf(1:9,:));
-vsd=std(vaf(1:9,:));
+    vmean=mean(vaf(1:9,:));
+    vsd=std(vaf(1:9,:));
 else
     vmean=mean(vaf);
     vsd=std(vaf);
@@ -276,7 +325,7 @@ if (r2(9,1)-r2(10,1))>0.5    %if big disparity in last fold, don't include it in
     r2sd=std(r2(1:9,:));
 else
     r2mean=mean(r2);
-r2sd=std(r2);
+    r2sd=std(r2);
 end
 
 % snam=[fnam,signal,' predict tikpoly.mat'];
@@ -310,9 +359,9 @@ if nargout>5
                         varargout(10)={0};
                     end
                     
-%                     if nargout>15
-%                         varargout{11}=t_final;
-%                     end
+                    %                     if nargout>15
+                    %                         varargout{11}=t_final;
+                    %                     end
                 end
             end
         end
@@ -321,17 +370,17 @@ if nargout>5
 end
 
 
-function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
-
-    thresholding = 1;
-    h = figure;
-    xT = [0 length(LinPred)];
-    offset = mean(LinPred)-mean(ActualData);
-    LinPred = LinPred-offset;
-    Tsup=mean(LinPred)+T;
-    Tinf=mean(LinPred)-T;
-    patch = mean(ActualData);
-    
+    function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
+        
+        thresholding = 1;
+        h = figure;
+        xT = [0 length(LinPred)];
+        offset = mean(LinPred)-mean(ActualData);
+        LinPred = LinPred-offset;
+        Tsup=mean(LinPred)+T;
+        Tinf=mean(LinPred)-T;
+        patch = mean(ActualData);
+        
         while thresholding
             hold off; axis('auto');
             plot(ActualData,'b');
@@ -385,7 +434,7 @@ function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
         Tinf = Tinf+offset;
         patch = patch+offset;
         
-    close(h);
-end
+        close(h);
+    end
 end
 
