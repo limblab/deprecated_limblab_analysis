@@ -1,0 +1,21 @@
+FilesCounter = 1;
+j = 1;
+
+for i = 1:length(Chewie_filenames_reduced)-1
+    
+    
+    if strcmp(Chewie_filesnames_reduced{i}(1:25),Chewie_filesnames_reduced{i+1}(1:25))== 1
+        
+        r2_X_SingleUnitsSorted_DayAvg(:,j) = r2_X_SingleUnitsSorted_Final(:,i) +  r2_X_SingleUnitsSorted_Final(:,i+1);
+        
+        FilesCounter = FilesCounter +1;
+        
+    else
+        r2_X_SingleUnitsSorted_DayAvg(:,j) = r2_X_SingleUnitsSorted_DayAvg(:,j)/FilesCounter;
+        
+        FilesCounter = 1;
+        j = j+1;
+        
+        r2_X_SingleUnitsSorted_DayAvg(:,j) = r2_X_SingleUnitsSorted_Final(:,i);
+    end
+end
