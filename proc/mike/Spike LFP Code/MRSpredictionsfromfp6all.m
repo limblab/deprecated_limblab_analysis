@@ -1,5 +1,5 @@
 function [vaf,vmean,vsd,y_test,y_pred,varargout] = MRSpredictionsfromfp6allDecoderBuild(sig, signal, numfp, ...
-	binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
+    binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
 %2009-07-10 Marc predicts MIMO from field potentials
@@ -26,7 +26,7 @@ function [vaf,vmean,vsd,y_test,y_pred,varargout] = MRSpredictionsfromfp6allDecod
 
 %Polynomial order is the order of polynomial to use. Use_Thresh: default is
 %0 (no threshold); setting to 1 uses a threshold to determine how to fit
-%the polynomial (but not to decode with it). 
+%the polynomial (but not to decode with it).
 %numsides should be 1 for causal predictions (2 for acausal).
 
 %modified 9/24/10 to get rid of 1st samples the length of the filter and to
@@ -38,21 +38,21 @@ if length(varargin)>0
     wsz=varargin{1};
     if length(varargin)>1
         nfeat=varargin{2};
-        if length(varargin)>2 
+        if length(varargin)>2
             PolynomialOrder=varargin{3};    %for Wiener Nonlinear cascade
             if length(varargin)>3
                 Use_Thresh=varargin{4};
-                if length(varargin)>4 
+                if length(varargin)>4
                     if ~isempty(varargin{5})
                         H=varargin{5};
                         if length(varargin)>5
                             words=varargin{6};
                             if length(varargin)>6
                                 emgsamplerate=varargin{7};
-                                 if length(varargin)>7
-                                     lambda=varargin{8};
-                                     if length(varargin)>8
-                                         smoothfeats=varargin{9};
+                                if length(varargin)>7
+                                    lambda=varargin{8};
+                                    if length(varargin)>8
+                                        smoothfeats=varargin{9};
                                         if length(varargin)>9 && ~isempty(varargin{10})
                                             featind=varargin{10};
                                             if length(varargin)>10 && ~isempty(varargin{11})
@@ -62,8 +62,8 @@ if length(varargin)>0
                                                 end
                                             end
                                         end
-                                     end
-                                 end
+                                    end
+                                end
                             end
                         end
                     else
@@ -77,14 +77,14 @@ if length(varargin)>0
                                     if length(varargin)>9 && ~isempty(varargin{10})
                                         featind=varargin{10};
                                         if length(varargin)>10 && ~isempty(varargin{11})
-                                                    featMat = varargin{11};
+                                            featMat = varargin{11};
                                         end
                                     end
                                 end
                             end
                         end
                     end
-                end                   
+                end
             else
                 Use_Thresh=0;
             end
@@ -92,109 +92,109 @@ if length(varargin)>0
             PolynomialOrder=0;
             Use_Thresh=0;
         end
-%         words=varargin{3};
+        %         words=varargin{3};
     end
 end
 if ~exist('smoothfeats','var')
     smoothfeats=0;  %default to no smoothing
 end
 
-if ~exist('featMat','var')
+
+if (strcmpi(signal,'vel') || (strcmpi(signal,'pos')) || (strcmpi(signal,'acc')))
+    y=sig(:,2:3);
+elseif strcmpi(signal,'emg')
+    y=sig;
+    %Rectify and filter emg
     
-    if (strcmpi(signal,'vel') || (strcmpi(signal,'pos')) || (strcmpi(signal,'acc')))
-        y=sig(:,2:3);
-    elseif strcmpi(signal,'emg')
-        y=sig;
-        %Rectify and filter emg
-
-        EMG_hp = 50; % default high pass at 50 Hz
-        EMG_lp = 5; % default low pass at 10 Hz
-        if ~exist('emgsamplerate','var')
-            emgsamplerate=1000; %default
-        end
-
-        [bh,ah] = butter(2, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
-        [bl,al] = butter(2, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
-        tempEMG=y;
-        tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
-        tempEMG = abs(tempEMG); %rectify
-        y = filtfilt(bl,al,tempEMG); %lowpass filter
+    EMG_hp = 50; % default high pass at 50 Hz
+    EMG_lp = 5; % default low pass at 10 Hz
+    if ~exist('emgsamplerate','var')
+        emgsamplerate=1000; %default
+    end
+    
+    [bh,ah] = butter(2, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
+    [bl,al] = butter(2, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
+    tempEMG=y;
+    tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
+    tempEMG = abs(tempEMG); %rectify
+    y = filtfilt(bl,al,tempEMG); %lowpass filter
     %     if ~exist('temg','var')
     %         temg=1/emgsamplerate:(1/emgsamplerate):(length(sig)*(samprate/emgsamplerate));
     %     end
-    else
-        y=sig;
-    end
-    samp_fact=1000/samprate;
-    %% Adjust the size of fp to make sure same number of samples as analog
-    %% signals
+else
+    y=sig;
+end
+samp_fact=1000/samprate;
+%% Adjust the size of fp to make sure same number of samples as analog
+%% signals
 
-    disp('fp adjust')
-    toc
-    tic
-    bs=binsize*samprate;    %This assumes binsize is in seconds.
-    numbins=floor(length(fptimes)/bs);   %Number of bins total
-    binsamprate=floor(1/binsize);   %sample rate due to binning (for MIMO input)
-    if ~exist('wsz','var')
-        wsz=256;    %FFT window size
-    end
+disp('fp adjust')
+toc
+tic
+bs=binsize*samprate;    %This assumes binsize is in seconds.
+numbins=floor(length(fptimes)/bs);   %Number of bins total
+binsamprate=floor(1/binsize);   %sample rate due to binning (for MIMO input)
+if ~exist('wsz','var')
+    wsz=256;    %FFT window size
+end
 
-        %MRS modified 12/13/11
-        % Using binsize ms bins
-        if fptimes(end)~= analog_times(end,1)
-            stop_time = min(analog_times(end,1),fptimes(end));
-            fptimesadj = analog_times(1):1/samprate:stop_time;
-
-        %          fptimes=1:samp_fact:length(fp);
-            if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of 
-                                        % get_plexon_data silly way of labeling time vector)
-                fpadj=interp1(fptimes,fp',fptimesadj);
-                fp=fpadj';
+%MRS modified 12/13/11
+% Using binsize ms bins
+if fptimes(end)~= analog_times(end,1)
+    stop_time = min(analog_times(end,1),fptimes(end));
+    fptimesadj = analog_times(1):1/samprate:stop_time;
+    
+    %          fptimes=1:samp_fact:length(fp);
+    if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of
+        % get_plexon_data silly way of labeling time vector)
+        fpadj=interp1(fptimes,fp',fptimesadj);
+        fp=fpadj';
         %         clear fpadj
-                numbins=floor(length(fptimes)/bs);
-            end
-        end
-
-    t = analog_times(1):binsize:analog_times(end);
-
-
-    while ((numbins-1)*bs+wsz)>length(fp) 
-        numbins=numbins-1;  %if wsz is much bigger than bs, may be too close to end of file
+        numbins=floor(length(fptimes)/bs);
     end
+end
 
-    %Align numbins correctly
-    if length(t)>numbins
-        t=t(1:numbins);
-    end
-    %     y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
-    % if size(y,2)>1
-    if t(1)<analog_times(1)
-        t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
-    end
-    y = interp1(analog_times, y, t);    % This should work for all numbers of outputs 
-                                        % as long as they are in columns of y
-    if size(y,1)==1
-        y=y(:); %make sure it's a column vector
-    end
-    % else
-    %     y=interp1(analog_times, y(:,1), t)';    %Must be a column vector
-    % end
-    % filter out inactive regions
-    % Find active regions
-    if exist('words','var') && ~isempty(words)
-        q = find_active_regions_words(words,analog_times);
-    else
-        q=ones(1,length(analog_times));   % Temp kludge b/c find_active_regions gives 
-                                          % too long of a vector back
-    end
+t = analog_times(1):binsize:analog_times(end);
 
-    q = interp1(analog_times, q, t);
 
-    disp('2nd part:assign t,y,q')
-    toc
-    %LMP=zeros(numfp,length(y));
+while ((numbins-1)*bs+wsz)>length(fp)
+    numbins=numbins-1;  %if wsz is much bigger than bs, may be too close to end of file
+end
 
-    tic
+%Align numbins correctly
+if length(t)>numbins
+    t=t(1:numbins);
+end
+%     y = [interp1(bdf.vel(:,1), y(:,1), t); interp1(bdf.vel(:,1), y(:,2), t)]';
+% if size(y,2)>1
+if t(1)<analog_times(1)
+    t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
+end
+y = interp1(analog_times, y, t);    % This should work for all numbers of outputs
+% as long as they are in columns of y
+if size(y,1)==1
+    y=y(:); %make sure it's a column vector
+end
+% else
+%     y=interp1(analog_times, y(:,1), t)';    %Must be a column vector
+% end
+% filter out inactive regions
+% Find active regions
+if exist('words','var') && ~isempty(words)
+    q = find_active_regions_words(words,analog_times);
+else
+    q=ones(1,length(analog_times));   % Temp kludge b/c find_active_regions gives
+    % too long of a vector back
+end
+
+q = interp1(analog_times, q, t);
+
+disp('2nd part:assign t,y,q')
+toc
+%LMP=zeros(numfp,length(y));
+
+tic
+if ~exist('featMat','var')
     %% Calculate LMP
     win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
     tfmat=zeros(wsz,numfp,numbins,'single');
@@ -214,16 +214,16 @@ if ~exist('featMat','var')
         %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
         tmp=fpf(:,(bs*i-wsz+1:bs*i))';    %Make tmp samples X channels
         LMP(:,ishift)=mean(tmp',2);
-    %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
-    %     tmp=detrend(tmp);
+        %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
+        %     tmp=detrend(tmp);
         tmp=win.*tmp;
-         tfmat(:,:,ishift)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+        tfmat(:,:,ishift)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
         clear tmp tftmp
     end
     %Now need to clean up tfmat to account for cutting off the firstind bins
     tfmat(:,:,(ishift+1:end))=[];
     numbins=numbins-firstind+1;
-
+    
     % t=t(1:numbins-firstind+1);
     t=t(1:numbins);
     y(ishift+1:end,:)=[];
@@ -232,11 +232,11 @@ if ~exist('featMat','var')
     freqs=linspace(0,samprate/2,wsz/2+1);
     freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
     tvect=(firstind:numbins)*(bs)-bs/2;
-
+    
     % %% Calculate LMP
     % win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
     % tfmat=zeros(wsz,numfp,numbins,'single');
-    % %% Notch filter for 60 Hz noise 
+    % %% Notch filter for 60 Hz noise
     % [b,a]=butter(2,[58 62]/(samprate/2),'stop');
     % fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
     % clear fp
@@ -260,9 +260,9 @@ if ~exist('featMat','var')
     tic
     %% Calculate bandpower
     % remove DC component of frequency vector
-    Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   
+    Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;
     %0.75 factor comes from newtimef (correction for hanning window)
-
+    
     % Pmean=mean(Pmat,3); %take mean over all times
     % instead of taking the mean over all times, calculate a running average
     % (more similar to how BrainReader does it).  To use filter, must rearrange
@@ -272,7 +272,7 @@ if ~exist('featMat','var')
     Pmean=mean(Pmat,3); %take mean over all times
     PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
     clear Pmat
-
+    
     %Define freq bands
     delta=freqs<4;
     mu=((freqs>7) & (freqs<20));
@@ -296,103 +296,91 @@ if ~exist('featMat','var')
     %%of y
     % First downsample PB if necessary to match y (t sample base)
     %numbands=size(PB,1);
-    % PBadj(:,:,:)=ipermute(interp1(fptimes,permute(PB,[3 1 2]),t),[3 1 2]);  
+    % PBadj(:,:,:)=ipermute(interp1(fptimes,permute(PB,[3 1 2]),t),[3 1 2]);
     % Need to permute PB to get 1st dimension be equal to length(fptimes)
     % PB=PBadj';
     % clear PBadj
+else
+    disp('Feature Matrix has been input to prediction code')
+    
+    PB = featMat;
+    q = ones(1,size(bestPB,2));
+    t = 1:.001:size(bestPB,2);
+    y=sig;
+end
 
-    if ~exist('nfeat','var')
-        nfeat=150;
-    end
+if ~exist('nfeat','var')
+    nfeat=150;
+end
 
-    %MRS Added 8/25/11 
-    if ~exist('featind','var')
-        if ~verLessThan('matlab','7.7.0') || size(y,2)>1 
-            for c=1:size(PB,2)
-                for f=1:size(PB,1)
-                    rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-                    if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use 
-                                                    % ALL outputs in calculating bestfeat 
-                                                    % (orig modified 12/13/10 for 2 outputs)
-                        rsum=abs(rt1);
-                        for n=2:size(y,2)
-                            rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                            rsum=rsum+abs(rtemp);
-                        end
-                        rt=rsum/n;
-        %                 rt=(abs(rt1)+abs(rt2))/2;
-                    else
-                        rt=rt1;
+%MRS Added 8/25/11
+if ~exist('featind','var')
+    if ~verLessThan('matlab','7.7.0') || size(y,2)>1
+        for c=1:size(PB,2)
+            for f=1:size(PB,1)
+                rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+                if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use
+                    % ALL outputs in calculating bestfeat
+                    % (orig modified 12/13/10 for 2 outputs)
+                    rsum=abs(rt1);
+                    for n=2:size(y,2)
+                        rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+                        rsum=rsum+abs(rtemp);
                     end
-                    r(f,c)=rt(1,2);    %take absolute value of r
+                    rt=rsum/n;
+                    %                 rt=(abs(rt1)+abs(rt2))/2;
+                else
+                    rt=rt1;
                 end
-            end
-        else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar; 
-              % in newer versions it outputs matrix for vectors
-            for c=1:size(PB,2)
-                for f=1:size(PB,1)
-                    rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-                    if size(y,2)>1
-                       rsum=abs(rt1);
-                        for n=2:size(y,2)
-                            rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                            rsum=rsum+abs(rtemp);
-                        end
-                        rt=rsum/n;
-                    else
-                        rt=rt1;
-                    end
-
-                    r(f,c)=abs(rt);    %take absolute value of r
-                end
+                r(f,c)=rt(1,2);    %take absolute value of r
             end
         end
-        r1=reshape(r,1,[]);
-        r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
-
-        [sr,featind]=sort(r1,'descend');
+    else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar;
+        % in newer versions it outputs matrix for vectors
+        for c=1:size(PB,2)
+            for f=1:size(PB,1)
+                rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+                if size(y,2)>1
+                    rsum=abs(rt1);
+                    for n=2:size(y,2)
+                        rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+                        rsum=rsum+abs(rtemp);
+                    end
+                    rt=rsum/n;
+                else
+                    rt=rt1;
+                end
+                
+                r(f,c)=abs(rt);    %take absolute value of r
+            end
+        end
     end
+    r1=reshape(r,1,[]);
+    r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
     
+    [sr,featind]=sort(r1,'descend');
+else   
+    disp('Feature Index has been input to prediction code')
     %Added because the sorting is currently done with row vectors not
     %column vectors
     if size(featind,1) > size(featind,2)
         featind = featind';
     end
-    
+end
+
     %MRS modified "ind2sub([size(PB,1) size(PB,2)]..." 12/13/11
     [bestf,bestc]=ind2sub([size(PB,1) size(PB,2)],featind(1:nfeat));
-
+  
     bestPB=single(zeros(nfeat,length(y)));
-
+    
     clear r     %clear this so we can reuse r later on
-
-
+     
     % bestc = bestc(bestc <= numfp);
-
-    for i=1:length(bestc)     
+    
+    for i=1:length(bestc)
         bestPB(i,:)=PB(bestf(i),bestc(i),:);
     end
-else
-   
-    bestPB = featMat;
-    q = ones(1,size(bestPB,2));
-    t = 1:.001:size(bestPB,2);
-    y=sig;
-    
-    for j = 1:length(featind)  
-        bestc(j) = ceil(featind(j)/6);
-        
-        if rem(featind(j),6) ~=0
-            bestf(j) = rem(featind(j),6);
-        else
-            bestf(j) = 6;
-        end
-        
-    end
-    
-    
-    
-end
+
 %% convert x to freq bands
 if exist('PB','var')
     numfreq=size(PB,1); %#frequency bands
@@ -439,19 +427,19 @@ y_test=x_test;
 y_pred=y_test;
 
 if ~exist('lambda','var')
-lambda=1;
+    lambda=1;
 end
 for i = 1:folds
     if folds > 1
-    fold_start = (i-1) * fold_length + 1;
-    fold_end = fold_start + fold_length-1;
-
-    x_test{i} = x(fold_start:fold_end,:);
-    y_test{i} = y(fold_start:fold_end,:);
-
-    x_train = [x(1:fold_start,:); x(fold_end:end,:)];
-    y_train = [y(1:fold_start,:); y(fold_end:end,:)];
-    
+        fold_start = (i-1) * fold_length + 1;
+        fold_end = fold_start + fold_length-1;
+        
+        x_test{i} = x(fold_start:fold_end,:);
+        y_test{i} = y(fold_start:fold_end,:);
+        
+        x_train = [x(1:fold_start,:); x(fold_end:end,:)];
+        y_train = [y(1:fold_start,:); y(fold_end:end,:)];
+        
     else
         x_test{i} = x;
         y_test{i} = y;
@@ -460,13 +448,13 @@ for i = 1:folds
     end
     %%
     %%Try z-score instead of mean sub
-%     y_train = zscore(y_train);
-%     y_test{i} = zscore(y_test{i});
-%     x_train = zscore(x_train);
-%     x_test{i} = zscore(x_test{i});
+    %     y_train = zscore(y_train);
+    %     y_test{i} = zscore(y_test{i});
+    %     x_train = zscore(x_train);
+    %     x_test{i} = zscore(x_test{i});
     
     %If a decoder does not exist, create one
-    if ~exist('H','var') 
+    if ~exist('H','var')
         [H{i},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda, 1); %binsamprate = 1
         i
     end
@@ -489,7 +477,7 @@ for i = 1:folds
     
     if ~exist('featMat','var')
         [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i}); %binsamprate = 1
-    else    
+    else
         [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,10,y_test{i});
     end
     
@@ -509,40 +497,40 @@ for i = 1:folds
         
         %%%Find a Wiener Cascade Nonlinearity
         for z=1:size(y_pred{i},2)
-            if Use_Thresh            
+            if Use_Thresh
                 %Find Threshold
                 T_default = 1.25*std(y_pred{i}(:,z));
                 [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
                 IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
-
+                
                 %Apply Threshold to linear predictions and Actual Data
                 PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
                 ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
-
-                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial 
+                
+                %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial
                 Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
-                                 (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
+                    (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
                 Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
-
+                
                 %Find Polynomial to Thresholded Data
                 [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], ...
-					[ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+                    [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
                 
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%% Use only one of the following 2 lines:
                 %
                 %   1-Use the threshold only to find polynomial, but not in the model data
-                T=[]; patch=[];                
+                T=[]; patch=[];
                 %
                 %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
+                %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
                 % MRS added 4/24/12 - Transpose P to match how brainreader
-                % accepts P 
+                % accepts P
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
             y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
@@ -552,34 +540,34 @@ for i = 1:folds
             ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
         end
         
-    %MRS 3/21/12 added so that the same P can be input across days    
+        %MRS 3/21/12 added so that the same P can be input across days
     elseif exist('P','var') && size(P,1) >1
         
         for z=1:size(y_pred{i},2)
             if size(P,2) < size(P,1)
                 y_pred{i}(:,z) = P(1,z)'*y_pred{i}(:,z)'.^3 + P(2,z)'*y_pred{i}(:,z)'.^2 +...
-                P(3,z)'*y_pred{i}(:,z)';
+                    P(3,z)'*y_pred{i}(:,z)';
                 
                 y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z)');
                 ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
-            
+                
             elseif size(P,2) > size(P,1)
                 y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
-                P(z,3)*y_pred{i}(:,z);
-            
+                    P(z,3)*y_pred{i}(:,z);
+                
                 y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
                 ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
-%                 y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
-%                 P(z,3)*y_pred{i}(:,z);
-%             
-%                 y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
-%                 ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
-            
-            
+                %                 y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
+                %                 P(z,3)*y_pred{i}(:,z);
+                %
+                %                 y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
+                %                 ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
+                
+                
             elseif size(P,2) == size(P,1)
                 disp('Make sure P matrix is input correctly, it may need to be transposed')
                 y_pred{i}(:,z) = P(1,z)'*y_pred{i}(:,z)'.^3 + P(2,z)'*y_pred{i}(:,z)'.^2 +...
-                P(3,z)'*y_pred{i}(:,z)';
+                    P(3,z)'*y_pred{i}(:,z)';
                 
                 y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
                 ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
@@ -587,21 +575,21 @@ for i = 1:folds
         end
         
     end
-
-%     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
+    
+    %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
     if exist('v','var')
         vaftr(i,:)=v/100; %Divide by 100 because v is in percent
     end
     
     
-    vaf(i,:) = RcoeffDet(y_pred{i},ytnew{i}) 
+    vaf(i,:) = RcoeffDet(y_pred{i},ytnew{i})
     %Old way to calculate vaf->1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
     
     for j=1:size(y,2)
         r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
-%         
-%     for j=1:size(y,2)
-%         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
+        %
+        %     for j=1:size(y,2)
+        %         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
         if size(r{i,j},2)>1
             r2(i,j)=r{i,j}(1,2)^2;
         else
@@ -618,8 +606,8 @@ for i = 1:folds
     %         r2x(i)=rx{i}^2;
     %     end
     %
-
-
+    
+    
 end
 disp('5th part: do predictions')
 
@@ -671,7 +659,7 @@ if nargout>5
                             featMat=reshape(pbrot,[],size(PB,1)*size(PB,2));
                             featMat=featMat(q==1,:);
                         end
-                        varargout{9}=x;   %featMat contains ALL features 
+                        varargout{9}=x;   %featMat contains ALL features
                         varargout{10}=y;
                         varargout{11}=featMat;
                         if nargout>16
@@ -696,20 +684,20 @@ if nargout>5
             end
         end
     end
-
+    
 end
 
-function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
-
-    thresholding = 1;
-    h = figure;
-    xT = [0 length(LinPred)];
-    offset = mean(LinPred)-mean(ActualData);
-    LinPred = LinPred-offset;
-    Tsup=mean(LinPred)+T;
-    Tinf=mean(LinPred)-T;
-    patch = mean(ActualData);
-    
+    function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
+        
+        thresholding = 1;
+        h = figure;
+        xT = [0 length(LinPred)];
+        offset = mean(LinPred)-mean(ActualData);
+        LinPred = LinPred-offset;
+        Tsup=mean(LinPred)+T;
+        Tinf=mean(LinPred)-T;
+        patch = mean(ActualData);
+        
         while thresholding
             hold off; axis('auto');
             plot(ActualData,'b');
@@ -763,6 +751,6 @@ function [Tinf, Tsup, patch] = findThresh(ActualData,LinPred,T)
         Tinf = Tinf+offset;
         patch = patch+offset;
         
-    close(h);
-end
+        close(h);
+    end
 end
