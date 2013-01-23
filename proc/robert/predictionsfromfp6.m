@@ -184,6 +184,7 @@ tfmat=zeros(wsz,numfp,numbins,'single');
 % Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
+% fpf=fp;
 clear fp
 for i=1:numbins
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
@@ -277,7 +278,7 @@ if ~verLessThan('matlab','7.7.0') || size(y,2)>1
                 rt=rt1;
             end
             if size(rt,2)>1
-            r(f,c)=rt(1,2);    %take absolute value of r
+                r(f,c)=abs(rt(1,2));    %take absolute value of r
             else
                 r(f,c)=abs(rt);
             end
@@ -353,6 +354,8 @@ end
 % the default operation of sortrows is to sort first on column 1, then do a
 % secondary sort on column 2, which is exactly what we want, so we're done.
 x=x(:,sortInd);
+% experimental
+% for i=1:size(x,2), x(:,i)=x(:,i)-smooth(x(:,i),floor(size(x,1)/2)); end
 
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;

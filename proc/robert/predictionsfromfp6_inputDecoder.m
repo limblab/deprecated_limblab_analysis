@@ -125,11 +125,11 @@ samp_fact=1000/samprate;
 %% Adjust the size of fp to make sure same number of samples as analog
 %% signals
 
-badChannels=mean(abs(fp),2)>=std(mean(abs(fp),2))*2+mean(mean(abs(fp),2));
-fp(badChannels,:)=zeros(nnz(badChannels),size(fp,2));
-
-bankRatio=mean(mean(abs(fp(33:64,:)),2))/mean(mean(abs(fp(1:32,:)),2));
-fprintf(1,'\n\nThe ratio of bank2 to bank1 is %.4f\n\n\n',bankRatio)
+% badChannels=mean(abs(fp),2)>=std(mean(abs(fp),2))*2+mean(mean(abs(fp),2));
+% fp(badChannels,:)=zeros(nnz(badChannels),size(fp,2));
+% 
+% bankRatio=mean(mean(abs(fp(33:64,:)),2))/mean(mean(abs(fp(1:32,:)),2));
+% fprintf(1,'\n\nThe ratio of bank2 to bank1 is %.4f\n\n\n',bankRatio)
 
 disp('fp adjust')
 toc
@@ -144,6 +144,9 @@ end
 % Using binsize ms bins
 if length(fp)~=length(y)
     stop_time = min(length(y),length(fp))/samprate;
+    if stop_time < 50 % BC case.
+        stop_time = min(length(y),length(fp))/binsamprate;
+    end
     fptimesadj = analog_times(1):1/samprate:stop_time;
 %          fptimes=1:samp_fact:length(fp);
     if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)

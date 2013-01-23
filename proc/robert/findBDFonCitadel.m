@@ -14,9 +14,11 @@ end
 
 switch ext
     case '.plx'
-        nameIn=regexprep(nameIn,'\.plx','\.mat');
+        nameIn=regexprep(nameIn,'\.plx','.mat');
+    case '.nev'
+        nameIn=regexprep(nameIn,'\.nev','.mat');
     case '.txt'
-         nameIn=regexprep(nameIn,'\.txt','\.mat');
+         nameIn=regexprep(nameIn,'\.txt','.mat');
     case '.mat'
         nameIn=nameIn;
     otherwise

@@ -24,7 +24,7 @@ for n=1:length(NEVfiles)
         % if .nev and .ns2/.ns3 differ only by 'sorted' in the .nev filename, they
         % should be considered as still belonging together.  Unfortunately,
         % get_cerebus_data does not understand this, so must alter filenames.
-        [~,NEVname,ext,~] = fileparts(FileName);
+        [~,NEVname,ext] = fileparts(FileName);
         if ~isempty(regexp(NEVname,'sorted','once'))
             regexp(NEVname,'sorted','split')
             NS2name=[NEVname,'.ns2'];

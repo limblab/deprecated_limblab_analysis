@@ -3,7 +3,7 @@ function VAFstruct=handControl_decoderPerformance_predictions2(bdf,decoderPath)
 % syntax varargout=handControl_decoderPerformance_predictions2(bdf,decoderPath)
 %
 %              INPUT:
-%                   bdf     - a path to a BDF-formatted .mat file
+%                   bdf         - a BDF-formatted .mat file
 %                   decoderPath - path to the original decoder.  The actual
 %                                 decoder used may vary from this one, if
 %                                 an updated version of this decoder was
