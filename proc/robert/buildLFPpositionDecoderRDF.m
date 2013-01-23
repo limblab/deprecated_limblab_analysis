@@ -51,6 +51,7 @@ else
     FilesInfo=dir(PathName);
 end
 badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
+badChannelsFileInd=[];
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
     try
@@ -89,7 +90,7 @@ Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
 %% Input parameters to play with.
 disp('assigning tunable parameters and building the decoder...')
-numlags=1; 
+numlags=10; 
 wsz=256; 
 nfeat=150;
 % nfeat=6*size(fp,1);
