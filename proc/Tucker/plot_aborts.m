@@ -44,5 +44,5 @@ function plot_aborts(tdf,stimcode,varargin)
             end
         end
     end
-    
+    hold off
 end

@@ -65,6 +65,12 @@ model='forcevel';
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
 
+if (include_unsorted && length(u1)~=length(moddepth))
+    disp('discarding clusters')
+    u1=u1(~u1(:,2),:);
+end
+    
+
 %% identify channels with excessive modulation depth
 for iChan = 1:length(u1)
     if (moddepth(iChan) > 10)
@@ -113,12 +119,15 @@ h_up = figure('name','PDs upper half of array');
 h_low = figure('name','PDs lower half of array');
 
 iPD =2 ; 
+
+maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)))
+
 for iPD = 1:length(u1(:,1))
-    r = 0.0001:0.0001:moddepth(iPD)/max(moddepth(setxor([1:length(moddepth)],skipchans))); % the length of the radial line is normalized by the modulation depth
+    r = 0.0001:0.0001:moddepth(iPD)/maxmod; % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
-    if max(max(chan_list_low' == u1(iPD,1)))
+    if max(max(chan_list_low' == u1(iPD,1)))%if the current channel is in the lower half of the array
         figure(h_low);
         subplot(subplot_dim_low_r,subplot_dim_low_c,find(chan_list_low' == u1(iPD,1),1,'first')) % put the plot in the correct location relative to position in array ( [ 1 2 3;..
                                                                                                                                % 4 5 6 ]; )
@@ -134,7 +143,7 @@ for iPD = 1:length(u1(:,1))
             '-or','String','  0.1','-or','String','  1') ,'String', ' '); % remove a bunch of labels from the polar plot; radial and tangential
         set(h1,'linewidth',2);
         
-        if max(u1(iPD)==deselected_chan)
+        if max(u1(iPD,1)==deselected_chan)
             % make background color red of deselected channels
             ph=findall(gca,'type','patch');
             set(ph,'facecolor',[1,0,0]);  
@@ -152,7 +161,7 @@ for iPD = 1:length(u1(:,1))
        
 
         title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))]) % last part finds the cerebus assigned label in cer_list that belongs to the channel number of the current channel
-    elseif max(max(chan_list_up' == u1(iPD,1)))
+    elseif max(max(chan_list_up' == u1(iPD,1)))%if the current channel is in the upper half of the array
         figure(h_up);
         subplot(subplot_dim_up_r,subplot_dim_up_c,find(chan_list_up' == u1(iPD,1),1,'first')) % put the plot in the correct location relative to position in array ( [ 1 2 3;..
                                                                                                                                % 4 5 6 ]; )
@@ -187,7 +196,7 @@ for iPD = 1:length(u1(:,1))
         
         title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))])
     else
-        disp('Error: channel not found in channel list')
+        disp('warning: channel not found in channel list:')
         disp(u1(iPD,1))
     end
 end

@@ -24,6 +24,7 @@ function catch_trials(tt,tt_hdr,stimcode)
     P_no_stim=sum(is_left_reach_no_stim)/length(is_left_reach_no_stim);
     CI_no_stim=binoinv([0.05 0.95],length(is_left_reach_no_stim),P_no_stim)
     CI_catch=binoinv([0.05 0.95],length(is_left_reach_catch),P_catch)
+    figure
     bar([P_no_stim, 0],'b');
     hold on;
     bar([0 P_catch],'r')

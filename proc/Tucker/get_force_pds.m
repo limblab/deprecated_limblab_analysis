@@ -3,14 +3,15 @@
     offset=-0.015; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
 
 %%load data
-    fname='C:\Users\limblab\Desktop\dail_data\11092012\bumpchoice\Kramer_bumpchoice_11092012_tucker_8ch_stim_001-01.nev';
-    disp(strcat('converting: ',fname))
-    bdf=get_cerebus_data(fname,3,'verbose','noeye');
-    save(fname,'bdf')
-    %disp(strcat('loading: ',fname))
-    %load('C:\Users\limblab\Desktop\dail_data\11092012\bumpchoice\Kramer_bumpchoice_11092012_tucker_8ch_stim_001-01.mat')
+%     fname='E:\processing\Kramer_bumpchoice_01152013_tucker_no_stim_001-01.mat';
+%     disp(strcat('converting: ',fname))
+%     bdf=get_cerebus_data(fname,3,'verbose','noeye');
+%     fname=strcat(fname(1:end-3),'mat');
+%     save(fname,'bdf')
+    disp(strcat('loading: ',fname))
+    load('E:\processing\Kramer_bumpchoice_01152013_tucker_no_stim_001-01')
 
-%%identify time vector for binning
+    %identify time vector for binning
     vt = bdf.vel(:,1);
     t = vt(1):ts/1000:vt(end);
 
@@ -44,4 +45,5 @@
     sub_bdf=get_sub_trials(bdf,timestamps);
 %%get force based PD
     disp('computing PDs and plotting results')
-    PD_force_plot(sub_bdf,'Kramer',2,1)
+    array_map_path='C:\Users\limblab\Desktop\kramer_array_map\6251-0922.cmp';
+    PD_force_plot(sub_bdf,array_map_path,2,1)
