@@ -4,7 +4,7 @@ input = 2;
 
 Monkeys = [{Chewie_filenames} {Mini_filenames}];
 
-for m = 1:length(Monkeys)
+for m = 1%:length(Monkeys)
     
     if m ==2
         
@@ -155,7 +155,7 @@ for m = 1:length(Monkeys)
                 load(DecNam)
                 
                 try
-                    DecNeuronIDs{j-start+1,m} = unit_list(out_struct)
+                    DecNeuronIDsIN{j-start+1,m} = unit_list(out_struct)
                 catch
                     NoSpikeFileNames{l} = fnam
                     continue
@@ -164,20 +164,23 @@ for m = 1:length(Monkeys)
                 clear outstruct
                 
                 %try
-                    [vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P]=... %,t]=...
+                    %[vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2,vaftr,H,x,y,ytnew,xtnew,P,
+                    [NewCells]=... %,t]=...
                         MRSpredictions_SingleUnitmwstikpoly(bdf,signal,[],binsize,folds,numlags,numsides,...
-                        lambda,Poly,Use_Thresh,fnam,emglpf,H_SingleUnits{j,m},P_SingleUnits{j},DecNeuronIDs{j-start+1,m});
+                        lambda,Poly,Use_Thresh,fnam,emglpf,H_SingleUnits{j,m},P_SingleUnits{j},DecNeuronIDsIN{j-start+1,m});
                 %catch exception
                  %   rethrow(exception)
                  %   continue
                 %end
-                vaf_X_SingleUnits{j-start+1,m,k} = vaf(:,1);
-                vaf_Y_SingleUnits{j-start+1,m,k} = vaf(:,2);
                 
-                r2_X_SingleUnits{j-start+1,m,k} = r2(:,1);
-                r2_Y_SingleUnits{j-start+1,m,k} = r2(:,2);
+                  DecNeuronIDsOUT{j-start+1,m} = NewCells;
+%                 vaf_X_SingleUnits{j-start+1,m,k} = vaf(:,1);
+%                 vaf_Y_SingleUnits{j-start+1,m,k} = vaf(:,2);
+%                 
+%                 r2_X_SingleUnits{j-start+1,m,k} = r2(:,1);
+%                 r2_Y_SingleUnits{j-start+1,m,k} = r2(:,2);
                 
-                save('SingleUnitDec_LFP_BC_Decoder1_Chewie_Mini_Output.mat','vaf*','r2*','DecNeuronIDs','H_SingleUnits');
+                save('SingleUnitDec_LFP_BC_Decoder1_Chewie_NeuronIDs_Output.mat','DecNeuronIDs*');
             end
         end
     end
