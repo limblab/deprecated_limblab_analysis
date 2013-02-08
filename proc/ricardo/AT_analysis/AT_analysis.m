@@ -6,8 +6,8 @@
 
 % filename = 'Handle_force_callibration_015';
 filepath = 'D:\Data\Kevin_12A2\Data';
-filename = '\ForceHandle_test_001';
-% filename = '\Kevin_2013-01-15_AT_001';
+% filename = '\motor_test_001';
+filename = '\Kevin_2013-02-08_AT_001';
 fileExt = '.nev';
 % filepath = 'D:\Data\TestData\Raw\';
 
@@ -39,6 +39,23 @@ bias_force_y = trial_table(:,tc.bias_force_mag).*sin(trial_table(:,tc.bias_force
 % Displacement as a function of bump direction
 bump_duration = trial_table(1,tc.bump_duration);
 % bias_ramp = trial_table(1,tc.bias_force_ramp);
+
+% fit_func = 'Pmin + (Pmax - Pmin)/(1+exp(beta*(xthr-x)))';
+% f_sigmoid = fittype(fit_func,'independent','x');
+
+% fit_func = @(Pmin,Pmax,beta1,xthr1,beta2,xthr2,x) ((x<=90).*(Pmin+(Pmax-Pmin)./(1+exp(beta1.*(xthr1-x)))) +...
+%     (x>=90).*(Pmin+(Pmax-Pmin)./(1+exp(beta2.*(xthr2-x)))));
+% 
+% f_sigmoid = fittype(fit_func,'independent','x');
+% f_opts = fitoptions('Method','NonlinearLeastSquares','StartPoint',[0 1 .01 0 -.01 180],...
+%     'MaxFunEvals',100000,'MaxIter',10000,'Lower',[0 0.3 0 -60 -inf 120],'Upper',[0.7 1 inf 60 inf 240]);
+
+fit_func = @(Pmin,Pmax,beta,xthr1,xthr2,x) (((x<=90).*(Pmin+(Pmax-Pmin)./(1+exp(beta.*(xthr1-x)))) +...
+    (x>=90).*(Pmin+(Pmax-Pmin)./(1+exp(-beta.*(xthr2-x))))).*(.5.*(x==90) + 1.*(x~=90)));
+
+f_sigmoid = fittype(fit_func,'independent','x');
+f_opts = fitoptions('Method','NonlinearLeastSquares','StartPoint',[.3 .7 .01 0 180],...
+    'MaxFunEvals',100000,'MaxIter',10000,'Lower',[0 0.3 0 -60 120],'Upper',[0.7 1 inf 60 240]);
 
 %%
 num_trials = size(trial_table,1);
@@ -226,7 +243,7 @@ end
 
 t_axis_short_idx = find(t_axis>.2 & t_axis<.5);
 
-figure; plot(averaged_x_forces_visual',averaged_y_forces_visual')
+% figure; plot(averaged_x_forces_visual',averaged_y_forces_visual')
 %% Average maximum projection
 figure;
 plot(unique_bump_directions*180/pi,max_x_projection_visual,'.b')
@@ -395,11 +412,100 @@ plot(180/pi*unique_dot_dirs,...
     visual_response_mean,'.b')
 hold on
 plot(180/pi*unique_bump_dirs,proprio_response_mean,'.r')
-plot([0 360],[mean(proprio_response_mean) mean(proprio_response_mean)],'-r')
-plot([0 360],[mean(visual_response_mean) mean(visual_response_mean)],'-b')
+plot([0 360],[mean(proprio_response_mean(~isnan(proprio_response_mean))) mean(proprio_response_mean(~isnan(proprio_response_mean)))],'-r')
+plot([0 360],[mean(visual_response_mean(~isnan(visual_response_mean))) mean(visual_response_mean(~isnan(visual_response_mean)))],'-b')
 legend('Visual','Proprioceptive')
 title('Performance as a function of direction')
 xlabel('Bump/dots direction (deg)')
 ylabel('Response')
 ylim([0 1])
 xlim([0 360])
+
+%% Psychophysics
+main_directions = trial_table(:,tc.main_direction);
+unique_main_directions = unique(main_directions);
+stim_directions = nan(size(main_directions));
+stim_directions(visual_trials) = dot_directions(visual_trials);
+stim_directions(proprio_trials) = bump_directions(proprio_trials);
+left_stim = mod(stim_directions - main_directions,2*pi) < mod(main_directions-stim_directions,2*pi);
+
+temp_diff = main_directions - stim_directions;
+temp_diff(temp_diff>3*pi/2) = -2*pi+temp_diff(temp_diff>3*pi/2);
+temp_diff(temp_diff<-pi/2) = 2*pi+temp_diff(temp_diff<-pi/2);
+temp_diff = round(temp_diff*1E6)/1E6;
+
+if length(unique(temp_diff))>=4
+    result_temp = (left_stim & trial_table(:,tc.result)==34) | (~left_stim & trial_table(:,tc.result)==32);
+
+    for iMainDir = 1:length(unique_main_directions)
+        dir_idx = find(main_directions==unique_main_directions(iMainDir));    
+        visual_idx_temp = intersect(dir_idx,visual_trials);
+        proprio_idx_temp = intersect(dir_idx,proprio_trials);
+
+        if length(visual_idx_temp)>=4 && length(proprio_idx_temp)>=4
+            [unique_visual_temp] = unique(temp_diff(visual_idx_temp));
+            [unique_proprio_temp] = unique(temp_diff(proprio_idx_temp));
+
+            response_vis = zeros(size(unique_visual_temp));
+            response_pro = zeros(size(unique_proprio_temp));
+            response_vis_vector = [];
+            response_pro_vector = [];
+            vis_dir_vector = [];
+            pro_dir_vector = [];
+            for iVis = 1:length(unique_visual_temp)
+                response_vis_vector = [response_vis_vector; result_temp(intersect(visual_idx_temp,find(temp_diff == unique_visual_temp(iVis))))];
+                vis_dir_vector = [vis_dir_vector; unique_visual_temp(iVis)*ones(size(result_temp(intersect(visual_idx_temp,find(temp_diff == unique_visual_temp(iVis))))))];
+                response_vis(iVis) = mean(result_temp(intersect(visual_idx_temp,find(temp_diff == unique_visual_temp(iVis)))));
+            end
+
+            for iPro = 1:length(unique_proprio_temp)
+                response_pro_vector = [response_pro_vector; result_temp(intersect(proprio_idx_temp,find(temp_diff == unique_proprio_temp(iPro))))];
+                pro_dir_vector = [pro_dir_vector; unique_proprio_temp(iPro)*ones(size(result_temp(intersect(proprio_idx_temp,find(temp_diff == unique_proprio_temp(iPro))))))];
+                response_pro(iPro) = mean(result_temp(intersect(proprio_idx_temp,find(temp_diff == unique_proprio_temp(iPro)))));
+            end    
+
+            figure; 
+            plot(180/pi*unique_visual_temp,response_vis,'b.');
+            hold on
+            plot(180/pi*unique_proprio_temp,response_pro,'r.');
+
+%             vis_fit = fit(180/pi*unique_visual_temp,response_vis,f_sigmoid,f_opts);
+            vis_fit = fit(180/pi*vis_dir_vector,response_vis_vector,f_sigmoid,f_opts);
+            plot(vis_fit,'b')
+
+            pro_fit = fit(180/pi*pro_dir_vector,response_pro_vector,f_sigmoid,f_opts);
+            plot(pro_fit,'r')
+            legend('Visual','Proprio')
+            xlabel('Relative stimulus direction (deg)')
+            ylabel('Probability of moving to the right')
+            title(['Main direction: ' num2str(unique_main_directions(iMainDir)*180/pi) ' (deg)'])
+        end
+    end
+    
+end
+
+%%
+figure; 
+reward_difference = 180/pi*abs(trial_table(intersect(visual_trials,find(trial_table(:,tc.result)==32)),tc.moving_dots_direction)-trial_table(intersect(visual_trials,find(trial_table(:,tc.result)==32)),tc.bump_direction));
+reward_difference(reward_difference>180) = reward_difference(reward_difference>180)-180;
+fail_difference = 180/pi*abs(trial_table(intersect(visual_trials,find(trial_table(:,tc.result)==34)),tc.moving_dots_direction)-trial_table(intersect(visual_trials,find(trial_table(:,tc.result)==34)),tc.bump_direction));
+fail_difference(fail_difference>180) = fail_difference(fail_difference>180)-180;
+reward_difference_count = hist(reward_difference,0:15:180);
+fail_difference_count = hist(fail_difference,0:15:180);
+reward_ratio = reward_difference_count./(reward_difference_count+fail_difference_count);
+reward_ratio(isnan(reward_ratio) | isinf(reward_ratio)) = 0;
+bar(0:15:180,reward_ratio);
+h = findobj(gca,'Type','patch');
+% set(h,'FaceColor','r','FaceAlpha',0.5)
+% hold on; 
+% hist(fail_difference,0:15:180)
+% disp(['Ratio of coherent bumps and dots in visual trials: ' num2str(sum(abs(trial_table(visual_trials,tc.moving_dots_direction)-trial_table(visual_trials,tc.bump_direction))<pi/2)/...
+%     length(abs(trial_table(visual_trials,tc.moving_dots_direction)-trial_table(visual_trials,tc.bump_direction))<pi/2))]);
+% h2 = findobj(gca,'Type','patch');
+% h2 = h2(h2~=h);
+xlim([-7.5 187.5])
+legend('Reward ratio')
+xlabel('|bump direction - dot direction| (deg)')
+ylabel('Count')
+title('Visual trials')
+% set(h2,'FaceColor','b','FaceAlpha',0.5)

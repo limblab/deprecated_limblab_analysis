@@ -259,6 +259,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
             for p = 1:size(out_struct.force, 1)                
                 r = [cos(-th_2_adj(p)) sin(th_2_adj(p)); -sin(th_2_adj(p)) cos(th_2_adj(p))];
+%                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
                 % Modified rotation matrix on Jan 15, 2013. Old matrix was
                 % incorrect, rotating handle force with respect to shoulder
                 % and not elbow as it should.

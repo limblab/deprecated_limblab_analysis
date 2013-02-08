@@ -64,7 +64,7 @@ num_trials = size(trial_starts,1);
 trial_table = nan(num_trials,length(fieldnames(tc)));
 trial_table(:,tc.t_trial_start) = trial_starts;
 % trial_table(:,tc.t_trial_end) = trial_ends;
-
+iError = 0;
 for iTrial = 1:num_trials
     temp_words = bdf.words(find(bdf.words(:,1)>trial_table(iTrial,tc.t_trial_start),1,'first'):...
         find(bdf.words(:,1)==trial_ends(find(trial_ends>trial_table(iTrial,tc.t_trial_start),1,'first'))),:);
@@ -86,6 +86,9 @@ for iTrial = 1:num_trials
                 case ot_on_code
                     column = tc.t_ot_on;
                 otherwise 
+%                     iError = iError+1;
+%                     disp(num2str(temp_words(iWord,2)))
+%                     warning('Garbage word %d',iError)
                     column = [];
             end
         end        
@@ -139,6 +142,11 @@ trial_table(:,tc.moving_dots_direction) = mod(trial_table(:,tc.moving_dots_direc
 temp = round(trial_table(:,tc.moving_dots_direction)*180/pi);
 temp(temp==360) = 0;
 trial_table(:,tc.moving_dots_direction) = temp*pi/180;
+
+trial_table(trial_table(:,tc.main_direction)>pi,tc.main_direction) = ...
+    trial_table(trial_table(:,tc.main_direction)>pi,tc.main_direction) - pi;
+
+trial_table(:,tc.main_direction) = round(trial_table(:,tc.main_direction)*1E6)/1E6;
 
 % remove_index = [];
 % for iCol=[9 10 11 12 13 14 15 16 17 21 22 23 24 25 26]
