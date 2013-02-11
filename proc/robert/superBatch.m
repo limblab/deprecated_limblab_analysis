@@ -41,16 +41,27 @@ try
     % the long-winded stuff.
     PathName=pwd;
     diary(fullfile(PathName,'decoderOutput.txt'))
-    if strcmp(CEBorPLX,'ceb') % this makes .plx the default
-        batch_get_cerebus_data % runs as script.  uses PathName
-        % put .mat files on the data server in an appropriate folder
-        % put EMGonly files
-        %     batch_buildLFP_EMGdecoder
-        %     batch_buildLFPpositionDecoderRDF
-    else
-        batch_get_plexon_data % runs as script.  uses PathName
-        batch_buildLFPpositionDecoderRDF    % only runs on hand-control files
-        batch_buildSpikePositionDecoderRDF  % only runs on hand-control files
+    switch CEBorPLX
+        case 'ceb' % this makes .plx the default
+            batch_get_cerebus_data % runs as script.  uses PathName
+            % put .mat files on the data server in an appropriate folder
+            % put EMGonly files
+            %     batch_buildLFP_EMGdecoder
+            %     batch_buildLFPpositionDecoderRDF
+        case 'plx'
+            batch_get_plexon_data % runs as script.  uses PathName
+            batch_buildLFPpositionDecoderRDF    % only runs on hand-control files
+            batch_buildSpikePositionDecoderRDF  % only runs on hand-control files
+        otherwise
+            % there is no data for that date.  delete the folder that was
+            % created, and exit.
+            diary off
+            cd ..
+            [~,folderToDelete,~]=FileParts(PathName);
+            if exist(folderToDelete,'file')==7
+                rmdir(folderToDelete,'s')
+            end
+            return
     end
     
     % copy the newly created data into appropriate location on citadel.

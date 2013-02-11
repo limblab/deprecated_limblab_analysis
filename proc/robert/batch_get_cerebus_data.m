@@ -37,6 +37,9 @@ for n=1:length(NEVfiles)
         fprintf(1,'loading %s...\n',NEVname)
 %         out_struct=get_cerebus_data_noCalc(FileName,1);
         out_struct=get_cerebus_data(FileName,1);
+        % for some reason get_cerebus_data makes the analog data show up in
+        % two places, which nearly doubles the size of the file.
+        if isfield(out_struct,'analog'), out_struct=rmfield(out_struct,'analog'); end
         save(fullfile(PathName,[FileName(1:end-4),'.mat']),'out_struct','FileName','PathName')
         clear out_struct
         disp('saved out_struct')

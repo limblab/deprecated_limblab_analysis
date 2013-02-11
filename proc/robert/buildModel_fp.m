@@ -55,6 +55,11 @@ if length(varargin)>0
                                      lambda=varargin{8};
                                      if length(varargin)>8
                                          smoothfeats=varargin{9};
+                                         if length(varargin)>9
+                                             featShift=varargin{10};
+                                         else
+                                             featShift=0;
+                                         end
                                      end
                                  end
                             end
@@ -67,7 +72,11 @@ if length(varargin)>0
                                 lambda=varargin{7};
                                 if length(varargin)>7
                                     smoothfeats=varargin{8};
-                                   
+                                    if length(varargin)>8
+                                        featShift=varargin{9};
+                                    else
+                                        featShift=0;
+                                    end
                                 end
                             end
                         end
@@ -257,7 +266,7 @@ if ~verLessThan('matlab','7.7.0') || size(y,2)>1
                 rt=rt1;
             end
             if size(rt,2)>1
-            r(f,c)=rt(1,2);    %take absolute value of r
+                r(f,c)=abs(rt(1,2));    %take absolute value of r
             else
                 r(f,c)=abs(rt);
             end
@@ -288,7 +297,7 @@ r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 assignin('base','featind',featind)
 assignin('base','R',r1)
 try
-    [bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
+    [bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+featShift));
 catch ME
     if strcmp(ME.identifier,'MATLAB:badsubscript')
         error('too many features requested.  check number of enabled channels')

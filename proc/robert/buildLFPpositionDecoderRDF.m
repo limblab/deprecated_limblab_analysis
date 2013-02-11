@@ -1,7 +1,37 @@
+function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
+
+% syntax buildLFPpositionDecoderRDF(PathName,skipBadChannelsAssignment,nfeat,featShift)
+%
+% inputs are optional, but must be supplied in order. i.e., in order to
+% input featShift, must also input PathName, skipBadChannelsAssignment and nfeat.
+
+numlags=10;
+wsz=256;
+nfeat=150; featShift=0;
+PolynomialOrder=3;
+smoothfeats=0;
+binsize=0.05;
+folds=10;
+skipBadChannelsAssignment=1;
+PathName='';
+
+if nargin >= 1
+    wholePath=varargin{1};
+    [PathName,FileName,ext]=FileParts(wholePath);
+    FileName=[FileName,ext];
+end
+if nargin >= 2
+    skipBadChannelsAssignment=varargin{2};
+end
+if nargin >= 3
+    nfeat=varargin{3};
+    featShift=varargin{4};
+end
+
 %% Identify the file for loading
 % if being called by something else, use the PathName that already exists.
 % Assume FileName also exists.
-if exist('PathName','var')~=1
+if isempty(PathName)
 	[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
 	cd(PathName)
 end
@@ -32,8 +62,10 @@ analog_times=sig(:,1);
 
 % assign FPs, offloaded to script so it can be used in other places.
 fpAssignScript
-% look for something called CumulativeBadChannels and load it, then use it
-% to cut down the fp array.
+
+if nfeat > size(fp,1)*6
+    nfeat=6*size(fp,1);
+end
 
 % do a bit of channel-dropping.
 % fp=fp([68 38],:);
@@ -51,7 +83,9 @@ else
     FilesInfo=dir(PathName);
 end
 badChannelsFileInd=find(cellfun(@isempty,regexp({FilesInfo.name},'CumulativeBadChannels'))==0);
-badChannelsFileInd=[];
+if skipBadChannelsAssignment~=0
+    badChannelsFileInd=[];
+end
 if ~isempty(badChannelsFileInd)
     fprintf(1,'loading bad channel info from %s',FilesInfo(badChannelsFileInd).name)
     try
@@ -88,52 +122,37 @@ numfp=size(fp,1);
 numsides=1;
 Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
-%% Input parameters to play with.
-disp('assigning tunable parameters and building the decoder...')
-numlags=10; 
-wsz=256; 
-nfeat=150;
-% nfeat=6*size(fp,1);
-PolynomialOrder=3; 
-smoothfeats=0;
-binsize=0.05;
-%%
-% to build a decoder:
-n=1;
-% for n=1:3
-%     fp=fp.*10;
 
-    [vaf,~,~,~,~,~,~,~,~,bestf,bestc,H,~,~,~,~,ytnew_buildModel,xtnew_buildModel,~,P,~,~] = ...
-        buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
-        samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-        Use_Thresh,words,emgsamplerate,lambda,smoothfeats);
+
+[vaf,~,~,~,~,~,~,~,~,bestf,bestc,H,~,~,~,~,ytnew_buildModel,xtnew_buildModel,~,P,~,~] = ...
+    buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
+    samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,featShift);
+
+fprintf(1,'\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n')
+
+% examine vaf
+fprintf(1,'file %s\n',fnam)
+fprintf(1,'decoding %s\n',signal)
+fprintf(1,'numlags=%d\n',numlags)
+fprintf(1,'wsz=%d\n',wsz)
+fprintf(1,'nfeat=%d\n',nfeat)
+fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+fprintf(1,'smoothfeats=%d\n',smoothfeats)
+fprintf(1,'binsize=%.2f\n',binsize)
+
+vaf
+
+formatstr='vaf mean across folds: ';
+for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
+formatstr=[formatstr, '\n'];
+
+fprintf(1,formatstr,mean(vaf,1))
+fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
+
+close
+fprintf(1,'\n\n\n')
     
-    fprintf(1,'\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n')
-    
-    % examine vaf
-    fprintf(1,'file %s\n',fnam)
-    fprintf(1,'decoding %s\n',signal)
-    fprintf(1,'numlags=%d\n',numlags)
-    fprintf(1,'wsz=%d\n',wsz)
-    fprintf(1,'nfeat=%d\n',nfeat)
-    fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
-    fprintf(1,'smoothfeats=%d\n',smoothfeats)
-    fprintf(1,'binsize=%.2f\n',binsize)
-%    fprintf(1,'gain factor=%d\n',10^n)
-    
-    vaf
-    
-    formatstr='vaf mean across folds: ';
-    for k=1:size(vaf,2), formatstr=[formatstr, '%.4f   ']; end
-    formatstr=[formatstr, '\n'];
-    
-    fprintf(1,formatstr,mean(vaf,1))
-    fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
-    
-%     [range(H(:)), mean(abs(H))]
-    close
-    fprintf(1,'\n\n\n')
-% end
 %%
 % transpose P?
 P=P';
@@ -197,15 +216,12 @@ fprintf(1,'decoder saved in %s',PathName)
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
-folds=10;
+
 [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:6);
-                                                      % this is bandsToUse,
-                                                      % can be omitted.
-
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:6,featShift);
 
 % examine vaf
 fprintf(1,'file %s\n',fnam)

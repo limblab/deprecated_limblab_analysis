@@ -55,6 +55,11 @@ if length(varargin)>0
                                      lambda=varargin{8};
                                      if length(varargin)>8
                                          smoothfeats=varargin{9};
+                                         if length(varargin)>9
+                                             featShift=varargin{10};
+                                         else
+                                             featShift=0;
+                                         end
                                      end
                                  end
                             end
@@ -69,6 +74,11 @@ if length(varargin)>0
                                     smoothfeats=varargin{8};
                                     if length(varargin) > 8
                                         bandToUse=varargin{9};
+                                        if length(varargin)>9
+                                            featShift=varargin{10};
+                                        else
+                                            featShift=0;
+                                        end
                                     end
                                 end
                             end
@@ -306,7 +316,7 @@ end
 r1=reshape(r,1,[]);
 r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 [sr,featind]=sort(r1,'descend');
-[bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+0));
+[bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+featShift));
 bestPB=single(zeros(nfeat,length(y)));
 clear r     %clear this so we can reuse r later on
 for i=1:nfeat

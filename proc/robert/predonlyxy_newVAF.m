@@ -39,12 +39,16 @@ if ~exist('smoothflag','var')
     smoothflag=0;
 end
 % Smoothing
-if smoothflag
-    xtemp=smooth(x(:),11,'sgolay');      %sometimes smoothing features helps
+% if smoothflag
+%     xtemp=smooth(x(:),11,'sgolay');      %sometimes smoothing features helps
+%     x=reshape(xtemp,size(x));
+%     ytemp=y(:);
+%     ytemp=smooth(y(:),11,'sgolay');
+%     y=reshape(ytemp,size(y));
+% end
+if smoothflag > 0
+    xtemp=smooth(x(:),smoothflag);      %sometimes smoothing features helps
     x=reshape(xtemp,size(x));
-    ytemp=y(:);
-    ytemp=smooth(y(:),11,'sgolay');
-    y=reshape(ytemp,size(y));
 end
 
 % Allow the possibility to redo feature selection to allow improved
@@ -64,7 +68,7 @@ if ~exist('featind','var') || (length(featind)<nfeat)
 			rt=rt1;
 		end
 		if ~verLessThan('matlab','7.7.0')
-			r(f)=rt(1,2);    %take absolute value of r
+			r(f)=abs(rt(1,2));    %take absolute value of r
 		else    %for older matlab versions than 2008
 			r(f)=abs(rt);    %take absolute value of r
 		end
