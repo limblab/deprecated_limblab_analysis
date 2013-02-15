@@ -32,13 +32,14 @@ function [STA, varargout] = STA(stim_ts, signals, timeBefore, timeAfter)
     STA(:,2:end) = STA(:,2:end)/numStim_ok;
 
     if nargout > 1
-         STV = zeros(windowLength,numSignals+1);
-         STV(:,1) = windowTimeFrame;
-         for i=1:numStim_ok
-         	low = find(signals(:,1)>=stim_ts(i)-timeBefore,1,'first');
-            high= round(low) + windowLength-1;
-            STV(:,2:end) = STV(:,2:end) + (signals(low:high,2:end)-STA(:,2:end)).^2;
-         end
-         STV(:,2:end) = STV(:,2:end)/numStim_ok;
+        STV = zeros(windowLength,numSignals+1);
+        STV(:,1) = windowTimeFrame;
+        for i=1:numStim_ok
+        low = find(signals(:,1)>=stim_ts(i)-timeBefore,1,'first');
+        high= round(low) + windowLength-1;
+        STV(:,2:end) = STV(:,2:end) + (signals(low:high,2:end)-STA(:,2:end)).^2;
+        end
+        STV(:,2:end) = STV(:,2:end)/numStim_ok;
+        varargout = {STV};
     end
 end

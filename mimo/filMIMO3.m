@@ -38,7 +38,7 @@ elseif (nargin ~=5) disp('Wrong number of inputs');return;end
   numio=cX+cY;
 
 %    X= detrend(X); Y=detrend(Y);
-  X= detrend(X, 'constant'); Y=detrend(Y, 'constant');
+%    X= detrend(X, 'constant'); Y=detrend(Y, 'constant');
   
   %adding the constant flag to the detrend code - just removes the mean.
 

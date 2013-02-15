@@ -9,7 +9,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %       fillen              : filter length (in seconds)
 %       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
 %       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos,PredVeloc,numPCs}
+%       varargin = {PredEMG, PredForce, PredCursPos,PredVeloc,Use_Thresh,Use_EMGs,Use_Ridge,numPCs}
 %                           :   flags to include EMG, Force, Cursor Position
 %                               and Velocity in the prediction model
 %                               (0=no,1=yes), if numPCs is present, will
@@ -147,8 +147,14 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     if PredVeloc
         Outputs = [Outputs binnedData.velocbin];
         OutNames = [OutNames;  binnedData.veloclabels];
-    end 
+    end
+    numOutputs = size(Outputs,2);
         
+    InputMean = mean(Inputs);
+    OutputMean= mean(Outputs);
+    Inputs = detrend(Inputs,'constant');
+    Outputs= detrend(Outputs,'constant');
+    
     %The following calculates the linear filters (H) that relate the inputs and outputs
     if Use_Ridge
         % Specify condition desired
@@ -159,11 +165,10 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         H = train_ridge(Inputs',Outputs',condition_desired);
     else
         [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
-%     H = MIMOCE1(Inputs,Outputs,numlags);\
+%     H = MIMOCE1(Inputs,Outputs,numlags);
 %     H = Inputs\Outputs;
 %     Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
     end
-
     
 %% Then, add non-linearity if applicable
 
@@ -174,7 +179,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     else
         [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
     end
-
+    
 % %     PredictedData = Inputs*H;
 % %     LP = 5; %10 Hz low pass...
 % %     PredictedData = FiltPred(PredictedData,1/binsize,LP);
@@ -219,15 +224,30 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
-                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder,'plot');
             end
             PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
         end
     end
-  
+    
+%% Add back the Output mean
+for i=1:numOutputs
+    PredictedData(:,i) = PredictedData(:,i)+OutputMean(i);
+end
+    
 %% Outputs
 
-    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize, 'input_type',input_type);
+    filter = struct('neuronIDs', neuronIDs,...
+                    'input_mean',InputMean,...
+                    'output_mean', OutputMean,...
+                    'H', H,...
+                    'P', P,...
+                    'T',T,...
+                    'patch',patch,...
+                    'outnames', OutNames,...
+                    'fillen',fillen,...
+                    'binsize', binsize,...
+                    'input_type',input_type);
 
     if Use_PrinComp
         filter.PC = PCoeffs(:,1:numPCs);

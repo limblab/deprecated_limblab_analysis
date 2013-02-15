@@ -49,6 +49,16 @@ if isfield(filter,'input_type')
     end   
 end
 
+%De-means:
+if isfield(filter,'input_mean')
+    for i=1:size(Inputs,2)
+        Inputs(:,i) = Inputs(:,i)-filter.input_mean(i);
+    end
+else
+    warning(['Ho, can''t find a field called ''input_mean''.'...
+            'You''re supposed to provide that, now you might have an offset problem']);
+end
+
 %% Outputs:  assign memory with dummy data, just cause predMIMO requires something there
 % just send dummy data as outputs for the function
 ActualData=zeros(size(Inputs));
@@ -92,6 +102,13 @@ if FiltPred
    [PredictedData] = FiltPred(PredictedData,spikeDataNew,binsize);
 end
 
+%% Add back Output means
+if isfield(filter,'output_mean')
+    for i=1:size(PredictedData,2)
+        PredictedData(:,i) = PredictedData(:,i)+filter.output_mean(i);
+    end
+end
+
 %% Aggregate Outputs in a Structure
 
 [numpts,Nx]=size(Inputs);
@@ -104,6 +121,7 @@ PredData = struct('timeframe', timeframeNew,...
                   'preddatabin', PredictedData,...
                   'spikeratedata', spikeDataNew,...
                   'outnames',filter.outnames,...
+                  'out_mean',filter.output_mean,...
                   'spikeguide', neuronIDs2spikeguide(filter.neuronIDs));
 
 end

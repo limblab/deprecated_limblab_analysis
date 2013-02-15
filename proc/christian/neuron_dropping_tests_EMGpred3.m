@@ -117,7 +117,7 @@ for k = 1:NumIter
 %         [R2f{1,k}] = PeriodicR2(filter,TestData,foldlength);
 %         disp(['Mean R2 = ' sprintf(' [%.2f]',mean(R2f{1,k}))]);
 % 
-%         %Adaptive algorithm, no drop or permutationfi
+%         %Adaptive algorithm, no drop or permutation
 %         disp('Predictions for Adaptive Model, no drop/perm...');
 %         [R2a{1,k}, filter_adapt] = PeriodicR2(filter_adapt,TestData,foldlength,Adapt);
 %         H{2,k} = filter_adapt.H;
