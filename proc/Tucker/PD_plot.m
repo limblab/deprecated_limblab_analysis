@@ -121,18 +121,18 @@ for iPD = 1:length(u1(:,1))
             % make background color red of deselected channels
             ph=findall(gca,'type','patch');
             set(ph,'facecolor',[1,0,0]);  
-        else 
-            [x1,y1]=pol2cart(angle,r); % needed to fill up the space between the two CI
-            [x2,y2]=pol2cart(err_up,r);
-            [x3,y3]=pol2cart(err_down,r);
-            
-            %     jbfill(x1,y1,y2,'b','b',1,0.5);
-            x_fill = [x2(end), x1(end), x3(end), 0];
-            y_fill = [y2(end), y1(end), y3(end), 0];
-            
-            % fill(x_fill,y_fill,'r');
-            patch(x_fill,y_fill,'b','facealpha',0.3);
         end
+        [x1,y1]=pol2cart(angle,r); % needed to fill up the space between the two CI
+        [x2,y2]=pol2cart(err_up,r);
+        [x3,y3]=pol2cart(err_down,r);
+
+        %     jbfill(x1,y1,y2,'b','b',1,0.5);
+        x_fill = [x2(end), x1(end), x3(end), 0];
+        y_fill = [y2(end), y1(end), y3(end), 0];
+
+        % fill(x_fill,y_fill,'r');
+        patch(x_fill,y_fill,'b','facealpha',0.3);
+        
 
         title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))]) % last part finds the cerebus assigned label in cer_list that belongs to the channel number of the current channel
     elseif max(max(chan_list_up' == u1(iPD,1)))
