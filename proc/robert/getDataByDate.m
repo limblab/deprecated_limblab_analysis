@@ -20,15 +20,18 @@ if nargin<3
     pathOverride='';
 end
 
+remoteDriveLetter=citadelDriveLetter;
+if isempty(remoteDriveLetter)
+    % if we couldn't determine it smartly, take a dumb guess.
+    remoteDriveLetter='Z';
+end
 
 switch lower(machineName)
     case 'gob'
         destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
             filesep,animal];
-        remoteDriveLetter='Z';      % appropriate for GOB
     case 'bumblebeeman'
         destFolder=['E:\monkey data',filesep,animal];
-        remoteDriveLetter='Z';      % by coincidence
     otherwise
         error('I''ve never been on this computer before!! Help!!')
         % need to set a destFolder for the current computer name

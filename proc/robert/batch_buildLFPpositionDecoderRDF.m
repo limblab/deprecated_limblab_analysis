@@ -52,7 +52,9 @@ for batchIndex=1:length(MATfiles)
     % halfway through the recording (e.g. it was bumped by the experimenter
     % accidentally).
     if mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 10 ...
-            && floor(mean(getNumTargets(out_struct)))>1
+            && (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 300 || ...
+            floor(mean(getNumTargets(out_struct)))>1)
+        
         [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(fullfile(PathName,FileName));
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});
         VAF_all=[VAF_all; struct('filename',tempNameafkdlj,'type','LFP','vaf',vaf)];

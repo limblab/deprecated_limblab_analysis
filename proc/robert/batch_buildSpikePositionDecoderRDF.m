@@ -54,7 +54,8 @@ for batchIndex=1:length(MATfiles)
     % recorded for testing purposes.  The number of targets enforcement 
     % rules out brain-control-with-handle files.
     if mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 10 ...
-            && floor(mean(getNumTargets(out_struct)))>1
+            && (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 300 || ...
+            floor(mean(getNumTargets(out_struct)))>1)
         % FUNCTION NOT A SCRIPT.  Trying to get smarter with time.
         buildSpikePositionDecoder(out_struct,0);
         [~,tempNameafkdlj,~]=FileParts(MATfiles{batchIndex});

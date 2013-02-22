@@ -10,7 +10,7 @@ function numTargets=getNumTargets(out_struct)
 % for notes on CO, see research notes 02-11-2013.txt
 
 START_TRIAL_WORD=unique(out_struct.words(:,2));
-START_TRIAL_WORD(START_TRIAL_WORD<17 | START_TRIAL_WORD>31)=[];
+START_TRIAL_WORD(START_TRIAL_WORD<17 | START_TRIAL_WORD>21)=[];
 
 % first, always must account for bad starts/ends.
 % make sure to start with the first complete trial in the recording

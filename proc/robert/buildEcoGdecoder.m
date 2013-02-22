@@ -11,8 +11,8 @@ SIGNALTOUSE='force';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
-FPSTOUSE=33:48;  % this determines which ones we actually want to use to 
+FPIND=1:32;     % this controls which columns of the signal array are valid fp channels.
+FPSTOUSE=1:16;  % this determines which ones we actually want to use to 
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
 %% find file, set up environment.
@@ -33,6 +33,10 @@ clear N
 fp=signal(:,FPIND)'; % fp should be numfp X [numSamples]
 % this is where we'll get the CG info & do the PCA
 sig=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
+% fudge factor has to be applied because BCI2000 internal processing to 
+% translate to screen coords.  Currently only works for force.
+p=polyfit(sig(:,2),double(states.CursorPosY),1);
+sig(:,2)=polyval(p,sig(:,2))*100/4096;
 %% set parameters, and build the feature matrix.  go ahead and include all the fps.
 wsz=256;
 samprate=1000;
@@ -41,7 +45,7 @@ binsize=0.05;
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
 %% index the fps - can change mind at this point as to which FPs to use.
-FPSTOUSE=33:48;
+FPSTOUSE=1:16;
 clear x
 x=zeros(size(featMat,1),length(FPSTOUSE)*6);
 % there is a tricky interplay between x and FPSTOUSE, because x is used to
@@ -60,7 +64,7 @@ end, clear n
 
 %% assign parameters.
 Use_Thresh=0; lambda=1; 
-PolynomialOrder=3; numlags=10; numsides=1; binsamprate=floor(1/0.05); folds=10; nfeat=75;
+PolynomialOrder=0; numlags=10; numsides=1; binsamprate=1; folds=10; nfeat=70;
 if nfeat>(size(featMat,1)*size(featMat,2))
     fprintf(1,'setting nfeat to %d\n',size(featMat,1)*size(featMat,2))
     nfeat=size(featMat,1)*size(featMat,2);
@@ -134,7 +138,7 @@ for n=1:size(H,1)
     for k=1:(size(H,2)-1)
         fprintf(fid,'%.5f\t',H(n,k));
     end
-    fprintf(fid,'%.5f\n',H(n,end))
+    fprintf(fid,'%.5f\n',H(n,end));
 end
 fclose(fid);
 fprintf(1,'%s\nsaved.\n',fullfile(SaveHpath,SaveHname))
@@ -153,7 +157,7 @@ fprintf(1,'%s\nsaved.\n',fullfile(SaveHpath,['bestcf.txt']))
 %     [regexp(FileName,'.*(?=\.dat)','match','once'),'_bestcf.txt']),'bestcf','-ascii','-tabs','-double')
 
 %%
-close
+% close
 figure, set(gcf,'Position',[88         378        1324         420])
 plot(ytnew(:,1)), hold on, plot(y_pred(:,1),'g')
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])

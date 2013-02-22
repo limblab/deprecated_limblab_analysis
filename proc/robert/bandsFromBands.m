@@ -146,7 +146,7 @@ for band=bandsToUse
         if sameElectrode
             % only if we ask for 'sameElectrode' mode is it appropriate to
             % try to find the mutual information between bands, as it is
-            % only defined for 2 bands, not more.
+            % only defined for 2 inputs, not more.
             N=9;   % precision of the mesh
                     % arg2,3 are x_grid,y_grid. Use for: mesh(x_grid,y_grid,jpdf)
             [~,jpdf,~,~]=kde2d([fpUse' sigUse(:,2)],2^N);
@@ -163,7 +163,8 @@ for band=bandsToUse
                 repmat(margX,size(logjpdf,1),1)-repmat(margY,1,size(logjpdf,2)))));
         end        
         % to do Wiener cascade decoding of one band with the other
-        [~,VAFstruct(band,elecInd).vaf,~,~,~,~,y_pred,~,ytnew]=predonlyxy_newVAF(fpUse',sigUse(:,2),PolynomialOrder,Use_Thresh, ...
+                                         % ... y_pred,~,ytnew] 
+        [~,VAFstruct(band,elecInd).vaf,~,~,~,~,~,~,~]=predonlyxy_newVAF(fpUse',sigUse(:,2),PolynomialOrder,Use_Thresh, ...
             lambda,numlags,numsides,binsize,folds,nfeat);
     end
 end

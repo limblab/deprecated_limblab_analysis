@@ -1,4 +1,4 @@
-function filter = buildSpikePositionDecoder(BDFfileIn,interactive)
+function filter = buildSpikePositionDecoder(BDFfileIn,interactive,singleUnitToUse)
 
 if ~nargin
     [FileName,PathName,~]=uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\', ...
@@ -66,6 +66,7 @@ stoptime=bdf.meta.duration;
 
 disp('Converting BDF structure to binned data, please wait...');
 binnedData = convertBDF2binned(varStr,binsize,starttime,stoptime,5,0,MinFiringRate);
+% assignin('base','binnedData',binnedData)
 
 if interactive
     [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc] = ...
@@ -75,6 +76,13 @@ else
     PolynomialOrder=3;
     Pred_EMG=0; Pred_Force=0; Pred_CursPos=0; 
     Pred_Veloc=1;
+end
+
+if nargin>2
+    unitIndexToUse=find(cellfun(@isempty,regexp(cellstr(binnedData.spikeguide), ...
+        ['ee',num2str(singleUnitToUse),'u1']))==0);
+    binnedData.spikeguide=binnedData.spikeguide(unitIndexToUse,:);
+    binnedData.spikeratedata=binnedData.spikeratedata(:,unitIndexToUse);
 end
 
 [filter,OLPredData] = BuildModel(binnedData, ...

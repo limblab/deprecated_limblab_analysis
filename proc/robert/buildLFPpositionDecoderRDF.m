@@ -4,6 +4,8 @@ function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 %
 % inputs are optional, but must be supplied in order. i.e., in order to
 % input featShift, must also input PathName, skipBadChannelsAssignment and nfeat.
+% featShift is ZERO-BASED; i.e., to calculate feature 9, input 1,8 for
+% nfeat & featShift.
 
 numlags=10;
 wsz=256;
