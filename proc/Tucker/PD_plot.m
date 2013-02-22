@@ -57,10 +57,10 @@ u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
 
 %% get out badly fitted channels
-mean(moddepth)
-
+tempmean=mean(moddepth);
 for iChan = 1:length(u1)
     if moddepth(iChan)<mean(moddepth)
+    if moddepth(iChan)<tempmean
         moddepth(iChan)
         moddepth(iChan)= 0;
         deselected_chan = [u1(iChan), deselected_chan];
