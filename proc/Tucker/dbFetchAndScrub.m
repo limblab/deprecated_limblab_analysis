@@ -1,7 +1,6 @@
-function [ Result, Pending ] = FetchAndScrub(mode, dbFormat, Pending)
-% dbFetch,Scrub(mode, dbFormat, Pending)
-%   Returns a list of databursts
-% Central must previously have been opened
+function [ Result, Pending, cyclenum ] = FetchAndScrub(mode, dbFormat, Pending, tt_hdr, cyclenum)
+% Returns a list of databursts and the corresponding trial result
+% Central must already be running
 %
 % mode: 'open'      Used the first time called, for a series of trials
 %       'update'    Used for successive calls
@@ -55,9 +54,7 @@ if nargin > 2
         error(['Failed format request:\n ',dbFormat]);
     end
 end
-
-% generate header data needed for psychometric displays
-tt_hdr = make_hdr();
+myWait = 1; % Number of seconds between each sub-collection interval
 %% Set up Cerebus.
 % 
 % OpenCerebus(mode)
@@ -94,13 +91,16 @@ switch mode
         catch
             error 'Cannot call FetchAndScrub() for update without first calling for open'
         end
+    case 'test'
+        INTERVAL=0.01; % abbreviate the wait time 
+        myWait = 0.01;
     otherwise
         help FetchAndScrub
         error(['unknown mode: ',mode])
 end
 
+Result = [];
 collect_time = INTERVAL; % collect samples for this many seconds
-myWait = 1; % Number of seconds between each sub-collection interval
 t_col0 = tic; % collection timer begins
 bCollect = true; % do we need to collect?
 
@@ -109,10 +109,16 @@ bCollect = true; % do we need to collect?
 while (bCollect)
     et_col = toc(t_col0); % elapsed time of collection
     if (et_col >= collect_time)
-        trialdata = cbmex('trialdata',1); % read some data
+        if strcmp(mode, 'test')
+            trialdata = cbmextest(cyclenum);
+            cyclenum = cyclenum+1;
+%            bCollect=false;
+        else
+            trialdata = cbmex('trialdata',1); % read some data
+        end
         t_col0 = tic;   % restart timer for next collection period
-
-        if size(trialdata{CHAN,2},1)==0
+        
+        if size(trialdata{CHAN,2},1)==0 % no words in this raw batch
             t_col0 = tic; % re-start collection time clock
             continue
         end
@@ -124,19 +130,22 @@ while (bCollect)
             else
                 testcol = 0;
             end
-            if min(find(raw.codes>hex2dec('F000'))) > 20
-                % there is no DATA code in the first 20 nibbles, BAIL
+            if (find(raw.codes>hex2dec('F000'),1,'first') > 20) && ...
+                    (Pending.MissingEND == false)
+                % there is no DATABURST code in the first 20 nibbles, BAIL
                 fprintf('**Had a fragment, but next data absent\n')
-                Pending = InitPending;
+                Pending = InitPending();
             else
-                % Now stitch pending and new raw data together
+                % Now stitch pending and new raw data together. The new raw
+                % timestamps start at 0, so need to add the ending timestamp.
+                % TODO: Time loss in this logic, use "toc" instead.
                 raw.ts=[Pending.ts; raw.ts+Pending.ts(numel(Pending.ts))];
                 raw.codes=[Pending.codes; raw.codes];
                 fprintf('*Stitch pending and new databurst fragments\n')
             end
-        end
+        end % END if Pending.Start_ts > 0
         % Now convert raw stream of nibbles to actual databurst
-        [cooked,Pending,Status] = ScrubData(raw,Pending);
+        [cooked,Pending,Status,TrialRet] = ScrubData(raw,Pending);
         switch Status
             case 'Discard'
                 % Normally occurs when there were no databursts during the
@@ -146,44 +155,47 @@ while (bCollect)
             case 'Fragment'
                 % Need more raw data to complete the current databurst
                 fragcnt = fragcnt+1;
-                continue
+                % Do not continue if there are completed TRialRets
+                if size(TrialRet,2) == 0
+                    continue
+                end
+            case 'Success'
+                Pending = InitPending;
             otherwise
                 if size(cooked,1) ~= DATABURSTSIZE
                     fprintf('**bad Databurst size = %d\n', size(cooked,1))
                     Status='Discard';
-                else
-                    Result = ParseData(cooked,dbFormat);
-                    bCollect=false;
                 end
                 Pending=InitPending();
         end
+        sztr = size(TrialRet,2);
+        % In the Fragment case there will be more cooked planes than TrialRet values
+        Result = ParseData(cooked(:,1:sztr),dbFormat);
+        Result(tt_hdr.trial_result,:) = TrialRet;
+        bCollect=false;
     else
         pause(myWait);
-    end
-end
-% We now have collect_time worth of data
-end
-% END FUNCTION FetchAndScrub()
+    end % END if (et_col >= collect_time)
+end % END while bCollect. We now have collect_time worth of data
+end% END FUNCTION FetchAndScrub()
 
 %% FUNCTION ScrubData()
-function [cooked,Pending,Status] = ScrubData(raw,Pending)
+function [cooked,Pending,Status,TrialRet] = ScrubData(raw,Pending)
 % Inputs: raw       data retrieved from Cerebus
 %         Pending   Structure to preserve Start_ts across invocations, also
 %                   containing data preserved across invocations.
 %
 % The following manipulations are done in ScrubData():
-%   1. Raw data constituting  reconstructed databursts will be returned as
+%   1. Raw data constituting reconstructed databurst bytes will be returned as
 %   cooked(:,kk), one vector per databurst
 %   2. Raw data that ends in the middle of a databurst will be returned as
 %   Pending.ts and Pending.codes (not yet reconstructed as databursts)
-%   3. Pending data is prepended to raw.ts and raw.codes prior to calling
+%   3. Pending data was prepended to raw.ts and raw.codes prior to calling
 %   ScrubData().
 %   4. Raw data with initial portion being a fragment of a databurst is
 %   discarded, for the initial run. Subsequent runs have the initial
 %   portion prepended to raw (that were preserved in Pending).
 %   5. Raw data containing no databurst codes will be discarded.
-% Data words are the (16-bit) words that have the top 4 bits set.
-% Here are their indices in the raw buffer
 
 global DATABURSTSIZE
 global CHAN;
@@ -193,12 +205,16 @@ global testclk;
 % ticks per millisecond
 INC = 30;
 Status='Success';
+TrialRet=[];    % One return value for each cooked buffer plane
 cooked = [];    % Buffer for output: reconstructed databurst words
 kk=1;           % Index into cooked buffer, for multiple planes
 
+% Databurst words are the (16-bit) words that have the top 4 bits set.
+% Here are their indices in the raw buffer
 RawIndices = find(raw.codes>hex2dec('F000'));
+
 if size(RawIndices,1)==0
-    Status = 'Discard';   % There are no data words in this sample
+    Status = 'Discard';   % There are no databurst words in this sample
     return
 end
 if raw.ts(RawIndices(1))<= INC
@@ -206,7 +222,7 @@ if raw.ts(RawIndices(1))<= INC
     Fragment = true;
     if Pending.Start_ts == -1
         % This is NOT a continuation run; discard databurst fragment with
-        % unknown beginning
+        % unknown beginning (unlikely that the first nibble is at the start)
         Status = 'Discard';
         fprintf('**Discard non-continuation databurst at start of data\n')
         return
@@ -216,15 +232,19 @@ else
     % Save the starting timestamp for the databurst
     Pending.Start_ts = raw.ts(RawIndices(1));
 end
-if raw.ts(RawIndices(numel(RawIndices))) < Pending.Start_ts + ...
-        (DATABURSTSIZE-1)*INC*2
-    % Here for an ending fragment. Just return, scrub this databurst after
-    % it's completed via next acquisition
+
+MAXraw = numel(RawIndices); %
+
+if raw.ts(RawIndices(MAXraw)) < Pending.Start_ts + (DATABURSTSIZE-1)*INC*2
+    % Here for an initial end-fragment. Just return; scrub this databurst after
+    % it's completed via next acquisition. TrialRet was alrady set to [].
     fprintf('*ending fragment\n')
     Status='Fragment';
     Pending.ts = raw.ts;
     Pending.codes = raw.codes;
-%    Status='Discard';   % If This is not working enable the Discard option
+    %    Status='Discard';   % If This is not working enable the Discard option
+    % This case is a fragment at the end of the first databurst, so there are no 
+    % TrialRet values to calculate
     return
 end
 
@@ -235,70 +255,106 @@ dbC=bitshift(bitand(raw.codes(RawIndices),hex2dec('FF00')),-8);
 % the databurst code.
 dbc=bitand(dbC,hex2dec('F'));
 % Now get the timestamps corresponding to these databurst codes.
-dbI=raw.ts(RawIndices);
+DBts=raw.ts(RawIndices);
 
-% the next two lines may be helpful for debuggung
-%plot(dbI, dbc)
-%db=[dbI, uint32(dbc)];
+% The next two lines may be helpful for debugging
+%     plot(DBts, dbc)
+%     db=[DBts, uint32(dbc)];
 % To validate databurst duration on the plot: Set cursors at beginning and
 % end of putative databurst and check the difference, divided by 60 because
 % the rate is 30 kHz and there are two bytes ber databurst byte. We get
 % about 90.5, which corresponds to 91 bytes in the ddataburst.
 %   (cursor_info(1).Position(1)- cursor_info(2).Position(1))/60 = 90.5
 
-% The following code sxtracts databurst content, one timestamp and data
+% Here are the START words (ANDed with 0x1000) (may not need these)
+StartI = find(bitand(raw.codes,hex2dec('F000'))==2^12);
+Start.ts = raw.ts(StartI);
+Start.codes = bitshift(raw.codes(StartI),-8);
+Start.codes = bitand(Start.codes,15); % just take the bottom nibble
+
+% Here are the END words (ANDed with 0x2000)
+EndI = find(bitand(raw.codes,hex2dec('F000'))==2^13);
+End.ts = raw.ts(EndI);
+End.codes = bitshift(raw.codes(EndI),-8);
+End.codes = bitand(End.codes,15); % just take the bottom nibble
+
+% The following code extracts databurst content, one timestamp and data
 % element at 30 (INC) ticks per millisecond. The code permits +- (1/30) msec
-% jitter. This extraction is neeeded when collection was done on both
+% jitter. This extraction is needed when collection was done on both
 % rising and falling edges of data.
 running = true;
 ii = 1; % index into databurst nibble list
 jj=1;   % index into reconstructed databurst byte stream
 looking4upper = true;   % Each databurst byte is transmitted as 2 nibbles, lower first
-MAXraw = size(dbc,1);
 lower = dbc(ii);    % The first nibble of the first byte of the next databurst
-was = lower;
+was = lower; % Use to look for nibble-to-nibble code changes
 cki=ii;     % debugging variable
-st_time = dbI(ii);  % timestamp to begin analysis for the next nibble 
+st_time = DBts(ii);  % timestamp to begin analysis for the next nibble 
 maybeC = dbc(ii);   % initialize the candidate for the next nibble
-while running
-    % now seek the next entry that either has a different code, or is inc
+while running % sit in this loop until we run out of databurst nibbles
+    % Now seek the next entry that either has a different code, or is inc
     % (30) time units +-1 later, whichever comes first. If a different code
     % comes first this is too soon, abort.
-    while dbI(ii) < (st_time+INC) ...% current time is within INC-1 later than start
+    while DBts(ii) < (st_time+INC) ...% current time is within INC-1 later than start
             && (maybeC == was) &&...   % code is unchanged
-            (ii < MAXraw)        % did not yet use up the raw data
-        ii=ii+1;
+            (ii < MAXraw)        % did not yet use up the raw databurst data
+        ii=ii+1; % increment index, then assign maybeC. These are values on loop exit.
         maybeC = dbc(ii);
     end
-    % Here when either there is a new code nibble value, or the time for
-    % the next databurst nibble is up, or the last DATA word has been
+    % Here when there is a new code nibble value, or the time for
+    % the next databurst nibble is up, or the last DATABURST word has been
     % copied. In all cases, maybeC now contains the next candidate code
-    % nibble.
+    % nibble, equaling dbc(ii)
     cki=[cki ii];   % debugging variable
 
-    if dbI(ii) < st_time+INC-1 && ii ~= MAXraw%
+    if (DBts(ii) < st_time+INC-1)
         toosoon=1; 
-        %fprintf('*Index %d-%d-%d, code change early: %d\n',ii,jj,kk,dbI(ii)-st_time) %possible error?
+        fprintf('*Index %d-%d-%d, code change early: %d\n',ii,jj,kk,DBts(ii)-st_time) %possible error?
     else
         toosoon=0;% time to pick out these nibbles
     end
     
-    if dbI(ii) > st_time + 4*INC    % next raw data is for NEXT databurst
+    if DBts(ii) > st_time + 4*INC    % further raw data is for NEXT databurst
         % Validate the previously processed "cooked" buffer
         if jj < DATABURSTSIZE   % this is an error case
             fprintf('**cooked smaller than expected (continuing): %d\n',jj)
             Status = 'Discard';
         end
         
+        % Get the first END word later than the just-completed databurst but
+        % earlier than the next databurst
+        TrialRetI = find(End.ts > DBts(ii-1), 1, 'first');
+        if TrialRetI & End.ts(TrialRetI) < DBts(ii) % append to end of TrialRet array (one value for each cooked DB)
+            TrialRet = End.codes(TrialRetI);
+        else
+            % No END word between the previous and the next databursts; flag as error
+            % & discard it.
+            fprintf('*No END word between the previous and the next databursts\n')
+            szckd = size(cooked,2);
+            if kk ~= szckd
+                error('no match in cooked size\n')
+            end
+            if szckd > 1
+                cooked = cooked(:,szckd-1);
+                TrialRet = TrialRet(1:szckd-1)
+                kk=kk-1; % the prior databurst must be discarded
+            else
+                cooked = [];
+                TrialRet=[];
+                kk=0;
+            end
+            Pending.Start_ts = DBts(ii);
+        end
+        
         % save the timestamp value for start of next databurst
-        Pending.Start_ts = dbI(ii);
+        Pending.Start_ts = DBts(ii);
         
         % If the remaining raw data do not make a complete databurst,
         % put the raw buffer into Pending and return.
-        if dbI(MAXraw) < Pending.Start_ts+(DATABURSTSIZE-1)*INC*2
-            disp('*Fragment in second databurst')
+        if DBts(MAXraw) < Pending.Start_ts+(DATABURSTSIZE-1)*INC*2
+            disp('*Fragment in subsequent databurst')
             testclk=tic;
-            StartPendingIdx = find(raw.ts==dbI(ii));
+            StartPendingIdx = find(raw.ts==DBts(ii));
             Pending.ts = raw.ts(StartPendingIdx:numel(raw.ts));
             Pending.codes = raw.codes(StartPendingIdx:numel(raw.ts));
             Status = 'Fragment';
@@ -318,11 +374,11 @@ while running
         lower = dbc(ii);    % The first nibble of the first byte of the next databurst
         was = lower;
         cki=ii;     % debugging variable
-        st_time = dbI(ii);  % timestamp to begin analysis for the next nibble
+        st_time = DBts(ii);  % timestamp to begin analysis for the next nibble
         maybeC = dbc(ii);   % initialize the candidate for the next nibble
         
         continue
-    end
+    end % END if DBts(ii) > st_time + 4*INC
     
     % Now process the code nibble just retrieved from dbc(ii)
     if looking4upper
@@ -341,25 +397,42 @@ while running
         looking4upper = true;
     end
     
-    % Exit loop when current time is EITHER too soon (error) or too late
+    % Exit loop when current time is EITHER too soon (error) or too late, OR done
     % (next databurst)
     if  ii == MAXraw  % have scrubbed all available raw data
         % Note that the scenario of a starting fragment of a databurst was
         % handled above, where status='Fragment' was returned
-        Pending = InitPending();
         if jj < DATABURSTSIZE   % this is an error case
             fprintf('**cooked smaller than expected (end): %d\n',jj)
             Status = 'Discard';
         end
+        % Get the first "end" word later than the just-completed databurst
+        TrialRetI = find(End.ts > DBts(ii), 1, 'first');
+        if TrialRetI % append to end of TrialRet array (one value for each cooked DB)
+            TrialRet = [TrialRet End.codes(TrialRetI)];
+        else
+            % No END word in this batch; put current databurst into Pending,
+            % flag it as a fragment, and return
+            fprintf('*ending fragment, need END word\n')
+            Status='Fragment';
+            rawThisDBStartI = find(raw.ts==Pending.Start_ts);
+            Pending.ts = raw.ts(rawThisDBStartI:numel(raw.ts));
+            Pending.codes = raw.codes(rawThisDBStartI:numel(raw.ts));
+            Pending.MissingEND = true;
+            return;
+        end
+        Pending = InitPending();
+        % default Status was set as Success at opening of function
         return
     end
 
-    st_time = dbI(ii);  % timestamp for last nibble analyzed
+    st_time = DBts(ii);  % timestamp for last nibble analyzed
     ii = ii+1;  % get next raw item for "while" loop above
     maybeC = dbc(ii);
-end
+end % END while running
 
 end     % END FUNCTION ScrubData()
+
 %%
 % FUNCTION parsed = ParseData(cooked, format)
 % Now parse the data using the requested format
@@ -385,5 +458,3 @@ for kk=1:size(cooked,2)
     jj=1;
 end
 end
-
-

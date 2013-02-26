@@ -7,4 +7,5 @@ function Pending = InitPending()
 Pending.ts = [];
 Pending.codes = [];
 Pending.Start_ts = -1;
+Pending.MissingEND = false;
 end
