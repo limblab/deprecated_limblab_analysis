@@ -71,15 +71,18 @@ TT_HDR_SIZE = 40;
 jj=1; % counter for elements in each databurst
 kk = 1; % counter for
 tt1=zeros(TT_HDR_SIZE,1);
-[tt Pending] = dbFetchAndScrub('open',dbfmt);
+[tt Pending cyclenum] = dbFetchAndScrub('open',dbfmt, 0, tt_hdr, 0);
 tt1(1:size(tt,1),jj:jj+size(tt,2)-1)= tt;
 for ii=1:MAXCOUNT
     jj=size(tt1,2)+1;
     tt1(:,jj)=zeros(TT_HDR_SIZE,1);
-    [tt, Pending] = dbFetchAndScrub('update',dbfmt, Pending, tt_hdr);
+    [tt, Pending, cyclenum] = dbFetchAndScrub('update',dbfmt, Pending, tt_hdr, cyclenum);
     tt1(1:size(tt,1),jj:jj+size(tt,2)-1)= tt;
     %% Now generate psychometric plots. Not every handle is populated at each call.    
     handle_list = bc_psychometric_curve_stim_live(tt1', tt_hdr,0,0,0);
+    if numel(handle_list)==0
+        continue
+    end
     LINELIST(ii,1:numel(handle_list)) = handle_list;
     % Only keep the last KEEPCOUNT plots
     if ii > KEEPCOUNT

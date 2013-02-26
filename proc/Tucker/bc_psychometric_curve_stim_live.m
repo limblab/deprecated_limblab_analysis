@@ -60,6 +60,18 @@ function g = bc_psychometric_curve_stim_live(tt,tt_hdr,stimcode,plot_error,inver
     %segregate the bump angles by hemispace relative to the target axis 
     %(some trials have shown different biases in the upper and lower 
     %hemispaces)
+    xx=find((proportion_stim~=0)&(proportion_stim~=1));
+    if xx
+        fprintf('proportion_stim(%d) not 0, not 1\n', xx);
+        g=[];
+        %return
+    end
+    xx=find((number_reaches_stim~=0)&(number_reaches_stim~=1));
+    if xx
+        fprintf('number_reaches_stim(%d) not 0, not 1\n', xx);
+        g=[];
+        %return
+    end
     up_dirs_stim = dirs_stim(dirs_stim<=180);
     down_dirs_stim = dirs_stim(dirs_stim>=180);
     %re-map the angles so that the left and right bumps can plot along the
@@ -161,6 +173,18 @@ function g = bc_psychometric_curve_stim_live(tt,tt_hdr,stimcode,plot_error,inver
     
     %split the reach counts to upper and lower hemispaces
     %no stim
+    xx=find((proportion_no_stim~=0)&(proportion_no_stim~=1));
+    if xx
+        fprintf('proportion_no_stim(%d) not 0, not 1\n', xx);
+        g=[];
+        %return
+    end
+    xx=find((number_reaches_no_stim~=0)&(number_reaches_no_stim~=1));
+    if xx
+        fprintf('number_reaches_no_stim(%d) not 0, not 1\n', xx);
+        g=[];
+        %return
+    end
     proportion_no_stim_upper = proportion_no_stim(dirs_no_stim<=180);
     proportion_no_stim_lower = proportion_no_stim(dirs_no_stim>=180);
     num_left_reaches_no_stim_upper = num_left_reaches_no_stim(dirs_no_stim<=180);

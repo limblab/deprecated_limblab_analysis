@@ -130,7 +130,7 @@ while (bCollect)
             else
                 testcol = 0;
             end
-            if (find(raw.codes>hex2dec('F000'),1,'first') > 20) && ...
+            if (find(raw.codes>hex2dec('F000'),1,'first') > 20) & ...
                     (Pending.MissingEND == false)
                 % there is no DATABURST code in the first 20 nibbles, BAIL
                 fprintf('**Had a fragment, but next data absent\n')
@@ -318,13 +318,13 @@ while running % sit in this loop until we run out of databurst nibbles
         % Validate the previously processed "cooked" buffer
         if jj < DATABURSTSIZE   % this is an error case
             fprintf('**cooked smaller than expected (continuing): %d\n',jj)
-            Status = 'Discard';
         end
         
         % Get the first END word later than the just-completed databurst but
         % earlier than the next databurst
         TrialRetI = find(End.ts > DBts(ii-1), 1, 'first');
-        if TrialRetI & End.ts(TrialRetI) < DBts(ii) % append to end of TrialRet array (one value for each cooked DB)
+        % append to end of TrialRet array (one value for each cooked DB)
+        if jj == DATABURSTSIZE & TrialRetI & End.ts(TrialRetI) < DBts(ii) 
             TrialRet = End.codes(TrialRetI);
         else
             % No END word between the previous and the next databursts; flag as error
