@@ -329,7 +329,7 @@ while running % sit in this loop until we run out of databurst nibbles
         else
             % No END word between the previous and the next databursts; flag as error
             % & discard it.
-            fprintf('*No END word between the previous and the next databursts\n')
+            fprintf('**No END word between the previous and the next databursts\n')
             szckd = size(cooked,2);
             if kk ~= szckd
                 error('no match in cooked size\n')
