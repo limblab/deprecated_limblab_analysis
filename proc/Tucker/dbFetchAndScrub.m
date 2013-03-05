@@ -324,7 +324,7 @@ while running % sit in this loop until we run out of databurst nibbles
         % earlier than the next databurst
         TrialRetI = find(End.ts > DBts(ii-1), 1, 'first');
         % append to end of TrialRet array (one value for each cooked DB)
-        if jj == DATABURSTSIZE & TrialRetI & End.ts(TrialRetI) < DBts(ii) 
+        if jj > DATABURSTSIZE & TrialRetI & End.ts(TrialRetI) < DBts(ii) 
             TrialRet = End.codes(TrialRetI);
         else
             % No END word between the previous and the next databursts; flag as error
