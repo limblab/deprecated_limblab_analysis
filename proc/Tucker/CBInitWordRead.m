@@ -1,17 +1,22 @@
 function [ Status ] = CBInitWordRead( mode )
 %CBInitWordRead Open Cerebus in mode to deliver data words
 %   
-%% Set up Cerebus.
+%% Set up Matlab interface to Central
 % 
+if nargin ~= 1
+    help CBInitWordRead
+    return
+end
+CHAN=151;
 % OpenCerebus(mode)
 switch mode
-    case 'open'
+    case {'open',''}
         try
             [c i] = cbmex('open',1);
         catch
             try
                 cbmex close
-                [c i] = cbmex('open',1, 'nocontinuous');
+                [c i] = cbmex('open',1);
             catch
                 %    addpath('C:\Users\Ted\Dropbox\TedBallou\Windows\v6.03.00.01\SDK\lib')
                 %addpath('../SDK/')
@@ -23,20 +28,9 @@ switch mode
                 end
             end
         end
-        Pending = InitPending();
         cbmex('mask',0,0)       % disable all channels
         cbmex('mask',CHAN,1)     % enable word channel
-        cbmex('trialconfig',1)  % empty the buffer and begin collecting data
-    case 'update'
-        % Here for repeated calls, no setup required. New data will be
-        % appended to Pending data; controls for next index and nibble are
-        % contained in the Pending structure. Cerebus is assumed to be
-        % already collecting data.
-        try
-            isstruct(Pending);
-        catch
-            error 'Cannot call FetchAndScrub() for update without first calling for open'
-        end
+        cbmex('trialconfig',1,'nocontinuous')  % empty the buffer and begin collecting data
     case 'test'
         INTERVAL=0.01; % abbreviate the wait time 
         myWait = 0.01;
