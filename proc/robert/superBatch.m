@@ -51,6 +51,10 @@ try
         case 'plx'
             batch_get_plexon_data % runs as script.  uses PathName
             batch_buildLFPpositionDecoderRDF    % only runs on hand-control files
+            diary off
+            batch_build1FeatureDecoders
+            save('singleFeatureDecoders.mat','vaf1feat_all','bestf1feat_all','bestc1feat_all','VAFstruct')
+            diary(fullfile(PathName,'decoderOutput.txt'))
             batch_buildSpikePositionDecoderRDF  % only runs on hand-control files
         otherwise
             % there is no data for that date.  delete the folder that was
@@ -85,6 +89,10 @@ try
         copyfile('allFPsToPlot.mat',remoteFolder2)
         fprintf(1,'allFPsToPlot.mat copied successfully to %s\n',remoteFolder2)
     end
+    if exist('singleFeatureDecoders.mat','file')==2
+        copyfile('singleFeatureDecoders.mat',remoteFolder2)
+        fprintf(1,'singleFeatureDecoders.mat copied successfully to %s\n',remoteFolder2)
+    end
     
     % get cursor kinematics for brain control files.  Was previously
     % attempting to be clever with this, but was forgetting the fact that in
@@ -117,6 +125,8 @@ try
             end
             movefile('decoderOutput.txt', ...
                 fullfile(localAnalysisFolder,'decoderOutput.txt'))
+            movefile('singleFeatureDecoders.txt', ...
+                fullfile(localAnalysisFolder,'singleFeatureDecoders.txt'))
         end
     end
     

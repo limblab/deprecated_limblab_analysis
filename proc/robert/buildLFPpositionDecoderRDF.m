@@ -209,10 +209,10 @@ end
 nameToSave=[nameToSave,signal,'-decoder.mat'];
 if ~isempty(P)
     save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
-        'chanIDs','samplingFreq','f_bands','bestc','bestf')
+        'chanIDs','samplingFreq','f_bands','bestc','bestf','R','rXY')
 else
     save(fullfile(PathName,nameToSave),'H','neuronIDs','fillen','binsize', ...
-        'chanIDs','samplingFreq','f_bands','bestc','bestf')
+        'chanIDs','samplingFreq','f_bands','bestc','bestf','R','rXY')
 end
 fprintf(1,'decoder saved in %s',PathName)
 

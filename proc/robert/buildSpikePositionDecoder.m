@@ -80,7 +80,7 @@ end
 
 if nargin>2
     unitIndexToUse=find(cellfun(@isempty,regexp(cellstr(binnedData.spikeguide), ...
-        ['ee',num2str(singleUnitToUse),'u1']))==0);
+        ['ee',sprintf('%02d',singleUnitToUse),'u1']))==0);
     binnedData.spikeguide=binnedData.spikeguide(unitIndexToUse,:);
     binnedData.spikeratedata=binnedData.spikeratedata(:,unitIndexToUse);
 end

@@ -1,19 +1,60 @@
-function sig=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE)
+function [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE)
+
+switch lower(SIGNALTOUSE)
+    case 'force'
+        CG=[];
+    case 'cg'
+        % the traditional variable 'sig' contains the PC reconstructions for the 1st N
+        % PCs up to 90% variance.  The the 1st 3 fields of CG contain and describe
+        % the raw CG data (CG.data is double not uint16).  The last field of CG
+        % has the weights for attempting to re-generate all 22 input signals
+        % from the N output signals returned in sig.  CG.mean and CG.std will
+        % need to be stored as gain factors so that when the PCs are predicted,
+        % the gain and offset can be applied in order to tranlate into CG
+        % coordinates.  CG.data is the raw data (though converted into double
+        % precision).
+        CG=struct('data',[],'mean',[],'std',[],'coeff',[]);
+end
+
+samprate=parameters.SamplingRate.NumericValue;
+blockSize=parameters.SampleBlockSize.NumericValue;
 
 fprintf(1,'finding %s signal...\n',SIGNALTOUSE)
 switch SIGNALTOUSE
     case 'force'
-        sig=[rowBoat(1:size(signal,1))/1000, ...
-            signal(:,strcmpi(parameters.ChannelNames.Value,SIGNALTOUSE))];
+        force_ind=find(strcmpi(parameters.ChannelNames.Value,SIGNALTOUSE));
+        sig=[rowBoat(1:size(signal,1))/samprate, ...
+            signal(:,force_ind).*str2double(parameters.SourceChGain.Value{force_ind})];
+        % scale further by Normalizer values
+        sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
+            str2double(parameters.NormalizerGains.Value{2});
+        % shift 1 more time, for the application (cursor position is
+        % defined by its displacement from 50, and is offset by
+        % YOffsetValue
+        sig(:,2)=sig(:,2)+50;  % this is hard-coded!
+        sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
     case 'CG'
+%         cg=zeros(size(signal,1),22);
         for i=1:22
-            cg(:,i)=eval(['states.GloveSensor',int2str(i)]);
-        end
-        clear i
-        % make sure and delete outrageously large deviations
+            CG.data(:,i)=states.(['GloveSensor',int2str(i)]);
+        end, clear i
+        % make CG.data 1 sample longer, in anticipation of interpolation
+        CG.data=CG.data([(blockSize+1):blockSize:size(CG.data,1) size(CG.data,1) size(CG.data,1)],:);
+        CG.data=double(CG.data);
+        % interpolate back up to the size of signal
+        analog_times=(1:size(signal,1))/samprate;
+        % blockTimes must wrap analog_times, but analog_times sets the size
+        % of the output, so make it == to size(signal,1).
+        sampfact=blockSize/samprate;
+        blockTimes=(0:(size(CG.data,1)-1))*sampfact;
+        CG.data=interp1(blockTimes',CG.data,analog_times');        
+        % Now, delete outrageously large deviations
         % within the signals, often occurring at the beginning of files.
-        % Also, employ this for EMGs after filtering/rectification/etc.
-        cgz=zscore(double(cg))'; clear cg
+        CG.mean=mean(CG.data); CG.std=std(CG.data);
+        cgz=CG.data-repmat(CG.mean,size(CG.data,1),1);
+        cgz=cgz./repmat(CG.std,size(CG.data,1),1);
+        % transpose for backwards compatibility with legacy code.
+        cgz=cgz';
         %Remove the noise "pops" that occur from using >1 file, or just inherent
         %noise from the sensors, by interpolating in the parts that are >2SDs from
         %the mean
@@ -45,15 +86,17 @@ switch SIGNALTOUSE
         end
         cgz=cgnew;
         clear cgnew
-
-        [junk,scores,variances,junk] = princomp(cgz');
+        
+        [CG.coeff,CGscores,variances,junk] = princomp(cgz'); % CG.data
 
         % to determine how many components to use, find the # that account for
         % >= 90% of the variance.
         % FOR POSITION THE FUNCTION EXPECTS A TIME VECTOR PREPENDED
         temp=cumsum(variances/sum(variances));
-        positionData=[rowBoat(1:size(cgz,2))/1000, scores(:,1:3)];
-        fprintf(1,'Using 3 PCs, which together account for\n')
+        cutoff90=find(temp >= 0.9,1,'first');
+        positionData=[rowBoat(1:size(cgz,2))/1000, CGscores(:,1:cutoff90)];
+        CG.coeff=CG.coeff(:,1:cutoff90);
+        fprintf(1,'Using %d PCs, which together account for\n',cutoff90)
         fprintf(1,'%.1f%% of the total variance in the PC signal\n',100*temp(size(positionData,2)-1))
 
         sig=positionData;

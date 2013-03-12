@@ -250,14 +250,17 @@ tic
 if ~exist('nfeat','var')
     nfeat=100;
 end
+m=1;
 if ~verLessThan('matlab','7.7.0') || size(y,2)>1 
     for c=1:size(PB,2)
         for f=1:size(PB,1)
             rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+            rXY(m,1)=rt1(2,1);
             if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use ALL outputs in calculating bestfeat (orig modified 12/13/10 for 2 outputs)
                 rsum=abs(rt1);
                 for n=2:size(y,2)
                     rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+                    rXY(m,n)=rtemp(2,1);
                     rsum=rsum+abs(rtemp);
                 end
                 rt=rsum/n;
@@ -265,6 +268,7 @@ if ~verLessThan('matlab','7.7.0') || size(y,2)>1
             else
                 rt=rt1;
             end
+            m=m+1;
             if size(rt,2)>1
                 r(f,c)=abs(rt(1,2));    %take absolute value of r
             else
@@ -295,7 +299,11 @@ r1=reshape(r,1,[]);
 r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
 [sr,featind]=sort(r1,'descend');
 assignin('base','featind',featind)
-assignin('base','R',r1)
+% since buildLFPpositionDecoderRDF.m got turned into a function, assignin
+% to 'caller' not 'base'.
+assignin('caller','R',r1)
+if ~exist('rXY','var'), rXY=[]; end
+assignin('caller','rXY',rXY)
 try
     [bestf,bestc]=ind2sub(size(r),featind((1:nfeat)+featShift));
 catch ME

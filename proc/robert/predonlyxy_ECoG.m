@@ -32,15 +32,23 @@ end
 if ~exist('smoothflag','var')
     smoothflag=0;
 end
-% Smoothing
+% Smoothing.  Do causal only, to better mimic the online case.
+x_smoothed=zeros(size(x));
 if smoothflag
-    xtemp=smooth(x(:),50,'sgolay');      %sometimes smoothing features helps
-    x=reshape(xtemp,size(x));
-    ytemp=y(:);
-    ytemp=smooth(y(:),50,'sgolay');
-    y=reshape(ytemp,size(y));
+    if smoothflag>10
+        for n=10:(smoothflag-1)
+            x_smoothed(n,:)=mean(x(1:n,:),1);
+        end
+    end
+    for n=smoothflag:size(x,1)
+        x_smoothed(n,:)=mean(x((n-smoothflag+1):n,:),1);
+    end
+    x=x_smoothed;
+    % skip y smoothing for now
+%     ytemp=y(:);
+%     ytemp=smooth(y(:),50,'sgolay');
+%     y=reshape(ytemp,size(y));
 end
-
 % if column 1 is monotonically increasing then it is the time vector.
 if nnz(diff(y(:,1))<0)==0
     analog_times=y(:,1);

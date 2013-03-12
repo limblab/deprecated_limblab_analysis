@@ -1,4 +1,4 @@
-function [vaf,ytnew,y_pred,bestc,bestf,H]=buildModel_ECoG(x,fpind,y,PolynomialOrder,Use_Thresh, ...
+function [vaf,ytnew,y_pred,bestc,bestf,H,P]=buildModel_ECoG(x,fpind,y,PolynomialOrder,Use_Thresh, ...
     lambda,numlags,numsides,binsamprate,featind,nfeat,varargin)
 
 % predonlyxy_ECoG.m This function runs just the prediction part of predictionsfromfp6.m
@@ -23,13 +23,22 @@ end
 if ~exist('smoothflag','var')
     smoothflag=0;
 end
-% Smoothing
+% Smoothing.  Do causal only, to better mimic the online case.
+x_smoothed=zeros(size(x));
 if smoothflag
-    xtemp=smooth(x(:),11,'sgolay');      %sometimes smoothing features helps
-    x=reshape(xtemp,size(x));
-    ytemp=y(:);
-    ytemp=smooth(y(:),11,'sgolay');
-    y=reshape(ytemp,size(y));
+    if smoothflag>10
+        for n=10:(smoothflag-1)
+            x_smoothed(n,:)=mean(x(1:n,:),1);
+        end
+    end
+    for n=smoothflag:size(x,1)
+        x_smoothed(n,:)=mean(x((n-smoothflag+1):n,:),1);
+    end
+    x=x_smoothed;
+    % skip y smoothing for now
+%     ytemp=y(:);
+%     ytemp=smooth(y(:),50,'sgolay');
+%     y=reshape(ytemp,size(y));
 end
 
 % if column 1 is monotonically increasing then it is the time vector.
