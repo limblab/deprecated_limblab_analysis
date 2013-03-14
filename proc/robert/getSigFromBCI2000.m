@@ -15,8 +15,7 @@ switch lower(SIGNALTOUSE)
         % precision).
         CG=struct('data',[],'mean',[],'std',[],'coeff',[]);
 end
-
-samprate=parameters.SamplingRate.NumericValue;
+samprate=24414.0625/24; % real TDT sample rate
 blockSize=parameters.SampleBlockSize.NumericValue;
 
 fprintf(1,'finding %s signal...\n',SIGNALTOUSE)
