@@ -1,11 +1,8 @@
-%%
-% empty
-
-%% set up.
+%% 1.  set up
 if ispc
     cd('E:\personnel\RobertF'), RDFstartup
 end
-
+%% 2.  define constants.
 %% to start over, without losing important info
 % clear everything but the stuff in the next cell? FileName/PathName?
 clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* fp* freqs 
@@ -23,25 +20,30 @@ FPIND=1:32;     % this controls which columns of the signal array are valid fp c
 FPSTOUSE=[16:32];   %#ok<*NBRAK>
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
-%% find file, set up environment.  
+%%  3. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
 % same file, skip this cell and move to the next.
 clear FileName PathName
 if ~exist('PathName','var')
-    [FileName,PathName,FilterIndex] = uigetfile('E:\ECoG_Data\*.dat');
+    [FileName,PathName,FilterIndex] = uigetfile('E:\ECoG_Data\*.dat','MultiSelect','on');
+end
+if iscell(FileName)
+    for n=1:length(FileName), files(n).name=fullfile(PathName,FileName{n}); end
+else
+    files.name=fullfile(PathName,FileName);
 end
 if isnumeric(PathName) && PathName==0
     disp('cancelled.')
     return
 end
 cd(PathName)
-%% load into memory. 
-fprintf(1,'loading %s...\n',FileName)
-[signal,states,parameters,N]=load_bcidat(fullfile(PathName,FileName));
+%%  4.  load into memory
+fprintf(1,'loading %s...\n',files.name)
+[signal,states,parameters,N]=load_bcidat(files.name);
 fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
 clear N
-%% get fp array from signal array
+%%  5.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
 fp=(signal(:,FPIND)').* ...
@@ -65,13 +67,16 @@ FPSTOUSE(ismember(FPSTOUSE,str2double(regexp(get(gco,'DisplayName'),'(?<=ch)[0-9
 delete(gco)
 legend('off')
 legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
-%% set parameters, and build the feature matrix.  go ahead and include all the fps.
-wsz=256; binsize=0.05;
+disp('done')
+%%  6.  set parameters, and build the feature matrix.
+wsz=256;
+samprate=24414.0625/24; % real TDT sample rate
+binsize=0.05;
 [featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize);
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
-
-%%
+%%  7.  index the fps - can change mind at this point as to which FPs to use.
+% FPSTOUSE=33:48;
 clear x
 x=zeros(size(featMat,1),length(FPSTOUSE)*6);
 % there is a tricky interplay between x and FPSTOUSE, because x is used to
@@ -88,7 +93,7 @@ end, clear n
 % or Triangle) but it could be added.  Alternately, just ensure it doesn't
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
 
-%% assign parameters.
+%%  8.  assign parameters.
 Use_Thresh=0; lambda=1; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=42; smoothfeats=40;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
@@ -100,7 +105,7 @@ end
 fprintf('\nusing %d features...\n\n',nfeat)
 % have to clear bestc,bestf if going from more features to fewer!
 clear bestc bestf
-%% evaluate fps offline use cross-validated predictions code.
+%%  9.  evaluate fps offline use cross-validated predictions code.
 % because this is so sensitive to # of features, we should really do a
 % whole feature-dropping curve here.  Possibly an entire exploration of the
 % parameter space; since featMat does not have to be re-calculated, it
@@ -115,8 +120,8 @@ vaf
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
-%%
-% close
+%%  10.  plot cross-validated predictions, with some informative text.
+close
 figure, set(gcf,'Position',[88         100        1324         420])
 col=1;
 for n=1:folds
@@ -134,7 +139,7 @@ title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d f
 % At this point, a decision must be made as to whether it will be best to
 % take one of these H's, or try calculating one on the entire file.
 
-%% (don't forget to choose the best fps) build a decoder and save.
+%%  11.  build a decoder and save.
 % at this point, bestc & bestf are sorted by channel, while featind is
 % still sorted by feature correlation rank.
 disp('calculating H,bestc,bestf using a single fold...')
@@ -145,7 +150,8 @@ vaf
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
-%% saving.  scroll down for last plot.
+close
+%%  12.  saving.
 % bestc must be re-cast so that it properly indexes the full 32-channel
 % possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
 % adjusted once loaded into BCI2000.
@@ -166,10 +172,16 @@ end
 
 % save in a more human-readable format.
 [SaveHname,SaveHpath,junk]= ...
-    uiputfile('E:\ECoG_Data\*.txt','Save H As','H.txt'); clear junk
+    uiputfile(fullfile(PathName,'*.txt'),'Save H As', ...
+    [regexp(files(1).name,'.*(?=\.dat)','match','once'),'_H.txt']);
+clear junk
 if isnumeric(SaveHpath) && SaveHpath==0
     disp('cancelled.')
     return
+end
+[junk1,junk2,ext]=FileParts(SaveHname); clear junk*
+if isempty(ext)
+    SaveHname=[SaveHname,'.txt'];
 end
 % save in a more human-readable format.
 % open file in write format (Windows text file = 'wt')
