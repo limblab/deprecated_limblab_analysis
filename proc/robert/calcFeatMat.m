@@ -2,7 +2,7 @@ function [featMat,y]=calcFeatMat(fp,y,wsz,samprate,binsize)
 
 % fp must be numfp rows X [samples] columns.
 numfp=size(fp,1);
-bs=binsize*samprate;    %This assumes binsize is in seconds.
+bs=round(binsize*samprate);    %This assumes binsize is in seconds.
 numbins=floor(size(fp,2)/bs);   %Number of bins total
 fptimes=(1:size(fp,2))/samprate;
 analog_times=(1:length(y))/samprate;
