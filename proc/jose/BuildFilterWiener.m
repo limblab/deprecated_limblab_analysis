@@ -12,7 +12,8 @@ function [filt_struct, OffLPredData, trainData R2] = BuildFilterWiener(EMGvector
 
 %% Loading dataset
 % Default Path
-dataPath = 'C:\Users\Jose Luis\Desktop\Spike\replicate_RealData\data\'; 
+
+dataPath = ':\';
 disp('You are going to select your dataset, be careful!!')
 disp('dataset in workspace: 1 (note dataset should be named as binnedData)')
 disp('dataset in folder   : 2 ')
