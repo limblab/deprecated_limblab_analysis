@@ -135,7 +135,12 @@ function [filter, varargout]=train_reg(binnedData,dataPath, fillen, UseAllInputs
         Outputs = [Outputs binnedData.velocbin];
         OutNames = [OutNames;  binnedData.veloclabels];
     end 
+    numOutputs = size(Outputs,2);
         
+    InputMean = mean(Inputs);
+    OutputMean= mean(Outputs);
+    Inputs = detrend(Inputs,'constant');
+    Outputs= detrend(Outputs,'constant');        
     %The following calculates the linear filters (H) that relate the inputs and outputs
    
     if nargin >10
@@ -174,10 +179,25 @@ function [filter, varargout]=train_reg(binnedData,dataPath, fillen, UseAllInputs
             PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
         end
     end
-  
+    
+%% Add back the Output mean
+for i=1:numOutputs
+    PredictedData(:,i) = PredictedData(:,i)+OutputMean(i);
+end  
+    
 %% Outputs
 
-    filter = struct('neuronIDs', neuronIDs, 'H', H, 'P', P, 'T',T,'patch',patch,'outnames', OutNames,'fillen',fillen, 'binsize', binsize, 'input_type',input_type);
+    filter = struct('neuronIDs', neuronIDs,...
+                    'input_mean',InputMean,...
+                    'output_mean', OutputMean,...
+                    'H', H,...
+                    'P', P,...
+                    'T',T,...
+                    'patch',patch,...
+                    'outnames', OutNames,...
+                    'fillen',fillen,...
+                    'binsize', binsize,...
+                    'input_type',input_type);
     
    if nargout > 1
          PredData = struct('preddatabin', PredictedData, 'timeframe', ...
