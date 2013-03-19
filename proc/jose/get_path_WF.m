@@ -29,10 +29,12 @@ path2T_x = zeros(length(tgts),102);
 path2T_y = zeros(length(tgts),102);
 t2T = zeros(100,length(tgts));
 
+final_time = size(binnedData.timeframe,1)*0.05; % final eward sometimes exceeds total data time
+
 for i=1:length(tgts)
-    a2t = tt(:,10)==i & (tt(:,9)=='R') & tt(:,7)>=0;
-    go_t = round(tt(a2t,7)/binsize) - lag/2;
-    rew_t = round(tt(a2t,8)/binsize) - lag/2;
+    a2t = tt(:,10)==i & (tt(:,9)=='R') & tt(:,7)>=0 & tt(:,8)<=final_time;
+    go_t = round(tt(a2t,7)/binsize); %- lag/2;
+    rew_t = round(tt(a2t,8)/binsize);% - lag/2;
     time2T =tt(a2t,8)-tt(a2t,7);
     t2T(1:length(go_t),i) = time2T;
     paths_x = zeros(length(go_t),101);

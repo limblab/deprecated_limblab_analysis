@@ -26,17 +26,17 @@ rgb_c = [  1    0.9   0.9;
 
 m_paths_x = zeros(length(tgts),101);
 m_paths_y = zeros(length(tgts),101);
-       
-if (tt(:,7)>=0)
+
+
     for i=1:length(tgts)
-        a2t = tt(:,10)==tgts(i) & (tt(:,9)=='R');
+        a2t = tt(:,10)==tgts(i) & (tt(:,9)=='R') & (tt(:,7)>=0);
         go_t = round(tt(a2t,7)/binsize) - lag/2;
         rew_t = round(tt(a2t,8)/binsize) - lag/2;
         time2T =tt(a2t,8)-tt(a2t,7);
-        figure(i);plot(1:length(go_t),time2T,'*'); ylim([0 5]);
-        title(sprintf('Time to reach the target %i',i));
-        xlabel('Time (sec)'); 
-        ylabel('trials'); 
+%         figure(i);plot(1:length(go_t),time2T,'*'); ylim([0 5]);
+%         title(sprintf('Time to reach the target %i',i));
+%         xlabel('Time (sec)'); 
+%         ylabel('trials'); 
         paths_x = zeros(length(go_t),101);
         paths_y = zeros(length(go_t),101);
         for j=1:length(go_t)
@@ -70,7 +70,7 @@ if (tt(:,7)>=0)
         xlabel('X position');
         ylabel('Y position');
     end
-end
+
 
 axis([-10 10 -10 10])
 rectangle('Position',[-2,-2,4,4])

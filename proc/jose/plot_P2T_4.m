@@ -52,7 +52,7 @@ if (tt(:,7)>=0)
         m_paths_x(i,:) = mean(paths_x,1);
         m_paths_y(i,:) = mean(paths_y,1);        
         std_path = [std(paths_x,1,1);std(paths_y,1,1)];
-        figure(i)   
+        figure(9)   
         for k=1:101
             plot_ellipse(std_path(1,k),std_path(2,k),m_paths_x(i,k),m_paths_y(i,k),0,rgb_c(i,:)); 
             axis([-10 10 -10 10])
@@ -69,7 +69,7 @@ if (tt(:,7)>=0)
         end
     end
     for i=1:length(tgts)
-        figure(i)
+        figure(9)
         plot(m_paths_x(i,:),m_paths_y(i,:),color_l(i,:),'LineWidth',2,'MarkerEdgeColor',...
         colors(i),'MarkerFaceColor',colors(i),'MarkerSize',1);hold on
         plot(m_paths_x(i,1),m_paths_y(i,1),color_s_e(i,:),'LineWidth',2,'MarkerSize',7)
