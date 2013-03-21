@@ -135,6 +135,17 @@ function out_struct = get_cerebus_data(varargin)
             out_struct.units(i).id = [neural_info(i).SourceEntityID neural_info(i).SourceUnitID];
 %             out_struct.units(i).ts = single(neural_data);
             out_struct.units(i).ts = neural_data; % don't convert as single for now because trains2bins_mex needs double
+            dn = diff(neural_data);
+            if any(dn<0) %test whether there was a ts reset in the file
+                idx = find(dn<0);
+                if length(idx)>1
+                    warning('BDF:MultipleResets', ['Unit %d contains more than one ts reset.'...
+                            'All the data after the first reset is extracted.'],i);
+                end
+                out_struct.units(i).ts = neural_data( (idx(1)+1):end);
+                clear idx;
+            end
+            clear dn;
         end
 
         if (opts.verbose == 1)
@@ -160,10 +171,16 @@ function out_struct = get_cerebus_data(varargin)
             % yeilds too large a contiguous block on most machines, resulting
             % in an out of memory error. Also: this takes a really long time.
             [nsresult,cont_count,analog_data] = ns_GetAnalogData(hfile, analog_list(i), 1, EntityInfo(analog_list(i)).ItemCount);
-            if (cont_count ~= EntityInfo(analog_list(i)).ItemCount)
-                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
+            
+            if (cont_count ~= EntityInfo(analog_list(i)).ItemCount) %check for a discontinuity
+                % there was a discontinuity, so just use the EMG data of
+                % the second segment, after the ts reset.
+                out_struct.raw.analog.data{i} = single(analog_data(cont_count+1:end));
+%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
+            else %no reset, just grab all the data
+                out_struct.raw.analog.data{i} = single(analog_data);
             end
-            out_struct.raw.analog.data{i} = single(analog_data); %02-22-12: removed the x4.16 gain here. Unnecessary.
+                        
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
@@ -200,17 +217,22 @@ function out_struct = get_cerebus_data(varargin)
             % yeilds too large a contiguous block on most machines, resulting
             % in an out of memory error. Also: this takes a really long time.
             [nsresult,cont_count,emg_data] = ns_GetAnalogData(hfile, emg_list(i), 1, EntityInfo(emg_list(i)).ItemCount);
-            if (cont_count ~= EntityInfo(emg_list(i)).ItemCount)
-                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
+            if (cont_count ~= EntityInfo(emg_list(i)).ItemCount) %check for a discontinuity
+                % there was a discontinuity, so just use the EMG data of
+                % the second segment, after the ts reset.
+                out_struct.emg.data(:,i+1) = single(emg_data(cont_count+1:end));
+%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
+            else %no reset, just grab all the data
+                out_struct.emg.data(:,i+1) = single(emg_data);
             end
-            out_struct.emg.data(:,i+1) = single(emg_data); %02-22-12: removed the x4.16 gain here. Unnecessary.
+            
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
             end
         end
-        out_struct.emg.data(:,1) = single(0:1/emgfreq:(length(emg_data)-1)/emgfreq);
-        clear emg_data emg_info emgfreq;
+        out_struct.emg.data(:,1) = single(0:1/emgfreq:(size(out_struct.emg.data,1)-1)/emgfreq);
+        clear emg_data emg_info emgfreq cont_count;
     end
 
 %% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
@@ -236,16 +258,21 @@ function out_struct = get_cerebus_data(varargin)
             % yeilds too large a contiguous block on most machines, resulting
             % in an out of memory error. Also: this takes a really long time.
             [nsresult,cont_count,force_data] = ns_GetAnalogData(hfile, force_list(i), 1, EntityInfo(force_list(i)).ItemCount);
-            if (cont_count ~= EntityInfo(force_list(i)).ItemCount)
-                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i)
+            if (cont_count ~= EntityInfo(force_list(i)).ItemCount) %check for a discontinuity
+                % there was a discontinuity, so just use the force data of
+                % the second segment, after the ts reset.
+                out_struct.force.data(:,i+1) = single(force_data(cont_count+1:end));
+%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
+            else %no reset, just grab all the data
+                out_struct.force.data(:,i+1) = single(force_data);
             end
-            out_struct.force.data(:,i+1) = single(force_data); %02-22-12: removed the x4.16 gain here. Unnecessary.
+                
             if (opts.verbose == 1)
                 progress = progress + entity_extraction_weight*EntityInfo(force_list(i)).ItemCount/relevant_entity_count;
                 waitbar(progress,h,sprintf('Opening: %s\nExtracting force...', filename));
             end
         end
-        out_struct.force.data(:,1) = single(0:1/forcefreq:(length(force_data)-1)/forcefreq);
+        out_struct.force.data(:,1) = single(0:1/forcefreq:(size(out_struct.force.data,1)-1)/forcefreq);
         clear force_data force_info forcefreq;
 
     end
@@ -259,6 +286,18 @@ function out_struct = get_cerebus_data(varargin)
         %populate stim marker ts
         [nsresult,stim_data] = ns_GetNeuralData(hfile, stim_marker, 1, EntityInfo(stim_marker).ItemCount);
         out_struct.stim_marker = stim_data;
+
+        ds = diff(stim_data);
+        if any(ds<0) %test whether there was a ts reset in the file
+            idx = find(ds<0);
+            if length(idx)>1
+                warning('BDF:MultipleResets', ['StimMarker contains more than one ts reset.'...
+                        'Only the last continuous segement is extracted.']);
+            end
+            out_struct.stim_marker = stim_data( (idx(end)+1):end);
+            clear idx;
+        end
+        clear ds;
         
         if (opts.verbose == 1)
             progress = progress + entity_extraction_weight*EntityInfo(stim_marker(i)).ItemCount/relevant_entity_count;
@@ -277,9 +316,20 @@ function out_struct = get_cerebus_data(varargin)
 %         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,145,1:EntityInfo(145).ItemCount);
          [nsresult,event_ts,event_data] = ns_GetEventData(hfile,digin_listID,1:EntityInfo(digin_listID).ItemCount);
         % we have the digin serial line
-
-
         % Get all words... including zeros.
+        
+        de = diff(event_ts);
+        if any(de<0) %test whether there was a ts reset in the file
+            idx = find(de<0);
+            if length(idx)>1
+                warning('BDF:MultipleResets', ['Events contains more than one ts reset.'...
+                        'Only the last continuous segement is extracted.'],i);
+            end
+            event_data = event_data( (idx(end)+1):end);
+            event_ts   = event_ts  ( (idx(end)+1):end);
+            clear idx;
+        end
+        clear de;
         
         % Check if file was recorded before the digital input cable was
         % switched.
@@ -318,8 +368,20 @@ function out_struct = get_cerebus_data(varargin)
         end
 
         % Grab the serial data -- event ID 146
-%         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,146,1:EntityInfo(146).ItemCount);
-         [nsresult,event_ts,event_data] = ns_GetEventData(hfile,serial_listID,1:EntityInfo(serial_listID).ItemCount);
+%        [nsresult,event_ts,event_data] = ns_GetEventData(hfile,146,1:EntityInfo(146).ItemCount);
+        [nsresult,event_ts,event_data] = ns_GetEventData(hfile,serial_listID,1:EntityInfo(serial_listID).ItemCount);
+        de = diff(event_ts);
+        if any(de<0) %test whether there was a ts reset in the file
+            idx = find(de<0);
+            if length(idx)>1
+                warning('BDF:MultipleResets', ['Events contains more than one ts reset.'...
+                        'Only the last continuous segement is extracted.'],i);
+            end
+            event_data = event_data( (idx(end)+1):end);
+            event_ts   = event_ts  ( (idx(end)+1):end);
+            clear idx;
+        end
+        clear de;
         out_struct.raw.serial = [event_ts, event_data];
     end
 
