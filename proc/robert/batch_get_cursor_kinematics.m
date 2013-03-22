@@ -60,8 +60,12 @@ for batchIndex=1:length(MATfiles)
     % don't use the range function because it is terrible.  relies on some
     % damn license that's always crapping out because of too many
     % concurrent users.
+    
+    % once we started doing CO tasks, the number of targets ceased to be
+    % meaningful
     if (exist('override','var')~=0 && override==1) || ...
-            mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 10
+            (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 10) || ...
+            (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 300)
         % we're in brain control country.  Savor the flavor.
         get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
         out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation
@@ -96,9 +100,15 @@ for batchIndex=1:length(MATfiles)
          % control, or brain control with handle, or the file has been run
          % previously.
         if ~isfield(out_struct.meta,'decoder_age') % file was not run previously...
-            if floor(mean(numTargets)) < 3  % then, brain control with handle.
-                get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
-                out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation
+            if ((floor(mean(numTargets)) < 3) && ... % brain control with handle.
+                    (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 300) && ...
+                    nnz(out_struct.words(:,2)==18))
+                % this if statement should be functional, but it is not
+                % complete.  It doesn't account for CO brain control
+                % w/handle.  Right now that doesn't occur so it works, but
+                % it will need updated in a future release.
+                get_cursor_kinematics(out_struct);              % run once, to store in the remote directory
+                out_struct=get_cursor_kinematics(out_struct);   % run again, for the upcoming kinematics calculation
                 % make a stab at perfectly silent failure
                 try
                     kinStruct(batchIndex).control=out_struct.meta.control;

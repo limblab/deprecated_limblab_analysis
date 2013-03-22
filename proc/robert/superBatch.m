@@ -100,6 +100,14 @@ try
     % overwritten every time, because that's what superBatch does.  So, by
     % the time we get to this point we'll need to re-run
     % batch_get_cursor_kinematics using scratch files anyway.
+    
+    % update 03-12-2013: improved the logic that determines what is a brain
+    % control file and what isn't, meaning that the brain control files on
+    % citadel should once again start having properly imported .pos and
+    % .vel fields.  However, kinematicsHandControl is still broken for CO
+    % files.  It doesn't look for the proper starting word, and there may
+    % be other problems as well.  So, the kinStructs for these days will
+    % still be off until that function is debugged.
     batch_get_cursor_kinematics
     if exist('kinStruct','var')==1
         save(fullfile(remoteFolder2,'kinStruct.mat'),'kinStruct')
@@ -125,8 +133,8 @@ try
             end
             movefile('decoderOutput.txt', ...
                 fullfile(localAnalysisFolder,'decoderOutput.txt'))
-            movefile('singleFeatureDecoders.txt', ...
-                fullfile(localAnalysisFolder,'singleFeatureDecoders.txt'))
+            movefile('singleFeatureDecoders.mat', ...
+                fullfile(localAnalysisFolder,'singleFeatureDecoders.mat'))
         end
     end
     

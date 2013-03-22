@@ -4,9 +4,9 @@ disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)),1);
 if ~isempty(disJoint)
     disp('error, mismatched lengths in out_struct.raw.analog.data.  attempting to correct...')
 	setLength=min(unique(cellfun(@length,out_struct.raw.analog.data)));
-	for n=1:length(out_struct.raw.analog.data)
-		out_struct.raw.analog.data{n}=out_struct.raw.analog.data{n}(1:setLength);
-	end
+    for n=1:length(out_struct.raw.analog.data)
+        out_struct.raw.analog.data{n}=out_struct.raw.analog.data{n}(1:setLength);
+    end, clear n
 end
 disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)));
 if ~isempty(disJoint)

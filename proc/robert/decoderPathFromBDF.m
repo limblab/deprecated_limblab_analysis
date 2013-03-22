@@ -108,7 +108,7 @@ end
 decoderDate=NaN;
 % assume there are fewer than 1000 files in a folder.  Use n=0 to check the
 % current file, in case a brain-control file is handed in.
-for n=0:1000
+for n=0:900
     fileToCheck{1}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))+n),'*'];
     % if going up doesn't work, try going down.
     fileToCheck{2}=['*',num2str(str2double(regexp(BDFname,'(?<=.*_)[0-9]+','match','once'))-n),'*'];
@@ -134,10 +134,10 @@ for n=0:1000
             if nargout > 1
                 fileChosenPath=nextFile;
             end
-            % should kick out here if it is a spike decoder.  
+            % should kick out here if it is a spike decoder.  WHY????
             decoderType=decoderTypeFromLogFile(nextFile);
             if strcmp(decoderType,'Spike')
-                continue
+%                 continue
             end
             fid=fopen(nextFile);
             % should be the first line.

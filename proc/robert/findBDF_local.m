@@ -38,7 +38,8 @@ end
 
 % evaluate, based on results of system commands to find file.
 if status==0
-    pathToBDF=result;
+    returns=regexp(result,'\n');
+    pathToBDF=result(1:(returns-1));
 else
     % revert to dialog, we couldn't automagically locate the
     % BDF.
