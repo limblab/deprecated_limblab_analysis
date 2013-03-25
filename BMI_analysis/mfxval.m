@@ -18,12 +18,12 @@ if ~isstruct(binnedData)
 end
 
 % default value for prediction flags
-PredEMG = 1;
+PredEMG = 0;
 PredForce = 0;
 PredCursPos = 0;
 PredVeloc = 0;
 plotflag = 0;
-numSig    = size(binnedData.emgguide,1);
+numSig    = 0;
 Use_SD =0;
 
 
