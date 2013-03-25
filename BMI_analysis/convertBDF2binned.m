@@ -469,6 +469,7 @@ end
 %% Trial Table
 if (isfield(datastruct,'words') && ~isempty(datastruct.words))
     tt = [];
+    tt_labels = [];
     
     start_trial_words = datastruct.words( bitand(hex2dec('f0'),datastruct.words(:,2)) == hex2dec('10') ,2);
     if ~isempty(start_trial_words)
@@ -479,7 +480,7 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
 
         if start_trial_code == hex2dec('17')
             % wrist_flexion_task
-            tt = wf_trial_table(datastruct);
+            [tt, tt_labels] = wf_trial_table(datastruct);
             tt = tt(tt(:,1)>=timeframe(1) & tt(:,8)<=timeframe(end),:);
         elseif start_trial_code == hex2dec('11')
             %center_out_task
@@ -502,8 +503,9 @@ if (isfield(datastruct,'words') && ~isempty(datastruct.words))
     end
     
 else
-        warning('BDF:noWords','No WORDs are present');
-        tt = [];
+    warning('BDF:noWords','No WORDs are present');
+    tt = [];
+    tt_labels = [];        
 end
     
 %% Stimulator Commands
@@ -535,6 +537,7 @@ binnedData = struct('timeframe',timeframe,...
                     'words',words,...
                     'targets',targets,...
                     'trialtable',tt,...
+                    'trialtablelabels',tt_labels,...
                     'stim',stim,...
                     'stimT',stimT);        
         
