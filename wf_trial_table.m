@@ -1,4 +1,4 @@
-function tt = wf_trial_table(bdf)
+function [varargout] = wf_trial_table(bdf)
 % WF_TRIAL_TABLE - returns a table containing the key timestamps for all of
 %                  the wrist-flexion trials in BDF
 %
@@ -89,7 +89,28 @@ for trial = 1:num_trials-1
         trial_result,...% Result of trial ('R', 'A', 'I', or 'N')
         target_id ];    % Target ID based on location
 end
+
+tt_labels = ['trial start time ' ;...
+             'tgt ULx          ' ;...
+             'tgt ULy          ' ;...
+             'tgt LRx          ' ;...
+             'tgt LRy          ' ;...
+             'outer target time' ;...
+             'go cue           ' ;...
+             'trial end time   ' ;...
+             'Result(R,A,I,orN)' ;...
+             'tgt_id           '];
     
+varargout = {tt,tt_labels};
+
+%    1: Start time
+%  2-5: Target              -- ULx ULy LRx LRy
+%    6: Outer target (OT) 'on' time
+%    7: Go cue
+%    8: Trial End time
+%    9: Trial result        -- R, A, I, or F 
+%   10: Target ID           -- Target ID (based on location)
+
 % % Give an ID to each unique target.  Note that these are in arbitrary order
 % targets = unique(tt(:,2:5), 'rows');
 % for t = 1:size(targets,1)
