@@ -521,6 +521,7 @@ title('Visual trials')
 %% Units!
 % Read cerebus to electrode map
 if isfield(bdf,'units')
+    kernel_width = 0.01;
     elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile);
     unit_list = reshape([bdf.units.id],2,[])';
     unit_idx = find(unit_list(:,2)~=0);
@@ -538,7 +539,7 @@ if isfield(bdf,'units')
             ts_temp = ts_temp' - trial_table(iTrial,tc.t_stimuli_onset);
             ts_vec = [ts_vec ts_temp];
 %             ts_trial = ts(ts>trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1) & ts<trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end));
-            fr_cell{iUnit}(iTrial,:) = spikes2fr(ts,[trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1):dt:trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end)],.005);           
+            fr_cell{iUnit}(iTrial,:) = spikes2fr(ts,[trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1):dt:trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end)],kernel_width);           
             ts_cell{iTrial} = ts_temp;
         end
         
@@ -566,13 +567,16 @@ if isfield(bdf,'units')
             max_y = max(max_y,max(mean(fr_cell{iUnit}(visual_idx{iBump},:))+std(fr_cell{iUnit}(visual_idx{iBump},:))));
             max_y = max(max_y,max(mean(fr_cell{iUnit}(proprio_idx{iBump},:))+std(fr_cell{iUnit}(proprio_idx{iBump},:))));
             xlabel('t (s)')
-            ylabel('FR (Hz?)')
+            ylabel('fr (Hz?)')
+            
         end
         for iBump = 1:size(proprio_idx)
             subplot(2,2,iBump)
             ylim([0 max_y+5])
             plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_proprio(iBump,:))/max(diff(averaged_x_projection_proprio(iBump,:))),'r')
             plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_visual(iBump,:))/max(diff(averaged_x_projection_visual(iBump,:))),'b')
+            text(t_axis(100),max_y*0.8+3,['n = ' num2str(length(proprio_idx{iBump}))],'Color','r')
+            text(t_axis(100),max_y*0.75+2,['n = ' num2str(length(visual_idx{iBump}))],'Color','b')
         end
         pause
 
@@ -599,17 +603,19 @@ if isfield(bdf,'units')
         max_y = 0;
         for iBump = 1:size(proprio_idx)
             subplot(2,2,iBump)
-            temp_1 = hist([ts_cell{proprio_idx{iBump}}],t_axis(1):.02:t_axis(end));
-            temp_2 = hist([ts_cell{visual_idx{iBump}}],t_axis(1):.02:t_axis(end));
-            max_y = max([max_y temp_1 temp_2]);
+            hist_proprio = hist([ts_cell{proprio_idx{iBump}}],t_axis(1):bin_width:t_axis(end));
+            hist_visual = hist([ts_cell{visual_idx{iBump}}],t_axis(1):bin_width:t_axis(end));
+            max_y = max([max_y hist_proprio/bin_width/length(proprio_idx{iBump}) hist_visual/bin_width/length(visual_idx{iBump})]);
             
             hold on
-            hist([ts_cell{proprio_idx{iBump}}],t_axis(1):bin_width:t_axis(end))
-            h1 = findobj(gca,'Type','patch');
-            set(h1,'FaceColor',[1 .9 .9],'LineStyle','none')
-            hist([ts_cell{visual_idx{iBump}}],t_axis(1):bin_width:t_axis(end))
-            h2 = findobj(gca,'Type','patch');
-            set(h2(1),'FaceColor',[.9 .9 1],'LineStyle','none')
+%             hist([ts_cell{proprio_idx{iBump}}],t_axis(1):bin_width:t_axis(end))
+            bar(t_axis(1):bin_width:t_axis(end),hist_proprio/bin_width/length(proprio_idx{iBump}),'FaceColor',[1 .9 .9],'LineStyle','none')
+%             h1 = findobj(gca,'Type','patch');
+%             set(h1,'FaceColor',[1 .9 .9],'LineStyle','none')
+            bar(t_axis(1):bin_width:t_axis(end),hist_visual/bin_width/length(visual_idx{iBump}),'FaceColor',[.9 .9 1],'LineStyle','none')
+%             hist([ts_cell{visual_idx{iBump}}],t_axis(1):bin_width:t_axis(end))
+%             h2 = findobj(gca,'Type','patch');
+%             set(h2(1),'FaceColor',[.9 .9 1],'LineStyle','none')
             
             for iTrial = 1:length(proprio_idx{iBump})
                 plot(ts_cell{proprio_idx{iBump}(iTrial)},repmat(iTrial * max_y/length(proprio_idx{iBump}),1,length(ts_cell{proprio_idx{iBump}(iTrial)})),'.r')
@@ -626,7 +632,7 @@ if isfield(bdf,'units')
                 title(['Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
             end
             xlabel('t (s)')
-            ylabel('Count')
+            ylabel('fr (Hz)')
         end
         for iBump = 1:size(proprio_idx)
             subplot(2,2,iBump)
