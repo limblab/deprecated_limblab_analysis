@@ -1,5 +1,7 @@
-function [trial_table tc] = AT_trial_table(filename)
-load(filename)
+function [trial_table tc] = AT_trial_table(bdf)
+
+% function [trial_table tc] = AT_trial_table(filename)
+% load(filename)
 
 databurst_version = zeros(size(bdf.databursts,1),1);
 for iDataburst = 1:size(bdf.databursts,1)
@@ -35,6 +37,7 @@ tc.bump_duration = 23;
 tc.main_direction = 24;
 tc.x_offset = 25;
 tc.y_offset = 26;
+tc.reward_target_direction = 27;
 
 databurst_version = bdf.databursts{1,2}(2);
 
@@ -123,6 +126,22 @@ for iTrial = 1:num_trials
     trial_table(iTrial,tc.y_offset) = bytes2float(bdf.databursts{iTrial,2}(11:14));
 end
 
+main_direction = trial_table(:,tc.main_direction);
+stim_direction = (trial_table(:,tc.trial_type)==0).*trial_table(:,tc.moving_dots_direction) +...
+    (trial_table(:,tc.trial_type)==1).*trial_table(:,tc.bump_direction) +...
+    (trial_table(:,tc.trial_type)==2).*trial_table(:,tc.bump_direction);
+rewards = trial_table(:,tc.result)==32;
+
+target_direction = (pi/2+main_direction).*((stim_direction - trial_table(:,tc.main_direction))<=pi)+...
+    (-pi/2+main_direction).*((stim_direction - trial_table(:,tc.main_direction))>pi);
+
+% target_direction = (pi/2+main_direction).*((stim_direction - trial_table(:,tc.main_direction))<=pi & rewards)+...
+%     (pi/2+main_direction).*((stim_direction - trial_table(:,tc.main_direction))>pi & ~rewards)+...
+%     (pi/2+main_direction).*((stim_direction - trial_table(:,tc.main_direction))<=pi & ~rewards)+...
+%     (-pi/2+main_direction).*((stim_direction - trial_table(:,tc.main_direction))>pi & rewards);
+target_direction(target_direction<0) = 2*pi + target_direction(target_direction<0);
+trial_table(:,tc.reward_target_direction) = round(target_direction * 1E6)/1E6;
+
 remove_index = [];
 remove_index = find(isnan(trial_table(:,tc.x_offset)) | isnan(trial_table(:,tc.t_ct_on)) |...
     (trial_table(:,tc.result)==32 & isnan(trial_table(:,tc.t_ct_hold_on))));
@@ -174,4 +193,4 @@ trial_table(:,tc.main_direction) = round(trial_table(:,tc.main_direction)*1E6)/1
 % remove_index = unique(remove_index);
 % trial_table(remove_index,:) = [];
 
-save(filename,'trial_table','tc','-append')
+% save(filename,'trial_table','tc','-append')
