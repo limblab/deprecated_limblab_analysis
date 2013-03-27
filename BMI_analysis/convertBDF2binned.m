@@ -186,7 +186,7 @@ else
 
         %downsample EMG data to desired bin size
 %             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
-        emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear',0);
+        emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear','extrap');
     end
 
     %Normalize EMGs        
@@ -221,7 +221,7 @@ else
 
     %downsample force data to desired bin size
 %         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
-    forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear',0);
+    forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
 
     if NormData
         %Normalize Force
@@ -241,7 +241,7 @@ if ~isfield(datastruct, 'pos')
     %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     cursorposbin = [];
 elseif ~isempty(datastruct.pos)
-    cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear',0);
+    cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear','extrap');
 end
 
 cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
