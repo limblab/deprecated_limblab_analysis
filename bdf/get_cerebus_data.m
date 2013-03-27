@@ -122,6 +122,7 @@ function out_struct = get_cerebus_data(varargin)
         entity_extraction_weight = 0.9;
     end
 
+    file_reset_time = -1; %Used to detect the timestamp reset point when synchronizing two Cerebus units
 %% The Units
     if ~isempty(unit_list)
         if (opts.verbose == 1)
@@ -142,169 +143,16 @@ function out_struct = get_cerebus_data(varargin)
                     warning('BDF:MultipleResets', ['Unit %d contains more than one ts reset.'...
                             'All the data after the first reset is extracted.'],i);
                 end
+                file_reset_time = max(file_reset_time, neural_data(idx));
                 out_struct.units(i).ts = neural_data( (idx(1)+1):end);
-                clear idx;
             end
-            clear dn;
+            clear dn idx;
         end
 
         if (opts.verbose == 1)
             progress = progress + entity_extraction_weight*unit_list_item_count/relevant_entity_count;
         end
     end
-
-%% The raw data analog data (other than emgs)
-    if ~isempty(analog_list)
-        if (opts.verbose == 1)
-            waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
-        end
-        [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list);
-  
-        out_struct.raw.analog.channels = {EntityInfo(analog_list).EntityLabel};
-        out_struct.raw.analog.adfreq = [analog_info(:).SampleRate];
-        % The start time of each channel.  Note that this NS library
-        % function ns_GetTimeByIndex simply multiplies the index by the 
-        % ADResolution... so it will always be zero.
-        out_struct.raw.analog.ts(1:length(analog_list)) = {0};
-        for i = length(analog_list):-1:1
-            % Note that this is often a lot of data; grabbing it all at once
-            % yeilds too large a contiguous block on most machines, resulting
-            % in an out of memory error. Also: this takes a really long time.
-            [nsresult,cont_count,analog_data] = ns_GetAnalogData(hfile, analog_list(i), 1, EntityInfo(analog_list(i)).ItemCount);
-            
-            if (cont_count ~= EntityInfo(analog_list(i)).ItemCount) %check for a discontinuity
-                % there was a discontinuity, so just use the EMG data of
-                % the second segment, after the ts reset.
-                out_struct.raw.analog.data{i} = single(analog_data(cont_count+1:end));
-%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
-            else %no reset, just grab all the data
-                out_struct.raw.analog.data{i} = single(analog_data);
-            end
-                        
-            if (opts.verbose == 1)
-                progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
-                waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
-            end
-        end
-        clear analog_info analog_data;
-    else
-        %build default analog fields anyways
-        out_struct.raw.analog.channels = [];
-        out_struct.raw.analog.adfreq = [];
-        out_struct.raw.analog.ts = [];
-        out_struct.raw.analog.data = [];
-    end
-
-%% The Emgs
-    if ~isempty(emg_list)
-        if (opts.verbose == 1)
-            waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
-        end
-
-        [nsresult,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
-        out_struct.emg.emgnames = {EntityInfo(emg_list).EntityLabel};
-        % ensure all emg channels have the same frequency
-        if ~all( [emg_info.SampleRate] == emg_info(1).SampleRate)
-            close(h);
-            error('BDF:unequalEmgFreqs','Not all EMG channels have the same frequency');
-        end
-
-        emgfreq = [emg_info(1).SampleRate];
-        out_struct.emg.emgfreq = emgfreq;
-
-        for i = length(emg_list):-1:1
-            % Note that this is often a lot of data; grabbing it all at once
-            % yeilds too large a contiguous block on most machines, resulting
-            % in an out of memory error. Also: this takes a really long time.
-            [nsresult,cont_count,emg_data] = ns_GetAnalogData(hfile, emg_list(i), 1, EntityInfo(emg_list(i)).ItemCount);
-            if (cont_count ~= EntityInfo(emg_list(i)).ItemCount) %check for a discontinuity
-                % there was a discontinuity, so just use the EMG data of
-                % the second segment, after the ts reset.
-                out_struct.emg.data(:,i+1) = single(emg_data(cont_count+1:end));
-%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
-            else %no reset, just grab all the data
-                out_struct.emg.data(:,i+1) = single(emg_data);
-            end
-            
-            if (opts.verbose == 1)
-                progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
-                waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
-            end
-        end
-        out_struct.emg.data(:,1) = single(0:1/emgfreq:(size(out_struct.emg.data,1)-1)/emgfreq);
-        clear emg_data emg_info emgfreq cont_count;
-    end
-
-%% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
-    if ~isempty(force_list)
-        
-        if (opts.verbose == 1)
-            waitbar(progress,h,sprintf('Opening: %s\nExtracting Force Data...', filename));
-        end
-
-        [nsresult,force_info] = ns_GetAnalogInfo(hfile, force_list);
-        out_struct.force.labels = {EntityInfo(force_list).EntityLabel};
-        % ensure all force channels have the same frequency
-        if ~all( [force_info.SampleRate] == force_info(1).SampleRate)
-            close(h);
-            error('BDF:unequalForceFreqs','Not all force channels have the same frequency');
-        end
-
-        forcefreq = [force_info(1).SampleRate];
-        out_struct.force.forcefreq = forcefreq;
-
-        for i = length(force_list):-1:1
-            % Note that this is often a lot of data; grabbing it all at once
-            % yeilds too large a contiguous block on most machines, resulting
-            % in an out of memory error. Also: this takes a really long time.
-            [nsresult,cont_count,force_data] = ns_GetAnalogData(hfile, force_list(i), 1, EntityInfo(force_list(i)).ItemCount);
-            if (cont_count ~= EntityInfo(force_list(i)).ItemCount) %check for a discontinuity
-                % there was a discontinuity, so just use the force data of
-                % the second segment, after the ts reset.
-                out_struct.force.data(:,i+1) = single(force_data(cont_count+1:end));
-%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
-            else %no reset, just grab all the data
-                out_struct.force.data(:,i+1) = single(force_data);
-            end
-                
-            if (opts.verbose == 1)
-                progress = progress + entity_extraction_weight*EntityInfo(force_list(i)).ItemCount/relevant_entity_count;
-                waitbar(progress,h,sprintf('Opening: %s\nExtracting force...', filename));
-            end
-        end
-        out_struct.force.data(:,1) = single(0:1/forcefreq:(size(out_struct.force.data,1)-1)/forcefreq);
-        clear force_data force_info forcefreq;
-
-    end
-    
-%% Analog trig
-    if ~isempty(stim_marker)
-        if (opts.verbose == 1)
-            waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
-        end
-        
-        %populate stim marker ts
-        [nsresult,stim_data] = ns_GetNeuralData(hfile, stim_marker, 1, EntityInfo(stim_marker).ItemCount);
-        out_struct.stim_marker = stim_data;
-
-        ds = diff(stim_data);
-        if any(ds<0) %test whether there was a ts reset in the file
-            idx = find(ds<0);
-            if length(idx)>1
-                warning('BDF:MultipleResets', ['StimMarker contains more than one ts reset.'...
-                        'Only the last continuous segement is extracted.']);
-            end
-            out_struct.stim_marker = stim_data( (idx(end)+1):end);
-            clear idx;
-        end
-        clear ds;
-        
-        if (opts.verbose == 1)
-            progress = progress + entity_extraction_weight*EntityInfo(stim_marker(i)).ItemCount/relevant_entity_count;
-            waitbar(progress,h,sprintf('Opening: %s\nExtracting Stim Marker', filename));
-        end
-    end   
-        
 %% Events        
     if ~isempty(event_list)
         if (opts.verbose == 1)
@@ -325,6 +173,7 @@ function out_struct = get_cerebus_data(varargin)
                 warning('BDF:MultipleResets', ['Events contains more than one ts reset.'...
                         'Only the last continuous segement is extracted.'],i);
             end
+            file_reset_time = max(file_reset_time, event_ts(idx));
             event_data = event_data( (idx(end)+1):end);
             event_ts   = event_ts  ( (idx(end)+1):end);
             clear idx;
@@ -385,6 +234,185 @@ function out_struct = get_cerebus_data(varargin)
         out_struct.raw.serial = [event_ts, event_data];
     end
 
+%% The raw data analog data (other than emgs)
+    if ~isempty(analog_list)
+        if (opts.verbose == 1)
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
+        end
+        [nsresult,analog_info] = ns_GetAnalogInfo(hfile, analog_list);
+  
+        out_struct.raw.analog.channels = {EntityInfo(analog_list).EntityLabel};
+        out_struct.raw.analog.adfreq = [analog_info(:).SampleRate];
+        % The start time of each channel.  Note that this NS library
+        % function ns_GetTimeByIndex simply multiplies the index by the 
+        % ADResolution... so it will always be zero.
+        out_struct.raw.analog.ts(1:length(analog_list)) = {0};
+        for i = length(analog_list):-1:1
+            % Note that this is often a lot of data; grabbing it all at once
+            % yeilds too large a contiguous block on most machines, resulting
+            % in an out of memory error. Also: this takes a really long time.
+            [nsresult,cont_count,analog_data] = ns_GetAnalogData(hfile, analog_list(i), 1, EntityInfo(analog_list(i)).ItemCount);
+            
+            if (cont_count ~= EntityInfo(analog_list(i)).ItemCount) %check for a discontinuity
+                % there was a discontinuity, so just use the EMG data of
+                % the second segment, after the ts reset.
+                out_struct.raw.analog.data{i} = single(analog_data(cont_count+1:end));
+%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
+            else %no reset, just grab all the data
+                if file_reset>0
+                    warning('BDF:undetected analog reset',['A timestamp reset was detected in the digital data'...
+                            ' but not in the analog signals. The analog sync with neural data will be approximate'...
+                            ' based on the time of the latest digital event occuring before the reset']);
+                    idx = floor(file_reset_time * out_struct.raw.analog.adfreq); %index of the last data point before reset
+                    out_struct.raw.analog.data{i} = single(analog_data(idx+1:end));
+                else
+                    %really no reset
+                    out_struct.raw.analog.data{i} = single(analog_data);
+                end
+            end
+                        
+            if (opts.verbose == 1)
+                progress = progress + entity_extraction_weight*EntityInfo(analog_list(i)).ItemCount/relevant_entity_count;
+                waitbar(progress,h,sprintf('Opening: %s\nExtracting Analog...', filename));
+            end
+        end
+        clear analog_info analog_data;
+    else
+        %build default analog fields anyways
+        out_struct.raw.analog.channels = [];
+        out_struct.raw.analog.adfreq = [];
+        out_struct.raw.analog.ts = [];
+        out_struct.raw.analog.data = [];
+    end
+
+%% The Emgs
+    if ~isempty(emg_list)
+        if (opts.verbose == 1)
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
+        end
+
+        [nsresult,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
+        out_struct.emg.emgnames = {EntityInfo(emg_list).EntityLabel};
+        % ensure all emg channels have the same frequency
+        if ~all( [emg_info.SampleRate] == emg_info(1).SampleRate)
+            close(h);
+            error('BDF:unequalEmgFreqs','Not all EMG channels have the same frequency');
+        end
+
+        emgfreq = [emg_info(1).SampleRate];
+        out_struct.emg.emgfreq = emgfreq;
+
+        for i = length(emg_list):-1:1
+            % Note that this is often a lot of data; grabbing it all at once
+            % yeilds too large a contiguous block on most machines, resulting
+            % in an out of memory error. Also: this takes a really long time.
+            [nsresult,cont_count,emg_data] = ns_GetAnalogData(hfile, emg_list(i), 1, EntityInfo(emg_list(i)).ItemCount);
+            if (cont_count ~= EntityInfo(emg_list(i)).ItemCount) %check for a discontinuity
+                % there was a discontinuity, so just use the EMG data of
+                % the second segment, after the ts reset.
+                out_struct.emg.data(:,i+1) = single(emg_data(cont_count+1:end));
+%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
+            else %no reset, just grab all the data
+                if file_reset_time>0
+                    warning('BDF:undetected EMG reset',['A timestamp reset was detected in the digital data'...
+                            ' but not in the EMG signals. The EMG sync with neural data will be approximate'...
+                            ' based on the time of the latest digital event occuring before the reset']);
+                    idx = floor(file_reset_time * emgfreq); %index of the last data point before reset
+                    out_struct.emg.data(:,i+1) = single(emg_data(idx+1:end));
+                else
+                    %realy no reset
+                    out_struct.emg.data(:,i+1) = single(emg_data);
+                end
+            end
+            
+            if (opts.verbose == 1)
+                progress = progress + entity_extraction_weight*EntityInfo(emg_list(i)).ItemCount/relevant_entity_count;
+                waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
+            end
+        end
+        out_struct.emg.data(:,1) = single(0:1/emgfreq:(size(out_struct.emg.data,1)-1)/emgfreq);
+        clear emg_data emg_info emgfreq cont_count;
+    end
+
+%% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
+    if ~isempty(force_list)
+        
+        if (opts.verbose == 1)
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting Force Data...', filename));
+        end
+
+        [nsresult,force_info] = ns_GetAnalogInfo(hfile, force_list);
+        out_struct.force.labels = {EntityInfo(force_list).EntityLabel};
+        % ensure all force channels have the same frequency
+        if ~all( [force_info.SampleRate] == force_info(1).SampleRate)
+            close(h);
+            error('BDF:unequalForceFreqs','Not all force channels have the same frequency');
+        end
+
+        forcefreq = [force_info(1).SampleRate];
+        out_struct.force.forcefreq = forcefreq;
+
+        for i = length(force_list):-1:1
+            % Note that this is often a lot of data; grabbing it all at once
+            % yeilds too large a contiguous block on most machines, resulting
+            % in an out of memory error. Also: this takes a really long time.
+            [nsresult,cont_count,force_data] = ns_GetAnalogData(hfile, force_list(i), 1, EntityInfo(force_list(i)).ItemCount);
+            if (cont_count ~= EntityInfo(force_list(i)).ItemCount) %check for a discontinuity
+                % there was a discontinuity, so just use the force data of
+                % the second segment, after the ts reset.
+                out_struct.force.data(:,i+1) = single(force_data(cont_count+1:end));
+%                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
+            else %no reset, just grab all the data
+                if file_reset_time>0
+                    warning('BDF:undetected Force reset',['A timestamp reset was detected in the digital data'...
+                            ' but not in the force signals. The force sync with neural data will be approximate'...
+                            ' based on the time of the latest digital event occuring before the reset']);
+                    idx = floor(file_reset_time * forcefreq); %index of the last data point before reset
+                    out_struct.force.data(:,i+1) = single(force_data(idx+1:end));
+                else
+                    %really no reset
+                    out_struct.force.data(:,i+1) = single(force_data);
+                end
+            end
+                
+            if (opts.verbose == 1)
+                progress = progress + entity_extraction_weight*EntityInfo(force_list(i)).ItemCount/relevant_entity_count;
+                waitbar(progress,h,sprintf('Opening: %s\nExtracting force...', filename));
+            end
+        end
+        out_struct.force.data(:,1) = single(0:1/forcefreq:(size(out_struct.force.data,1)-1)/forcefreq);
+        clear force_data force_info forcefreq;
+
+    end
+    
+%% Analog trig
+    if ~isempty(stim_marker)
+        if (opts.verbose == 1)
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting Events...', filename));
+        end
+        
+        %populate stim marker ts
+        [nsresult,stim_data] = ns_GetNeuralData(hfile, stim_marker, 1, EntityInfo(stim_marker).ItemCount);
+        out_struct.stim_marker = stim_data;
+
+        ds = diff(stim_data);
+        if any(ds<0) %test whether there was a ts reset in the file
+            idx = find(ds<0);
+            if length(idx)>1
+                warning('BDF:MultipleResets', ['StimMarker contains more than one ts reset.'...
+                        'Only the last continuous segement is extracted.']);
+            end
+            out_struct.stim_marker = stim_data( (idx(end)+1):end);
+            clear idx;
+        end
+        clear ds;
+        
+        if (opts.verbose == 1)
+            progress = progress + entity_extraction_weight*EntityInfo(stim_marker(i)).ItemCount/relevant_entity_count;
+            waitbar(progress,h,sprintf('Opening: %s\nExtracting Stim Marker', filename));
+        end
+    end   
+        
 %% Clean up
     if (opts.verbose == 1)
         waitbar(1,h,sprintf('Opening: %s\nCleaning Up...', filename));
