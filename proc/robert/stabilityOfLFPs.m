@@ -1,4 +1,4 @@
-function [stabilityMatrix,kinInfo]=stabilityOfLFPs(kinStruct,elementsToKeep)
+function [stabilityMatrix,kinInfo]=stabilityOfLFPs(kinStruct)
 
 % take each date included in the kinStruct, load in the decoder that was
 % used, get from that decoder the information about which channels were
@@ -17,7 +17,7 @@ function [stabilityMatrix,kinInfo]=stabilityOfLFPs(kinStruct,elementsToKeep)
 cd('Y:\user_folders\Robert\data\monkey\outputs\LFPcontrol\Stability')
 
 kSind=1;
-stabilityMatrix=nan(length(kinStruct),elementsToKeep,3);
+stabilityMatrix=nan(length(kinStruct),150,3);
 kinInfo=struct([]);
 
 for ind=1:length(kinStruct)
@@ -42,16 +42,13 @@ for ind=1:length(kinStruct)
     [pathToDecoderMAT,~]=decoderPathFromBDF(out_struct);
     fprintf(1,'loading bestc, bestf, H from %s\n',pathToDecoderMAT)
     load(pathToDecoderMAT,'bestc','bestf','H')
-    % only interested in whether H is zero or not, so limit it to a single
-    % lag for easier testing.
-    H_from_decoder=sum(abs(H(1:10:end,:)),2); clear H %#ok<NODEF>
-    % if elements of H were zeroed out for one of the top elementsToKeep, 
-    % forget about calculating them any more for stabilityMatrix.
-    % first, find out where in H (channel-sorted) that each of
-    % elementsToKeep occurs, by referencing bestc,bestf (sorted by order of
-    % decreasing R to outputs).
-    [sortedBestCF,~]=sortrows([bestc' bestf'],1);
-    bestc_from_decoder=bestc; bestf_from_decoder=bestf; clear bestc bestf
+    if kSind==1
+        % only interested in whether H is zero or not, so limit it to a single
+        % lag for easier testing.
+        H_from_decoder=sum(abs(H(1:10:end,:)),2); clear H %#ok<NODEF>
+        [sortedBestCF,~]=sortrows([bestc' bestf'],1);
+        bestc_from_decoder=bestc; bestf_from_decoder=bestf;
+    end
     % calculate PB for this file.  sig is irrelevant; will not be used for
     % anything anyway.  Is required input because of the structure of the
     % function, but can just feed in junk (which out_struct.pos will be,
@@ -61,18 +58,25 @@ for ind=1:length(kinStruct)
     fpAssignScript
     [featMat,~]=calcFeatMat(fp,out_struct.pos,256,1000,0.05);
     fprintf(1,'done\n')
-    for el_ind=1:elementsToKeep        
+    for el_ind=1:size(stabilityMatrix,2)        
+        % the H test for zeros includes some unnecessary functionality, but
+        % it shouldn't hurt anything to leave it.
         if (H_from_decoder(sortedBestCF(:,1)==bestc_from_decoder(el_ind) & ...
                 sortedBestCF(:,2)==bestf_from_decoder(el_ind))) ~= 0 
             % if H==0, stabilityMatrix(kSind,el_ind) will stay NaN
             % otherwise, calculate stability quantity.  For LFPs, this
             % means bandpower values from above.
-            featToUse=featMat(:,(bestc_from_decoder(el_ind)-1)*6+(bestf_from_decoder(el_ind)));
+            featInd=(bestc_from_decoder(el_ind)-1)*6+(bestf_from_decoder(el_ind));
+            featToUse=featMat(:,featInd);
             stabilityMatrix(kSind,el_ind,1)=mean(featToUse);
             stabilityMatrix(kSind,el_ind,2)=var(featToUse);
             stabilityMatrix(kSind,el_ind,3)=sum(featToUse); 
-            kinInfo(kSind).name=kinStruct(ind).name;
-            kinInfo(kSind).decoder_age=kinStruct(ind).decoder_age;
+            if length(kinInfo)==(kSind-1)
+                kinInfo(kSind).name=kinStruct(ind).name;
+                kinInfo(kSind).decoder_age=kinStruct(ind).decoder_age;
+                kinInfo(kSind).bestcf=[rowBoat(bestc) rowBoat(bestf)];
+                clear bestc bestf
+            end
         end
     end
     %stabilityMatrix(kSind,:)=xcorr or SFD, or other calc.
@@ -80,6 +84,9 @@ for ind=1:length(kinStruct)
     clear out_struct featMat fp PB
     cd('Y:\user_folders\Robert\data\monkey\outputs\LFPcontrol\Stability')
     save([inputname(1),'stability.mat'],'stabilityMatrix','kinInfo')
+%     if kSind==8, break, end
 end, clear ind
 
-
+if size(stabilityMatrix,1) >= kSind
+    stabilityMatrix(kSind:end,:,:)=[];
+end

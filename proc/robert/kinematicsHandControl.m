@@ -1,6 +1,6 @@
-function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControl(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted out_struct
