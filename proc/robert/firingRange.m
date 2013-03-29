@@ -46,7 +46,7 @@ unitFiring=binnedData.spikeratedata(:,cellfun(@isempty,regexp(cellstr(binnedData
     ['ee',sprintf('%02d',unitInd),'u1']))==0);
 
 maxFactorUp=maxFactor(1);
-maxFactorDowm=maxFactor(1); %#ok<NASGU>
+maxFactorDown=maxFactor(1); 
 if length(maxFactor) > 1
     maxFactorDown=maxFactor(2);
 end
