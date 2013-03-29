@@ -9,13 +9,27 @@ function [mMinEpochRate,mMaxEpochRate,meanUnitFiring]=firingRange(bdfIn,unitInd,
 %                       (struct) bdf-formatted struct variable.
 %           unitInd   - number of the unit we're examining, in
 %                       sortClient-centric format.
-%           maxFactor - for thresholding the position data.
+%           maxFactor - for thresholding the position data.  Can be 1
+%                       element or 2, if 2 elements, the first is the 
+%                       factor for the upper threshold, the 2nd is the
+%                       factor for the lower threshold.  Default is 0.7 but
+%                       this can vary pretty widely, so check it for your
+%                       file.
+%
+%   OUTPUTS:
+%           mMinEpochRate  - the mean for the negative-deflection maxima
+%           mMaxEpochRate  - the mean for the positive-deflection maxima
+%           meanUnitFiring - overall mean firing rate for the unit.
 
 if isstruct(bdfIn)
     stoptime=bdfIn.meta.duration;
     bdfIn=inputname(1);
 else
     stoptime=0.0;
+end
+
+if nargin < 3
+    maxFactor=0.7;
 end
 
 binsize=0.05; starttime=0; MinFiringRate=0; 
