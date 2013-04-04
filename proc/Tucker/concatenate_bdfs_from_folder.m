@@ -1,10 +1,11 @@
-function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring)
+function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring,do_units,do_kin)
     %concatinates all the bdf's in the specified folder path into a single
     %object.  All bdf's are assumed to have the same channel arrangement,
     %and are concatinated in alphabetical order by filename. This function
     %only operates on .mat files- other file types are ignored. each .mat
     %file is assumed to have a single bdf stored such that, when loaded, it
     %will generate a single workspace variable called bdf
+    
     
     foldercontents=dir(folderpath);
     fnames={foldercontents.name};%extracts just the names from the foldercontents
@@ -22,7 +23,7 @@ function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring)
                 else
                     %if our new bdf already has something in it, append to
                     %the end of the new bdf
-                    full_bdf=concatenate_bdfs(full_bdf,bdf,.1);
+                    full_bdf=concatenate_bdfs(full_bdf,bdf,30,do_units,do_kin);
                     
                 end
                 

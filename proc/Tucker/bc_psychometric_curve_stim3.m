@@ -1,4 +1,4 @@
-function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_error)
+function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_2,H_1] = bc_psychometric_curve_stim3(tt,tt_hdr,stimcode,invert_dir,plot_error,invert_error)
     %receives a trial table and a header object for the trial table. The
     %header object must include the fields bump_angle, trial_result and
     %stim_trial
@@ -26,7 +26,6 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
 
     
-    
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'))
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
     %get a list of the bump directions durign stim
@@ -41,6 +40,10 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
         tt_stim(:,tt_hdr.trial_result)==2 & -90 <= tt_stim(:,tt_hdr.bump_angle) & tt_stim(:,tt_hdr.bump_angle) <= 90 |...
         tt_stim(:,tt_hdr.trial_result)==2 & 270 <= tt_stim(:,tt_hdr.bump_angle) & tt_stim(:,tt_hdr.bump_angle) <= 360  );
 
+    if(invert_dir)
+         is_left_reach_stim= abs(is_left_reach_stim-1);
+    end
+    
     %get_stim reaching rates
     proportion_stim = zeros(size(dirs_stim));
     number_reaches_stim = zeros(size(dirs_stim));
@@ -74,19 +77,21 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     
     %set the angle interval on which the fit curves will be displayed
     dd = 0:.01:180;
+           
+    %sigmoid_fittype = fittype( @(p1,p2,p3,p4, x) p1+(p2-p1)./(1+exp(-p4*(x-p3))) );
     
     %get the parameters of the maximum likelyhood model of the psychometric
     %curve for stim reaches in the upper hemispace (0-180deg bumps)
-    g_stim_upper = get_ml_fit(up_dirs_stim,num_left_reaches_stim_upper,number_reaches_stim_upper);
-    reach_fit_stim_upper = g_stim_upper(1) + g_stim_upper(2)*erf(g_stim_upper(3)*(dd-g_stim_upper(4)));
+    g_stim_upper = lsqcurvefit(@sigmoid,[0,1,90,.2],up_dirs_stim,proportion_stim_upper);
+    reach_fit_stim_upper = sigmoid(g_stim_upper,dd);
 
     %get the parameters of the maximum likelyhood model of the psychometric
     %curve for stim reaches in the lower hemispace (180-360deg bumps)
-    g_stim_lower = get_ml_fit(down_dirs_stim,num_left_reaches_stim_lower,number_reaches_stim_lower);
-    reach_fit_stim_lower = g_stim_lower(1) + g_stim_lower(2)*erf(g_stim_lower(3)*(dd-g_stim_lower(4)));
 
     
-    
+    [g_stim_lower] = lsqcurvefit(@sigmoid,[0,1,90,.2],down_dirs_stim,proportion_stim_lower);
+    reach_fit_stim_lower = sigmoid(g_stim_lower,dd);
+
     %recombine the hemispaces
     %re-shift the directions in the lower hemispace
     down_dirs_stim=360-down_dirs_stim;
@@ -153,10 +158,7 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     disp(strcat('Mean reaches per direction under stim: ',num2str(mean(number_reaches_stim))))
     disp(strcat('Min reaches per direction under stim: ',num2str(min(number_reaches_stim))))
     
-    
 
-    
-    
     %get non stim trials
     tt_no_stim=tt(( tt(:,tt_hdr.stim_trial) ~= 1 ) ,  :);
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) ~= 1)),' stim trials'))
@@ -170,6 +172,10 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     is_left_reach_no_stim =( tt_no_stim(:,tt_hdr.trial_result)==0 & 90 <= tt_no_stim(:,tt_hdr.bump_angle) &  tt_no_stim(:,tt_hdr.bump_angle)<= 270 |...
         tt_no_stim(:,tt_hdr.trial_result)==2 & -90 <= tt_no_stim(:,tt_hdr.bump_angle) & tt_no_stim(:,tt_hdr.bump_angle) <= 90 |...
         tt_no_stim(:,tt_hdr.trial_result)==2 & 270 <= tt_no_stim(:,tt_hdr.bump_angle) & tt_no_stim(:,tt_hdr.bump_angle) <= 360  );
+    
+    if(invert_dir)
+         is_left_reach_no_stim= abs(is_left_reach_no_stim-1);
+    end
     
     up_dirs_no_stim = dirs_no_stim(dirs_no_stim<=180);
     down_dirs_no_stim = dirs_no_stim(dirs_no_stim>=180);
@@ -202,12 +208,13 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
     dd = 0:.01:180;
     %get the parameters of the maximum likelyhood model of the psychometric
     %curve for no-stim reaches in the upper hemispace (0-180deg bumps)
-    g_no_stim_upper = get_ml_fit(up_dirs_no_stim,num_left_reaches_no_stim_upper,number_reaches_no_stim_upper);
-    reach_fit_no_stim_upper = g_no_stim_upper(1) + g_no_stim_upper(2)*erf(g_no_stim_upper(3)*(dd-g_no_stim_upper(4)));
+    
+    g_no_stim_upper = lsqcurvefit(@sigmoid,[0,1,90,.2],up_dirs_no_stim,proportion_no_stim_upper);
+    reach_fit_no_stim_upper = sigmoid(g_no_stim_upper ,dd);
         %get the parameters of the maximum likelyhood model of the psychometric
     %curve for no-stim reaches in the lower hemispace (180-360deg bumps)
-    g_no_stim_lower = get_ml_fit(down_dirs_no_stim,num_left_reaches_no_stim_lower,number_reaches_no_stim_lower);
-    reach_fit_no_stim_lower = g_no_stim_lower(1) + g_no_stim_lower(2)*erf(g_no_stim_lower(3)*(dd-g_no_stim_lower(4)));
+    g_no_stim_lower = lsqcurvefit(@sigmoid,[0,1,90,.2],down_dirs_no_stim,proportion_no_stim_lower);
+    reach_fit_no_stim_lower = sigmoid(g_no_stim_lower,dd);
     
     %plot the stim rate data points and the psychometric fit for the stim
     %trials
@@ -218,8 +225,6 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
 %     subplot(2,1,2),plot(down_dirs_no_stim,proportion_no_stim_lower,'bo')
 %     subplot(2,1,2),plot(dd, reach_fit_no_stim_lower, 'b-');
 
-
-    
     %recombine the hemispaces
     %re-shift the directions in the lower hemispace
     down_dirs_no_stim=360-down_dirs_no_stim;

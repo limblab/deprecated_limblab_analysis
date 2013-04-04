@@ -20,7 +20,7 @@ for i=1:length(foldercontents)
                 try
                     bdf=get_cerebus_data(strcat(folderpath, fnames{i}),3,'verbose','noeye');
                     disp(strcat('Saving: ',strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat')))
-                    save( strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat'), 'bdf')
+                    save( strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat'), 'bdf','-v7.3')
                     clear bdf
                 catch temperr
                     disp(strcat('Failed to process: ', folderpath,fnames{i}))

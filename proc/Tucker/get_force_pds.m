@@ -3,13 +3,13 @@
     offset=-0.015; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
 
 %%load data
-%     fname='E:\processing\Kramer_bumpchoice_01152013_tucker_no_stim_001-01.mat';
-%     disp(strcat('converting: ',fname))
-%     bdf=get_cerebus_data(fname,3,'verbose','noeye');
-%     fname=strcat(fname(1:end-3),'mat');
-%     save(fname,'bdf')
+    fname='E:\processing\Kramer_BD_02122013_tucker_no_stim_005-02.nev';
+    disp(strcat('converting: ',fname))
+    bdf=get_cerebus_data(fname,3,'verbose','noeye');
+    fname=strcat(fname(1:end-3),'mat');
+    save(fname,'bdf')
     disp(strcat('loading: ',fname))
-    load('E:\processing\Kramer_bumpchoice_01152013_tucker_no_stim_001-01')
+    load('E:\processing\Kramer_BD_02122013_tucker_no_stim_005-02.mat')
 
     %identify time vector for binning
     vt = bdf.vel(:,1);

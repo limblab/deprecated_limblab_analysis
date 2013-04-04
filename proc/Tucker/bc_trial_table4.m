@@ -37,7 +37,7 @@ num_trials = length(burst_times);
 disp(strcat('Found: ',num2str(num_trials),' trials'))
 
 disp('composing trial table assuming db v 4')
-disp(strcat('db version:',num2str(bdf.databursts{1,2}(2))))
+disp(strcat('db version:',num2str(bdf.databursts{2,2}(2))))
 disp('If actual db version does not match assumed version, fix the trial table code')
 
 
@@ -45,17 +45,28 @@ disp('If actual db version does not match assumed version, fix the trial table c
 tt = zeros(num_trials-1, 40);
 skip_counter=0;
 for trial = 1:num_trials-1
-
+    
         start_time = start_words(trial);
-        next_trial_start = start_words(trial+1);
+        if length(start_words)>trial
+            next_trial_start = start_words(trial+1);
+        else
+            %if we have the last trial of the session, just use all the
+            %remaining data
+            next_trial_start = start_words(trial)+100;
+        end
         
         burstindex= find((burst_times > start_time) & (burst_times < next_trial_start));
-        
+        if length(burstindex)>1 
+            %if we have two start times kill the burst index. this is
+            %usually the result of concatenating two files where the trial
+            %did not end properly
+            burstindex=[];
+        end
+            
         if ( isempty(burstindex) ) %if we don't have a databurst, or the databurst is empty
             skip_counter=skip_counter+1;
             continue
         else
-            
             if isnan(bdf.databursts{burstindex,2})
                 skip_counter=skip_counter+1;
                 continue

@@ -45,7 +45,15 @@ else
 end
 glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
 glmv = interp1(bdf.vel(:,1), bdf.vel(:,2:3), t);
-glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
+if isfield(bdf,'force')
+    if ~isempty(bdf.force)
+        glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
+    elseif strcmp(mdl,'forcevel') | strcmp(mdl,'forceonly') | strcmp(mdl,'ppforcevel' | strcmp(mdl,'ppforceposvel') | strcmp(mdl,'powervel') | strcmp(mdl,'powerposvel') | strcmp(mdl,'ppcartfvp'))
+        error('glm_kin:NO_FORCE_IN_BDF', 'the bdf given has an empty array for force, and the selected model requires force to run.')
+    end
+elseif strcmp(mdl,'forcevel') | strcmp(mdl,'forceonly') | strcmp(mdl,'ppforcevel' | strcmp(mdl,'ppforceposvel') | strcmp(mdl,'powervel') | strcmp(mdl,'powerposvel') | strcmp(mdl,'ppcartfvp'))
+    error('glm_kin:NO_FORCE_IN_BDF', 'the bdf given does not have a field for force, and the selected model requires force to run.')
+end
 %glmp = sum(glmf .* glmv,2);
 %glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
 %    sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];

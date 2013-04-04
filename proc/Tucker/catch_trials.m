@@ -1,4 +1,4 @@
-function catch_trials(tt,tt_hdr,stimcode)
+function H=catch_trials(tt,tt_hdr,stimcode)
     %takes the trial table and trial table header and plots a simple bar
     %chart with the rate of reaching to the secondary target under the
     %nostim, and catch trial conditions
@@ -6,7 +6,7 @@ function catch_trials(tt,tt_hdr,stimcode)
     %exclude aborts
     tt = tt( ( tt(:,tt_hdr.trial_result) ~= 1 ) ,  :); 
     %get catch trials
-    tt_catch=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.bump_mag) == 0) ,  :);
+    tt_catch=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.bump_mag) == 0 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
 
     is_left_reach_catch =( tt_catch(:,tt_hdr.trial_result)==0 & 90 <= tt_catch(:,tt_hdr.bump_angle) &  tt_catch(:,tt_hdr.bump_angle)<= 270 |...
         tt_catch(:,tt_hdr.trial_result)==2 & -90 <= tt_catch(:,tt_hdr.bump_angle) & tt_catch(:,tt_hdr.bump_angle) <= 90 |...
@@ -15,7 +15,7 @@ function catch_trials(tt,tt_hdr,stimcode)
     P_catch=sum(is_left_reach_catch)/length(is_left_reach_catch);
     
     %get non stim trials
-    tt_no_stim=tt(( tt(:,tt_hdr.stim_trial) ~= 1 ) ,  :);
+    tt_no_stim=tt(( tt(:,tt_hdr.stim_trial) ~= 1 & tt(:,tt_hdr.bump_mag) == 0) ,  :);
 
     is_left_reach_no_stim =( tt_no_stim(:,tt_hdr.trial_result)==0 & 90 <= tt_no_stim(:,tt_hdr.bump_angle) &  tt_no_stim(:,tt_hdr.bump_angle)<= 270 |...
         tt_no_stim(:,tt_hdr.trial_result)==2 & -90 <= tt_no_stim(:,tt_hdr.bump_angle) & tt_no_stim(:,tt_hdr.bump_angle) <= 90 |...
@@ -24,7 +24,7 @@ function catch_trials(tt,tt_hdr,stimcode)
     P_no_stim=sum(is_left_reach_no_stim)/length(is_left_reach_no_stim);
     CI_no_stim=binoinv([0.05 0.95],length(is_left_reach_no_stim),P_no_stim)
     CI_catch=binoinv([0.05 0.95],length(is_left_reach_catch),P_catch)
-    figure
+    H=figure
     bar([P_no_stim, 0],'b');
     hold on;
     bar([0 P_catch],'r')
@@ -33,7 +33,7 @@ function catch_trials(tt,tt_hdr,stimcode)
    %condition
     P_dist=binopdf(sum(is_left_reach_catch),length(is_left_reach_catch),P_no_stim);
     
-    title(strcat('reaching rates under stim and nostim. p=',num2str(P_dist)))
+    title(strcat('reaching rates under stim (stimcode=',num2str(stimcode),' and nostim. p=',num2str(P_dist)))
     legend('No-stim','Catch')
     %lower errorbars
     e_lower=[P_no_stim-CI_no_stim(1)/length(is_left_reach_no_stim),P_catch-CI_catch(1)/length(is_left_reach_catch)];
@@ -41,6 +41,6 @@ function catch_trials(tt,tt_hdr,stimcode)
     e_upper=[-P_no_stim+CI_no_stim(2)/length(is_left_reach_no_stim),-P_catch+CI_catch(2)/length(is_left_reach_catch)];
     errorbar([1 ,2],[P_no_stim,P_catch],e_lower,e_upper,'k')
     
-    disp(strcat('Probability our stim trials are drawn from the same distribution as the no stim trials: ',num2str(P_dist)))
+    disp(strcat('Probability our stim catch trials are drawn from the same distribution as the no stim catch trials: ',num2str(P_dist)))
     
 end
