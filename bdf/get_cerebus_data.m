@@ -259,7 +259,7 @@ function out_struct = get_cerebus_data(varargin)
                 out_struct.raw.analog.data{i} = single(analog_data(cont_count+1:end));
 %                warning('BDF:contiguousAnalog','Channel %d does not contain contiguous data',i);
             else %no reset, just grab all the data
-                if file_reset>0
+                if file_reset_time>0
                     warning('BDF:undetected analog reset',['A timestamp reset was detected in the digital data'...
                             ' but not in the analog signals. The analog sync with neural data will be approximate'...
                             ' based on the time of the latest digital event occuring before the reset']);
