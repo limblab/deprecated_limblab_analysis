@@ -1,4 +1,4 @@
-function PD_plot(varargin)
+function [outdata,h_up,h_low]=PD_plot(varargin)
 
 % PD_PLOT = PD_plot(BDF,ARRAY_MAP_FILEPATH,INCLUDE_UNSORTED,INCLUDE_HISTOGRAMS,DESELECTED_CHANNELS)
 %       generates PD plots. BDF is data in the bdf structure. 
@@ -56,10 +56,19 @@ model='posvel';
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
 
+if (include_unsorted && length(u1)~=length(moddepth))
+    disp('discarding clusters')
+    u1=u1(~u1(:,2),:);
+end
+%set_outputs
+outdata=[u1,pds,moddepth,errs];
+
+
+
 %% get out badly fitted channels
 tempmean=mean(moddepth);
 for iChan = 1:length(u1)
-    if moddepth(iChan)<mean(moddepth)
+    if moddepth(iChan)<tempmean
     if moddepth(iChan)<tempmean
         moddepth(iChan)
         moddepth(iChan)= 0;
@@ -96,8 +105,9 @@ h_up = figure('name','PDs upper half of array');
 h_low = figure('name','PDs lower half of array');
 
 iPD =2 ; 
+maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)))
 for iPD = 1:length(u1(:,1))
-    r = 0.0001:0.0001:moddepth(iPD)/max(moddepth); % the length of the radial line is normalized by the modulation depth
+    r = 0.0001:0.0001:moddepth(iPD)/maxmod; % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
@@ -155,18 +165,18 @@ for iPD = 1:length(u1(:,1))
             % make background color red of deselected channels
             ph=findall(gca,'type','patch');
             set(ph,'facecolor',[1,0,0]);  
-        else 
-            [x1,y1]=pol2cart(angle,r); % needed to fill up the space between the two CI
-            [x2,y2]=pol2cart(err_up,r);
-            [x3,y3]=pol2cart(err_down,r);
-            
-            %     jbfill(x1,y1,y2,'b','b',1,0.5);
-            x_fill = [x2(end), x1(end), x3(end), 0];
-            y_fill = [y2(end), y1(end), y3(end), 0];
-            
-            % fill(x_fill,y_fill,'r');
-            patch(x_fill,y_fill,'b','facealpha',0.3);
-        end
+        end 
+        [x1,y1]=pol2cart(angle,r); % needed to fill up the space between the two CI
+        [x2,y2]=pol2cart(err_up,r);
+        [x3,y3]=pol2cart(err_down,r);
+
+        %     jbfill(x1,y1,y2,'b','b',1,0.5);
+        x_fill = [x2(end), x1(end), x3(end), 0];
+        y_fill = [y2(end), y1(end), y3(end), 0];
+
+        % fill(x_fill,y_fill,'r');
+        patch(x_fill,y_fill,'b','facealpha',0.3);
+        
         
         title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))])
     else

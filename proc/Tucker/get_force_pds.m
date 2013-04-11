@@ -3,14 +3,20 @@
     offset=-0.015; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
 
 %%load data
-    fname='E:\processing\Kramer_BD_02122013_tucker_no_stim_005-02.nev';
-    disp(strcat('converting: ',fname))
-    bdf=get_cerebus_data(fname,3,'verbose','noeye');
-    fname=strcat(fname(1:end-3),'mat');
-    save(fname,'bdf')
-    disp(strcat('loading: ',fname))
-    load('E:\processing\Kramer_BD_02122013_tucker_no_stim_005-02.mat')
-
+    folderpath='E:\processing\';
+    fname='Kramer_BC_04032013_tucker_no_stim_001-04.nev';
+    savename=strcat(fname(1:end-3),'mat');
+    
+    foldercontents=dir(folderpath);
+    fnames={foldercontents.name};%extracts just the names from the foldercontents
+    if isempty(strmatch( savename,fnames))
+        disp(strcat('converting: ',fname))
+        bdf=get_cerebus_data(strcat(folderpath,fname),3,'verbose','noeye');
+        save(strcat(folderpath,savename),'bdf')
+    else
+        load(strcat(folderpath,savename))
+    end
+    
     %identify time vector for binning
     vt = bdf.vel(:,1);
     t = vt(1):ts/1000:vt(end);
@@ -41,9 +47,17 @@
     clear timestamps
     timestamps(:,1)=bdf.tt(:,bdf.tt_hdr.bump_time);
     timestamps(:,2)=timestamps(:,1)+bdf.tt(:,bdf.tt_hdr.bump_dur)+2*bdf.tt(:,bdf.tt_hdr.bump_ramp);
-    timestamps=timestamps(bdf.tt(:,bdf.tt_hdr.stim_trial)==0,:);%exclude stim trials
+    timestamps=timestamps(bdf.tt(:,bdf.tt_hdr.stim_trial)==0 | bdf.tt(:,bdf.tt_hdr.trial_result)~=1,:);%exclude stim trials and abort trials
+
+    timestamps=timestamps(timestamps(:,1)~=-1,:);%exclude trials where the bump never happened
+    
+    
     sub_bdf=get_sub_trials(bdf,timestamps);
+    
 %%get force based PD
     disp('computing PDs and plotting results')
     array_map_path='C:\Users\limblab\Desktop\kramer_array_map\6251-0922.cmp';
-    PD_force_plot(sub_bdf,array_map_path,2,1)
+    [outdata,H_upper,H_lower]=PD_force_plot(sub_bdf,array_map_path,2,1);
+    save(strcat(folderpath,'bump_PD_moddepth_data.txt','outdata'))
+    print('-dpdf',H_upper,strcat(folderpath,'Upper_bump_PD_plot.pdf'))
+    print('-dpdf',H_lower,strcat(folderpath,'Lower_bump_PD_plot.pdf'))

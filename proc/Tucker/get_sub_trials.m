@@ -57,7 +57,7 @@
             ind(2)=i2;
             %disp(strcat('kin_ind: ',num2str(ind(1)),', ',num2str(ind(2))))
             num_ind=diff(ind)+1;
-            if abs(num_ind-(diff(timestamps(trial,:))/kin_sr))>10
+            if abs(num_ind-(diff(timestamps(trial,:))/kin_sr))>10 %if we have more than 10s between trials. This catches corrupt databursts and concatenated files with incomplete databursts
                 %we have a problem computing the sample range for this
                 %trial
                 warning('get_sub_trials:BAD_KINEMATIC_RANGE_SELECTION',strcat('The range of kinematic data selected for trial #: ',num2str(trial),' is inappropriate given the trial length'))

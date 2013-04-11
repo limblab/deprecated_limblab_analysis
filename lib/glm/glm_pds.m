@@ -60,7 +60,6 @@ for i = 1:length(ul)
             error('s1_analysis:lib:glm:glm_pds:UnmappedPDCase',strcat('No output case defined for model type: ',model))
     end
     J = [-bv(2)/(bv(1)^2+bv(2)^2); bv(1)/(bv(1)^2+bv(2)^2)];
-    moddepth(i) = norm(bv,2);
     pds(i,:) = atan2(bv(2), bv(1));
     errs(i,:) = dbv*J;
     moddepth(i,:) = sqrt(bv(1).^2 + bv(2).^2); 

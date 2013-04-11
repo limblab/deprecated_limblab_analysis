@@ -1,4 +1,4 @@
-function PD_plot(varargin)
+function [outdata,h_up,h_low]=PD_force_plot(varargin)
 
 % PD_PLOT = PD_plot(BDF,ARRAY_MAP_FILEPATH,INCLUDE_UNSORTED,INCLUDE_HISTOGRAMS,DESELECTED_CHANNELS)
 %       generates PD plots. BDF is data in the bdf structure. 
@@ -70,6 +70,8 @@ if (include_unsorted && length(u1)~=length(moddepth))
     u1=u1(~u1(:,2),:);
 end
     
+%set_outputs
+outdata=[u1,pds,moddepth,errs];
 
 %% identify channels with excessive modulation depth
 for iChan = 1:length(u1)
@@ -120,7 +122,7 @@ h_low = figure('name','PDs lower half of array');
 
 iPD =2 ; 
 
-maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)))
+maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)));
 
 for iPD = 1:length(u1(:,1))
     r = 0.0001:0.0001:moddepth(iPD)/maxmod; % the length of the radial line is normalized by the modulation depth
