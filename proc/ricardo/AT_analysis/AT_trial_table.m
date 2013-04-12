@@ -3,13 +3,21 @@ function [trial_table tc] = AT_trial_table(bdf)
 % function [trial_table tc] = AT_trial_table(filename)
 % load(filename)
 
-databurst_version = zeros(size(bdf.databursts,1),1);
+databurst_version_temp = zeros(size(bdf.databursts,1),1);
+databurst_length_temp = zeros(size(bdf.databursts,1),1);
 for iDataburst = 1:size(bdf.databursts,1)
-    databurst_version(iDataburst) = bdf.databursts{iDataburst,2}(2);
-    databurst_length(iDataburst) = length(bdf.databursts{iDataburst,2});
+    if ~isempty(bdf.databursts{iDataburst,2}) && ~isnan(sum(bdf.databursts{iDataburst,2}))
+        databurst_version_temp(iDataburst) = bdf.databursts{iDataburst,2}(2);
+        databurst_length_temp(iDataburst) = length(bdf.databursts{iDataburst,2});
+    else
+        databurst_version_temp(iDataburst) = -1;
+        databurst_length_temp(iDataburst) = -1;
+    end
 end
-databurst_version = mode(databurst_version);
-databurst_length = mode(databurst_length);
+databurst_version = mode(databurst_version_temp);
+databurst_length = mode(databurst_length_temp);
+
+bdf.databursts(databurst_version_temp~=databurst_version,:) = [];
 
 tc.trial_type = 1;
 tc.t_trial_start = 2;

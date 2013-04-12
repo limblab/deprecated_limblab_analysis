@@ -3,7 +3,7 @@
 % filename = 'Handle_force_callibration_015';
 filepath = 'D:\Data\Kevin_12A2\Data';
 % filename = '\Motor_calibration_004';
-filelist = dir([filepath '\Kevin_2013-03-26_AT*.nev']);
+filelist = dir([filepath '\Kevin_2013-04-02_AT*.nev']);
 % filelist = {filelist.name};
 % filename = '\Kevin_2013-03-26_AT_002';
 % fileExt = '.nev';
@@ -521,126 +521,181 @@ title('Visual trials')
 %% Units!
 % Read cerebus to electrode map
 if isfield(bdf,'units')
-    kernel_width = 0.01;
+    kernel_width = 0.005;
     elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile);
     unit_list = reshape([bdf.units.id],2,[])';
     unit_idx = find(unit_list(:,2)~=0);
     fr_cell = cell(size(unit_idx));
     electrode = [];    
+%     red_area = [1 .9 .9];
+%     blue_area = [.9 .9 1];
+    red_area = [1 0 0];
+    blue_area = [0 0 1];
     figure
     for iUnit = 1:length(unit_idx)
         electrode(iUnit) = elec_map(find(elec_map(:,3)==unit_list(unit_idx(iUnit))),4);
+        unit(iUnit) = unit_list(unit_idx(iUnit),2);
         fr_cell{iUnit} = zeros(size(trial_table,1),length(t_axis));
         ts = bdf.units(unit_idx(iUnit)).ts;
-        ts_vec = [];
         ts_cell = {};
         for iTrial = 1:size(trial_table,1)
             ts_temp = ts(ts>trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1) & ts<trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end));
             ts_temp = ts_temp' - trial_table(iTrial,tc.t_stimuli_onset);
-            ts_vec = [ts_vec ts_temp];
-%             ts_trial = ts(ts>trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1) & ts<trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end));
             fr_cell{iUnit}(iTrial,:) = spikes2fr(ts,[trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1):dt:trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end)],kernel_width);           
             ts_cell{iTrial} = ts_temp;
         end
         
-        clf
-        max_y = 0;
-        for iBump = 1:size(proprio_idx)
-            subplot(2,2,iBump)
-            hold on
-            area([t_axis t_axis(end:-1:1)], [mean(fr_cell{iUnit}(proprio_idx{iBump},:)) mean(fr_cell{iUnit}(proprio_idx{iBump},end:-1:1))]+...
-                [std(fr_cell{iUnit}(proprio_idx{iBump},:)) -std(fr_cell{iUnit}(proprio_idx{iBump},end:-1:1))],...
-                'FaceColor',[1 .9 .9],'LineStyle','none')
-            area([t_axis t_axis(end:-1:1)], [mean(fr_cell{iUnit}(visual_idx{iBump},:)) mean(fr_cell{iUnit}(visual_idx{iBump},end:-1:1))]+...
-                [std(fr_cell{iUnit}(visual_idx{iBump},:)) -std(fr_cell{iUnit}(visual_idx{iBump},end:-1:1))],...
-                'FaceColor',[.9 .9 1],'LineStyle','none')
-            
-            plot(t_axis,mean(fr_cell{iUnit}(proprio_idx{iBump},:)),'r')            
-            plot(t_axis,mean(fr_cell{iUnit}(visual_idx{iBump},:)),'b')
-            
-            if iBump == 1
-                title(['Electrode: ' num2str(electrode(iUnit)) '   Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
-                legend('Proprio','Visual')
-            else
-                title(['Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
+        if length([ts_cell{:}])>20
+            figure
+            max_y = 0;
+            for iBump = 1:size(proprio_idx)
+                subplot(2,2,iBump)
+                hold on
+                error_y_proprio = std(fr_cell{iUnit}(proprio_idx{iBump},:),[],1);                
+                error_y_visual = std(fr_cell{iUnit}(visual_idx{iBump},:),[],1);
+%                 error_y_proprio = std(fr_cell{iUnit}(proprio_idx{iBump},:),[],1)/sqrt(size(fr_cell{iUnit}(proprio_idx{iBump},:),1));
+%                 error_y_visual = std(fr_cell{iUnit}(visual_idx{iBump},:),[],1)/sqrt(size(fr_cell{iUnit}(visual_idx{iBump},:),1));
+                area([t_axis t_axis(end:-1:1)], [mean(fr_cell{iUnit}(proprio_idx{iBump},:),1) mean(fr_cell{iUnit}(proprio_idx{iBump},end:-1:1),1)]+...
+                    [error_y_proprio -error_y_proprio(end:-1:1)],...
+                    'FaceColor',red_area,'LineStyle','none')
+                area([t_axis t_axis(end:-1:1)], [mean(fr_cell{iUnit}(visual_idx{iBump},:),1) mean(fr_cell{iUnit}(visual_idx{iBump},end:-1:1),1)]+...
+                    [error_y_visual -error_y_visual(end:-1:1)],...
+                    'FaceColor',blue_area,'LineStyle','none')
+                alpha(0.2)
+
+                plot(t_axis,mean(fr_cell{iUnit}(proprio_idx{iBump},:)),'r')            
+                plot(t_axis,mean(fr_cell{iUnit}(visual_idx{iBump},:)),'b')
+
+                if iBump == 1
+                    title(['Electrode: ' num2str(electrode(iUnit)) '   Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
+                    legend('Proprio','Visual')
+                else
+                    title(['Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
+                end
+                max_y = max(max_y,max(mean(fr_cell{iUnit}(visual_idx{iBump},:),1)+std(fr_cell{iUnit}(visual_idx{iBump},:),[],1)));
+                max_y = max(max_y,max(mean(fr_cell{iUnit}(proprio_idx{iBump},:),1)+std(fr_cell{iUnit}(proprio_idx{iBump},:),[],1)));
+                xlabel('t (s)')
+                ylabel('fr (Hz?)')
+
             end
-            max_y = max(max_y,max(mean(fr_cell{iUnit}(visual_idx{iBump},:))+std(fr_cell{iUnit}(visual_idx{iBump},:))));
-            max_y = max(max_y,max(mean(fr_cell{iUnit}(proprio_idx{iBump},:))+std(fr_cell{iUnit}(proprio_idx{iBump},:))));
-            xlabel('t (s)')
-            ylabel('fr (Hz?)')
+            for iBump = 1:size(proprio_idx)
+                subplot(2,2,iBump)
+                ylim([0 max_y+5])
+                plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_proprio(iBump,:))/max(diff(averaged_x_projection_proprio(iBump,:))),'r')
+                plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_visual(iBump,:))/max(diff(averaged_x_projection_visual(iBump,:))),'b')
+                text(t_axis(100),max_y*0.8+3,['n = ' num2str(length(proprio_idx{iBump}))],'Color','r')
+                text(t_axis(100),max_y*0.75+2,['n = ' num2str(length(visual_idx{iBump}))],'Color','b')
+            end
             
+%             pause
         end
-        for iBump = 1:size(proprio_idx)
-            subplot(2,2,iBump)
-            ylim([0 max_y+5])
-            plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_proprio(iBump,:))/max(diff(averaged_x_projection_proprio(iBump,:))),'r')
-            plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_visual(iBump,:))/max(diff(averaged_x_projection_visual(iBump,:))),'b')
-            text(t_axis(100),max_y*0.8+3,['n = ' num2str(length(proprio_idx{iBump}))],'Color','r')
-            text(t_axis(100),max_y*0.75+2,['n = ' num2str(length(visual_idx{iBump}))],'Color','b')
-        end
-        pause
 
     end
 end
 
-%% Units!
+%% Units! (Bar plots)
 % Read cerebus to electrode map
 t_axis = t_axis;
 if isfield(bdf,'units')    
     figure
-    bin_width = 0.02;
-    for iUnit = 1:length(unit_idx)        
-        clf
-        max_y = 0;
+    bin_width = 0.02;    
+    boot_rep = 100;
+    hist_centers = t_axis(1):bin_width:t_axis(end);
+%     anova_bins = hist_centers > -inf & hist_centers < inf;
+    anova_bins = hist_centers > 0.01 & hist_centers < 0.15;
+    for iUnit = 1:length(unit_idx)                
+
         ts = bdf.units(unit_idx(iUnit)).ts;
         ts_cell = {};
+        hist_mat = zeros(size(trial_table,1),length(hist_centers));
+        bump_X_mat = zeros(size(trial_table,1),length(hist_centers));
+        bump_Y_mat = zeros(size(trial_table,1),length(hist_centers));
+        trial_type_mat = zeros(size(trial_table,1),length(hist_centers));
+        result_mat = zeros(size(trial_table,1),length(hist_centers)); 
+        bin_mat = zeros(size(trial_table,1),length(hist_centers)); 
+        trial_number_mat = zeros(size(trial_table,1),length(hist_centers)); 
+        bump_on_mat = zeros(size(trial_table,1),length(hist_centers));         
+        bump_on_mat(:,hist_centers>=0 & hist_centers <= bump_duration) = 1;
+        movement_dir_mat = zeros(size(trial_table,1),length(hist_centers));         
+        
         for iTrial = 1:size(trial_table,1)
             ts_temp = ts(ts>trial_table(iTrial,tc.t_stimuli_onset)+t_axis(1) & ts<trial_table(iTrial,tc.t_stimuli_onset)+t_axis(end));
             ts_temp = ts_temp' - trial_table(iTrial,tc.t_stimuli_onset);
             ts_cell{iTrial} = ts_temp;
+            hist_mat(iTrial,:) = hist(ts_cell{iTrial},hist_centers);
+            bump_X_mat(iTrial,:) = cos(bump_directions(iTrial));
+            bump_Y_mat(iTrial,:) = sin(bump_directions(iTrial));
+            trial_type_mat(iTrial,:) = trial_table(iTrial,tc.trial_type);
+            result_mat(iTrial,:) = trial_table(iTrial,tc.result);
+            bin_mat(iTrial,:) = 1:size(bin_mat,2);
+            trial_number_mat(iTrial,:) = iTrial;            
+            movement_dir_mat(iTrial,:) = trial_table(iTrial,tc.reward_target_direction)+(trial_table(iTrial,tc.result)==34*pi);
         end
+        hist_mat = hist_mat(:,anova_bins);
+        bump_X_mat = bump_X_mat(:,anova_bins);
+        bump_Y_mat = bump_Y_mat(:,anova_bins);
+        trial_type_mat = trial_type_mat(:,anova_bins);
+        result_mat = result_mat(:,anova_bins);
+        bin_mat = bin_mat(:,anova_bins);
+        trial_number_mat = trial_number_mat(:,anova_bins);
+        bump_on_mat = bump_on_mat(:,anova_bins);
+        movement_dir_mat = movement_dir_mat(:,anova_bins);
+        varnames = {'Bump X','Bump Y','Movement dir','Result',...
+            'Bin number','Trial number','Bump on','Trial type'};
         
-        max_y = 0;
-        for iBump = 1:size(proprio_idx)
-            subplot(2,2,iBump)
-            hist_proprio = hist([ts_cell{proprio_idx{iBump}}],t_axis(1):bin_width:t_axis(end));
-            hist_visual = hist([ts_cell{visual_idx{iBump}}],t_axis(1):bin_width:t_axis(end));
-            max_y = max([max_y hist_proprio/bin_width/length(proprio_idx{iBump}) hist_visual/bin_width/length(visual_idx{iBump})]);
-            
-            hold on
-%             hist([ts_cell{proprio_idx{iBump}}],t_axis(1):bin_width:t_axis(end))
-            bar(t_axis(1):bin_width:t_axis(end),hist_proprio/bin_width/length(proprio_idx{iBump}),'FaceColor',[1 .9 .9],'LineStyle','none')
-%             h1 = findobj(gca,'Type','patch');
-%             set(h1,'FaceColor',[1 .9 .9],'LineStyle','none')
-            bar(t_axis(1):bin_width:t_axis(end),hist_visual/bin_width/length(visual_idx{iBump}),'FaceColor',[.9 .9 1],'LineStyle','none')
-%             hist([ts_cell{visual_idx{iBump}}],t_axis(1):bin_width:t_axis(end))
-%             h2 = findobj(gca,'Type','patch');
-%             set(h2(1),'FaceColor',[.9 .9 1],'LineStyle','none')
-            
-            for iTrial = 1:length(proprio_idx{iBump})
-                plot(ts_cell{proprio_idx{iBump}(iTrial)},repmat(iTrial * max_y/length(proprio_idx{iBump}),1,length(ts_cell{proprio_idx{iBump}(iTrial)})),'.r')
-            end            
-            
-            for iTrial = 1:length(visual_idx{iBump})
-                plot(ts_cell{visual_idx{iBump}(iTrial)},repmat(iTrial * max_y/length(visual_idx{iBump}),1,length(ts_cell{visual_idx{iBump}(iTrial)})),'.b')
-            end  
-                        
-            if iBump == 1
-                title(['Electrode: ' num2str(electrode(iUnit)) '   Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
-                legend('Proprio','Visual')
-            else
-                title(['Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
+        [p,table,stats] = anovan(hist_mat(:),{bump_X_mat(:),bump_Y_mat(:),movement_dir_mat(:),result_mat(:),...
+            bin_mat(:),trial_number_mat(:),bump_on_mat(:),trial_type_mat(:)},...
+            'model','interaction','continuous',[1 2 5 6],'varnames',varnames,'display','off');
+        table(find(p<0.05)+1,1)
+%         [c,m,h,nms] = multcompare(stats);
+        
+        if length([ts_cell{:}])>20
+            clf
+            max_y = 0;
+            for iBump = 1:size(proprio_idx)
+                subplot(2,2,iBump)
+                hist_proprio = hist([ts_cell{proprio_idx{iBump}}],t_axis(1):bin_width:t_axis(end));
+                hist_visual = hist([ts_cell{visual_idx{iBump}}],t_axis(1):bin_width:t_axis(end));
+                max_y = max([max_y hist_proprio/bin_width/length(proprio_idx{iBump}) hist_visual/bin_width/length(visual_idx{iBump})]);
+                
+                proprio_boot = rand(length(proprio_idx{iBump})*1/bin_width*boot_rep,length(hist_proprio))<...
+                    repmat(hist_proprio,length(proprio_idx{iBump})*1/bin_width*boot_rep,1)/(length(proprio_idx{iBump})*1/bin_width);
+                
+                visual_boot = rand(length(visual_idx{iBump})*1/bin_width*boot_rep,length(hist_visual))<...
+                    repmat(hist_visual,length(visual_idx{iBump})*1/bin_width*boot_rep,1)/(length(visual_idx{iBump})*1/bin_width);
+                
+                hold on
+                bar(t_axis(1):bin_width:t_axis(end),hist_proprio/bin_width/length(proprio_idx{iBump}),'FaceColor',red_area,'LineStyle','none')
+                bar(t_axis(1):bin_width:t_axis(end),hist_visual/bin_width/length(visual_idx{iBump}),'FaceColor',blue_area,'LineStyle','none')
+                alpha(0.2)
+                if iBump == 1
+                    title(['Electrode: ' num2str(electrode(iUnit)) '-' num2str(unit(iUnit)) ' Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
+                    legend('Proprio','Visual')
+                else
+                    title(['Bump: ' num2str(unique_bump_directions(iBump)*180/pi) ' deg'])
+                end
+                xlabel('t (s)')
+                ylabel('fr (Hz)')
             end
-            xlabel('t (s)')
-            ylabel('fr (Hz)')
+            for iBump = 1:size(proprio_idx)
+                subplot(2,2,iBump)
+                
+                for iTrial = 1:length(proprio_idx{iBump})
+                    plot(ts_cell{proprio_idx{iBump}(iTrial)},repmat(proprio_idx{iBump}(iTrial) * max_y/size(trial_table,1),1,length(ts_cell{proprio_idx{iBump}(iTrial)})),'.r')
+                end            
+
+                for iTrial = 1:length(visual_idx{iBump})
+                    plot(ts_cell{visual_idx{iBump}(iTrial)},repmat(visual_idx{iBump}(iTrial) * max_y/size(trial_table,1),1,length(ts_cell{visual_idx{iBump}(iTrial)})),'.b')
+                end  
+                
+                ylim([0 1.2*(max_y+5)])
+                plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_proprio(iBump,:))/max(diff(averaged_x_projection_proprio(iBump,:))),'r')
+                plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_visual(iBump,:))/max(diff(averaged_x_projection_visual(iBump,:))),'b')
+                xlim([-0.1 0.15])
+            end
+            
+            pause
         end
-        for iBump = 1:size(proprio_idx)
-            subplot(2,2,iBump)
-            ylim([0 1.2*(max_y+5)])
-            plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_proprio(iBump,:))/max(diff(averaged_x_projection_proprio(iBump,:))),'r')
-            plot(t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(averaged_x_projection_visual(iBump,:))/max(diff(averaged_x_projection_visual(iBump,:))),'b')
-        end
-        pause
 
     end
 end

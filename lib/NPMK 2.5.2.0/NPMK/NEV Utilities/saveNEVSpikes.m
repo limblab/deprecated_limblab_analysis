@@ -1,4 +1,4 @@
-function saveNEVSpikes(spikeStruct, newFileName)
+function saveNEVSpikes(spikeStruct, newFileName, modifiedNEVFileName)
 
 % saveNEVSpikes
 % 
@@ -50,8 +50,10 @@ if ~exist('newFileName', 'var')
 end
 
 %% Opening the file and reading header
-[dataFilename dataFolder] = getFile('*.nev', 'Choose a NEV that you would like to modify.');
-fileFullPath = [dataFolder dataFilename];
+% [dataFilename dataFolder] = getFile('*.nev', 'Choose a NEV that you would like to modify.');
+% fileFullPath = [dataFolder dataFilename];
+fileFullPath = modifiedNEVFileName;
+[dataFolder, ~, ~] = fileparts(modifiedNEVFileName);
 FID = fopen(fileFullPath, 'r', 'ieee-le');
 
 %% Calculating the header bytes
@@ -73,28 +75,38 @@ headerBinaries = fread(FID, headerBytes, '*uint8');
 dataBinaries = fread(FID, [dataPacketByteLength numberOfPackets], '*uint8', 0);
 
 %% Finding what PacketIDs have the desired channels
-for IDX = 1:size(dataBinaries,2)
-    PacketIDs(IDX) = typecast(dataBinaries(5:6, IDX), 'uint16');
-end
+% PacketIDs = uint16(zeros(1,size(dataBinaries,2)));
+PacketIDs = dataBinaries(5:6,:);
+PacketIDs = typecast(PacketIDs(:),'uint16');
 
 %% Only capturing all the binary lines that contain non-spike events, such
 % as comments, tracking, patient trigger, etc.
-newDataBinaries = dataBinaries(:, PacketIDs > 256); clear dataBinaries;
+newDataBinaries = dataBinaries(:, PacketIDs == 0 );
 
 %% Extracting the timestamps of all the above non-spike events
-for IDX = 1:size(newDataBinaries,2)
-    dataTimestamps(IDX) = typecast(newDataBinaries(1:4, IDX), 'uint32');
-end
+% dataTimestamps = uint32(zeros(1,size(newDataBinaries,2)));
+dataTimestamps = newDataBinaries(1:4,:);
+dataTimestamps = typecast(dataTimestamps(:),'uint32')';
 
 %% Converting all the user supplied data into binaries for saving into the
 % new structure
-for idx = 1:size(spikeStruct.Electrode,2)
-    newSpikesBinary(:,idx) = [typecast(uint32(spikeStruct.TimeStamp(idx)), 'uint8'),...
-                         typecast(uint16(spikeStruct.Electrode(idx)), 'uint8'),...
-                         typecast(uint8(spikeStruct.Unit(idx)), 'uint8'),...
-                         1,...
-                         typecast(uint16(spikeStruct.Waveform(:,idx))', 'uint8')]';
-end
+% newSpikesBinary = uint8(zeros(dataPacketByteLength,size(spikeStruct.Electrode,2)));
+timestamps = reshape(typecast(uint32(spikeStruct.TimeStamp), 'uint8'),4,[])';
+electrodes = reshape(typecast(uint32(spikeStruct.Electrode), 'uint8'),4,[])';
+electrodes = electrodes(:,[1 2]);
+units = typecast(uint8(spikeStruct.Unit), 'uint8')';
+ones_vec = uint8(ones(size(spikeStruct.Electrode,2),1));
+waveforms = reshape(typecast(int16(spikeStruct.Waveform(:)), 'uint8'),...
+    size(spikeStruct.Waveform(:,1),1)*2,[])';
+
+newSpikesBinary = [timestamps electrodes units ones_vec waveforms]';
+% for idx = 1:size(spikeStruct.Electrode,2)
+%     newSpikesBinary(:,idx) = [typecast(uint32(spikeStruct.TimeStamp(idx)), 'uint8'),...
+%                          typecast(uint16(spikeStruct.Electrode(idx)), 'uint8'),...
+%                          typecast(uint8(spikeStruct.Unit(idx)), 'uint8'),...
+%                          1,...
+%                          typecast(uint16(spikeStruct.Waveform(:,idx))', 'uint8')]';
+% end
 
 %% Processing data
 % Concatinating the user supplied data (non-spike) and the user supplied data
@@ -105,9 +117,12 @@ allTimestamps = [dataTimestamps, spikeStruct.TimeStamp];
 [~, ranking] = sort(allTimestamps);
 newDataBinaries = newDataBinaries(:,ranking);
 
+fclose(FID);
+
 %% Saving the new NEV containig the desired channels
-FIDw = fopen([dataFolder newFileName '.nev'], 'w+', 'ieee-le');
+delete([dataFolder '\' newFileName])
+FIDw = fopen([dataFolder '\' newFileName], 'w+', 'ieee-le');
 fwrite(FIDw, headerBinaries, 'char');
 fwrite(FIDw, newDataBinaries, 'char');
-fclose(FID);
+
 fclose(FIDw);

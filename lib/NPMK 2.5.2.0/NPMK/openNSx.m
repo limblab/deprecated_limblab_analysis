@@ -393,7 +393,7 @@ if strcmpi(NSx.MetaTags.FileTypeID, 'NEURALSG')
     f.BOData = f.EOexH;
     f.EOData = f.EOF;
     NSx.MetaTags.DataPoints = (f.EOF-f.EOexH)/(ChannelCount*2);
-elseif strcmpi(NSx.MetaTags.FileTypeID, 'NEURALCD')    
+elseif strcmpi(NSx.MetaTags.FileTypeID, 'NEURALCD')
     segmentCount = 0;
     while double(ftell(FID)) < f.EOF
         if (fread(FID, 1, 'uint8') ~= 1)
@@ -560,6 +560,14 @@ NSx.MetaTags.ChannelID(channelIDToDelete) = [];
 
 %% Calculating the DataPoints in seconds and adding it to MetaData
 NSx.MetaTags.DataDurationSec = double(NSx.MetaTags.DataPoints)/NSx.MetaTags.SamplingFreq;
+
+% Getting rid of false starts
+NSx.MetaTags.Timestamp = NSx.MetaTags.Timestamp(end);
+NSx.MetaTags.DataPoints = NSx.MetaTags.DataPoints(end);
+NSx.MetaTags.DataDurationSec = NSx.MetaTags.DataDurationSec(end);
+try
+    NSx.Data = NSx.Data{end};
+end
 
 %% Displaying a report of basic file information and the Basic Header.
 if strcmp(Report, 'report')

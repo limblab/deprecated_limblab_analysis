@@ -1,106 +1,134 @@
 % clear all
-datapath = 'D:\Data\Kevin_12A2\Data';
-% datapath = 'D:\Data\Kramer_10I1';
-% datapath = 'D:\Data\TestData\Raw';
-filenames = dir([datapath '\Kevin_2012-11-28_UF_*.nev']);
-% filenames = dir([datapath '\Kramer_2012-11-30_UF_*.nev']);
-% filenames = dir([datapath '\PD_bump_test_004.nev']);
-% filenames(end+1) = dir([datapath '\Kevin_2012-09-18*.nev']);
+use_experimental = 1;
+file_prefix = 'Kevin_2013-04-12_UF';
 
-trial_table = [];
-for iFile = 1:length(filenames)   
-    filename_no_ext = filenames(iFile).name(1:end-4);
-    if ~exist([datapath '\' filename_no_ext '.mat'])
-        bdf = get_cerebus_data([datapath '\' filenames(iFile).name],3);    
-        save([datapath '\' filename_no_ext],'bdf');        
-    else
-        load([datapath '\' filename_no_ext],'bdf');        
-    end
-    bdf_temp = bdf;    
-    if strcmp(filename_no_ext,'Kevin_2012-09-28_UF_002')
-        bdf_temp.words(732,:) = [];
-    end
-%     if strcmp(filename_no_ext,'Kevin_2012-10-02_UF_001')
-%         bdf_temp.words(find(bdf.words(:,1)>120.95,1,'first'),:) = [];
-%     end
-    if iFile == 1
-        bdf_all = bdf;
-        [trial_table_temp table_columns] = UF_trial_table(bdf_temp);
-        trial_table_temp = trial_table_temp(1:end-1,:);
-    else        
-%         old_end_time = trial_table(end,table_columns.t_trial_end);
-        old_end_time = bdf_all.pos(end,1);
-        [trial_table_temp table_columns_temp] = UF_trial_table(bdf_temp);
-        trial_table_temp = trial_table_temp(1:end-1,:);
-        if isequal(table_columns,table_columns_temp)
-            trial_table_temp(:,table_columns_temp.t_trial_start) = trial_table_temp(:,table_columns_temp.t_trial_start) +...
-                old_end_time;
-            trial_table_temp(:,table_columns_temp.t_field_buildup) = trial_table_temp(:,table_columns_temp.t_field_buildup) +...
-                old_end_time;
-            trial_table_temp(:,table_columns_temp.t_ct_hold_on) = trial_table_temp(:,table_columns_temp.t_ct_hold_on) +...
-                old_end_time;
-            trial_table_temp(:,table_columns_temp.t_bump_onset) = trial_table_temp(:,table_columns_temp.t_bump_onset) +...
-                old_end_time;
-            trial_table_temp(:,table_columns_temp.t_trial_end) = trial_table_temp(:,table_columns_temp.t_trial_end) +...
-                old_end_time;
-            bdf_temp.words(:,1) = bdf_temp.words(:,1) + old_end_time;
-            bdf_all.words = [bdf_all.words ; bdf_temp.words];
-            bdf_temp.pos(:,1) = bdf_temp.pos(:,1) + old_end_time;
-            bdf_all.pos = [bdf_all.pos ; bdf_temp.pos];
-            bdf_temp.vel(:,1) = bdf_temp.vel(:,1) + old_end_time;
-            bdf_all.vel = [bdf_all.vel ; bdf_temp.vel];
-            bdf_temp.acc(:,1) = bdf_temp.acc(:,1) + old_end_time;
-            bdf_all.acc = [bdf_all.acc ; bdf_temp.acc];
-            bdf_temp.force(:,1) = bdf_temp.force(:,1) + old_end_time;
-            bdf_all.force = [bdf_all.force ; bdf_temp.force];
-            for iTrial = 1:size(bdf_temp.databursts,1)
-                bdf_temp.databursts{iTrial,1} = bdf_temp.databursts{iTrial,1} + old_end_time;
+    if ~use_experimental
+        datapath = 'D:\Data\Kevin_12A2\Data\';
+        filenames = dir([datapath '\' file_prefix '_*.nev']);
+
+        trial_table = [];
+        for iFile = 1:length(filenames)   
+            filename_no_ext = filenames(iFile).name(1:end-4);
+            if ~exist([datapath filename_no_ext '.mat'])
+                bdf = get_cerebus_data([datapath '\' filenames(iFile).name],3);    
+                save([datapath filename_no_ext],'bdf');        
+            else
+                load([datapath filename_no_ext],'bdf');        
             end
-            bdf_all.databursts = [bdf_all.databursts; bdf_temp.databursts];
-            for iUnit = 1:size(bdf_all.units,2)
-                unit_id = bdf_all.units(iUnit).id;
-                temp_units = reshape([bdf_temp.units.id],2,[])';
-                [~,~,unit_idx] = intersect(unit_id,temp_units,'rows');
-                if ~isempty(unit_idx)
-                    bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(unit_idx).ts + old_end_time];
+            bdf_temp = bdf;    
+            if strcmp(filename_no_ext,'Kevin_2012-09-28_UF_002')
+                bdf_temp.words(732,:) = [];
+            end   
+            if iFile == 1
+                bdf_all = bdf;
+                [trial_table_temp table_columns] = UF_trial_table(bdf_temp);
+                trial_table_temp = trial_table_temp(1:end-1,:);
+            else        
+        %         old_end_time = trial_table(end,table_columns.t_trial_end);
+                old_end_time = bdf_all.pos(end,1)+1;
+                [trial_table_temp table_columns_temp] = UF_trial_table(bdf_temp);
+                trial_table_temp = trial_table_temp(1:end-1,:);
+                if isequal(table_columns,table_columns_temp)
+                    trial_table_temp(:,table_columns_temp.t_trial_start) = trial_table_temp(:,table_columns_temp.t_trial_start) +...
+                        old_end_time;
+                    trial_table_temp(:,table_columns_temp.t_field_buildup) = trial_table_temp(:,table_columns_temp.t_field_buildup) +...
+                        old_end_time;
+                    trial_table_temp(:,table_columns_temp.t_ct_hold_on) = trial_table_temp(:,table_columns_temp.t_ct_hold_on) +...
+                        old_end_time;
+                    trial_table_temp(:,table_columns_temp.t_bump_onset) = trial_table_temp(:,table_columns_temp.t_bump_onset) +...
+                        old_end_time;
+                    trial_table_temp(:,table_columns_temp.t_trial_end) = trial_table_temp(:,table_columns_temp.t_trial_end) +...
+                        old_end_time;
+                    bdf_temp.words(:,1) = bdf_temp.words(:,1) + old_end_time;
+                    bdf_all.words = [bdf_all.words ; bdf_temp.words];
+                    bdf_temp.pos(:,1) = bdf_temp.pos(:,1) + old_end_time;
+                    bdf_all.pos = [bdf_all.pos ; bdf_temp.pos];
+                    bdf_temp.vel(:,1) = bdf_temp.vel(:,1) + old_end_time;
+                    bdf_all.vel = [bdf_all.vel ; bdf_temp.vel];
+                    bdf_temp.acc(:,1) = bdf_temp.acc(:,1) + old_end_time;
+                    bdf_all.acc = [bdf_all.acc ; bdf_temp.acc];
+                    bdf_temp.force(:,1) = bdf_temp.force(:,1) + old_end_time;
+                    bdf_all.force = [bdf_all.force ; bdf_temp.force];
+                    for iTrial = 1:size(bdf_temp.databursts,1)
+                        bdf_temp.databursts{iTrial,1} = bdf_temp.databursts{iTrial,1} + old_end_time;
+                    end
+                    bdf_all.databursts = [bdf_all.databursts; bdf_temp.databursts];
+                    for iUnit = 1:size(bdf_all.units,2)
+                        unit_id = bdf_all.units(iUnit).id;
+                        temp_units = reshape([bdf_temp.units.id],2,[])';
+                        [~,~,unit_idx] = intersect(unit_id,temp_units,'rows');
+                        if ~isempty(unit_idx)
+                            bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(unit_idx).ts + old_end_time];
+                        else
+                            warning('Neuron dropped from recording') %#ok<WNTAG>
+                        end
+                    end
+
+        %             for iUnit = 1:size(bdf_temp.units,2)
+        %                 bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(iUnit).ts + old_end_time];
+        %             end
                 else
-                    warning('Neuron dropped from recording') %#ok<WNTAG>
+                    error('Poop')
                 end
-            end
-            
-%             for iUnit = 1:size(bdf_temp.units,2)
-%                 bdf_all.units(iUnit).ts = [bdf_all.units(iUnit).ts ; bdf_temp.units(iUnit).ts + old_end_time];
-%             end
-        else
-            error('Poop')
+            end    
+            trial_table = [trial_table; trial_table_temp];
         end
-    end    
-   	trial_table = [trial_table; trial_table_temp];
-end
-bdf = bdf_all;
-trial_table(:,table_columns.bump_direction) = round(trial_table(:,table_columns.bump_direction)*180/pi)*pi/180;
+        bdf = bdf_all;
+        trial_table(:,table_columns.bump_direction) = round(trial_table(:,table_columns.bump_direction)*180/pi)*pi/180;
+    else
+        % Experimental!        (but then again, what isn't?)
+        datapath = 'D:\Data\Kevin_12A2\Data\';
+        if exist([datapath file_prefix '-concat.mat'],'file')
+            disp('Files already concatenated. Loading existing files.')
+            load([datapath,file_prefix,'-concat.mat'])
+            if (NEVNSx.MetaTags.NumFilesConcat ~= length(dir([datapath file_prefix '*.nev'])))
+                NEVNSx = concatenate_NEVs(datapath,file_prefix);
+                NEVNSx.NEV = artifact_removal(NEVNSx.NEV,3,0.001);
+                save([datapath,file_prefix,'-concat.mat'],'NEVNSx')
+            end
+        else            
+            NEVNSx = concatenate_NEVs(datapath,file_prefix);
+            NEVNSx.NEV = artifact_removal(NEVNSx.NEV,3,0.001);
+            save([datapath,file_prefix,'-concat.mat'],'NEVNSx')
+        end        
+        bdf = get_nev_mat_data(NEVNSx,3);         
+    end
+        
+[trial_table table_columns] = UF_trial_table(bdf);
+        
 bump_duration = trial_table(1,table_columns.bump_duration);
 
 t_lim = min(trial_table(:,table_columns.bump_duration));
 fs = 1/diff(bdf.pos(1:2,1));
+
 field_orientations = unique(trial_table(:,table_columns.field_orientation));
 bump_directions = unique(trial_table(:,table_columns.bump_direction));
+bias_force_directions = unique(trial_table(:,table_columns.bias_force_dir));
+
 colors_bump = lines(length(bump_directions));
 colors_field = lines(length(field_orientations));
 colors_field = [0 0 1; 1 0 0; 0 1 0];
+
+colors_field_bias = lines(length(field_orientations)*length(bias_force_directions));
+
 markerlist = {'^','o','.','*'};
 linelist = {'-','-.','--',':'};
 
 rewarded_trials = find(trial_table(:,table_columns.result)==32);
 aborted_trials = find(trial_table(:,table_columns.result)==33);
+
 field_indexes = cell(1,length(field_orientations));
 bump_indexes = cell(1,length(bump_directions));
-trial_range = [-.4 .5];
+bias_indexes = cell(1,length(bias_force_directions));
+
+trial_range = [-.5 .5];
 if isfield(bdf,'emg')
     num_emg = size(bdf.emg.emgnames,2);
 else
     num_emg = 0;
 end
+
+num_emg = 0;
 
 %% Adjust kinematics
 
@@ -120,12 +148,15 @@ acc(:,1) = bdf.pos(:,1);
 acc(:,2) = [0 ; diff(vel(:,2))*fs];
 acc(:,3) = [0 ; diff(vel(:,3))*fs];
 
-% Remove force offset
-xy_movement = sqrt(diff(bdf.pos(:,2)).^2+diff(bdf.pos(:,3)).^2);
-handle_not_moving_idx = intersect(find(xy_movement<1e-16),find(abs(bdf.pos(:,2))<20 & abs(bdf.pos(:,3)<10)));
-% handle_not_moving_idx = find(xy_movement<50*min(xy_movement));
-x_force_offset = mean(bdf.force(handle_not_moving_idx,2));
-y_force_offset = mean(bdf.force(handle_not_moving_idx,3));
+% % Remove force offset
+% xy_movement = sqrt(diff(bdf.pos(:,2)).^2+diff(bdf.pos(:,3)).^2);
+% [b,a] = butter(4,50/(fs/2),'low');
+% xy_movement = filtfilt(b,a,xy_movement);
+% handle_not_moving_idx = intersect(find(xy_movement<1e-30),find(abs(bdf.pos(:,2))<20 & abs(bdf.pos(:,3)<10)));
+% % handle_not_moving_idx = find(xy_movement<50*min(xy_movement));
+% x_force_offset = mean(bdf.force(handle_not_moving_idx,2));
+% y_force_offset = mean(bdf.force(handle_not_moving_idx,3));
+% 
 % trial_table_temp = trial_table(~isnan(trial_table(:,table_columns.t_field_buildup)),:);
 % x_forces_offset = zeros(size(trial_table_temp,1),100);
 % y_forces_offset = zeros(size(trial_table_temp,1),100);
@@ -136,8 +167,9 @@ y_force_offset = mean(bdf.force(handle_not_moving_idx,3));
 % end
 % x_force_offset = mean(mean(x_forces_offset));
 % y_force_offset = mean(mean(y_forces_offset));
-bdf.force(:,2) = bdf.force(:,2) - x_force_offset;
-bdf.force(:,3) = bdf.force(:,3) - y_force_offset;
+% 
+% bdf.force(:,2) = bdf.force(:,2) - x_force_offset;
+% bdf.force(:,3) = bdf.force(:,3) - y_force_offset;
 
 % % Copy EMG
 % if num_emg>0
@@ -147,24 +179,11 @@ bdf.force(:,3) = bdf.force(:,3) - y_force_offset;
 % end
 
 trial_table_temp = trial_table(rewarded_trials,:);
-
-x_pos = zeros(size(trial_table_temp,1),length(find(bdf.pos(:,1)>trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1) &...
-        bdf.pos(:,1)<trial_table_temp(1,table_columns.t_bump_onset)+trial_range(2))));
-y_pos = x_pos;
-x_vel = x_pos;
-y_vel = x_pos;
-x_acc = x_pos;
-y_acc = x_pos;
-x_force = x_pos;
-y_force = x_pos;
-idx_table = x_pos;
+trial_table_temp = trial_table_temp(1:end-1,:);
 
 if num_emg>0
     emg_all = zeros(num_emg,size(trial_table_temp,1),length(find(bdf.emg.data(:,1)>trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1) &...
             bdf.emg.data(:,1)<trial_table_temp(1,table_columns.t_bump_onset)+trial_range(2))));
-
-    % s_enc = x_pos;
-    % e_enc = x_pos;
 
     % Process EMG
     emg_filtered = zeros(size(bdf.emg.data,1),num_emg);
@@ -178,26 +197,38 @@ end
 % emg_filtered = abs(emg_filtered);
 % [b,a] = butter(4,150/(bdf.emg.emgfreq/2),'low');
 
-for iTrial = 1:size(trial_table_temp,1)
-    idx = find(bdf.pos(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first'):...
-        find(bdf.pos(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first')+size(x_pos,2)-1;
-    idx_table(iTrial,:) = idx;
-    x_pos(iTrial,:) = bdf.pos(idx,2);
-    y_pos(iTrial,:) = bdf.pos(idx,3);
-    x_vel(iTrial,:) = vel(idx,2);
-    y_vel(iTrial,:) = vel(idx,3);
-    x_acc(iTrial,:) = acc(idx,2);
-    y_acc(iTrial,:) = acc(idx,3);
-    x_force(iTrial,:) = bdf.force(idx,2);
-    y_force(iTrial,:) = bdf.force(idx,3);         
-    if num_emg>0
-        emg_idx = find(bdf.emg.data(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first'):...
-            find(bdf.emg.data(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first')+size(emg_all,3)-1;
-        for iEMG = 1:num_emg        
-            emg_all(iEMG,iTrial,:) = emg_filtered(emg_idx,iEMG);
-        end
-    end
+num_samples = sum(bdf.pos(:,1)>=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1) &...
+    bdf.pos(:,1)<=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(2));
+all_idx = 1:size(bdf.pos,1);
+t_vector = round(bdf.pos(:,1)*30000)/30000;
+
+[~,first_idx,~] = intersect(t_vector,round((trial_table_temp(:,table_columns.t_bump_onset)+trial_range(1))*1000)/1000);
+idx_table = repmat(first_idx,1,num_samples) + repmat(1:num_samples,size(first_idx,1),1);
+x_pos = reshape(bdf.pos(idx_table,2),[],num_samples);
+y_pos = reshape(bdf.pos(idx_table,3),[],num_samples);
+x_vel = reshape(vel(idx_table,2),[],num_samples);
+y_vel = reshape(vel(idx_table,3),[],num_samples);
+x_acc = reshape(acc(idx_table,2),[],num_samples);
+y_acc = reshape(acc(idx_table,3),[],num_samples);
+x_force = reshape(bdf.force(idx_table,2),[],num_samples);
+y_force = reshape(bdf.force(idx_table,3),[],num_samples);
+
+emg_fs = double(1/mean(diff(bdf.emg.data(:,1))));
+t_vector = round(double(bdf.emg.data(:,1))*round(emg_fs))/emg_fs;
+num_samples_emg = sum(bdf.emg.data(:,1)>=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1) &...
+    bdf.emg.data(:,1)<=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(2));
+[~,first_idx,~] = intersect(t_vector,round((trial_table_temp(:,table_columns.t_bump_onset)+trial_range(1))*emg_fs)/emg_fs);
+emg_idx_table = repmat(first_idx,1,num_samples_emg) + repmat(1:num_samples_emg,size(first_idx,1),1);
+
+if length(first_idx)~=size(trial_table_temp,1)
+    num_emg = 0;
+    warning('EMG length does not match NEV length')
 end
+for iEMG = 1:num_emg        
+    emg_all(iEMG,:,:) = reshape(emg_filtered(emg_idx_table,iEMG),[],num_samples_emg);
+end
+
+% toc
 
 % % Process EMG
 % for iEMG = 1:size(emg_all,1)
@@ -313,14 +344,19 @@ for iBump = 1:length(bump_directions)
     bump_indexes{iBump} = find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(iBump));
 end
 
+for iBias = 1:length(bias_force_directions)
+    bias_indexes{iBias} = find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(iBias));
+end
+
 %%
 % Raw positions
+figure(1)
+clf
 t_axis = (1/fs:1/fs:size(x_pos,2)/fs)+trial_range(1);
 for iField = 1:length(field_indexes)
     for iBump = 1:length(bump_indexes)
         idx = intersect(field_indexes{iField},bump_indexes{iBump});
-        [tmp t_idx] = min(abs(t_axis));
-        figure(1)
+        [tmp t_idx] = min(abs(t_axis));        
         subplot(length(field_indexes),length(bump_indexes),(iField-1)*(length(bump_indexes))+iBump)
         plot(x_pos(idx,t_idx),y_pos(idx,t_idx),'k.','MarkerSize',10)
         hold on
@@ -337,6 +373,7 @@ end
 %%
 % Raw forces
 figure(2) 
+clf
 t_axis = (1/fs:1/fs:size(x_pos,2)/fs)+trial_range(1);
 for iField = 1:length(field_indexes)
     for iBump = 1:length(bump_indexes)
@@ -351,8 +388,8 @@ for iField = 1:length(field_indexes)
         ylim([-5 5])
         title(['F: ' num2str(round(field_orientations(iField)*180/pi))...
             'deg  B: ' num2str(round(bump_directions(iBump)*180/pi)) 'deg'])
-        xlabel('X force (?)')
-        ylabel('Y force (?)')
+        xlabel('X force (N)')
+        ylabel('Y force (N)')
     end
 end
         
@@ -365,7 +402,7 @@ for iField = 1:length(field_indexes)
     for iBump = 1:length(bump_indexes)
         idx = intersect(field_indexes{iField},bump_indexes{iBump});       
         figure(3)
-        subplot(2,2,iBump)
+        subplot(2,length(bump_indexes),(iField-1)*length(bump_indexes)+iBump)
         plot(x_pos_translated(idx,t_idx:end)',...
             y_pos_translated(idx,t_idx:end)','Color',colors_field(iField,:))
         hold on
@@ -386,7 +423,7 @@ t_axis = (1/fs:1/fs:size(x_force,2)/fs)+trial_range(1);
 for iField = 1:length(field_indexes)
     for iBump = 1:length(bump_indexes)
         idx = intersect(field_indexes{iField},bump_indexes{iBump});        
-        subplot(2,2,iBump)
+        subplot(2,length(bump_indexes),(iField-1)*length(bump_indexes)+iBump)
         plot(x_force(idx,t_idx:end)'-repmat(x_force(idx,t_idx)',size(x_force(idx,t_idx:end),2),1),...
             y_force(idx,t_idx:end)'-repmat(y_force(idx,t_idx)',size(y_force(idx,t_idx:end),2),1),'Color',colors_field(iField,:))
         hold on
@@ -394,8 +431,8 @@ for iField = 1:length(field_indexes)
         xlim([-5 5])
         ylim([-5 5])
         title(['Bump: ' num2str(round(bump_directions(iBump)*180/pi)) 'deg'])
-        xlabel('X force (?)')
-        ylabel('Y force (?)')
+        xlabel('X force (N)')
+        ylabel('Y force (N)')
     end
 end        
         
@@ -625,7 +662,7 @@ t_axis = (1/fs:1/fs:size(value_matrix,2)/fs)+trial_range(1);
 y_limit = [min(min(x_acc_rot_bump(:,t_axis<t_lim))) max(max(x_acc_rot_bump(:,t_axis<t_lim)))];
 x_limit = plot_range;
 for iBump = 1:length(bump_directions)
-    subplot(2,2,iBump)
+    subplot(2,length(bump_directions)/2,iBump)
     hold on
     for iField = 1:length(field_orientations)           
         idx = intersect(field_indexes{iField},bump_indexes{iBump});
@@ -637,7 +674,7 @@ for iBump = 1:length(bump_directions)
     alpha(0.1)
 end
 for iBump = 1:length(bump_directions)
-    subplot(2,2,iBump)
+    subplot(2,length(bump_directions)/2,iBump)
     hold on
     for iField = 1:length(field_orientations)           
         idx = intersect(field_indexes{iField},bump_indexes{iBump});
@@ -669,7 +706,7 @@ y_limit = [min(min(values_matrix(:,t_axis<t_lim))) max(max(values_matrix(:,t_axi
 x_limit = [-0.05 t_lim];
 
 for iBump = 1:length(bump_directions)
-    subplot(2,2,iBump)
+    subplot(2,length(bump_directions)/2,iBump)
     hold on
     for iField = 1:length(field_orientations)           
         idx = intersect(field_indexes{iField},bump_indexes{iBump});
@@ -681,7 +718,7 @@ for iBump = 1:length(bump_directions)
     alpha(0.1)
 end
 for iBump = 1:length(bump_directions)
-    subplot(2,2,iBump)
+    subplot(2,length(bump_directions)/2,iBump)
     hold on
     for iField = 1:length(field_orientations)           
         idx = intersect(field_indexes{iField},bump_indexes{iBump});
@@ -736,7 +773,7 @@ x_limit = plot_range;
 for iField = 1:length(field_orientations)
     for iBump = 1:length(bump_directions)
         idx = intersect(bump_indexes{iBump},field_indexes{iField});
-        subplot(2,2,iBump)
+        subplot(2,length(bump_directions)/2,iBump)
         hold on
         temp_std = [mean(values_matrix(idx,:),1)+std(values_matrix(idx,:),[],1),...            
             mean(values_matrix(idx,end:-1:1),1)-std(values_matrix(idx,end:-1:1),[],1)];
@@ -747,7 +784,7 @@ for iField = 1:length(field_orientations)
         xlim(x_limit)
         ylim(y_limit)
         alpha(.1)
-        ylabel('Force (?)')
+        ylabel('Force (N)')
         xlabel('t (s)')
         title(['Force parallel to bump at ' num2str(180*bump_directions(iBump)/pi) '^o'])
     end
@@ -780,82 +817,131 @@ end
 %% Units
 tic
 if isfield(bdf,'units')
-    figure
+    t_axis = trial_range(1); 
     all_chans = reshape([bdf.units.id],2,[])';
     units = unit_list(bdf);
-    bin_size = 0.001;
-
-    % unit_idx = find(all_chans(:,1)==units(1,1) & all_chans(:,2)==units(1,2));
-    % [count bin_t] = train2bins(bdf.units(unit_idx).ts,bin_size);
-    % unit_idx_temp = find(bin_t>=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1),1,'first'):...
-    %     find(bin_t>=trial_table_temp(1,table_columns.t_bump_onset)+trial_range(1),1,'first')+size(x_pos,2)-1;
+    dt = round(mean(diff(bdf.pos(:,1)))*10000)/10000;
+    bin_size = dt;
+    bin_width = 0.02;    
+%     trial_range = [-3 0.5];
 
     neuron_t_axis = (1:(trial_range(2)-trial_range(1))/bin_size)*bin_size+trial_range(1);
+    varnames = {'Bin','Bump X','Bump Y','Field orientation','Trial number','Bump on'};       
+    
+    hist_centers = neuron_t_axis(1):bin_width:neuron_t_axis(end);
+    anova_bins = hist_centers > -0.1 & hist_centers < 0.15;      
 
-    for iUnit = 1:length(units)    
-        clf
+    for iUnit = 1:size(units,1)    
+        unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));    
+        ts = bdf.units(unit_idx).ts; %#ok<FNDSB>
+        ts_cell = {};    
+        max_y = 0;
+            
+%         % anova independent variables
+%         bump_dir_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));
+        bump_x_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));
+        bump_y_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));
+        field_orientation_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));    
+        trial_number_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));         
+        bin_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers)); 
+        bump_on_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));         
+        bump_on_mat(:,hist_centers>=0 & hist_centers <= bump_duration) = 1; 
+%         %anova dependent variable
+        hist_mat = zeros(size(trial_table_temp,1)-1,length(hist_centers));
+%         fr_mat = zeros(size(trial_table_temp,1),length(neuron_t_axis));
+        
+        figure
+        hold on
         unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));    
         fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),.01);
         unit_all_trials = zeros(size(trial_table_temp,1),length(neuron_t_axis));
         spikes_vector = [];
         for iTrial = 1:size(trial_table_temp,1)-1
-%             idx = find(bdf.pos(:,1)>=trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1),1,'first')+...
-%                     (0:size(unit_all_trials,2)-1);
             idx = idx_table(iTrial,:);
             unit_all_trials(iTrial,:) = fr(idx);
                     
             spikes_temp = bdf.units(unit_idx).ts(bdf.units(unit_idx).ts>trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(1) &...
                 bdf.units(unit_idx).ts < trial_table_temp(iTrial,table_columns.t_bump_onset)+trial_range(2));
-            spikes_temp = spikes_temp - trial_table_temp(iTrial,table_columns.t_bump_onset);
+            spikes_temp = reshape(spikes_temp - trial_table_temp(iTrial,table_columns.t_bump_onset),[],1);
             spikes_vector = [spikes_vector [spikes_temp';repmat(iTrial,1,length(spikes_temp))]];
-%             unit_all_trials(iTrial,:) = spikes2fr(spikes_temp,neuron_t_axis,.01);
-
-        end     
-
-
-        t_axis = (1/fs:1/fs:size(value_matrix,2)/fs)+trial_range(1);
-        for iField = 1:length(field_indexes)
-            for iBump = 1:length(bump_indexes)
-                idx = intersect(field_indexes{iField},bump_indexes{iBump});
-                subplot(1,length(bump_indexes),iBump)               
-                spikes_idx = [];
-                for iTrial = 1:length(idx)
-                    spikes_idx = [spikes_idx find(spikes_vector(2,:)==idx(iTrial))];
+%             bump_dir_mat(iTrial,:) = trial_table_temp(iTrial,table_columns.bump_direction);
+            bump_x_mat(iTrial,:) = round(1000*cos(trial_table_temp(iTrial,table_columns.bump_direction)))/1000;
+            bump_y_mat(iTrial,:) = round(1000*sin(trial_table_temp(iTrial,table_columns.bump_direction)))/1000;
+            field_orientation_mat(iTrial,:) = trial_table_temp(iTrial,table_columns.field_orientation);
+            trial_number_mat(iTrial,:) = iTrial;
+            fr_mat(iTrial,:) = fr(idx);
+            
+            ts_temp = ts(ts>trial_table(iTrial,table_columns.t_bump_onset)+neuron_t_axis(1) &...
+                ts<trial_table(iTrial,table_columns.t_bump_onset)+neuron_t_axis(end));
+            ts_temp = ts_temp' - trial_table(iTrial,table_columns.t_bump_onset);
+            ts_cell{iTrial} = ts_temp;
+            hist_mat(iTrial,:) = hist(ts_cell{iTrial},hist_centers);
+            bin_mat(iTrial,:) = 1:size(bin_mat,2);
+        end
+        max_y = .5*iTrial;        
+       
+        for iBias = 1:length(bias_indexes)
+            for iField = 1:length(field_indexes)
+                for iBump = 1:length(bump_indexes)
+                    idx = intersect(field_indexes{iField},bump_indexes{iBump});
+                    idx = intersect(idx,bias_indexes{iBias});
+                    subplot(1,length(bump_indexes),iBump)               
+                    spikes_idx = [];
+                    for iTrial = 1:length(idx)
+                        spikes_idx = [spikes_idx find(spikes_vector(2,:)==idx(iTrial))];
+                    end
+                    plot(spikes_vector(1,spikes_idx),.5*spikes_vector(2,spikes_idx),'.','Color',...
+                        min([1,1,1],colors_field_bias((iBias-1)*length(field_indexes)+iField,:)+.7),'MarkerSize',5)
+                    hold on
                 end
-    %             [~,spikes_idx,~] = intersect(spikes_vector(2,:),idx);
-                plot(spikes_vector(1,spikes_idx),.5*spikes_vector(2,spikes_idx),'.','Color',min([1,1,1],colors_field(iField,:)+.5),'MarkerSize',5)
-                hold on
-    %             plot(neuron_t_axis,mean(unit_all_trials(idx,:),1),'Color',colors_field(iField,:),'LineWidth',2)
-    %             title(['B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
-    %             ylim([0 size(trial_table_temp,1)/2])
             end
-            legend_str{iField} = ['F: ' num2str(field_orientations(iField)*180/pi) ' deg'];
-        end
-
-        for iField = 1:length(field_indexes)
-            for iBump = 1:length(bump_indexes)
-                idx = intersect(field_indexes{iField},bump_indexes{iBump});
-                subplot(1,length(bump_indexes),iBump)               
-    %             spikes_idx = [];
-    %             for iTrial = 1:length(idx)
-    %                 spikes_idx = [spikes_idx find(spikes_vector(2,:)==idx(iTrial))];
-    %             end
-    % %             [~,spikes_idx,~] = intersect(spikes_vector(2,:),idx);
-    %             plot(spikes_vector(1,spikes_idx),.5*spikes_vector(2,spikes_idx),'.','Color',min([1,1,1],colors_field(iField,:)+.5),'MarkerSize',5)
-    %             hold on
-                plot(neuron_t_axis,mean(unit_all_trials(idx,:),1),'Color',colors_field(iField,:),'LineWidth',2)
-                title(['B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
-                ylim([0 size(trial_table_temp,1)/2])
-                ylabel('Firing rate (1/s)')
-                xlabel('t (s)')
+                 end
+        
+        for iBias = 1:length(bias_indexes)
+            for iField = 1:length(field_indexes)
+                for iBump = 1:length(bump_indexes)
+                    idx = intersect(field_indexes{iField},bump_indexes{iBump});
+                    idx = intersect(idx,bias_indexes{iBias});
+                    subplot(1,length(bump_indexes),iBump)               
+                    plot(neuron_t_axis,mean(unit_all_trials(idx,:),1),'Color',...
+                        colors_field_bias((iBias-1)*length(field_indexes)+iField,:),'LineWidth',2)
+                    title(['B:' num2str(bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
+                    ylim([0 size(trial_table_temp,1)/2])
+                    ylabel('Firing rate (1/s)')
+                    xlabel('t (s)')
+                    max_y = max(max_y,max(mean(unit_all_trials(idx,:),1)));
+                end
+%                 legend_str{iField} = ['Field: ' num2str(field_orientations(iField)*180/pi) ' deg'];
+                legend_str{(iBias-1)*length(field_indexes)+iField} = ['F: ' num2str(field_orientations(iField)*180/pi) ' deg' ' BF: ' num2str(round(bias_force_directions(iBias)*180/pi)) ' deg'];
             end
-            legend_str{iField} = ['Field: ' num2str(field_orientations(iField)*180/pi) ' deg'];
         end
-
         legend(legend_str,'interpreter','none')
         set(gcf,'name',['Channel: ' num2str(units(iUnit,1))],'numbertitle','off')
-        drawnow
-        pause             
+        drawnow 
+        
+        for iBump = 1:length(bump_indexes)
+            subplot(1,length(bump_indexes),iBump)
+            ylim([0 1.2*max_y])
+            xlim([-0.1 .15])
+        end
+%         [p,table,stats] = anovan(fr_mat(:),{t_mat(:),bump_dir_mat(:),field_orientation_mat(:),...
+%             trial_number_mat(:),bump_on_mat(:)},...
+%             'model','interaction','continuous',[1 4],'varnames',varnames,'display','on');
+        hist_mat = hist_mat(:,anova_bins);
+%         bump_dir_mat = bump_dir_mat(:,anova_bins);
+        bump_x_mat = bump_x_mat(:,anova_bins);
+        bump_y_mat = bump_y_mat(:,anova_bins);
+        field_orientation_mat = field_orientation_mat(:,anova_bins);
+        bin_mat = bin_mat(:,anova_bins);
+        trial_number_mat = trial_number_mat(:,anova_bins);
+        bump_on_mat = bump_on_mat(:,anova_bins);
+        
+        [p,table,stats] = anovan(hist_mat(:),{bin_mat(:),bump_x_mat(:),bump_y_mat(:),field_orientation_mat(:),...
+            trial_number_mat(:),bump_on_mat(:)},...
+            'model','interaction','continuous',[1 2 3 5],'varnames',varnames,'display','on');
+        table(find(p<0.05)+1,1)
+        
+        pause
     end
 end
 toc

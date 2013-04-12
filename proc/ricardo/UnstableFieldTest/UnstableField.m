@@ -1,14 +1,14 @@
 % function UnstableField()
 
-theta = .7853;
-F_offset = 0.02;
-F_offset_theta = 0;
+theta = pi/2;
+F_offset = -40;
+F_offset_theta = pi/2;
 % Fx_offset = 10;
 % Fy_offset = 10;
 x_offset = 0;
 y_offset = 0;
-neg_stiffness = 0.008;
-pos_stiffness = 0.16;
+neg_stiffness = 10;
+pos_stiffness = 10;
 axis_lim = 10;
 
 [X,Y] = meshgrid(-axis_lim:axis_lim/5:axis_lim);

@@ -725,6 +725,22 @@ if strcmpi(Flags.ParseData, 'parse')
     end
 end
 
+%% Remove false start data 
+spikes_to_remove = 1:find(diff(double(NEV.Data.Spikes.TimeStamp))<0,1,'last');
+NEV.Data.Spikes.TimeStamp(spikes_to_remove) = [];
+NEV.Data.Spikes.Electrode(spikes_to_remove) = [];
+NEV.Data.Spikes.Unit(spikes_to_remove) = [];
+NEV.Data.Spikes.Waveform(:,spikes_to_remove) = [];
+
+digital_to_remove = 1:find(diff(double(NEV.Data.SerialDigitalIO.TimeStamp))<0,1,'last');
+NEV.Data.SerialDigitalIO.TimeStamp(digital_to_remove) = [];
+NEV.Data.SerialDigitalIO.TimeStampSec(digital_to_remove) = [];
+NEV.Data.SerialDigitalIO.InsertionReason(digital_to_remove) = [];
+NEV.Data.SerialDigitalIO.UnparsedData(digital_to_remove) = [];
+
+NEV.MetaTags.PacketCount = length(NEV.Data.SerialDigitalIO.TimeStamp)+...
+    length(NEV.Data.Spikes.TimeStamp);
+
 %% Show a report if 'report' is passed as an argument
 if strcmpi(Flags.Report, 'report')
     % Displaying report
