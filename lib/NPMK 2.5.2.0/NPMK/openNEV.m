@@ -149,7 +149,7 @@ NEV.Data.SerialDigitalIO = struct('InputType', [], 'TimeStamp', [],...
     'TimeStampSec', [], 'Type', [], 'Value', [], 'InsertionReason', [], 'UnparsedData', []);
 NEV.Data.VideoSync = struct('TimeStamp', [], 'FileNumber', [], 'FrameNumber', [], 'ElapsedTime', [], 'SourceID', []);
 NEV.Data.Comments = struct('TimeStamp', [], 'TimeStampSec', [], 'CharSet', [], 'Color', [], 'Text', []);
-NEV.Data.Tracking = [];
+NEV.Data.Tracking = struct('TimeStamp', [], 'TimeStampSec', [], 'Text', []);
 NEV.Data.TrackingEvents = struct('TimeStamp', [], 'TimeStampSec', [], 'Text', []);
 NEV.Data.PatientTrigger = struct('TimeStamp', [], 'TriggerType', []);
 NEV.Data.Reconfig = struct('TimeStamp', [], 'ChangeType', [], 'CompName', [], 'ConfigChanged', []);

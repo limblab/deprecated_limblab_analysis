@@ -23,17 +23,20 @@
 %   Version 1.0.0.0
 
 
-function NEVNSx = combineNSxNEV(NEVNSxstruct)
+function NEVNSx = combineNSxNEV(NEVNSxstruct,NEVlist)
 
 NSxfields = fieldnames(NEVNSxstruct);
 NSxfields = NSxfields(~strcmp(NSxfields,'NEV'));
 
 NEVNSx = NEVNSxstruct(1);
+NEVNSx.MetaTags.NumFilesConcat = 1;
+NEVNSx.MetaTags.FileStartSec = 0;
+NEVNSx.MetaTags.NEVlist = {NEVlist.name};
 
 for iNEVNSx = 2:length(NEVNSxstruct)
     NEV1 = NEVNSx.NEV;
     NEV2 = NEVNSxstruct(iNEVNSx).NEV;
-    
+    NSx1DataLength = [];
     for iNSx = 1:length(NSxfields)
         if ~isempty(NEVNSx.(NSxfields{iNSx})) && ~isempty(NEVNSxstruct(iNEVNSx).(NSxfields{iNSx}))
             NSx1 = NEVNSx.(NSxfields{iNSx});
@@ -54,6 +57,10 @@ for iNEVNSx = 2:length(NEVNSxstruct)
         end
     end
     
+    if isempty(NSx1DataLength)
+        NSx1DataLength = (NEV1.MetaTags.DataDurationSec + 1)*30000;
+    end
+    
     % Adjusting the timestamp on the second NEV file
     NEV2.Data.Comments.TimeStamp = NEV2.Data.Comments.TimeStamp + NSx1DataLength;
     NEV2.Data.Comments.TimeStampSec = NEV2.Data.Comments.TimeStampSec + double(NSx1DataLength)/30000;
@@ -62,6 +69,7 @@ for iNEVNSx = 2:length(NEVNSxstruct)
     NEV2.Data.Spikes.TimeStamp = NEV2.Data.Spikes.TimeStamp + NSx1DataLength;
 
     % Combining the two NEV files
+    NEVNSx.MetaTags.FileStartSec(end+1) = double(NSx1DataLength)/30000;
     NEV1.Data.Spikes.Electrode      = [NEV1.Data.Spikes.Electrode, NEV2.Data.Spikes.Electrode];
     NEV1.Data.Spikes.TimeStamp      = [NEV1.Data.Spikes.TimeStamp, NEV2.Data.Spikes.TimeStamp];
     NEV1.Data.Spikes.Unit           = [NEV1.Data.Spikes.Unit, NEV2.Data.Spikes.Unit];

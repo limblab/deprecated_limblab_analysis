@@ -145,6 +145,11 @@ function out_struct = get_nev_mat_data(varargin)
             elseif NSx_info.NSx_sampling(analog_list(i))==30000
                 out_struct.raw.analog.data{i} = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(analog_list(i)),:))';
             end
+            % 6.5584993 is the ratio when comparing the output of 
+            % get_cerebus_data to the one from this script. It must come
+            % from the data type conversion that happens when pulling 
+            % analog data.
+            out_struct.raw.analog.data{i} = out_struct.raw.analog.data{i}/6.5584993;
         end
         
         % The start time of each channel.  Note that this NS library
