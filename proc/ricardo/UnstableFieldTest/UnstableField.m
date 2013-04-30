@@ -40,6 +40,7 @@ quiver(X,Y,Fx_prime,Fy_prime,'k')
 xlim([-15 15])
 ylim([-15 15])
 axis square
+axis off
 % set(gca,'ytick',[],'xtick',[])
 
 
