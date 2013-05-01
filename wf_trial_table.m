@@ -69,7 +69,13 @@ for trial = 1:num_trials-1
     target = bytes2float(target, 'little')';
     
     % Target ID
-    target_id = get_tgt_id(target);
+    if isempty(target)
+        warning('databurst(%d) is corrupted, no target info',dbidx);
+        target = [-1 -1 -1 -1];
+        target_id = -1;
+    else
+        target_id = get_tgt_id(target);
+    end
     
     % Go cue
     go_cue_idx = find(go_cues > start_time & go_cues < stop_time, 1, 'first');
