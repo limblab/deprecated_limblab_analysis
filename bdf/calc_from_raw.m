@@ -257,15 +257,22 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
             clear force_offsets; % cleanup a little
             out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
-            for p = 1:size(out_struct.force, 1)                
-                r = [cos(-th_2_adj(p)) sin(th_2_adj(p)); -sin(th_2_adj(p)) cos(th_2_adj(p))];
-%                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
-                % Modified rotation matrix on Jan 15, 2013. Old matrix was
-                % incorrect, rotating handle force with respect to shoulder
-                % and not elbow as it should.
-                out_struct.force(p,:) = out_struct.force(p,:) * r;
-            end
+            
+            % Removed stupid loop for calculating rotation matrix of
+            % handle, substituted by next 4 lines
+%             for p = 1:size(out_struct.force, 1)                
+%                 r = [cos(-th_2_adj(p)) sin(th_2_adj(p)); -sin(th_2_adj(p)) cos(th_2_adj(p))];
+% %                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
+%                 % Modified rotation matrix on Jan 15, 2013. Old matrix was
+%                 % incorrect, rotating handle force with respect to shoulder
+%                 % and not elbow as it should.
+%                 out_struct.force(p,:) = out_struct.force(p,:) * r;
+%             end
 
+            temp = out_struct.force;
+            out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
+            out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
+            clear temp
             out_struct.force = [analog_time_base' out_struct.force];
 
         else
