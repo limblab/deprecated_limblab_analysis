@@ -209,11 +209,11 @@ function out_struct = get_cerebus_data(varargin)
             actual_words = actual_words(word_indices_keep,:);
         end
 
-        out_struct.raw.words = actual_words; %#ok<FNDSB>
+        out_struct.raw.words = actual_words;
 
         % and encoder data
         if (opts.kin)
-            out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
+            out_struct.raw.enc = get_encoder(all_enc);
         end
 
         % Grab the serial data -- event ID 146
@@ -291,7 +291,7 @@ function out_struct = get_cerebus_data(varargin)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
         end
 
-        [nsresult,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
+        [~,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
         out_struct.emg.emgnames = {EntityInfo(emg_list).EntityLabel};
         % ensure all emg channels have the same frequency
         if ~all( [emg_info.SampleRate] == emg_info(1).SampleRate)
