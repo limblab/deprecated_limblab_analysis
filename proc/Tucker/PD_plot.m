@@ -41,8 +41,18 @@ end
 
 if length(varargin)>4
     deselected_chan = varargin{5};
+    ul=unit_list(bdf,1); % gets two columns back, first with channel
+% numbers, second with unit sort code on that channel
+    for i=1:length(deselected_chan)
+        if include_unsorted==0
+            skipchans(i)=find(ul(:,1)==deselected_chan(i) & ul(:,2)~=0);
+        else
+            skipchans(i)=find(ul(:,1)==deselected_chan(i) & ul(:,2)==0);
+        end
+    end
 else
     deselected_chan = [];
+    skipchans=[];
 end
 
 % include_unsorted = 1 ; 
@@ -61,28 +71,35 @@ if (include_unsorted && length(u1)~=length(moddepth))
     u1=u1(~u1(:,2),:);
 end
 %set_outputs
-outdata=[u1,pds,moddepth,errs];
+outdata=[u1(:,1),pds,moddepth,errs];
 
-
-
-%% get out badly fitted channels
-tempmean=mean(moddepth);
+%% identify channels with excessive modulation depth
+%% identify channels with excessive modulation depth
 for iChan = 1:length(u1)
-    if moddepth(iChan)<tempmean
-    if moddepth(iChan)<tempmean
-        moddepth(iChan)
-        moddepth(iChan)= 0;
+    if (moddepth(iChan) > 10)
+        warning('PD_force_plot:AbnormalModulationDepth',strcat('An unusually large modulation depth was detected on channel: ',num2str(iChan)))
+        disp(strcat('Channel: ',num2str(iChan), ' has been marked as bad, and will not be used to compute the mean modulation depth'))
         deselected_chan = [u1(iChan), deselected_chan];
+        skipchans=[iChan,skipchans];
+    end
+end
+%% identify channels with low modulation depth
+tmp_mean=mean(moddepth(setxor([1:length(moddepth)],skipchans)));
+for iChan = 1:length(u1)
+    if moddepth(iChan)< tmp_mean
+        %moddepth(iChan)= 0;
+        deselected_chan = [u1(iChan), deselected_chan];
+        skipchans=[iChan,skipchans];
     end
 end
 disp(['Deselected channels (manually or because moddepth > 1 ): ' num2str(deselected_chan)])
 
-%% make deselected channel pds, errs and moddepth zero.
-% deselected_chan = [96];
-    
-pds(find(ismember(u1,deselected_chan))) = NaN ; 
-errs(find(ismember(u1,deselected_chan))) = NaN ; 
-moddepth(find(ismember(u1,deselected_chan))) = NaN ; 
+% %% make deselected channel pds, errs and moddepth zero.
+% % deselected_chan = [96];
+%     
+% pds(find(ismember(u1,deselected_chan))) = NaN ; 
+% errs(find(ismember(u1,deselected_chan))) = NaN ; 
+% moddepth(find(ismember(u1,deselected_chan))) = NaN ; 
 
 
 %% PD map plot. 
@@ -105,7 +122,7 @@ h_up = figure('name','PDs upper half of array');
 h_low = figure('name','PDs lower half of array');
 
 iPD =2 ; 
-maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)))
+maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)));
 for iPD = 1:length(u1(:,1))
     r = 0.0001:0.0001:moddepth(iPD)/maxmod; % the length of the radial line is normalized by the modulation depth
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction

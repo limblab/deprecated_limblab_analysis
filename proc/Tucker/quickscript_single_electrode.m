@@ -3,7 +3,7 @@
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\210deg_single_electrode\';
+folderpath_base='E:\processing\210deg_single_electrode_80ua\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
@@ -28,7 +28,7 @@ H=catch_trials_all(bdf.tt,bdf.tt_hdr,[0,1,2,3,4],1);
 title('Catch trials: reaching rate to secondary target') 
 print('-dpdf',H,strcat(folderpath,'Catch_trials_inverted.pdf'))
 
-[h]=error_rate(bdf.tt,bdf.tt_hdr,[0,1,2,3,4]);
+[H]=error_rate(bdf.tt,bdf.tt_hdr,[0,1,2,3,4]);
 title('error rate by stim condition') 
 print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
 
@@ -117,8 +117,8 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
 
 %save the executing script to the same folder as the figures and data
 
-fname=strcat(mfilename,'.m')
-[SUCCESS,MESSAGE,MESSAGEID] = copyfile(strcat(folderpath_base,'\',fname),folderpath);
+fname=strcat(mfilename,'.m');
+[SUCCESS,MESSAGE,MESSAGEID] = copyfile(fname,folderpath);
 if SUCCESS
     disp(strcat('successfully copied the running script to the processed data folder'))
 else

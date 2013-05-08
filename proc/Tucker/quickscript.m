@@ -3,7 +3,7 @@
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\70degstim\adaptorcheck\B\';
+folderpath_base='E:\processing\210degstim\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
@@ -17,7 +17,7 @@ make_tdf
 
 %make folder to save into:
 mkdir(folderpath_base,strcat('Psychometrics_',date));
-folderpath=strcat(folderpath_base,'\','Psychometrics_',date,'\');
+folderpath=strcat(folderpath_base,'Psychometrics_',date,'\');
 disp('saving new figures and files to:')
 disp(folderpath)
 
@@ -65,9 +65,17 @@ disp(folderpath)
 %  print('-dpdf',H,strcat(folderpath,'Catch_trials.pdf'))
  H=catch_trials_all(bdf.tt,bdf.tt_hdr,[0,1,2,3],1);
   title('Catch trials: reaching rate to secondary target') 
- print('-deps',H,strcat(folderpath,'Catch_trials_inverted.eps'))
  print('-dpdf',H,strcat(folderpath,'Catch_trials_inverted.pdf'))
+
+ [H]=error_rate(bdf.tt,bdf.tt_hdr,[0,1,2,3,4]);
+title('error rate by stim condition') 
+print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
  
+
+ [H]=error_rate_aggregate(bdf.tt,bdf.tt_hdr);
+title('error rate Stim vs No-stim') 
+print('-dpdf',H,strcat(folderpath,'error_rate_aggregate.pdf'))
+
 %  %plotting with new fitting algorythem
 %  %bc_psychometric_curve_stim3(tt,tt_hdr,stimcode,invert_dir,plot_error,invert_error)
 %  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3(bdf.tt,bdf.tt_hdr,0,0,0,0);
@@ -111,14 +119,12 @@ disp(folderpath)
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3(bdf.tt,bdf.tt_hdr,0,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 save(strcat(folderpath,'5ua_inverted.txt'),'temp','-ascii')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_5ua_inverted.eps'))
+print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_5ua_inverted.pdf'))
   figure(H_cartesian)
 title('Psychometric cartesian 5uA inverted')
   figure(H_polar)
 title('Psychometric polar 5uA inverted')
-print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_5ua_inverted.eps'))
  print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_5ua_inverted.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_5ua_inverted.pdf'))
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3(bdf.tt,bdf.tt_hdr,1,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
   figure(H_cartesian)
@@ -126,10 +132,7 @@ title('Psychometric cartesian 10uA inverted')
   figure(H_polar)
 title('Psychometric polar 10uA inverted')
 save(strcat(folderpath,'10ua_inverted.txt'),'temp','-ascii')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_10ua_inverted.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_10ua_inverted.eps'))
   print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_10ua_inverted.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_10ua_inverted.pdf'))
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3(bdf.tt,bdf.tt_hdr,2,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 save(strcat(folderpath,'15ua_inverted.txt'),'temp','-ascii')
@@ -137,10 +140,7 @@ save(strcat(folderpath,'15ua_inverted.txt'),'temp','-ascii')
 title('Psychometric cartesian 15uA inverted')
   figure(H_polar)
 title('Psychometric polar 15uA inverted')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_15ua_inverted.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_15ua_inverted.eps'))
  print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_15ua_inverted.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_15ua_inverted.pdf'))
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3(bdf.tt,bdf.tt_hdr,3,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 save(strcat(folderpath,'20ua_inverted.txt'),'temp','-ascii')
@@ -148,10 +148,7 @@ save(strcat(folderpath,'20ua_inverted.txt'),'temp','-ascii')
 title('Psychometric cartesian 20uA inverted')
   figure(H_polar)
 title('Psychometric polar 20uA inverted')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_inverted.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_20ua_inverted.eps'))
   print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_inverted.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_20ua_inverted.pdf'))
 
 %  %folding the 180->360deg bumps onto the 0->180 hemispace for cleaner plots
 %   [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3_compressed(bdf.tt,bdf.tt_hdr,0,0,0,0);
@@ -208,10 +205,7 @@ save(strcat(folderpath,'5ua_inverted_compressed.txt'),'temp','-ascii')
 title('Psychometric cartesian 5uA inverted compressed')
   figure(H_polar)
 title('Psychometric polar 5uA inverted compressed')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_5ua_inverted_compressed.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_5ua_inverted_compressed.eps'))
  print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_5ua_inverted_compressed.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_5ua_inverted_compressed.pdf'))
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3_compressed(bdf.tt,bdf.tt_hdr,1,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 save(strcat(folderpath,'10ua_inverted_compressed.txt'),'temp','-ascii')
@@ -219,10 +213,7 @@ save(strcat(folderpath,'10ua_inverted_compressed.txt'),'temp','-ascii')
 title('Psychometric cartesian 10uA inverted compressed')
   figure(H_polar)
 title('Psychometric polar 10uA inverted compressed')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_10ua_inverted_compressed.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_10ua_inverted_compressed.eps'))
   print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_10ua_inverted_compressed.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_10ua_inverted_compressed.pdf'))
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3_compressed(bdf.tt,bdf.tt_hdr,2,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 save(strcat(folderpath,'15ua_inverted_compressed.txt'),'temp','-ascii')
@@ -230,10 +221,7 @@ save(strcat(folderpath,'15ua_inverted_compressed.txt'),'temp','-ascii')
 title('Psychometric cartesian 15uA inverted compressed')
   figure(H_polar)
 title('Psychometric polar 15uA inverted compressed')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_15ua_inverted_compressed.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_15ua_inverted_compressed.eps'))
  print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_15ua_inverted_compressed.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_15ua_inverted_compressed.pdf'))
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3_compressed(bdf.tt,bdf.tt_hdr,3,1,0,0);
  temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 save(strcat(folderpath,'20ua_inverted_compressed.txt'),'temp','-ascii')
@@ -241,16 +229,13 @@ save(strcat(folderpath,'20ua_inverted_compressed.txt'),'temp','-ascii')
 title('Psychometric cartesian 20uA inverted compressed')
   figure(H_polar)
 title('Psychometric polar 20uA inverted compressed')
-print('-deps',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_inverted_compressed.eps'))
- print('-deps',H_polar,strcat(folderpath,'Psychometric_polar_20ua_inverted_compressed.eps'))
   print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_inverted_compressed.pdf'))
- print('-dpdf',H_polar,strcat(folderpath,'Psychometric_polar_20ua_inverted_compressed.pdf'))
 
 
  %save the executing script to the same folder as the figures and data
 
 fname=strcat(mfilename,'.m');
-[SUCCESS,MESSAGE,MESSAGEID] = copyfile(strcat(folderpath_base,'\',fname),folderpath);
+[SUCCESS,MESSAGE,MESSAGEID] = copyfile(fname,folderpath);
 if SUCCESS
     disp(strcat('successfully copied the running script to the processed data folder'))
 else

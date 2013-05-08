@@ -13,7 +13,7 @@
 % test_fft=fft(double(NEV.Data.Spikes.Waveform)');
 
 test_waveform=NEV.Data.Spikes.Waveform(:,NEV.Data.Spikes.Electrode(:)==42);
-test_fft=fft(double(test_waveform)');
+test_fft=fft(double(test_waveform));
 figure;
 
 
@@ -21,7 +21,10 @@ for i=1: length(test_waveform(1,:))
 i
     subplot(2,1,1); plot(test_waveform(:,i));
     title('spike');
-    subplot(2,1,2); plot(abs(test_fft(i,:).^2));
+    subplot(2,1,2); semilogy(abs(test_fft(1:floor(length(test_fft(:,i))/2),i).^2));
     title('fft')
     pause
 end
+
+
+
