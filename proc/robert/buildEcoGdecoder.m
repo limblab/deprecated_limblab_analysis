@@ -2,8 +2,7 @@
 if ispc
     cd('E:\personnel\RobertF'), RDFstartup
 end
-%% 2.  define constants.
-% to start over, without losing important info
+%% 2. to start over, without losing important info
 % clear everything but the stuff in the next cell? FileName/PathName?
 clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* fp* freqs 
 clear h junk lambda num* parameters save* sig signal states total_samples
@@ -54,7 +53,7 @@ fptimes=(1:size(fp,2))/samprate;
 clear sig CG
 [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
-%% pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
+%%  6a. pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
 figure, set(gcf,'Position',[88         100        1324         420])
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
 h1=plot(fptimes,fp(FPSTOUSE,:)');
@@ -63,7 +62,7 @@ for n=1:length(h1)
 end, clear n
 legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
 
-%% second option for plot
+%% 6b. second option for plot
 scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2))                             %#ok<NOPTS>
 figure, set(gcf,'Position',[88         100        1324         420])
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
@@ -72,7 +71,7 @@ for n=1:length(h2)
     set(h2(n),'Color',rand(1,3))
 end, clear n
 legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h2
-%% if there are bad channels, try this code to figure out which ones they are...
+%% 6c. if there are bad channels, try this code to figure out which ones they are...
 % this works for either plot because it uses gco.  Just dock it, to make
 % sure it is the current plot when you run the cell.
 % step 1: zoom in and select with the plot edit tool!  Then, 
@@ -81,14 +80,14 @@ delete(gco)
 legend('off')
 legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
 disp('done')
-%%  6.  set parameters, and build the feature matrix.
+%%  7.  set parameters, and build the feature matrix.
 wsz=256;
 samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
 binsize=0.05;
 [featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize);
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
-%%  7.  index the fps - can change mind at this point as to which FPs to use.
+%%  8.  index the fps - can change mind at this point as to which FPs to use.
 % FPSTOUSE=33:48;
 clear x
 x=zeros(size(featMat,1),length(FPSTOUSE)*6);
@@ -112,7 +111,7 @@ imagesc(bsxfun(@rdivide,x,max(x,[],1))')
 hold on
 gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
 plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
-%%  8.  assign parameters.
+%%  9.  assign parameters.
 Use_Thresh=0; lambda=1; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=60; smoothfeats=140; featShift=0;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
@@ -124,7 +123,7 @@ end
 fprintf('\nusing %d features...\n\n',nfeat)
 % have to clear bestc,bestf if going from more features to fewer!
 clear bestc bestf
-%%  9.  evaluate fps offline use cross-validated predictions code.
+%%  10.  evaluate fps offline use cross-validated predictions code.
 % because this is so sensitive to # of features, we should really do a
 % whole feature-dropping curve here.  Possibly an entire exploration of the
 % parameter space; since featMat does not have to be re-calculated, it
@@ -139,7 +138,7 @@ vaf                                                                             
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
-%%  10.  plot cross-validated predictions, with some informative text.
+%%  11.  plot cross-validated predictions, with some informative text.
 close
 figure, set(gcf,'Position',[88         100        1324         420])
 col=1;
@@ -158,7 +157,7 @@ title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d f
 % At this point, a decision must be made as to whether it will be best to
 % take one of these H's, or try calculating one on the entire file.
 
-%%  11.  build a decoder and save.
+%%  12.  build a decoder and save.
 % at this point, bestc & bestf are sorted by channel, while featind is
 % still sorted by feature correlation rank.
 disp('calculating H,bestc,bestf using a single fold...')
@@ -170,7 +169,7 @@ fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
 close
-%%  12.  saving.
+%%  13.  saving.
 % bestc must be re-cast so that it properly indexes the full 32-channel
 % possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
 % adjusted once loaded into BCI2000.
@@ -255,7 +254,7 @@ end
 % save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
 %     [regexp(FileName,'.*(?=\.dat)','match','once'),'_bestcf.txt']),'bestcf','-ascii','-tabs','-double')
 
-%%
+%% 14.  plot results of same-file decoder.
 % close
 figure, set(gcf,'Position',[88         378        1324         420])
 plot(ytnew(:,1)), hold on, plot(y_pred(:,1),'g')
