@@ -3,7 +3,7 @@ if ispc
     cd('E:\personnel\RobertF'), RDFstartup
 end
 %% 2.  define constants.
-%% to start over, without losing important info
+% to start over, without losing important info
 % clear everything but the stuff in the next cell? FileName/PathName?
 clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* fp* freqs 
 clear h junk lambda num* parameters save* sig signal states total_samples
@@ -83,7 +83,7 @@ legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
 disp('done')
 %%  6.  set parameters, and build the feature matrix.
 wsz=256;
-samprate=24414.0625/24; % real TDT sample rate
+samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
 binsize=0.05;
 [featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize);
 % featMat that comes out of here is unsorted!  needs feature
@@ -114,7 +114,7 @@ gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
 plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
 %%  8.  assign parameters.
 Use_Thresh=0; lambda=1; 
-PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=24; smoothfeats=140; featShift=20;
+PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=60; smoothfeats=140; featShift=0;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
