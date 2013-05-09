@@ -10,14 +10,17 @@ Hinpflag=0;     %Whether H is input or not
 if ~isempty(varargin)
     smoothflag=varargin{1};
     if length(varargin)>1
-        H=varargin{2};
-        Hinpflag=1;
-        if length(varargin)>2
-            P=varargin{3};
-            if length(varargin)>3
-                smoothflag=varargin{4};
-            end
-        end
+        featShift=varargin{2};
+    else
+        featShift=0;
+%         H=varargin{2};
+%         Hinpflag=1;
+%         if length(varargin)>2
+%             P=varargin{3};
+%             if length(varargin)>3
+%                 smoothflag=varargin{4};
+%             end
+%         end
     end
 end
 if ~exist('smoothflag','var')
@@ -67,8 +70,8 @@ if exist('featind','var')~=1
     [sr,featind]=sort(r,'descend');
 end
 
-[bestf,bestc]=ind2sub([6 length(fpind)],featind(1:nfeat));
-x=x(:,featind(1:nfeat));
+[bestf,bestc]=ind2sub([6 length(fpind)],featind((1:nfeat)+featShift));
+x=x(:,featind((1:nfeat)+featShift));
 figure, plot(mean(abs(x))), xlabel('feature number')
 title(sprintf(['mean raw values: if there is a large discrepancy at the far right side,\n',...
     'too many features are being included (currently nfeat =%d)'],nfeat))

@@ -1,13 +1,13 @@
 function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 
-% syntax buildLFPpositionDecoderRDF(PathName,skipBadChannelsAssignment,nfeat,featShift)
+% syntax [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(PathName,skipBadChannelsAssignment,nfeat,featShift)
 %
 % inputs are optional, but must be supplied in order. i.e., in order to
 % input featShift, must also input PathName, skipBadChannelsAssignment and nfeat.
 % featShift is ZERO-BASED; i.e., to calculate feature 9, input 1,8 for
 % nfeat & featShift.
 
-numlags=10;
+numlags=1;
 wsz=256;
 nfeat=150; featShift=0;
 PolynomialOrder=3;

@@ -11,23 +11,29 @@ fold_length = floor(length(y) ./ folds);
 Hinpflag=0;     %Whether H is input or not
 
 if ~isempty(varargin)
+    smoothflag=varargin{1};
+    if length(varargin)>1
+        featShift=varargin{2};
+    else
+        featShift=0;
+    end
     %     bestf_old=varargin{1};
     %     bestc_old=varargin{2};
-    if length(varargin{1})>1
-        featind=varargin{1};
-    else
-        smoothflag=varargin{1};
-    end
-    if length(varargin)>1
-        H=varargin{2};
-        Hinpflag=1;
-        if length(varargin)>2
-            P=varargin{3};
-            if length(varargin)>3
-                smoothflag=varargin{4};
-            end
-        end
-    end
+%     if length(varargin{1})>1
+%         featind=varargin{1};
+%     else
+%         smoothflag=varargin{1};
+%     end
+%     if length(varargin)>1
+%         H=varargin{2};
+%         Hinpflag=1;
+%         if length(varargin)>2
+%             P=varargin{3};
+%             if length(varargin)>3
+%                 smoothflag=varargin{4};
+%             end
+%         end
+%     end
 end
 if ~exist('smoothflag','var')
     smoothflag=0;
@@ -73,8 +79,8 @@ end
 % vector anyway.
 [sr,featind]=sort(r,'descend');
 
-[bestf,bestc]=ind2sub([6 length(fpind)],featind(1:nfeat));
-x=x(:,featind(1:nfeat));
+[bestf,bestc]=ind2sub([6 length(fpind)],featind((1:nfeat)+featShift));
+x=x(:,featind((1:nfeat)+featShift));
 figure, plot(mean(abs(x))), xlabel('feature number')
 title(sprintf(['mean raw values: if there is a large discrepancy at the far right side,\n',...
     'too many features are being included (currently nfeat =%d)'],nfeat))

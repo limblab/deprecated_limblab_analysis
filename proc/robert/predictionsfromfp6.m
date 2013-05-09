@@ -275,7 +275,16 @@ end
 if ~verLessThan('matlab','7.7.0') || size(y,2)>1 
     for c=1:size(PB,2)
         for f=1:size(PB,1)
-            rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+            rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));     
+            
+%             yJ=y(:,1)-min(y(:,1))+1;
+%             yJ=yJ/max(yJ);
+%             entropyForce=log(length(yJ))-sum((yJ).*log(yJ))/length(yJ);            
+%             PBJ=squeeze(PB(f,c,:))-min(squeeze(PB(f,c,:)))+1;
+%             PBJ=PBJ/max(PBJ);
+%             entropyPB=log(length(PBJ))-sum(PBJ.*log(PBJ))/length(PBJ);
+%             rt1=entropyForce+entropyPB-2*MI(yJ,PBJ);
+            
             if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use ALL outputs in calculating bestfeat (orig modified 12/13/10 for 2 outputs)
                 rsum=abs(rt1);
                 for n=2:size(y,2)
@@ -366,6 +375,10 @@ end
 x=x(:,sortInd);
 % experimental
 % for i=1:size(x,2), x(:,i)=x(:,i)-smooth(x(:,i),floor(size(x,1)/2)); end
+
+% PA(freqs>300,:,:)=[];
+% PA=reshape(PA,76*16,6050);
+% x=PA';
 
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;

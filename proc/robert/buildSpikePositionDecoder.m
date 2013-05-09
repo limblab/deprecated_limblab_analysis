@@ -72,7 +72,7 @@ if interactive
     [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc] = ...
         BuildModelGUI(binsize,'');
 else
-    fillen=0.5;
+    fillen=0.05;
     PolynomialOrder=3;
     Pred_EMG=0; Pred_Force=0; Pred_CursPos=0; 
     Pred_Veloc=1;

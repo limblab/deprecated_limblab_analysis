@@ -30,8 +30,6 @@ for n=1:length(kinStruct)
     pathToBDF=findBDF_local(kinStruct(n).name,1);
     fprintf(1,'%s found.  loading file...\n',pathToBDF)
     load(pathToBDF)
-    % find the actual decoder used, by examining the first line of the
-    % BR log.
     fprintf(1,'%s loaded.\n',out_struct.meta.filename)
     % calculate binnedData for this file.  use 0 Hz as a cutoff, i.e.
     % calculate for all units.

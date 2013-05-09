@@ -61,6 +61,9 @@ else
     else % take a guess.
         remoteDriveLetter='Z:';
     end
+    if isequal(remoteDriveLetter,':')
+        error(result)
+    end
     pathToCitadelData=fullfile(remoteDriveLetter, ...
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *',nameIn,'* /s /b']);
