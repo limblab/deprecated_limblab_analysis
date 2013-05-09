@@ -7,17 +7,18 @@ end
 % clear everything but the stuff in the next cell? FileName/PathName?
 clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* fp* freqs 
 clear h junk lambda num* parameters save* sig signal states total_samples
-clear vaf x CG* bin* cg* folds recon* y*
+clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
+clear N_KsectionInterp
 %% define constants.
 
-% SIGNALTOUSE='force';
-SIGNALTOUSE='CG';
+SIGNALTOUSE='force';
+% SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
 FPIND=1:32;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
-FPSTOUSE=[16:32];   %#ok<*NBRAK>
+FPSTOUSE=1:16;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
 %%  3. find file(s)
@@ -56,12 +57,24 @@ disp('done')
 %% pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
 figure, set(gcf,'Position',[88         100        1324         420])
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
-h=plot(fptimes,fp(FPSTOUSE,:)');
-for n=1:length(h)
-    set(h(n),'Color',rand(1,3))
+h1=plot(fptimes,fp(FPSTOUSE,:)');
+for n=1:length(h1)
+    set(h1(n),'Color',rand(1,3))
 end, clear n
-legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
+legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
+
+%% second option for plot
+scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2))                             %#ok<NOPTS>
+figure, set(gcf,'Position',[88         100        1324         420])
+set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
+h2=plot(fptimes,bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,:)'));
+for n=1:length(h2)
+    set(h2(n),'Color',rand(1,3))
+end, clear n
+legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h2
 %% if there are bad channels, try this code to figure out which ones they are...
+% this works for either plot because it uses gco.  Just dock it, to make
+% sure it is the current plot when you run the cell.
 % step 1: zoom in and select with the plot edit tool!  Then, 
 FPSTOUSE(ismember(FPSTOUSE,str2double(regexp(get(gco,'DisplayName'),'(?<=ch)[0-9]+','match','once'))))=[];
 delete(gco)
@@ -92,10 +105,16 @@ end, clear n
 % do it.  Currently it's not in either of the brain control setups (force
 % or Triangle) but it could be added.  Alternately, just ensure it doesn't
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
-
+figure, set(gcf,'Position',[88         100        1324         420])
+set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
+imagesc(bsxfun(@rdivide,x,max(x,[],1))')
+% imagesc(x')
+hold on
+gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
+plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
 %%  8.  assign parameters.
 Use_Thresh=0; lambda=1; 
-PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=42; smoothfeats=40;
+PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=24; smoothfeats=140; featShift=20;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
@@ -115,8 +134,8 @@ clear bestc bestf
 % in 2D with the number of features in a fast parameter exploration.
 disp('evaluating feature matrix using selected ECoG channels')
 [vaf,ytnew,y_pred,bestc,bestf,featind,H]=predonlyxy_ECoG(x,FPSTOUSE,sig, ...
-    PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats); %#ok<*NASGU,*ASGLU>
-vaf
+    PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<*NASGU,*ASGLU>
+vaf                                                                                          %#ok<NOPTS>
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
@@ -146,7 +165,7 @@ disp('calculating H,bestc,bestf using a single fold...')
 [vaf,ytnew,y_pred,bestc,bestf,H,P]=buildModel_ECoG(x,FPSTOUSE,sig,PolynomialOrder,Use_Thresh, ...
     lambda,numlags,numsides,binsamprate,featind,nfeat,smoothfeats);
 
-vaf
+vaf                                                                                                 %#ok<NOPTS>
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')

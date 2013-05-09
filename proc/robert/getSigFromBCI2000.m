@@ -31,7 +31,9 @@ switch SIGNALTOUSE
         % defined by its displacement from 50, and is offset by
         % YOffsetValue
         sig(:,2)=sig(:,2)+50;  % this is hard-coded!
-        sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
+        if isfield(parameters,'YCenterOffset')
+            sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
+        end
     case 'CG'
 %         cg=zeros(size(signal,1),22);
         for i=1:22
