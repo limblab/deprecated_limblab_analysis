@@ -1,7 +1,7 @@
 function table = PD_table(bdf,offset)
 
-    x_offset = -bytes2float(bdf.databursts{1,2}(7:10));
-    y_offset = -bytes2float(bdf.databursts{1,2}(11:14));
+    x_offset = -bytes2float(bdf.databursts{2,2}(7:10));
+    y_offset = -bytes2float(bdf.databursts{2,2}(11:14));
     workspace_size = 15;
     min_speed = 0;
     max_speed = 10;
@@ -56,7 +56,6 @@ function table = PD_table(bdf,offset)
     pds_f = zeros(num_pds,1);
     conf_f = zeros(num_pds,1);
 
-    tic;
     for i = 1:num_pds       
         spike_times = get_unit(bdf,ul(i,1),ul(i,2));
         spike_times = spike_times(spike_times>t(1) & spike_times<t(end))-offset;

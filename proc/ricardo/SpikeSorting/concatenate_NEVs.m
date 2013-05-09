@@ -8,12 +8,12 @@ function NEVNSx = concatenate_NEVs(filepath,file_prefix)
             disp('Adding new files')
             NEVNSx = concatenate_files(filepath,file_prefix);
             NEVNSx.NEV = artifact_removal(NEVNSx.NEV,3,0.001);
-            save([filepath,file_prefix,'-concat.mat'],'NEVNSx')
+%             save([filepath,file_prefix,'-concat.mat'],'NEVNSx')
         end
     else
         NEVNSx = concatenate_files(filepath,file_prefix);
         NEVNSx.NEV = artifact_removal(NEVNSx.NEV,3,0.001);
-        save([filepath,file_prefix,'-concat.mat'],'NEVNSx')
+%         save([filepath,file_prefix,'-concat.mat'],'NEVNSx')
     end   
     
 end
@@ -40,7 +40,7 @@ function NEVNSx = concatenate_files(filepath,file_prefix)
         end
     else
         for iNEV = 1:length(NEVlist)
-            NEVNSx(iNEV).NEV = openNEV('read', [filepath NEVlist(iNEV).name]);
+            NEVNSx(iNEV).NEV = openNEV('read', [filepath NEVlist(iNEV).name],'nosave');
         end
     end
     for iNS2 = 1:length(NS2list)

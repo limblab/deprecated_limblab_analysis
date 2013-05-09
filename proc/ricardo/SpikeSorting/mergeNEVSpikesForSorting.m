@@ -1,9 +1,9 @@
 
-file_prefix = 'Kevin_2013-04-18_';
+file_prefix = 'Kevin_2013-05-08_';
 filepath = 'D:\Data\Kevin_12A2\Data\';
 NEVlist = dir([filepath file_prefix '*.nev']);
 
-if isempty(strfind({NEVlist.name},'-spikes-s'))
+if cellfun('isempty',strfind({NEVlist.name},'-spikes-s'))
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-s'))));
     NEVNSx_all = concatenate_NEVs(filepath,file_prefix);
     saveNEVOnlySpikes(NEVNSx_all.NEV, filepath, [file_prefix '-spikes.nev'])
@@ -23,7 +23,7 @@ else
         NEV_spikes_struct(iFile).Electrode =  NEV_spikes_struct(iFile).Electrode(first_idx:last_idx);
         NEV_spikes_struct(iFile).Unit =  NEV_spikes_struct(iFile).Unit(first_idx:last_idx);
         NEV_spikes_struct(iFile).Waveform =  NEV_spikes_struct(iFile).Waveform(:,first_idx:last_idx);
-        load([filepath NEVNSx_all.MetaTags.NEVlist{iFile}(1:end-4)])
+        NEV = openNEV('read', [filepath NEVNSx_all.MetaTags.NEVlist{iFile}],'nosave');
         NEV.Data.Spikes = NEV_spikes_struct(iFile);
         save([filepath NEVNSx_all.MetaTags.NEVlist{iFile}(1:end-4) '-s'],'NEV')
     end

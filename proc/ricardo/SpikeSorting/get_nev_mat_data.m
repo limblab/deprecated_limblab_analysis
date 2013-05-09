@@ -287,7 +287,8 @@ function out_struct = get_nev_mat_data(varargin)
 
         % and encoder data
         if (opts.kin)
-            out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
+%             out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
+            out_struct.raw.enc = get_encoder(all_enc);
         end
        
     end

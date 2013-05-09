@@ -1,12 +1,19 @@
 function [trial_table tc] = UF_trial_table(bdf)
 
-databurst_version = zeros(size(bdf.databursts,1),1);
+databurst_version_temp = zeros(size(bdf.databursts,1),1);
+databurst_length_temp = zeros(size(bdf.databursts,1),1);
 for iDataburst = 1:size(bdf.databursts,1)
-    databurst_version(iDataburst) = bdf.databursts{iDataburst,2}(2);
-    databurst_length(iDataburst) = length(bdf.databursts{iDataburst,2});
+    databurst_length_temp(iDataburst) = length(bdf.databursts{iDataburst,2});
+    if databurst_length_temp(iDataburst)~=0
+        databurst_version_temp(iDataburst) = bdf.databursts{iDataburst,2}(2);
+    else
+        databurst_version_temp(iDataburst) = -1;
+    end
 end
-databurst_version = mode(databurst_version);
-databurst_length = mode(databurst_length);
+databurst_version = mode(databurst_version_temp);
+databurst_length = mode(databurst_length_temp);
+
+bdf.databursts(databurst_version_temp~=databurst_version | databurst_length_temp~=databurst_length,:) = [];
 if databurst_version == 2
     databurst_length = 50;
 end
