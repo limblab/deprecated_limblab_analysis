@@ -275,6 +275,21 @@ function out_struct = calc_from_raw(raw_struct, opts)
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
 
+            analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) &...
+                ~isempty(out_struct.raw.analog.channels)); %#ok<EFIND>
+            if ~isempty(analog_channels)
+                out_struct.analog.ts = analog_time_base;
+                for c = 1:length(analog_channels)
+                    channame = out_struct.raw.analog.channels{analog_channels(c)};
+                    fs = out_struct.raw.analog.adfreq(analog_channels(c));
+                    chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{analog_channels(c)})/fs;
+                    a_data = double(get_analog_signal(out_struct, channame));                
+                    a_data = interp1(chan_time_base, a_data, analog_time_base);
+                    out_struct.analog.channel{c} = channame;
+                    out_struct.analog.data{c} = a_data;
+                end
+            end
+            
         else
             if (robot_task)
                 warning('BDF:noForceSignal','No force handle signal found because no channel named ''ForceHandle*''');
