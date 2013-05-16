@@ -283,10 +283,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
                     channame = out_struct.raw.analog.channels{analog_channels(c)};
                     fs = out_struct.raw.analog.adfreq(analog_channels(c));
                     chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{analog_channels(c)})/fs;
-                    a_data = double(get_analog_signal(out_struct, channame));                
+                    a_data = get_analog_signal(out_struct, channame);                
                     a_data = interp1(chan_time_base, a_data, analog_time_base);
                     out_struct.analog.channel{c} = channame;
-                    out_struct.analog.data{c} = a_data;
+                    out_struct.analog.data{c} = a_data(:,2);
                 end
             end
             
@@ -314,8 +314,16 @@ function out_struct = calc_from_raw(raw_struct, opts)
         end
     end % opts.force
 
+%% EMG for robot task, making time base same as that for all analog signals
+% Chris: you should reconsider and remove the "robot_task" from below!
+if robot_task && isfield(out_struct,'emg')
+    new_emg = interp1(out_struct.emg.data(:,1), out_struct.emg.data(:,2:end), analog_time_base);
+    out_struct.emg.data = [analog_time_base' new_emg];
+    out_struct.emg.emgfreq = round(1/mode(diff(analog_time_base)));
+    clear new_emg;
+end        
+        
 %% Eye-Tracker Analog Signals
-
 if opts.eye
     eye_channels = find( strncmp(out_struct.raw.analog.channels, 'POG', 3) ); %#ok<EFIND>
     if(~isempty(eye_channels))

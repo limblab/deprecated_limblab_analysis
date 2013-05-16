@@ -160,6 +160,8 @@ for iTrial = 1:num_trials
     end        
 end
 
+trial_table(:,tc.bias_force_dir) = round(trial_table(:,tc.bias_force_dir)*10000)/10000;
+
 remove_index = [];
 remove_index = find(isnan(trial_table(:,tc.x_offset)));
 for iCol = 7:length(fieldnames(tc))    

@@ -177,13 +177,13 @@ function out_struct = get_nev_mat_data(varargin)
 
         for i = length(emg_list):-1:1
             if NSx_info.NSx_sampling(emg_list(i))==1000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(emg_list(i)),:));
+                out_struct.emg.data(:,i+1) = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
             elseif NSx_info.NSx_sampling(emg_list(i))==2000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(emg_list(i)),:));
+                out_struct.emg.data(:,i+1) = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
             elseif NSx_info.NSx_sampling(emg_list(i))==10000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS4.Data(NSx_info.NSx_idx(emg_list(i)),:));
+                out_struct.emg.data(:,i+1) = single(NEVNSx.NS4.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
             elseif NSx_info.NSx_sampling(emg_list(i))==30000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(emg_list(i)),:));
+                out_struct.emg.data(:,i+1) = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
             end
         end        
        
