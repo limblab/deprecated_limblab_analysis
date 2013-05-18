@@ -3,11 +3,11 @@
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\210deg_single_electrode_80ua\';
+folderpath_base='E:\processing\270deg_single_electrode_80ua\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
-autoconvert_nev_to_bdf(folderpath_base,matchstring)
+file_list=autoconvert_nev_to_bdf(folderpath_base,matchstring);
 % autoconvert_nev_to_bdf(folderpath,matchstring2)
 disp('concatenating bdfs into single structure')
 bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,0);
@@ -23,6 +23,10 @@ mkdir(folderpath_base,strcat('Psychometrics_',ts));
 folderpath=strcat(folderpath_base,'Psychometrics_',ts,'\');
 disp('saving new figures and files to:')
 disp(folderpath)
+fid=fopen(strcat(folderpath,'file_list.txt'),'w+');
+fprintf(fid,'%s',file_list);
+fclose(fid);
+
 
 H=catch_trials_all(bdf.tt,bdf.tt_hdr,[0,1,2,3,4],1);
 title('Catch trials: reaching rate to secondary target') 
@@ -45,7 +49,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_1.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 1')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 1')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_electrode_1.pdf'))
 
@@ -53,7 +57,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_2.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 2')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 2')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_electrode_2.pdf'))
 
@@ -61,7 +65,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_3.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 3')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 3')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_electrode_3.pdf'))
 
@@ -69,7 +73,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_4.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 4')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 4')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_electrode_4.pdf'))
 
@@ -87,7 +91,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_1_compressed.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 1 compressed')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 1 compressed')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_electrode_1_compressed.pdf'))
 
@@ -95,7 +99,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_2_compressed.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 2 compressed')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 2 compressed')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_electrode_2_compressed.pdf'))
         
@@ -103,7 +107,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_3_compressed.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 3 compressed')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 3 compressed')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_electrode_3_compressed.pdf'))
         
@@ -111,7 +115,7 @@ print('-dpdf',H,strcat(folderpath,'error_rate.pdf'))
     temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
     save(strcat(folderpath,'20ua_electrode_4_compressed.txt'),'temp','-ascii')
     figure(H_cartesian)
-        subplot(2,1,1),title('Psychometric cartesian 20ua electrode 4 compressed')
+        subplot(2,1,1),title('Psychometric cartesian 80ua electrode 4 compressed')
         subplot(2,1,2),title('Observation counts at each bump angle')
         print('-dpdf',H_cartesian,strcat(folderpath,'Psychometric_cartesian_20ua_electrode_4_compressed.pdf'))
 

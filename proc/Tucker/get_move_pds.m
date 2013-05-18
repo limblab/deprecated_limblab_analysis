@@ -3,8 +3,8 @@
     offset=-0.015; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
 
 %load data
-    folderpath='E:\processing\move_PD\'
-    fname='Kramer_RW_04122013_tucker_002.nev';
+    folderpath='E:\processing\move_PD\05012013\'
+    fname='Kramer_RW_05012013_tucker_002-01.nev';
     savename=strcat(fname(1:end-3),'mat');
     
     foldercontents=dir(folderpath);
@@ -29,7 +29,7 @@
     array_map_path='C:\Users\limblab\Desktop\kramer_array_map\6251-0922.cmp';
     [outdata,H_upper,H_lower]=PD_plot(bdf,array_map_path,2,1);
     
-    save(strcat(folderpath,'PD_moddepth_data.txt','outdata'))
+    save(strcat(folderpath,'PD_moddepth_data.txt',outdata,'-ascii'))
     print('-dpdf',H_upper,strcat(folderpath,'Upper_PD_plot.pdf'))
     print('-dpdf',H_lower,strcat(folderpath,'Lower_PD_plot.pdf'))
     

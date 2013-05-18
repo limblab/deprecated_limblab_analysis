@@ -7,7 +7,7 @@ folderpath_base='E:\processing\210degstim\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
-autoconvert_nev_to_bdf(folderpath_base,matchstring)
+file_list=autoconvert_nev_to_bdf(folderpath_base,matchstring);
 % autoconvert_nev_to_bdf(folderpath,matchstring2)
 disp('concatenating bdfs into single structure')
 bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,0);
@@ -20,7 +20,9 @@ mkdir(folderpath_base,strcat('Psychometrics_',date));
 folderpath=strcat(folderpath_base,'Psychometrics_',date,'\');
 disp('saving new figures and files to:')
 disp(folderpath)
-
+fid=fopen(strcat(folderpath,'file_list.txt'),'w+');
+fprintf(fid,'%s',file_list);
+fclose(fid);
 % [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H] = bc_psychometric_curve_stim3_nofit2(bdf.tt,bdf.tt_hdr,0,0,0);
 % temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
 % save(strcat(folderpath,'5ua.txt'),'temp','-ascii')
