@@ -6,8 +6,8 @@ window_bins = floor(window/bin_length); % calculate # of bins in window
 observations = DuplicateAndShift(spikes,window_bins); % build training set
 group = vel > vel_thresh; % assign training classes
 
-[~,~,~,~,coeff0] = classify(observations(1,:),observations,group,'linear',[0.7 0.3]); % calculate coefficients for posture state
-[~,~,~,~,coeff1] = classify(observations(1,:),observations,group,'linear',[0.3 0.7]); % calculate coefficients for movement state
+[a,b,c,d,coeff0] = classify(observations(1,:),observations,group,'linear',[0.7 0.3]); % calculate coefficients for posture state
+[a,b,c,d,coeff1] = classify(observations(1,:),observations,group,'linear',[0.3 0.7]); % calculate coefficients for movement state
 
 Coeffs = {coeff0(1,2),coeff1(1,2)};
 
