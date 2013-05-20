@@ -1,5 +1,5 @@
-function SD_decoder_from_plx(plx_file,use_distance,threshold)
-% SD_decoder_from_plx(plx_file,use_distance,threshold)
+function SD_decoder_from_plx(plx_file,use_distance,threshold,unsorted)
+% SD_decoder_from_plx(plx_file,use_distance,threshold,unsorted)
 %
 % Builds an LDA-based state dependent decoder from a plx file and saves the
 % bdf, binnedData, and decoder files in the same directory as the original
@@ -12,16 +12,17 @@ function SD_decoder_from_plx(plx_file,use_distance,threshold)
 %   1 - distance
 % THRESHOLD is the threshold value (either speed in cm/s or distance in cm)
 % used to differentiate posture and movement.
+% UNSORTED is a flag to indicate whether to include unsorted waveforms
 
 disp('Converting .plx file to BDF structure...');
-% out_struct = get_plexon_data(plx_file,'verbose');
+out_struct = get_plexon_data(plx_file,'verbose');
 
 bdf_file = strrep(plx_file,'.plx','.mat');
 disp(['Saving BDF file as ' bdf_file '...']);
-% save(bdf_file,'out_struct');
+save(bdf_file,'out_struct');
 
 disp('Converting BDF to binnedData file...');
-binnedData = convertBDF2binned(bdf_file,0.05,1,0,50,10,0,0,0,1);
+binnedData = convertBDF2binned(bdf_file,0.05,1,0,50,10,0,0,0,unsorted);
 
 disp('Finding states...')
 if use_distance
