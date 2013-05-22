@@ -22,3 +22,5 @@ elseif ismac
         name='';
     end
 end
+
+name(regexp(name,sprintf('\n')))='';

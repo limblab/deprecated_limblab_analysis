@@ -152,8 +152,25 @@ for n=1:folds
     text(leftEdge+(rightEdge-leftEdge)/2,max(get(gca,'Ylim')),sprintf('vaf=\n%.3f',vaf(n,col)),...
         'VerticalAlignment','top','HorizontalAlignment','center')
 end, clear n leftEdge rightEdge
+
+txtH=findobj(gca,'Type','text');
+for n=1:length(txtH)
+    tmp=get(txtH(n),'Position'); tmp(2)=max(get(gca,'Ylim')); 
+    set(txtH(n),'Position',tmp)
+end, clear n tmp txtH
+
+dottedH=findobj(gca,'LineStyle','--');
+for n=1:length(dottedH)
+    yData=get(dottedH(n),'ydata');
+    yData(2)=max(get(gca,'Ylim'));
+    set(dottedH(n),'ydata',yData)
+end, clear n dottedH
+
 title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
     PolynomialOrder,mean(vaf(:,col)),nfeat))
+
+
+
 % At this point, a decision must be made as to whether it will be best to
 % take one of these H's, or try calculating one on the entire file.
 
