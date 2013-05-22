@@ -15,18 +15,19 @@ SIGNALTOUSE='force';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=1:32;     % this controls which columns of the signal array are valid fp channels.
+FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
-FPSTOUSE=1:16;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
+FPSTOUSE=1:64;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
 %%  3. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
 % same file, skip this cell and move to the next.
-clear FileName PathName
+clear FileName
 if ~exist('PathName','var')
-    [FileName,PathName,FilterIndex] = uigetfile('E:\ECoG_Data\*.dat','MultiSelect','on');
+    PathName='E:\ECoG_Data\';
 end
+[FileName,PathName,FilterIndex] = uigetfile([PathName,'*.dat'],'MultiSelect','on');
 if iscell(FileName)
     for n=1:length(FileName), files(n).name=fullfile(PathName,FileName{n}); end
 else
@@ -66,7 +67,7 @@ legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
 scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2))                             %#ok<NOPTS>
 figure, set(gcf,'Position',[88         100        1324         420])
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
-h2=plot(fptimes,bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,:)'));
+h2=plot(fptimes,bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,1:100:end)'));
 for n=1:length(h2)
     set(h2(n),'Color',rand(1,3))
 end, clear n

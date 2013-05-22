@@ -15,7 +15,11 @@ switch lower(SIGNALTOUSE)
         % precision).
         CG=struct('data',[],'mean',[],'std',[],'coeff',[]);
 end
-samprate=24414.0625/24; % real TDT sample rate
+if nnz(cellfun(@isempty,regexp(parameters.SignalSourceFilterChain.Value(:,1),'TDTADC'))==0)
+    samprate=24414.0625/24; % real TDT sample rate (only if samplingRate is 1000)
+else
+    samprate=parameters.SamplingRate.NumericValue;
+end
 blockSize=parameters.SampleBlockSize.NumericValue;
 
 fprintf(1,'finding %s signal...\n',SIGNALTOUSE)

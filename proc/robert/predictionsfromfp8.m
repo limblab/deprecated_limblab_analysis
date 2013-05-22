@@ -356,8 +356,12 @@ end
 x=bestPB';
 
 if smoothfeats > 0
-    xtemp=smooth(x(:),smoothfeats);      %sometimes smoothing features helps
-    x=reshape(xtemp,size(x));
+%     xtemp=smooth(x(:),smoothfeats);      %sometimes smoothing features helps
+%     x=reshape(xtemp,size(x));
+    x=filter(ones(1,smoothfeats)/smoothfeats,1,x);
+    y(1:smoothfeats,:)=[];
+    x(1:smoothfeats,:)=[];
+    q(1:smoothfeats)=[];
 end
 disp('5th part: select best features')
 disp(['selected best ',num2str(nfeat),' features, time: '])
@@ -367,14 +371,14 @@ tic
 x = x(q==1,:);
 y = y(q==1,:);
 
-vaf = zeros(folds,size(y,2));
-r2 = zeros(folds,2);
+vaf = zeros(folds-1,size(y,2));
+r2 = zeros(folds-1,2);
 fold_length = floor(length(y) ./ folds);
 validationFoldStart=(folds-1)*fold_length+1;
 
 fprintf(1,'fold ')
 
-x_test=cell(folds,1);
+x_test=cell(folds-1,1);
 y_test=x_test;
 y_pred=y_test;
 if ~exist('lambda','var')
