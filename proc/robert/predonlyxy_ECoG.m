@@ -1,4 +1,4 @@
-function [vaf,ytnew,y_pred,bestc,bestf,featind,H]=predonlyxy_ECoG(x,fpind,y,PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,varargin)
+function [vaf,ytnew,y_pred,bestc,bestf,featind,H,P]=predonlyxy_ECoG(x,fpind,y,PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,varargin)
 
 % predonlyxy_ECoG.m This function runs just the prediction part of predictionsfromfp6.m
 % useful once you have x and y matrices to run different levels of lambda

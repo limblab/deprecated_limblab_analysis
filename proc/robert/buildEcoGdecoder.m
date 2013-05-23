@@ -25,6 +25,7 @@ SIGNALTOUSE='force';
 FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
 FPSTOUSE=1:64;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
+FPSTOUSE=[4 5 6 9 10 13 14 15 16 20 21 24 25 26 29 33 34 37 38 41 42 44 45 46 47 51 52 55 56 59 61 63];
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
 %%  3. find file(s)
@@ -145,7 +146,7 @@ clear bestc bestf
 % variable-time-constant smoothing filter will have to be implemented
 % in 2D with the number of features in a fast parameter exploration.
 disp('evaluating feature matrix using selected ECoG channels')
-[vaf,ytnew,y_pred,bestc,bestf,featind,H]=predonlyxy_ECoG(x,FPSTOUSE,sig, ...
+[vaf,ytnew,y_pred,bestc,bestf,featind,H,P]=predonlyxy_ECoG(x,FPSTOUSE,sig, ...
     PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<*NASGU,*ASGLU>
 vaf                                                                                          %#ok<NOPTS>
 fprintf(1,'mean vaf across folds: ')
