@@ -3,6 +3,8 @@ if ispc
     switch machineName
         case 'BumblebeeMan'
             cd('E:\personnel\RobertF'), RDFstartup
+        case 'Apu-PC'
+            cd('E:\personnel\RobertF'), RDFstartup
         otherwise
             cd('C:\Users\NECALHDEMG\Documents\BCI2000\Matlab code')
             addpath(genpath(pwd))
@@ -22,9 +24,9 @@ SIGNALTOUSE='force';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=1:32;     % this controls which columns of the signal array are valid fp channels.
+FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
-FPSTOUSE=1:32;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
+FPSTOUSE=1:64;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
 % FPSTOUSE=[4 5 6 9 10 13 14 15 16 20 21 24 25 26 29 33 34 37 38 41 42 44 45 46 47 51 52 55 56 59 61 63];
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
