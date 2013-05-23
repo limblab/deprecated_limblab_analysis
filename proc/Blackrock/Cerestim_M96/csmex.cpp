@@ -215,7 +215,7 @@ beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n
     
     /***** Here for NO recognized command ***************/
     mexPrintf("Cannot recognize command %s\n\n", cs_cmd);
-    mexPrintf("Legal commands are:\n%s", cmd_list);
+    mexPrintf("The following commands have been implemented:\n%s", cmd_list);
 }
 
 double getpar(const mxArray* prhs[], int i) {

@@ -6,10 +6,13 @@ function CfgPerTrig(TRIGNUM, chList)
 % chList    electrode channels to have stimuli applied
 %           The number of channels actually used varies with the trigger
 %
-% NOTE: if this function is called in a loop, the "toc" times subsequent to
-% the first call increase by hundreds of milliseconds, unless a "pause" is
-% inserted, e.g:
+% NOTE: if this function is called in a loop, the times measured by "toc"
+% subsequent to the first call will increase by hundreds of milliseconds,
+% unless a "pause" is inserted, e.g:
 % for i=1:8,CfgPerTrig(i,chList);pause(0.3),end
+%
+% The csmex commands mirror the function calls in the Blackrock Cerestim
+% API.
 
 global a
 global idx
@@ -52,6 +55,7 @@ fprintf('TRIGNUM=%d, elapsed time=%.1f\n',TRIGNUM,1000*a(idx))
 idx=idx+1;
 end
 
+% Function to send the requested stimulus configuration to Cerestim
 function issueStim(configID, channels)
 
 csmex('beginningOfSequence');
