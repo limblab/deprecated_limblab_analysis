@@ -1,6 +1,13 @@
 %% 1.  set up
 if ispc
-    cd('E:\personnel\RobertF'), RDFstartup
+    switch machineName
+        case 'BumblebeeMan'
+            cd('E:\personnel\RobertF'), RDFstartup
+        otherwise
+            cd('C:\Users\NECALHDEMG\Documents\BCI2000\Matlab code')
+            addpath(genpath(pwd))
+            addpath('C:\Users\NECALHDEMG\Documents\BCI2000\tools\mex')
+    end
 end
 %% 2. to start over, without losing important info
 % clear everything but the stuff in the next cell? FileName/PathName?
@@ -23,9 +30,13 @@ FPSTOUSE=1:64;   % [2:6 8 9 11:15] for ME                                       
 %%  3. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
 % same file, skip this cell and move to the next.
-clear FileName
+clear FileName files
 if ~exist('PathName','var')
-    PathName='E:\ECoG_Data\';
+    if exist('E:\ECoG_Data\','file')==7
+        PathName='E:\ECoG_Data\';
+    else
+        PathName='C:\Users\NECALHDEMG\Documents\BCI2000\data\';
+    end
 end
 [FileName,PathName,FilterIndex] = uigetfile([PathName,'*.dat'],'MultiSelect','on');
 if iscell(FileName)
@@ -65,9 +76,9 @@ legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
 
 %% 6b. second option for plot
 scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2))                             %#ok<NOPTS>
-figure, set(gcf,'Position',[88         100        1324         420])
+figure, set(gcf,'Position',[88 100 1324 420])
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
-h2=plot(fptimes,bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,1:100:end)'));
+h2=plot(fptimes(1:10:end),bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,1:10:end)'));
 for n=1:length(h2)
     set(h2(n),'Color',rand(1,3))
 end, clear n
@@ -105,8 +116,9 @@ end, clear n
 % do it.  Currently it's not in either of the brain control setups (force
 % or Triangle) but it could be added.  Alternately, just ensure it doesn't
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
+%%
 figure, set(gcf,'Position',[88         100        1324         420])
-set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
+set(gca,'Position',[0.0415 0.1100 0.9366 0.8150])
 imagesc(bsxfun(@rdivide,x,max(x,[],1))')
 % imagesc(x')
 hold on
@@ -114,7 +126,7 @@ gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
 plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
 %%  9.  assign parameters.
 Use_Thresh=0; lambda=1; 
-PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=60; smoothfeats=140; featShift=0;
+PolynomialOrder=2; numlags=10; numsides=1; folds=10; nfeat=95; smoothfeats=21; featShift=0;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
@@ -141,7 +153,7 @@ fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
 %%  11.  plot cross-validated predictions, with some informative text.
 close
-figure, set(gcf,'Position',[88         100        1324         420])
+figure, set(gcf,'Position',[88 100 1324 420])
 col=1;
 for n=1:folds
     leftEdge=(n-1)*length(ytnew{1}(:,col))+1;
