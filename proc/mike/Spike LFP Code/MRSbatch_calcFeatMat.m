@@ -13,9 +13,9 @@ DaysNames = [{Chewie_LFP_BC_Decoder1_filenames} {Mini_LFP_BC_Decoder1_filenames}
 maindir = ['C:\Documents and Settings\Administrator\Desktop\Mike_Data\',...
            'Spike LFP Decoding\Working Data'];
 
-for k = 1:size(DaysNames,1)
+for k = 2:size(DaysNames,1)
     
-    for i = 1:size(DaysNames,2)
+    for i = 2:size(DaysNames,2)
         
         if i == 1
             Monkey = 'Chewie';
@@ -105,14 +105,20 @@ for k = 1:size(DaysNames,1)
         %smoothfeats
         
         %% Begin iterating through files
-        for l=1:length(MATfiles)
+        if (i == 2) && (k == 2)
+            start = 122;
+        else
+            start = 1;
+        end
+        
+        for l=start:length(MATfiles)
             
             fnam =  findBDFonCitadel(MATfiles{l,1})
             
             try
                 load(fnam)
             catch
-                FailedFiles{i,k}(l) = fnam;
+                FailedFiles{i,k}(l,:) = fnam;
                 continue
             end
             
@@ -128,7 +134,7 @@ for k = 1:size(DaysNames,1)
                 [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,...
                 fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
             catch
-                FailedFiles{i,k}(l) = fnam;
+                FailedFiles{i,k}(l,:) = fnam;
                 continue
             end
             
@@ -141,7 +147,7 @@ for k = 1:size(DaysNames,1)
                 samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
                 Use_Thresh,[],words,emgsamplerate,lambda,0,[],[],[]);
             catch
-                FailedFiles{i,k}(l) = fnam;
+                FailedFiles{i,k}(l,:) = fnam;
                 continue
             end
             

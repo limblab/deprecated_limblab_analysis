@@ -5,6 +5,7 @@ function [Power,Spikes,yLFP,PosLFP,ySpike,PosSpike,Words] = GetPower_SpikeRates_
 % InputFileList - list of files to get power and spike rates
 
 Usefeatmat = 0;
+ploton = 0;
 %Usefeatmat = 1 if loading featMat for decoding
 
 %% Implement file i/o strategy
@@ -68,9 +69,8 @@ for i = 1%:length(DaysNames)]
             samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
             Use_Thresh,[],words,emgsamplerate,lambda,0,bdf,binsize);
         
-        Vel = bdf.vel;
-        Pos = bdf.pos;
-        Acc = bdf.acc;
+        Vel{l,:} = [{yLFP} {ySpike}];
+        Pos{l,:} = [{PosLFP} {PosSpike}];
         Words = bdf.words;
         
         Power{l} = PA;
@@ -81,3 +81,31 @@ for i = 1%:length(DaysNames)]
         
     end
 end
+
+if ploton == 1
+wsz = 256;
+samprate = 1000;
+freqs=linspace(0,samprate/2,wsz/2+1);
+freqs=freqs(2:end);
+delta=freqs<4;
+mu=((freqs>7) & (freqs<20));
+gam1=(freqs>70)&(freqs<115);
+gam2=(freqs>130)&(freqs<200);
+gam3=(freqs>200)&(freqs<300);
+
+
+LFPchNum = 17;
+SpikechNum = 81;
+FileNum = 2;
+band = [1:size(Power{FileNum},1)];
+    
+NormPower = squeeze(Power{FileNum}(band,LFPchNum,:))%./repmat(max(squeeze(Power{FileNum}(band,LFPchNum,:))')',1,size(Power{FileNum}(band,LFPchNum,:),3));
+imagesc(NormPower);figure(gcf);
+hold on
+plot(PosLFP+60)
+
+end
+
+
+
+

@@ -9,7 +9,7 @@
 % postfix='_spikepds_allunits-bs200';
 
 % filelist=BDFlistshort;
-filelist= Filesnames;
+filelist= Chewie_LFP_BC_Decoder1_filenames;
 % Dir='Y:\Chew
 lag=-0.1;
 binlen=0.1;

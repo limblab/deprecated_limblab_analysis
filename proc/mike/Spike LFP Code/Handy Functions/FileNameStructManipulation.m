@@ -1,5 +1,5 @@
-Chewie_SpikeFileNames = {Chewie_SpikeFiles.name};
+Mini_SpikeFileNames = {Mini_SpikeControlDaysNames.name; Mini_SpikeControlDaysNames.datename; Mini_SpikeControlDaysNames.decoder_age};
 
-Chewie_SpikeHC_filenames = Chewie_SpikeFileNames(cellfun(@isnan,{Chewie_SpikeFiles.decoder_age})== 1)';
+Mini_SpikeHC_filenames = Mini_SpikeFileNames(:,cellfun(@isnan,{Mini_SpikeControlDaysNames.decoder_age})== 1)';
     
-Chewie_SpikeBC_filenames = Chewie_SpikeFileNames(cellfun(@isnan,{Chewie_SpikeFiles.decoder_age})== 0)';
+Mini_SpikeBC_filenames = Mini_SpikeFileNames(:,cellfun(@isnan,{Mini_SpikeControlDaysNames.decoder_age})== 0)';

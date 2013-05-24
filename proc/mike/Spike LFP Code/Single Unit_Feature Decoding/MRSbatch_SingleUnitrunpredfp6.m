@@ -8,7 +8,7 @@ Batchinput = 2;
 Usefeatmat = 0;
 %Usefeatmat = 1 if loading featMat for decoding
 
-Monkeys = [{Mini_LFP1filenames}];
+Monkeys = [{Chewie_LFP_BC_Decoder1_filenames}];
 
 direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
 %Set directory to desired directory
@@ -32,7 +32,7 @@ lambda = 1;
 %%% Begin building Single Feature Decoders %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for m = 2%:length(Monkeys)
+for m = 1%:length(Monkeys)
     
     featindBEST = Onlinefeatind(:,m);
     
@@ -53,7 +53,7 @@ for m = 2%:length(Monkeys)
 %         %
 %         %         DaysNames = [{kinStructOut.name}'
 %         %         {kinStructOut.decoder_age}'];
-        DaysNames = Monkeys{1};
+        DaysNames = Monkeys{m};
         MATfiles = DaysNames;
 %         %         DaysNames = DaysNames(cellfun(@isnan,{kinStructOut.decoder_age})==0,:); % %
 %         %         direct = 'C:\Documents andSettings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
@@ -177,6 +177,10 @@ for m = 2%:length(Monkeys)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Test single feature decoders on test set %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    fnam =  findBDFonCitadel(MATfiles{end})
+    sname=[direct,'\',DaysNames{length(MATfiles)}];
+    load(fnam)
+    
     for q = 1:length(MATfiles)
         
         if Batchinput == 1
@@ -186,7 +190,7 @@ for m = 2%:length(Monkeys)
             load(fnam);
             
         else
-            fnam =  findBDFonCitadel(MATfiles{q})
+            fnam =  findBDFonCitadel(MATfiles{end})
             sname=[direct,'\',DaysNames{length(MATfiles)}];
             try
                 load(fnam)
@@ -212,7 +216,7 @@ for m = 2%:length(Monkeys)
             y,featMat,ytnew,xtnew,predtbase,P,featind] =... %,sr]...
             MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
             samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-            Use_Thresh,H_SingleUnits(:,1,1),words,emgsamplerate,lambda,0,featind,0,[]);
+            Use_Thresh,H_SingleUnits(:,q,1),words,emgsamplerate,lambda,0,featind,0,[]);
         
         close all
         
@@ -223,7 +227,7 @@ for m = 2%:length(Monkeys)
         r2_Y_SingleUnits{m,q} = squeeze(r2(:,2,:));
         
         
-        save('SingleChLFP_HC_Decoder1_Chewie_Chewie_Output.mat','vaf*','r2*','featind*','H_SingleUnits');
+        save('SingleChLFP_LFP_BC_Decoder1_Chewie_Lastfiletest_Output.mat','vaf*','r2*','featind*','H_SingleUnits');
     end
 end
 
