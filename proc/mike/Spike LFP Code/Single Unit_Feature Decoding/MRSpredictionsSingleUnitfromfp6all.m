@@ -373,10 +373,11 @@ if ~exist('featMat','var')
     end
 else
    
-    bestPB = featMat;
-    q = ones(1,size(bestPB,2));
-    t = 1:.001:size(bestPB,2);
-    y=sig;
+    PB = featMat;
+    q = ones(1,size(PB,2));
+    t = 1:.001:size(PB,2);
+    binsamprate=floor(1/binsize);
+    y=sig(:,2:3);
     
     for j = 1:length(featind)  
         bestc(j) = ceil(featind(j)/6);
@@ -387,6 +388,10 @@ else
             bestf(j) = 6;
         end
         
+    end
+    
+    for i=1:length(bestc)     
+        bestPB(i,:)=PB(bestf(i),bestc(i),:);
     end
     
     
@@ -580,7 +585,7 @@ for i = 1:size(x,2)
             if isempty(y_pred{i,k})
                 continue
             else
-                vaf(i,:,k) = RcoeffDet(y_pred{i,k},ytnew{i});
+                vaf(i,:,k) = RcoeffDet(y_pred{i,k},ytnew{i}(:,1:size(y_pred{i,k},2)));
                 
                 %Old way to calculate vaf->1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
                 

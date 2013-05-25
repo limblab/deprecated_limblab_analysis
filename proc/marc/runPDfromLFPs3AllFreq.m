@@ -33,7 +33,7 @@ chinds=1:96;
 bandstart=[0, 7, 70, 130, 200];
 bandend=[4, 20, 115, 200, 300];
 
-filelist= Chewie_LFP_BC_Decoder1_filenames;
+filelist= Chewie_LFP_BC_Decoder1_filenames(327:end);
 %     'Chewie_Spike_LFP_0919201100','Chewie_Spike_LFP_1024201100','Chewie_Spike_LFP_0106201200',...
 %     'Chewie_Spike_LFP_0117201200','Chewie_Spike_LFP_0130201200','Chewie_Spike_LFP_0215201200','Chewie_Spike_LFP_0217201200',...
 %    'Chewie_Spike_LFP_0217201200','Chewie_Spike_LFP_0321201200'}

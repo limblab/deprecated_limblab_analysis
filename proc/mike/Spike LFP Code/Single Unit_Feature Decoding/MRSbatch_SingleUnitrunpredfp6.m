@@ -8,7 +8,7 @@ Batchinput = 2;
 Usefeatmat = 0;
 %Usefeatmat = 1 if loading featMat for decoding
 
-Monkeys = [{Chewie_LFP_BC_Decoder1_filenames}];
+Monkeys = [{Chewie_filenames}];
 
 direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Chewie';
 %Set directory to desired directory
@@ -32,7 +32,7 @@ lambda = 1;
 %%% Begin building Single Feature Decoders %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-for m = 1%:length(Monkeys)
+for m = 1%:length(Monkeys) 1 == Chewie, 2 == Mini
     
     featindBEST = Onlinefeatind(:,m);
     
@@ -177,9 +177,9 @@ for m = 1%:length(Monkeys)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Test single feature decoders on test set %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fnam =  findBDFonCitadel(MATfiles{end})
-    sname=[direct,'\',DaysNames{length(MATfiles)}];
-    load(fnam)
+%     fnam =  findBDFonCitadel(MATfiles{end})
+%     sname=[direct,'\',DaysNames{length(MATfiles)}];
+%     load(fnam)
     
     for q = 1:length(MATfiles)
         
@@ -190,12 +190,14 @@ for m = 1%:length(Monkeys)
             load(fnam);
             
         else
-            fnam =  findBDFonCitadel(MATfiles{end})
-            sname=[direct,'\',DaysNames{length(MATfiles)}];
-            try
-                load(fnam)
-            catch exception
-                continue
+            if q == 1
+                fnam =  findBDFonCitadel(MATfiles{46})
+                sname=[direct,'\',DaysNames{length(MATfiles)}];
+                try
+                    load(fnam)
+                catch exception
+                    continue
+                end
             end
             
         end
@@ -216,7 +218,7 @@ for m = 1%:length(Monkeys)
             y,featMat,ytnew,xtnew,predtbase,P,featind] =... %,sr]...
             MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
             samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-            Use_Thresh,H_SingleUnits(:,q,1),words,emgsamplerate,lambda,0,featind,0,[]);
+            Use_Thresh,H_SingleUnits(:,q,1),words,emgsamplerate,lambda,0,featind,0,PB);
         
         close all
         
