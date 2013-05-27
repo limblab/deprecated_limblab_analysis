@@ -1,24 +1,28 @@
 FirstTrialInds=find(out_struct.words(:,2)==17);
 j = 1;
-for i = 1:length(FirstTrialInds)
+for i = 1:length(FirstTrialInds)-1
     
     if out_struct.words(FirstTrialInds(i+1)-1,2) ~= 32
         continue
     else
-        TimeStart = vpa(out_struct.words(FirstTrialInds(i),1),3)
-        TimeEnd = vpa(out_struct.words(FirstTrialInds(i+1)-1,1),3)
+        TimeStart = vpa(out_struct.words(FirstTrialInds(i),1),3);
+        TimeEnd = vpa(out_struct.words(FirstTrialInds(i+1)-1,1),3);
         
-        TrialStartIndex = (TimeStart - 1)/.05
-        TrialEndIndex = (TimeEnd - 1)/.05
+        TrialStartIndex = round((TimeStart - 1)/.05);
+        TrialEndIndex = round((TimeEnd - 1)/.05);
         
-        TrialPath{j} = out_struct.pos(TrialStartIndex:TrialEndIndex,:)
+        if TrialEndIndex > length(out_struct.pos);
+            continue
+        else
+        TrialPath{j} = out_struct.pos(TrialStartIndex:TrialEndIndex,:);
+        end
         
         clear Time* TrialStartIndex TrialEndIndex
         
-        if out_struct.targets.corners(i,2) == -3
-            plot(TrialPath{i}(:,2),TrialPath{i}(:,3),'b')
+        if round(out_struct.targets.corners(i,2)) == 8
+            plot(TrialPath{j}(:,2),TrialPath{j}(:,3),'b')
         else
-            plot(TrialPath{i}(:,2),TrialPath{i}(:,3),'gr')
+            plot(TrialPath{j}(:,2),TrialPath{j}(:,3),'k')
         end
         
         hold on
@@ -28,13 +32,17 @@ for i = 1:length(FirstTrialInds)
     end
 end
 
-fill([-3,-3,3,3],[13,7,7,13],'r')
-set(gco,'FaceAlpha',.3)
-fill([7,7,13,13],[3,-3,-3,3],'r')
-set(gco,'FaceAlpha',.3)
-fill([3,3,-3,-3],[3,-3,-3,3],'r')
-set(gco,'FaceAlpha',.3)
-    
+h = fill([-2,-2,2,2],[12,8,8,12],'r')
+set(h,'FaceAlpha',.3)
+j = fill([8,8,12,12],[2,-2,-2,2],'r')
+set(j,'FaceAlpha',.3)
+m = fill([2,2,-2,-2],[2,-2,-2,2],'r')
+set(m,'FaceAlpha',.3)
+
+axis square
+set(gca,'xlim',[-15,15])
+set(gca,'ylim',[-12,12])
+
     
     
     

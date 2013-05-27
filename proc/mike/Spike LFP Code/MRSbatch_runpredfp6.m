@@ -1,18 +1,18 @@
 %runpredfp6 
 %Uses MRSpredictionsfromfp6allDecoderBuild
 input = 1;
-Usefeatmat = 1;
+Usefeatmat = 0;
 %Use 1 if loading files from folder structure, use 2 if using list of
 %filenames and obtaining path from citadel
 
-%Usefeatmat = 1 if loading featMat for decoding
+%Usefeatmat = 1 if loading featMat for decoding, 0 if not.
 
 %% Implement file i/o strategy
 
 if input == 1 % Remember to clear featind if building decoders on diff feat
     % Need proper folder structure if using input = 1
     
-    direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Mini';
+    direct = 'C:\Users\M.R.Scheid\Desktop\Chewie Data\11-11-2011';
     %Set directory to desired directory
     cd(direct);
 
@@ -181,8 +181,7 @@ for i = 1%:length(DaysNames)]
          y,featMat,ytnew,xtnew,predtbase,P,featind] =... %,sr]...
          MRSpredictionsfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
          samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-         Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,featMat);
-        
+         Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,[]); %< --- last input is featmat        
         %% Save output
         %save([sname,'velpred Using LFP Decoder from first HC file.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
         if exist('DecoderAge','var')

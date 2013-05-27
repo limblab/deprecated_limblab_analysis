@@ -180,12 +180,12 @@ end
 % end
 % filter out inactive regions
 % Find active regions
-if exist('words','var') && ~isempty(words)
-    q = find_active_regions_words(words,analog_times);
-else
-    q=ones(1,length(analog_times));   % Temp kludge b/c find_active_regions gives
+% if exist('words','var') && ~isempty(words)
+%      q = find_active_regions_words(words,analog_times);
+% else
+q=ones(1,length(analog_times));   % Temp kludge b/c find_active_regions gives
     % too long of a vector back
-end
+% end
 
 q = interp1(analog_times, q, t);
 
