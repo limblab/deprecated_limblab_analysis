@@ -2,7 +2,7 @@ function targetData = plotForceSummaryByTarget(trialTable, force, interval)
 % Plot the total (integrated) force for each of the target directions
 
 if nargin < 3
-    interval = 'full';
+    interval = 'move';
 end
 
 switch lower(interval)
@@ -28,10 +28,11 @@ for i = 1:length(targets)
         tempForce = force.data(force.data(:,1) >= trialTable(relInds(ind),interval) & force.data(:,1) <= trialTable(relInds(ind),8),:);
         DeltaX = diff(tempForce(:,2));
         DeltaY = diff(tempForce(:,3));
+        
         totalForce(ind) = sum(sqrt(DeltaX.^2 + DeltaY.^2));
-        peakForce(ind) = max(sqrt(DeltaX.^2 + DeltaY.^2));
-        meanForce(ind) = mean(sqrt(DeltaX.^2 + DeltaY.^2));
-        stdForce(ind) = std(sqrt(DeltaX.^2 + DeltaY.^2));
+        peakForce(ind) = max(sqrt(tempForce(:,2).^2 + tempForce(:,3).^2));
+        meanForce(ind) = mean(sqrt(tempForce(:,2).^2 + tempForce(:,3).^2));
+        stdForce(ind) = std(sqrt(tempForce(:,2).^2 + tempForce(:,3).^2));
     end
     
     % add the forces to the trial table

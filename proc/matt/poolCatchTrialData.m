@@ -1,4 +1,4 @@
-function [trialTable, force] = poolCatchTrialData(fileList)
+function [trialTable, force, neural] = poolCatchTrialData(fileList)
 % Give a list of files and it will pool all force and trial data from them
 % fileList: cell array of string filenames
 %
@@ -33,10 +33,23 @@ for iFile = 1:length(fileList)
     tempforce = out_struct.force.data;
     tempforce(:,1) = tempforce(:,1) + maxTime;
     
-    maxTime = max(tempforce(:,1));
-    
     trialTable = [trialTable; temptable];
     forcedata = [forcedata; tempforce];
+    
+    % Pool together the neural spike times
+    for i = 1:length(out_struct.units)
+        tempneural = out_struct.units(i).ts;
+        tempneural = tempneural+maxTime;
+        
+        if iFile == 1
+            neural(i).ts = tempneural;
+            neural(i).id = out_struct.units(i).id;
+        else
+            neural(i).ts = [neural(i).ts; tempneural];
+        end
+    end
+    
+    maxTime = max(tempforce(:,1));
     
 end
 
