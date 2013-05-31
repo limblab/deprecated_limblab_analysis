@@ -12,7 +12,7 @@ function NEVNSx = concatenate_NEVs(filepath,file_prefix)
         end
     else
         NEVNSx = concatenate_files(filepath,file_prefix);
-        NEVNSx.NEV = artifact_removal(NEVNSx.NEV,3,0.001);
+        NEVNSx.NEV = artifact_removal(NEVNSx.NEV,5,0.001);
 %         save([filepath,file_prefix,'-concat.mat'],'NEVNSx')
     end   
     

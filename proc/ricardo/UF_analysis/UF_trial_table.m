@@ -160,7 +160,10 @@ for iTrial = 1:num_trials
     end        
 end
 
-trial_table(:,tc.bias_force_dir) = round(trial_table(:,tc.bias_force_dir)*10000)/10000;
+trial_table(:,tc.bias_force_dir) = round(180/pi*trial_table(:,tc.bias_force_dir))*pi/180;
+trial_table(:,tc.field_orientation) = round(180/pi*trial_table(:,tc.field_orientation))*pi/180;
+trial_table(:,tc.bump_direction) = round(180/pi*trial_table(:,tc.bump_direction))*pi/180;
+
 
 remove_index = [];
 remove_index = find(isnan(trial_table(:,tc.x_offset)));

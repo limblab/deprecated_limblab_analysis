@@ -1,5 +1,5 @@
 
-file_prefix = 'Kevin_2013-05-13_';
+file_prefix = 'Kevin_2013-05-24_';
 filepath = 'D:\Data\Kevin_12A2\Data\';
 NEVlist = dir([filepath file_prefix '*.nev']);
 

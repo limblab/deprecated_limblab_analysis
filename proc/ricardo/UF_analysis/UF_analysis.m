@@ -1,20 +1,24 @@
 % clear all
-file_details.UF_file_prefix = 'Kevin_2013-05-15_UF';
-file_details.RW_file_prefix = 'Kevin_2013-05-15_RW_001';
+file_details.UF_file_prefix = 'Kevin_2013-05-31_UF_';
+file_details.RW_file_prefix = 'Kevin_2013-05-31_RW_001';
 file_details.datapath = 'D:\Data\Kevin_12A2\Data\';
 cerebus2ElectrodesFile = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';
 file_details.elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile);
 
-reload_data = 0;
-plot_behavior = 0;
+reload_data = 1;
+plot_behavior = 1;
 plot_emg = 1;
 plot_units = 0;
-plot_STEMG = 0;
-plot_SSEP = 1;
+plot_STAEMG = 0;
+plot_SSEP = 0;
 
-if ~exist([file_details.datapath file_details.UF_file_prefix '-bdf.mat'],'file') ||...
-        ~exist('bdf','var') || ~exist('rw_bdf','var') || ~exist('UF_struct','var')
-    reload_data = 1;
+if ~reload_data
+    if ~exist([file_details.datapath file_details.UF_file_prefix '-bdf.mat'],'file') && (...
+            ~exist('bdf','var') || ~exist('rw_bdf','var') || ~exist('UF_struct','var'))
+        reload_data = 1;
+    elseif ~exist('bdf','var') || ~exist('rw_bdf','var') || ~exist('UF_struct','var')
+        load([file_details.datapath file_details.UF_file_prefix '-bdf.mat'])
+    end
 end
 
 if reload_data
@@ -28,7 +32,7 @@ else
 end
 
 if plot_behavior
-    UF_plot_behavior(UF_struct)
+    UF_plot_behavior(UF_struct,bdf)
 end
 
 if plot_emg
@@ -43,8 +47,8 @@ if plot_SSEP
     UF_plot_SSEP(UF_struct,bdf);
 end
 
-if plot_STEMG  % Spike triggered EMG
-    UF_plot_STEMG(UF_struct,bdf);
+if plot_STAEMG  % Spike triggered EMG
+    UF_plot_STAEMG(UF_struct,bdf);
 end
 %% TODO
 

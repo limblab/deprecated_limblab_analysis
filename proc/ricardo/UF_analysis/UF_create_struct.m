@@ -79,8 +79,11 @@ end
 if UF_struct.num_lfp>0
     UF_struct.lfp_all = zeros(UF_struct.num_lfp,size(UF_struct.idx_table,1),size(UF_struct.idx_table,2));
     % Process LFP
+    [b,a] = butter(4,100/(round(1/mode(diff(bdf.analog.ts)))/2));
     for iLFP = 1:UF_struct.num_lfp
-        UF_struct.lfp_all(iLFP,:,:) = reshape(bdf.analog.data{iLFP}(UF_struct.idx_table),[],num_samples);
+        filt_lfp = filtfilt(b,a,double(bdf.analog.data{iLFP}));
+        UF_struct.lfp_all(iLFP,:,:) = reshape(filt_lfp(UF_struct.idx_table),[],num_samples);
+%         UF_struct.lfp_all(iLFP,:,:) = reshape(bdf.analog.data{iLFP}(UF_struct.idx_table),[],num_samples);
     end
 end
 
@@ -163,6 +166,10 @@ for iField = 1:length(UF_struct.field_orientations)
 end
 UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0)=2*pi+UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0);
 UF_struct.bump_dir_actual = mean(UF_struct.bump_dir_actual,2);
+bump_dir_mat = [abs(UF_struct.bump_dir_actual-UF_struct.bump_directions) abs((UF_struct.bump_dir_actual-2*pi)-UF_struct.bump_directions)];
+[~,idx] = min(bump_dir_mat,[],2);
+idx = idx-1;
+UF_struct.bump_dir_actual = UF_struct.bump_dir_actual - 2*pi*idx;
 
 UF_struct.bump_force_dir_actual = atan2(mean(UF_struct.y_force(:,UF_struct.t_axis>0.03 & UF_struct.t_axis<UF_struct.bump_duration),2)-...
     mean(UF_struct.y_force(:,UF_struct.t_axis>-.05 & UF_struct.t_axis<0),2),...

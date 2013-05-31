@@ -1,7 +1,7 @@
 function table = PD_table(bdf,offset)
 
-    x_offset = -bytes2float(bdf.databursts{2,2}(7:10));
-    y_offset = -bytes2float(bdf.databursts{2,2}(11:14));
+    x_offset = -bytes2float(bdf.databursts{3,2}(7:10));
+    y_offset = -bytes2float(bdf.databursts{3,2}(11:14));
     workspace_size = 15;
     min_speed = 0;
     max_speed = 10;
