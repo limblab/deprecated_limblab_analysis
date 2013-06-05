@@ -1,3 +1,4 @@
+IsoTaskMetrics = IsoTaskMetrics1_blocked_0828;
 NumOfTargets = length(IsoTaskMetrics.Time2Target.Time2TargetSummary)-1;
 
 
@@ -29,7 +30,8 @@ imagesc(img)
 % Plot files in a row
 
 for N =1:length(who)
-Time2TargetStruct.Time2TargetSummary(N,1) = mean(Time2TargetStruct.(['Target' num2str(N)])); 
+%Time2TargetStruct.Time2TargetSummary(N,1) = mean(Time2TargetStruct.(['Target' num2str(N)])); 
+IsoTaskMetrics.Time2Target.Time2TargetSummary(N,1) = mean(IsoTaskMetrics.Time2Target.(['Target' num2str(N)])); 
 end
 
 h = subplot(1,4,1);

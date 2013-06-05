@@ -20,8 +20,7 @@ plotmin = 1; plotmax = 2;
 PlotTruncatedPaths(out_struct, plotmin, plotmax)
 
 % Put data into a struct
-IsoTaskMetrics.PercentofSuccessfulTrials =  TrialSuccessPercentage(out_struct);
-IsoTaskMetrics.Time2Target = ComputeTime2Target(out_struct);
+IsoTaskMetrics.PercentofSuccessfulTrials =  TrialSuccessPercentage(out_struct);IsoTaskMetrics.Time2Target = ComputeTime2Target(out_struct);
 IsoTaskMetrics.PathLength = ComputePathLength(out_struct);
 IsoTaskMetrics.AngleError = ComputeAngleError(out_struct);
 IsoTaskMetrics.Goodtrialtable = Goodtrialtable;
@@ -29,5 +28,6 @@ IsoTaskMetrics.File_Info = out_struct.meta;
 
 % Boxplots
 PlotIsoMetrics(IsoTaskMetrics)
+%PlotTruncatedForces(out_struct, 1,10)
 
 

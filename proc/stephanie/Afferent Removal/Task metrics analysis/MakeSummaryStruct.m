@@ -1,4 +1,6 @@
-% Put all data into a FullSummary struct
+% Puts all data into a FullSummary struct
+
+% Workspace should have IsoTaskMetrics_dateU/B
 
 clc;
 allFiles = who('IsoTaskMetrics*');
