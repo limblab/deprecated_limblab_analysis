@@ -161,7 +161,8 @@ for iPD = 1:length(u1(:,1))
         patch(x_fill,y_fill,'b','facealpha',0.3);
         
 
-        title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))]) % last part finds the cerebus assigned label in cer_list that belongs to the channel number of the current channel
+%        title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))]) % last part finds the cerebus assigned label in cer_list that belongs to the channel number of the current channel
+        title(['Chan' num2str(u1(iPD,1))]) % last part finds the cerebus assigned label in cer_list that belongs to the channel number of the current channel
     elseif max(max(chan_list_up' == u1(iPD,1)))
         figure(h_up);
         subplot(subplot_dim_up_r,subplot_dim_up_c,find(chan_list_up' == u1(iPD,1),1,'first')) % put the plot in the correct location relative to position in array ( [ 1 2 3;..
@@ -195,7 +196,8 @@ for iPD = 1:length(u1(:,1))
         patch(x_fill,y_fill,'b','facealpha',0.3);
         
         
-        title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))])
+%        title(['Chan' num2str(u1(iPD,1)) ', Elec' num2str(cer_list(find(chan_list == u1(iPD,1),1,'first')))])
+        title(['Chan' num2str(u1(iPD,1))])
     else
         disp('Error: channel not found in channel list')
         disp(u1(iPD,1))
