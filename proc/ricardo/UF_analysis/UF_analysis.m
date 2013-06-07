@@ -1,13 +1,13 @@
 % clear all
-file_details.UF_file_prefix = 'Kevin_2013-05-31_UF_';
-file_details.RW_file_prefix = 'Kevin_2013-05-31_RW_001';
+file_details.UF_file_prefix = 'Kevin_2013-06-06_UF_';
+file_details.RW_file_prefix = 'Kevin_2013-06-06_RW_001';
 file_details.datapath = 'D:\Data\Kevin_12A2\Data\';
 cerebus2ElectrodesFile = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';
 file_details.elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile);
 
-reload_data = 1;
+reload_data = 0;
 plot_behavior = 1;
-plot_emg = 1;
+plot_emg = 0;
 plot_units = 0;
 plot_STAEMG = 0;
 plot_SSEP = 0;

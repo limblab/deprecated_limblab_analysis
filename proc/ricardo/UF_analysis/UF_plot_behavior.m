@@ -94,8 +94,8 @@ h = title(UF_struct.UF_file_prefix,'Interpreter','none');
 set(gca,'Visible','off');
 set(h,'Visible','on');
 
-%% Raw positions
-% figure(1)
+% %% Raw positions
+% figure
 % clf
 % for iField = 1:length(UF_struct.field_indexes)
 %     for iBump = 1:length(UF_struct.bump_indexes)
@@ -440,6 +440,10 @@ for iBias = 1:length(UF_struct.bias_force_directions)
         bias_force_mag*sin(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_dir)),...
         'Xk','MarkerSize',20)
 end      
+xlabel('X force (N)')
+ylabel('Y force (N)')
+title('Force before bump')
+
 
 % figure; plot(UF_struct.t_axis,UF_struct.x_force)
 % figure; plot(UF_struct.t_axis,UF_struct.y_force)

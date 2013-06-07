@@ -2,10 +2,14 @@ function UF_plot_SSEP(UF_struct,bdf)
 if isfield(bdf,'units')
     channels = str2double([bdf.analog.channel]);
     SSEP_range = [0.02 0.05];
+    plot_range = [-.05 .1];
     n_bumps = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.field_indexes));
     min_lfp_mean_all = zeros(length(channels),length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));
     min_lfp_sem_all = zeros(length(channels),length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));
 
+    lfp_baseline = repmat(mean(UF_struct.lfp_all(:,:,UF_struct.t_axis<0),3),[1 1 size(UF_struct.lfp_all,3)]);
+    UF_struct.lfp_all = UF_struct.lfp_all - lfp_baseline;
+    
     for iChannel = 1:length(channels)
         electrode = UF_struct.elec_map(UF_struct.elec_map(:,3)==channels(iChannel),4);
         figure
@@ -23,22 +27,24 @@ if isfield(bdf,'units')
         min_lfp_sem = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes)); 
         sum_lfp_mean = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes)); 
         sum_lfp_sem = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes)); 
-        for iBias = 1:length(UF_struct.bias_indexes)
-            for iField = 1:length(UF_struct.field_indexes)
-                for iBump = 1:length(UF_struct.bump_indexes)
+        figure(figure1_idx);
+        for iBump = 1:length(UF_struct.bump_indexes)           
+            subplot(2,length(UF_struct.bump_indexes)/2,iBump) 
+            hold on
+            for iBias = 1:length(UF_struct.bias_indexes)
+                for iField = 1:length(UF_struct.field_indexes)                
                     idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump});
                     idx = intersect(idx,UF_struct.bias_indexes{iBias});
                     idx = idx(mean(abs(lfp_temp(idx,:))') < 2*mean(std(abs(lfp_temp(:,:))')));
-                    n_bumps(iBias,iField,iBump) = length(idx);
-                    figure(figure1_idx);
-                    subplot(2,length(UF_struct.bump_indexes)/2,iBump) 
-                    hold on
+                    n_bumps(iBias,iField,iBump) = length(idx); 
+                    errorarea(UF_struct.t_axis,mean(lfp_temp(idx,:),1),1.96*std(lfp_temp(idx,:),1)/sqrt(length(idx)),...
+                         min([1 1 1],.7+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)));
                     plot(UF_struct.t_axis,mean(lfp_temp(idx,:),1),'Color',...
                         UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),'LineWidth',2)
                     title(['B:' num2str(UF_struct.bump_directions(iBump)*180/pi) ' deg'],'interpreter','none')
                     ylabel('SSEP (mV?)')
                     xlabel('t (s)')
-                    xlim([-.02 .15])
+                    xlim(plot_range)
                     lfp_lim_max = max(lfp_lim_max,max(mean(lfp_temp(idx,:),1)));
                     lfp_lim_min = min(lfp_lim_min,min(mean(lfp_temp(idx,:),1)));
                     lfp_temp_2 = lfp_temp(idx,UF_struct.t_axis>SSEP_range(1) & UF_struct.t_axis<SSEP_range(2));                    
@@ -54,11 +60,10 @@ if isfield(bdf,'units')
                     min_lfp_sem_all(iChannel,iBias,iField,iBump) = std(min(lfp_temp_2,[],2))/sqrt(length(idx));
 %                     sum_lfp_mean(iBias,iField,iBump) = mean(sum(lfp_temp_2,2));
 %                     sum_lfp_sem(iBias,iField,iBump) = std(sum(lfp_temp_2,2))/sqrt(length(idx));
+                    legend_str{(iBias-1)*length(UF_struct.field_indexes)+iField} =...
+                        ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) ' deg' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) ' deg'];          
                 end
-                legend_str{(iBias-1)*length(UF_struct.field_indexes)+iField} =...
-                    ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) ' deg' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) ' deg'];
-                                
-            end
+             end
         end
         for iBump = 1:length(UF_struct.bump_indexes)
             subplot(2,length(UF_struct.bump_indexes)/2,iBump) 
@@ -89,7 +94,7 @@ if isfield(bdf,'units')
             for iField = 1:length(UF_struct.field_indexes)
                 errorbar(180/pi*UF_struct.bump_directions',...
                     squeeze(mean_lfp(iBias,iField,:)),...
-                    squeeze(sem_lfp(iBias,iField,:)),...
+                    1.96*squeeze(sem_lfp(iBias,iField,:)),...
                     'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
             end
         end
@@ -97,18 +102,43 @@ if isfield(bdf,'units')
         ylabel('Mean SSEP (mV)')
         legend(legend_str)
         
-%         subplot(222)
-%         hold on
-%         for iBias = 1:length(UF_struct.bias_indexes)
-%             for iField = 1:length(UF_struct.field_indexes)
-%                 errorbar(180/pi*UF_struct.bump_directions',...
-%                     squeeze(sum_lfp_mean(iBias,iField,:)),...
-%                     squeeze(sum_lfp_sem(iBias,iField,:)),...
+        subplot(222)
+        hold on
+        for iBias = 1:length(UF_struct.bias_indexes)
+            for iField = 1:length(UF_struct.field_indexes)
+                plot(cos(UF_struct.bump_dir_actual([1:end 1])).*squeeze(abs(min_lfp_mean(iBias,iField,[1:end 1]))),...
+                    sin(UF_struct.bump_dir_actual([1:end 1])).*squeeze(abs(min_lfp_mean(iBias,iField,[1:end 1]))),...
+                    'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
+%                   plot(cos(UF_struct.bump_directions([1:end 1])).*squeeze(abs(min_lfp_sem(iBias,iField,[1:end 1]))),...
+%                     sin(UF_struct.bump_directions([1:end 1])).*squeeze(abs(min_lfp_sem(iBias,iField,[1:end 1]))),...
 %                     'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
-%             end
-%         end
-%         xlabel('Bump direction (deg)')
-%         ylabel('Integral of SSEP (mV)')
+            end
+        end
+        plot(cos(0:.1:2*pi)*max(abs(min_lfp_mean(:))),sin(0:.1:2*pi)*max(abs(min_lfp_mean(:))),'-k')
+
+        xlim([-1.1*max(abs(min_lfp_mean(:))) 1.1*max(abs(min_lfp_mean(:)))])
+        ylim([-1.1*max(abs(min_lfp_mean(:))) 1.1*max(abs(min_lfp_mean(:)))])
+        axis square
+        title('max(|LFP|) as a function of displacement direction')
+        
+        subplot(224)
+        hold on
+        for iBias = 1:length(UF_struct.bias_indexes)
+            for iField = 1:length(UF_struct.field_indexes)
+%                 plot(cos(UF_struct.bump_dir_actual([1:end 1])).*squeeze(abs(min_lfp_sem(iBias,iField,[1:end 1]))),...
+%                     sin(UF_struct.bump_dir_actual([1:end 1])).*squeeze(abs(min_lfp_sem(iBias,iField,[1:end 1]))),...
+%                     'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
+                  plot(cos(UF_struct.bump_directions([1:end 1])).*squeeze(abs(min_lfp_mean(iBias,iField,[1:end 1]))),...
+                    sin(UF_struct.bump_directions([1:end 1])).*squeeze(abs(min_lfp_mean(iBias,iField,[1:end 1]))),...
+                    'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
+            end
+        end
+        plot(cos([0:.1:2*pi 0])*max(abs(min_lfp_mean(:))),sin([0:.1:2*pi 0])*max(abs(min_lfp_mean(:))),'-k')
+        
+        xlim([-1.1*max(abs(min_lfp_mean(:))) 1.1*max(abs(min_lfp_mean(:)))])
+        ylim([-1.1*max(abs(min_lfp_mean(:))) 1.1*max(abs(min_lfp_mean(:)))])
+        axis square
+        title('max(|LFP|) as a function of commanded force direction')
         
         subplot(223)
         hold on
@@ -116,7 +146,7 @@ if isfield(bdf,'units')
             for iField = 1:length(UF_struct.field_indexes)
                 errorbar(180/pi*UF_struct.bump_directions',...
                     squeeze(min_lfp_mean(iBias,iField,:)),...
-                    squeeze(min_lfp_sem(iBias,iField,:)),...
+                    1.96*squeeze(min_lfp_sem(iBias,iField,:)),...
                     'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
             end
         end
@@ -285,4 +315,15 @@ title({['Average normalized LFP amplitude (N1) for all electrodes'];...
 % [b,a] = butter(2,[55/(Fs/2) 65/(Fs/2)]);
 % y_filt = filtfilt(b,a,mean(y,1));
 % plot(t,mean(y,1),t,mean(y,1)-y_filt)
+end
 
+function h = errorarea(x,ymean,yerror,c)
+    x = reshape(x,1,[]);
+    ymean = reshape(ymean,size(x,1),size(x,2));
+    yerror = reshape(yerror,size(x,1),size(x,2));
+    h = area(x([1:end end:-1:1]),[ymean(1:end)+yerror(1:end) ymean(end:-1:1)-yerror(end:-1:1)],...
+        'FaceColor',c,'LineStyle','none');
+    hChildren = get(gca,'children');
+    hType = get(hChildren,'Type');
+    set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]))
+end

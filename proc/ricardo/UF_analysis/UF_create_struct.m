@@ -123,8 +123,11 @@ UF_struct.x_acc_rot_bump = repmat(cos(-UF_struct.trial_table(:,UF_struct.table_c
 UF_struct.y_acc_rot_bump = repmat(sin(-UF_struct.trial_table(:,UF_struct.table_columns.bump_direction)),1,size(UF_struct.x_pos_translated,2)).*UF_struct.x_acc +...
     repmat(cos(-UF_struct.trial_table(:,UF_struct.table_columns.bump_direction)),1,size(UF_struct.x_pos_translated,2)).*UF_struct.y_acc;
 
-x_force_translated = UF_struct.x_force-repmat(UF_struct.x_force(:,1),1,size(UF_struct.x_force,2));
-y_force_translated = UF_struct.y_force-repmat(UF_struct.y_force(:,1),1,size(UF_struct.y_force,2));
+% x_force_translated = UF_struct.x_force-repmat(UF_struct.x_force(:,1),1,size(UF_struct.x_force,2));
+% y_force_translated = UF_struct.y_force-repmat(UF_struct.y_force(:,1),1,size(UF_struct.y_force,2));
+
+x_force_translated = UF_struct.x_force-repmat(mean(UF_struct.x_force(:,UF_struct.t_axis<0),2),1,size(UF_struct.x_force,2));
+y_force_translated = UF_struct.y_force-repmat(mean(UF_struct.y_force(:,UF_struct.t_axis<0),2),1,size(UF_struct.y_force,2));
 
 UF_struct.x_force_rot_bump = repmat(cos(-UF_struct.trial_table(:,UF_struct.table_columns.bump_direction)),1,size(x_force_translated,2)).*x_force_translated -...
     repmat(sin(-UF_struct.trial_table(:,UF_struct.table_columns.bump_direction)),1,size(x_force_translated,2)).*y_force_translated;
@@ -164,8 +167,8 @@ for iField = 1:length(UF_struct.field_orientations)
         UF_struct.bump_dir_actual(iBump,iField) = atan2(mean_y,mean_x);
     end    
 end
-UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0)=2*pi+UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0);
 UF_struct.bump_dir_actual = mean(UF_struct.bump_dir_actual,2);
+UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0)=2*pi+UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0);
 bump_dir_mat = [abs(UF_struct.bump_dir_actual-UF_struct.bump_directions) abs((UF_struct.bump_dir_actual-2*pi)-UF_struct.bump_directions)];
 [~,idx] = min(bump_dir_mat,[],2);
 idx = idx-1;

@@ -1,4 +1,5 @@
 function UF_plot_EMG(UF_struct)
+    plot_idx = 1:size(UF_struct.trial_table,1);
     for iEMG = 1:UF_struct.num_emg
         baseline_idx = find(UF_struct.t_axis>-.05 & UF_struct.t_axis<0);
         temp_emg = squeeze(UF_struct.emg_all(iEMG,:,:));
@@ -19,6 +20,7 @@ function UF_plot_EMG(UF_struct)
             figure 
             for iField = 1:length(UF_struct.field_indexes)
                 idx = intersect(UF_struct.field_indexes{iField},UF_struct.bias_indexes{iBias});
+                idx = intersect(idx,plot_idx);
                 baseline = temp_emg(idx,baseline_idx);
                 baseline_mean(iBias,iField) = mean(baseline(:));
                 baseline_sem(iBias,iField) = std(mean(baseline,2))/sqrt(length(idx));
@@ -26,6 +28,7 @@ function UF_plot_EMG(UF_struct)
                 for iBump = 1:length(UF_struct.bump_indexes)
                     idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump}); 
                     idx = intersect(idx,UF_struct.bias_indexes{iBias}); 
+                    idx = intersect(idx,plot_idx);
                     idx = idx(~(std(temp_emg(idx,:)') > 3*mean(std(temp_emg(idx,:)'))));
                     subplot(2,length(UF_struct.bump_indexes)/2,iBump)            
                     hold on
@@ -128,6 +131,7 @@ function UF_plot_EMG(UF_struct)
         temp_fields = round(UF_struct.field_orientations*100)/100;
         temp_bumps = round(UF_struct.bump_directions*100)/100;
         temp_pi = round(pi*100)/100;
+        temp_pi2= round(pi*100)/100/2;
         log_gain = zeros(length(UF_struct.bias_indexes),length(UF_struct.bump_indexes));
         gain = zeros(length(UF_struct.bias_indexes),length(UF_struct.bump_indexes));
         sem_prop = zeros(length(UF_struct.bias_indexes),length(UF_struct.bump_indexes));
@@ -136,7 +140,8 @@ function UF_plot_EMG(UF_struct)
         for iBias = 1:length(UF_struct.bias_indexes)
             for iBump = 1:length(UF_struct.bump_indexes)
                 idxParallel = find(temp_fields==temp_bumps(iBump) | (temp_fields+temp_pi)==temp_bumps(iBump));
-                idxPerpendicular =  find(temp_fields~=temp_bumps(iBump) & (temp_fields+temp_pi)~=temp_bumps(iBump));
+                idxPerpendicular =  find(abs(temp_fields+temp_pi2-temp_bumps(iBump))<1E-10 | abs((temp_fields-temp_pi2)-temp_bumps(iBump))<1E-10 |...
+                    abs(temp_fields+temp_pi2+temp_pi-temp_bumps(iBump))<1E-10 | abs((temp_fields-temp_pi2+temp_pi)-temp_bumps(iBump))<1E-10);
     %             gain(iBias,iBump) = mean(squeeze(emg_mean(iBias,idxParallel,iBump))) ./ ...
     %                 mean(squeeze(emg_mean(iBias,idxPerpendicular,iBump)));
                 gain(iBias,iBump) = emg_mean(iBias,idxParallel,iBump) - ...
