@@ -1,12 +1,22 @@
 function [ Status words Delay ] = CBWait4Word( myword, interval, maxwait, mask, mode )
 % CBWait4Word: Run a tight loop, returning when the required word appears at Cerebus
 %
+% Parameters:
+%
 % myword:   code, the upper 4 bits of which must appear before the function returns
 % interval: time to wait between Cerebus queries
 % maxwait:  time to return if myword does not appear
 % mask:     use if looking for a particular group of bits, default is 0xFF
 % mode:     'test' to read mat file, '' to wait for Cerebus
-Status = 'fail';
+%
+% Returns:
+%
+% Status:	Success/Fail/Timeout
+% words:	Array of timestamps and words seen
+% Delay:	Elapsed time of data collection
+%
+% Note that ONLY the last 'interval' of data following the first hit will be returned
+Status = 'Fail';
 words = [];
 Delay = [];
 
