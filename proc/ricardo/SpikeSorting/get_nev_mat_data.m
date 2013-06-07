@@ -116,13 +116,13 @@ function out_struct = get_nev_mat_data(varargin)
             
             dn = diff(out_struct.units(i).ts);
             if any(dn<0) %test whether there was a ts reset in the file
-                idx = find(dn<0);
+                idx = find(dn<0,1,'last');
                 if length(idx)>1
                     warning('BDF:MultipleResets', ['Unit %d contains more than one ts reset.'...
                             'All the data after the first reset is extracted.'],i);
                 end
-                out_struct.units(i).ts = neural_data( (idx(1)+1):end);
-                out_struct.units(i).waveforms = [];
+                out_struct.units(i).ts = out_struct.units(i).ts(idx+1:end);
+                out_struct.units(i).waveforms = out_struct.units(i).waveforms(idx+1:end,:);
                 clear idx;
             end
             clear dn;
