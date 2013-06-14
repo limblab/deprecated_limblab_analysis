@@ -27,7 +27,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     static char cmd_list[] = "\tconnect\n\tdisconnect\n\tconfigure\n\tstim_max\n\
 \treadDeviceInfo\n\tbeginningOfSequence\n\tendOfSequence\n\t\
 beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n\
-";
+\tgetParams\n";
     
     cs_cmd = mxArrayToString(prhs[i]);
 	if (verbose>1) mexPrintf("\nCommand (arg %d): %s\n", i, cs_cmd);
@@ -241,7 +241,28 @@ beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n
         return;
     }
     
-    /***** Here for NO recognized command ***************/
+    /***** getParams*****************************/
+    if (!strcmp(cs_cmd, "getParams")) {
+        void *voidP;
+        struct BUsbParams *outputP;
+
+        voidP = myStim.getParams();
+		if (!voidP) {
+            mexPrintf("getParams Failed\n");
+			return;
+		} else {
+			outputP = (struct BUsbParams *) voidP;
+				if(verbose){
+					mexPrintf("getParams: vid = %x\n", outputP->vid);
+					mexPrintf("getParams: pid = %x\n", outputP->pid);
+				}
+        }
+        plhs[0] = mxCreateDoubleMatrix(5,1,mxREAL);
+        BUsbParams *myP = (BUsbParams *)mxGetPr(plhs[0]);
+        myP = outputP;
+        return;
+    }
+      /***** Here for NO recognized command ***************/
     mexPrintf("Cannot recognize command %s\n\n", cs_cmd);
     mexPrintf("The following commands have been implemented:\n%s", cmd_list);
 }
