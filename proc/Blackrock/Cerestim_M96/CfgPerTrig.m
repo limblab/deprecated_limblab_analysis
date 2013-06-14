@@ -16,6 +16,7 @@ function CfgPerTrig(TRIGNUM, chList)
 
 global a
 global idx
+idx=1;
 if ~nargin || numel(chList)<4
     help CfgPerTrig
     error('CfgPerTrig requires 4 electrode channels')
@@ -66,7 +67,7 @@ for i=1:numel(channels)
     end
     as=tic;
     csmex('autoStimulus',channels(i),configID);
-    fprintf('as=%d\n',toc(as))
+    fprintf('Time to run (ms)=%.2f\n',toc(as)*1000)
 end
 csmex('endOfGroup');
 csmex('endOfSequence');

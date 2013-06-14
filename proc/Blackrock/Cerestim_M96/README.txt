@@ -23,3 +23,6 @@ Open the file csmex.cpp, and place any desired breakpoints by clicking in the le
 Next, select Debug/AttachToProcess, select the MATLAB process, and click "Attach".
 
 Now calling csmex will run the code under control of the Visual Studio debugger.
+
+The csmex code provides a Matlab interface for a subset of the C/C++ commands described in the API manual. To view the ist of supported commands, call with invalid argument.
+
