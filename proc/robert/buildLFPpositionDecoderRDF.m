@@ -9,7 +9,7 @@ function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 
 numlags=1;
 wsz=256;
-nfeat=150; featShift=0;
+nfeat=40; featShift=41;
 PolynomialOrder=3;
 smoothfeats=0;
 binsize=0.05;
@@ -163,6 +163,8 @@ samplingFreq = samprate;
 fillen=numlags*binsize;
 neuronIDs='';
 freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300];
+% freq_bands = [70 300];
+% freq_bands(1:3,:)=[];
 featmat = [bestc', bestf']; 
 f_bands = cell(numfp,1);
 

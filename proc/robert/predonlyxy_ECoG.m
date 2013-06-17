@@ -78,7 +78,7 @@ end
 % since r is an average, there is no need to reshape it; it will just be a
 % vector anyway.
 [sr,featind]=sort(r,'descend');
-
+assignin('base','R',sr)
 [bestf,bestc]=ind2sub([6 length(fpind)],featind((1:nfeat)+featShift));
 x=x(:,featind((1:nfeat)+featShift));
 figure, plot(mean(abs(x))), xlabel('feature number')
