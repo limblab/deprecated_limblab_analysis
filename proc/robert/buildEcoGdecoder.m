@@ -20,6 +20,7 @@ clear N_KsectionInterp
 %% define constants.
 
 SIGNALTOUSE='force';
+% SIGNALTOUSE='dfdt';
 % SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
@@ -128,8 +129,8 @@ hold on
 gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
 plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
 %%  9.  assign parameters.
-Use_Thresh=0; lambda=1; 
-PolynomialOrder=2; numlags=10; numsides=1; folds=10; nfeat=95; smoothfeats=21; featShift=0;
+Use_Thresh=0; lambda=2; 
+PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=95; smoothfeats=0; featShift=0;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
@@ -155,7 +156,7 @@ fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
 %%  11.  plot cross-validated predictions, with some informative text.
-close
+% close
 figure, set(gcf,'Position',[88 100 1324 420])
 col=1;
 for n=1:folds
@@ -185,6 +186,16 @@ end, clear n dottedH
 title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
     PolynomialOrder,mean(vaf(:,col)),nfeat))
 
+
+%% alternate way of exploring the feature space: do a sweep.  May take
+%  a few minutes.
+%  NOT PRACTICAL FOR DAY-OF ANALYSIS
+infoStruct=struct('path',fullfile(PathName,FileName),'montage',[],'force',1);
+infoStruct.montage={FPSTOUSE,[],[],[]};
+paramStructIn=struct('PolynomialOrder',3,'folds',11,'numlags',10,'wsz',256, ...
+    'nfeat',6:12:(6*length(FPSTOUSE)),'smoothfeats',unique([0 5:10:55 11:10:51]), ...
+    'binsize',0.05,'fpSingle',0,'zscore',0,'lambda',[0 1 2:2:10]);
+VAFstruct=batchAnalyzeECoGv6(infoStruct,'force','MS',paramStructIn);
 
 
 % At this point, a decision must be made as to whether it will be best to

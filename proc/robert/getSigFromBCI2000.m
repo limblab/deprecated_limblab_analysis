@@ -1,7 +1,7 @@
 function [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE)
 
 switch lower(SIGNALTOUSE)
-    case 'force'
+    case {'force','dfdt'}
         CG=[];
     case 'cg'
         % the traditional variable 'sig' contains the PC reconstructions for the 1st N
@@ -15,7 +15,7 @@ switch lower(SIGNALTOUSE)
         % precision).
         CG=struct('data',[],'mean',[],'std',[],'coeff',[]);
 end
-if nnz(cellfun(@isempty,regexp(parameters.SignalSourceFilterChain.Value(:,1),'TDTADC'))==0)
+if nnz(cellfun(@isempty,regexp(parameters.SignalSourceFilterChain.Value(:,1),'TDT'))==0)
     samprate=24414.0625/24; % real TDT sample rate (only if samplingRate is 1000)
 else
     samprate=parameters.SamplingRate.NumericValue;
@@ -24,8 +24,8 @@ blockSize=parameters.SampleBlockSize.NumericValue;
 
 fprintf(1,'finding %s signal...\n',SIGNALTOUSE)
 switch SIGNALTOUSE
-    case 'force'
-        force_ind=find(strcmpi(parameters.ChannelNames.Value,SIGNALTOUSE));
+    case {'force','dfdt'}
+        force_ind=find(strcmpi(parameters.ChannelNames.Value,'force'));
         sig=[rowBoat(1:size(signal,1))/samprate, ...
             signal(:,force_ind).*str2double(parameters.SourceChGain.Value{force_ind})];
         % scale further by Normalizer values
@@ -34,12 +34,17 @@ switch SIGNALTOUSE
         % shift 1 more time, for the application (cursor position is
         % defined by its displacement from 50, and is offset by
         % YOffsetValue
-        sig(:,2)=sig(:,2)+50;  % this is hard-coded!
+        % sig(:,2)=sig(:,2)+50;  % this is hard-coded!
         if isfield(parameters,'YCenterOffset')
             sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
         end
+        if isequal(SIGNALTOUSE,'dfdt')
+%             sig=kindiff([sig, zeros(size(sig,1),1)],samprate);
+%             sig(:,end)=[];
+            sig(:,2)=kin_diff(sig(:,2));
+        end
     case 'CG'
-%         cg=zeros(size(signal,1),22);
+        %         cg=zeros(size(signal,1),22);
         for i=1:22
             CG.data(:,i)=states.(['GloveSensor',int2str(i)]);
         end, clear i
@@ -52,7 +57,7 @@ switch SIGNALTOUSE
         % of the output, so make it == to size(signal,1).
         sampfact=blockSize/samprate;
         blockTimes=(0:(size(CG.data,1)-1))*sampfact;
-        CG.data=interp1(blockTimes',CG.data,analog_times');        
+        CG.data=interp1(blockTimes',CG.data,analog_times');
         % Now, delete outrageously large deviations
         % within the signals, often occurring at the beginning of files.
         CG.mean=mean(CG.data); CG.std=std(CG.data);
@@ -93,7 +98,7 @@ switch SIGNALTOUSE
         clear cgnew
         
         [CG.coeff,CGscores,variances,junk] = princomp(cgz'); % CG.data
-
+        
         % to determine how many components to use, find the # that account for
         % >= 90% of the variance.
         % FOR POSITION THE FUNCTION EXPECTS A TIME VECTOR PREPENDED
@@ -103,6 +108,22 @@ switch SIGNALTOUSE
         CG.coeff=CG.coeff(:,1:cutoff90);
         fprintf(1,'Using %d PCs, which together account for\n',cutoff90)
         fprintf(1,'%.1f%% of the total variance in the PC signal\n',100*temp(size(positionData,2)-1))
-
+        
         sig=positionData;
+end
+
+    % diferentiater function for kinematic signals
+    % should differentiate, LP filter at 100Hz and add a zero to adjust for
+    % temporal shift
+    function dx = kin_diff(x)
+        [b, a] = butter(8, 20/samprate);
+        dx = diff(x) .* samprate;
+        dx = filtfilt(b,a,double(dx));
+        if size(dx,1)==1
+            dx = [0 dx];
+        else
+            dx = [0;dx];
+        end
+    end
+
 end
