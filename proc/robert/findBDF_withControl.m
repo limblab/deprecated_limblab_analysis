@@ -35,7 +35,7 @@ pathBank={'Chewie_8I2','Mini_7H1'};
 ff={'Filter files','FilterFiles'};
 animus=cellfun(@isempty,regexp(pathBank,animal))==0;
 if ispc
-    remoteDriveLetter='Z:';
+    remoteDriveLetter=[citadelDriveLetter,':'];
 else
     remoteDriveLetter='/Volumes/data';
 end

@@ -88,8 +88,7 @@ else
                 % citadel than local. If during superBatch, the network copy of the
                 % BDF almost certainly won't exist yet.  Either way, assume
                 % no local copies of brainReader logs exist.
-                % assume GOB.  Drive letter is Z:
-                remoteDriveLetter='Z:';
+                remoteDriveLetter=[citadelDriveLetter,':'];
                 pathToCitadelData=fullfile(remoteDriveLetter, ...
                     CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
                 [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *', ...
@@ -220,6 +219,11 @@ end
 % memory, the gaps between successive time points will be wider than 50
 % msec.  Does this have an effect on predicted velocities?  If so, we need
 % to account for that effect when looking at the velocty values.
+
+% mark times where Reach was lagging.  We may want to cut these out later,
+% since these predictions may be more inaccurate than the rest.
+excessDT={0.06,BRarray(find(diff(BRarray(:,7))>0.06)+1,7)};
+
 newTvector=start_time:0.05:stop_time;
 
 newXpos=interp1(BRarray(:,7),BRarray(:,3),newTvector);
@@ -230,6 +234,8 @@ newXvel=interp1(BRarray(:,7),BRarray(:,5),newTvector);
 newYvel=interp1(BRarray(:,7),BRarray(:,6),newTvector);
 bdf.vel=[newTvector' newXvel' newYvel'];
 
+% bdf.vel=BRarray(:,[7 5 6]);
+% bdf.pos=BRarray(:,[7 3 4]);
 
 bdf.meta.brain_control=1;
 decoderDate=decoderDateFromLogFile(pathToBR);
