@@ -27,7 +27,9 @@ SIGNALTOUSE='force';
 %  decoder, which is always a game-time decision.
 FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
-FPSTOUSE=1:64;   % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
+                % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
+FPSTOUSE=[2 3 6 7 8 11 12 16 17 18 19 22 23 26 27 28 29 31 ...
+    32 35 36 39 40 42 43 46 47 49 50 53 54 57 58 60 62 64];
 % FPSTOUSE=[4 5 6 9 10 13 14 15 16 20 21 24 25 26 29 33 34 37 38 41 42 44 45 46 47 51 52 55 56 59 61 63];
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
@@ -59,7 +61,7 @@ fprintf(1,'loading %s...\n',files.name)
 fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
 clear N
-%%  5.  get fp array from signal array
+%%  5a.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
 fp=(signal(:,FPIND)').* ...
@@ -69,44 +71,39 @@ fptimes=(1:size(fp,2))/samprate;
 clear sig CG
 [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
-%%  6a. pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
-figure, set(gcf,'Position',[88         100        1324         420])
-set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
-h1=plot(fptimes,fp(FPSTOUSE,:)');
-for n=1:length(h1)
-    set(h1(n),'Color',rand(1,3))
-end, clear n
-legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
 
-%% 6b. second option for plot
-scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2))                             %#ok<NOPTS>
-figure, set(gcf,'Position',[88 100 1324 420])
-set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
-h2=plot(fptimes(1:10:end),bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,1:10:end)'));
-for n=1:length(h2)
-    set(h2(n),'Color',rand(1,3))
-end, clear n
-legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h2
-%% 6c. if there are bad channels, try this code to figure out which ones they are...
-% this works for either plot because it uses gco.  Just dock it, to make
-% sure it is the current plot when you run the cell.
-% step 1: zoom in and select with the plot edit tool!  Then, 
-FPSTOUSE(ismember(FPSTOUSE,str2double(regexp(get(gco,'DisplayName'),'(?<=ch)[0-9]+','match','once'))))=[];
-delete(gco)
-legend('off')
-legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
-disp('done')
+%%  5b. optional: look at smoothed force signal
+if ~exist('smForceFigure','var') || ~ishandle(smForceFigure) % ~strcmp(get(gcf,'Tag'),'smForceFigure')
+    smForceFigure=figure; set(smForceFigure,'Tag','smForceFigure')
+    plot(sig(:,1),sig(:,2)), hold on
+else
+    figure(smForceFigure)
+    % comment out delete line, and optionally change color below, to 
+    % add new views of different smoothing factors, instead of replacing
+    % the current one.
+    delete(findobj(gca,'Color','g'))    
+end
+smForce=smooth(sig(:,2),101);
+plot(sig(:,1),smForce,'g','LineWidth',1.5)
+%%  5b(i).  optional add-on to 5b, to actually use the smoothed force
+sig(:,2)=smForce;
+%%  6.  new school: pick channels to include/exclude based on cap map
+% FPSTOUSE=1:64; % just in case it comes in handy
+FPuseList=selectEEGelectrodes2(parameters.ChannelNames.Value(FPIND),parameters.ChannelNames.Value(setdiff(FPIND,FPSTOUSE)));
+FPSTOUSE=find(ismember(parameters.ChannelNames.Value,FPuseList));
 %%  7.  set parameters, and build the feature matrix.
 wsz=256;
 samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
-binsize=0.05;
-[featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize);
+binsize=0.1; % TO CHANGE ANYTHING IN THIS CELL, MUST RE-RUN CELL 5, THEN COME BACK HERE.
+bandsToUse='456';
+[featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize,bandsToUse);
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
 %%  8.  index the fps - can change mind at this point as to which FPs to use.
 % FPSTOUSE=33:48;
 clear x
-x=zeros(size(featMat,1),length(FPSTOUSE)*6);
+numBands=length(regexp(bandsToUse,'[0-9]+'));
+x=zeros(size(featMat,1),length(FPSTOUSE)*numBands);
 % there is a tricky interplay between x and FPSTOUSE, because x is used to
 % calculate H, and H must take into account 3 things:
 %   -which channels are meant to serve as inputs
@@ -114,23 +111,19 @@ x=zeros(size(featMat,1),length(FPSTOUSE)*6);
 %    bestc,bestf)
 %
 for n=1:length(FPSTOUSE)
-    x(:,(n-1)*6+1:n*6)=featMat(:,(FPSTOUSE(n)-1)*6+1:FPSTOUSE(n)*6);
+    x(:,(n-1)*numBands+1:n*numBands)= ...
+        featMat(:,(FPSTOUSE(n)-1)*numBands+1:FPSTOUSE(n)*numBands);
 end, clear n
 % If a bad channel needs to be taken out, consider using the spatial filter to
 % do it.  Currently it's not in either of the brain control setups (force
 % or Triangle) but it could be added.  Alternately, just ensure it doesn't
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
-%%
-figure, set(gcf,'Position',[88         100        1324         420])
-set(gca,'Position',[0.0415 0.1100 0.9366 0.8150])
-imagesc(bsxfun(@rdivide,x,max(x,[],1))')
-% imagesc(x')
-hold on
-gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
-plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
+
 %%  9.  assign parameters.
-Use_Thresh=0; lambda=2; 
-PolynomialOrder=3; numlags=10; numsides=1; folds=10; nfeat=95; smoothfeats=0; featShift=0;
+Use_Thresh=0; lambda=1; 
+PolynomialOrder=3; numlags=10; numsides=1; folds=10; smoothfeats=0; featShift=0;
+nfeat=floor(0.5*size(featMat,2));
+% nfeat=95;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
@@ -151,6 +144,15 @@ clear bestc bestf
 disp('evaluating feature matrix using selected ECoG channels')
 [vaf,ytnew,y_pred,bestc,bestf,featind,H,P]=predonlyxy_ECoG(x,FPSTOUSE,sig, ...
     PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<*NASGU,*ASGLU>
+fprintf(1,'file %s\n',FileName)
+fprintf(1,'decoding %s\n',SIGNALTOUSE)
+fprintf(1,'numlags=%d\n',numlags)
+fprintf(1,'wsz=%d\n',wsz)
+fprintf(1,'nfeat=%d of a possible %d (%.1f%%)\n',nfeat,size(featMat,2),100*nfeat/size(featMat,2))
+fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+fprintf(1,'smoothfeats=%d\n',smoothfeats)
+fprintf(1,'binsize=%.2f\n',binsize)
+fprintf(1,'using bands %s ',bandsToUse), fprintf(1,'\n')
 vaf                                                                                          %#ok<NOPTS>
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
@@ -185,21 +187,6 @@ end, clear n dottedH
 
 title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
     PolynomialOrder,mean(vaf(:,col)),nfeat))
-
-
-%% alternate way of exploring the feature space: do a sweep.  May take
-%  a few minutes.
-%  NOT PRACTICAL FOR DAY-OF ANALYSIS
-infoStruct=struct('path',fullfile(PathName,FileName),'montage',[],'force',1);
-infoStruct.montage={FPSTOUSE,[],[],[]};
-paramStructIn=struct('PolynomialOrder',3,'folds',11,'numlags',10,'wsz',256, ...
-    'nfeat',6:12:(6*length(FPSTOUSE)),'smoothfeats',unique([0 5:10:55 11:10:51]), ...
-    'binsize',0.05,'fpSingle',0,'zscore',0,'lambda',[0 1 2:2:10]);
-VAFstruct=batchAnalyzeECoGv6(infoStruct,'force','MS',paramStructIn);
-
-
-% At this point, a decision must be made as to whether it will be best to
-% take one of these H's, or try calculating one on the entire file.
 
 %%  12.  build a decoder and save.
 % at this point, bestc & bestf are sorted by channel, while featind is
@@ -303,3 +290,73 @@ end
 figure, set(gcf,'Position',[88         378        1324         420])
 plot(ytnew(:,1)), hold on, plot(y_pred(:,1),'g')
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
+
+
+
+
+%%
+% old school, fancy graphical solutions for inclusion/exclusion of
+% channels.  Basis things on the data instead of just picking them off
+% an image and assuming they're good.  Go figure, right?
+%%  6a. pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
+figure, set(gcf,'Position',[88         100        1324         420])
+set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
+h1=plot(fptimes,fp(FPSTOUSE,:)');
+for n=1:length(h1)
+    set(h1(n),'Color',rand(1,3))
+end, clear n
+legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
+
+%% 6b. second option for plot
+scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2));
+figure, set(gcf,'Position',[88 100 1324 420],'Color',[0 0 0]+1)
+set(gca,'Position',[0.0415 0.0571 0.9366 0.9190])
+h2=plot(fptimes(1:10:end),bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fliplr(fp(FPSTOUSE,1:10:end)')));
+% h2=plot(fptimes(1:10:end),bsxfun(@plus,(1:length(FPSTOUSE))*scaleFactor,fp(FPSTOUSE,1:10:end)'));
+axis tight
+for n=1:length(h2)
+    set(h2(n),'Color',rand(1,3), ...
+        'Tag',parameters.ChannelNames.Value{FPSTOUSE(length(FPSTOUSE)-n+1)})
+end, clear n
+set(gca,'YTick',scaleFactor*(1:length(FPSTOUSE)))
+set(gca,'YTickLabel',flipud(parameters.ChannelNames.Value(FPSTOUSE)), ...
+    'TickLength',[0.001 0.025],'box','off')
+% set(gca,'YTickLabel',parameters.ChannelNames.Value(FPSTOUSE))
+
+% for simple numeric list, instead
+% set(gca,'YTickLabel',regexp(sprintf('%d ',1:64),'[0-9]+(?= )','match'))
+% legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
+%% 6c. if there are bad channels, try this code to figure out which ones they are...
+% this works for either plot because it uses gco.  Just dock it, to make
+% sure it is the current plot when you run the cell.
+% step 1: zoom in and select with the plot edit tool!  Then, 
+FPSTOUSE(FPSTOUSE==find(strcmp(parameters.ChannelNames.Value,get(gco,'Tag'))))=[];
+% deprecated, for use with legended plot
+% FPSTOUSE(ismember(FPSTOUSE,str2double(regexp(get(gco,'DisplayName'),'(?<=ch)[0-9]+','match','once'))))=[];
+delete(gco)
+% legend('off')
+% legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
+
+%% other graphical fanciness.  useful for searching for patterns by eye,
+%  once the features have been calculated (i.e. following cell 7)
+figure, set(gcf,'Position',[88         100        1324         420])
+set(gca,'Position',[0.0415 0.1100 0.9366 0.8150])
+imagesc(bsxfun(@rdivide,x,max(x,[],1))')
+% imagesc(x')
+hold on
+gain=size(x,2)/(max(sig(:,2))-min(sig(:,2)));
+plot(sig(:,2)*(-1)*gain+(gain*max(sig(:,2))),'k','LineWidth',3), clear gain
+
+%% alternate way of exploring the feature space: do a sweep.  May take
+%  a few minutes.
+%  NOT PRACTICAL FOR DAY-OF ANALYSIS
+infoStruct=struct('path',fullfile(PathName,FileName),'montage',[],'force',1);
+infoStruct.montage={FPSTOUSE,[],[],[]};
+paramStructIn=struct('PolynomialOrder',3,'folds',11,'numlags',10,'wsz',256, ...
+    'nfeat',6:12:(6*length(FPSTOUSE)),'smoothfeats',unique([0 5:10:55 11:10:51]), ...
+    'binsize',0.05,'fpSingle',0,'zscore',0,'lambda',[0 1 2:2:10]);
+VAFstruct=batchAnalyzeECoGv6(infoStruct,'force','MS',paramStructIn);
+
+
+% At this point, a decision must be made as to whether it will be best to
+% take one of these H's, or try calculating one on the entire file.
