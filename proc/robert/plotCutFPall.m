@@ -63,7 +63,7 @@ badChansGuess=[badChansGuess; find(range(allCutFP(65:96,:),2) >= ...
 badChansGuess=[badChansGuess; find(range(allCutFP(65:96,:),2) <= ...
     (median(range(allCutFP(65:96,:),2))-2*iqr(range(allCutFP(65:96,:),2))))+64];
 
-badChansGuess=sort(badChansGuess);
+badChansGuess=unique(badChansGuess);
 rangeForPlot=range(allCutFP,2);
 figure, plot(rangeForPlot,'.'), hold on, plot(badChansGuess,rangeForPlot(badChansGuess),'r.')
 title('bad channel estimate is in red')
