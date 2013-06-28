@@ -260,7 +260,7 @@ end
 % test a combined gamma band alone.
 PB=[];
 PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
-% assignin('base','PB',PB)
+assignin('base','PB',PB)
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
