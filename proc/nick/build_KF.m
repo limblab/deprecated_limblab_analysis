@@ -68,6 +68,15 @@ if exist('out_struct','var')
     binnedData = convertBDF2binned('temp_out_struct', 0.05, startTime, endTime);
     evalin('base','clear temp_out_struct');
 end
+if  exist('bdf','var')
+    disp('extracting offsets...');
+    x_offset = bytes2float(bdf.databursts{1,2}(7:10));
+    y_offset = bytes2float(bdf.databursts{1,2}(11:14));
+    disp('converting bdf file to binnedData...');
+    assignin('base','temp_out_struct',bdf);
+    binnedData = convertBDF2binned('temp_out_struct', 0.05, startTime, endTime);
+    evalin('base','clear temp_out_struct');
+end
 
 % to remove potential small timing discrepencies
 binnedData.timeframe = round(binnedData.timeframe.*1000)./1000;
@@ -88,7 +97,10 @@ pos = binnedData.cursorposbin + repmat([x_offset y_offset],length(binnedData.cur
 % acc = binnedData.accelbin(:,1:2);
 vel = [0 0; diff(pos)]/binsize;
 acc = [0 0; diff(vel)]/binsize;
-spikes = binnedData.spikeratedata;
+% spikes = binnedData.spikeratedata;
+% use principal components
+PCcoeffs = princomp(binnedData.spikeratedata);
+spikes = binnedData.spikeratedata*(PCcoeffs(1:75,:))'; % adjust number of PCs as needed
 
 state = [pos vel acc ones(length(pos),1)];
 
@@ -126,6 +138,11 @@ if genPlots
     title(['y position prediction, delay = ' num2str(delayBins) ' vaf = ' num2str(ypvaf)])
     xlabel('time (s)')
     ylabel('position (cm)')
+
+    figure; plot(pred_state(1,:),pred_state(2,:),'r');
+    title(['KF position prediction, delay = ' num2str(delayBins) ' vaf = ' num2str(mean([xpvaf ypvaf]))])
+    xlabel('x (cm)')
+    ylabel('y (cm)')
 
 end
 

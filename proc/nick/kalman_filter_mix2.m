@@ -170,9 +170,18 @@ for t=1:T
     end
 
 
-
-    if sum(weight(t,:))
+    
+    if isnan(sum(weight(t,:)))
+        if t > 1
+            weight(t,:) = weight(t-1,:);
+        else
+            weight(t,:) = ones(1,size(weight,2))./size(weight,2);
+        end
+    elseif sum(weight(t,:))
         weight(t,:) = weight(t,:)/sum(weight(t,:));
+        if (isnan(sum(weight(t,:))) && t > 1)
+            weight(t,:) = weight(t-1,:);
+        end
     end
 
     xmtm(:,t) = 0;

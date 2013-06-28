@@ -16,7 +16,13 @@ end
 %assert(length(m)==d); % slow
 m = m(:);
 M = m*ones(1,N); % replicate the mean across columns
-denom = (2*pi)^(d/2)*sqrt(abs(det(C)));
+% denom = (2*pi)^(d/2)*sqrt(abs(det(C)));
+denom = 1;
+
+if isinf(denom) % <--fix to get to work with close to singular C
+    denom = 1;
+end
+
 mahal = sum(((x-M)'*inv(C)).*(x-M)',2);   % Chris Bregler's trick
 if any(mahal<0)
   warning('mahal < 0 => C is not psd')
