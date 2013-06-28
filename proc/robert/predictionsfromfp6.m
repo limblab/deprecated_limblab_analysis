@@ -258,9 +258,9 @@ end
 % PB(2,:,:)=mean(PA(gam2,:,:),1);
 % PB(3,:,:)=mean(PA(gam3,:,:),1);
 % test a combined gamma band alone.
-% PB=[];
-% PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
-assignin('base','PB',PB)
+PB=[];
+PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
+% assignin('base','PB',PB)
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
@@ -379,6 +379,7 @@ x=x(:,sortInd);
 % PA(freqs>300,:,:)=[];
 % PA=reshape(PA,76*16,6050);
 % x=PA';
+Pcell=cell(10,1);
 
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
@@ -447,6 +448,7 @@ for i = 1:folds
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
             y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            Pcell{i}=P;
         end
     end
     
@@ -528,7 +530,7 @@ if nargout>5
                             varargout{13}=xtnew;
                             varargout{14}=t;
                             if nargout>19
-                                varargout{15}=P;
+                                varargout{15}=Pcell;
                                 varargout{16}=featind;
                                 if nargout>21
                                     varargout{17}=sr;

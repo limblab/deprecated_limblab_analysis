@@ -31,6 +31,8 @@ animal=regexp(nameIn,'Chewie|Mini','match','once');
 switch lower(machineName)
     case 'bumblebeeman'
         basePath=fullfile('E:\monkey data',animal);
+    case 'apu-pc'
+        basePath=fullfile('E:\monkey data',animal);
     case 'gob'
         basePath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data',animal);
 end

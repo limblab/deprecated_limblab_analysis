@@ -83,7 +83,7 @@ else
     % the current one.
     delete(findobj(gca,'Color','g'))    
 end
-smForce=smooth(sig(:,2),101);
+smForce=smooth(sig(:,2),51);
 plot(sig(:,1),smForce,'g','LineWidth',1.5)
 %%  5b(i).  optional add-on to 5b, to actually use the smoothed force
 sig(:,2)=smForce;
@@ -95,7 +95,7 @@ FPSTOUSE=find(ismember(parameters.ChannelNames.Value,FPuseList));
 wsz=256;
 samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
 binsize=0.1; % TO CHANGE ANYTHING IN THIS CELL, MUST RE-RUN CELL 5, THEN COME BACK HERE.
-bandsToUse='456';
+bandsToUse='1 2 3 4 5 6';
 [featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize,bandsToUse);
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
@@ -122,8 +122,8 @@ end, clear n
 %%  9.  assign parameters.
 Use_Thresh=0; lambda=1; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; smoothfeats=0; featShift=0;
-nfeat=floor(0.5*size(featMat,2));
-% nfeat=95;
+nfeat=floor(0.9*size(x,2));
+% nfeat=20;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
@@ -188,7 +188,7 @@ end, clear n dottedH
 title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
     PolynomialOrder,mean(vaf(:,col)),nfeat))
 
-%%  12.  build a decoder and save.
+%%  12.  build a decoder.
 % at this point, bestc & bestf are sorted by channel, while featind is
 % still sorted by feature correlation rank.
 disp('calculating H,bestc,bestf using a single fold...')
@@ -280,6 +280,73 @@ if ~isempty(CG)
     fclose(fid); clear fid
 end
 
+
+%%
+% get parameter file to overwrite
+% write out new parameter file; tag filename with today's date
+[ParamFileName,ParamPathName,~]=uigetfile('E:\ECoG_Data\*.prm','Select parameter file to update.');
+if ~ischar(ParamPathName(1)) && ParamPathName==0
+    disp('cancelled.')
+    return
+end
+fid=fopen(fullfile(ParamPathName,ParamFileName));
+strData=fscanf(fid,'%c');
+fclose(fid); clear fid
+nCharPerLine = diff([0 find(strData == char(10)) numel(strData)]);
+cellData = strtrim(mat2cell(strData,1,nCharPerLine));
+clear strData nCharPerLine
+
+% frequency bands to use
+sprintfStr_fbands='Filtering:LFPDecodingFilter matrix FreqBands';
+fbandsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_fbands))==0);
+sprintfStr_fbands=[sprintfStr_fbands, '= %d { Low High }'];
+f_bands=[0 4; 7 20; 70 115; 130 200; 200 300];
+% only match 2-6 in bandsToUse because LMP does not need to be mentioned in
+% paramBands at all; it will be used if it shows up in bestf.
+bandsUsed=regexp(bandsToUse,'[2-6]+','match');
+paramBands=[];
+for n=1:length(bandsUsed)
+    paramBands=[paramBands, f_bands(str2double(bandsUsed{n}(1))-1,1)];          %#ok<AGROW>
+    paramBands=[paramBands, f_bands(str2double(bandsUsed{n}(end))-1,2)];        %#ok<AGROW>
+    sprintfStr_fbands=[sprintfStr_fbands, ' %d %d'];                            %#ok<AGROW>
+end, clear n
+sprintfStr_fbands=[sprintfStr_fbands, ' // Frequency bands to calculate for each channel'];
+cellData{fbandsCell}=sprintf(sprintfStr_fbands,length(bandsUsed),paramBands);
+
+% bestc, bestf
+sprintfStr_bestcf='Filtering:LFPDecodingFilter matrix Classifier';
+bestcfCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_bestcf))==0);
+sprintfStr_bestcf=[sprintfStr_bestcf, '= %d { bestc bestf }'];
+for n=1:size(bestcf,1)
+    sprintfStr_bestcf=[sprintfStr_bestcf, ' %d %d'];                           %#ok<AGROW>
+end, clear n
+sprintfStr_bestcf=[sprintfStr_bestcf, ' // bestc, bestf matrix'];
+cellData{bestcfCell}=sprintf(sprintfStr_bestcf,size(bestcf,1),reshape(bestcf',1,[]));
+
+% H
+sprintfStr_H='Filtering:LFPDecodingFilter matrix HMatrix';
+cellDataHcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_H))==0);
+sprintfStr_H=[sprintfStr_H, '= %d { Xwt Ywt }'];
+if size(H,2)<2
+    H=[zeros(size(H)), H];
+end
+for n=1:size(H,1)
+    for k=1:size(H,2)
+        sprintfStr_H=[sprintfStr_H, ' %.4f'];                                   %#ok<AGROW>
+    end, clear k
+end, clear n
+sprintfStr_H=[sprintfStr_H, ' // H Matrix'];
+cellData{cellDataHcell}=sprintf(sprintfStr_H,size(H,1),reshape(H',1,[]));
+
+% P
+sprintfStr_P='Filtering:LFPDecodingFilter matrix Pmatrix';
+cellDataPcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_P))==0);
+sprintfStr_P=[sprintfStr_P, '= 2 %d', repmat(' 0.0',1,PolynomialOrder), ...
+    repmat(' %.4f',1,PolynomialOrder)];
+sprintf(sprintfStr,PolynomialOrder,P)
+
+
+
 % save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
 %     [regexp(FileName,'.*(?=\.dat)','match','once'),'_H.txt']),'H','-ascii','-tabs','-double')
 % save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
@@ -296,7 +363,7 @@ set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
 
 %%
 % old school, fancy graphical solutions for inclusion/exclusion of
-% channels.  Basis things on the data instead of just picking them off
+% channels.  Bases things on the data instead of just picking them off
 % an image and assuming they're good.  Go figure, right?
 %%  6a. pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
 figure, set(gcf,'Position',[88         100        1324         420])

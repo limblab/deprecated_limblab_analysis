@@ -7,7 +7,7 @@ function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 % featShift is ZERO-BASED; i.e., to calculate feature 9, input 1,8 for
 % nfeat & featShift.
 
-numlags=1;
+numlags=10;
 wsz=256;
 nfeat=40; featShift=41;
 PolynomialOrder=3;
@@ -34,10 +34,16 @@ end
 % if being called by something else, use the PathName that already exists.
 % Assume FileName also exists.
 if isempty(PathName)
-	[FileName,PathName,FilterIndex] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');
-	cd(PathName)
+	[FileName,PathName,~] = uigetfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select a *.plx file','*.*');	
 end
-FileName
+if exist(PathName,'file')~=0
+    cd(PathName)
+else
+    disp('cancelled.')
+    vaf=[]; H=[]; bestf=[]; bestc=[];
+    return
+end
+fullfile(PathName,FileName)
 if isequal(get(0,'Diary'),'off')
     diary(fullfile(PathName,'decoderOutput.txt'))
 end
@@ -125,7 +131,8 @@ numsides=1;
 Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
 
-
+warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+warning('off','MATLAB:nearlySingularMatrix')
 [vaf,~,~,~,~,~,~,~,~,bestf,bestc,H,~,~,~,~,ytnew_buildModel,xtnew_buildModel,~,P,~,~] = ...
     buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
@@ -163,7 +170,7 @@ samplingFreq = samprate;
 fillen=numlags*binsize;
 neuronIDs='';
 freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300];
-% freq_bands = [70 300];
+freq_bands = [70 300];
 % freq_bands(1:3,:)=[];
 featmat = [bestc', bestf']; 
 f_bands = cell(numfp,1);
@@ -209,23 +216,26 @@ else
     nameToSave=[nameToSave,'feats'];
 end
 nameToSave=[nameToSave,signal,'-decoder.mat'];
+save(fullfile(PathName,nameToSave),'H','neuronIDs','fillen','binsize', ...
+    'chanIDs','samplingFreq','f_bands','bestc','bestf','R','rXY')
 if ~isempty(P)
-    save(fullfile(PathName,nameToSave),'H','P','neuronIDs','fillen','binsize', ...
-        'chanIDs','samplingFreq','f_bands','bestc','bestf','R','rXY')
-else
-    save(fullfile(PathName,nameToSave),'H','neuronIDs','fillen','binsize', ...
-        'chanIDs','samplingFreq','f_bands','bestc','bestf','R','rXY')
+    save(fullfile(PathName,nameToSave),'P','-append')
 end
-fprintf(1,'decoder saved in %s',PathName)
+if exist('badChannels','var')~=0 && ~isempty(badChannels)
+    save(fullfile(PathName,nameToSave),'badChannels','-append')
+end
+fprintf(1,'decoder saved in %s.\n',PathName)
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y, ...
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
     Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:6,featShift);
+close
+warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
+warning('on','MATLAB:nearlySingularMatrix')
 
 % examine vaf
 fprintf(1,'file %s\n',fnam)
@@ -245,5 +255,12 @@ formatstr=[formatstr, '\n'];
 
 fprintf(1,formatstr,mean(vaf,1))
 fprintf(1,'overall mean vaf %.4f\n',mean(vaf(:)))
+
+if exist(fullfile(PathName,nameToSave),'file')~=0
+    save(fullfile(PathName,nameToSave),'vaf','-append')
+    fprintf(1,'vaf appended to %s\n',nameToSave)
+else
+    fprintf(1,'%s does not exist.\n',fullfile(PathName,nameToSave))
+end
 
 diary off
