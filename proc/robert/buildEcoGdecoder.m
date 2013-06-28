@@ -120,10 +120,10 @@ end, clear n
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
 
 %%  9.  assign parameters.
-Use_Thresh=0; lambda=1; 
+Use_Thresh=0; lambda=6; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; smoothfeats=0; featShift=0;
-nfeat=floor(0.9*size(x,2));
-% nfeat=20;
+nfeat=floor(0.9*size(featMat,2));
+% nfeat=95;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(featMat,1)*size(featMat,2))
