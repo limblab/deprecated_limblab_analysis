@@ -144,7 +144,7 @@ for fileInd=1:length(infoStruct)
     % if something is done to cg (portion of the signal cut short to
     % eliminate noise, etc), do that same thing to analog_times.
     if exist('samprate','var')~=1
-        samprate=1000;
+        samprate=parameters.SamplingRate.NumericValue;
     end
     analog_times=(1:size(BCI2000signal,1))/samprate;
 
@@ -171,6 +171,13 @@ for fileInd=1:length(infoStruct)
         % notch filter first
         y=BCI2000signal(:,ismember(parameters.ChannelNames.Value, ...
             infoStruct(fileInd).EMG.channels));
+        if isempty(y)
+            error('no emg channels were found in %s',infoStruct(fileInd).path)
+        end
+        % want to remove huge noise spikes BEFORE filtering, especially
+        % before low-pass filtering, which brings them down much closer to
+        % everything else.  The 30 SDs is not a typo.
+        y=remove_artifacts(y,30);
         samprate=parameters.SamplingRate.NumericValue;
         [b,a]=butter(2,[58 62]/(samprate/2),'stop');
         tempEMG=filtfilt(b,a,double(y));  % yf is channels X samples
@@ -185,7 +192,7 @@ for fileInd=1:length(infoStruct)
         
         % if we're decoding EMG from the FPs, then EMGs are the sig
         sig=[rowBoat(analog_times), filtfilt(bl,al,tempEMG)]; %lowpass filter
-        sig=[sig(:,1), remove_artifacts(sig(:,2:end),3)];
+        % sig=[sig(:,1), remove_artifacts(sig(:,2:end),3)];
         
         % if we're decoding CG or force from the EMGs, then EMGs are the
         % FPs.
@@ -484,7 +491,7 @@ for fileInd=1:length(infoStruct)
                                             numfp=1;
                                             [vaf,~,~,~,y_pred,~,~,~,~,bestf, ...
                                                 bestc,H,~,~,~,~,ytnew,~,~,P] ...
-                                                = predictionsfromfp8(sig,'pos', ...
+                                                = predictionsfromfp8v2(sig,'pos', ...
                                                 numfp,binsize,folds,numlags,numsides,samprate, ...
                                                 fpKeep,fptimes,analog_times,'',wsz,nfeat, ...
                                                 PolynomialOrder,Use_Thresh,words, ...
