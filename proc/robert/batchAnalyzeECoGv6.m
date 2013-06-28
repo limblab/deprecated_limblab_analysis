@@ -13,7 +13,7 @@ function VAFstruct=batchAnalyzeECoGv6(infoStruct,signalToDecode,FPsToUse,paramSt
 %							   	    'force'
 %                                   'xcorr'
 %                                   'chanRatio'
-%               FPsToUse       - one of {'MS','ME','S','EP'}, or a
+%               FPsToUse       - one of {'MS','ME','S','EP','EEG'}, or a
 %                                number indexing this array
 %               paramStructIn  - allows input specifying what values/
 %                                ranges to use for the input parameters.
@@ -98,7 +98,7 @@ function VAFstruct=batchAnalyzeECoGv6(infoStruct,signalToDecode,FPsToUse,paramSt
 VAFstruct=struct('name','','PolynomialOrder',[],'folds',[],'numlags',[], ...
     'wsz',[],'nfeat',[],'smoothfeats',[],'binsize',[],'vaf',[]);
 
-defaultElectrodeTypes={'MS','ME','S','EP'};
+defaultElectrodeTypes={'MS','ME','S','EP','EEG'};
 if ~isnumeric(FPsToUse) && ~ischar(FPsToUse)
     disp('bad input for FPsToUse.  see help')
     return
@@ -399,7 +399,7 @@ for fileInd=1:length(infoStruct)
                                             = predictionsfromfp8v2(sig,'pos', ...
                                             numfp,binsize,folds,numlags,numsides,samprate, ...
                                             fp,fptimes,analog_times,'',wsz,nfeat,PolynomialOrder, ...
-                                            Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:nbands,0); %#ok<ASGLU>
+                                            Use_Thresh,words,emgsamplerate,lambda,smoothfeats,paramStructIn.bands,0); %#ok<ASGLU>
                                         % close                                                        % featShift
                                         warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
                                         warning('on','MATLAB:nearlySingularMatrix')
