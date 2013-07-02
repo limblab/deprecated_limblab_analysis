@@ -302,7 +302,7 @@ fbandsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_fbands))==0);
 sprintfStr_fbands=[sprintfStr_fbands, '= %d { Low High }'];
 f_bands=[0 4; 7 20; 70 115; 130 200; 200 300];
 % only match 2-6 in bandsToUse because LMP does not need to be mentioned in
-% paramBands at all; it will be used if it shows up in bestf.
+% paramBands at all; it will be silently added if it shows up in bestf.
 bandsUsed=regexp(bandsToUse,'[2-6]+','match');
 paramBands=[];
 for n=1:length(bandsUsed)
@@ -343,8 +343,36 @@ sprintfStr_P='Filtering:LFPDecodingFilter matrix Pmatrix';
 cellDataPcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_P))==0);
 sprintfStr_P=[sprintfStr_P, '= 2 %d', repmat(' 0.0',1,PolynomialOrder), ...
     repmat(' %.4f',1,PolynomialOrder)];
-sprintf(sprintfStr,PolynomialOrder,P)
+cellData{cellDataPcell}=sprintf(sprintfStr_P,PolynomialOrder,P);
 
+% numlags
+sprintfStr_numlags='Filtering:LFPDecodingFilter int nBins';
+cellDataNumlagsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_numlags))==0);
+sprintfStr_numlags=[sprintfStr_numlags, '=%d 1 %% %% // ', ...
+    'The number of bins to save in the data buffer.'];
+cellData{cellDataNumlagsCell}=sprintf(sprintfStr_numlags,numlags);
+
+% wsz
+sprintfStr_wsz='Filtering:LFPDecodingFilter int FFTWinSize';
+cellDataWSZcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_wsz))==0);
+sprintfStr_wsz=[sprintfStr_wsz, '=%d 1 0 %% // ', ...
+    'The window size during the FFT calculation.'];
+cellData{cellDataWSZcell}=sprintf(sprintfStr_wsz,wsz);
+
+% smoothfeats
+sprintfStr_smoothfeats='Filtering:LFPDecodingFilter int MovingAverageWindow';
+cellDataSmoothfeatsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_smoothfeats))==0);
+sprintfStr_smoothfeats=[sprintfStr_smoothfeats, '=%d // ', ...
+    'Used for feature smoothing. 0=no smoothing.'];
+cellData{cellDataSmoothfeatsCell}=sprintf(sprintfStr_smoothfeats,smoothfeats);
+
+% now, write out the new parameter file.  tag it with the time of creation
+% so that we don't overwrite anything important.
+
+fid=fopen(fullfile(ParamPathName,[ParamFileName, ...
+    regexprep(datestr(now),{':',' '},{'_','_'})]),'w');
+fprintf(fid,'%c',cellData{:});
+fclose(fid); clear fid
 
 
 % save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
