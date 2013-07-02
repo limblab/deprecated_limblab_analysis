@@ -138,7 +138,7 @@ for fileInd=1:length(infoStruct)
             signal=BCI2000signal;
         end
     elseif regexp(infoStruct(fileInd).path,'\.dat')
-        [signal,states,parameters,~]=load_bcidat(infoStruct(fileInd).path);
+        [signal,states,parameters,~]=load_bcidat(infoStruct(fileInd).path); %#ok<*ASGLU>
         BCI2000signal=signal;
     end
     % if something is done to cg (portion of the signal cut short to
@@ -285,7 +285,7 @@ for fileInd=1:length(infoStruct)
         fp=fp-repmat(mean(fp,1),numfp,1);
         [~,PB] = makefmatbp(fp,analog_times,numfp,0.05,samprate,256);
         
-        R(:,:,1,fileInd)= corrcoef(squeeze(PB(1,:,:))');
+        R(:,:,1,fileInd)= corrcoef(squeeze(PB(1,:,:))'); %#ok<*AGROW>
         R(:,:,2,fileInd)= corrcoef(squeeze(PB(2,:,:))');
         R(:,:,3,fileInd)= corrcoef(squeeze(PB(3,:,:))');
         R(:,:,4,fileInd)= corrcoef(squeeze(PB(4,:,:))');
@@ -304,7 +304,7 @@ for fileInd=1:length(infoStruct)
             % [vmean,vaf,vaftr,r2mean,r2sd,r2,y_pred,y_test,varargout]= ...
             %   predonlyxy_nofeatselect(x,y,PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,smoothflag)
                                                                                         % P                  
-            [~,vaf(:,elecInd),~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(fp,sig(:,2),3,0,1,10,1,1,10,0);
+            [~,vaf(:,elecInd),~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(fp,sig(:,2),3,0,1,10,1,1,10,0); %#ok<NASGU>
         end
         continue
     end
@@ -337,6 +337,12 @@ for fileInd=1:length(infoStruct)
     % the code into parameter-exploration mode.  Otherwise, if given one
     % value for each of the fields of paramStructIn, the code will just
     % run once for each file in infoStruct.
+    if ~iscell(paramStructIn.bands)
+        % if it was just passed in as a string, then put it in a 1x1 cell
+        % so that the length will properly reflect the number of times we
+        % want the code to execute.
+        paramStructIn.bands={paramStructIn.bands};
+    end
     for PolynomialOrder=paramStructIn.PolynomialOrder
         for folds=paramStructIn.folds
             for numlags=paramStructIn.numlags
@@ -389,114 +395,22 @@ for fileInd=1:length(infoStruct)
                                 sig=[rowBoat(analog_times), rowBoat(forceSignal)];
                             end
                             for binsize=paramStructIn.binsize
-                                for lambda=paramStructIn.lambda;
-                                    if paramStructIn.fpSingle==0
-                                        numfp=size(fp,1);
-                                        warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-                                        warning('off','MATLAB:nearlySingularMatrix')                                        
-                                        [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~,~,~,ytnew,~,~,P, ...
-                                            ~,~,vaf_vald,ytnew_vald,y_pred_vald,P_vald,r2_vald] ...
-                                            = predictionsfromfp8v2(sig,'pos', ...
-                                            numfp,binsize,folds,numlags,numsides,samprate, ...
-                                            fp,fptimes,analog_times,'',wsz,nfeat,PolynomialOrder, ...
-                                            Use_Thresh,words,emgsamplerate,lambda,smoothfeats,paramStructIn.bands,0); %#ok<ASGLU>
-                                        % close                                                        % featShift
-                                        warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
-                                        warning('on','MATLAB:nearlySingularMatrix')
-                                        [~,name,ext]=fileparts(infoStruct(fileInd).path);
-                                        VAFstruct(fileInd,m).name=[name,ext];
-                                        VAFstruct(fileInd,m).PolynomialOrder=PolynomialOrder;
-                                        VAFstruct(fileInd,m).folds=folds;
-                                        VAFstruct(fileInd,m).numlags=numlags;
-                                        VAFstruct(fileInd,m).wsz=wsz;
-                                        VAFstruct(fileInd,m).nfeat=nfeat;
-                                        VAFstruct(fileInd,m).smoothfeats=smoothfeats;
-                                        VAFstruct(fileInd,m).binsize=binsize;
-                                        VAFstruct(fileInd,m).vaf=vaf;
-                                        VAFstruct(fileInd,m).lambda=lambda;
-                                        VAFstruct(fileInd,m).vaf_vald=vaf_vald;
-                                        if strcmpi(signalToDecode,'emg')
-                                            VAFstruct(fileInd,m).emg= ...
-                                                infoStruct(fileInd).EMG.channels;
-                                        end
-                                        VAFstruct(fileInd,m).montage= ...
-                                            infoStruct(fileInd).montage{strcmp(FPsToUse, ...
-                                            defaultElectrodeTypes)};
-                                        VAFstruct(fileInd,m).electrodeType=FPsToUse;
-                                        VAFstruct(fileInd,m).bestc=bestc;
-                                        VAFstruct(fileInd,m).bestf=bestf;
-                                        VAFstruct(fileInd,m).signalToDecode=signalToDecode;
-                                        VAFstruct(fileInd,m).H=H;
-                                        VAFstruct(fileInd,m).P=P;
-                                        m=m+1;
-                                        
-                                        % export so we can look at raw data
-                                        % comparisons, maybe do the weights
-                                        % analysis.
-                                        assignin('base','y_pred',y_pred)
-                                        assignin('base','ytnew',ytnew)
-                                        assignin('base','bestf',bestf)
-                                        assignin('base','bestc',bestc)
-                                        assignin('base','H',H)
-                                        assignin('base','vaf',vaf)
-                                        assignin('base','sig',sig)
-                                        
-                                        fprintf(1,'file %s.\n',infoStruct(fileInd).path)
-                                        
-                                        if isnumeric(FPsToUse)
-                                            fprintf(1,'Using %s electrodes.\n', ...
-                                                defaultElectrodeTypes{FPsToUse})
-                                        elseif ischar(FPsToUse)
-                                            fprintf(1,'Using %s electrodes.\n', ...
-                                                defaultElectrodeTypes{strcmpi(defaultElectrodeTypes,FPsToUse)})
-                                        end
-                                        
-                                        % echo to the command window for the diary.
-                                        fprintf(1,'folds=%d\n',folds)
-                                        fprintf(1,'numlags=%d\n',numlags)
-                                        fprintf(1,'lambda=%d\n',lambda)
-                                        fprintf(1,'wsz=%d\n',wsz)
-                                        fprintf(1,'nfeat=%d of a possible %d\n',nfeat,size(fp,1)*nbands)
-                                        fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
-                                        fprintf(1,'smoothfeats=%d\n',smoothfeats)
-                                        fprintf(1,'binsize=%.2f\n',binsize)
-                                        
-                                        % fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
-                                        % fprintf(1,'zscoring fp signals\n')
-                                        % OR
-                                        fprintf(1,'\n')
-                                        if strcmpi(signalToDecode,'CG') && size(cgz,1)<22
-                                            fprintf(1,'elimindating %d bad cg signals\n', ...
-                                                22-size(cgz,1))
-                                        else
-                                            fprintf(1,'\n')
-                                        end
-                                        
-                                        [vaf,vaf_vald]
-                                        
-                                        formatstr='%s vaf mean across folds:    %.4f';
-                                        if size(sig,2)>2
-                                            for n=2:size(sig,2)
-                                                formatstr=[formatstr, '    %.4f'];
-                                            end
-                                            clear n
-                                        end
-                                        formatstr=[formatstr, '\n'];
-                                        fprintf(1,formatstr,signalToDecode,mean(nonzeros(vaf),1))
-                                        fprintf(1,'\noverall mean vaf %.4f\n',mean(vaf(:)))
-                                    else
-                                        for fpSingleInd=1:length(infoStruct(fileInd).montage{strcmp(FPsToUse,...
-                                                defaultElectrodeTypes)})
-                                            fpKeep=fp(fpSingleInd,:);
-                                            numfp=1;
-                                            [vaf,~,~,~,y_pred,~,~,~,~,bestf, ...
-                                                bestc,H,~,~,~,~,ytnew,~,~,P] ...
+                                for lambda=paramStructIn.lambda;                                    
+                                    for bandGrps=1:length(paramStructIn.bands)
+                                        if paramStructIn.fpSingle==0
+                                            numfp=size(fp,1);
+                                            warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                                            warning('off','MATLAB:nearlySingularMatrix')
+                                            [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~,~,~,ytnew,~,~,P, ...
+                                                ~,~,vaf_vald,ytnew_vald,y_pred_vald,P_vald,r2_vald] ...
                                                 = predictionsfromfp8v2(sig,'pos', ...
                                                 numfp,binsize,folds,numlags,numsides,samprate, ...
-                                                fpKeep,fptimes,analog_times,'',wsz,nfeat, ...
-                                                PolynomialOrder,Use_Thresh,words, ...
-                                                emgsamplerate,lambda,smoothfeats,1:nbands,0);
-                                            % close
+                                                fp,fptimes,analog_times,'',wsz,nfeat,PolynomialOrder, ...
+                                                Use_Thresh,words,emgsamplerate,lambda,smoothfeats, ...
+                                                paramStructIn.bands{bandGrps},0); %#ok<NASGU,ASGLU>
+                                            % close                                                        % featShift
+                                            warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
+                                            warning('on','MATLAB:nearlySingularMatrix')
                                             [~,name,ext]=fileparts(infoStruct(fileInd).path);
                                             VAFstruct(fileInd,m).name=[name,ext];
                                             VAFstruct(fileInd,m).PolynomialOrder=PolynomialOrder;
@@ -508,13 +422,14 @@ for fileInd=1:length(infoStruct)
                                             VAFstruct(fileInd,m).binsize=binsize;
                                             VAFstruct(fileInd,m).vaf=vaf;
                                             VAFstruct(fileInd,m).lambda=lambda;
+                                            VAFstruct(fileInd,m).vaf_vald=vaf_vald;
                                             if strcmpi(signalToDecode,'emg')
                                                 VAFstruct(fileInd,m).emg= ...
                                                     infoStruct(fileInd).EMG.channels;
                                             end
                                             VAFstruct(fileInd,m).montage= ...
                                                 infoStruct(fileInd).montage{strcmp(FPsToUse, ...
-                                                defaultElectrodeTypes)}(fpSingleInd);
+                                                defaultElectrodeTypes)};
                                             VAFstruct(fileInd,m).electrodeType=FPsToUse;
                                             VAFstruct(fileInd,m).bestc=bestc;
                                             VAFstruct(fileInd,m).bestf=bestf;
@@ -549,7 +464,7 @@ for fileInd=1:length(infoStruct)
                                             fprintf(1,'numlags=%d\n',numlags)
                                             fprintf(1,'lambda=%d\n',lambda)
                                             fprintf(1,'wsz=%d\n',wsz)
-                                            fprintf(1,'nfeat=%d\n',nfeat)
+                                            fprintf(1,'nfeat=%d of a possible %d\n',nfeat,size(fp,1)*nbands)
                                             fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
                                             fprintf(1,'smoothfeats=%d\n',smoothfeats)
                                             fprintf(1,'binsize=%.2f\n',binsize)
@@ -565,7 +480,7 @@ for fileInd=1:length(infoStruct)
                                                 fprintf(1,'\n')
                                             end
                                             
-                                            vaf
+                                            [vaf,vaf_vald]                                              %#ok<NOPRT>
                                             
                                             formatstr='%s vaf mean across folds:    %.4f';
                                             if size(sig,2)>2
@@ -575,12 +490,111 @@ for fileInd=1:length(infoStruct)
                                                 clear n
                                             end
                                             formatstr=[formatstr, '\n'];
-                                            fprintf(1,formatstr,signalToDecode,mean(vaf,1))
+                                            fprintf(1,formatstr,signalToDecode,mean(nonzeros(vaf),1))
                                             fprintf(1,'\noverall mean vaf %.4f\n',mean(vaf(:)))
-                                            fprintf(1,'single channel: %d \n',fpSingleInd)
-                                        end % fpSingle for loop
-                                    end % fpSingle if statement
-                                    assignin('base','VAFstruct',VAFstruct)
+                                        else
+                                            warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                                            warning('off','MATLAB:nearlySingularMatrix')
+                                            for fpSingleInd=1:length(infoStruct(fileInd).montage{strcmp(FPsToUse,...
+                                                    defaultElectrodeTypes)})
+                                                fpKeep=fp(fpSingleInd,:);
+                                                numfp=1;
+                                                [vaf,~,~,~,y_pred,~,~,~,~,bestf, ...
+                                                    bestc,H,~,~,~,~,ytnew,~,~,P] ...
+                                                    = predictionsfromfp8v2(sig,'pos', ...
+                                                    numfp,binsize,folds,numlags,numsides,samprate, ...
+                                                    fpKeep,fptimes,analog_times,'',wsz,nfeat, ...
+                                                    PolynomialOrder,Use_Thresh,words, ...
+                                                    emgsamplerate,lambda,smoothfeats, ...
+                                                    paramStructIn.bands{bandGrps},0);
+                                                warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
+                                                warning('on','MATLAB:nearlySingularMatrix')
+                                                % close
+                                                [~,name,ext]=fileparts(infoStruct(fileInd).path);
+                                                VAFstruct(fileInd,m).name=[name,ext];
+                                                VAFstruct(fileInd,m).PolynomialOrder=PolynomialOrder;
+                                                VAFstruct(fileInd,m).folds=folds;
+                                                VAFstruct(fileInd,m).numlags=numlags;
+                                                VAFstruct(fileInd,m).wsz=wsz;
+                                                VAFstruct(fileInd,m).nfeat=nfeat;
+                                                VAFstruct(fileInd,m).smoothfeats=smoothfeats;
+                                                VAFstruct(fileInd,m).binsize=binsize;
+                                                VAFstruct(fileInd,m).vaf=vaf;
+                                                VAFstruct(fileInd,m).lambda=lambda;
+                                                if strcmpi(signalToDecode,'emg')
+                                                    VAFstruct(fileInd,m).emg= ...
+                                                        infoStruct(fileInd).EMG.channels;
+                                                end
+                                                VAFstruct(fileInd,m).montage= ...
+                                                    infoStruct(fileInd).montage{strcmp(FPsToUse, ...
+                                                    defaultElectrodeTypes)}(fpSingleInd);
+                                                VAFstruct(fileInd,m).electrodeType=FPsToUse;
+                                                VAFstruct(fileInd,m).bestc=bestc;
+                                                VAFstruct(fileInd,m).bestf=bestf;
+                                                VAFstruct(fileInd,m).signalToDecode=signalToDecode;
+                                                VAFstruct(fileInd,m).H=H;
+                                                VAFstruct(fileInd,m).P=P;
+                                                m=m+1;
+                                                
+                                                % export so we can look at raw data
+                                                % comparisons, maybe do the weights
+                                                % analysis.
+                                                assignin('base','y_pred',y_pred)
+                                                assignin('base','ytnew',ytnew)
+                                                assignin('base','bestf',bestf)
+                                                assignin('base','bestc',bestc)
+                                                assignin('base','H',H)
+                                                assignin('base','vaf',vaf)
+                                                assignin('base','sig',sig)
+                                                
+                                                fprintf(1,'file %s.\n',infoStruct(fileInd).path)
+                                                
+                                                if isnumeric(FPsToUse)
+                                                    fprintf(1,'Using %s electrodes.\n', ...
+                                                        defaultElectrodeTypes{FPsToUse})
+                                                elseif ischar(FPsToUse)
+                                                    fprintf(1,'Using %s electrodes.\n', ...
+                                                        defaultElectrodeTypes{strcmpi(defaultElectrodeTypes,FPsToUse)})
+                                                end
+                                                
+                                                % echo to the command window for the diary.
+                                                fprintf(1,'folds=%d\n',folds)
+                                                fprintf(1,'numlags=%d\n',numlags)
+                                                fprintf(1,'lambda=%d\n',lambda)
+                                                fprintf(1,'wsz=%d\n',wsz)
+                                                fprintf(1,'nfeat=%d\n',nfeat)
+                                                fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+                                                fprintf(1,'smoothfeats=%d\n',smoothfeats)
+                                                fprintf(1,'binsize=%.2f\n',binsize)
+                                                
+                                                % fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
+                                                % fprintf(1,'zscoring fp signals\n')
+                                                % OR
+                                                fprintf(1,'\n')
+                                                if strcmpi(signalToDecode,'CG') && size(cgz,1)<22
+                                                    fprintf(1,'elimindating %d bad cg signals\n', ...
+                                                        22-size(cgz,1))
+                                                else
+                                                    fprintf(1,'\n')
+                                                end
+                                                
+                                                vaf                                                     %#ok<NOPRT>
+                                                
+                                                formatstr='%s vaf mean across folds:    %.4f';
+                                                if size(sig,2)>2
+                                                    for n=2:size(sig,2)
+                                                        formatstr=[formatstr, '    %.4f'];
+                                                    end
+                                                    clear n
+                                                end
+                                                formatstr=[formatstr, '\n'];
+                                                fprintf(1,formatstr,signalToDecode,mean(vaf,1))
+                                                fprintf(1,'\noverall mean vaf %.4f\n',mean(vaf(:)))
+                                                fprintf(1,'single channel: %d \n',fpSingleInd)
+                                            end % fpSingle for loop
+                                        end % fpSingle if statement
+                                        assignin('base','VAFstruct',VAFstruct)
+                                    end % band selection
                                 end % lambda
                             end % binsize
                         end % smoothfeats
