@@ -281,6 +281,8 @@ startind=1;
 if any(strcmp(bndGroups,'1'))
     PBtemp(1,:,:)=LMP;
     startind=2;
+else
+    PBtemp=zeros(1,size(PA,2),size(PA,3));
 end
 for n=startind:length(bndGroups)
     evalstr='PA(';
