@@ -11,28 +11,29 @@ ciSig = 30; %degrees
 % doType = [0 2]; % target, final
 % doType = [0 3]; % target, pre
 % doType = [1 0]; % movement, peak
-doType = [1 1]; % movement, initial
+% doType = [1 1]; % movement, initial
 % doType = [1 2]; % movement, final
-% doType = [1 3]; % move, pre
+doType = [1 3]; % move, pre
 
 
 % Define locations
-pmdDir = '/Users/Matt/Desktop/mrt/pmd/BDFStructs';
-m1Dir = '/Users/Matt/Desktop/mrt/m1/BDFStructs';
+pmdDir = 'Z:\MrT_9I4\PMd\Matt\BDFStructs';
+m1Dir = 'Z:\MrT_9I4\M1\Matt\BDFStructs';
 
-useDate = '05272013';
+useDate = '2013-07-02';
+useDate2 = '07022013';
 filePreM1 = 'MrT_M1_CO_FF_';
 filePrePMd = 'MrT_PMd_CO_FF_';
 
 if isempty(loadMat)
     
-    blM1File = fullfile(m1Dir,useDate,[filePreM1 'BL_' useDate '_001.mat']); %baseline file
-    adM1File = fullfile(m1Dir,useDate,[filePreM1 'AD_' useDate '_002.mat']); %adaptation file
-    woM1File = fullfile(m1Dir,useDate,[filePreM1 'WO_' useDate '_003.mat']); %washout file
+    blM1File = fullfile(m1Dir,useDate,[filePreM1 'BL_' useDate2 '_001.mat']); %baseline file
+    adM1File = fullfile(m1Dir,useDate,[filePreM1 'AD_' useDate2 '_002.mat']); %adaptation file
+    woM1File = fullfile(m1Dir,useDate,[filePreM1 'WO_' useDate2 '_003.mat']); %washout file
     
-    blPMdFile = fullfile(pmdDir,useDate,[filePrePMd 'BL_' useDate '_001.mat']); %baseline file
-    adPMdFile = fullfile(pmdDir,useDate,[filePrePMd 'AD_' useDate '_002.mat']); %adaptation file
-    woPMdFile = fullfile(pmdDir,useDate,[filePrePMd 'WO_' useDate '_003.mat']); %washout file
+    blPMdFile = fullfile(pmdDir,useDate,[filePrePMd 'BL_' useDate2 '_001.mat']); %baseline file
+    adPMdFile = fullfile(pmdDir,useDate,[filePrePMd 'AD_' useDate2 '_002.mat']); %adaptation file
+    woPMdFile = fullfile(pmdDir,useDate,[filePrePMd 'WO_' useDate2 '_003.mat']); %washout file
     
     % Get the pds for M1 cells
     disp('Baseline M1...')

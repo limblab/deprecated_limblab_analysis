@@ -128,20 +128,9 @@ end
 theta = wrapAngle(theta,0); % make sure it goes from [-pi,pi)
 
 % Do bootstrapping
-pds = zeros(length(neural),numIters);
+% [pds,cis] = regressTuningCurves(fr,theta,{'bootstrapping',numIters,sig},'doplots',doPlots);
+[pds,cis] = vectorSumPDs(fr,theta,{'none'},'doplots',doPlots);
 
-for iter = 1:numIters
-    tempfr = zeros(size(fr));
-    tempTheta = zeros(size(fr));
-    for unit = 1:length(neural)
-        randInds = randi([1 size(fr,1)],size(fr,1),1);
-        tempfr(:,unit) = fr(randInds,unit);
-        tempTheta(:,unit) = theta(randInds);
-    end
-    [tunCurves, ~] = regressTuningCurves(tempfr,zeros(size(tempfr)),tempTheta,doPlots);
-    pds(:,iter) = tunCurves(:,3);
-end
 
-pds = sort(pds,2);
-cis = [pds(:,ceil(numIters - sig*numIters)), pds(:,floor(sig*numIters))].*180./pi;
-pds = mean(pds,2).*180./pi;
+
+
