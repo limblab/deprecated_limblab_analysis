@@ -43,9 +43,9 @@ function [H1,H2]=plot_tail_choices(tt,tt_hdr,varargin)
     trend=polyval(p,tt_stim_up(:,tt_hdr.bump_time));
     
     %test beginning vs end using binomial theorem
-    endtime=tt_stim(end,tt_hdr.bump_time);
-    starttime=tt_stim(1,tt_hdr.bump_time);
-    halftime=(endtime-starttime)/2;
+    endtime=max(tt_stim(:,tt_hdr.bump_time));
+    starttime=min(tt_stim(:,tt_hdr.bump_time));
+    halftime=starttime+(endtime-starttime)/2;
     firsthalf=(tt_stim_up(:,tt_hdr.bump_time)<halftime);
     secondhalf=(tt_stim_up(:,tt_hdr.bump_time)>halftime);
     total_beginning=sum(firsthalf);
@@ -82,9 +82,9 @@ function [H1,H2]=plot_tail_choices(tt,tt_hdr,varargin)
     trend=polyval(p,tt_stim_down(:,tt_hdr.bump_time));
     
     %test beginning vs end using binomial theorem
-    endtime=tt_stim(end,tt_hdr.bump_time);
-    starttime=tt_stim(1,tt_hdr.bump_time);
-    halftime=(endtime-starttime)/2;
+    endtime=max(tt_stim(:,tt_hdr.bump_time));
+    starttime=min(tt_stim(:,tt_hdr.bump_time));
+    halftime=starttime+(endtime-starttime)/2;
     firsthalf=(tt_stim_down(:,tt_hdr.bump_time)<halftime);
     secondhalf=(tt_stim_down(:,tt_hdr.bump_time)>halftime);
     total_beginning=sum(firsthalf);

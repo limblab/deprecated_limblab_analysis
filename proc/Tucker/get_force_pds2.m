@@ -4,7 +4,7 @@
 
 %%load data
     folderpath='E:\processing\post_DARPA\force PD\';
-    fname='Kramer_BC_06112013_tucker_no_stim_001_bumponly.nev';
+    fname='Kramer_BC_07082013_tucker_no_stim_random_tgt_001.nev';
     savename=strcat(fname(1:end-3),'mat');
     
     foldercontents=dir(folderpath);
@@ -16,6 +16,22 @@
     else
         load(strcat(folderpath,savename))
     end
+    file_list=strcat(folderpath,savename);
+    if ~isempty(strmatch( strcat(fname(1:end-4),'_bumponly.nev'),fnames))
+        disp(strcat('loading spike data from: ',fname(1:end-4),'_bumponly.nev'))
+        NEVNSx=load_NEVNSX_object(strcat(folderpath,fname(1:end-4),'_bumponly.nev'));
+        bdf2=get_nev_mat_data(NEVNSx);
+        bdf.units=bdf2.units;
+        clear bdf2
+        file_list=[file_list '; ' strcat(folderpath,fname(1:end-4),'_bumponly.nev')];
+    end
+    
+        %log the files used for this PD analysis
+    mkdir(folderpath,strcat('pds_',date));
+    folderpath=strcat(folderpath,'pds_',date,'\');
+    fid=fopen(strcat(folderpath,'file_list.txt'),'w+');
+    fprintf(fid,'%s',file_list);
+    
     
     %identify time vector for binning
     vt = bdf.vel(:,1);

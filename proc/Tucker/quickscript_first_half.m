@@ -3,8 +3,10 @@
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\post_DARPA\bump_task\211degstim\';
+folderpath_base='E:\processing\post_DARPA\bump_task\352degstim\';
 matchstring='Kramer';
+
+
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
 file_list=autoconvert_nev_to_bdf(folderpath_base,matchstring);
@@ -15,9 +17,12 @@ bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,0);
 
 make_tdf
 
+mask=bdf.tt(:,bdf.tt_hdr.bump_time)< ((max(bdf.tt(:,bdf.tt_hdr.bump_time))-min(bdf.tt(:,bdf.tt_hdr.bump_time)))/2+min(bdf.tt(:,bdf.tt_hdr.bump_time)));
+bdf.tt=bdf.tt(mask,:);
+
 %make folder to save into:
-mkdir(folderpath_base,strcat('Psychometrics_',date));
-folderpath=strcat(folderpath_base,'Psychometrics_',date,'\');
+mkdir(folderpath_base,strcat('Psychometrics_first_half_',date));
+folderpath=strcat(folderpath_base,'Psychometrics_first_half_',date,'\');
 disp('saving new figures and files to:')
 disp(folderpath)
 fid=fopen(strcat(folderpath,'file_list.txt'),'w+');

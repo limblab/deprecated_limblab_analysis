@@ -6,8 +6,8 @@
 %% load the bdf from a file
 %filename='E:\processing\270deg_single_electrode_80ua\Kramer_BC_05072013_tucker_4ch_stim_270deg_tgt_single_elec_80ua_001.mat';
 %filename='E:\processing\20deg_single_electrode_80ua\Kramer_BC_0426013_tucker_4ch_stim_21deg_tgt_single_elec_80ua_001.mat';
-folderpath='E:\processing\210deg_single_electrode_80ua\';
-filename='Kramer_BC_05012013_tucker_4ch_stim_210deg_tgt_single_elec_80ua_001.mat';
+folderpath='E:\processing\post_DARPA\bump_task\352degstim\sequester\';
+filename='Kramer_BC_06072013_tucker_352deg_4ch_stim_001.mat';
 
 load(strcat(folderpath,filename))
 %% make tt fields

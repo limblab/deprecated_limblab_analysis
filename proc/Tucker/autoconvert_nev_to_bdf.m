@@ -13,9 +13,7 @@ for i=1:length(foldercontents)
     if (length(fnames{i})>3)
         if (strcmp(fnames{i}((length(fnames{i})-3):end),'.nev') & ~isempty(strfind(fnames{i},matchstring)))
             
-            disp(file_list)
-            disp(fnames{i})
-            file_list=strcat(file_list, ', ', fnames{i});
+           file_list=strcat(file_list, ', ', fnames{i});
             if isempty(strmatch( strcat( fnames{i}(1:(length(fnames{i})-3)), 'mat'),fnames))
                 %if we haven't found a .mat file to match the .nev then make
                 %one
