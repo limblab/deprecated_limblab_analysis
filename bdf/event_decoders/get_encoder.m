@@ -35,9 +35,11 @@ time_stamps = ts( ts_index );
 % assemble encoder signals
 encoder = zeros(length(ts_index)-2, 3);
 
-encoder(:,1) = time_stamps(1:end-2);
-encoder(:,2) = strobed_events(ts_index(1:end-2),2) + strobed_events(ts_index(1:end-2)+1,2)*2^8 - 32765;
-encoder(:,3) = strobed_events(ts_index(1:end-2)+2,2) + strobed_events(ts_index(1:end-2)+3,2)*2^8 - 32765;
+if (length(ts_index)-2>=1)
+    encoder(:,1) = time_stamps(1:end-2);
+    encoder(:,2) = strobed_events(ts_index(1:end-2),2) + strobed_events(ts_index(1:end-2)+1,2)*2^8 - 32765;
+    encoder(:,3) = strobed_events(ts_index(1:end-2)+2,2) + strobed_events(ts_index(1:end-2)+3,2)*2^8 - 32765;
+end
 
 temp_indices = (diff(encoder(:,2))<50 & diff(encoder(:,2))>-50 &...
     diff(encoder(:,3))<50 & diff(encoder(:,3))>-50);
