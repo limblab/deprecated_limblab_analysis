@@ -1,5 +1,5 @@
 function [ Status words Delay ] = CBWait4Word( myword, interval, maxwait, mask, mode )
-% CBWait4Word: Run a tight loop, returning when the required word appears at Cerebus
+% CBWait4Word: Run a tight loop, returning when the required masked word appears at Cerebus
 %
 % Parameters:
 %
