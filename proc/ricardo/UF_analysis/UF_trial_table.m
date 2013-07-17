@@ -4,7 +4,7 @@ databurst_version_temp = zeros(size(bdf.databursts,1),1);
 databurst_length_temp = zeros(size(bdf.databursts,1),1);
 for iDataburst = 1:size(bdf.databursts,1)
     databurst_length_temp(iDataburst) = length(bdf.databursts{iDataburst,2});
-    if databurst_length_temp(iDataburst)~=0
+    if databurst_length_temp(iDataburst) > 1
         databurst_version_temp(iDataburst) = bdf.databursts{iDataburst,2}(2);
     else
         databurst_version_temp(iDataburst) = -1;

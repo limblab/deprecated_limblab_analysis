@@ -259,15 +259,31 @@ function out_struct = calc_from_raw(raw_struct, opts)
             
             [b,a] = butter(4, 200/adfreq);
             raw_force = zeros(length(analog_time_base), 6);
+            
+            % Calculate force offsets for this particular file
+            % Find longest time range of no movement
+            temp_d = diff(out_struct.pos(:,2))<.004 & diff(out_struct.pos(:,3))<.004;
+            q = diff([0 temp_d(:)' 0]);
+            v1 = find(q == 1); v2 = find(q == -1); 
+            v = v2-v1;
+            [max_v,max_v_ind] = max(v);
+            no_mov_idx = v1(max_v_ind):v2(max_v_ind);
+            force_offsets_temp = zeros(1,6);
+            
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
                 a_data = double(get_analog_signal(out_struct, channame));   
                 a_data(:,2) = filtfilt(b, a, a_data(:,2));
-                a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);
-                
+                a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);                
                 raw_force(:,c) = a_data';
+                force_offsets_temp(c) = mean(a_data(no_mov_idx));
             end
-
+            
+            if max_v > 1000  % Only use if there are more than 
+                             % 1000 contiguous movement free samples                
+                force_offsets = force_offsets_temp;
+            end
+            
             force_offsets = repmat(force_offsets, length(raw_force), 1);
             out_struct.force = (raw_force - force_offsets) * fhcal * rotcal;
             clear force_offsets; % cleanup a little
@@ -284,10 +300,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 %                 out_struct.force(p,:) = out_struct.force(p,:) * r;
 %             end
 
-            temp = out_struct.force;
-            
-            
-            
+            temp = out_struct.force;            
             out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
             out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
             clear temp

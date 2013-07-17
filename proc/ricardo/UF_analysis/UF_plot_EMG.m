@@ -1,4 +1,6 @@
-function UF_plot_EMG(UF_struct)
+function UF_plot_EMG(UF_struct,save_figs)
+    mean_range = [0.05 0.075];
+    figHandles = [];
     plot_idx = 1:size(UF_struct.trial_table,1);
     for iEMG = 1:UF_struct.num_emg
         baseline_idx = find(UF_struct.t_axis>-.05 & UF_struct.t_axis<0);
@@ -6,8 +8,7 @@ function UF_plot_EMG(UF_struct)
         max_emg = 0.001;
         emg_mean = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));
         emg_std = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));
-        emg_sem = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));
-        mean_range = [0.05 0.075];
+        emg_sem = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));        
         min_n = 1000;
         max_n = 0;
         n_bumps = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.field_indexes));
@@ -17,7 +18,7 @@ function UF_plot_EMG(UF_struct)
         smooth_n = 10;
 
         for iBias = 1:length(UF_struct.bias_indexes)
-            figure 
+            figHandles(end+1) = figure; 
             for iField = 1:length(UF_struct.field_indexes)
                 idx = intersect(UF_struct.field_indexes{iField},UF_struct.bias_indexes{iBias});
                 idx = intersect(idx,plot_idx);
@@ -98,7 +99,7 @@ function UF_plot_EMG(UF_struct)
             set(h,'Visible','on');            
         end
 
-        figure
+        figHandles(end+1) = figure; 
         subplot(211)
         hold on
         for iBias = 1:length(UF_struct.bias_indexes)
@@ -172,7 +173,11 @@ function UF_plot_EMG(UF_struct)
             [UF_struct.emgnames{iEMG} '.  Average EMG between ' num2str(mean_range(1)) ' and ' num2str(mean_range(2)) ' s. '...
             num2str(min_n) ' <= n <= ' num2str(max_n)]},...
             'interpreter','none')
+        plot([-10 500],[0 0],'k--')
 
+    end
+    if save_figs
+        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'EMG')
     end
 end
 
@@ -182,4 +187,7 @@ function h = errorarea(x,ymean,yerror,c)
     yerror = reshape(yerror,size(x,1),size(x,2));
     h = area(x([1:end end:-1:1]),[ymean(1:end)+yerror(1:end) ymean(end:-1:1)-yerror(end:-1:1)],...
         'FaceColor',c,'LineStyle','none');
+    hChildren = get(gca,'children');
+    hType = get(hChildren,'Type');
+    set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]))
 end

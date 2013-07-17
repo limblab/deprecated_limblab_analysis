@@ -48,13 +48,15 @@ trial_table_temp = UF_struct.trial_table(rewarded_trials,:);
 trial_table_temp = trial_table_temp(1:end-1,:);
 UF_struct.trial_table = trial_table_temp;
 
-num_samples = sum(bdf.pos(:,1)>=UF_struct.trial_table(1,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1) &...
-    bdf.pos(:,1)<=UF_struct.trial_table(1,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(2));
+num_samples = sum(bdf.pos(:,1)>=UF_struct.trial_table(2,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1) &...
+    bdf.pos(:,1)<=UF_struct.trial_table(2,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(2));
 t_vector = round(bdf.pos(:,1)*30000)/30000;
 UF_struct.t_axis = (1/UF_struct.fs:1/UF_struct.fs:num_samples/UF_struct.fs)+UF_struct.trial_range(1);
 [~,UF_struct.t_zero_idx] = min(abs(UF_struct.t_axis));
 
-[~,first_idx,~] = intersect(t_vector,round((UF_struct.trial_table(:,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1))*1000)/1000);
+[~,first_idx,table_idx] = intersect(t_vector,round((UF_struct.trial_table(:,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1))*1000)/1000);
+UF_struct.trial_table = UF_struct.trial_table(table_idx,:);
+
 UF_struct.idx_table = repmat(first_idx,1,num_samples) + repmat(1:num_samples,size(first_idx,1),1);
 UF_struct.x_pos = reshape(bdf.pos(UF_struct.idx_table,2),[],num_samples);
 UF_struct.y_pos = reshape(bdf.pos(UF_struct.idx_table,3),[],num_samples);
@@ -62,8 +64,8 @@ UF_struct.x_vel = reshape(vel(UF_struct.idx_table,2),[],num_samples);
 UF_struct.y_vel = reshape(vel(UF_struct.idx_table,3),[],num_samples);
 UF_struct.x_acc = reshape(acc(UF_struct.idx_table,2),[],num_samples);
 UF_struct.y_acc = reshape(acc(UF_struct.idx_table,3),[],num_samples);
-UF_struct.x_force = -reshape(bdf.force(UF_struct.idx_table,2),[],num_samples);
-UF_struct.y_force = -reshape(bdf.force(UF_struct.idx_table,3),[],num_samples);
+UF_struct.x_force = -(1-2*file_details.rot_handle)*reshape(bdf.force(UF_struct.idx_table,2),[],num_samples);
+UF_struct.y_force = -(1-2*file_details.rot_handle)*reshape(bdf.force(UF_struct.idx_table,3),[],num_samples);
 
 if UF_struct.num_emg>0
     UF_struct.emg_all = zeros(UF_struct.num_emg,size(UF_struct.trial_table,1),num_samples);

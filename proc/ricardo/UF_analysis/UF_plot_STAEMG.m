@@ -1,4 +1,5 @@
 function UF_plot_STAEMG(UF_struct,bdf)
+figHandles = [];
 if isfield(bdf,'units')
 
     UF_struct.t_axis = bdf.pos(:,1);
@@ -22,7 +23,7 @@ if isfield(bdf,'units')
         it_fake = sort(it+1000*rand+500);
         it_fake = it_fake(it_fake<length(t));
         
-        figure;
+        figHandles(end+1) = figure;
         for iEMG = 1:UF_struct.num_emg
             emg_mat = zeros(length(ts),length(emg_window));
             idx_mat = round(repmat(idx_vec,length(it),1) + repmat(it',1,size(idx_vec,2)));
@@ -66,5 +67,8 @@ if isfield(bdf,'units')
             'interpreter','none');
         set(gca,'Visible','off');
         set(h,'Visible','on');
+    end
+    if save_figs
+        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'STAEMG')
     end
 end

@@ -1,4 +1,5 @@
-function UF_plot_SSEP(UF_struct,bdf)
+function UF_plot_SSEP(UF_struct,bdf,save_figs)
+figHandles = [];
 if isfield(bdf,'units')
     channels = str2double([bdf.analog.channel]);
     SSEP_range = [0.02 0.05];
@@ -8,13 +9,16 @@ if isfield(bdf,'units')
     min_lfp_sem_all = zeros(length(channels),length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.bump_indexes));
 
     lfp_baseline = repmat(mean(UF_struct.lfp_all(:,:,UF_struct.t_axis<0),3),[1 1 size(UF_struct.lfp_all,3)]);
+    
+    lfp_baseline = 0*lfp_baseline;
+    
     UF_struct.lfp_all = UF_struct.lfp_all - lfp_baseline;
     
     for iChannel = 1:length(channels)
         electrode = UF_struct.elec_map(UF_struct.elec_map(:,3)==channels(iChannel),4);
-        figure
+        figHandles(end+1) = figure; 
         figure1_idx = gcf;
-        figure
+        figHandles(end+1) = figure; 
         figure2_idx = gcf;
         lfp_idx = iChannel;
         lfp_temp = squeeze(UF_struct.lfp_all(lfp_idx,:,:));
@@ -37,7 +41,7 @@ if isfield(bdf,'units')
                     idx = intersect(idx,UF_struct.bias_indexes{iBias});
                     idx = idx(mean(abs(lfp_temp(idx,:))') < 2*mean(std(abs(lfp_temp(:,:))')));
                     n_bumps(iBias,iField,iBump) = length(idx); 
-                    errorarea(UF_struct.t_axis,mean(lfp_temp(idx,:),1),1.96*std(lfp_temp(idx,:),1)/sqrt(length(idx)),...
+                    errorarea(UF_struct.t_axis,mean(lfp_temp(idx,:),1),1.96*std(lfp_temp(idx,:),[],1)/sqrt(length(idx)),...
                          min([1 1 1],.7+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)));
                     plot(UF_struct.t_axis,mean(lfp_temp(idx,:),1),'Color',...
                         UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),'LineWidth',2)
@@ -61,7 +65,7 @@ if isfield(bdf,'units')
 %                     sum_lfp_mean(iBias,iField,iBump) = mean(sum(lfp_temp_2,2));
 %                     sum_lfp_sem(iBias,iField,iBump) = std(sum(lfp_temp_2,2))/sqrt(length(idx));
                     legend_str{(iBias-1)*length(UF_struct.field_indexes)+iField} =...
-                        ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) ' deg' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) ' deg'];          
+                        ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) '\circ' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) '\circ'];          
                 end
              end
         end
@@ -100,7 +104,8 @@ if isfield(bdf,'units')
         end
         xlabel('Bump direction (deg)')
         ylabel('Mean SSEP (mV)')
-        legend(legend_str)
+        hleg = legend(legend_str);
+        set(hleg,'FontSize',8)
         
         subplot(222)
         hold on
@@ -184,7 +189,7 @@ min_lfp_mean_all_norm = min_lfp_mean_all./norm_mat;
 %     end
 % end
 
-figure
+figHandles(end+1) = figure; 
 hold on
 parallel_mean = zeros(size(UF_struct.bias_force_directions));
 perpendicular_mean = zeros(size(UF_struct.bias_force_directions));
@@ -211,7 +216,7 @@ title({['Average normalized parallel - perpendicular LFP amplitude (N1) for all 
        ['Bias direction = bump direction'];...
         [UF_struct.UF_file_prefix]},'Interpreter','none');
     
-figure
+figHandles(end+1) = figure; 
 hold on
 parallel_mean = zeros(size(UF_struct.bump_directions));
 perpendicular_mean = zeros(size(UF_struct.bump_directions));
@@ -237,7 +242,7 @@ title({['Average normalized parallel - perpendicular LFP amplitude (N1) for all 
         ['Averaged for all bias force directions'];...
         [UF_struct.UF_file_prefix]},'Interpreter','none');
     
-figure
+figHandles(end+1) = figure; 
 hold on
 parallel_mean = zeros(size(UF_struct.bias_force_directions));
 parallel_sem = zeros(size(UF_struct.bias_force_directions));
@@ -270,7 +275,7 @@ title({['Average normalized parallel - perpendicular LFP amplitude (N1) for all 
         ['Averaged for all bump directions'];...
         [UF_struct.UF_file_prefix]},'Interpreter','none');
     
-figure
+figHandles(end+1) = figure; 
 hold on
 bump_dir_lfp_mean = zeros(1,length(UF_struct.bump_directions));
 bump_dir_lfp_sem = zeros(1,length(UF_struct.bump_directions));
@@ -288,33 +293,50 @@ title({['Average normalized LFP amplitude (N1) for all electrodes'];...
         [UF_struct.UF_file_prefix]},'Interpreter','none');
 
 % parallel_mean-perpendicular_mean
+figHandles(end+1) = figure; 
+hold on
+for iBias = 1:length(UF_struct.bias_indexes)
+    for iField = 1:length(UF_struct.field_indexes)
+        errorbar(180/pi*UF_struct.bump_directions',...
+            squeeze(mean(min_lfp_mean_all_norm(:,iBias,iField,:),1)),...
+            1.96*squeeze(std(min_lfp_mean_all_norm(:,iBias,iField,:),1)),...
+            'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:));
+    end
+end
+xlabel('Bump direction (deg)')
+ylabel('Min SSEP (mV)')
+hleg = legend(legend_str);
+set(hleg,'FontSize',8)
+title({[UF_struct.UF_file_prefix];...
+    ['Mean for all electrodes']},'Interpreter','none');
+   
 
+figHandles(end+1) = figure; 
+hold on
+set(gcf,'NextPlot','add');
+gca = axes;
+h = title({[UF_struct.UF_file_prefix];...
+    'Mean for all electrodes'},'Interpreter','none');
+set(gca,'Visible','off');
+set(h,'Visible','on');
 
+if length(UF_struct.bias_indexes) > 1
+    min_lfp_mat = [];
+    for iBias = 1:length(UF_struct.bias_indexes)
+        subplot(1,length(UF_struct.bias_indexes),iBias)   
+        tmp_mat = squeeze(mean(min_lfp_mean_all_norm));
+        tmp_mat = squeeze(tmp_mat(iBias,:,:));
+        surface(UF_struct.bump_directions*180/pi,UF_struct.field_orientations*180/pi, tmp_mat)
+        xlabel('Bump direction (deg)')
+        ylabel('Field orientation (deg)')
+        zlabel('Min LFP (mV)')
+        title(['Bias: ' num2str(180/pi*UF_struct.bias_force_directions(iBias)) ' deg'])
+    end
+end
+if save_figs
+    save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'SSEP')
+end
 
-% y = lfp_temp(idx,UF_struct.t_axis<0);
-% Fs = UF_struct.fs;                    % Sampling frequency
-% T = 1/Fs;                     % Sample time
-% L = length(y);                     % Length of signal
-% t = (0:L-1)*T;                % Time vector
-% 
-% NFFT = L; 
-% Y = fft(y,NFFT,2);
-% f = Fs/2*linspace(0,1,NFFT/2+1);
-% 
-% figure
-% Y_60 = zeros(size(Y));
-% Y_60(:,f>55 & f<65) = Y(:,f>55 & f<65);
-% Y_filt = Y-Y_60;
-% y_filt = ifft(Y_filt,NFFT,2);
-% hold on;
-% plot(t,mean(y,1),t,mean(y_filt,1))
-% figure
-% plot(f,mean(2*abs(Y(:,1:NFFT/2+1))),f,mean(2*abs(Y_filt(:,1:NFFT/2+1))))
-% 
-% figure
-% [b,a] = butter(2,[55/(Fs/2) 65/(Fs/2)]);
-% y_filt = filtfilt(b,a,mean(y,1));
-% plot(t,mean(y,1),t,mean(y,1)-y_filt)
 end
 
 function h = errorarea(x,ymean,yerror,c)

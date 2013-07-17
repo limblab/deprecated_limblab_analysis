@@ -3,11 +3,11 @@ function [bdf,rw_bdf,UF_struct] = UF_load_data(file_details,reload_data)
 if reload_data        
     % Experimental!        (but then again, what isn't?)
     NEVNSx = concatenate_NEVs(file_details.datapath,file_details.UF_file_prefix);
-    bdf = get_nev_mat_data(NEVNSx,3);
+    bdf = get_nev_mat_data(NEVNSx,'rothandle',file_details.rot_handle,3);
     clear NEVNSx
 
     NEVNSx_RW = concatenate_NEVs(file_details.datapath,file_details.RW_file_prefix);
-    rw_bdf = get_nev_mat_data(NEVNSx_RW,3);
+    rw_bdf = get_nev_mat_data(NEVNSx_RW,file_details.rot_handle,3);
     clear NEVNSx_RW
     
     dummy = 0;
