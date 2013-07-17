@@ -22,7 +22,7 @@ function out_struct = get_cerebus_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     %initial setup
-    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0); %default to lab 1, no force, no eye
+    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0); %default to lab 1, no force, no eye
    
     % Parse arguments
     if (nargin == 1)
@@ -43,6 +43,8 @@ function out_struct = get_cerebus_data(varargin)
             elseif strcmp(opt_str, 'nokin')
                 opts.kin = 0;
                 opts.force = 0;
+            elseif strcmp(opt_str, 'rothandle')
+                opts.rothandle = 1;
             elseif isnumeric(varargin{i})
                 opts.labnum=varargin{i};    %Allow entering of the lab number               
             else 

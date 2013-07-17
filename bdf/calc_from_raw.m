@@ -129,8 +129,10 @@ function out_struct = calc_from_raw(raw_struct, opts)
             elseif isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
                 if datenum(out_struct.meta.datetime) < datenum('10/05/2012')
                     l1=24.75; l2=23.6;
-                else                
+                elseif datenum(out_struct.meta.datetime) < datenum('17-Jul-2013')
                   l1 = 24.765; l2 = 24.13;
+                else
+                    l1 = 24.765; l2 = 23.8125;
                 end
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
@@ -228,6 +230,19 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 rotcal = [1 0; 0 1];                
                 force_offsets = [-.73 .08 .21 -.23 .25 .44];
                 Fy_invert = 1;
+            elseif opts.rothandle
+                % Fx,Fy,scaleX,scaleY from ATI calibration file:
+                % \\citadel\limblab\Software\ATI FT - March
+                % 2011\Calibration\FT7520.cal
+                % fhcal = [Fx;Fy]./[scaleX;scaleY]
+                % force_offsets acquired empirically by recording static
+                % handle.
+                fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
+                        -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
+                rotcal = [-1 0; 0 1];  
+                force_offsets = [306.5423 -847.5678 132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
+                force_offsets = [373.2183 -1017.803 -87.8063 -107.1702 -709.7454 21.6321];
+                Fy_invert = 1;
             else
                 % Fx,Fy,scaleX,scaleY from ATI calibration file:
                 % \\citadel\limblab\Software\ATI FT - March
@@ -237,7 +252,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 % handle.
                 fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
                         -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
-                rotcal = [1 0; 0 1];                
+                rotcal = [1 0; 0 1];  
                 force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
                 Fy_invert = 1;
             end 
@@ -270,6 +285,9 @@ function out_struct = calc_from_raw(raw_struct, opts)
 %             end
 
             temp = out_struct.force;
+            
+            
+            
             out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
             out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
             clear temp
