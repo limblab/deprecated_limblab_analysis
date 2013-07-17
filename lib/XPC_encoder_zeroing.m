@@ -20,3 +20,9 @@ while 1
     pause(.1)
     clc
 end
+
+% Motor stuff:
+% zero2id = getparamid(tg,'Motor Control/zero2','Value');
+% tg.setparam(zero2id,[0 0])
+% constant1 = getparamid(tg,'Constant1','Value');
+% tg.setparam(constant1,0)
