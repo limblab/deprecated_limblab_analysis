@@ -79,7 +79,8 @@ switch lower(sigTest{1})
             
         end
         
-        % find confidence bounds and return as sig
+        % find confidence bounds on PD and return as sig
+        % IN THE FUTURE: maybe have confidence bounds for all three params?
         b2s = sort(b2s,2);
         sig = [b2s(:,ceil(numIters - confLevel*numIters)), b2s(:,floor(confLevel*numIters))].*180./pi;
         

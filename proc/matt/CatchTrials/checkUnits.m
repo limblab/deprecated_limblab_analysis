@@ -1,6 +1,7 @@
 function badUnits = checkUnits(varargin)
-% Checks to ensure units are consistent across all inputs. Unit IDs are
-% expected to be defined by the first column.
+% CHECKUNITS Checks to ensure units are consistent across all inputs. Unit
+% IDs are expected to be defined by the first column. This currently only
+% works with thresholded files and not sorted files
 
 badUnits = [];
 for i = 2:length(varargin)

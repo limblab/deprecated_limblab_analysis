@@ -3,29 +3,35 @@ close all;
 clc;
 
 % loadMat = '05272013_move_peak_bin.mat';
+% loadMat = ['data\05272013_glm.mat'];
+% loadMat = ['data\07022013_glm.mat'];
+% loadMat = ['data\CO_07-02-2013_move_peak.mat'];
 loadMat = [];
 
 ciSig = 30; %degrees
-% doType = [0 0]; % target, peak
-% doType = [0 1]; % target, initial
-% doType = [0 2]; % target, final
-% doType = [0 3]; % target, pre
-% doType = [1 0]; % movement, peak
-% doType = [1 1]; % movement, initial
-% doType = [1 2]; % movement, final
-doType = [1 3]; % move, pre
-
 
 % Define locations
 pmdDir = 'Z:\MrT_9I4\PMd\Matt\BDFStructs';
 m1Dir = 'Z:\MrT_9I4\M1\Matt\BDFStructs';
 
+% useDate = '2013-05-27';
+% useDate2 = '05272013';
+% filePreM1 = 'MrT_M1_CO_FF_';
+% filePrePMd = 'MrT_PMd_CO_FF_kin_';
 useDate = '2013-07-02';
 useDate2 = '07022013';
 filePreM1 = 'MrT_M1_CO_FF_';
-filePrePMd = 'MrT_PMd_CO_FF_';
+filePrePMd = 'MrT_PMd_CO_FF_kin_';
 
 if isempty(loadMat)
+    tuningParams = {'doplots',false,...
+                    'movetime',0.5,...
+                    'sig',0.95,...
+                    'numiters',1000,...
+                    'glmnumsamps','all',...
+                    'glmmodel','vel',...
+                    'glmbin',25,...
+                    'trialtable',[]};
     
     blM1File = fullfile(m1Dir,useDate,[filePreM1 'BL_' useDate2 '_001.mat']); %baseline file
     adM1File = fullfile(m1Dir,useDate,[filePreM1 'AD_' useDate2 '_002.mat']); %adaptation file
@@ -37,35 +43,34 @@ if isempty(loadMat)
     
     % Get the pds for M1 cells
     disp('Baseline M1...')
-    [pdsM1BL,ciM1BL,sgM1BL,ttBL] = fitTuningCurves(blM1File,[],doType,false);
+    [pdsM1BL,ciM1BL,sgM1BL,ttBL] = fitTuningCurves(blM1File,tuningParams);
     disp('Adaptation M1...')
-    [pdsM1AD,ciM1AD,sgM1AD,ttAD] = fitTuningCurves(adM1File,[],doType,false);
+    [pdsM1AD,ciM1AD,sgM1AD,ttAD] = fitTuningCurves(adM1File,tuningParams);
     disp('Washout M1...')
-    [pdsM1WO,ciM1WO,sgM1WO,ttWO] = fitTuningCurves(woM1File,[],doType,false);
+    [pdsM1WO,ciM1WO,sgM1WO,ttWO] = fitTuningCurves(woM1File,tuningParams);
     
     % Get the pds for PMd cells
-    %    Pass in a cell array with the M1 and PMd files
     disp('Baseline PMd...')
-    [pdsPMdBL,ciPMdBL,sgPMdBL] = fitTuningCurves(blPMdFile,ttBL,doType,false);
+    tuningParams{end} = ttBL;
+    [pdsPMdBL,ciPMdBL,sgPMdBL] = fitTuningCurves(blPMdFile,tuningParams);
     disp('Adaptation PMd...')
-    [pdsPMdAD,ciPMdAD,sgPMdAD] = fitTuningCurves(adPMdFile,ttAD,doType,false);
+    tuningParams{end} = ttAD;
+    [pdsPMdAD,ciPMdAD,sgPMdAD] = fitTuningCurves(adPMdFile,tuningParams);
     disp('Washout PMd...')
-    [pdsPMdWO,ciPMdWO,sgPMdWO] = fitTuningCurves(woPMdFile,ttWO,doType,false);
-    
+    tuningParams{end} = ttWO;
+    [pdsPMdWO,ciPMdWO,sgPMdWO] = fitTuningCurves(woPMdFile,tuningParams);
 else
+    % just load data for plotting below
     load(loadMat);
     ciSig = 30; %degrees
 end
 
-% Currently I assume that the spike guide doesn't change between files
-% sigM1BL = angleDiff(ciM1BL(:,1),ciM1BL(:,2)) <= ciSig;
-% sigM1AD = angleDiff(ciM1AD(:,1),ciM1AD(:,2)) <= ciSig;
-% sigM1WO = angleDiff(ciM1WO(:,1),ciM1WO(:,2)) <= ciSig;
-%
-% sigPMdBL = angleDiff(ciPMdBL(:,1),ciPMdBL(:,2)) <= ciSig;
-% sigPMdAD = angleDiff(ciPMdAD(:,1),ciPMdAD(:,2)) <= ciSig;
-% sigPMdWO = angleDiff(ciPMdWO(:,1),ciPMdWO(:,2)) <= ciSig;
 
+%%
+% Classify cells as AAA (kinematic), ABA (dynamic), or memory
+
+
+%%
 sigM1BL = ( angleDiff(pdsM1BL,ciM1BL(:,1)) + angleDiff(pdsM1BL,ciM1BL(:,2)) ) <= ciSig;
 sigM1AD = ( angleDiff(pdsM1AD,ciM1AD(:,1)) + angleDiff(pdsM1AD,ciM1AD(:,2)) ) <= ciSig;
 sigM1WO = ( angleDiff(pdsM1WO,ciM1WO(:,1)) + angleDiff(pdsM1WO,ciM1WO(:,2)) ) <= ciSig;
@@ -101,7 +106,7 @@ diffPMd_WB = wrapAngle(pdsPMdWO(usePMd).*(pi/180) - pdsPMdBL(usePMd).*(pi/180),0
 % hist(diffM1_WB,10);
 % subplot1(2);
 % hist(diffPMd_WB,10);
-
+% 
 % Plot raw PDs
 % figure;
 % hold all;
@@ -153,16 +158,4 @@ for i = 1:length(diffPMd_BB)
 end
 text(0.1,-60,['B  PMd (N = ' num2str(length(usePMd)) ')'],'FontSize',16);
 
-
-if 0
-    % some extra analysis code
-    clear;
-    close all;
-    load('05272013_move_peak_bin.mat');
-    
-    keyboard
-    
-    
-    
-end
 
