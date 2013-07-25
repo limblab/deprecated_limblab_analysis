@@ -155,6 +155,7 @@ for i=1:length(neurons)
     yc = [yc temp_c];
     yu = [yu temp_u];
     
+    % calculate SSE
     res_con_temp = (ac-X*c)'*(ac-X*c);
     res_unc_temp = (au-X*u)'*(au-X*u);
     
@@ -164,6 +165,7 @@ for i=1:length(neurons)
     % find variance accounted for
     mean_ac = mean(ac);
     mean_au = mean(au);
+    % find sum of squared deviations from mean
     ss_tot_con = (ac-mean_ac)'*(ac-mean_ac);
     ss_tot_unc = (au-mean_au)'*(au-mean_au);
     

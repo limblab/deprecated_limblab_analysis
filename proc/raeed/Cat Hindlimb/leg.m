@@ -40,7 +40,7 @@ tibial_points = [-1.5 0; 10.67 -.14; 2.55 .17; 2.67 .89; .78 -.41; 10.8 -.24; .1
 %   Plantaris action point (18)
 %   Soleus insertion (19)
 %   FDL action point (20)
-foot_points = [3.57 0.88; 8.03 0; -.11 -.24; .2 .17; 2.67 -.17]';
+foot_points = [3.57 3.88; 8.03 0; -.11 -.24; .2 .17; 2.67 -.17]';
 
 master_points = [pelvic_points femoral_points tibial_points foot_points];
 
