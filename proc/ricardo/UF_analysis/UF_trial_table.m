@@ -44,6 +44,16 @@ tc.y_offset = iCol; iCol=iCol+1;
 if databurst_version >= 2
     tc.force_target_diameter = iCol; iCol=iCol+1;
 end
+tc.position_cursor = iCol; iCol=iCol+1;
+if databurst_version >= 4
+    tc.force_bump = iCol; iCol=iCol+1;
+end
+if databurst_version >= 5
+    tc.inf_bump_duration = iCol; iCol=iCol+1;
+end
+if databurst_version >= 6
+    tc.position_cursor = iCol; iCol=iCol+1;
+end
 
 start_trial_code = hex2dec('1F');
 end_code = hex2dec('20');
@@ -62,27 +72,18 @@ if ~isempty(bdf.words(find(diff(bdf.words(:,1))<0,1,'last'),1))
     bdf.databursts = bdf.databursts(find([bdf.databursts{:,1}] < bdf.words(find(diff(bdf.words(:,1))<0,1,'last'),1),1,'last'):end,:);
     bdf.words = bdf.words(find(diff(bdf.words(:,1))<0,1,'last')+1:end,:);
 end
-% start_time = bdf.words(find(bdf.words(:,2)==start_trial_code ,1,'first'),1);
 start_time = bdf.databursts{1,1};
 end_time = bdf.words(find(bitand(bdf.words(:,2),...
     repmat(hex2dec('F0'),size(bdf.words(:,2)),1))==end_code,1,'last'),1);
 bdf.words = bdf.words(bdf.words(:,1)>=start_time & bdf.words(:,1)<=end_time,:);
-% start_end_words = bdf.words(bdf.words(:,2)>=31 & bdf.words(:,2)<=34,:);
-% repeated_words = find(diff(start_end_words(:,2))==0);
-% for iWord = 1:length(repeated_words)    
-%     bdf.words(find(bdf.words(:,1)==start_end_words(repeated_words(iWord),1)),:) = [];
-% end
 
 bdf.databursts = bdf.databursts([bdf.databursts{:,1}]>=start_time & [bdf.databursts{:,1}]<end_time,:);
 
 trial_starts = [bdf.databursts{:,1}]';
-% trial_ends = bdf.words(bitand(bdf.words(:,2),repmat(hex2dec('F0'),size(bdf.words(:,2)),1))==end_code,1);
-% trial_starts = trial_starts(1:length(trial_ends));
 num_trials = size(trial_starts,1);
 
 trial_table = nan(num_trials,length(fieldnames(tc)));
 trial_table(:,tc.t_trial_start) = trial_starts;
-% trial_table(:,tc.t_trial_end) = trial_ends; 
 
 for iTrial = 1:num_trials
     temp_words = bdf.words(bdf.words(:,1)>trial_table(iTrial,tc.t_trial_start),:);
@@ -115,27 +116,7 @@ for iTrial = 1:num_trials
         iWord = iWord + 1;
         current_word = temp_words(iWord,2);
     end
-%     trial_table(iTrial,tc.result) = temp_words(end,2);
 end
-
-% for iTrial = 1:num_trials
-%     temp_words = bdf.words(bdf.words(:,1)>trial_table(iTrial,tc.t_trial_start) &...
-%         bdf.words(:,1)<=trial_table(iTrial,tc.t_trial_end),:);
-%     for iWord = 1:size(temp_words,1)        
-%         switch temp_words(iWord,2)  
-%             case field_buildingup_code
-%                 column = tc.t_field_buildup;
-%             case ct_hold_code
-%                 column = tc.t_ct_hold_on;
-%             case bump_code
-%                 column = tc.t_bump_onset;
-%             otherwise 
-%                 column = [];
-%         end
-%         trial_table(iTrial,column) = temp_words(iWord,1);
-%     end
-%     trial_table(iTrial,tc.result) = temp_words(end,2);
-% end
 
 for iTrial = 1:num_trials
     if length(bdf.databursts{iTrial,2})==databurst_length
@@ -157,6 +138,15 @@ for iTrial = 1:num_trials
         trial_table(iTrial,tc.bias_force_mag) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
         trial_table(iTrial,tc.bias_force_dir) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
         trial_table(iTrial,tc.force_target_diameter) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        if databurst_version >= 4
+            trial_table(iTrial,tc.force_bump) = bdf.databursts{iTrial,2}(temp_idx(1)); temp_idx = temp_idx+1;
+        end
+        if databurst_version >= 5
+            trial_table(iTrial,tc.inf_bump_duration) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;      
+        end
+        if databurst_version >= 6
+            trial_table(iTrial,tc.position_cursor) = bdf.databursts{iTrial,2}(temp_idx(1)); temp_idx = temp_idx+1;
+        end
     end        
 end
 

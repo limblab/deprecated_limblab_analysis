@@ -2,7 +2,7 @@ function UF_plot_behavior(UF_struct,bdf,file_details,save_figs)
 
 %%  Rotated with respect to bump, separated by bump direction: Position and force
 figHandles(1) = figure;
-plot_range = [-.01 .04];
+plot_range = [-.01 .1];
 t_idx = (UF_struct.t_axis>plot_range(1) & UF_struct.t_axis<plot_range(2));
 clf
 max_y_pos = 0;
@@ -309,8 +309,8 @@ for iField = 1:length(UF_struct.field_indexes)
                 UF_struct.y_pos_translated(idx,UF_struct.t_zero_idx:find(t_idx,1,'last'))',...
                 'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:))
             hold on
-            xlim([-.5 .5])
-            ylim([-.5 .5])
+            xlim([-2 2])
+            ylim([-2 2])
             title(['Bump: ' num2str(round(UF_struct.bump_directions(iBump)*180/pi)) 'deg'])
             xlabel('X pos (cm)')
             ylabel('Y pos (cm)')
@@ -418,6 +418,20 @@ gca = axes;
 h = title(UF_struct.UF_file_prefix,'Interpreter','none');
 set(gca,'Visible','off');
 set(h,'Visible','on');
+
+%% X-Y forces
+x_force_offset = repmat(UF_struct.x_force(:,find(t_idx,1,'first')),1,sum(t_idx));
+y_force_offset = repmat(UF_struct.y_force(:,find(t_idx,1,'first')),1,sum(t_idx));
+figure; plot((UF_struct.x_force(:,t_idx) - x_force_offset)',(UF_struct.y_force(:,t_idx) - y_force_offset)','k')
+hold on
+plot((UF_struct.x_force(:,find(t_idx,1,'last'))-x_force_offset(:,1))',(UF_struct.y_force(:,find(t_idx,1,'last'))-y_force_offset(:,1))','*r')
+[~,bump_end_idx] = min(abs(UF_struct.t_axis-.1));
+plot(UF_struct.x_force(:,bump_end_idx)-x_force_offset(:,1),UF_struct.y_force(:,bump_end_idx)-y_force_offset(:,1),'b*')
+axis square
+axis equal
+xlim([-7 7])
+xlabel('x force (N)')
+ylabel('y force (N)')
 
 %% Force/position map
 % figure(5)
