@@ -242,6 +242,8 @@ if ~isfield(datastruct, 'pos')
     cursorposbin = [];
 elseif ~isempty(datastruct.pos)
     cursorposbin = interp1(datastruct.pos(:,1), datastruct.pos(:,2:3), timeframe,'linear','extrap');
+else
+    cursorposbin = [];
 end
 
 cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
@@ -261,7 +263,7 @@ cursposlabels(2,1:5)= 'y_pos';
 
 %% Bin Velocity
 if ~isfield(datastruct, 'vel')
-    if isfield(datastruct,'pos')
+    if isfield(datastruct,'pos') && ~isempty(cursorposbin)
         %derive freshly binned pos data
         dx = [0; diff(cursorposbin(:,1))./ binsize];
         dy = [0; diff(cursorposbin(:,2))./ binsize];
@@ -289,7 +291,7 @@ veloclabels(3,1:8)= 'vel_magn';
 
 %% Bin Acceleration
 if ~isfield(datastruct, 'acc')
-    if isfield(datastruct,'vel')
+    if isfield(datastruct,'pos') && ~isempty(velocbin)
         %derive freshly binned vel data
         ddx = [0; diff(velocbin(:,1))./ binsize];
         ddy = [0; diff(velocbin(:,2))./ binsize];

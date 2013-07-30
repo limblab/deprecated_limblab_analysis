@@ -44,7 +44,7 @@ if isfield(filter,'input_type')
         Inputs=BinnedData.emgdatabin;
     elseif strcmp(filter.input_type,'princomp')
         % use PCs as model inputs
-        Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
+%         Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
         Inputs = Inputs*filter.PC(:,1:numPCs);
     end   
 end

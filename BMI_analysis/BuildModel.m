@@ -118,6 +118,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         Inputs = binnedData.emgdatabin;
         input_type = 'EMG';
     elseif Use_PrinComp
+        Inputs = binnedData.spikeratedata(:,desiredInputs);
         [PCoeffs,Inputs] = princomp(zscore(Inputs));
         Inputs = Inputs(:,1:numPCs);
         input_type = 'princomp';
@@ -152,9 +153,11 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         
     InputMean = mean(Inputs);
     OutputMean= mean(Outputs);
+
     Inputs = detrend(Inputs,'constant');
     Outputs= detrend(Outputs,'constant');
-    
+
+
     %The following calculates the linear filters (H) that relate the inputs and outputs
     if Use_Ridge
         % Specify condition desired
@@ -258,7 +261,6 @@ end
 			 binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew, ...
 			 'outnames',OutNames,'spikeguide',binnedData.spikeguide, ...
 			 'vaf',RcoeffDet(PredictedData,ActualDataNew),'actualData',ActualDataNew);
-% %          PredData = struct('preddatabin', PredictedData, 'timeframe',binnedData.timeframe,'outnames',OutNames,'spikeguide',binnedData.spikeguide);
         varargout{1} = PredData;
     end
     
