@@ -1,10 +1,10 @@
 function H=filter_reg(X,Y,numlags,varargin)
 
 X= detrend(X, 'constant'); Y=detrend(Y, 'constant');
-Xd=DuplicateAndShift(X,numlags);
+X=DuplicateAndShift(X,numlags);
 
-[nr nc] = size(Xd);
-aux = Xd - [zeros(1,nc);Xd(1:end-1,:)];
+[nr nc] = size(X);
+aux = X - [zeros(1,nc);X(1:end-1,:)];
 
 if nargin > 3
     lambda = varargin{1};
@@ -13,10 +13,11 @@ if nargin > 3
 else
     reg = 0;
 end
+clear aux;
 
 if reg
-    H = (Xd'*Xd+Q)\(Xd'*Y);
+    H = (X'*X+Q)\(X'*Y);
 else
-    H = (Xd'*Xd)\(Xd'*Y);    
+    H = (X'*X)\(X'*Y);    
 end
 

@@ -1,6 +1,6 @@
-BinDataPath = 'Z:\Spike_10I3\BinnedData\2013-05-02';
-FilterPath  = 'Z:\Spike_10I3\SavedFilters\2013-05-02';
-Bin_FileName = 'Spike_2013-05-02_WF_001.mat';
+BinDataPath = 'Y:\Spike_10I3\BinnedData\2013-05-07';
+FilterPath  = 'Y:\Spike_10I3\SavedFilters\2013-05-07';
+Bin_FileName = 'Spike_2013-05-07_WF_002_0to18m40s.mat';
 
 lambda = 10; % parameter for regularization
 
