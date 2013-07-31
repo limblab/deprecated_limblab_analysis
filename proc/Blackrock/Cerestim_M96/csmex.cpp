@@ -262,7 +262,61 @@ beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n
         myP = outputP;
         return;
     }
-      /***** Here for NO recognized command ***************/
+    /***** wait *****************************/
+    if (!strcmp(cs_cmd, "wait")) {
+		int delay;
+		if (nrhs == 2) {
+			delay = 1;
+		} else if (nrhs  == 2) {
+			delay = getpar(prhs, 2);
+			if (delay <1) {
+				mexPrintf("ERROR: wait parameter must be at least 1 msec\n");
+				return;
+			}
+		} else {
+			mexPrintf("ERROR: wait takes one parameter, the # msec to delay\n");
+			return;
+		}
+		int retval = myStim.wait(delay);
+        if (retval=BSUCCESS) {
+			mexPrintf("wait Failed:%d\n", retval);
+        } else if(verbose){
+			mexPrintf("wait executed\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+    /***** manualStimulus *****************************/
+    if (!strcmp(cs_cmd, "manualStimulus")) {
+        if (nrhs != 3) {
+            mexPrintf("Error: manualStimulus requires 2 parameters, channel and configID\n");
+            return;
+        }
+        UINT8 channel;
+        
+        int i=1;
+        channel = (UINT8)getpar(prhs, i);
+        i++;
+
+		int cfgID0 = getpar(prhs,i);
+		BConfig cfgID = (BConfig)cfgID0;
+
+	    if ((cfgID > 15)||(cfgID==0)) {
+	        mexPrintf("csmex ERROR: configID=%d, range=1-15\n", cfgID);
+		    return;
+	    }
+
+        int retval = myStim.manualStimulus(channel, cfgID);
+        if (retval!=BSUCCESS) {
+            mexPrintf("Fail manualStimulus: %d\n", retval);
+        } else if(verbose){
+            mexPrintf("manualStimulus executed.\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+
+	/***** Here for NO recognized command ***************/
     mexPrintf("Cannot recognize command %s\n\n", cs_cmd);
     mexPrintf("The following commands have been implemented:\n%s", cmd_list);
 }
@@ -291,7 +345,17 @@ int configure_command(int nrhs, const mxArray* prhs[]) {
 	int retval = -2;
     if (nrhs < NUMCFGPARS) {
         mexPrintf("csmex ERROR: see %d parameters; configure requires %d parameters\n",
-                nrhs, NUMCFGPARS);
+                nrhs-1, NUMCFGPARS-1);
+		char *cfgstring = "% configID:     The configuration to save (0-15) <<but 0 is reserved>>\n\
+% afcf:         The polarity of the waveform; 0=anodic first\n\
+% pulses:       The number of pulses in the stimulation train (1-255)\n\
+% amp1:         The amplitude of the first phase in the stimulation (1-215) uA\n\
+% amp2:         The amplitude of the second phase in the stimulation (1-215) uA\n\
+% width1:       The width of the first phase in the stimulation ( 44 – 65535) uS\n\
+% width2:       The width of the second phase in the stimulation ( 44 – 65535) uS\n\
+% frequency:    The frequency to stimulate at (4-5154)Hz\n\
+% interphase:   The width between phases in the stimulation (53-65535) uS\n";
+		printf("%s",cfgstring);
         mexErrMsgTxt("Parameter count mismatch");
         return retval;
     }
