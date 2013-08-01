@@ -9,12 +9,33 @@ static BStimulator myStim;
 int verbose=1;
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
-    if (nrhs < 1) {
-        mexErrMsgTxt("csmex: At least one input required.");
+
+	    /***** LIST OF COMMANDS *********************************/
+    static char cmd_list[] = "\
+\tautoStimulus\n\
+\tbeginningOfGroup\n\
+\tbeginningOfSequence\n\
+\tconfigure\n\
+\tconnect\n\
+\tdisconnect\n\
+\tendOfGroup\n\
+\tendOfSequence\n\
+\tgetParams\n\
+\tmanualStimulus\n\
+\tmeasureOutputVoltage\n\
+\tplay\n\
+\treadDeviceInfo\n\
+\tstim_max\n\
+";
+    
+	if (nrhs < 1) {
+		mexPrintf("The following commands have been implemented:\n%s", cmd_list);
+		mexErrMsgTxt("csmex: At least one input required.");
     }
     
     if (!mxIsClass(prhs[0], "char")) {
-        mexErrMsgTxt("csmex: First argument must be a command");
+	mexPrintf("The following commands have been implemented:\n%s", cmd_list);
+        mexErrMsgTxt("csmex: First argument must be a command string");
         return;
     }
         
@@ -23,130 +44,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     int i=0;
     BUsbParams	myParams;
     
-    /***** LIST OF COMMANDS *********************************/
-    static char cmd_list[] = "\tconnect\n\tdisconnect\n\tconfigure\n\tstim_max\n\
-\treadDeviceInfo\n\tbeginningOfSequence\n\tendOfSequence\n\t\
-beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n\
-\tgetParams\n";
-    
     cs_cmd = mxArrayToString(prhs[i]);
 	if (verbose>1) mexPrintf("\nCommand (arg %d): %s\n", i, cs_cmd);
     
-    /***** connect************************************************/
-    if (!strcmp(cs_cmd, "connect")) {
-		myParams.size=sizeof(BUsbParams);
-        myParams.timeout = 2000; // in ms
-//        myParams.vid = 0x04d8;
-//        myParams.pid = 0x003f;
-		void *parP;
-		parP = &myParams;
-//		parP->timeout = 2000;
-        BResult retval = myStim.connect(BINTERFACE_DEFAULT, parP);
-		if (verbose) {
-			if (retval != -10) {
-				mexPrintf("Attempt connection to Cerestim: retval=%d\n", retval);
-			} else {
-				mexPrintf("Connect already present\n");
-			}
-	        if (!retval) {
-		        mexPrintf("Vendor ID = %d, Product ID = %d\n", myParams.vid, myParams.pid);
-			}
-		}
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        
-        return;
-    }
-    /***** disconnect *******************************************/
-    if (!strcmp(cs_cmd, "disconnect")) {
-        int retval = myStim.disconnect();
-		if (verbose) {
-			if (retval != -9) {
-		        mexPrintf("Attempt disconnection from Cerestim: retval=%d\n", retval);
-			} else {
-				mexPrintf("Disconnect already present\n");
-			}
-		}
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
-    /***** configure ***************************************/
-    if (!strcmp(cs_cmd, "configure")) {
-        int retval = configure_command(nrhs, &prhs[0]);
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-		return;
-    }
-    /**** stim_max ********************************************/
-    if (!strcmp(cs_cmd, "stim_max")) {
-        //Ensure that max values are set high enough so you don't get errors when configuring patterns
-        int retval = myStim.stimulusMaxValues(&maxValues, 1, BOCVOLT9_5, 215, 65535, 950000, 5154);
-        if (retval != BSUCCESS) {
-			mexPrintf("maxValues NOT set at Cerestim: %d\n", retval);
-        }else if(verbose){
-            mexPrintf("maxValues SET at Cerestim\n");
-        }
-	    return ;
-	}
-    /***** readDeviceInfo*****************************/
-    if (!strcmp(cs_cmd, "readDeviceInfo")) {
-        BDeviceInfo output;
-        int retval = myStim.readDeviceInfo(&output);
-        if (retval!=BSUCCESS) {
-            mexPrintf("Read Device Info Failed\n");
-        } else if(verbose){
-            for (i=0;i<MAXMODULES;i++) {
-                mexPrintf("Device Info: module status = %d\n", output.moduleStatus[i]);
-                mexPrintf("Device Info: module version = %d\n", output.moduleVersion[i]);            }
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        plhs[1] = mxCreateDoubleMatrix(5,1,mxREAL);
-        BDeviceInfo *myP = (BDeviceInfo *)mxGetPr(plhs[1]);
-        myP = &output;
-        return;
-    }
-    /***** beginningOfSequence *****************************/
-    if (!strcmp(cs_cmd, "beginningOfSequence")) {
-        int retval = myStim.beginningOfSequence();
-        if (retval!=BSUCCESS) {
-            mexPrintf("Fail beginning of sequence: %d\n", retval);
-        } else if (verbose){
-            mexPrintf("Beginning of sequence executed.\n");
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
-    /***** endOfSequence *****************************/
-    if (!strcmp(cs_cmd, "endOfSequence")) {
-        int retval = myStim.endOfSequence();
-        if (retval!=BSUCCESS) {
-            mexPrintf("Fail End of sequence: %d\n", retval);
-        } else if(verbose){
-            mexPrintf("End of sequence executed.\n");
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
-    /***** beginningOfGroup *****************************/
-    if (!strcmp(cs_cmd, "beginningOfGroup")) {
-        int retval = myStim.beginningOfGroup();
-        if (retval!=BSUCCESS) {
-            mexPrintf("Fail beginning of group: %d\n", retval);
-        } else if(verbose){
-            mexPrintf("Beginning of group executed.\n");
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
-    /***** endOfGroup *****************************/
-    if (!strcmp(cs_cmd, "endOfGroup")) {
-        int retval = myStim.endOfGroup();
-        if (retval!=BSUCCESS) {
-            mexPrintf("Fail end of group: %d\n", retval);
-        } else if(verbose){
-            mexPrintf("End of group executed.\n");
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
     /***** autoStimulus *****************************/
     if (!strcmp(cs_cmd, "autoStimulus")) {
         if (nrhs != 3) {
@@ -176,71 +76,101 @@ beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n
 		plhs[0] = mxCreateDoubleScalar((double)retval);
         return;
     }
-    /***** play *****************************/
-    if (!strcmp(cs_cmd, "play")) {
-		int count;
-		if (nrhs == 2) {
-			count = 1;
-		} else if (nrhs  == 2) {
-			count = getpar(prhs, 2);
-			if (count <1) {
-				mexPrintf("ERROR: count paremeter must be at least 1\n");
-				return;
-			}
-		} else {
-			mexPrintf("ERROR: play takes one parameter, the count of # times to run\n");
-			return;
-		}
-		int retval = myStim.play(count);
-        if (retval=BSUCCESS) {
-			mexPrintf("play Failed:%d\n", retval);
-        } else if(verbose){
-			mexPrintf("play executed\n");
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
-    /***** measureOutputVoltage *****************************/
-    if (!strcmp(cs_cmd, "measureOutputVoltage")) {
-        BOutputMeasurement output;
-		INT16 *myMeasP;
-        if (nrhs != 3) {
-            mexPrintf("Error: measureOutputVoltage requires 2 parameters: module and channel\n");
-            return;
-        }
-        UINT8 module = (UINT8)getpar(prhs, 1);
-        UINT8 channel = (UINT8)getpar(prhs, 2);
-        
-        int retval = myStim.measureOutputVoltage(&output, module, channel);
+
+	/***** beginningOfGroup *****************************/
+    if (!strcmp(cs_cmd, "beginningOfGroup")) {
+        int retval = myStim.beginningOfGroup();
         if (retval!=BSUCCESS) {
-            mexPrintf("Fail measureOutputVoltage: %d\n", retval);
+            mexPrintf("Fail beginning of group: %d\n", retval);
         } else if(verbose){
-            mexPrintf("measureOutputVoltage executed.\n");
+            mexPrintf("Beginning of group executed.\n");
         }
 		plhs[0] = mxCreateDoubleScalar((double)retval);
-        plhs[1] = mxCreateDoubleMatrix(5,1,mxREAL);
-        myMeasP = (INT16 *)mxGetPr(plhs[1]);
-//        myMeasP = &(output.measurement[0]);
-		int b=1;
         return;
     }
-    /***** readSequenceStatus *******************************************/
-    if (!strcmp(cs_cmd, "readSequenceStatus")) {
-		struct BSequenceStatus output;
-        int retval = myStim.readSequenceStatus(&output);
+
+	/***** beginningOfSequence *****************************/
+    if (!strcmp(cs_cmd, "beginningOfSequence")) {
+        int retval = myStim.beginningOfSequence();
+        if (retval!=BSUCCESS) {
+            mexPrintf("Fail beginning of sequence: %d\n", retval);
+        } else if (verbose){
+            mexPrintf("Beginning of sequence executed.\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+
+	/***** configure ***************************************/
+    if (!strcmp(cs_cmd, "configure")) {
+        int retval = configure_command(nrhs, &prhs[0]);
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+		return;
+    }
+
+    /***** connect************************************************/
+    if (!strcmp(cs_cmd, "connect")) {
+		myParams.size=sizeof(BUsbParams);
+        myParams.timeout = 2000; // in ms
+//        myParams.vid = 0x04d8;
+//        myParams.pid = 0x003f;
+		void *parP;
+		parP = &myParams;
+//		parP->timeout = 2000;
+        BResult retval = myStim.connect(BINTERFACE_DEFAULT, parP);
 		if (verbose) {
-			if (retval ==0) {
-		        mexPrintf("readSequenceStatus: Success\n");
-				// 0x00 = Stopped, 0x01 = Playing, 0x02 = Paused, 0x03 = Writing Sequence
-		        mexPrintf("Status=%d\n", output);
+			if (retval != -10) {
+				mexPrintf("Attempt connection to Cerestim: retval=%d\n", retval);
 			} else {
-		        mexPrintf("Fail readSequenceStatus: retval=%d\n", retval);
+				mexPrintf("Connect already present\n");
+			}
+	        if (!retval) {
+		        mexPrintf("Vendor ID = %d, Product ID = %d\n", myParams.vid, myParams.pid);
+			}
+		}
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        
+        return;
+    }
+
+	/***** disconnect *******************************************/
+    if (!strcmp(cs_cmd, "disconnect")) {
+        int retval = myStim.disconnect();
+		if (verbose) {
+			if (retval != -9) {
+		        mexPrintf("Attempt disconnection from Cerestim: retval=%d\n", retval);
+			} else {
+				mexPrintf("Disconnect already present\n");
 			}
 		}
 		plhs[0] = mxCreateDoubleScalar((double)retval);
         return;
     }
-    
+
+    /***** endOfGroup *****************************/
+    if (!strcmp(cs_cmd, "endOfGroup")) {
+        int retval = myStim.endOfGroup();
+        if (retval!=BSUCCESS) {
+            mexPrintf("Fail end of group: %d\n", retval);
+        } else if(verbose){
+            mexPrintf("End of group executed.\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+
+	/***** endOfSequence *****************************/
+    if (!strcmp(cs_cmd, "endOfSequence")) {
+        int retval = myStim.endOfSequence();
+        if (retval!=BSUCCESS) {
+            mexPrintf("Fail End of sequence: %d\n", retval);
+        } else if(verbose){
+            mexPrintf("End of sequence executed.\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+
     /***** getParams*****************************/
     if (!strcmp(cs_cmd, "getParams")) {
         void *voidP;
@@ -262,30 +192,7 @@ beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n
         myP = outputP;
         return;
     }
-    /***** wait *****************************/
-    if (!strcmp(cs_cmd, "wait")) {
-		int delay;
-		if (nrhs == 2) {
-			delay = 1;
-		} else if (nrhs  == 2) {
-			delay = getpar(prhs, 2);
-			if (delay <1) {
-				mexPrintf("ERROR: wait parameter must be at least 1 msec\n");
-				return;
-			}
-		} else {
-			mexPrintf("ERROR: wait takes one parameter, the # msec to delay\n");
-			return;
-		}
-		int retval = myStim.wait(delay);
-        if (retval=BSUCCESS) {
-			mexPrintf("wait Failed:%d\n", retval);
-        } else if(verbose){
-			mexPrintf("wait executed\n");
-        }
-		plhs[0] = mxCreateDoubleScalar((double)retval);
-        return;
-    }
+
     /***** manualStimulus *****************************/
     if (!strcmp(cs_cmd, "manualStimulus")) {
         if (nrhs != 3) {
@@ -316,6 +223,128 @@ beginningOfGroup\n\tendOfGroup\n\tautoStimulus\n\tplay\n\tmeasureOutputVoltage\n
         return;
     }
 
+	/***** measureOutputVoltage *****************************/
+    if (!strcmp(cs_cmd, "measureOutputVoltage")) {
+        BOutputMeasurement output;
+		INT16 *myMeasP;
+        if (nrhs != 3) {
+            mexPrintf("Error: measureOutputVoltage requires 2 parameters: module and channel\n");
+            return;
+        }
+        UINT8 module = (UINT8)getpar(prhs, 1);
+        UINT8 channel = (UINT8)getpar(prhs, 2);
+        
+        int retval = myStim.measureOutputVoltage(&output, module, channel);
+        if (retval!=BSUCCESS) {
+            mexPrintf("Fail measureOutputVoltage: %d\n", retval);
+        } else if(verbose){
+            mexPrintf("measureOutputVoltage executed.\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        plhs[1] = mxCreateDoubleMatrix(5,1,mxREAL);
+        myMeasP = (INT16 *)mxGetPr(plhs[1]);
+//        myMeasP = &(output.measurement[0]);
+		int b=1;
+        return;
+    }
+
+	/***** play *****************************/
+    if (!strcmp(cs_cmd, "play")) {
+		int count;
+		if (nrhs == 2) {
+			count = 1;
+		} else if (nrhs  == 2) {
+			count = getpar(prhs, 2);
+			if (count <1) {
+				mexPrintf("ERROR: count parameter must be at least 1\n");
+				return;
+			}
+		} else {
+			mexPrintf("ERROR: play takes one parameter, the count of # times to run\n");
+			return;
+		}
+		int retval = myStim.play(count);
+        if (retval=BSUCCESS) {
+			mexPrintf("play Failed:%d\n", retval);
+        } else if(verbose){
+			mexPrintf("play executed\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+
+	/***** readDeviceInfo*****************************/
+    if (!strcmp(cs_cmd, "readDeviceInfo")) {
+        BDeviceInfo output;
+        int retval = myStim.readDeviceInfo(&output);
+        if (retval!=BSUCCESS) {
+            mexPrintf("Read Device Info Failed\n");
+        } else if(verbose){
+            for (i=0;i<MAXMODULES;i++) {
+                mexPrintf("Device Info: module status = %d\n", output.moduleStatus[i]);
+                mexPrintf("Device Info: module version = %d\n", output.moduleVersion[i]);            }
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        plhs[1] = mxCreateDoubleMatrix(5,1,mxREAL);
+        BDeviceInfo *myP = (BDeviceInfo *)mxGetPr(plhs[1]);
+        myP = &output;
+        return;
+    }
+
+    /***** readSequenceStatus *******************************************/
+    if (!strcmp(cs_cmd, "readSequenceStatus")) {
+		struct BSequenceStatus output;
+        int retval = myStim.readSequenceStatus(&output);
+		if (verbose) {
+			if (retval ==0) {
+		        mexPrintf("readSequenceStatus: Success\n");
+				// 0x00 = Stopped, 0x01 = Playing, 0x02 = Paused, 0x03 = Writing Sequence
+		        mexPrintf("Status=%d\n", output);
+			} else {
+		        mexPrintf("Fail readSequenceStatus: retval=%d\n", retval);
+			}
+		}
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+    
+	/**** stim_max ********************************************/
+    if (!strcmp(cs_cmd, "stim_max")) {
+        //Ensure that max values are set high enough so you don't get errors when configuring patterns
+        int retval = myStim.stimulusMaxValues(&maxValues, 1, BOCVOLT9_5, 215, 65535, 950000, 5154);
+        if (retval != BSUCCESS) {
+			mexPrintf("maxValues NOT set at Cerestim: %d\n", retval);
+        }else if(verbose){
+            mexPrintf("maxValues SET at Cerestim\n");
+        }
+	    return ;
+	}
+
+    /***** wait *****************************/
+    if (!strcmp(cs_cmd, "wait")) {
+		int delay;
+		if (nrhs == 2) {
+			delay = 1;
+		} else if (nrhs  == 2) {
+			delay = getpar(prhs, 2);
+			if (delay <1) {
+				mexPrintf("ERROR: wait parameter must be at least 1 msec\n");
+				return;
+			}
+		} else {
+			mexPrintf("ERROR: wait takes one parameter, the # msec to delay\n");
+			return;
+		}
+		int retval = myStim.wait(delay);
+        if (retval=BSUCCESS) {
+			mexPrintf("wait Failed:%d\n", retval);
+        } else if(verbose){
+			mexPrintf("wait executed\n");
+        }
+		plhs[0] = mxCreateDoubleScalar((double)retval);
+        return;
+    }
+	/***** Here for NO recognized command ***************/
 	/***** Here for NO recognized command ***************/
     mexPrintf("Cannot recognize command %s\n\n", cs_cmd);
     mexPrintf("The following commands have been implemented:\n%s", cmd_list);
