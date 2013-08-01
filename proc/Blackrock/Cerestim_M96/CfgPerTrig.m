@@ -19,7 +19,7 @@ global idx
 idx=1;
 if ~nargin || numel(chList)<4
     help CfgPerTrig
-    error('CfgPerTrig requires 4 electrode channels')
+    warning('CfgPerTrig can service 4 electrode channels')
 end
 
 if TRIGNUM>8 || TRIGNUM < 0
