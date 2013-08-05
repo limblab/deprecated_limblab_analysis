@@ -57,8 +57,8 @@ end
 
 switch lower(sigTest{1})
     case 'bootstrap'
-        numIters = sigTest{3};
-        confLevel = sigTest{4};
+        numIters = sigTest{2};
+        confLevel = sigTest{3};
         
         b0s = zeros(size(fr,2),numIters);
         b1s = zeros(size(fr,2),numIters);

@@ -121,6 +121,7 @@ else % use regression of cosines for tuning
         end
         
         trialTable = ff_trial_table(out_struct,targAngs,moveTime);
+        save('tt.mat');
         %    1: Start time
         %    2: Target                  -- -1 for none
         %    3: OT on time
@@ -136,12 +137,12 @@ else % use regression of cosines for tuning
         moveTimes = trialTable(:,8)-trialTable(:,5)-holdTime;
         goodTrials = moveTimes >= excludeTimeRange(1) & moveTimes <= excludeTimeRange(2);
         trialTable = trialTable(goodTrials,:);
-    else
-        % for adaptation and washout, we want to ignore trials where the monkey
-        % is adapting.
-        %   Currently assume that this happens if a trialTable is passed in, and
-        %   assume that I should exclude the first 30% of trials
-        trialTable = trialTable(floor(0.3*size(trialTable,1)):end,:);
+%     else
+%         % for adaptation and washout, we want to ignore trials where the monkey
+%         % is adapting.
+%         %   Currently assume that this happens if a trialTable is passed in, and
+%         %   assume that I should exclude the first 30% of trials
+%         trialTable = trialTable(floor(0.3*size(trialTable,1)):end,:);
     end
 
     % % Plot force traces

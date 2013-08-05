@@ -90,7 +90,7 @@ for iFolder = 1:length(convertFolders)
     files = {files.name};
     % We only want the .nev or .plx files
     [~,~,fileExts] = cellfun(@(x) fileparts(x),files,'UniformOutput',false);
-    fileInds = strcmpi(fileExts,'.nev') || strcmpi(fileExts,'.plx');
+    fileInds = strcmpi(fileExts,'.nev') | strcmpi(fileExts,'.plx');
     files = files(fileInds);
     
     % Loop along the .nev files found
@@ -100,7 +100,7 @@ for iFolder = 1:length(convertFolders)
         CB_FullFileName = fullfile(dirCB,CB_FileName);
         
         % is it .nev or .plx?
-        [~,~,fileExt] = fileparts(CB_FileName_);
+        [~,~,fileExt] = fileparts(CB_FileName);
         
         BDF_FileName = strrep(CB_FileName,fileExt,'.mat');
         BDF_FullFileName = fullfile(dirBDF,BDF_FileName);
@@ -126,7 +126,7 @@ for iFolder = 1:length(convertFolders)
             end
             
             disp('Done.');
-            disp('Saving BDF struct...');
+            disp(['Saving BDF struct to ' BDF_FullFileName '...']);
             save(BDF_FullFileName, 'out_struct');
         else
             disp(['Data file ' CB_FullFileName ' has already been converted. Skipping...']);

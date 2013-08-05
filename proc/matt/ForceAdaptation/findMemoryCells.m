@@ -4,7 +4,7 @@ clc;
 
 % loadMat = '05272013_move_peak_bin.mat';
 % loadMat = ['data\05272013_glm.mat'];
-% loadMat = ['data\07022013_glm.mat'];
+% loadMat = ['data\07022013_glm_vel.mat'];
 % loadMat = ['data\CO_07-02-2013_move_peak.mat'];
 loadMat = [];
 
@@ -126,11 +126,14 @@ subplot1(1);
 hold all;
 for i = 1:length(diffM1_BB)
     % mark it as blue if it is significantly different in any epoch
+    % red for every epoc
     % check for overlap of CIs
     ad_sig_diff = range_intersection(useCIM1AD(i,:),useCIM1BL(i,:));
     wo_sig_diff = range_intersection(useCIM1WO(i,:),useCIM1BL(i,:));
 
-    if isempty(ad_sig_diff) || isempty(wo_sig_diff);
+    if isempty(ad_sig_diff) && isempty(wo_sig_diff);
+        usecolor = 'r';
+    elseif isempty(ad_sig_diff) || isempty(wo_sig_diff);
         usecolor = 'b';
     else
         usecolor = 'k';
@@ -148,7 +151,9 @@ for i = 1:length(diffPMd_BB)
     ad_sig_diff = range_intersection(useCIPMdAD(i,:),useCIPMdBL(i,:));
     wo_sig_diff = range_intersection(useCIPMdWO(i,:),useCIPMdBL(i,:));
     
-    if isempty(ad_sig_diff) || isempty(wo_sig_diff);
+    if isempty(ad_sig_diff) && isempty(wo_sig_diff);
+        usecolor = 'r';
+    elseif isempty(ad_sig_diff) || isempty(wo_sig_diff);
         usecolor = 'b';
     else
         usecolor = 'k';
