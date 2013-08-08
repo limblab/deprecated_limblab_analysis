@@ -141,8 +141,9 @@ start_reaches=startEndReachesMatrix(1:2:end,1);
 end_reaches=startEndReachesMatrix(2:2:end,1)-hold_time;
 
 if isempty(start_reaches)
-    % probably a CO trial
-    [start_reaches,end_reaches]=COtrialTimes(out_struct);
+    % probably a CO file
+    [start_reaches,end_reaches,hitRate,hitRate2,~,~, ...
+        slidingAccuracy,slidingTime]=COtrialTimes(out_struct);
     if isempty(start_reaches) % or, could be an error.
         error('kinematicsHandControl:badStartEndReaches', ...
         'malformed matrix of start reach / end reach pairs')
@@ -226,12 +227,14 @@ speedProfile(exclude_trials)=[];
 pathReversals(exclude_trials)=[];
 interTargetDistance(exclude_trials)=[];
 
-% success trials are success trials, whether they were successful by
-% accident or by design.  Use quantities that pre-date exclude_trials in
-% order to score hitRates
-hitRate=length(trialOnset)/nnz(out_struct.words(:,2)==18);
-if nargout > 3
-    hitRate2=(length(trialOnset)+numAfirst)/nnz(out_struct.words(:,2)==18);
+if exist('hitRate','var')~=1 % if CO, hitRate and hitRate2 were already calculated.
+    % success trials are success trials, whether they were successful by
+    % accident or by design.  Use quantities that pre-date exclude_trials in
+    % order to score hitRates
+    hitRate=length(trialOnset)/nnz(out_struct.words(:,2)==18);
+    if nargout > 3
+        hitRate2=(length(trialOnset)+numAfirst)/nnz(out_struct.words(:,2)==18);
+    end
 end
 
 trialTS=[out_struct.words(trialOnset,1) start_reaches end_reaches];
