@@ -21,7 +21,7 @@ if nargin == 1
     rejection_num_chans = 3;
     rejection_window = 0.001;
     delete_artifacts = 1;
-elseif nargin == 3
+elseif nargin == 4
     unit_structure = varargin{1};
     rejection_num_chans = varargin{2};
     rejection_window = varargin{3};  % in seconds
