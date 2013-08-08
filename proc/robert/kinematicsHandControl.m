@@ -1,6 +1,6 @@
-function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControl(out_struct,opts)
+function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControlRW(out_struct,opts)
 
-% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControl(out_struct,opts);
+% syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControlRW(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
 % successful trial (RW) in a out_struct-formatted BDF
@@ -140,20 +140,26 @@ end
 start_reaches=startEndReachesMatrix(1:2:end,1);
 end_reaches=startEndReachesMatrix(2:2:end,1)-hold_time;
 
+if isempty(start_reaches)
+    % probably a CO trial
+    [start_reaches,end_reaches]=COtrialTimes(out_struct);
+    if isempty(start_reaches) % or, could be an error.
+        error('kinematicsHandControl:badStartEndReaches', ...
+        'malformed matrix of start reach / end reach pairs')
+    end
+end
+
+
 disp('Normalizing path length, time-to-target')
 disp('Requiring >2 time points to be included in the reach')
-% see below
-
-% assignin('caller','start_reaches',start_reaches)
-% assignin('caller','end_reaches',end_reaches)
 
 PL=zeros(size(start_reaches));
 TTT=zeros(size(start_reaches));
 speedProfile=cell(size(start_reaches));
 pathReversals=zeros(size(start_reaches));
 interTargetDistance=zeros(size(start_reaches));
-%temporary
-assignin('base','kinReachTimes',end_reaches)
+% temporary
+% assignin('base','kinReachTimes',end_reaches)
 for n=1:length(start_reaches)
 	included_points=find(out_struct.pos(:,1)>=start_reaches(n) & ...
 		out_struct.pos(:,1)<=end_reaches(n));    
