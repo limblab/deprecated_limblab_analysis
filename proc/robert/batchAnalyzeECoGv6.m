@@ -166,6 +166,8 @@ for fileInd=1:length(infoStruct)
     else
         fp=fp';
     end  
+    % CAR?
+    % fp=bsxfun(@minus,fp,mean(fp,2));
     
     if strncmpi(signalToDecode,'emg',3)
         % notch filter first
@@ -436,6 +438,7 @@ for fileInd=1:length(infoStruct)
                                             VAFstruct(fileInd,m).signalToDecode=signalToDecode;
                                             VAFstruct(fileInd,m).H=H;
                                             VAFstruct(fileInd,m).P=P;
+                                            VAFstruct(fileInd,m).bands=paramStructIn.bands{bandGrps};
                                             m=m+1;
                                             
                                             % export so we can look at raw data
@@ -468,6 +471,7 @@ for fileInd=1:length(infoStruct)
                                             fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
                                             fprintf(1,'smoothfeats=%d\n',smoothfeats)
                                             fprintf(1,'binsize=%.2f\n',binsize)
+                                            fprintf(1,'bands %s\n',paramStructIn.bands{bandGrps})
                                             
                                             % fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
                                             % fprintf(1,'zscoring fp signals\n')
@@ -534,6 +538,7 @@ for fileInd=1:length(infoStruct)
                                                 VAFstruct(fileInd,m).signalToDecode=signalToDecode;
                                                 VAFstruct(fileInd,m).H=H;
                                                 VAFstruct(fileInd,m).P=P;
+                                                VAFstruct(fileInd,m).bands=paramStructIn.bands{bandGrps};
                                                 m=m+1;
                                                 
                                                 % export so we can look at raw data
@@ -566,6 +571,7 @@ for fileInd=1:length(infoStruct)
                                                 fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
                                                 fprintf(1,'smoothfeats=%d\n',smoothfeats)
                                                 fprintf(1,'binsize=%.2f\n',binsize)
+                                                fprintf(1,'bands %s\n',paramStructIn.bands{bandGrps})
                                                 
                                                 % fprintf(1,'emgsamplerate=%d\n',emgsamplerate)
                                                 % fprintf(1,'zscoring fp signals\n')

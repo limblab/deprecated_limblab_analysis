@@ -3,7 +3,12 @@
 
 % folder/file info
 if exist('PathName','var')~=1
-    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+    PathName = uigetdir('E:','select folder with data files');
+else
+    if ~ischar(PathName)
+        disp('whatever is stored in ''PathName'' is not a valid path.  aborting...')
+        return
+    end
 end
 % PathName=pwd;
 if exist(PathName,'dir')~=7

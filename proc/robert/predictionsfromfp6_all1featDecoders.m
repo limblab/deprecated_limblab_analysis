@@ -242,6 +242,7 @@ PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
+PB(7,:,:)=mean(PA(freqs>30 & freqs<50,:,:),1);
 
 if exist('bandToUse','var')==1 && all(isfinite(bandToUse)) && all(bandToUse <= size(PB,1))
     PB=PB(bandToUse,:,:);

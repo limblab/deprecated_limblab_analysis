@@ -1,16 +1,16 @@
 function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 
-% syntax [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(PathName,skipBadChannelsAssignment,nfeat,featShift)
+% syntax [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(PathName,skipBadChannelsAssignment,nfeat,featShift);
 %
 % inputs are optional, but must be supplied in order. i.e., in order to
 % input featShift, must also input PathName, skipBadChannelsAssignment and nfeat.
 % featShift is ZERO-BASED; i.e., to calculate feature 9, input 1,8 for
 % nfeat & featShift.
 
-numlags=10;
+numlags=1;
 wsz=256;
-nfeat=40; featShift=41;
-PolynomialOrder=3;
+nfeat=150; featShift=0;
+PolynomialOrder=0;
 smoothfeats=0;
 binsize=0.05;
 folds=10;
@@ -169,8 +169,8 @@ chanIDs = unique(bestc');
 samplingFreq = samprate;
 fillen=numlags*binsize;
 neuronIDs='';
-freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300];
-freq_bands = [70 300];
+freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300;30,50];
+% freq_bands = [70 300];
 % freq_bands(1:3,:)=[];
 featmat = [bestc', bestf']; 
 f_bands = cell(numfp,1);
@@ -232,7 +232,7 @@ fprintf(1,'decoder saved in %s.\n',PathName)
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:6,featShift);
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:7,featShift);
 close
 warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
 warning('on','MATLAB:nearlySingularMatrix')

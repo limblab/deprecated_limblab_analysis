@@ -77,8 +77,11 @@ Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CROSS-FOLD TESTING%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+warning('off','MATLAB:nearlySingularMatrix')
 [vaf1feat,~,~,~,y_pred,~,~,~,~,bestf1feat,bestc1feat,H,~,x,y,featMat,ytnew,~,~,~,featind,sr] = ...
     predictionsfromfp6_all1featDecoders(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:6,featShift);
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:7,featShift);
+warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
+warning('on','MATLAB:nearlySingularMatrix')

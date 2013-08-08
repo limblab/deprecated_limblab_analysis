@@ -209,6 +209,8 @@ tfmat=zeros(wsz,numfp,numbins,'single');
 % Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
+[b,a]=butter(2,[178 182]/(samprate/2),'stop');
+fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 clear fp
 itemp=1:numlags;
 firstind=find(bs*itemp>wsz,1,'first');
@@ -300,11 +302,20 @@ PB=PBtemp; clear PBtemp
 % remain commented.
 % PB([2:6],:,:)=[];
 
-% % temporary - to test a hypothesis 01/06
 % PB=[];
 % PB(1,:,:)=mean(PA(gam1,:,:),1);
 % PB(2,:,:)=mean(PA(gam2,:,:),1);
 % PB(3,:,:)=mean(PA(gam3,:,:),1);
+
+% clear PB, PB(1,:,:)=LMP; PB=[PB; mean(PA(freqs<40,:,:),1); PA(freqs>=40 & freqs<=300,:,:)];
+% clear PB, PB(1,:,:)=LMP; PB=[PB; PA(freqs<10,:,:); ...
+%     mean(PA(freqs>=10 & freqs<45,:,:),1); ...
+%     mean(PA(freqs>=45 & freqs<160,:,:),1); ...
+%     PA(freqs>=160 & freqs<300,:,:)];
+
+% clear PB, PB(1,:,:)=LMP; PB=[PB; PA(freqs<10,:,:); ...
+%     mean(PA(freqs>=10 & freqs<50,:,:),1); ...
+%     mean(PA(freqs>=50 & freqs<300,:,:),1)];
 
 
 % PB has dims freqs X chans X bins

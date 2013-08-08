@@ -1,4 +1,4 @@
-function allElementCorr=PAelement_corr(PA)
+function [allElementCorr,Cbox]=PAelement_corr(PA,freqs)
 
 % all possible pairs of elements
 combos=nchoosek(1:size(PA,1),2);
@@ -6,9 +6,11 @@ combos=nchoosek(1:size(PA,1),2);
 for n=1:size(PA,2)
     for k=1:size(combos,1)
         allElementCorr(n,k)=corr(squeeze(PA(combos(k,1),n,:)), ...
-            squeeze(PA(combos(k,2),n,:)));
+            squeeze(PA(combos(k,2),n,:))); %#ok<*AGROW>
     end
+    fprintf(1,'%d,',n)
 end
+fprintf(1,'\n,')
 
 %%
 Cbox=zeros(size(PA,1));
@@ -21,8 +23,22 @@ Cbox=Cbox./size(allElementCorr,1);
 for k=1:size(PA,1)
     Cbox(k,k)=1.0;
 end
-figure, imagesc(Cbox)
+figure, imagesc(freqs,freqs,Cbox)
+title('all electrodes mean')
 
+
+%% - probably to run in workspace afterwards, to get individual electrode results.
+for n=1:size(allElementCorr,1)                                              %#ok<UNRCH>
+    Cbox_elec=zeros(size(PA,1));
+    for k=1:size(combos,1)
+        Cbox_elec(combos(k,1),combos(k,2))=allElementCorr(n,k); 
+    end
+    for k=1:size(PA,1)
+        Cbox_elec(k,k)=1.0;
+    end, clear k
+    figure, imagesc(freqs,freqs,Cbox_elec)
+    title(sprintf('electrode %d',n))
+end, clear n
 
 
 

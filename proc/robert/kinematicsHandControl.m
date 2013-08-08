@@ -3,9 +3,9 @@ function [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTarget
 % syntax [PL,TTT,hitRate,hitRate2,speedProfile,pathReversals,trialTS,interTargetDistance,slidingAccuracy,slidingTime]=kinematicsHandControl(out_struct,opts);
 %
 % calculates the path length & time-to-target for each 
-% successful trial (RW) in a out_struct-formatted out_struct
+% successful trial (RW) in a out_struct-formatted BDF
 %
-% out_struct.words should follow something like
+% out_struct.words in the RW should follow something like
 %
 %     1.7975   18
 %     1.8654   49

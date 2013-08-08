@@ -226,18 +226,19 @@ PB(5,:,:)=mean(PA(gam2,:,:),1);
 if samprate>600
 PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
+PB(7,:,:)=mean(PA(freqs>30 & freqs<50,:,:),1);
 
 % for n=1:size(PB,1)
 %     PB(n,:,:)=zscore(squeeze(PB(n,:,:))')';
 % end
 % y=zscore(y);
-PB=[];
-PB(1,:,:)=mean(PA(gam1,:,:),1);
-PB(2,:,:)=mean(PA(gam2,:,:),1);
-PB(3,:,:)=mean(PA(gam3,:,:),1);
-% test a combined gamma band alone (11/13/2012).
-PB=[];
-PB(1,:,:)=mean(PA(freqs>70 & freqs<300,:,:),1);
+% PB=[];
+% PB(1,:,:)=mean(PA(gam1,:,:),1);
+% PB(2,:,:)=mean(PA(gam2,:,:),1);
+% PB(3,:,:)=mean(PA(gam3,:,:),1);
+% % test a combined gamma band alone (11/13/2012).
+% PB=[];
+% PB(1,:,:)=mean(PA(freqs>70 & freqs<300,:,:),1);
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')

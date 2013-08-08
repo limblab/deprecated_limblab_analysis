@@ -20,7 +20,7 @@ if beginFirstTrial > 1
 end
 % make sure to end with the last complete trial in the recording
 % all of the following codes are valid trial-end codes: success (32),
-% abort (33), fail (34)
+% abort (33), fail (34), incomplete (35)
 END_TRIAL_WORD=unique(out_struct.words(:,2));
 END_TRIAL_WORD(END_TRIAL_WORD<32 | END_TRIAL_WORD>36)=[];
 endLastTrial=find(ismember(out_struct.words(:,2),END_TRIAL_WORD),1,'last');
