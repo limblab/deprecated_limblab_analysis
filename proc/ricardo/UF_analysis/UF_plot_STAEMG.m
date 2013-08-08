@@ -1,5 +1,6 @@
-function UF_plot_STAEMG(UF_struct,bdf)
+function UF_plot_STAEMG(UF_struct,bdf,save_figs)
 figHandles = [];
+figTitles = cell(0);  
 if isfield(bdf,'units')
 
     UF_struct.t_axis = bdf.pos(:,1);
@@ -24,6 +25,9 @@ if isfield(bdf,'units')
         it_fake = it_fake(it_fake<length(t));
         
         figHandles(end+1) = figure;
+        set(gcf,'name',['STAEMG Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2))],'numbertitle','off')                
+        figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2)) '_raster'];
+        
         for iEMG = 1:UF_struct.num_emg
             emg_mat = zeros(length(ts),length(emg_window));
             idx_mat = round(repmat(idx_vec,length(it),1) + repmat(it',1,size(idx_vec,2)));
@@ -69,6 +73,6 @@ if isfield(bdf,'units')
         set(h,'Visible','on');
     end
     if save_figs
-        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'STAEMG')
+        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'STAEMG',figTitles)
     end
 end

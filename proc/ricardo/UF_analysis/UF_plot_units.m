@@ -1,11 +1,19 @@
 function UF_plot_units(UF_struct,bdf,rw_bdf,save_figs)
 figHandles = [];
+figTitles = cell(0);
     if isfield(bdf,'units')
         UF_struct.t_axis = UF_struct.trial_range(1); 
         all_chans = reshape([bdf.units.id],2,[])';
-        all_chans_rw = reshape([rw_bdf.units.id],2,[])';
-        units = unit_list(bdf);
-        units_rw = unit_list(rw_bdf);
+        
+        if ~isempty(rw_bdf)
+            all_chans_rw = reshape([rw_bdf.units.id],2,[])';
+            units_rw = unit_list(rw_bdf);
+        else
+            all_chans_rw = [];
+            units_rw = [];
+        end
+        
+        units = unit_list(bdf);        
         dt = round(mean(diff(bdf.pos(:,1)))*10000)/10000;
 
         bin_size = dt;
@@ -32,11 +40,12 @@ figHandles = [];
 
         for iUnit = 1:size(units,1)    
             unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));
-
             electrode = UF_struct.elec_map(find(UF_struct.elec_map(:,3)==all_chans(unit_idx,1)),4);
 
-            rw_unit_idx = find(UF_struct.PDs(:,1)==units(iUnit,1) & UF_struct.PDs(:,2)==units(iUnit,2));
-            PD = UF_struct.PDs(rw_unit_idx,[3 4]);
+            if isfield(UF_struct,'PDs')
+                rw_unit_idx = find(UF_struct.PDs(:,1)==units(iUnit,1) & UF_struct.PDs(:,2)==units(iUnit,2));
+                PD = UF_struct.PDs(rw_unit_idx,[3 4]);
+            end
             ts = bdf.units(unit_idx).ts; %#ok<FNDSB>
             ts_cell = {};    
             max_y = 0;
@@ -89,8 +98,9 @@ figHandles = [];
             if length(spikes_vector) > 0
                 figHandles(end+1) = figure;
                 clf
+                set(gcf,'name',['Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2)) ' raster'],'numbertitle','off')                
+                figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2)) '_raster'];                
                 hold on
-
 
                 % Rasters
                 trial_type_number = zeros(1,size(UF_struct.trial_table,1));
@@ -149,7 +159,6 @@ figHandles = [];
                 end
 
                 legend(legend_str,'interpreter','none')
-                set(gcf,'name',['Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2))],'numbertitle','off')
                 drawnow 
 
                 for iBump = 1:length(UF_struct.bump_indexes)
@@ -179,8 +188,9 @@ figHandles = [];
     %             if ~isempty(PD)
     %                 text(-.05,1.05*max_y,['PD: ' num2str(PD(1)*180/pi,3) ' +/- ' num2str(PD(2)*180/pi,3) ' deg']);        
     %             end
-
-                rw_unit_idx = find(UF_struct.PDs(:,1)==units(iUnit,1) & UF_struct.PDs(:,2)==units(iUnit,2));
+                if isfield(UF_struct,'PDs')
+                    rw_unit_idx = find(UF_struct.PDs(:,1)==units(iUnit,1) & UF_struct.PDs(:,2)==units(iUnit,2));
+                end
     %             figure(iUnit+50)
 
                 unit_mean_fr = zeros(size(trial_type_mat,1),...
@@ -227,6 +237,8 @@ figHandles = [];
                 set(h,'Visible','on');
 
                 figHandles(end+1) = figure;
+                set(gcf,'name',['Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2)) ' summary'],'numbertitle','off')
+                figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2)) '_summary']; 
                 subplot(2,2,1)    
                 hold on
                 for iBias = 1:length(UF_struct.bias_indexes)
@@ -293,19 +305,22 @@ figHandles = [];
                     'Upper',[100 100 2*pi 100]);
                 f = fittype(exp_cosine,'options',s);
                 fit_cosine = fit(UF_struct.bump_dir_actual,mean_fr_bump,f);
-                active_PD(rw_unit_idx) = fit_cosine.d;
-    %             compass(max_radius*cos(active_PD(rw_unit_idx)),max_radius*sin(active_PD(rw_unit_idx)),'r');
-                plot([active_PD(rw_unit_idx) active_PD(rw_unit_idx)]*180/pi,[0 max_radius],'r')
+                
+                if isfield(UF_struct,'PDs')
+                    active_PD(rw_unit_idx) = fit_cosine.d;
+        %             compass(max_radius*cos(active_PD(rw_unit_idx)),max_radius*sin(active_PD(rw_unit_idx)),'r');
+                    plot([active_PD(rw_unit_idx) active_PD(rw_unit_idx)]*180/pi,[0 max_radius],'r')
 
-                PD = UF_struct.PDs(rw_unit_idx,[3 4]);
-                PD_f = UF_struct.PDs(rw_unit_idx,[9 10]);
-                if ~isempty(PD)
-                    if PD(2) < pi     
-                          plot([PD(1) PD(1)]*180/pi,[0 max_radius],'k')
-                          temp = plot([PD(1)+PD(2)/2 PD(1)+PD(2)/2]*180/pi,[0 max_radius],'k');
-                          set(temp,'Color',[0.6 0.6 0.6])
-                          temp = plot([PD(1)-PD(2)/2 PD(1)-PD(2)/2]*180/pi,[0 max_radius],'k');
-                          set(temp,'Color',[0.6 0.6 0.6])
+                    PD = UF_struct.PDs(rw_unit_idx,[3 4]);
+                    PD_f = UF_struct.PDs(rw_unit_idx,[9 10]);
+                    if ~isempty(PD)
+                        if PD(2) < pi     
+                              plot([PD(1) PD(1)]*180/pi,[0 max_radius],'k')
+                              temp = plot([PD(1)+PD(2)/2 PD(1)+PD(2)/2]*180/pi,[0 max_radius],'k');
+                              set(temp,'Color',[0.6 0.6 0.6])
+                              temp = plot([PD(1)-PD(2)/2 PD(1)-PD(2)/2]*180/pi,[0 max_radius],'k');
+                              set(temp,'Color',[0.6 0.6 0.6])
+                        end
                     end
                 end
                 ylim([0 max_radius])
@@ -374,14 +389,16 @@ figHandles = [];
         end
         %% Active vs passive PDs
         % atan2(sin(PDs(:,3)-active_PD),cos(PDs(:,3)-active_PD));
-        figHandles(end+1) = figure;
-        hist(abs(180*atan2(sin(UF_struct.PDs(:,3)-active_PD'),cos(UF_struct.PDs(:,3)-active_PD'))/pi),30)
-        xlabel('|passive - active PD| (deg)')
-        ylabel('Count')
+        if isfield(UF_struct,'PDs')
+            figHandles(end+1) = figure;
+            hist(abs(180*atan2(sin(UF_struct.PDs(:,3)-active_PD'),cos(UF_struct.PDs(:,3)-active_PD'))/pi),30)
+            xlabel('|passive - active PD| (deg)')
+            ylabel('Count')
+        end
 
     end
     if save_figs
-        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'Units')
+        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'Units',figTitles)
     end
 end
 

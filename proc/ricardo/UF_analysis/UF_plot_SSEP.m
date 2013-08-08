@@ -1,5 +1,6 @@
 function UF_plot_SSEP(UF_struct,bdf,save_figs)
 figHandles = [];
+figTitles = cell(0);
 if isfield(bdf,'units')
     channels = str2double([bdf.analog.channel]);
     SSEP_range = [0.02 0.05];
@@ -18,8 +19,12 @@ if isfield(bdf,'units')
         electrode = UF_struct.elec_map(UF_struct.elec_map(:,3)==channels(iChannel),4);
         figHandles(end+1) = figure; 
         figure1_idx = gcf;
+        set(gcf,'name',['SSEP electrode: ' num2str(electrode)],'numbertitle','off')               
+        figTitles{end+1} = num2str(electrode,'%1.2d');              
         figHandles(end+1) = figure; 
         figure2_idx = gcf;
+        set(gcf,'name',['SSEP electrode: ' num2str(electrode) ' summary'],'numbertitle','off')               
+        figTitles{end+1} = [num2str(electrode,'%1.2d') '_summary'];        
         lfp_idx = iChannel;
         lfp_temp = squeeze(UF_struct.lfp_all(lfp_idx,:,:));
 %         lfp_temp = filter_lfp(lfp_temp,UF_struct.t_axis,UF_struct.t_axis>.1);        
@@ -334,7 +339,7 @@ if length(UF_struct.bias_indexes) > 1
     end
 end
 if save_figs
-    save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'SSEP')
+    save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'SSEP',figTitles)
 end
 
 end

@@ -1,11 +1,12 @@
 
-file_prefix = 'Kevin_2013-06-12_';
+file_prefix = 'Kevin_2013-08-07_';
 filepath = 'D:\Data\Kevin_12A2\Data\';
 NEVlist = dir([filepath file_prefix '*.nev']);
 
 if cellfun('isempty',strfind({NEVlist.name},'-spikes-s'))
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-s'))));
     NEVNSx_all = concatenate_NEVs(filepath,file_prefix);
+    NEVNSx_all.NEV = artifact_removal(NEVNSx_all.NEV,5,0.001);
     saveNEVOnlySpikes(NEVNSx_all.NEV, filepath, [file_prefix '-spikes.nev'])
 else
     % Un-merge

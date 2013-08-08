@@ -1,74 +1,64 @@
-function NEVNSx = concatenate_NEVs(filepath,file_prefix,new_file_suffix)
+function NEVNSx = concatenate_NEVs(filepath,file_prefix)
 % Batch combine NEVs and NSxs
-% filepath = 'D:\Data\Kevin_12A2\Data\NPMK_test\';
-% file_prefix = 'Kevin_2013-04-03_UF';
-success = 0;
-new_filename = [file_prefix new_file_suffix];
 
-NEVlist = dir([filepath file_prefix '*.nev']);
-NS2list = dir([filepath file_prefix '*.ns2']);
-NS3list = dir([filepath file_prefix '*.ns3']);
-NS4list = dir([filepath file_prefix '*.ns4']);
-NS5list = dir([filepath file_prefix '*.ns5']);
-
-NEV = []; NS2 = []; NS3 = []; NS4 = []; NS5 = [];
-
-for iNEV = 1:length(NEVlist)
-    NEVNSx
-
-
-if size(NEVlist,1)
-    NEV = openNEV('read', [filepath NEVlist(1).name]);
-end
-if size(NS2list,1)
-    NS2 = openNSx('read', [filepath NS2list(1).name]);
-end
-if  size(NS3list,1)
-    NS3 = openNSx('read', [filepath NS3list(1).name]);
-end
-if size(NS4list,1)
-    NS4 = openNSx('read', [filepath NS4list(1).name]);
-end
-if size(NS5list,1)
-    NS5 = openNSx('read', [filepath NS5list(1).name]);
-end
-
-% save([filepath new_filename],'NEV','NS2','NS3','NS4','NS5')
-
-
-
-for iNS2 = 1:length(NS2list)-1
-    NEV_concatenated = 0;
-    if ~isempty(NS2)
-        [NS2, NEV] = combineNSxNEV([filepath new_filename],[filepath NS2list(iNS2+1).name]);
-        NEV_concatenated = 1;
-    end
-    if ~isempty(NS3)
-        [NS3, NEV_temp] = combineNSxNEV([filepath new_filename],[filepath NS3list(iNS2+1).name]);
-        if ~NEV_concatenated
-            NEV = NEV_temp;
-            NEV_concatenated = 1;
+    if exist([filepath file_prefix '-concat.mat'],'file')
+        disp('Files already concatenated. Loading existing file.')
+        load([filepath,file_prefix,'-concat.mat'])
+        if (NEVNSx.MetaTags.NumFilesConcat ~= length(dir([filepath file_prefix '*.nev'])))
+            disp('Adding new files')
+            NEVNSx = concatenate_files(filepath,file_prefix);
         end
-    end
-    if ~isempty(NS4)
-        [NS4, NEV_temp] = combineNSxNEV([filepath new_filename],[filepath NS4list(iNS2+1).name]);
-        if ~NEV_concatenated
-            NEV = NEV_temp;
-            NEV_concatenated = 1;
-        end
-    end
-    if ~isempty(NS5)
-        [NS5, NEV_temp] = combineNSxNEV([filepath new_filename],[filepath NS5list(iNS2+1).name]);
-        if ~NEV_concatenated
-            NEV = NEV_temp;
-            NEV_concatenated = 1;
-        end
-    end
+    else
+        NEVNSx = concatenate_files(filepath,file_prefix);
+    end   
     
-    save([filepath new_filename],'NEV','NS2','NS3','NS4','NS5')
 end
-NEVNSx.NEV = NEV;
-NEVNSx.NS2 = NS2;
-NEVNSx.NS3 = NS3;
-NEVNSx.NS4 = NS4;
-NEVNSx.NS5 = NS5;
+
+function NEVNSx = concatenate_files(filepath,file_prefix)
+    NEVlist_sorted = dir([filepath file_prefix '*-s.mat']);
+    NEVlist = dir([filepath file_prefix '*.nev']);
+    NS2list = dir([filepath file_prefix '*.ns2']);
+    NS3list = dir([filepath file_prefix '*.ns3']);
+    NS4list = dir([filepath file_prefix '*.ns4']);
+    NS5list = dir([filepath file_prefix '*.ns5']);
+
+    if isempty(NEVlist)
+        disp('File(s) not found, aborting.')
+        return
+    end
+    NEVNSx = struct('NEV',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
+    
+    if length(NEVlist_sorted)==length(NEVlist)
+        for iNEV = 1:length(NEVlist)
+            clear NEV
+            load([filepath NEVlist_sorted(iNEV).name]);
+            NEVNSx(iNEV).NEV = NEV;
+        end
+    else
+        for iNEV = 1:length(NEVlist)
+            NEVNSx(iNEV).NEV = openNEV('read', [filepath NEVlist(iNEV).name],'nosave');
+        end
+    end
+    for iNS2 = 1:length(NS2list)
+        NEVNSx(iNS2).NS2 = openNSx('read', [filepath NS2list(iNS2).name],'precision','short');
+        num_zeros = fix((NEVNSx(iNS2).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSx(iNS2).NS2.Data,2)/1000)*1000);
+        NEVNSx(iNS2).NS2.Data = [zeros(size(NEVNSx(iNS2).NS2.Data,1),num_zeros) NEVNSx(iNS2).NS2.Data];
+        NEVNSx(iNS2).NS2.MetaTags.DataPoints = NEVNSx(iNS2).NS2.MetaTags.DataPoints + num_zeros;
+        NEVNSx(iNS2).NS2.MetaTags.DataDurationSec = NEVNSx(iNS2).NS2.MetaTags.DataDurationSec + num_zeros/1000;        
+    end
+    for iNS3 = 1:length(NS3list)
+        NEVNSx(iNS3).NS3 = openNSx('read', [filepath NS3list(iNS3).name],'precision','short');        
+        num_zeros = fix((NEVNSx(iNS3).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSx(iNS3).NS3.Data,2)/2000)*2000);
+        NEVNSx(iNS3).NS3.Data = [zeros(size(NEVNSx(iNS3).NS3.Data,1),num_zeros) NEVNSx(iNS2).NS2.Data];
+        NEVNSx(iNS2).NS2.MetaTags.DataPoints = NEVNSx(iNS2).NS2.MetaTags.DataPoints + num_zeros;
+        NEVNSx(iNS2).NS2.MetaTags.DataDurationSec = NEVNSx(iNS2).NS2.MetaTags.DataDurationSec + num_zeros/1000;
+    end
+    for iNS4 = 1:length(NS4list)
+        NEVNSx(iNS4).NS4 = openNSx('read', [filepath NS4list(iNS4).name],'precision','short');
+    end
+    for iNS5 = 1:length(NS5list)
+        NEVNSx(iNS5).NS5 = openNSx('read', [filepath NS5list(iNS5).name],'precision','short');
+    end
+
+    NEVNSx = combineNSxNEV(NEVNSx,NEVlist);
+end

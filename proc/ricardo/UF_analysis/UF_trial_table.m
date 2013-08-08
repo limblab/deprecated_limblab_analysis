@@ -151,6 +151,7 @@ for iTrial = 1:num_trials
 end
 
 trial_table(:,tc.bias_force_dir) = round(180/pi*trial_table(:,tc.bias_force_dir))*pi/180;
+trial_table(trial_table(:,tc.field_orientation)>=pi,tc.field_orientation) = trial_table(trial_table(:,tc.field_orientation)>=pi,tc.field_orientation)-pi;
 trial_table(:,tc.field_orientation) = round(180/pi*trial_table(:,tc.field_orientation))*pi/180;
 trial_table(:,tc.bump_direction) = round(180/pi*trial_table(:,tc.bump_direction))*pi/180;
 

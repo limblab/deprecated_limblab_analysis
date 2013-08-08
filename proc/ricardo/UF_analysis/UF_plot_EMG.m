@@ -1,6 +1,7 @@
 function UF_plot_EMG(UF_struct,save_figs)
-    mean_range = [0.05 0.075];
-    figHandles = [];
+    mean_range = [0.04 0.075];
+    figHandles = [];    
+    figTitles = cell(0);
     plot_idx = 1:size(UF_struct.trial_table,1);
     for iEMG = 1:UF_struct.num_emg
         baseline_idx = find(UF_struct.t_axis>-.05 & UF_struct.t_axis<0);
@@ -19,6 +20,8 @@ function UF_plot_EMG(UF_struct,save_figs)
 
         for iBias = 1:length(UF_struct.bias_indexes)
             figHandles(end+1) = figure; 
+            figTitles{end+1} = [UF_struct.emgnames{iEMG} ' BF ' num2str(UF_struct.bias_force_directions(iBias)*180/pi) ' deg'];
+            set(gcf,'name',[UF_struct.emgnames{iEMG} ' BF:' num2str(UF_struct.bias_force_directions(iBias)*180/pi) ' deg'],'numbertitle','off')
             for iField = 1:length(UF_struct.field_indexes)
                 idx = intersect(UF_struct.field_indexes{iField},UF_struct.bias_indexes{iBias});
                 idx = intersect(idx,plot_idx);
@@ -100,6 +103,9 @@ function UF_plot_EMG(UF_struct,save_figs)
         end
 
         figHandles(end+1) = figure; 
+        figTitles{end+1} = [UF_struct.emgnames{iEMG} ' summary'];
+        set(gcf,'name',[UF_struct.emgnames{iEMG} ' summary'],'numbertitle','off')
+
         subplot(211)
         hold on
         for iBias = 1:length(UF_struct.bias_indexes)
@@ -177,7 +183,7 @@ function UF_plot_EMG(UF_struct,save_figs)
 
     end
     if save_figs
-        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'EMG')
+        save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'',figTitles)
     end
 end
 

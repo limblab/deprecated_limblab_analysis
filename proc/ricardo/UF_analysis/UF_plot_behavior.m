@@ -2,6 +2,7 @@ function UF_plot_behavior(UF_struct,bdf,file_details,save_figs)
 
 %%  Rotated with respect to bump, separated by bump direction: Position and force
 figHandles(1) = figure;
+figuretitle{1} = {'PF_vs_time'};
 plot_range = [-.01 .1];
 t_idx = (UF_struct.t_axis>plot_range(1) & UF_struct.t_axis<plot_range(2));
 clf
@@ -13,10 +14,13 @@ for iBump = 1:length(UF_struct.bump_directions)
     subplot(length(UF_struct.bump_directions),2,iPlot)
     hold on        
     value_matrix = UF_struct.x_pos_rot_bump;
-    for iBias = 1:length(UF_struct.bias_force_directions)      
-        idx = intersect(UF_struct.bump_indexes{iBump},UF_struct.bias_indexes{iBias});
-        plot(UF_struct.t_axis(1),mean(value_matrix(idx,1)),'Color',UF_struct.colors_field_bias(iBias,:),...
-            'LineStyle','-');  
+    for iBias = 1:length(UF_struct.bias_force_directions)   
+        for iField = 1:length(UF_struct.field_orientations) 
+            idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump});
+            idx = intersect(idx,UF_struct.bias_indexes{iBias});
+            plot(UF_struct.t_axis(1),mean(value_matrix(idx,1)),'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),...
+                'LineStyle','-');  
+        end
     end
     
     for iBias = 1:length(UF_struct.bias_force_directions)        
@@ -35,8 +39,9 @@ for iBump = 1:length(UF_struct.bump_directions)
             temp_t = UF_struct.t_axis(t_idx);
             temp_t = [temp_t temp_t(end:-1:1)];
 %             area(temp_t,temp_std,'FaceColor',min(UF_struct.colors_field_bias(iBias,:)*1,[1 1 1]),'LineStyle','none')   
-            area(temp_t,temp_sem,'FaceColor',min([1 1 1],.7+UF_struct.colors_field_bias(iBias,:)*1),'LineStyle','none')   
-            legend_text{iBias} = ['Bias at ' num2str(round(180*UF_struct.bias_force_directions(iBias)/pi)) '^o'];
+            area(temp_t,temp_sem,'FaceColor',min([1 1 1],.7+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)*1),'LineStyle','none')   
+            legend_text{(iBias-1)*length(UF_struct.field_orientations)+iField} = ['UF: ' num2str(180*UF_struct.field_orientations(iField)/pi)...
+                '^o BF: ' num2str(180*UF_struct.bias_force_directions(iBias)/pi) '^o'];        
         end       
     end
     for iBias = 1:length(UF_struct.bias_force_directions)        
@@ -44,8 +49,8 @@ for iBump = 1:length(UF_struct.bump_directions)
             idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump});
             idx = intersect(idx,UF_struct.bias_indexes{iBias});
 
-            plot(UF_struct.t_axis(t_idx),mean(value_matrix(idx,t_idx)),'Color',UF_struct.colors_field_bias(iBias,:),...
-                'LineStyle',UF_struct.linelist{iField});
+            plot(UF_struct.t_axis(t_idx),mean(value_matrix(idx,t_idx)),'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),...
+                'LineStyle','-');
             max_y_pos = max(max_y_pos,max(mean(value_matrix(idx,t_idx))));            
         end        
     end
@@ -74,15 +79,15 @@ for iBump = 1:length(UF_struct.bump_directions)
                 temp_mean(end:-1:1)-temp_std(end:-1:1)];
             temp_t = UF_struct.t_axis(t_idx);
             temp_t = [temp_t temp_t(end:-1:1)];
-            area(temp_t,temp_std,'FaceColor',min([1 1 1],.7+UF_struct.colors_field_bias(iBias,:)*1),'LineStyle','none')   
+            area(temp_t,temp_std,'FaceColor',min([1 1 1],.7+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)*1),'LineStyle','none')   
         end       
     end
     for iBias = 1:length(UF_struct.bias_force_directions)        
         for iField = 1:length(UF_struct.field_orientations)           
             idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump});
             idx = intersect(idx,UF_struct.bias_indexes{iBias});
-            plot(UF_struct.t_axis(t_idx),mean(value_matrix(idx,t_idx)),'Color',UF_struct.colors_field_bias(iBias,:),...
-                'LineStyle',UF_struct.linelist{iField});
+            plot(UF_struct.t_axis(t_idx),mean(value_matrix(idx,t_idx)),'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),...
+                'LineStyle','-');
             y_force_range = [min(y_force_range(1),min(mean(value_matrix(idx,t_idx)))) ...
                 max(y_force_range(2),max(mean(value_matrix(idx,t_idx))))];          
         end        
@@ -113,6 +118,7 @@ x_pos_start = UF_struct.x_pos(:,UF_struct.t_zero_idx);
 y_pos_start = UF_struct.y_pos(:,UF_struct.t_zero_idx);
 
 figHandles(end+1) = figure;
+figuretitle{end+1} = {'Starting_pos'};
 hold on
 xlabel('Starting X position (cm)')
 ylabel('Starting Y position (cm)')
@@ -156,6 +162,7 @@ title(UF_struct.UF_file_prefix,'Interpreter','none');
 
 %% Starting force
 figHandles(end+1) = figure;
+figuretitle{end+1} = {'Starting_force'};
 hold on
 x_force_pre_bump = mean(UF_struct.x_force(:,UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,2));
 y_force_pre_bump = mean(UF_struct.y_force(:,UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,3));
@@ -298,6 +305,7 @@ title(UF_struct.UF_file_prefix,'Interpreter','none');
 
 %% Aligned positions
 figHandles(end+1) = figure;
+figuretitle{end+1} = {'Aligned_positions'};
 clf
 for iField = 1:length(UF_struct.field_indexes)
     for iBias = 1:length(UF_struct.bias_indexes)
@@ -326,6 +334,7 @@ set(h,'Visible','on');
 
 %% Aligned forces
 figHandles(end+1) = figure;
+figuretitle{end+1} = {'Aligned_forces'};
 clf
 for iField = 1:length(UF_struct.field_indexes)
     for iBias = 1:length(UF_struct.bias_indexes)
@@ -621,5 +630,5 @@ ylabel('y force (N)')
 % 
 
 if save_figs
-    save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'behavior')
+    save_figures(figHandles,UF_struct.UF_file_prefix,UF_struct.datapath,'Behavior',figuretitle)
 end
