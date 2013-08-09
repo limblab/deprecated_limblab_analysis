@@ -29,15 +29,15 @@ elseif nargin == 4
 end
     
 if isfield(unit_structure,'MetaTags')  %% If coming from an NEVNSx structure
-    timestamps = double(unit_structure.Data.Spikes.TimeStamp);
+    timestamps = double(unit_structure.Data.Spikes.TimeStamp)';
     num_electrodes = length(unique(unit_structure.Data.Spikes.Electrode));
 elseif isfield(unit_structure,'units')  %% If coming from a bdf structure
-    [timestamps,sort_order] = sort([unit_structure.units.ts]);
+    [timestamps,sort_order] = sort(vertcat(unit_structure.units.ts));
     timestamps = round(timestamps*30000);
     unit_index = [];
     units = [];
     for iUnit = 1:size(unit_structure.units,2)
-        unit_index = [unit_index repmat(iUnit,1,length(unit_structure.units(iUnit).ts))];
+        unit_index = [unit_index; repmat(iUnit,length(unit_structure.units(iUnit).ts),1)];
     end
     unit_index = unit_index(sort_order);
     num_electrodes = length(unit_structure.units);
@@ -61,9 +61,9 @@ if ~isempty(timestamps)
         bins_to_reject = find(spike_count_in_bin>=rejection_num_chans);
 
         actual_spikes = find(ismember(in_bin,bins_to_keep));
-        artifacts = unique([artifacts find(ismember(in_bin,bins_to_reject))]);
+        artifacts = unique([artifacts; find(ismember(in_bin,bins_to_reject))]);
 
-        actual_spikes = unique([actual_spikes intersect(actual_spikes,1:length(timestamps))]);
+        actual_spikes = unique([actual_spikes intersect(actual_spikes,1:length(timestamps))']);
         actual_spikes = actual_spikes(~ismember(actual_spikes,artifacts));
     end
     disp(['Removed ' num2str(length(artifacts)) ' artifacts, found ' num2str(length(actual_spikes))...
