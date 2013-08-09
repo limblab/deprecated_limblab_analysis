@@ -17,9 +17,9 @@ if filedate < datenum('2013-06-19')
     file_details.rot_handle = 0;
 end
 
-reload_data = 0;
+reload_data = 1;
 plot_behavior = 0;
-plot_emg = 1;
+plot_emg = 0;
 plot_units = 0;
 plot_STAEMG = 0;
 plot_SSEP = 0;
