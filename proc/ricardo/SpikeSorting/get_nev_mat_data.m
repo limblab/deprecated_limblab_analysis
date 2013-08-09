@@ -113,6 +113,7 @@ function out_struct = get_nev_mat_data(varargin)
             out_struct.units(i).id = unit_list(i,:);
             out_struct.units(i).ts = double(NEVNSx.NEV.Data.Spikes.TimeStamp(NEVNSx.NEV.Data.Spikes.Electrode==unit_list(i,1)...
                 & NEVNSx.NEV.Data.Spikes.Unit==unit_list(i,2)))/30000;
+            out_struct.units(i).ts = out_struct.units(i).ts';
             out_struct.units(i).waveforms = NEVNSx.NEV.Data.Spikes.Waveform(:,NEVNSx.NEV.Data.Spikes.Electrode==unit_list(i,1) &...
                 NEVNSx.NEV.Data.Spikes.Unit==unit_list(i,2))';
             
