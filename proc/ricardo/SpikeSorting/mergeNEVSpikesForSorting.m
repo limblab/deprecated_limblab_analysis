@@ -1,16 +1,18 @@
 
-file_prefix = 'Kevin_2013-08-07_';
+file_prefix = 'Kevin_2013-08-13_';
 filepath = 'D:\Data\Kevin_12A2\Data\';
-NEVlist = dir([filepath file_prefix '*.nev']);
 
+NEVlist = dir([filepath file_prefix '*.nev']);
 if cellfun('isempty',strfind({NEVlist.name},'-spikes-s'))
+    disp(['Merging ' num2str(length(NEVlist)) ' files.'])
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-s'))));
     NEVNSx_all = concatenate_NEVs(filepath,file_prefix);
-    NEVNSx_all.NEV = artifact_removal(NEVNSx_all.NEV,5,0.001);
+    NEVNSx_all.NEV = artifact_removal(NEVNSx_all.NEV,5,0.001,1);
     saveNEVOnlySpikes(NEVNSx_all.NEV, filepath, [file_prefix '-spikes.nev'])
 else
     % Un-merge
     NEV_sorted = openNEV('read',[filepath file_prefix '-spikes-s.nev']);
+    disp(['Separating ' num2str(length(NEVNSx_all.MetaTags.NEVlist) ) ' files.'])
     for iFile = 1:length(NEVNSx_all.MetaTags.NEVlist) 
         t_offset = (NEVNSx_all.MetaTags.FileStartSec(iFile))*30000;
         NEV_spikes_struct(iFile) = NEV_sorted.Data.Spikes;

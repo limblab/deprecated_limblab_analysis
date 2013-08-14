@@ -1,5 +1,5 @@
 % clear all
-file_details.UF_file_prefix = 'Kevin_2013-08-08_UF_';
+file_details.UF_file_prefix = 'Kevin_2013-08-13_UF_';
 % file_details.RW_file_prefix = 'Kevin_2013-07-15_RW_001';
 
 % file_details.UF_file_prefix = 'Test_2013-07-31_UF_003';
@@ -18,9 +18,9 @@ if filedate < datenum('2013-06-19')
 end
 
 reload_data = 1;
-plot_behavior = 0;
+plot_behavior = 1;
 plot_emg = 0;
-plot_units = 0;
+plot_units = 1;
 plot_STAEMG = 0;
 plot_SSEP = 0;
 save_figs = 0;

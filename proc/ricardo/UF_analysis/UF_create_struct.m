@@ -114,7 +114,7 @@ if UF_struct.num_emg>0
     UF_struct.emg_all = zeros(UF_struct.num_emg,size(UF_struct.trial_table,1),num_samples);
     % Process EMG
     UF_struct.emg_filtered = zeros(size(bdf.emg.data,1),UF_struct.num_emg);
-    [b,a] = butter(4,10/(bdf.emg.emgfreq/2),'high');
+    [b,a] = butter(4,100/(bdf.emg.emgfreq/2),'high');
     for iEMG = 1:UF_struct.num_emg        
         UF_struct.emg_filtered(:,iEMG)=abs(filtfilt(b,a,double(bdf.emg.data(:,iEMG+1))));   
         UF_struct.emg_all(iEMG,:,:) = reshape(UF_struct.emg_filtered(UF_struct.idx_table,iEMG),[],num_samples);

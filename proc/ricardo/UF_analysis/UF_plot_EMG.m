@@ -73,11 +73,12 @@ function UF_plot_EMG(UF_struct,save_figs)
             set(gca,'children',hChildren([find(~strcmp(hType,'line')); find(strcmp(hType,'line'))]))
             legend(legend_str{(iBias-1)*length(UF_struct.field_indexes)+[1:length(UF_struct.field_indexes)]})
             set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]))
-
+            
             for iBump=1:length(UF_struct.bump_indexes)
                 subplot(2,length(UF_struct.bump_indexes)/2,iBump)
                 ylim([0 1.1*max_emg])
                 y_text = max_emg;
+                hAxes = gca;
                 for iField = 1:length(UF_struct.field_indexes)
                     y_text = y_text - .05*max_emg; 
                     text(-.03,y_text,num2str(n_bumps(iBias,iField,iBump)),...
@@ -92,9 +93,14 @@ function UF_plot_EMG(UF_struct,save_figs)
                     plot(UF_struct.t_axis(baseline_idx([1 end])),[baseline_mean(iBias,iField) baseline_mean(iBias,iField)]-...
                         1.96*[baseline_sem(iBias,iField) baseline_sem(iBias,iField)],...
                     'Color',min([1 1 1],.5+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)),...
-                    'LineStyle','--')
-                end
+                    'LineStyle','--')                    
+                    UF_plot_field_arrows(figHandles(end),hAxes,UF_struct,iBias,iField)
+                    UF_plot_bias_arrow(figHandles(end),hAxes,UF_struct,iBias,iField)   
+                    UF_plot_bump_arrow(figHandles(end),hAxes,UF_struct,iBump)   
+                    set(hAxes,'Visible','on')
+                end 
             end
+            
             set(gcf,'NextPlot','add');
             gca2 = axes;
             h = title(UF_struct.UF_file_prefix,'Interpreter','none');

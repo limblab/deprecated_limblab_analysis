@@ -70,7 +70,7 @@ if isfield(bdf,'units')
 %                     sum_lfp_mean(iBias,iField,iBump) = mean(sum(lfp_temp_2,2));
 %                     sum_lfp_sem(iBias,iField,iBump) = std(sum(lfp_temp_2,2))/sqrt(length(idx));
                     legend_str{(iBias-1)*length(UF_struct.field_indexes)+iField} =...
-                        ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) '\circ' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) '\circ'];          
+                        ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) '\circ' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) '\circ'];                             
                 end
              end
         end
@@ -83,6 +83,10 @@ if isfield(bdf,'units')
                     y_text = y_text - .05*(lfp_lim_max - lfp_lim_min); 
                     text(0,y_text,num2str(n_bumps(iBias,iField,iBump)),...
                             'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:))
+                    hAxes = get(gcf,'CurrentAxes');
+                    UF_plot_field_arrows(figure1_idx,hAxes,UF_struct,iBias,iField)
+                    UF_plot_bias_arrow(figure1_idx,hAxes,UF_struct,iBias,iField)   
+                    UF_plot_bump_arrow(figure1_idx,hAxes,UF_struct,iBump)
                 end
             end
         end
