@@ -1,4 +1,10 @@
 % UF movie
+dataset = 2;
+% dataset 1 = 90 degree bumps, 2 field orientations
+% dataset 2 = 90/270 degree bumps, 1 field orientation, bias force  90
+% dataset 3 = 90/270 degree bumps, 1 field orientation, bias force  270
+% dataset 4 = 90 degree bumps, 1 field orientation, 2 bias force directions
+
 start_time = -.05;
 end_time = .15;
 dt = mode(diff(bdf.pos(:,1)));
@@ -38,46 +44,54 @@ for iEMG = 1:num_emg
 end
 
 %%
-% 90 degree bumps, 2 field orientations
-trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
-trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
-trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
-trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
+switch dataset
+    case 1
+    % 90 degree bumps, 2 field orientations
+    clear trial_idx
+    trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
+    trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
+    trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
+    trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
 
+    case 2
+    % 90/270 degree bumps, 1 field orientation, bias force  90
+    clear trial_idx
+    trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
+    trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
+    trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
+    trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
+    
+    case 3
+    % 90/270 degree bumps, 1 field orientation, bias force  270
+    clear trial_idx
+    trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
+    trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
+    trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
+    trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
+    
+    case 4
+    % 90 degree bumps, 1 field orientation, 2 bias force directions
+    clear trial_idx
+    trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
+    trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
+    trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
+    trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
 
-% 90/270 degree bumps, 1 field orientation, bias force  90
-trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
-trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
-trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
-trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
-
-% 90/270 degree bumps, 1 field orientation, bias force  270
-trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
-trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
-trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(1)));
-trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
-
-% 90 degree bumps, 1 field orientation, 2 bias force directions
-trial_idx{1} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
-trial_idx{1} = intersect(trial_idx{1},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
-trial_idx{2} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
-trial_idx{2} = intersect(trial_idx{2},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(2)));
-
-trial_idx{3} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
-trial_idx{3} = intersect(trial_idx{3},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
-trial_idx{4} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
-    find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
-trial_idx{4} = intersect(trial_idx{4},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
-
+    trial_idx{3} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(1)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
+    trial_idx{3} = intersect(trial_idx{3},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
+    trial_idx{4} = intersect(find(trial_table_temp(:,table_columns.bias_force_dir)==bias_force_directions(2)),...
+        find(trial_table_temp(:,table_columns.field_orientation)==field_orientations(2)));
+    trial_idx{4} = intersect(trial_idx{4},find(trial_table_temp(:,table_columns.bump_direction)==bump_directions(4)));
+end
 %%
 plot_colors = lines(8);
 figure(1)
