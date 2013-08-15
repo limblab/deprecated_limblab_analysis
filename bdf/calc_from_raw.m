@@ -80,7 +80,6 @@ function out_struct = calc_from_raw(raw_struct, opts)
     else
         warning('BDF:noWords','No WORDs are present');
     end
-    robot_task = 1
     
 %% Compile analog data
     if isfield(out_struct.raw, 'analog') && ~isempty(out_struct.raw.analog.data)
