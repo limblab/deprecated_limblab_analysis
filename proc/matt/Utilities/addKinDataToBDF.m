@@ -18,9 +18,6 @@ bdf.meta = out_struct.meta;
 bdf.units = out_struct.units;
 clear out_struct;
 
-out_struct = bdf;
-
 if ~isempty(filename_save)
-    save(filename_save,'out_struct');
+    save(filename_save,'bdf');
 end
-    

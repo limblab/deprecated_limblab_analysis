@@ -6,18 +6,19 @@ function convertDataToBDF(baseDirectory,convertFolders,varargin)
 % directory (e.g. a monkey folder on the server) and then a cell array of
 % folders (e.g. recording days) containing data files to convert to BDF.
 % You can direct the program to any folder you want within the base
-% directory, including subfolders (e.g. 'CerebusData\08-11-12').
+% directory, including subfolders.
 %
 % INPUTS:
 %   baseDirectory: (string) the base data directory (e.g. 'z:\Jaco_8I1\')
 %   convertFolders: (string or cell array of strings) folders to convert
-%       (e.g. {'CerebusData\08-16-12','CerebusData\08-17-12'} )
+%       (e.g. {'08-16-12','08-17-12'} )
 %   varargin: specify more parameters as needed. Use a format
 %               ...,'parameter_name',parameter_value,...
 %       Options:
 %           'rewrite': (boolean) rewrite any existing BDF files?
 %           'haskin': (boolean) is there encoder data in the file?
 %           'bdffolder': (string) name of bdf folder (default: 'BDFStructs')
+%           'datafolder': (string) name of folder with cerebus/plexon data (default: 'CerebusData')
 %
 % NOTES:
 %   This program will create a folder called "BDFStructs" inside of the
@@ -29,15 +30,15 @@ function convertDataToBDF(baseDirectory,convertFolders,varargin)
 %
 % EXAMPLES:
 %   Convert a folder with cerebus files (called \08-21-2012\) into BDFs
-%       convertDataToBDF('Z:\Jaco_8I1\CerebusData\','08-21-2012');
-%       -or- convertDataToBDF('Z:\Jaco_8I1\CerebusData\08-21-2012','');
+%       convertDataToBDF('Z:\Jaco_8I1\','08-21-2012');
+%       -or- convertDataToBDF('Z:\Jaco_8I1\08-21-2012','');
 %
 %   Convert multiple folders of data
-%       convertDataToBDF('Z:\MrT_9I4\M1\CerebusData\',{'06-21-2013','06-24-2013'});
+%       convertDataToBDF('Z:\MrT_9I4\M1\',{'06-21-2013','06-24-2013'},'datafolder','CerebusData','bdffolder','BDFStructs');
 %
 %   Convert files from a dual cerebus, where only one gets the encoder data
-%       convertDataToBDF('Z:\MrT_9I4\M1\CerebusData\',{'06-21-2013','06-24-2013'},'haskin',true);
-%       convertDataToBDF('Z:\MrT_9I4\PMd\CerebusData\',{'06-21-2013','06-24-2013'},'haskin',false);
+%       convertDataToBDF('Z:\MrT_9I4\M1\',{'06-21-2013','06-24-2013'},'haskin',true);
+%       convertDataToBDF('Z:\MrT_9I4\PMd\',{'06-21-2013','06-24-2013'},'haskin',false);
 %%%%%%
 % written by Matt Perich; last updated July 2013
 %%%%%
@@ -57,6 +58,7 @@ end
 rewriteFiles = 0; % By default, don't rewrite files
 hasKin = 1; % by default, assume there is encoder data
 bdfFolderName = 'BDFStructs'; %name of folder to put BDFs in
+dataFolderName = 'CerebusData';
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'rewrite'
@@ -65,6 +67,8 @@ for i=1:2:length(varargin)
             hasKin = varargin{i+1};
         case 'bdffolder'
             bdfFolderName = varargin{i+1};
+        case 'datafolder'
+            dataFolderName = varargin{i+1};
     end
 end
 %%%%%
@@ -77,7 +81,7 @@ end
 % Loop along the provided folders to convert
 for iFolder = 1:length(convertFolders)
     disp(['Converting neural data files from ' convertFolders{iFolder} '...']);
-    dirCB = fullfile(baseDirectory,convertFolders{iFolder},filesep);
+    dirCB = fullfile(baseDirectory,[filesep dataFolderName filesep],convertFolders{iFolder},filesep);
     dirBDF = fullfile(baseDirectory,[filesep bdfFolderName filesep],convertFolders{iFolder},filesep);
     
     % If there isn't a BDF directory yet, create it
