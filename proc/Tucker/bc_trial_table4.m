@@ -103,41 +103,7 @@ for trial = 1:num_trials-1
         else
             stim_code = -1;
         end
-% % * Databurst version descriptions
-%  * ==============================
-%  *
-%  * Version 0 (0x01)
-%  * ----------------
-%  * byte 0:		uchar		=> number of bytes to be transmitted
-%  * byte 1:		uchar		=> version number (in this case one)
-%  * byte 2:		uchar		=> task code (0x01)
-%  * bytes 3-6:     uchar       => version code
-%  * byte 7-8:      uchar		=> version code (micro)
-%  * bytes 9-12:    float		=> target angle
-%  * bytes 13-16:   float		=> bump direction
-%  * byte  17:      uchar		=> random target flag
-%  * bytes 18-21:   float		=> target floor (minimum angle(deg) target can take in random target assignment)
-%  * bytes 22-25:   float		=> target ceiling (maximum angle(deg) target can take in random target assignment)
-%  * bytes 26-29:   float		=> bump magnitude
-%  * bytes 30-33:   float		=> bump duration
-%  * bytes 34-37:   float		=> bump ramp
-%  * bytes 38-41:   float		=> bump floor (minimum angle(deg) bump can take in random target assignment)
-%  * bytes 42-45:   float		=> bump ceiling (maximum angle(deg) bump can take in random target assignment)
-%  * byte  46:      uchar		=> stim trial flag
-%  * bytes 47-50:   float		=> training trial frequency
-%  * bytes 51-54:   float		=> stimulation probability 
-%  * byte  55:      uchar		=> recenter cursor flag
-%  * bytes 56-59:   float		=> target radius
-%  * bytes 60-63:   float		=> target size
-%  * bytes 64-67:   float		=> intertrial time
-%  * bytes 68-71:   float		=> penalty time
-%  * bytes 72-75:   float		=> bump hold time
-%  * bytes 76-79:   float		=> center hold time
-%  * bytes 80-83:   float		=> outer target delay time
-%  * byte  84:      uchar		=> show target during bump
-%  * bytes 85-88:   float		=> bump incriment
-%  * byte  89:      uchar		=> is primary target
-%  */
+
 
 
         numbytes=db(1);
