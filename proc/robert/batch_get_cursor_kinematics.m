@@ -83,6 +83,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
             kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
+            kinStruct(batchIndex).slidingAccuracy=out_struct.kin.slidingAccuracy;
             % Fitts' Law calculations.  un-normalized time to target...
             unTT=kinStruct(batchIndex).TT./kinStruct(batchIndex).interTargetDistance;
             % and Index of Difficulty
@@ -128,6 +129,7 @@ for batchIndex=1:length(MATfiles)
                     kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
                     kinStruct(batchIndex).interTargetDistance= ...
                         out_struct.kin.intertarget_distance;
+                    kinStruct(batchIndex).slidingAccuracy=out_struct.kin.slidingAccuracy;
                 else
                     % this happens when get_cursor_kinematices was unable to modify
                     % the BDF, (e.g., there was no BR log file)
@@ -184,6 +186,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).pathReversals=out_struct.kin.pathReversals;
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
             kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
+            kinStruct(batchIndex).slidingAccuracy=out_struct.kin.slidingAccuracy;
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};

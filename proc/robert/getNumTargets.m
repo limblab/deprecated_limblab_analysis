@@ -10,6 +10,11 @@ function numTargets=getNumTargets(out_struct)
 
 START_TRIAL_WORD=unique(out_struct.words(:,2));
 START_TRIAL_WORD(START_TRIAL_WORD<17 | START_TRIAL_WORD>19)=[];
+% Weird glitch that happens occasionally in CO but never cropped up in
+% recorded history with RW, so it must be a CO if this happens...
+if length(START_TRIAL_WORD)>1 && all(START_TRIAL_WORD==17 | START_TRIAL_WORD==18)
+    START_TRIAL_WORD=17;
+end
 
 % first, always must account for bad starts/ends.
 % make sure to start with the first complete trial in the recording
