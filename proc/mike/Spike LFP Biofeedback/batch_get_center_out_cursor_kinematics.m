@@ -1,27 +1,31 @@
 % Runs batch_get_cursor_kinematics on a list of files
 
-[DateNames FileList] = CalcDecoderAge(Mini_Gam3_SingleFeat_Ch94, '02-11-2013');
+[DateNames FileList] = CalcDecoderAge(AllFiles, '02-11-2013');
 
-for i = 2:length(FileList)
+for i = 40:length(FileList)
     
     if (i== 1)
         
-        fnam =  findBDFonCitadel(Mini_Gam3_SingleFeat_Ch94{i,1})
+        [fnam,~,~] =  fileparts(findBDF_local(FileList{i,1}))
         
-        PathName = fnam(1:27)
+        PathName = fnam
         
         batch_get_cursor_kinematics
+        [citadelPathstr,~,~]=fileparts(regexprep(findBDFonCitadel(FileList{i,1}),'BDFs','Filter files'));
+        save(fullfile(citadelPathstr,'kinStruct.mat'),'kinStruct')
+
     end
         
     if i ~= 1 
         if (FileList{i,2} ~= FileList{i-1,2})
             
-            fnam =  findBDFonCitadel(Mini_Gam3_SingleFeat_Ch94{i,1})
+            [fnam,~,~] =  fileparts(findBDF_local(FileList{i,1}))
 
-            PathName = fnam(1:27)
+            PathName = fnam
 
             batch_get_cursor_kinematics
-            
+            [citadelPathstr,~,~]=fileparts(regexprep(findBDFonCitadel(FileList{i,1}),'BDFs','Filter files'));
+            save(fullfile(citadelPathstr,'kinStruct.mat'),'kinStruct')
         else
             continue
         end
