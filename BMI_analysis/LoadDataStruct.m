@@ -1,7 +1,7 @@
 function datastruct = LoadDataStruct(filename,varargin)
 % loads a mat file
 % usage: datastruct = loaddatastruct(filename)
-%       filename   : the name of the mat file to be loaded
+%       filename   : string of the mat file to be loaded
 %       datastruct : the loaded structure
 %       varargin   : obsolete "type" argument, just for compatibility
        

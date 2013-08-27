@@ -213,15 +213,24 @@ function BMIDataAnalyzer()
         
     function BDF_BinButton_Callback(obj,event)
 %        Bin_UI = figure;
-        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate,NormData, FindStates, Unsorted, TriKernel, sig] = convertBDF2binnedGUI;  %Added Unsorted TriKernel and sig 3/14/12 SNN
-        if isempty(binsize)
+        [BDF2BinArgs] = convertBDF2binnedGUI;  %Added Unsorted TriKernel and sig 3/14/12 SNN
+        if isempty(BDF2BinArgs)
             disp('Cancelled');
             return;
         end
-        disp('Converting BDF structure to binned data, please wait...');
-        binnedData = convertBDF2binned(BDF_FullFileName,binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData, FindStates, Unsorted, TriKernel, sig);
+        
+        disp('Loading BDF...')
+        BDF = LoadDataStruct(BDF_FullFileName);
+        
+        if BDF2BinArgs.ArtRemEnable
+            disp('Looking for Artifacts...');
+            BDF = artifact_removal(BDF,BDF2BinArgs.NumChan,BDF2BinArgs.TimeWind, 1);
+        end
+        
+        disp('Converting BDF structure to binned data...');
+        binnedData = convertBDF2binned(BDF,BDF2BinArgs);
   
-        if FindStates
+        if BDF2BinArgs.FindStates
             [states,statemethods] = findStates(binnedData);
             binnedData.states = states;
             binnedData.statemethods = statemethods;

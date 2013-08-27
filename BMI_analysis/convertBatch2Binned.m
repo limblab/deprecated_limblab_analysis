@@ -22,12 +22,12 @@ function Bin_FileNames = convertBatch2Binned(varargin)
             Bin_FileNames = {};
             return;
         end
-        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate, NormData, FindStates, Unsorted, TriKernel, sig] = convertBDF2binnedGUI;
+        BDF2BinArgs = convertBDF2binnedGUI;
                 
     elseif nargin == 2
         BDF_FileNames = varargin{1};
         dataPath = varargin{2};
-        [binsize, starttime, stoptime, hpfreq, lpfreq, MinFiringRate, NormData, FindStates, Unsorted, TriKernel, sig] = convertBDF2binnedGUI;
+        BDF2BinArgs = convertBDF2binnedGUI;
         %Save directory:
         savePath = uigetdir([dataPath '\..\..'],'Select a Destination Directory for Binned Files');
         if ~savePath
@@ -35,21 +35,11 @@ function Bin_FileNames = convertBatch2Binned(varargin)
             Bin_FileNames = {};
             return;
         end
-    elseif nargin == 14
+    elseif nargin == 4
         BDF_FileNames = varargin{1};
         dataPath = varargin{2};
-        binsize = varargin{3};
-        starttime = varargin{4};
-        stoptime = varargin{5};
-        hpfreq = varargin{6};
-        lpfreq = varargin{7};
-        MinFiringRate = varargin{8};
-        NormData = varargin{9};
-        FindStates = varargin{10};
-        Unsorted = varargin{11};
-        TriKernel = varargin{12};
-        sig = varargin{13};
-        savePath = varargin{14};
+        BDF2BinArgs = varargin{3};
+        savePath = varargin{4};
     else
         disp('Wrong Number of argument in call to ''convertBatch2Binned''');
         Bin_FileNames = {};
@@ -67,7 +57,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
     
     for i=1:size(BDF_FileNames,2)
         disp(sprintf('Binning %s structure...', BDF_FileNames{:,i} ));
-        binnedData = convertBDF2binned([dataPath '\' BDF_FileNames{:,i}],binsize,starttime,stoptime,hpfreq,lpfreq,MinFiringRate,NormData,FindStates, Unsorted, TriKernel, sig);
+        binnedData = convertBDF2binned([dataPath '\' BDF_FileNames{:,i}],BDF2BinArgs);
         disp(sprintf('Saving binned data file %s...',Bin_FileNames{:,i}));
         save([savePath '\' Bin_FileNames{:,i} ], 'binnedData');
         disp('Done.');

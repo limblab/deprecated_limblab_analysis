@@ -22,7 +22,7 @@ function varargout = convertBDF2binnedGUI(varargin)
 
 % Edit the above text to modify the response to help convertBDF2binnedGUI
 
-% Last Modified by GUIDE v2.5 02-Oct-2012 11:11:19
+% Last Modified by GUIDE v2.5 27-Aug-2013 12:10:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -73,27 +73,28 @@ function varargout = convertBDF2binnedGUI_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 
     if handles.OK
-        binsize = get(handles.binsize_txtbx,'Value');
-        startTime = get(handles.startTime_txtbx, 'Value');
-        stopTime = get(handles.stopTime_txtbx, 'Value');
-        HP = get(handles.HP_txtbx, 'Value');
-        LP = get(handles.LP_txtbx, 'Value');
-        MFR = get(handles.MFR_txtbx, 'Value');
-        NormData = get(handles.Normalize_cbx,'Value');
-        FindStates = get(handles.State_cbx,'Value');
-        Unsorted = get(handles.Unsorted_cbx,'Value');
-        TriKernel = get(handles.Triangle_cbx,'Value');
-        sig = get(handles.Sigma_txtbx, 'Value');
-        varargout = {binsize startTime stopTime HP LP MFR NormData FindStates Unsorted TriKernel sig};
+        out_struct = struct(...
+                    'binsize',      get(handles.binsize_txtbx,'Value'),...
+                    'startTime',    get(handles.startTime_txtbx, 'Value'),...
+                    'stopTime',     get(handles.stopTime_txtbx, 'Value'),...
+                    'HP',           get(handles.HP_txtbx, 'Value'),...
+                    'LP',           get(handles.LP_txtbx, 'Value'),...
+                    'MFR',          get(handles.MFR_txtbx, 'Value'),...
+                    'NormData',     get(handles.Normalize_cbx,'Value'),...
+                    'FindStates',   get(handles.State_cbx,'Value'),...
+                    'Unsorted',     get(handles.Unsorted_cbx,'Value'),...
+                    'TriKernel',    get(handles.Triangle_cbx,'Value'),...
+                    'sig',          get(handles.Sigma_txtbx, 'Value'),...
+                    'ArtRemEnable', get(handles.ArtRemEnable_cbx,'Value'),...
+                    'NumChan',      get(handles.NumChan_tbx,'Value'),...
+                    'TimeWind',     get(handles.TimeWind_tbx,'Value')...
+                    );
     else
-        for i=1:nargout
-            varargout{i} = [];
-        end
+        out_struct = [];
     end
     
+    varargout = {out_struct};
     close(handles.figure1);
-
-
 
 function binsize_txtbx_Callback(hObject, eventdata, handles)
 % hObject    handle to binsize_txtbx (see GCBO)
@@ -321,3 +322,34 @@ function CancelButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 uiresume(handles.figure1);
+
+
+% --- Executes on button press in ArtRemEnable_cbx.
+function ArtRemEnable_cbx_Callback(hObject, eventdata, handles)
+% hObject    handle to ArtRemEnable_cbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of ArtRemEnable_cbx
+
+
+% --- Executes on button press in NumChan_tbx.
+function NumChan_tbx_Callback(hObject, eventdata, handles)
+% hObject    handle to NumChan_tbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    set(handles.NumChan_tbx, 'Value', str2double(get(hObject,'String')) );
+
+% --- Executes during object creation, after setting all properties.
+function NumChan_tbx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to NumChan_tbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on button press in TimeWind_tbx.
+function TimeWind_tbx_Callback(hObject, eventdata, handles)
+% hObject    handle to TimeWind_tbx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+    set(handles.TimeWind_tbx, 'Value', str2double(get(hObject,'String'))*1E-6 );

@@ -1,38 +1,45 @@
-function binnedData = convertBDF2binned(varargin)
-        %argin : (datastructname, binsize, starttime, endtime, EMG_highpass, EMG_lowpass, minFiringRate, NormData, FindStates, Unsorted, TriKernel, sig)
+function binnedData = convertBDF2binned(datastruct,varargin)
+% converts a BDF to the binned format, according to parameters specified in argstruct
+%
+% binnedData = convertBDF2binned(datastruct,[arg_struct])
+%
+%         datastructname        : string of bdf.mat file path and name, or string of BDF in workspace, or BDF structure directly
+%
+%         arg_struct fields:        [default values]
+%             binsize             : [0.05] desired bin size in second
+%             startTime, stopTime : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)
+%             HP, Lp              : [50 10] high pass and low pass cut off frequencies for EMG filtering
+%             MFR                 : [0.0] minimum firing rate a units needs to be included in the data
+%             NormData            : [false] specify whether the output data is to be normalized to unity
+%             FindStates          : [false] Whether the data in classified in discret states
+%             Unsorted            : [false] Whether to use the unsorted units in the analysis
+%             TriKernel           : [false] Whether to use a triangular kernel to smooth the firing rate
+%             sig                 : [0.04] sigma value for creating triangular kernel
+%             ArtRemEnable        : [1] Whether to attempt detecting and deleting artifacts
+%             NumChan             : [10] Number of channels from which the artifact removal needs to detect simultaneous spikes to consider it an artifact
+%             TimeWind            : [0.0005] time window, in seconds, over which the artifact remover will consider event to be "simultaneous"
 
-%% Initialization
-
-if (nargin <1 || nargin == 3 || nargin > 12)
-    disp('Wrong number of arguments');
-    disp(sprintf('Usage: \nconvertBDF2binned( datastructname, [binsize], [starttime, endtime],[EMG_hp, EMG_lp]'));
-    disp('  - datastructname        : string of bdf.mat file path and name, or name of preloaded BDF structure');
-    disp('  - [binsize]             : [0.02] opt. desired bin size in second');
-    disp('  - [starttime, stoptime] : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)');
-    disp('  - [EMG_hp, EMG_lp]      : [50 10] high pass and low pass cut off frequencies for EMG filtering');
-    disp('  - [minFiringRate]       : [0.0] minimum firing rate a units needs to be included in the data');
-    disp('  - [NormData]            : [false] specify whether the output data is to be normalized to unity');
-    disp('  - [FindStates]          : [false] Whether the data in classified in discret states');
-    disp('  - [ThreshOnly]          : [false] Whether to use the unsorted units in the analysis');
-    disp('  - [TriKernel]           : [false] Whether to use a triangular kernel to smooth the data');
-    disp('  - [sig]                 : [0.04] sigma value for creating triangular kernel');
-    disp(sprintf('\n'));
+if nargin > 1
+    arg_struct = varargin{1};
+elseif nargin ==0 || nargin > 2
+    warning('Wrong number of arguments');
+    evalin('base','help convertBDF2binned');
     return;
 end
 
-datastructname = varargin{1};
-
-%Load the file or structure
-datastruct = LoadDataStruct(datastructname);
-
+if ~isstruct(datastruct)
+    %Load the file or structure
+    datastruct = LoadDataStruct(datastruct);
+end
+    
 if isempty(datastruct)
-   disp(sprintf('Could not load structure %s',datastructname));
+   disp('Could not load BDF');
    binnedData=[];
    return
 end
 
 %Default Parameters (all units are in seconds):
-binsize = 0.02;
+binsize = 0.05;
 starttime = 0.0;
 if isfield(datastruct, 'emg')
     duration = double(datastruct.emg.data(end,1));
@@ -60,35 +67,49 @@ TriKernel = false;
 sig = 0.04;
 
 %optional parameters overridding
-if (nargin >= 2)
-    binsize = varargin{2};
+if isfield(arg_struct,'binsize');
+    binsize = arg_struct.binsize;
 end
-if (nargin >=4)
-    starttime = varargin{3};
-    stoptime = varargin{4};
+if isfield(arg_struct,'startTime');
+    starttime = arg_struct.startTime;
 end
-if (nargin >=6)
-    EMG_hp = varargin{5};
-    EMG_lp = varargin{6};
+if isfield(arg_struct,'stopTime');
+    stoptime = arg_struct.stopTime;
 end
-if (nargin >=7)
-    minFiringRate = varargin{7};
+if isfield(arg_struct,'HP');
+    EMG_hp = arg_struct.HP;
 end
-if (nargin >= 8)
-    NormData = varargin{8};
+if isfield(arg_struct,'LP');
+    EMG_lp = arg_struct.LP;
 end
-if (nargin >= 9)
-    FindStates = varargin{9};
+if isfield(arg_struct,'MFR');
+    minFiringRate = arg_struct.MFR;
 end
-if (nargin >= 10)
-    Unsorted = varargin{10};
+if isfield(arg_struct,'NormData');
+    NormData = arg_struct.NormData;
 end
-if (nargin >= 11)
-   TriKernel = varargin{11};
+if isfield(arg_struct,'FindStates');
+    FindStates = arg_struct.FindStates;
 end
-if (nargin >= 12)
-   sig = varargin{12};
+if isfield(arg_struct,'Unsorted');
+    Unsorted = arg_struct.Unsorted;
 end
+if isfield(arg_struct,'TriKernel');
+    TriKernel = arg_struct.TriKernel;
+end
+if isfield(arg_struct,'sig');
+    sig = arg_struct.sig;
+end
+if isfield(arg_struct,'ArtRemEnable');
+    ArtRemEnable = arg_struct.ArtRemEnable;
+end
+if isfield(arg_struct,'NumChan');
+    NumChan = arg_struct.NumChan;
+end
+if isfield(arg_struct,'TimeWind');
+    TimeWind = arg_struct.TimeWind;
+end
+clear arg_struct;
 
 %-------------------------------------------------------------------------
 
