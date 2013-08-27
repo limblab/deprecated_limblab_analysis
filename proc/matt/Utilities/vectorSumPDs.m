@@ -58,9 +58,10 @@ end
 
 switch lower(sigTest{1})
     case 'bootstrap'
-        numIters = sigTest{3};
-        confLevel = sigTest{4};
+        numIters = sigTest{2};
+        confLevel = sigTest{3};
         
+        % Bootstrapping
         pds = zeros(size(fr,2),numIters);
         for iter = 1:numIters
             tempfr = zeros(size(fr));
@@ -76,9 +77,9 @@ switch lower(sigTest{1})
         
         % find confidence bounds and return as sig
         pds = sort(pds,2);
-        sig = [pds(:,ceil(numIters - confLevel*numIters)), pds(:,floor(confLevel*numIters))].*180./pi;
+        sig = [pds(:,ceil(numIters - confLevel*numIters)), pds(:,floor(confLevel*numIters))];
         
-        pds = mean(pds,2).*180./pi;
+        pds = mean(pds,2);
         
     case 'anova'
         confLevel = sigTest{2};

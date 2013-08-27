@@ -1,4 +1,4 @@
-function [tunCurves,sig] = regressTuningCurves(fr,theta,sigTest,varargin)
+function [tunCurves,ci_sig,md_sig,bo_sig] = regressTuningCurves(fr,theta,sigTest,varargin)
 % Compute cosine tuning curves relating neural activity to output using a
 % linear regression method to get preferred directions
 %
@@ -71,8 +71,10 @@ switch lower(sigTest{1})
                 tempfr(:,unit) = fr(randInds,unit);
                 tempTheta(:,unit) = theta(randInds);
             end
-            
+
             tunCurves = regressTCs(tempfr,tempTheta,doPlots);
+
+            
             b0s(:,iter) = tunCurves(:,1);
             b1s(:,iter) = tunCurves(:,2);
             b2s(:,iter) = tunCurves(:,3);
@@ -82,11 +84,17 @@ switch lower(sigTest{1})
         % find confidence bounds on PD and return as sig
         % IN THE FUTURE: maybe have confidence bounds for all three params?
         b2s = sort(b2s,2);
-        sig = [b2s(:,ceil(numIters - confLevel*numIters)), b2s(:,floor(confLevel*numIters))].*180./pi;
+        ci_sig = [b2s(:,ceil(numIters - confLevel*numIters)), b2s(:,floor(confLevel*numIters))];
         
-        b0s = mean(b0s,2).*180./pi;
-        b1s = mean(b1s,2).*180./pi;
-        b2s = mean(b2s,2).*180./pi;
+        b1s = sort(b1s,2);
+        md_sig = [b1s(:,ceil(numIters - confLevel*numIters)), b1s(:,floor(confLevel*numIters))];
+        
+        b0s = sort(b0s,2);
+        bo_sig = [b0s(:,ceil(numIters - confLevel*numIters)), b0s(:,floor(confLevel*numIters))];
+        
+        b0s = mean(b0s,2);
+        b1s = mean(b1s,2);
+        b2s = mean(b2s,2);
         
         tunCurves = [b0s,b1s,b2s];
         
@@ -97,14 +105,17 @@ switch lower(sigTest{1})
         for i = 1:size(fr,2)
             ap(i) = anova1(fr(:,i),theta(:,i),'off');
         end
-        sig = ap <= confLevel;
-        
+        ci_sig = ap <= confLevel;
+        md_sig = [];
+        bo_sig = [];
         tunCurves = regressTCs(fr,theta,doPlots);
 
     otherwise
         % Don't do any significance testing
         tunCurves = regressTCs(fr,theta,doPlots);
-        sig = [];
+        ci_sig = [];
+        md_sig = [];
+        bo_sig = [];
 end
 
 end %end main function
