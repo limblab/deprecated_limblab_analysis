@@ -24,7 +24,7 @@ function retv = oneModuleMultElect(electrodes, delay)
 if nargin ~= 2
     help oneModuleMultElect
     errstr = sprintf('%s\n%s\n','Not enough arguments',...
-        'select electrode list and delay>StimDuration');
+        'select electrode list and delay (msec)');
     error(errstr);
 end
 
@@ -51,14 +51,14 @@ duration = 500;
 slack = 200;    % put in a little extra time between electrode switches
 stimdur = 2*duration+interphase+slack;
 
-if numels > 1 && delay < stimdur
-    error('delay too short!')
-end
+% if numels > 1 && delay < stimdur
+%     error('delay too short!')
+% end
 % configure pattern #1
 configID = 1;   % Use stimulator module #1
-freq = 20;      % period = 50 msec
+freq = 10;      % period = 50 msec
 polarity = 0;   % anode first
-numpuls = 60;
+numpuls = 2;
 ampl = 20;      % pulse amplitude in  microAmps
 
 if 1000/freq <= numels*stimdur/1000
@@ -78,7 +78,7 @@ for i=1:numel(electrodes)
         break
     end
     if i>1
-        csmex('wait',stimdur);
+        csmex('wait',delay)
     end
     as=tic;
     csmex('autoStimulus',electrodes(i),configID);

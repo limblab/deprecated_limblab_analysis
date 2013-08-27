@@ -323,7 +323,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     /***** wait *****************************/
     if (!strcmp(cs_cmd, "wait")) {
 		int delay;
-		if (nrhs == 2) {
+		if (nrhs == 1) {
 			delay = 1;
 		} else if (nrhs  == 2) {
 			delay = getpar(prhs, 2);
