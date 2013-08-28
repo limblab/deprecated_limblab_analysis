@@ -77,7 +77,7 @@ for i=1:numel(electrodes)
         break
     end
     if i>1
-        csmex('wait',delay)
+        %csmex('wait',delay);
     end
     as=tic;
     csmex('autoStimulus',electrodes(i),configID);
