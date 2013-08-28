@@ -8,6 +8,9 @@ function NEVNSx = concatenate_NEVs(filepath,file_prefix)
     NS4list = dir([filepath file_prefix '*.ns4']);
     NS5list = dir([filepath file_prefix '*.ns5']);
 
+    NEVlist_sorted = NEVlist_sorted(cellfun('isempty',(regexp({NEVlist_sorted(:).name},'-spikes'))));
+    NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-spikes'))));
+    
     if isempty(NEVlist)
         disp('File(s) not found, aborting.')
         return

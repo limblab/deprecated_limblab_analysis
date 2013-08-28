@@ -164,8 +164,8 @@ title(UF_struct.UF_file_prefix,'Interpreter','none');
 figHandles(end+1) = figure;
 figuretitle{end+1} = {'Starting_force'};
 hold on
-x_force_pre_bump = mean(UF_struct.x_force(:,UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,2));
-y_force_pre_bump = mean(UF_struct.y_force(:,UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,3));
+x_force_pre_bump = mean(UF_struct.x_force(:,UF_struct.t_axis>-0.01 & UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,2));
+y_force_pre_bump = mean(UF_struct.y_force(:,UF_struct.t_axis>-0.01 & UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,3));
 bias_force_mag = mode(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_mag));
 target_radius = unique(UF_struct.trial_table(:,UF_struct.table_columns.force_target_diameter))/2;
 
@@ -441,6 +441,27 @@ axis equal
 xlim([-7 7])
 xlabel('x force (N)')
 ylabel('y force (N)')
+
+
+%% Trial type order
+figure
+hold on
+for iBias = 1:length(UF_struct.bias_indexes)
+    for iField = 1:length(UF_struct.field_indexes)
+        for iBump = 1:length(UF_struct.bump_indexes)
+            idx = intersect(UF_struct.bias_indexes{iBias},UF_struct.field_indexes{iField});
+            idx = intersect(idx,UF_struct.bump_indexes{iBump});
+            if ~isempty(idx)
+                plot(idx,(iBias-1)*(length(UF_struct.field_indexes)*length(UF_struct.bump_indexes))+...
+                    (iField-1)*length(UF_struct.bump_indexes)+iBump,'k.','MarkerSize',5); 
+            end
+        end
+    end
+end
+ylabel('Bias/Field/Bump combination')
+xlabel('Trial number')
+title('Trial type order')
+       
 
 %% Force/position map
 % figure(5)

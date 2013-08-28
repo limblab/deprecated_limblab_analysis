@@ -7,10 +7,13 @@ end
 for iFig = 1:length(figHandles)
 %     printname = [output_dir 'Results\' behaviorfilename filenamesuffix '_' num2str(iFig,'%3.3d')];
     tmp = figuretitle{iFig};
+    if ~exist([output_dir 'Results\' behaviorfilename],'dir')
+        mkdir([output_dir 'Results\' behaviorfilename])
+    end
     if isempty(filenamesuffix)
-        printname = strcat([output_dir 'Results\' behaviorfilename],tmp);
+        printname = strcat([output_dir 'Results\' behaviorfilename '\' behaviorfilename],tmp);
     else
-        printname = strcat([output_dir 'Results\' behaviorfilename filenamesuffix '_'],tmp);
+        printname = strcat([output_dir 'Results\' behaviorfilename '\' behaviorfilename filenamesuffix '_'],tmp);
     end
     set(figHandles(iFig),'Units','inches')
     set(figHandles(iFig),'OuterPosition',[0 0 11 8.5])

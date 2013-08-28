@@ -23,6 +23,7 @@ if strcmp(file_details.UF_file_prefix,'Kevin_2013-08-08_UF_')
 end
 
 UF_struct.bump_duration = mode(UF_struct.trial_table(:,UF_struct.table_columns.bump_duration));
+UF_struct.bias_magnitude = mode(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_mag));
 
 UF_struct.t_lim = min(UF_struct.trial_table(:,UF_struct.table_columns.bump_duration));
 UF_struct.fs = round(1/mode(diff(bdf.pos(:,1))));
@@ -67,8 +68,13 @@ trial_table_temp = trial_table_temp(1:end-1,:);
 UF_struct.trial_table = trial_table_temp;
 
 %% Remove bad trials
-num_samples = sum(bdf.pos(:,1)>=UF_struct.trial_table(2,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1) &...
-    bdf.pos(:,1)<=UF_struct.trial_table(2,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(2));
+temp = min(20,size(UF_struct.trial_table,1));
+num_samples = zeros(1,temp);
+for iTemp = 1:temp
+    num_samples(iTemp) = sum(bdf.pos(:,1)>=UF_struct.trial_table(iTemp,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1) &...
+        bdf.pos(:,1)<=UF_struct.trial_table(iTemp,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(2));
+end
+num_samples = mode(num_samples);
 t_vector = round(bdf.pos(:,1)*30000)/30000;
 UF_struct.t_axis = (1/UF_struct.fs:1/UF_struct.fs:num_samples/UF_struct.fs)+UF_struct.trial_range(1);
 [~,UF_struct.t_zero_idx] = min(abs(UF_struct.t_axis));
@@ -87,12 +93,18 @@ max_x_pos = sign(x_temp(:,end)).*max(abs(x_temp),[],2);
 max_y_pos = sign(y_temp(:,end)).*max(abs(y_temp),[],2);
 actual_bump_directions = atan2(max_y_pos,max_x_pos);
 actual_bump_directions(actual_bump_directions<0) = actual_bump_directions(actual_bump_directions<0)+2*pi;
-keep_idx = abs(actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5;
+keep_idx = abs(actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5 |...
+    abs(-2*pi+actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5;
 UF_struct.trial_table = UF_struct.trial_table(keep_idx,:);
 
 %%
-num_samples = sum(bdf.pos(:,1)>=UF_struct.trial_table(2,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1) &...
-    bdf.pos(:,1)<=UF_struct.trial_table(2,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(2));
+temp = min(20,size(UF_struct.trial_table,1));
+num_samples = zeros(1,temp);
+for iTemp = 1:temp
+    num_samples(iTemp) = sum(bdf.pos(:,1)>=UF_struct.trial_table(iTemp,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(1) &...
+        bdf.pos(:,1)<=UF_struct.trial_table(iTemp,UF_struct.table_columns.t_bump_onset)+UF_struct.trial_range(2));
+end
+num_samples = mode(num_samples);
 t_vector = round(bdf.pos(:,1)*30000)/30000;
 UF_struct.t_axis = (1/UF_struct.fs:1/UF_struct.fs:num_samples/UF_struct.fs)+UF_struct.trial_range(1);
 [~,UF_struct.t_zero_idx] = min(abs(UF_struct.t_axis));
@@ -209,7 +221,11 @@ for iField = 1:length(UF_struct.field_orientations)
         std_x = std(max_x_pos(idx));
         mean_y = mean(max_y_pos(idx));
         std_y = std(max_y_pos(idx));
-        UF_struct.bump_dir_actual(iBump,iField) = atan2(mean_y,mean_x);
+        if isnan(mean_x)
+            UF_struct.bump_dir_actual(iBump,iField) = UF_struct.bump_directions(iBump);
+        else
+            UF_struct.bump_dir_actual(iBump,iField) = atan2(mean_y,mean_x);
+        end
     end    
 end
 UF_struct.bump_dir_actual = mean(UF_struct.bump_dir_actual,2);

@@ -81,16 +81,16 @@ if isfield(bdf,'units')
             for iBias = 1:length(UF_struct.bias_indexes)
                 for iField = 1:length(UF_struct.field_indexes)
                     y_text = y_text - .05*(lfp_lim_max - lfp_lim_min); 
-                    text(0,y_text,num2str(n_bumps(iBias,iField,iBump)),...
+                    text(0.02,y_text,num2str(n_bumps(iBias,iField,iBump)),...
                             'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:))
                     hAxes = get(gcf,'CurrentAxes');
-                    UF_plot_field_arrows(figure1_idx,hAxes,UF_struct,iBias,iField)
-                    UF_plot_bias_arrow(figure1_idx,hAxes,UF_struct,iBias,iField)   
-                    UF_plot_bump_arrow(figure1_idx,hAxes,UF_struct,iBump)
+                    UF_plot_field_arrows(figure1_idx,hAxes,UF_struct,iBias,iField,2,'south')
+                    UF_plot_bias_arrow(figure1_idx,hAxes,UF_struct,iBias,iField,2,'south')   
+                    UF_plot_bump_arrow(figure1_idx,hAxes,UF_struct,iBump,2,'south')
                 end
             end
         end
-        legend(legend_str)
+%         legend(legend_str)
 
         clear lfp_temp
         set(gcf,'NextPlot','add');

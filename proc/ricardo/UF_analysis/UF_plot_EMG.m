@@ -71,7 +71,7 @@ function UF_plot_EMG(UF_struct,save_figs)
                 legend_str{(iBias-1)*length(UF_struct.field_indexes)+iField} = ['UF: ' num2str(UF_struct.field_orientations(iField)*180/pi) ' deg' ' BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) ' deg'];                
             end      
             set(gca,'children',hChildren([find(~strcmp(hType,'line')); find(strcmp(hType,'line'))]))
-            legend(legend_str{(iBias-1)*length(UF_struct.field_indexes)+[1:length(UF_struct.field_indexes)]})
+%             legend(legend_str{(iBias-1)*length(UF_struct.field_indexes)+[1:length(UF_struct.field_indexes)]})
             set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]))
             
             for iBump=1:length(UF_struct.bump_indexes)
@@ -81,7 +81,7 @@ function UF_plot_EMG(UF_struct,save_figs)
                 hAxes = gca;
                 for iField = 1:length(UF_struct.field_indexes)
                     y_text = y_text - .05*max_emg; 
-                    text(-.03,y_text,num2str(n_bumps(iBias,iField,iBump)),...
+                    text(.03,y_text,num2str(n_bumps(iBias,iField,iBump)),...
                         'Color',UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:))
                     plot(UF_struct.t_axis(baseline_idx([1 end])),[baseline_mean(iBias,iField) baseline_mean(iBias,iField)],...
                         'Color',min([1 1 1],.3+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)),...
@@ -94,9 +94,9 @@ function UF_plot_EMG(UF_struct,save_figs)
                         1.96*[baseline_sem(iBias,iField) baseline_sem(iBias,iField)],...
                     'Color',min([1 1 1],.5+UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:)),...
                     'LineStyle','--')                    
-                    UF_plot_field_arrows(figHandles(end),hAxes,UF_struct,iBias,iField)
-                    UF_plot_bias_arrow(figHandles(end),hAxes,UF_struct,iBias,iField)   
-                    UF_plot_bump_arrow(figHandles(end),hAxes,UF_struct,iBump)   
+                    UF_plot_field_arrows(figHandles(end),hAxes,UF_struct,iBias,iField,1,'north')
+                    UF_plot_bias_arrow(figHandles(end),hAxes,UF_struct,iBias,iField,1,'north')   
+                    UF_plot_bump_arrow(figHandles(end),hAxes,UF_struct,iBump,1,'north')   
                     set(hAxes,'Visible','on')
                 end 
             end
