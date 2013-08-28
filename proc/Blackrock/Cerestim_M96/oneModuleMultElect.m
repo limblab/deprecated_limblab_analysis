@@ -71,7 +71,7 @@ csmex('configure',configID,polarity,numpuls,ampl,ampl,...
     duration,duration,freq,interphase);
 
 csmex('beginningOfSequence');
-csmex('beginningOfGroup');
+%csmex('beginningOfGroup');
 for i=1:numel(electrodes)
     if electrodes(i)==0
         break
@@ -83,7 +83,7 @@ for i=1:numel(electrodes)
     csmex('autoStimulus',electrodes(i),configID);
     fprintf('Time to run (ms)=%.2f\n',toc(as)*1000)
 end
-csmex('endOfGroup');
+%csmex('endOfGroup');
 csmex('endOfSequence');
 
 csmex('play',1);
