@@ -4,20 +4,22 @@
 % module, with interleaving delay "delay"
 
 %         <----stimdur-------->
-%          -----
-%         |  ^  |          <-->slack
-%         |  |  |
-% --------   |   ----       ------------------------------------------
+%          -----                                                    ---
+%         |  ^  |          <-->slack                               |
+%         |  |  |                                                  |
+% --------   |   ----       ---------------------------------------
 %     duration    ^  |     |
 %                 |  |     |
 %        interphase   -----    <--delay->
 %                                         -----
 %                                        |     |
 %                                        |     |
-% ---------------------------------------       ----       -----------
+% ---------------------------------------       ----       ------------
 %                                                   |     |
-%          <-----Period(msec)=1000/freq-->          |     |
+%                                                   |     |
 %                                                    -----
+% 
+%          <-----------------Period(msec)=1000/freq---------------->
 
 function retv = oneModuleMultElect(electrodes, delay)
 
@@ -51,9 +53,6 @@ duration = 500;
 slack = 200;    % put in a little extra time between electrode switches
 stimdur = 2*duration+interphase+slack;
 
-% if numels > 1 && delay < stimdur
-%     error('delay too short!')
-% end
 % configure pattern #1
 configID = 1;   % Use stimulator module #1
 freq = 10;      % period = 50 msec
@@ -61,10 +60,10 @@ polarity = 0;   % anode first
 numpuls = 2;
 ampl = 20;      % pulse amplitude in  microAmps
 
-if 1000/freq <= numels*stimdur/1000
+if 1000/freq <= numels*(stimdur+delay*1000)/1000
     help oneModuleMultElect
     errmsg=sprintf('Period is %d ms but last electrode delay is %d ms', ...
-        1000/freq, (numel(electrodes)-1)*delay);
+        1000/freq, numels*(stimdur+delay*1000)/1000);
     error(errmsg)
 end
 

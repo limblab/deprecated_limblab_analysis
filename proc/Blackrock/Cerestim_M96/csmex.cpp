@@ -26,6 +26,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 \tplay\n\
 \treadDeviceInfo\n\
 \tstim_max\n\
+\twait\n\
 ";
     
 	if (nrhs < 1) {
@@ -251,10 +252,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	/***** play *****************************/
     if (!strcmp(cs_cmd, "play")) {
 		int count;
-		if (nrhs == 2) {
+		if (nrhs == 1) {
 			count = 1;
 		} else if (nrhs  == 2) {
-			count = getpar(prhs, 2);
+			count = getpar(prhs, 1);
 			if (count <1) {
 				mexPrintf("ERROR: count parameter must be at least 1\n");
 				return;
@@ -264,7 +265,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			return;
 		}
 		int retval = myStim.play(count);
-        if (retval=BSUCCESS) {
+        if (retval != BSUCCESS) {
 			mexPrintf("play Failed:%d\n", retval);
         } else if(verbose){
 			mexPrintf("play executed\n");
@@ -326,7 +327,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 		if (nrhs == 1) {
 			delay = 1;
 		} else if (nrhs  == 2) {
-			delay = getpar(prhs, 2);
+			delay = getpar(prhs, 1);
 			if (delay <1) {
 				mexPrintf("ERROR: wait parameter must be at least 1 msec\n");
 				return;
@@ -336,7 +337,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			return;
 		}
 		int retval = myStim.wait(delay);
-        if (retval=BSUCCESS) {
+        if (retval != BSUCCESS) {
 			mexPrintf("wait Failed:%d\n", retval);
         } else if(verbose){
 			mexPrintf("wait executed\n");
