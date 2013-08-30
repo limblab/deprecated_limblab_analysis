@@ -20,7 +20,6 @@ for i = 40:length(FileList)
         if (FileList{i,2} ~= FileList{i-1,2})
             
             [fnam,~,~] =  fileparts(findBDF_local(FileList{i,1}))
-
             PathName = fnam
 
             batch_get_cursor_kinematics
