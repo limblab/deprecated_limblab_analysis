@@ -1,4 +1,4 @@
-function varargout = openNEV(varargin)
+function varargout = openNEVLimblab(varargin)
 
 % openNEV
 %

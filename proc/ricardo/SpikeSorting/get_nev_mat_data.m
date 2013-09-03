@@ -1,8 +1,11 @@
 function out_struct = get_nev_mat_data(varargin)
-% GET_CEREBUS_DATA Generates a BDF struct from NEVNSx structure
+% GET_CEREBUS_DATA Generates a BDF struct from NEVNSx structure or from
+% .nev and .nsx files.
 %
 %   OUT_STRUCT = GET_NEV_MAT_DATA(NEVNSx) returns a BDF populated by the
 %   structure NEVNSx.
+%   OUT_STRUCT = GET_NEV_MAT_DATA([filepath fileprefix]) returns a BDF 
+%   populated by concatenating data from the files in [filepath fileprefix]
 % 
 %   OUT_STRUCT = GET_NEV_MAT_DATA(NEVNSx, VERBOSE) returns a BDF
 %   populated by the structure NEVNSx and outputs status information acording
@@ -24,9 +27,9 @@ function out_struct = get_nev_mat_data(varargin)
    
     % Parse arguments
     if (nargin == 1)
-        NEVNSx = varargin{1};
+        fileOrStruct = varargin{1};
     else
-        NEVNSx = varargin{1};
+        fileOrStruct = varargin{1};
         for i = 2:nargin
             opt_str = char(varargin{i} + ...
                 (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case            
@@ -50,6 +53,14 @@ function out_struct = get_nev_mat_data(varargin)
             end
         end
     end
+    
+    if isstruct(fileOrStruct)
+        NEVNSx = fileOrStruct;        
+    else
+        [filepath,fileprefix,~] = fileparts(fileOrStruct);
+        NEVNSx = cerebus2NEVNSx([filepath '\'],fileprefix);
+    end
+    clear fileOrStruct
   
     progress = 0;
     if (opts.verbose == 1)

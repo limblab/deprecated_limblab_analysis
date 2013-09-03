@@ -1,4 +1,4 @@
-function varargout = openNSx(varargin)
+function varargout = openNSxLimblab(varargin)
 
 % openNSx
 % 

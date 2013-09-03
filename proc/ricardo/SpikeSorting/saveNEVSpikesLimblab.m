@@ -1,4 +1,4 @@
-function saveNEVOnlySpikes(NEV, filepath, newFileName)
+function saveNEVSpikesLimblab(NEV, filepath, newFileName)
 
 %%
 % Saves a .nev file from NEV data structure
@@ -299,111 +299,6 @@ if (~isempty(passIdx))
     end
     idx = idx - length(NEV.Data.Spikes.TimeStamp);
 end
-% passIdx = find(idx > 0 & idx <= length(NEV.Data.SerialDigitalIO.TimeStamp));
-% if (~isempty(passIdx))
-%     pass = pass + 1;
-%     if strcmp(Report, 'report')
-%         disp(['pass ' num2str(pass) ': Recording ' num2str(length(passIdx)) ' digital and serial events ...']);
-%     end
-%     nxtIdx = find(diff(passIdx) ~= 1);
-%     nxtIdx(end+1) = length(passIdx);
-%     start = 1;
-%     for ii = 1:length(nxtIdx) % for each chunk
-%         offset = fExtendedHeader + (passIdx(start) - 1) * NEV.MetaTags.PacketBytes;
-%         fseek(FID, offset - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.SerialDigitalIO.TimeStamp(start:nxtIdx(ii)), 'uint32', NEV.MetaTags.PacketBytes - 4);
-%         fseek(FID, offset + 6 - (NEV.MetaTags.PacketBytes - 1), 'bof');
-%         fwrite(FID, NEV.Data.SerialDigitalIO.InsertionReason(start:nxtIdx(ii)), 'uint8', NEV.MetaTags.PacketBytes - 1);
-%         fseek(FID, offset + 8 - (NEV.MetaTags.PacketBytes - 2), 'bof');
-%         fwrite(FID, NEV.Data.SerialDigitalIO.UnparsedData(start:nxtIdx(ii)), 'uint16', NEV.MetaTags.PacketBytes - 2);
-%         start = nxtIdx(ii) + 1;
-%     end
-%     idx = idx - length(NEV.Data.SerialDigitalIO.TimeStamp);
-% end
-% passIdx = find(idx > 0 & idx <= length(NEV.Data.VideoSync.TimeStamp));
-% if (~isempty(passIdx))
-%     pass = pass + 1;
-%     if strcmp(Report, 'report')
-%         disp(['pass ' num2str(pass) ': Recording ' num2str(length(passIdx)) ' video evnets ...']);
-%     end
-%     nxtIdx = find(diff(passIdx) ~= 1);
-%     nxtIdx(end+1) = length(passIdx);
-%     start = 1;
-%     for ii = 1:length(nxtIdx) % for each chunk
-%         offset = fExtendedHeader + (passIdx(start) - 1) * NEV.MetaTags.PacketBytes;
-%         fseek(FID, offset - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.VideoSync.TimeStamp(start:nxtIdx(ii)), 'uint32', NEV.MetaTags.PacketBytes - 4);
-%         fseek(FID, offset + 4 - (NEV.MetaTags.PacketBytes - 2), 'bof');
-%         fwrite(FID, ones(length(start:nxtIdx(ii)), 1, 'uint16') * 65534, 'uint16', NEV.MetaTags.PacketBytes - 2);
-%         fseek(FID, offset + 6 - (NEV.MetaTags.PacketBytes - 2), 'bof');
-%         fwrite(FID, NEV.Data.VideoSync.FileNumber(start:nxtIdx(ii)), 'uint16', NEV.MetaTags.PacketBytes - 2);
-%         fseek(FID, offset + 8 - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.VideoSync.FrameNumber(start:nxtIdx(ii)), 'uint32', NEV.MetaTags.PacketBytes - 4);
-%         fseek(FID, offset + 12 - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.VideoSync.ElapsedTime(start:nxtIdx(ii)), 'uint32', NEV.MetaTags.PacketBytes - 4);
-%         fseek(FID, offset + 16 - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.VideoSync.SourceID(start:nxtIdx(ii)), 'uint32', NEV.MetaTags.PacketBytes - 4);
-%         start = nxtIdx(ii) + 1;
-%     end
-%     idx = idx - length(NEV.Data.VideoSync.TimeStamp);
-% end
-% passIdx = find(idx > 0 & idx <= length(NEV.Data.Comments.TimeStamp));
-% if (~isempty(passIdx))
-%     pass = pass + 1;
-%     if strcmp(Report, 'report')
-%         disp(['pass ' num2str(pass) ': Recording ' num2str(length(passIdx)) ' comments ...']);
-%     end
-%     nxtIdx = find(diff(passIdx) ~= 1);
-%     nxtIdx(end+1) = length(passIdx);
-%     start = 1;
-%     cmtLen = size(NEV.Data.Comments.Comments, 2);
-%     for ii = 1:length(nxtIdx) % for each chunk
-%         offset = fExtendedHeader + (passIdx(start) - 1) * NEV.MetaTags.PacketBytes;
-%         fseek(FID, offset - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.Comments.TimeStamp(start:nxtIdx(ii)), 'uint32', NEV.MetaTags.PacketBytes - 4);
-%         fseek(FID, offset + 4 - (NEV.MetaTags.PacketBytes - 2), 'bof');
-%         fwrite(FID, ones(length(start:nxtIdx(ii)), 1, 'uint16') * 65535, 'uint16', NEV.MetaTags.PacketBytes - 2);
-%         fseek(FID, offset + 6 - (NEV.MetaTags.PacketBytes - 1), 'bof');
-%         fwrite(FID, NEV.Data.Comments.CharSet(start:nxtIdx(ii)), 'uint8', NEV.MetaTags.PacketBytes - 1);
-%         fseek(FID, offset + 8 - (NEV.MetaTags.PacketBytes - 4), 'bof');
-%         fwrite(FID, NEV.Data.Comments.Color(start:nxtIdx(ii)), 'uint8', NEV.MetaTags.PacketBytes - 4);
-%         if (~isempty(NEV.Data.Comments.Comments))
-%             fseek(FID, offset + 12 - (NEV.MetaTags.PacketBytes - cmtLen), 'bof');
-%             fwrite(FID, NEV.Data.Comments.Comments(start:nxtIdx(ii), :).', [num2str(cmtLen) '*uint8'], NEV.MetaTags.PacketBytes - cmtLen);
-%         end
-%         start = nxtIdx(ii) + 1;
-%     end
-%     clear cmtLen;
-%     idx = idx - length(NEV.Data.Comments.TimeStamp);
-% end
-% passIdx = find(idx > 0 & idx <= length(NEV.Data.Tracking.TimeStamp));
-% if (~isempty(passIdx))
-%     pass = pass + 1;
-%     if strcmp(Report, 'report')
-%         disp(['pass ' num2str(pass) ': Recording ' num2str(length(passIdx)) ' tracking events ...']);
-%     end
-%     nxtIdx = find(diff(passIdx) ~= 1);
-%     idx = idx - length(NEV.Data.Tracking.TimeStamp);
-% end
-% passIdx = find(idx > 0 & idx <= length(NEV.Data.PatientTrigger.TimeStamp));
-% if (~isempty(passIdx))
-%     pass = pass + 1;
-%     if strcmp(Report, 'report')
-%         disp(['pass ' num2str(pass) ': Recording ' num2str(length(passIdx)) ' trigger events ...']);
-%     end
-%     nxtIdx = find(diff(passIdx) ~= 1);
-%     idx = idx - length(NEV.Data.PatientTrigger.TimeStamp);
-% end
-% passIdx = find(idx > 0 & idx <= length(NEV.Data.Reconfig.TimeStamp));
-% if (~isempty(passIdx))
-%     pass = pass + 1;
-%     if strcmp(Report, 'report')
-%         disp(['pass ' num2str(pass) ': Recording ' num2str(length(passIdx)) ' reconfig events ...']);
-%     end
-%     nxtIdx = find(diff(passIdx) ~= 1);
-%     idx = idx - length(NEV.Data.Reconfig.TimeStamp);
-% end
-
 %% Display how fast the function was executed.
 if strcmp(Report, 'report')
     disp(['The save time for NEV file was ' num2str(toc, '%0.5f') ...
