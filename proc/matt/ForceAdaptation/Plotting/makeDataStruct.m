@@ -7,34 +7,36 @@ if nargin < 2
     end
 end
 
-%% get parameters from file
+numWF = 100000;
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load some of the experimental parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(expParamFile);
-
-baseDir = params.baseDir{1};
-outDir = params.outDir{1};
-useDate = params.useDate{1};
+baseDir = params.base_dir{1};
+outDir = params.out_dir{1};
+useDate = params.date{1};
 monkey = params.monkey{1};
-useArray = params.useArray;
-bdfArray = params.bdfArray{1};
-taskType = params.taskType{1};
-adaptType = params.adaptType{1};
+useArray = params.arrays;
+bdfArray = params.bdf_array{1};
+task = params.task{1};
+adaptType = params.adaptation_type{1};
 epochs = params.epochs;
-numWF = str2double(params.numWF{1});
-holdTime = str2double(params.holdTime{1});
-forceMag = str2double(params.forceMag{1});
-forceAng = str2double(params.forceAng{1});
-
+holdTime = str2double(params.target_hold_low{1});
+forceMag = str2double(params.force_magnitude{1});
+forceAng = str2double(params.force_angle{1});
+rotationAng = str2double(params.rotation_angle{1});
 clear params
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 paramFile = fullfile(outDir, useDate, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 latency = str2double(params.pmd_latency{1});
-binSize = str2double(params.angle_bin_size{1});
 moveThresh = str2double(params.movement_threshold{1});
 winSize = str2double(params.movement_time{1});
 curvWin = str2double(params.curvature_window{1});
-clear params;
-
+clear params
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % convert the file with continuous data into bdf if not done so
 convertDataToBDF(fullfile(baseDir,bdfArray),useDate);
@@ -63,8 +65,8 @@ for iEpoch = 1:length(epochs)
     m = useDate(6:7);
     d = useDate(9:10);
     
-    bdfName = [monkey '_' bdfArray '_' taskType '_' adaptType '_' currEpoch '_' m d y '_' filenum '.mat'];
-    outName = [taskType '_' adaptType '_' currEpoch '_' y '-' m '-' d '.mat'];
+    bdfName = [monkey '_' bdfArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '.mat'];
+    outName = [task '_' adaptType '_' currEpoch '_' y '-' m '-' d '.mat'];
     
     bdfPath = fullfile(baseDir,bdfArray,'BDFStructs',useDate);
     outPath = fullfile(outDir,useDate);
@@ -85,10 +87,10 @@ for iEpoch = 1:length(epochs)
     spd = sqrt(vel(:,1).^2 + vel(:,2).^2);
     
     %% Get the trial table
-    tt = ff_trial_table(taskType,out_struct,holdTime);
+    tt = ff_trial_table(task,out_struct,holdTime);
     
     %% Turn that into a movement table
-    mt = getMovementTable(tt,taskType);
+    mt = getMovementTable(tt,task);
     
     %% Here's what I want to do... get movement windows based on mt
     % find fr and theta for each movement window
@@ -152,7 +154,7 @@ for iEpoch = 1:length(epochs)
     disp('Getting neural data...')
     for iArray = 1:length(useArray)
         currArray = useArray{iArray};
-        cerName = [monkey '_' currArray '_' taskType '_' adaptType '_' currEpoch '_' m d y '_' filenum '_sorted.nev'];
+        cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '_sorted.nev'];
         cerPath = fullfile(baseDir,currArray,'CerebusData',useDate);
         cerFile = fullfile(cerPath,cerName);
         
@@ -253,7 +255,6 @@ for iEpoch = 1:length(epochs)
         % store unit data in the struct
         data.(currArray).units = u;
         data.(currArray).unit_guide = sg;
-        data.(currArray).tuning = []; % initialize tuning field to be filled in later
         
         clear iu units unitIDs waveforms timestamps_wf remInds nsresult sampleCount channel chanName wf ts p2p ns hfile inds seg_list unit_list FileInfo EntityInfo iMove
         
@@ -279,7 +280,7 @@ for iEpoch = 1:length(epochs)
     m.arrays = useArray;
     m.monkey = monkey;
     m.perturbation = adaptType;
-    m.task = taskType;
+    m.task = task;
     m.epoch = epochs{iEpoch};
     
     p.hold_time = holdTime;
@@ -288,7 +289,7 @@ for iEpoch = 1:length(epochs)
     p.force_ang = forceAng;
     p.unit_count = unitCount;
     p.latency = latency;
-    
+
     data.meta = m;
     data.movements = r;
     data.cont = c;
@@ -297,7 +298,7 @@ for iEpoch = 1:length(epochs)
     
     clear m t u c;
     
-    disp('Saving data...')
+    disp(['Saving data to ' outFile '...'])
     save(outFile,'data');
     
 end

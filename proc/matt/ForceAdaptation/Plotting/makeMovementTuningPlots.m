@@ -1,10 +1,7 @@
-function makeMovementTuningPlots(data,saveFilePath)
-% compType is the type of computation
-%   'glm'
-%   'regression'
-%   'vectorsum'
+function makeMovementTuningPlots(data,tuning,saveFilePath)
 
-if nargin < 2
+
+if nargin < 3
     saveFilePath = [];
 end
 
@@ -26,38 +23,69 @@ for iArray = 1:length(useArrays)
     sg = data.(currArray).unit_guide;
     
     % find how many different types of tuning periods there are to plot
-    tuneTypes = fieldnames(data.(currArray).tuning);
+    tuningMethods = fieldnames(tuning.(currArray));
+    tuningPeriods = fieldnames(tuning.(currArray).(tuningMethods{1}));
     
-    for unit = 1:size(sg,1)
-        for iPlot = 1:length(tuneTypes)
-            tuneType = tuneTypes{iPlot};
+    for iPlot = 1:length(tuningPeriods)
+        tuneType = tuningPeriods{iPlot};
+        
+        % I'd prefer to use the nonparametric cis
+        if ismember('nonparametric',tuningMethods)
             
-            fr = data.(currArray).tuning.(tuneType).fr(:,unit);
-            theta = data.(currArray).tuning.(tuneType).theta;
-            utheta = unique(theta);
+            useMethod = 'nonparametric';
             
-            % find the mean firing rate
-            mFR = zeros(length(utheta),1);
-            sFR = zeros(length(utheta),1);
-            for it = 1:length(utheta)
-                relFR = fr(theta==utheta(it));
-                mFR(it) = mean(relFR);
-                sFR(it) = std(relFR);
+            disp('Using nonparametric tuning for plots');
+            utheta = tuning.(currArray).(useMethod).(tuneType).utheta;
+            mFR = tuning.(currArray).(useMethod).(tuneType).mfr;
+            sFR_l = tuning.(currArray).(useMethod).(tuneType).cil;
+            sFR_h = tuning.(currArray).(useMethod).(tuneType).cih;
+            
+        else % in the absence of that...
+            % doesn't matter which of these I pick as long as it exists
+            if ismember('regression',tuningMethods)
+                useMethod = 'regression';
+            elseif ismember('vectorsum',tuningMethods)
+                useMethod = 'vectorsum';
+            else
+                error('Could not find data')
             end
+            
+            for unit = 1:size(sg,1)
+                
+                
+                
+                fr = tuning.(currArray).(useMethod).(tuneType).fr(:,unit);
+                theta = tuning.(currArray).(useMethod).(tuneType).theta;
+                utheta = unique(theta);
+                
+                % find the mean firing rate
+                mFR = zeros(size(fr,1),length(utheta));
+                sFR_l = zeros(size(fr,1),length(utheta));
+                sFR_h = zeros(size(fr,1),length(utheta));
+                for it = 1:length(utheta)
+                    relFR = fr(theta==utheta(it));
+                    mFR(unit,it) = mean(relFR);
+                    sFR_l(unit,it) = mFR(unit,it) - std(relFR);
+                    sFR_h(unit,it) = 2*std(relFR);
+                end
+            end
+        end
+        
+        for unit = 1:size(sg,1)
             
             set(0, 'CurrentFigure', fh);
             clf reset;
             
             hold all;
-            h = area(utheta.*(180/pi),[mFR-sFR 2*sFR]);
+            h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
             set(h(1),'FaceColor',[1 1 1]);
             set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
-            plot(utheta.*(180/pi),mFR,'b','LineWidth',2);
+            plot(utheta.*(180/pi),mFR(unit,:),'b','LineWidth',2);
             
             ylabel('Firing Rate (Hz)','FontSize',fontSize);
             xlabel('Movement Direction (deg)','FontSize',fontSize);
             axis('tight');
-
+            
             V = axis;
             axis([V(1) V(2) 0 V(4)]);
             

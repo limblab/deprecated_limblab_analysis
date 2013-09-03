@@ -53,6 +53,9 @@ if strfind(lower(glmModel),'force')
     glmForce = [];
 end
 
+% Make the number of samples equal to the number of points for bootstrap
+use_samp = length(binT);
+
 fr = zeros(length(binT),size(sg,1));
 
 for unit = 1:size(sg,1)
@@ -71,38 +74,26 @@ end
 if ~strcmpi(tuningPeriod,'file')
     % Get the movement table
     mt = data.movements.movement_table;
+    mt = filterMovementTable(data,mt);
     
     disp(['Using ' tuningPeriod ' movement period, ' num2str(movementTime) ' second window...']);
-    
-    % exclude anticipated movements or outliers (Xiao et al 2006)
-    moveTimes = mt(:,5) - mt(:,3);
-    goodTrials = moveTimes >= excludeTimeRange(1) & moveTimes <= excludeTimeRange(2);
-    mt = mt(goodTrials,:);
-    
-    % for adaptation, exclude first set of trials
-    if excludeTrials && strcmp(data.meta.epoch,'AD');
-        % assume that I should exclude the first 30% of trials
-        mt = mt(floor(excludeFraction*size(mt,1)):end,:);
-    elseif excludeTrials && strcmp(data.meta.epoch,'WO');
-        % assume that I should exclude the first 30% of trials
-        mt = mt(floor(excludeFraction*size(mt,1)):end,:);
-    end
     
     %% Get spike count for each channel in desired window
     useWin = zeros(size(mt,1),2);
     
     for trial = 1:size(mt,1)
         % Time window for which to look for neural activity
+        % Time window for which to look for neural activity
         if strcmpi(tuningPeriod,'peak') % Use 0.5 sec period around peak speed
-            useWin(trial,:) = [mt(trial,4) - movementTime/2, mt(trial,4) + movementTime/2];
+            useWin(trial,:) = [mt(trial,5) - movementTime/2, mt(trial,5) + movementTime/2];
         elseif strcmpi(tuningPeriod,'initial') %Use initial movement period
-            useWin(trial,:) = [mt(trial,3), mt(trial,3)+movementTime];
+            useWin(trial,:) = [mt(trial,4), mt(trial,4)+movementTime];
         elseif strcmpi(tuningPeriod,'final') % Use the final movement period
             useWin(trial,:) = [mt(trial,end)-movementTime, mt(trial,end)];
         elseif strcmpi(tuningPeriod,'pre') % Use pre-movement period
-            useWin(trial,:) = [mt(trial,3)-movementTime, mt(trial,3)];
+            useWin(trial,:) = [mt(trial,4)-movementTime, mt(trial,4)];
         elseif strcmpi(tuningPeriod,'full') % Use entire movement
-            useWin(trial,:) = [mt(trial,2), mt(trial,end)];
+            useWin(trial,:) = [mt(trial,3), mt(trial,end)];
         else
             error('Could not identify the tuning period');
         end
@@ -126,15 +117,15 @@ if ~strcmpi(tuningPeriod,'file')
 else % don't break down by movements, use whole file continuously
     
     disp('Using whole data file...');
-        if strfind(lower(glmModel),'vel')
-            glmVel = binVel;
-        end
-        if strfind(lower(glmModel),'pos')
-            glmPos = binPos;
-        end
-        if strfind(lower(glmModel),'force')
-            glmForce = binForce;
-        end
+    if strfind(lower(glmModel),'vel')
+        glmVel = binVel;
+    end
+    if strfind(lower(glmModel),'pos')
+        glmPos = binPos;
+    end
+    if strfind(lower(glmModel),'force')
+        glmForce = binForce;
+    end
     
 end
 
@@ -176,15 +167,13 @@ for unit = 1:size(sg,1)
             disp(['Iteration ' num2str(bootCt) '...']);
         end
         % grab test set indices randomly
-            % Make the number of samples equal to the number of points
-            use_samp = length(glmPos);
-
+        
         % randomly grab binned data points
-        idx = uint32(1+(length(glmPos)-1)*rand(use_samp,1));
-
+        idx = uint32(1+use_samp-1)*rand(use_samp,1));
+        
         % fit glm model
         b = glmfit(glm_input(idx,:),fr(idx,unit),'poisson');
-
+        
         switch lower(glmModel)
             case 'pos'
                 error('s1_analysis:lib:glm:glm_pds:UnmappedPDCase',strcat('No bootstrap case defined for model type: ',model))
@@ -204,12 +193,12 @@ for unit = 1:size(sg,1)
                 bootMDs(unit,bootCt) = norm([b(6) b(7)]);
                 bootPDs(unit,bootCt) = atan2(b(6),b(7));
         end
-
+        
         b_mat(:,bootCt) = b;
     end
     avg_b = mean(b_mat,2);
     
-
+    
     % Get model outputs
     switch lower(glmModel)
         case 'posvel'
@@ -235,11 +224,11 @@ for unit = 1:size(sg,1)
         case 'ppcartfvp'
             error('s1_analysis:lib:glm:glm_pds:UnmappedPDCase',strcat('No output case defined for model type: ',model))
     end
-
+    
     % Set outputs
     mds(unit) = norm(bv);
     pds(unit) = atan2(bv(2),bv(1));
-
+    
 end
 
 
@@ -270,19 +259,16 @@ md_dist = bootMDs - mds(:,ones(1,bootNumIters));
 md_dist_sort = sort(md_dist,2);
 md_cis = [md_dist_sort(:,ang_ind_low) + mds, md_dist_sort(:,ang_ind_high) + mds];
 
-bos = [];
-bo_cis = [];
-
 %% build output struct
-out.glm.pds = [pds pd_cis];
-out.glm.mds = [mds md_cis];
-out.glm.bos = [bos bo_cis];
-out.glm.unit_guide = sg;
-out.glm.mt = mt;
-out.glm.params.stats = {'bootstrap', bootNumIters, confLevel};
-out.glm.params.exclude_trials = excludeTrials;
-out.glm.params.tune_type = tuningPeriod;
-out.glm.params.movement_time = movementTime;
-out.glm.params.glm_model = glmModel;
-out.glm.params.glm_bin_size = glmBinSize;
+out.pds = [pds pd_cis];
+out.mds = [mds md_cis];
+
+out.unit_guide = sg;
+out.mt = mt;
+out.params.stats = {'bootstrap', bootNumIters, confLevel};
+out.params.exclude_trials = excludeTrials;
+out.params.tune_type = tuningPeriod;
+out.params.movement_time = movementTime;
+out.params.glm_model = glmModel;
+out.params.glm_bin_size = glmBinSize;
 

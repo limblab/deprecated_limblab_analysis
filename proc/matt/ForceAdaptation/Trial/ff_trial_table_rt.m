@@ -8,8 +8,8 @@ function tt = ff_trial_table_rt(bdf)
 %    [2->1+(3*num_tgts)]: [go cue, onset, peak] for each target
 %    (1+3*num_tgts)+1   : Trial End time
 %    (1+3*num_tgts)+2   : Trial result    -- R, A, F, I or N (N coresponds to no-result)
-        
-        
+
+
 words = bdf.words;
 
 result_codes = 'RAFI------------';
@@ -29,7 +29,7 @@ end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 num_targets = (bdf.databursts{1,2}(1)-18)/8;
 
 %tt= [-1 -1 -1 -1 -1 -1 NaN ... NaN -1 -1]
-tt = [(zeros(num_trials-1,1)-1)  NaN(num_trials-1,3*num_targets)  (zeros(num_trials-1,2)-1) ];
+tt = [(zeros(num_trials-1,1)-1)  NaN(num_trials-1,5*num_targets)  (zeros(num_trials-1,2)-1) ];
 
 for trial = 1:num_trials-1
     start_time = start_words(trial);
@@ -66,7 +66,7 @@ for trial = 1:num_trials-1
     
     cue_array = [];
     for iCue = 1:length(cues)-1
-        if trial_result == double('R')
+        if trial_result == double('R') && length(cues) <= num_targets + 1
             sidx = find(bdf.vel(:,1) > cues(iCue),1,'first'):find(bdf.vel(:,1) > cues(iCue+1),1,'first');
             
             t = bdf.vel(sidx,1);                                % Set up time index vector
@@ -96,22 +96,29 @@ for trial = 1:num_trials-1
                 t_peak = t(i_peak);
                 
                 % find movement end time as when velocity goes below thresh?
-%                 off_idx = find(d>thresh & t>t(mvt_peak),1,'last');
-%                 t_offset = t(off_idx);
-%                 if isempty(t_offset)
-%                     t_offset = cues(iCue+1);
-%                 end
+                %                 off_idx = find(d>thresh & t>t(mvt_peak),1,'last');
+                %                 t_offset = t(off_idx);
+                %                 if isempty(t_offset)
+                %                     t_offset = cues(iCue+1);
+                %                 end
             else
                 t_onset = NaN;
                 t_peak = NaN;
-%                 t_offset = NaN;
+                %                 t_offset = NaN;
             end
             
-            cue_array = [cue_array these_go_cues(iCue) t_onset t_peak];
+            try
+                tgt_center_x = bytes2float(bdf.databursts{trial,2}(19+8*(iCue-1):19+8*(iCue-1)+3));
+                tgt_center_y = bytes2float(bdf.databursts{trial,2}(19+8*(iCue-1)+4:19+8*(iCue-1)+7));
+            catch
+                keyboard
+            end
+            
+            cue_array = [cue_array, these_go_cues(iCue), t_onset, t_peak, tgt_center_x, tgt_center_y];
         end
     end
     
-    %     % Offsets, target size
+    % Offsets, target size
     %     x_offset = bytes2float(bdf.databursts{trial,2}(7:10));
     %     y_offset = bytes2float(bdf.databursts{trial,2}(11:14));
     %     tgt_size = bytes2float(bdf.databursts{trial,2}(15:18));
@@ -122,14 +129,14 @@ for trial = 1:num_trials-1
     
     if trial_result == double('R') && num_targets_attempted == num_targets
         try
-        tt(trial,:) = [...
-            start_time, ...             % Trial start
-            cue_array,... % for each target, [go onset peak offset]
-            stop_time, ...  % End of trial
-            trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
+            tt(trial,:) = [...
+                start_time, ...             % Trial start
+                cue_array,... % for each target, [go onset peak offset xcenter ycenter]
+                stop_time, ...  % End of trial
+                trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
         catch
             keyboard
-            end
+        end
     end
 end
 

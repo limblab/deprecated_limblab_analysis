@@ -27,7 +27,7 @@ for iArray = 1:length(useArrays)
         unit_names = fieldnames(elec);
         for j = 1:length(unit_names)
             unit = elec.(unit_names{j});
-            isi = diff(unit.ts);
+            isi = diff(unit.ts).*1000;
             
             if removeOutliers
                 out = findOutliers(isi,3);
@@ -38,6 +38,7 @@ for iArray = 1:length(useArrays)
             clf reset;
             
             hist(isi,nBins);
+            xlabel('ISI (msec)','FontSize',fontSize);
             axis('tight');
             
             if ~isempty(saveFilePath)

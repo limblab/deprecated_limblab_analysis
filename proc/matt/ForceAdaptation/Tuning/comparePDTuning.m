@@ -1,4 +1,4 @@
-function out = compareCellTuning(pds,sg)
+function out = comparePDTuning(pds,sg)
 % compares tuning in different methods, epochs, files, days, etc
 %   pds is cell array of pd arrays [pd ci_low ci_high]
 %   sg is spike guide
@@ -12,11 +12,11 @@ end
 % for each unit, compare pds and cis across three epochs
 
 for unit = 1:size(pds{1},1)
-    diffMat = zeros(length(dataFiles));
-    for i = 1:length(dataFiles)
+    diffMat = zeros(length(pds));
+    for i = 1:length(pds)
         pd1 = pds{i};
         ci1 = pd1(unit,2:3);
-        for j = i+1:length(dataFiles)
+        for j = i+1:length(pds)
             pd2 = pds{j};
             ci2 = pd2(unit,2:3);
             

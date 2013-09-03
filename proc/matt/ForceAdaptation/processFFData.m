@@ -2,49 +2,65 @@ close all;
 clear;
 clc;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Specify these things %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+useDate = '2013-08-13';
+rewriteFiles = true;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Process a day's experimental data
-paramFileDir = 'C:\Users\Matt Perich\Desktop\lab\code\s1_analysis\proc\matt';
-expParamFile = 'Z:\MrT_9I4\Matt\2013-08-13_experiment_parameters.dat';
+paramFileDir = 'Z:\MrT_9I4\Matt';
+expParamFile = ['Z:\MrT_9I4\Matt\' useDate '_experiment_parameters.dat'];
 
-tuningPeriods = {'initial','peak','final','full'};
-% tuneType: (string) what kind of tuning to do
-%   'glm': use a glm for the whole file (NOT IMPLEMENTED YET!)
-%   'pre': use the time period immediately after target presentation (not implemented for RT task)
-%   'initial': use the time period starting from movement onset
-%   'peak': use time period centered around movement peak
-%   'final': use time period ending when trial ends
-%   'full': use time from go cue to end of trial with target direction <- IMPLEMENT THIS
-
-tuningMethod = {'regression','vectorsum'};
-
-% copy parameter files
+% get parameters
 params = parseExpParams(expParamFile);
-baseDir = params.outDir{1};
-useDate = params.useDate{1};
+baseDir = params.out_dir{1};
+useDate = params.date{1};
 clear params;
 
 dataPath = fullfile(baseDir,useDate);
 
 % copy the parameter files
-copyfile(expParamFile,fullfile(dataPath,[useDate '_experiment_parameters.dat']),'f');
-copyfile(fullfile(paramFileDir,'ff_analysis_parameters.dat'),fullfile(dataPath,[useDate '_analysis_parameters.dat']),'f');
+fn = fullfile(dataPath,[useDate '_experiment_parameters.dat']);
+if ~exist(fn,'file') || rewriteFiles
+    copyfile(expParamFile,fn,'f');
+end
+expParamFile = fn;
+
+analysisParamFile = fullfile(dataPath,[useDate '_analysis_parameters.dat']);
+if ~exist(analysisParamFile,'file') || rewriteFiles
+    copyfile(fullfile(paramFileDir,'ff_analysis_parameters.dat'),analysisParamFile,'f');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load some of the parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+params = parseExpParams(analysisParamFile);
+tuningPeriods = params.tuning_periods;
+tuningMethods = params.tuning_methods;
+clear params;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % make my data file (will convert things to BDF if necessary
 [~] = makeDataStruct(expParamFile);
 
+% Look at each cell in each file and determine if it is the same unit
+%   use Brian's code....
+
 % calculate tuning curves
-[~] = calculateTuningCurves(expParamFile,tuningPeriods,tuningMethod);
+[~] = fitTuningCurves(expParamFile);
+
+% Look for memory cells
+[~] = findMemoryCells(expParamFile);
 
 % make my plots
-doForce          = 0;
-doCurvature      = 0;
-doWF             = 0;
-doISI            = 0;
-doMovementTuning = 0;
-makeFFPlots(expParamFile,30,doForce,doCurvature,doWF,doISI,doMovementTuning);
+[~] = makeFFPlots(expParamFile);
 
 % make an HTML document detailing it all
-neuronReports(expParamFile);
+[~] = neuronReports(expParamFile);
 
 
 
