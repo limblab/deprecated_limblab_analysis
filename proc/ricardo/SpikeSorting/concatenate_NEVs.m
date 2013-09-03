@@ -1,5 +1,9 @@
 function NEVNSx = concatenate_NEVs(filepath,file_prefix)
-% Batch combine NEVs and NSxs
+% concatenate_NEVs creates NEVNSx structure containing all Cerebus data in the
+%   filepath folder that matches the file_prefix string.  NEVNSx is a
+%   structure with NEV, NS2, NS3, NS4 and NS5 fields, each containing data
+%   from that particular recording type.  Files of the same recording type
+%   are appended to one another with 1 second of blank data in between.
 
     NEVlist_sorted = dir([filepath file_prefix '*-s.mat']);
     NEVlist = dir([filepath file_prefix '*.nev']);
@@ -28,34 +32,17 @@ function NEVNSx = concatenate_NEVs(filepath,file_prefix)
             NEVNSxstruct(iNEV).NEV = openNEV('read', [filepath NEVlist(iNEV).name],'nosave');
         end
     end
-    for iNS2 = 1:length(NS2list)
-        NEVNSxstruct(iNS2).NS2 = openNSx('read', [filepath NS2list(iNS2).name],'precision','short');
-        num_zeros = fix((NEVNSxstruct(iNS2).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iNS2).NS2.Data,2)/1000)*1000);
-        NEVNSxstruct(iNS2).NS2.Data = [zeros(size(NEVNSxstruct(iNS2).NS2.Data,1),num_zeros) NEVNSxstruct(iNS2).NS2.Data];
-        NEVNSxstruct(iNS2).NS2.MetaTags.DataPoints = NEVNSxstruct(iNS2).NS2.MetaTags.DataPoints + num_zeros;
-        NEVNSxstruct(iNS2).NS2.MetaTags.DataDurationSec = NEVNSxstruct(iNS2).NS2.MetaTags.DataDurationSec + num_zeros/1000;        
-    end
-    for iNS3 = 1:length(NS3list)
-        NEVNSxstruct(iNS3).NS3 = openNSx('read', [filepath NS3list(iNS3).name],'precision','short');        
-        num_zeros = fix((NEVNSxstruct(iNS3).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iNS3).NS3.Data,2)/2000)*2000);
-        NEVNSxstruct(iNS3).NS3.Data = [zeros(size(NEVNSxstruct(iNS3).NS3.Data,1),num_zeros) NEVNSxstruct(iNS3).NS3.Data];
-        NEVNSxstruct(iNS3).NS3.MetaTags.DataPoints = NEVNSxstruct(iNS3).NS3.MetaTags.DataPoints + num_zeros;
-        NEVNSxstruct(iNS3).NS3.MetaTags.DataDurationSec = NEVNSxstruct(iNS3).NS3.MetaTags.DataDurationSec + num_zeros/2000;
-    end
-    for iNS4 = 1:length(NS4list)
-        NEVNSxstruct(iNS4).NS4 = openNSx('read', [filepath NS4list(iNS4).name],'precision','short');
-        num_zeros = fix((NEVNSxstruct(iNS4).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iNS4).NS4.Data,2)/10000)*10000);
-        NEVNSxstruct(iNS4).NS4.Data = [zeros(size(NEVNSxstruct(iNS4).NS4.Data,1),num_zeros) NEVNSxstruct(iNS4).NS4.Data];
-        NEVNSxstruct(iNS4).NS4.MetaTags.DataPoints = NEVNSxstruct(iNS4).NS4.MetaTags.DataPoints + num_zeros;
-        NEVNSxstruct(iNS4).NS4.MetaTags.DataDurationSec = NEVNSxstruct(iNS4).NS4.MetaTags.DataDurationSec + num_zeros/10000;
-    end
-    for iNS5 = 1:length(NS5list)
-        NEVNSxstruct(iNS5).NS5 = openNSx('read', [filepath NS5list(iNS5).name],'precision','short');
-        num_zeros = fix((NEVNSxstruct(iNS5).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iNS5).NS5.Data,2)/30000)*30000);
-        NEVNSxstruct(iNS5).NS5.Data = [zeros(size(NEVNSxstruct(iNS5).NS5.Data,1),num_zeros) NEVNSxstruct(iNS5).NS5.Data];
-        NEVNSxstruct(iNS5).NS5.MetaTags.DataPoints = NEVNSxstruct(iNS5).NS5.MetaTags.DataPoints + num_zeros;
-        NEVNSxstruct(iNS5).NS5.MetaTags.DataDurationSec = NEVNSxstruct(iNS5).NS5.MetaTags.DataDurationSec + num_zeros/30000;
-    end
+    
+    fs = [0,1000,2000,10000,30000];
+    for iNS = 2:5        
+        for iFile = 1:length(eval(['NS' num2str(iNS) 'list']))
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSx('read', [filepath eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
+            num_zeros = fix((NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)/fs(iNS))*1000);
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data = [zeros(size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,1),num_zeros) NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data];
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints + num_zeros;
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec + num_zeros/1000;
+        end
+    end    
 
     NSxfields = fieldnames(NEVNSxstruct);
     NSxfields = NSxfields(~strcmp(NSxfields,'NEV'));
@@ -127,6 +114,7 @@ function NEVNSx = concatenate_NEVs(filepath,file_prefix)
         clear NEV1;
     end
 
+    %% The following fields are not implemented
     % NEV1.Data.Tracking.TimeStamp    = [NEV1.Data.Tracking.TimeStamp, NEV2.Data.Tracking.TimeStamp];
     % NEV1.Data.Tracking.PointCount   = [NEV1.Data.Tracking.PointCount, NEV2.Data.Tracking.PointCount];
     % NEV1.Data.Tracking.X            = [NEV1.Data.Tracking.X, NEV2.Data.Tracking.X];
