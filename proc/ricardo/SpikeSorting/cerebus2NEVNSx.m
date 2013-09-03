@@ -3,7 +3,9 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
 %   filepath folder that matches the file_prefix string.  NEVNSx is a
 %   structure with NEV, NS2, NS3, NS4 and NS5 fields, each containing data
 %   from that particular recording type.  Files of the same recording type
-%   are appended to one another with 1 second of blank data in between.
+%   are appended to one another with 1 second of blank data in between.  If
+%   spike data has been sorted (indicated by '*-s.mat' suffix), sorted files
+%   will be loaded.   
 
     NEVlist_sorted = dir([filepath file_prefix '*-s.mat']);
     NEVlist = dir([filepath file_prefix '*.nev']);
@@ -29,7 +31,7 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
         end
     else
         for iNEV = 1:length(NEVlist)
-            NEVNSxstruct(iNEV).NEV = openNEV('read', [filepath NEVlist(iNEV).name],'nosave');
+            NEVNSxstruct(iNEV).NEV = openNEVlimblab('read', [filepath NEVlist(iNEV).name],'nosave');
         end
     end
     

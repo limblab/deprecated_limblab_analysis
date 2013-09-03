@@ -1,12 +1,11 @@
 function out_struct = get_nev_mat_data(varargin)
-% GET_CEREBUS_DATA Generates a BDF struct from mat files containing NEV and
-%   NSx data
+% GET_CEREBUS_DATA Generates a BDF struct from NEVNSx structure
 %
-%   OUT_STRUCT = GET_NEV_MAT_DATA(FILENAME) returns a BDF populated by the
-%   file FILENAME.
+%   OUT_STRUCT = GET_NEV_MAT_DATA(NEVNSx) returns a BDF populated by the
+%   structure NEVNSx.
 % 
-%   OUT_STRUCT = GET_NEV_MAT_DATA(FILENAME, VERBOSE) returns a BDF
-%   populated by the file FILENAME and outputs status information acording
+%   OUT_STRUCT = GET_NEV_MAT_DATA(NEVNSx, VERBOSE) returns a BDF
+%   populated by the structure NEVNSx and outputs status information acording
 %   to the optional parameter VERBOSE.
 %       VERBOSE - 1 => prints status info
 %                 0 => prints nothing (default)
