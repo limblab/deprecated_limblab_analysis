@@ -1,4 +1,17 @@
 function elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile)
+
+%cerebusToElectrodeMap reads Blackrock .cmp files into Matlab
+%   elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile) returns a
+%   cell array or array depending on whether the electrodes are named or
+%   numbered.  If named, elec_map is a cell array with each element
+%   corresponding to a different electrode. 
+%   Within each cell and in the case when electrodes are numbered, 
+%   the first column contains the column of the electrode on the
+%   array, the second column contains the row of the electrode on the array
+%   the third column contains the channel number and the last column
+%   contains either the electrode name or the electrode number.
+%   
+
 fileID = fopen(cerebus2ElectrodesFile,'r');
 text = char(fread(fileID,inf,'char'))';
 fclose(fileID);
