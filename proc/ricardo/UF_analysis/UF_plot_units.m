@@ -3,7 +3,7 @@ figHandles = [];
 figTitles = cell(0);
 x_limits = [-.1 .15];
 histograms = 1;
-hist_bin_width = 0.005;
+hist_bin_width = 0.01;
 fr_tc = 0.005;
 
     if isfield(bdf,'units')

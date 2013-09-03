@@ -228,8 +228,10 @@ for iField = 1:length(UF_struct.field_orientations)
         end
     end    
 end
+temp = abs(UF_struct.bump_dir_actual-[UF_struct.bump_directions UF_struct.bump_directions]) > abs(UF_struct.bump_dir_actual-[UF_struct.bump_directions UF_struct.bump_directions]+2*pi);
+UF_struct.bump_dir_actual(temp) = UF_struct.bump_dir_actual(temp)+2*pi;
 UF_struct.bump_dir_actual = mean(UF_struct.bump_dir_actual,2);
-UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0)=2*pi+UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0);
+% UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0)=2*pi+UF_struct.bump_dir_actual(UF_struct.bump_dir_actual<0);
 bump_dir_mat = [abs(UF_struct.bump_dir_actual-UF_struct.bump_directions) abs((UF_struct.bump_dir_actual-2*pi)-UF_struct.bump_directions)];
 [~,idx] = min(bump_dir_mat,[],2);
 idx = idx-1;

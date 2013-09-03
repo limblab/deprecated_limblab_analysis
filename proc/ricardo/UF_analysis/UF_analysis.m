@@ -4,20 +4,20 @@
 % file_details.UF_file_prefix = 'Kevin_2013-08-15_UF_';
 % file_details.RW_file_prefix = 'Kevin_2013-07-15_RW_001';
 % file_details.RW_file_prefix = '';
-% cerebus2ElectrodesFile = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';
+% cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';
+% file_details.rot_handle = 1; 
 
-% file_details.datapath = 'D:\Data\Kramer_10I1\';
-% file_details.UF_file_prefix = 'Kramer_2013-08-28_UF_';
-% file_details.RW_file_prefix = 'Kramer_2013-08-28_RW_';
-% cerebus2ElectrodesFile = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kramer 10I1\Kramer sept 2012 implant array mapping\6251-0922.cmp';
+file_details.datapath = 'D:\Data\Kramer_10I1\';
+file_details.UF_file_prefix = 'Kramer_2013-08-30_UF_';
+file_details.RW_file_prefix = 'Kramer_2013-08-30_RW_';
+cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kramer 10I1\Kramer sept 2012 implant array mapping\6251-0922.cmp';
+file_details.rot_handle = 0; 
 
-file_details.datapath = 'D:\Data\TestData\';
-file_details.UF_file_prefix = 'Test_2013-08-28_UF_001';
-file_details.RW_file_prefix = '';
+% file_details.datapath = 'D:\Data\TestData\';
+% file_details.UF_file_prefix = 'Test_2013-08-28_UF_001';
+% file_details.RW_file_prefix = '';
 
-file_details.elec_map = cerebusToElectrodeMap(cerebus2ElectrodesFile);
-
-file_details.rot_handle = 1;  
+file_details.elec_map = read_cmp(cmp_file);
 
 % All files before June 19, 2013 use non-rotated handle
 filedate = datenum(cell2mat(regexp(file_details.UF_file_prefix,'\d\d\d\d-\d\d-\d\d','match')));
@@ -25,10 +25,10 @@ if filedate < datenum('2013-06-19')
     file_details.rot_handle = 0;
 end
 
-reload_data = 0;
-plot_behavior = 1;
+reload_data = 1;
+plot_behavior = 0;
 plot_emg = 0;
-plot_units = 0;
+plot_units = 1;
 plot_STAEMG = 0;
 plot_SSEP = 0;
 save_figs = 0;
