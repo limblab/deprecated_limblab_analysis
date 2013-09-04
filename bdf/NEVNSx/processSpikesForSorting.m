@@ -1,7 +1,7 @@
 function processSpikesForSorting(filepath,file_prefix)
 % mergeNEVSpikes combines spike data from .nev files in filepath that match
 %   file_prefix string.  Saves data to new file named '(file_prefix).nev'.
-%   Sort spikes and save as '(file_prefix)-spikes-s.nev'.
+%   After running, sort spikes and save as '(file_prefix)-spikes-s.nev'.
 %   Run this script again after spike sorting to separate into independent 
 %   .mat files.
 
