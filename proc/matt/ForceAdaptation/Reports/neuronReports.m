@@ -1,9 +1,26 @@
 function html = neuronReports(expParamFile)
-% make HTML file with summary of data file
-% Built to support any number of arrays with any names
-% Built to support any number of files (called "epochs" here after my force
-% field stuff), just give each one a consistent code in the parameters file
+% NEURONREPORTS  Constructs html document to summarize a session's data
 %
+%   This function will load processed data and generate html for a summary
+% report with data and figures.
+%
+% INPUTS:
+%   expParamFile: (string) path to file containing experimental parameters
+%
+% OUTPUTS:
+%   html: (string) giant piece of html code with everything included
+%
+% NOTES:
+%   -This function requires several bits of pre-processing
+%       1) Create a data struct from the Cerebus files (makeDataStruct)
+%       2) Create adaptation metrics struct (getAdaptationMetrics)
+%       3) Run empirical KS test to track stability of neurons (trackNeurons)
+%       4) Fit tuning for neurons, regression and nonparametric recommended (fitTuningCurves)
+%       5) Classify cells based on adaptation behavior (findMemoryCells)
+%       6) Generate a variety of plots (makeFFPlots)
+%   - This function will automatically write the html to a file, too
+%   - See "experimental_parameters_doc.m" for documentation on expParamFile
+%   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 % set some parameters
 tuningPeriods = {'initial','peak','final','full'};
@@ -60,7 +77,11 @@ end
 % load the classification information
 load(fullfile(dataPath,[taskType '_' adaptType '_classes_' useDate '.mat']));
 
+% load neuron tracking data
+load(fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']));
+
 disp('Done. Writing html...')
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tuningMethods = fieldnames(classes.(arrays{1}));
 % we don't really care about the nonparametric tuning atthis time
@@ -90,6 +111,8 @@ html = strcat(html,'<a href="#classes">Cell Classifications</a><br>');
 % if there is M1 and PMd, loop
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
+    
+    useComp = tracking.(currArray){1}.chan;
     
     % check to ensure same units are in all epochs
     unit_guides = cell(size(epochs));
@@ -136,21 +159,25 @@ for iArray = 1:length(arrays)
             
             html = strcat(html,['<a href="#' currArray 'elec' num2str(uElecs(i)) 'unit' num2str(units(j)) '">unit' num2str(units(j)) '</a>']);
             if any(any(temp_tuning))
-                if any(all(temp_tuning)) % 3 stars if tuned in all epochs
-                    html = strcat(html,'***');
-                    superTunedCount = superTunedCount + 1;
-                else
+                if any(all(temp_tuning)) % star if tuned in all epochs
                     html = strcat(html,'*');
+                    superTunedCount = superTunedCount + 1;
                 end
                 tunedCount = tunedCount + 1;
             end
+
+            relCompInd = useComp(:,1)==uElecs(i)+.1*units(j);
+            if any(diff(useComp(relCompInd,:)))
+                html = strcat(html,'<--');
+            end
+            
             html = strcat(html,'&nbsp; &nbsp;');
+            
         end
         html = strcat(html,'<br>');
     end
 end
-html = strcat(html,['*unit tuned for direction by bootstrapping regression of PD at ' num2str(confLevel.*100) '% CI<br>']);
-html = strcat(html,['***unit tuned for direction in all epochs by bootstrapping regression of PD at ' num2str(confLevel.*100) '% CI']);
+html = strcat(html,['*unit tuned for direction in all epochs by bootstrapping regression of PD at ' num2str(confLevel.*100) '% CI']);
 html = strcat(html,'</div><hr>');
 
 %% Make summary, maybe with memory cells and stuff? link to the cell then
@@ -168,19 +195,30 @@ html = strcat(html,['<div id="behavior"><h2>Behavior Metrics</h2>' ...
 
 for iEpoch = 1:length(epochs)
     html = strcat(html,['<tr>' ...
-        '<td>' epochs{iEpoch} '</td> <td><img src="' figPath '\' epochs{iEpoch} '_hist_time_to_target.png" width="' num2str(imgWidth+100) '"></td>' ...
-        '<td><img src="' figPath '\' epochs{iEpoch} '_hist_reaction_time.png" width="' num2str(imgWidth+100) '"></td>' ...
-        '<td><img src="' figPath '\' epochs{iEpoch} '_hist_target_direction.png" width="' num2str(imgWidth+100) '"></td>' ...
+        '<td>' epochs{iEpoch} '</td> <td><img src="' figPath '\' epochs{iEpoch} '_behavior_time_to_target.png" width="' num2str(imgWidth+100) '"></td>' ...
+        '<td><img src="' figPath '\' epochs{iEpoch} '_behavior_reaction_time.png" width="' num2str(imgWidth+100) '"></td>' ...
+        '<td><img src="' figPath '\' epochs{iEpoch} '_behavior_target_direction.png" width="' num2str(imgWidth+100) '"></td>' ...
         '</tr>']);
 end
 html = strcat(html,'</table></div><hr>');
 
 %% Make plot showing adaptation/deadaptation over time
-html = strcat(html,'<div id="adapt"><h1>Adaptation</h1>');
+html = strcat(html,['<div id="adapt"><h2>Adaptation</h2>' ...
+    '<table style="text-align:center"><tr> <td>&nbsp;</td> <td>BL</td> <td>AD</td> <td>WO</td></tr>']);
+
+html = strcat(html,'<tr><td>Curvature</td>');
 for iEpoch = 1:length(epochs)
-    html = strcat(html,['<img src="' figPath '\' epochs{iEpoch} '_adaptation_curvature.png" width="' num2str(imgWidth+200) '">']);
+    html = strcat(html,['<td><img src="' figPath '\' epochs{iEpoch} '_adaptation_curvature.png" width="' num2str(imgWidth+200) '"></td>']);
 end
-html = strcat(html,'<br><a href="#header">back to top</a></div><hr>');
+html = strcat(html,'</tr><tr><td>Reaction Time</td>');
+for iEpoch = 1:length(epochs)
+    html = strcat(html,['<td><img src="' figPath '\' epochs{iEpoch} '_adaptation_reactiontime.png" width="' num2str(imgWidth+200) '"></td>']);
+end
+html = strcat(html,'</tr><tr><td>Time to Target</td>');
+for iEpoch = 1:length(epochs)
+    html = strcat(html,['<td><img src="' figPath '\' epochs{iEpoch} '_adaptation_timetotarget.png" width="' num2str(imgWidth+200) '"></td>']);
+end
+html = strcat(html,'</tr></table><br><a href="#header">back to top</a></div><hr>');
 
 %% Make plot showing forces check out
 html = strcat(html,['<div id="force">' ...
@@ -195,6 +233,9 @@ html = strcat(html,['<div id="force">' ...
 html = strcat(html,'<div id="classes"><h2>Classes</h2>Showing cells that are significantly tuned in all three epochs<br>');
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
+    
+    useComp = tracking.(currArray){1}.chan;
+    
     for iPeriod = 1:length(tuningPeriods)
         html = strcat(html,['<h3>' tuningPeriods{iPeriod} '</h3>']);
         
@@ -205,7 +246,19 @@ for iArray = 1:length(arrays)
         if ~isempty(tunedCells)
             html = strcat(html,'<table border="1" style="display:inline"> <tr> <td> Unit </td> <td> Classification </td> </tr>');
             for unit = 1:length(tunedCells)
-                html = strcat(html,['<tr><td> <a href="#' currArray 'elec' num2str(tune_sg(tunedCells(unit),1)) 'unit' num2str(tune_sg(tunedCells(unit),2)) '"> Elec' num2str(tune_sg(tunedCells(unit),1)) '/Unit' num2str(tune_sg(tunedCells(unit),2)) '</a></td>' ...
+                
+                % mark the background as red if the neuron tracking says that the cells may be different in each epoch
+                e = tune_sg(tunedCells(unit),1);
+                u = tune_sg(tunedCells(unit),2);
+                
+                relCompInd = useComp(:,1)==e+.1*u;
+                if any(diff(useComp(relCompInd,:)))
+                    useColor = '#ff0000';
+                else
+                    useColor = '#ffffff';
+                end
+                
+                html = strcat(html,['<tr bgcolor="' useColor '"><td> <a href="#' currArray 'elec' num2str(tune_sg(tunedCells(unit),1)) 'unit' num2str(tune_sg(tunedCells(unit),2)) '"> Elec' num2str(tune_sg(tunedCells(unit),1)) '/Unit' num2str(tune_sg(tunedCells(unit),2)) '</a></td>' ...
                     '<td>' classNames{useClasses(tunedCells(unit))} '</td></tr>']);
             end
         else
@@ -229,13 +282,24 @@ for iArray = 1:length(arrays)
         % loop along units on each electrode
         for j = 1:length(units)
             html = strcat(html,['<div id="' currArray 'elec' num2str(uElecs(i)) 'unit' num2str(units(j)) '"><div id="unit"><h2>elec' num2str(uElecs(i)) ' : unit' num2str(units(j)) '</h2>']);
+            
+            useComp = tracking.(currArray){1}.chan;
+            useCompPw = tracking.(currArray){1}.p_wave;
+            useCompPi = tracking.(currArray){1}.p_isi;
+            relCompInd = useComp(:,1)==uElecs(i)+.1*units(j);
             for iEpoch = 1:length(epochs)
+                
                 % Add some info about the waveforms and spike behavior
-                html = strcat(html,['<br><table>' ...
-                    '<tr><td><h2>' epochs{iEpoch} '</h2></td>' ...
-                    '<td>&nbsp;&nbsp;# Spikes: ' num2str(d.(epochs{iEpoch}).(currArray).units.(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]).ns,4) ...
-                    '<br>&nbsp;&nbsp;Peak to Peak: ' num2str(d.(epochs{iEpoch}).(currArray).units.(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]).p2p,4) ' mV' ...
-                    '<br>&nbsp;&nbsp;Mean ISI: ' num2str(d.(epochs{iEpoch}).(currArray).units.(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]).misi*1000,4) ' msec</td>']);
+                try
+                    html = strcat(html,['<br><table>' ...
+                        '<tr><td><h2>' epochs{iEpoch} '</h2></td>' ...
+                        '<td>&nbsp;&nbsp;# Spikes: ' num2str(d.(epochs{iEpoch}).(currArray).units.(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]).ns,4) ...
+                        '<br>&nbsp;&nbsp;Peak to Peak: ' num2str(d.(epochs{iEpoch}).(currArray).units.(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]).p2p,4) ' mV' ...
+                        '<br>&nbsp;&nbsp;Mean ISI: ' num2str(d.(epochs{iEpoch}).(currArray).units.(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]).misi*1000,4) ' msec' ...
+                        '<br>&nbsp;&nbsp;Unit Match: ' num2str(useComp(relCompInd,iEpoch)) ' ( ' num2str(useCompPw(relCompInd,iEpoch)) ',' num2str(useCompPi(relCompInd,iEpoch)) ' )</td>']);
+                catch
+                    keyboard
+                end
                 
                 temp_tuning = sig_tuned.(sigMethod).(['elec' num2str(uElecs(i))]).(['unit' num2str(units(j))]);
                 % add label for period plots, and use different color if significantly tuned

@@ -1,19 +1,39 @@
 function tuning = fitTuningCurves(expParamFile)
-% wrapper function that takes in data struct and calls subfunctions
-% tuneType: (string) what kind of tuning to do (can be cell to do multiple)
-%   'pre': use the time period immediately after target presentation
-%   'initial': use the time period starting from movement onset
-%   'peak': use time period centered around movement peak
-%   'final': use time period ending when trial ends
-%   'full': entire movement from target presentation to completion
-%   'file': use the whole file (***ONLY WORKS FOR GLM***)
+% FITTUNINGCURVES  Wrapper function to calculate tuning curves
 %
-% compType: what computational method to use for PDs
-%   'glm': use a GLM
-%   'regression': use regression of cosines
-%   'vectorsum': use vector sum
+%   This function will calculate tuning using a variety of methods for
+% different periods of the movements.
 %
-%   The time window size is specified in the parameters file.
+% INPUTS:
+%   expParamFile: (string) path to file containing experimental parameters
+%
+% OUTPUTS:
+%   tuning: (struct) has field for each array, each method, each period
+%       Supported methods:
+%           'glm': use a GLM
+%           'regression': use regression of cosines
+%           'vectorsum': use vector sum
+%       Supported periods:
+%           'pre': use the time period immediately after target presentation
+%           'initial': use the time period starting from movement onset
+%           'peak': use time period centered around movement peak
+%           'final': use time period ending when trial ends
+%           'full': entire movement from target presentation to completion
+%           'file': use the whole file (***ONLY WORKS FOR GLM***)
+%
+% NOTES:
+%   - non-'file' tuning requires a window to look in, specified by analysis
+%         parameters file
+%   - This function requires several bits of pre-processing
+%       1) Create a data struct from the Cerebus files (makeDataStruct)
+%       2) Create adaptation metrics struct (getAdaptationMetrics)
+%       3) Run empirical KS test to track stability of neurons (trackNeurons)
+%       4) Fit tuning for neurons, regression and nonparametric recommended (fitTuningCurves)
+%       5) Classify cells based on adaptation behavior (findMemoryCells)
+%       6) Generate a variety of plots (makeFFPlots)
+%   - This function will automatically write the struct to a file, too
+%   - See "experimental_parameters_doc.m" for documentation on expParamFile
+%   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
@@ -46,6 +66,7 @@ doPlots = false;
 
 for iEpoch = 1:length(epochs)
     saveFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
+    
     getFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
     load(getFile);
     
@@ -68,7 +89,7 @@ for iEpoch = 1:length(epochs)
                 switch lower(tuningMethods{iMethod})
                     case 'glm' % fit a GLM model
                         % NOT IMPLEMENTED
-                        tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},useArray,doPlots);
+                        tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},useArray);
                         
                     case 'nonparametric'
                         % NOT: for now, must do regression (or vectorsum) first

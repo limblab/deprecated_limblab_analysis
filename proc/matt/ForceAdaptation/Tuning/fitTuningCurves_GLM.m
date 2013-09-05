@@ -1,12 +1,8 @@
-function out = fitTuningCurves_GLM(data,tuningPeriod,useArray,doPlots)
+function out = fitTuningCurves_GLM(data,tuningPeriod,useArray)
 % notes about inputs
 % notes about outputs
 %
 % NOTE: right now, target direction or 'pre' window for movement don't work with RT
-
-if nargin < 4
-    doPlots = false;
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
@@ -19,13 +15,6 @@ confLevel = str2double(params.confidence_level{1});
 bootNumIters = str2double(params.number_iterations{1});
 glmModel = params.glm_model{1};
 glmBinSize = params.glm_bin_size{1};
-excludeTrials = str2double(params.exclude_trials{1});
-excludeFraction = str2double(params.exclude_fraction{1});
-temp = params.exclude_time_range;
-excludeTimeRange = zeros(size(temp));
-for i = 1:length(temp) % hack to make this work... do it better someday
-    excludeTimeRange(i) = str2double(temp{i});
-end
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,6 +28,10 @@ disp('Binning data...');
 % use bin sizes of glmBinSize
 t = data.cont.t;
 binT = t(1):glmBinSize/1000:t(end);
+glmT = [];
+if size(binT,1)==1
+    binT = binT';
+end
 
 if strfind(lower(glmModel),'vel')
     binVel = interp1(t, data.cont.vel, binT,'linear','extrap');
@@ -52,9 +45,6 @@ if strfind(lower(glmModel),'force')
     binForce = interp1(t, data.cont.force, binT,'linear','extrap');
     glmForce = [];
 end
-
-% Make the number of samples equal to the number of points for bootstrap
-use_samp = length(binT);
 
 fr = zeros(length(binT),size(sg,1));
 
@@ -73,8 +63,7 @@ end
 
 if ~strcmpi(tuningPeriod,'file')
     % Get the movement table
-    mt = data.movements.movement_table;
-    mt = filterMovementTable(data,mt);
+    mt = filterMovementTable(data);
     
     disp(['Using ' tuningPeriod ' movement period, ' num2str(movementTime) ' second window...']);
     
@@ -101,6 +90,8 @@ if ~strcmpi(tuningPeriod,'file')
         % build vector of firing rate and relevant binned velocity
         idx = binT >= useWin(trial,1) & binT < useWin(trial,2);
         
+        glmT = [glmT; binT(idx)];
+        
         if strfind(lower(glmModel),'vel')
             glmVel = [glmVel; binVel(idx,:)];
         end
@@ -111,6 +102,9 @@ if ~strcmpi(tuningPeriod,'file')
             glmForce = [glmForce; binForce(idx,:)];
         end
     end
+    
+    % Make the number of samples equal to the number of points for bootstrap
+    use_samp = length(glmT);
     
     
     
@@ -127,9 +121,12 @@ else % don't break down by movements, use whole file continuously
         glmForce = binForce;
     end
     
+    glmT = binT;
+    
+    use_samp = length(glmT);
 end
 
-clear binVel binPos binForce trial moveTimes goodTrials
+clear binVel binT binPos binForce trial moveTimes goodTrials
 
 %% Now do tuning
 switch lower(glmModel)
@@ -169,10 +166,14 @@ for unit = 1:size(sg,1)
         % grab test set indices randomly
         
         % randomly grab binned data points
-        idx = uint32(1+use_samp-1)*rand(use_samp,1));
-        
+        idx = randi([1,length(glmT)],use_samp,1);
+
         % fit glm model
+        try
         b = glmfit(glm_input(idx,:),fr(idx,unit),'poisson');
+        catch
+            keyboard
+        end
         
         switch lower(glmModel)
             case 'pos'
@@ -266,7 +267,6 @@ out.mds = [mds md_cis];
 out.unit_guide = sg;
 out.mt = mt;
 out.params.stats = {'bootstrap', bootNumIters, confLevel};
-out.params.exclude_trials = excludeTrials;
 out.params.tune_type = tuningPeriod;
 out.params.movement_time = movementTime;
 out.params.glm_model = glmModel;

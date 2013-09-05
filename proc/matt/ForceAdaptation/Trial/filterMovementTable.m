@@ -1,4 +1,4 @@
-function mt = filterMovementTable(data,mt)
+function mt = filterMovementTable(data,excludeTrials)
 % filter movements out of one of my movement tables based on:
 %   1) reaction time
 %   2) time to target
@@ -7,6 +7,9 @@ function mt = filterMovementTable(data,mt)
 %
 %   The values to use are specified in the analysis_parameters file
 
+if nargin < 2
+    excludeTrials = true;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
 paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
@@ -20,13 +23,17 @@ maxTimeToTarget = str2double(params.max_time_to_target{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% don't count the hold time in the time to target
+holdTime = data.params.hold_time;
+mt = data.movement_table;
+
 reactionTime = mt(:,4) - mt(:,3);
-timeToTarget = mt(:,end) - mt(:,4);
+timeToTarget = ( mt(:,end) - mt(:,4) ) - holdTime;
 
 mt = mt(reactionTime >= minReactionTime & reactionTime <= maxReactionTime & timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget,:);
 
 % for adaptation, exclude first set of trials
-if excludeFraction > 0 && (strcmp(data.meta.epoch,'AD') || strcmp(data.meta.epoch,'WO'));
+if excludeTrials && (excludeFraction > 0) && (strcmp(data.meta.epoch,'AD') || strcmp(data.meta.epoch,'WO'));
     % remove the first however many trials
     mt = mt(floor(excludeFraction*size(mt,1)):end,:);
 end

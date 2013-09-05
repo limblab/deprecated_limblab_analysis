@@ -1,5 +1,22 @@
 function plotted = makeFFPlots(expParamFile)
-% NOTE: hard-coded for PMd right now
+% MAKEFFPLOTS  Wrapper function to save a lot of plots for adaptation analysis
+%
+%   This code will make a variety of plots from processed data.
+%
+% INPUTS:
+%   expParamFile: (string) path to file containing experimental parameters
+%
+% OUTPUTS:
+%   plotted: (struct) list of booleans showing which plots were just made
+%
+% NOTES:
+%   -This function requires several bits of pre-processing
+%       1) Create a data struct from the Cerebus files (makeDataStruct)
+%       2) Create adaptation metrics struct (getAdaptationMetrics)
+%       3) Fit tuning for neurons (fitTuningCurves)
+%   - This function will automatically write the images to a file, too
+%   - See "experimental_parameters_doc.m" for documentation on expParamFile
+%   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
@@ -23,7 +40,6 @@ params = parseExpParams(paramFile);
 forceThresh = str2double(params.vel_thresh{1});
 plotted.doForce = str2double(params.do_force{1});
 plotted.doBehavior = str2double(params.do_behavior{1});
-plotted.doCurvature = str2double(params.do_curvature{1});
 plotted.doWF = str2double(params.do_waveform{1});
 plotted.doISI = str2double(params.do_isi{1});
 plotted.doMovementTuning = str2double(params.do_movement_tuning{1});
@@ -60,26 +76,6 @@ if plotted.doForce
     close all;
 end
 
-if plotted.doBehavior
-    disp('Creating behavior plots...')
-    makeBehaviorPlots(bl,figPath);
-    close all;
-    makeBehaviorPlots(ad,figPath);
-    close all;
-    makeBehaviorPlots(wo,figPath);
-    close all;
-end
-
-if plotted.doCurvature
-    disp('Creating curvature plots...')
-    makeCurvaturePlots(bl,figPath);
-    close all;
-    makeCurvaturePlots(ad,figPath);
-    close all;
-    makeCurvaturePlots(wo,figPath);
-    close all;
-end
-
 if plotted.doWF
     disp('Creating waveform plots...')
     makeWaveformPlots(bl,figPath);
@@ -113,5 +109,16 @@ end
 if plotted.doEpochTuningComparison
     disp('Creating tuning comparison plots...')
     plotEpochTuningComparison(blt,adt,wot,figPath);
+    close all;
+end
+
+if plotted.doBehavior
+    disp('Creating adaptation/behavior plots...')
+    load(fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
+    makeBehaviorPlots(adaptation.BL,figPath);
+    close all;
+    makeBehaviorPlots(adaptation.AD,figPath);
+    close all;
+    makeBehaviorPlots(adaptation.WO,figPath);
     close all;
 end

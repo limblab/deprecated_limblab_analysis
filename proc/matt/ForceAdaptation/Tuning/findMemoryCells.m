@@ -1,4 +1,31 @@
 function classes = findMemoryCells(expParamFile)
+% FINDMEMORYCELLS  Compares tuning of cells to classify their behavior
+%
+%   This function uses the tuning made by fitTuningCurves to classify them
+% based on their tuning behavior before, during, and after learning. There
+% are the following types:
+%       Kinematic (AAA, id=1) : no change with perturbation
+%       Dynamic (ABA, id=2)   : changes in response to the perturbation
+%       Memory I (ABB, id=3)  : changes with perturbation and hold tuning
+%       Memory II (AAB, id=4) : changes when perturbation is removed
+%       Other (ABC, id=5)     : Different tuning in every epoch
+%       Weird (???, id=6)     : Cells that don't fit above descriptions
+%           Personal note: these should be investigated...
+%
+% INPUTS:
+%   expParamFile: (string) path to file containing experimental parameters
+%
+% OUTPUTS:
+%   classes: (struct) output with field for each array and tuning period
+%
+% NOTES:
+%   - Assumes the Baseline->Adaptation->Washout files exist and uses all 3
+%   - This function requires several bits of pre-processing
+%       1) Create a data struct from the Cerebus files (makeDataStruct)
+%       2) Fit tuning for neurons, regression and nonparametric recommended (fitTuningCurves)
+%   - This function will automatically write the struct to a file, too
+%   - See "experimental_parameters_doc.m" for documentation on expParamFile
+%   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
@@ -37,20 +64,26 @@ clear data tuning;
 for iArray = 1:length(arrays)
     useArray = arrays{iArray};
     for iMethod = 1:length(tuningMethods)
+        % nonparametric tuning requires a different method for comparison
         if strcmpi(tuningMethods{iMethod},'nonparametric')
-            warning('Skipping nonparametric... not supported');
+            warning('Skipping nonparametric... not supported for memory stuff yet');
         else
-            for iTune = 1:length(tuningPeriods)
-                
-                [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iTune},tuningMethods{iMethod});
-                
-                % get cells that are significantly tuned in all epochs
-                tunedCells = find(cellClass(:,1)~=-1);
-                disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
-                
-                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).classes = cellClass;
-                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).unit_guide = sg;
-                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).tuned_cells = tunedCells;
+            % for regression or GLM, loop along the periods
+            for iPeriod = 1:length(tuningPeriods)
+                % only glm can use the full file tuning
+                if strcmpi(tuningPeriods{iPeriod},'file') && ~strcmpi(tuningMethods{iMethod},'glm')
+                    warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
+                else
+                    [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod});
+                    
+                    % get cells that are significantly tuned in all epochs
+                    tunedCells = find(cellClass(:,1)~=-1);
+                    disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
+                    
+                    classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).classes = cellClass;
+                    classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).unit_guide = sg;
+                    classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).tuned_cells = tunedCells;
+                end
             end
         end
     end

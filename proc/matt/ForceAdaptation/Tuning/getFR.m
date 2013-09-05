@@ -20,8 +20,7 @@ clear params temp;
 sg = data.(useArray).unit_guide;
 
 % Get the movement table
-mt = data.movements.movement_table;
-mt = filterMovementTable(data,mt);
+mt = filterMovementTable(data);
 
 if size(mt,1)==0
     keyboard

@@ -1,5 +1,5 @@
 function tt = ff_trial_table_co(bdf, hold_time)
-% FF_TRIAL_TABLE - returns a table containing the key timestamps for all of
+% FF_TRIAL_TABLE_CO  Returns a table containing the key timestamps for all of
 %                  the successful center-out trials in BDF
 %
 % task is 'CO' or 'RT' for center out or random target
@@ -148,6 +148,7 @@ for trial = 1:num_trials-1
     
     % Build table
     if ot_dir ~= -1 % ignore trials that don't make it to target presentation
+        if ot_dir < length(targ_angs)
         tt(trial,:) = [...
             start_time, ... % Trial start
             ot_dir, ...     % Outer target id (-1 for none)
@@ -159,6 +160,12 @@ for trial = 1:num_trials-1
             peak, ...       % Time of peak movement speed
             offset,...      % end of movement (back below threshold)
             stop_time];  % End of trial
+        else
+            % I ran into a problem once where one single target had an
+            % ot_dir that was greater than it should be... i have no idea what
+            % causes it so I just throw away the trials for now
+            warning('Hey! something is fishy with this outer target business');
+        end
     end
 end
 

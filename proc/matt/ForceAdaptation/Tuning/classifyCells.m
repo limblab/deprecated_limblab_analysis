@@ -29,7 +29,8 @@ ciSig = str2double(params.ci_significance{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-converterMatrix = [1 2 3;4 5 6;7 8 9];
+% load the info to classify cells
+cell_classifications;
 
 sg_bl = blt.(useArray).(tuningMethod).(tuningPeriod).unit_guide;
 sg_ad = adt.(useArray).(tuningMethod).(tuningPeriod).unit_guide;
@@ -37,14 +38,12 @@ sg_wo = wot.(useArray).(tuningMethod).(tuningPeriod).unit_guide;
 
 badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
 
-if ~isempty(badUnits)
-    % remove that index from each
-    [sg_bl, idx_bl] = setdiff(sg_bl,badUnits,'rows');
-    
-    [sg_ad, idx_ad] = setdiff(sg_ad,badUnits,'rows');
-    
-    [sg_wo, idx_wo] = setdiff(sg_wo,badUnits,'rows');
-end
+% remove that index from each
+[sg_bl, idx_bl] = setdiff(sg_bl,badUnits,'rows');
+
+[sg_ad, idx_ad] = setdiff(sg_ad,badUnits,'rows');
+
+[sg_wo, idx_wo] = setdiff(sg_wo,badUnits,'rows');
 
 % make the cell to pass in the checking function
 switch lower(tuningMethod)
@@ -112,24 +111,12 @@ for unit = 1:size(sg_bl,1)
             useDiff = squeeze(diffMat(:,:,k));
             
             val = sum(sum(useDiff.*converterMatrix));
-            
-            switch num2str(val)
-                case '0' % Kinematic AAA
-                    cellClass(unit,k) = 1;
-                case '8' % Dynamic ABA
-                    cellClass(unit,k) = 2;
-                case '5' % Memory I ABB
-                    cellClass(unit,k) = 3;
-                case '9' % Memory II AAB
-                    cellClass(unit,k) = 4;
-                case '11' % Other ABC
-                    cellClass(unit,k) = 5;
-                otherwise
-                    % something is funky, usually means that only one value
-                    % is 1 in useDiff, e.g. significant change from BL->AD
-                    % but neither BL->WO or AD->WO is not significant
-                    % IGNORE FOR NOW
-                    cellClass(unit,k) = 6;
+            idx = classMapping(:,1)==val;
+            if sum(idx) ~= 0
+                cellClass(unit,k) = classMapping(idx,2);
+            else
+                warning('DANGER! Class not recognized. Something is probably fishy...');
+                cellClass(unit,k) = NaN;
             end
         end
     else

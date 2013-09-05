@@ -1,12 +1,39 @@
-function data = makeDataStruct(expParamFile, useUnsorted)
-%%
-if nargin < 2
-    useUnsorted = false; %by default, exclude unit IDs of 0
-    if nargin < 1
-        expParamFile = 'Z:\MrT_9I4\Matt\2013-08-13_experiment_parameters.dat';
+function data = makeDataStruct(expParamFile, useUnsorted,keepTuning)
+% MAKEDATASTRUCT  Create general data struct from Cerebus data
+%
+%   Loads data recorded on a session and converts into my proprietary data
+% struct format.
+%
+% INPUTS:
+%   expParamFile: (string) path to file containing experimental parameters
+%   useUnsorted: (bool) whether to include unsorted units
+%   keepTuning: (bool) overwrite tuning struct if exists (phase this out?)
+%
+% OUTPUTS:
+%   data: the struct with the following main fields
+%       params: experimental parameters
+%       meta: meta data about the experiment and files
+%       cont: continuously sampled data (kinematics etc)
+%       (arraynames): struct for each array name provided with neural info
+%       trial_table: table with info on each trial for the task
+%       movement_table: like trial table, but based on individual movements
+%
+% NOTES:
+%   - This function will automatically write the data struct to a file, too
+%   - See "experimental_parameters_doc.m" for documentation on expParamFile
+
+%% sort out inputs
+if nargin < 3
+    keepTuning = false;
+    if nargin < 2
+        useUnsorted = false; %by default, exclude unit IDs of 0
+        if nargin < 1
+            error('No parameter file provided');
+        end
     end
 end
 
+% how many neuron waveforms to query (this should get all of them)
 numWF = 100000;
 
 %%
@@ -27,14 +54,6 @@ holdTime = str2double(params.target_hold_low{1});
 forceMag = str2double(params.force_magnitude{1});
 forceAng = str2double(params.force_angle{1});
 rotationAng = str2double(params.rotation_angle{1});
-clear params
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(outDir, useDate, [ useDate '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-latency = str2double(params.pmd_latency{1});
-moveThresh = str2double(params.movement_threshold{1});
-winSize = str2double(params.movement_time{1});
-curvWin = str2double(params.curvature_window{1});
 clear params
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -77,6 +96,13 @@ for iEpoch = 1:length(epochs)
         mkdir(outPath);
     end
     
+    % I wanted to give the option to not overwrite the tuning if it exists
+    tuning = [];
+    if exist(outFile,'file') && keepTuning
+        load(outFile);
+        clear data;
+    end
+    
     %% load the bdf with the continuous data
     disp('Loading BDF file with continuous data...')
     load(bdfFile);
@@ -84,71 +110,14 @@ for iEpoch = 1:length(epochs)
     pos = out_struct.pos(:,2:3);
     vel = out_struct.vel(:,2:3);
     acc = out_struct.acc(:,2:3);
-    spd = sqrt(vel(:,1).^2 + vel(:,2).^2);
     
     %% Get the trial table
     tt = ff_trial_table(task,out_struct,holdTime);
     
     %% Turn that into a movement table
     mt = getMovementTable(tt,task);
-    
-    %% Here's what I want to do... get movement windows based on mt
-    % find fr and theta for each movement window
-    % do ANOVA on peak and pre (?) to see if it's tuned for direction?
-    % compute tcs for each window and save them?
-    
-    %% Get movement information
-    % find times when velocity goes above that threshold
-    disp('Getting movement data...')
-    moveInds = diff(spd > moveThresh);
-    moveOn = find(moveInds > 0);
-    moveOff = find(moveInds < 0);
-    % check to make sure nothing fishy is going on
-    if moveOff(1) < moveOn(1)
-        moveOff(1) = [];
-    end
-    
-    moveWins = zeros(length(moveOff),2);
-    for iMove = 1:length(moveOff)
-        mStart = t(moveOn(iMove));
-        mEnd = t(moveOff(iMove));
-        
-        % get the relevant velocity data
-        useT = t(t >= mStart & t < mEnd,:);
-        
-        % find the time of peak speed in that window
-        [~,idx] = max(spd(t >= mStart & t < mEnd,:));
-        mPeak = useT(idx);
-        
-        moveWins(iMove,:) = [mPeak-winSize/2, mPeak+winSize/2];
-    end
-    
-    disp('Getting curvature adaptation data...')
-    % now group curvatures in blocks to track adaptation
-    blockTimes = t(1):curvWin:t(end);
-    curvMeans = zeros(1,length(blockTimes)-1);
-    curvSTDs = zeros(1,length(blockTimes)-1);
-    for tMove = 1:length(blockTimes)-1
-        relMoves = moveWins(:,1) >= blockTimes(tMove) & moveWins(:,1) < blockTimes(tMove+1);
-        relMoves = moveWins(relMoves,:);
-        allInds = [];
-        for iMove = 1:size(relMoves,1)
-            idx = find(t >= relMoves(iMove,1) & t < relMoves(iMove,2));
-            allInds = [allInds; idx];
-        end
-        %compute mean curvature over movement
-        moveCurvs = ( vel(allInds,1).*acc(allInds,2) - vel(allInds,2).*acc(allInds,1) )./( (vel(allInds,1).^2 + vel(allInds,2).^2).^(3/2) );
-        curvMeans(tMove) = mean(moveCurvs);
-        curvSTDs(tMove) = std(moveCurvs);
-    end
 
-    % has info on movement
-    r.curvature_block_times = blockTimes(1:end-1)';
-    r.curvature_means = curvMeans;
-    r.curvature_stds = curvSTDs;
-    r.movement_table = mt;
-
-    clear moveWins moveCurvs allInds useT idx mPeak mStart mEnd iMove tMove relMoves blockTimes moveCurves mt spd;
+    clear moveWins moveCurvs allInds useT idx mPeak mStart mEnd iMove tMove relMoves blockTimes moveCurves spd;
     
     %% Get neural data
     disp('Getting neural data...')
@@ -233,14 +202,18 @@ for iEpoch = 1:length(epochs)
                     
                     misi = mean(diff(ts)); %mean isi
                     
+                    % make a spike guide to make it easy to compare units in each file
+                    id = [str2double(chanName(isstrprop(chanName,'digit'))), iu];
+                    sg = [sg; id];
+                    
+                    u.(chanName).(['unit' num2str(units(iu))]).id = id;
                     u.(chanName).(['unit' num2str(units(iu))]).wf = wf;
                     u.(chanName).(['unit' num2str(units(iu))]).ts = ts;
                     u.(chanName).(['unit' num2str(units(iu))]).ns = ns;
                     u.(chanName).(['unit' num2str(units(iu))]).p2p = p2p;
                     u.(chanName).(['unit' num2str(units(iu))]).misi = misi;
                     
-                    % make a spike guide to make it easy to compare units in each file
-                    sg = [sg; str2double(chanName(isstrprop(chanName,'digit'))), iu];
+                    
                 end
             else
                 disp('no units');
@@ -268,6 +241,7 @@ for iEpoch = 1:length(epochs)
     c.force = out_struct.force(:,2:3);
     c.pos = pos;
     c.vel = vel;
+    c.acc = acc;
     
     clear out_struct t pos vel acc;
     
@@ -284,21 +258,25 @@ for iEpoch = 1:length(epochs)
     m.epoch = epochs{iEpoch};
     
     p.hold_time = holdTime;
-    p.window_size = winSize;
-    p.force_mag = forceMag;
-    p.force_ang = forceAng;
+    p.force_magnitude = forceMag;
+    p.force_angle = forceAng;
+    p.rotation_angle = rotationAng;
     p.unit_count = unitCount;
-    p.latency = latency;
-
+    
     data.meta = m;
-    data.movements = r;
     data.cont = c;
     data.params = p;
     data.trial_table = tt;
+    data.movement_table = mt;
     
     clear m t u c;
     
     disp(['Saving data to ' outFile '...'])
-    save(outFile,'data');
+    
+    if isempty(tuning)
+        save(outFile,'data');
+    else
+        save(outFile,'data','tuning');
+    end
     
 end
