@@ -72,11 +72,13 @@ switch lower(tuningMethod)
         cil_wo = cil_wo(idx_wo,:);
         cih_wo = cih_wo(idx_wo,:);
         
-        istuned = ones(size(sg_bl,1),1);
+        istuned = zeros(size(sg_bl,1),1);
+        for unit = 1:size(sg_bl,1)
+            istuned(unit) = checkTuningNonparametricSignificance(mfr_bl(unit,:),cil_bl(unit,:),cih_bl(unit,:));
+        end
         
         % Call the cell tuned if the confidence bounds of any 2 or more
         % points have confidence bounds that do no overlap
-        
         out = compareNonparametricTuning({mfr_bl,mfr_ad,mfr_wo},{cil_bl,cil_ad,cil_wo},{cih_bl,cih_ad,cih_wo},sg_bl);
         
     otherwise

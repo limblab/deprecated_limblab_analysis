@@ -35,7 +35,8 @@ useWin = zeros(size(mt,1),2);
 for trial = 1:size(mt,1)
     % Time window for which to look for neural activity
     if strcmpi(tuningPeriod,'peak') % Use 0.5 sec period around peak speed
-        useWin(trial,:) = [mt(trial,5) - movementTime/2, mt(trial,5) + movementTime/2];
+        % offset by 100msec from being centered on peak so it precedes move
+        useWin(trial,:) = [mt(trial,5) - movementTime/2-0.1, mt(trial,5) + movementTime/2-0.1];
     elseif strcmpi(tuningPeriod,'initial') %Use initial movement period
         useWin(trial,:) = [mt(trial,4), mt(trial,4)+movementTime];
     elseif strcmpi(tuningPeriod,'final') % Use the final movement period
@@ -60,10 +61,10 @@ end
 
 
 %% Now get direction for tuning
-if strcmpi(tuneDir,'targ')
+if strcmpi(tuneDir,'target')
     disp('Using target direction...')
     theta = mt(:,1);
-else
+elseif strcmpi(tuneDir,'movement')
     disp('Using movement direction...')
     
     if strcmpi(tuningPeriod,'pre') % in this case, use target direction
@@ -78,6 +79,8 @@ else
         
         clear t usePos movedir;
     end
+else
+    error('tuning direction not recognized');
 end
 
 % theta = wrapAngle(theta,0); % make sure it goes from [-pi,pi)

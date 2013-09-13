@@ -1,4 +1,4 @@
-function tt = ff_trial_table_co(bdf, hold_time)
+function tt = ff_trial_table_co(bdf)
 % FF_TRIAL_TABLE_CO  Returns a table containing the key timestamps for all of
 %                  the successful center-out trials in BDF
 %
@@ -20,11 +20,6 @@ function tt = ff_trial_table_co(bdf, hold_time)
 %  ASSUMES A 0.5 SECOND HOLD TIME WHEN REQUIRED
 
 % $Id: co_trial_table.m 334 2011-01-12 04:18:39Z chris $
-
-if nargin < 2
-    % Total time to consider when computing window for movement direction
-    hold_time = 0.5; %seconds
-end
 
 words = bdf.words;
 

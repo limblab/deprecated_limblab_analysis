@@ -45,6 +45,9 @@ for iArray = 1:length(useArrays)
             xlabel('ISI (msec)','FontSize',fontSize);
             axis('tight');
             
+            V = axis;
+            axis([0 1000 0 V(4)]);
+            
             if ~isempty(saveFilePath)
                 fn = fullfile(saveFilePath,[useArrays{iArray} '_' elec_names{i} unit_names{j} '_' epoch '_isi.png']);
                 saveas(fh,fn,'png');

@@ -14,17 +14,19 @@ nTargs = size(mfrs{1},2);
 
 for unit = 1:size(mfrs{1},1)
     
-    diffMat = zeros(length(mfrs),length(mfrs),nTargs);
+    diffMat = zeros(length(mfrs),length(mfrs));
     
-    for i = 1:length(mfrs)
-        fr1 = mfrs{i};
-        cil1 = cils{i};
-        cih1 = cihs{i};
+    for iFile = 1:length(mfrs)
+        fr1 = mfrs{iFile};
+        cil1 = cils{iFile};
+        cih1 = cihs{iFile};
         
-        for j = i+1:length(mfrs)
+        for j = iFile+1:length(mfrs)
             fr2 = mfrs{j};
             cil2 = cils{j};
             cih2 = cihs{j};
+            
+            targDiffs = zeros(nTargs,1);
             
             for iTarg = 1:nTargs
                 % do the confidence intervals overlap?
@@ -34,8 +36,12 @@ for unit = 1:size(mfrs{1},1)
                 
                 % build matrix showing how they differ
                 if isempty(overlap)
-                    diffMat(i,j,iTarg) = 1;
+                    targDiffs(iTarg) = 1;
                 end
+            end
+            
+            if any(targDiffs)==1
+                diffMat(iFile,j) = 1;
             end
         end
     end

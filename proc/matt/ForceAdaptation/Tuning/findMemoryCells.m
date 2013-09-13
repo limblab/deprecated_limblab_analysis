@@ -52,38 +52,36 @@ clear params;
 saveFile = fullfile(dataPath,[taskType '_' adaptType '_classes_' useDate '.mat']);
 
 disp('Loading data to classify cells...')
+load(fullfile(dataPath,[taskType '_' adaptType '_tuning_' useDate '.mat']));
+
 load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']));
 arrays = data.meta.arrays;
-blt = tuning;
+blt = tuning.BL;
 load(fullfile(dataPath,[taskType '_' adaptType '_AD_' useDate '.mat']));
-adt = tuning;
+adt = tuning.AD;
 load(fullfile(dataPath,[taskType '_' adaptType '_WO_' useDate '.mat']));
-wot = tuning;
+wot = tuning.WO;
 clear data tuning;
 
 for iArray = 1:length(arrays)
     useArray = arrays{iArray};
     for iMethod = 1:length(tuningMethods)
         % nonparametric tuning requires a different method for comparison
-        if strcmpi(tuningMethods{iMethod},'nonparametric')
-            warning('Skipping nonparametric... not supported for memory stuff yet');
-        else
-            % for regression or GLM, loop along the periods
-            for iPeriod = 1:length(tuningPeriods)
-                % only glm can use the full file tuning
-                if strcmpi(tuningPeriods{iPeriod},'file') && ~strcmpi(tuningMethods{iMethod},'glm')
-                    warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
-                else
-                    [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod});
-                    
-                    % get cells that are significantly tuned in all epochs
-                    tunedCells = find(cellClass(:,1)~=-1);
-                    disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
-                    
-                    classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).classes = cellClass;
-                    classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).unit_guide = sg;
-                    classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).tuned_cells = tunedCells;
-                end
+        % for regression or GLM, loop along the periods
+        for iPeriod = 1:length(tuningPeriods)
+            % only glm can use the full file tuning
+            if strcmpi(tuningPeriods{iPeriod},'file') && ~strcmpi(tuningMethods{iMethod},'glm')
+                warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
+            else
+                [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod});
+                
+                % get cells that are significantly tuned in all epochs
+                tunedCells = find(cellClass(:,1)~=-1);
+                disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
+                
+                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).classes = cellClass;
+                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).unit_guide = sg;
+                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).tuned_cells = tunedCells;
             end
         end
     end

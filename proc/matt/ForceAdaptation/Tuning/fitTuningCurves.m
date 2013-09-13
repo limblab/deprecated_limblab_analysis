@@ -63,10 +63,9 @@ doPlots = false;
 
 %%
 
+saveFile = fullfile(dataPath,[taskType '_' adaptType '_tuning_' useDate '.mat']);
 
 for iEpoch = 1:length(epochs)
-    saveFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
-    
     getFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
     load(getFile);
     
@@ -89,19 +88,19 @@ for iEpoch = 1:length(epochs)
                 switch lower(tuningMethods{iMethod})
                     case 'glm' % fit a GLM model
                         % NOT IMPLEMENTED
-                        tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},useArray);
+                        tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},useArray);
                         
                     case 'nonparametric'
                         % NOT: for now, must do regression (or vectorsum) first
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                            tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = nonparametricTuning(data,tuningPeriods{iTune},useArray,doPlots);
+                            tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = nonparametricTuning(data,tuningPeriods{iTune},useArray,doPlots);
                         else
                             disp('WARNING: cannot use whole file for this tuning method, so skipping this tuning period input');
                         end
                         
                     otherwise % do regression of cosine model for period specified in tuneType
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                            tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},tuningMethods{iMethod},useArray,doPlots);
+                            tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},tuningMethods{iMethod},useArray,doPlots);
                         else
                             disp('WARNING: cannot use whole file for this tuning method, so skipping this tuning period input');
                         end
@@ -110,9 +109,8 @@ for iEpoch = 1:length(epochs)
             end
         end
     end
-    
-    tuning.meta = data.meta;
-    % save the new file with tuning info
-    save(saveFile,'data','tuning');
-    
+    tuning.(epochs{iEpoch}).meta = data.meta;
 end
+
+% save the new file with tuning info
+save(saveFile,'tuning');

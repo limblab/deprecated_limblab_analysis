@@ -129,7 +129,6 @@ for i = 1:num_days % Loop through days
     for j = 1:length(sort_inds{i}.inds) % find ID of unit in day i
         
         % Compile isi/wave information
-        index = sort_inds{i}.inds(j);
         chan = sort_inds{i}.ch_un(j,1);
         unit = sort_inds{i}.ch_un(j,2);
         ISI_1 = diff(data{i}.units.(['elec' num2str(chan)]).(['unit' num2str(unit)]).ts);
@@ -168,6 +167,9 @@ for i = 1:num_days % Loop through days
                 
                 % Find p value for ISI using KS statistic
                 p_isi = interp1(sortrows(ts_ISI'),1:length(ts_ISI),kSTAT,'linear')./length(ts_ISI);
+                if isnan(p_isi)
+                    p_isi = interp1(sortrows(ts_ISI'),1:length(ts_ISI),kSTAT,'linear','extrap')./length(ts_ISI);
+                end
                 
                 % Find p value for wave shape using linear projection
                 p_wave = interp1(sortrows(lda_proj),1:length(lda_proj),...
@@ -176,11 +178,15 @@ for i = 1:num_days % Loop through days
                 % If the combined p value is within specified confidence level
                 if p_isi*p_wave < conf % p_isi < conf && p_wave < conf
                     % Link the two as matched neurons
-                    COMPS{i}.chan(j,k) = data{k}.units.(['elec' num2str(chan2)]).(['unit' num2str(unit2)]).id(1) + 0.1*data{k}.units.(['elec' num2str(chan2)]).(['unit' num2str(unit2)]).id(2);
-                    COMPS{i}.inds(j,k) = sorted_list_ind;
+                    COMPS{i}.chan(j,k) = chan2 + 0.1*unit2;
+                    COMPS{i}.inds(j,k) = sorted_list_ind;                    
+                    COMPS{i}.p_isi(j,k) = p_isi;
+                    COMPS{i}.p_wave(j,k) = p_wave;
+                elseif chan==chan2 && unit==unit2
+                    COMPS{i}.p_isi(j,k) = p_isi;
+                    COMPS{i}.p_wave(j,k) = p_wave;
                 end
-                COMPS{i}.p_isi(j,k) = p_isi;
-                COMPS{i}.p_wave(j,k) = p_wave;
+                
             end
         end
         

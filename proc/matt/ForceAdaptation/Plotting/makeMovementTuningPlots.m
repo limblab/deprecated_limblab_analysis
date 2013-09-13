@@ -26,8 +26,11 @@ for iArray = 1:length(useArrays)
     tuningMethods = fieldnames(tuning.(currArray));
     tuningPeriods = fieldnames(tuning.(currArray).(tuningMethods{1}));
     
-    for iPlot = 1:length(tuningPeriods)
-        tuneType = tuningPeriods{iPlot};
+    % these plots don't make sense for the whole file tuning
+    tuningPeriods = setdiff(tuningPeriods,'file');
+    
+    for iPeriod = 1:length(tuningPeriods)
+        tuneType = tuningPeriods{iPeriod};
         
         % I'd prefer to use the nonparametric cis
         if ismember('nonparametric',tuningMethods)
@@ -39,6 +42,22 @@ for iArray = 1:length(useArrays)
             mFR = tuning.(currArray).(useMethod).(tuneType).mfr;
             sFR_l = tuning.(currArray).(useMethod).(tuneType).cil;
             sFR_h = tuning.(currArray).(useMethod).(tuneType).cih;
+            
+            % we went +pi to be the highest index, so if -pi is used...
+            if abs(utheta(1)) > utheta(end)
+                utheta = [utheta; abs(utheta(1))];
+                utheta(1) = [];
+                
+                mFR = [mFR mFR(:,1)];
+                sFR_l = [sFR_l sFR_l(:,1)];
+                sFR_h = [sFR_h sFR_h(:,1)];
+                
+                mFR(:,1) = [];
+                sFR_l(:,1) = [];
+                sFR_h(:,1) = [];
+                
+            end
+            
             
         else % in the absence of that...
             % doesn't matter which of these I pick as long as it exists
@@ -87,7 +106,7 @@ for iArray = 1:length(useArrays)
             axis('tight');
             
             V = axis;
-            axis([V(1) V(2) 0 V(4)]);
+            axis([min(utheta)*180/pi max(utheta)*180/pi 0 V(4)]);
             
             if ~isempty(saveFilePath)
                 fn = fullfile(saveFilePath,[currArray '_elec' num2str(sg(unit,1)) 'unit' num2str(sg(unit,2)) '_' epoch '_tc_' tuneType '.png']);

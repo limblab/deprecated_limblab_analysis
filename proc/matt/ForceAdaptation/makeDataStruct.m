@@ -1,4 +1,4 @@
-function data = makeDataStruct(expParamFile, useUnsorted,keepTuning)
+function [data, useUnsorted] = makeDataStruct(expParamFile, useUnsorted)
 % MAKEDATASTRUCT  Create general data struct from Cerebus data
 %
 %   Loads data recorded on a session and converts into my proprietary data
@@ -7,7 +7,6 @@ function data = makeDataStruct(expParamFile, useUnsorted,keepTuning)
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
 %   useUnsorted: (bool) whether to include unsorted units
-%   keepTuning: (bool) overwrite tuning struct if exists (phase this out?)
 %
 % OUTPUTS:
 %   data: the struct with the following main fields
@@ -17,24 +16,20 @@ function data = makeDataStruct(expParamFile, useUnsorted,keepTuning)
 %       (arraynames): struct for each array name provided with neural info
 %       trial_table: table with info on each trial for the task
 %       movement_table: like trial table, but based on individual movements
+%   useUnsorted: (bool) whether unsorted spikes were included
 %
 % NOTES:
 %   - This function will automatically write the data struct to a file, too
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 
 %% sort out inputs
-if nargin < 3
-    keepTuning = false;
+
     if nargin < 2
         useUnsorted = false; %by default, exclude unit IDs of 0
         if nargin < 1
             error('No parameter file provided');
         end
     end
-end
-
-% how many neuron waveforms to query (this should get all of them)
-numWF = 100000;
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -96,13 +91,6 @@ for iEpoch = 1:length(epochs)
         mkdir(outPath);
     end
     
-    % I wanted to give the option to not overwrite the tuning if it exists
-    tuning = [];
-    if exist(outFile,'file') && keepTuning
-        load(outFile);
-        clear data;
-    end
-    
     %% load the bdf with the continuous data
     disp('Loading BDF file with continuous data...')
     load(bdfFile);
@@ -112,10 +100,19 @@ for iEpoch = 1:length(epochs)
     acc = out_struct.acc(:,2:3);
     
     %% Get the trial table
-    tt = ff_trial_table(task,out_struct,holdTime);
+    %  CRC is a case where Center Out is BL and WO and AD is RT
+    if strcmpi(task,'CRC') && strcmpi(epochs{iEpoch},'AD')
+        tempTask = 'RT';
+    elseif strcmpi(task,'CRC') && ~strcmpi(epochs{iEpoch},'AD')
+        tempTask = 'CO';
+    else
+        tempTask = task;
+    end
+    
+    tt = ff_trial_table(tempTask,out_struct);
     
     %% Turn that into a movement table
-    mt = getMovementTable(tt,task);
+    mt = getMovementTable(tt,tempTask);
 
     clear moveWins moveCurvs allInds useT idx mPeak mStart mEnd iMove tMove relMoves blockTimes moveCurves spd;
     
@@ -123,13 +120,13 @@ for iEpoch = 1:length(epochs)
     disp('Getting neural data...')
     for iArray = 1:length(useArray)
         currArray = useArray{iArray};
-        cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '_sorted.nev'];
+        cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_sorted.nev'];
         cerPath = fullfile(baseDir,currArray,'CerebusData',useDate);
         cerFile = fullfile(cerPath,cerName);
         
         
         if ~exist(cerFile,'file') % probably not sorted, so do this
-            cerName = [monkey '_' currArray '_' expType '_' currEpoch '_' m d y '_' filenum '.nev'];
+            cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '.nev'];
             cerPath = fullfile(baseDir,currArray,'CerebusData',useDate);
             cerFile = fullfile(cerPath,cerName);
             useUnsorted = true; % include unsorted units since none will be sorted
@@ -145,7 +142,7 @@ for iEpoch = 1:length(epochs)
         if (nsresult ~= 0)
             %try again with 64 bit library...
             [nsresult] = ns_SetLibrary(which('nsNEVLibrary64.dll'));
-            disp('Retrying with 64 bit version...');
+            %disp('Retrying with 64 bit version...');
             if (nsresult ~=0)
                 close(h);
                 error('Error opening library!');
@@ -175,8 +172,9 @@ for iEpoch = 1:length(epochs)
             chanName = EntityInfo(channel).EntityLabel;
             %     [nsresult, nsSegmentInfo] = ns_GetSegmentInfo(hfile, seg_list(channel));
             %     [nsresult, nsSegmentSourceInfo] = ns_GetSegmentSourceInfo(hfile, seg_list(channel), 1);
+            numWF = EntityInfo(channel).ItemCount; % how many waveforms are there?
             
-            % Load the first numWF waveforms on each seelected channel
+            % Load the waveforms on each seelected channel
             [nsresult, timestamps_wf, waveforms, ~, unitIDs] = ns_GetSegmentData(hfile, seg_list(channel), 1:numWF);
             % remove any indices that don't exist, or are unsorted/invalidated
             if useUnsorted
@@ -199,8 +197,11 @@ for iEpoch = 1:length(epochs)
                     
                     p2p = mean(max(wf,[],1) - min(wf,[],1)); % average peak to peak of waveforms
                     ns = size(wf,2); % number of spikes
+                    mfr = ns/ts(end); % mean firing rate over trial
                     
-                    misi = mean(diff(ts)); %mean isi
+                    isi = diff(ts);
+                    
+                    misi = mean(isi(isi < 1)); %mean isi
                     
                     % make a spike guide to make it easy to compare units in each file
                     id = [str2double(chanName(isstrprop(chanName,'digit'))), iu];
@@ -212,11 +213,10 @@ for iEpoch = 1:length(epochs)
                     u.(chanName).(['unit' num2str(units(iu))]).ns = ns;
                     u.(chanName).(['unit' num2str(units(iu))]).p2p = p2p;
                     u.(chanName).(['unit' num2str(units(iu))]).misi = misi;
+                    u.(chanName).(['unit' num2str(units(iu))]).mfr = mfr;
                     
                     
                 end
-            else
-                disp('no units');
             end
         end
         
@@ -273,10 +273,6 @@ for iEpoch = 1:length(epochs)
     
     disp(['Saving data to ' outFile '...'])
     
-    if isempty(tuning)
-        save(outFile,'data');
-    else
-        save(outFile,'data','tuning');
-    end
+    save(outFile,'data');
     
 end

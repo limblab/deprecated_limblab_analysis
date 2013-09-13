@@ -78,7 +78,7 @@ for iArray = 1:length(arrays)
     
     disp(['Comparing cells for ' currArray '...'])
     
-    tracking.(currArray) = KS_p(data, (1-confLevel).^2);
+    tracking.(currArray) = KS_p(data, (2*(1-confLevel)).^2);
     
 end
 

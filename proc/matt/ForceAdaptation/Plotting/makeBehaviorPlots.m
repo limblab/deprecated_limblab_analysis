@@ -1,4 +1,4 @@
-function makeBehaviorPlots(adaptation,saveFilePath)
+function makeBehaviorPlots(adaptation,saveFilePath,curvLims)
 % MAKEBEHAVIORPLOTS  Generate and save plots for adaptation and behavior metrics
 %
 %   This function takes in Matt's proprietary 'adaptation' struct and makes
@@ -18,8 +18,11 @@ function makeBehaviorPlots(adaptation,saveFilePath)
 %       none.
 %
 % NOTES:
-% 
+%
 
+if nargin < 3
+    curvLims = [];
+end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
@@ -89,16 +92,11 @@ end
 moveCounts = adaptation.movement_counts;
 
 %% plot curvature over time
-mC = adaptation.curvature_mean(:,1);
-sC = adaptation.curvature_mean(:,2);
+mC = adaptation.curvature_max(:,1);
+sC = adaptation.curvature_max(:,2);
 
 set(0, 'CurrentFigure', fh);
 clf reset;
-
-hold all;
-% h = area(adaptation.movement_counts,[mC-sC 2*sC]);
-% set(h(1),'FaceColor',[1 1 1]);
-% set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
 
 % if multiple points occur at same movement count, take average
 repeats = moveCounts(diff(moveCounts) == 0);
@@ -109,11 +107,43 @@ for i = 1:length(uRepeats)
     sC(useInds) = mean(sC(useInds));
 end
 
-plot(adaptation.movement_counts,mC,'b','LineWidth',2);
+nans = find(isnan(mC));
+for i = 1:length(nans)
+    % find value of last non-nan
+    ind = find(~isnan(mC(1:nans(i))),1,'last');
+    if isempty(ind)
+        mval = 0;
+        sval = 0;
+    else
+        mval = mC(ind);
+        sval = sC(ind);
+    end
+    mC(nans(i)) = mval;
+    sC(nans(i)) = sval;
+end
+
+% do additional filtering
+doFiltering = false;
+if doFiltering
+    filtWidth = 2;
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+
+hold all;
+% h = area(adaptation.movement_counts,[mC-sC 2*sC]);
+% set(h(1),'FaceColor',[1 1 1]);
+% set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
+plot(moveCounts,mC','b','LineWidth',2);
 
 xlabel('Movements','FontSize',fontSize);
 ylabel('Curvature','FontSize',fontSize);
 axis('tight');
+
+if ~isempty(curvLims)
+    set(gca,'Ylim',curvLims);
+end
 
 if ~isempty(saveFilePath)
     fn = fullfile(saveFilePath, [adaptation.meta.epoch '_adaptation_curvature.png']);
@@ -134,6 +164,22 @@ for i = 1:length(uRepeats)
     mC(useInds) = mean(mC(useInds));
     sC(useInds) = mean(sC(useInds));
 end
+
+nans = find(isnan(mC));
+for i = 1:length(nans)
+    % find value of last non-nan
+    ind = find(~isnan(mC(1:nans(i))),1,'last');
+    if isempty(ind)
+        mval = 0;
+        sval = 0;
+    else
+        mval = mC(ind);
+        sval = sC(ind);
+    end
+    mC(nans(i)) = mval;
+    sC(nans(i)) = sval;
+end
+
 
 set(0, 'CurrentFigure', fh);
 clf reset;
@@ -169,6 +215,23 @@ for i = 1:length(uRepeats)
     sC(useInds) = mean(sC(useInds));
 end
 
+
+nans = find(isnan(mC));
+for i = 1:length(nans)
+    % find value of last non-nan
+    ind = find(~isnan(mC(1:nans(i))),1,'last');
+    if isempty(ind)
+        mval = 0;
+        sval = 0;
+    else
+        mval = mC(ind);
+        sval = sC(ind);
+    end
+    mC(nans(i)) = mval;
+    sC(nans(i)) = sval;
+end
+
+
 set(0, 'CurrentFigure', fh);
 clf reset;
 
@@ -188,5 +251,3 @@ if ~isempty(saveFilePath)
 else
     pause;
 end
-
-

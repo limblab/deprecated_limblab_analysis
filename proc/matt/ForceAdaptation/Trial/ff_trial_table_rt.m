@@ -35,7 +35,7 @@ for trial = 1:num_trials-1
     start_time = start_words(trial);
     if (bdf.databursts{trial,2}(1)-18)/8 ~= num_targets
         warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, operation interrupted',start_time);
-        tt = tt(1:trial-1,:);
+%         tt = tt(1:trial-1,:);
         continue;
     end
     

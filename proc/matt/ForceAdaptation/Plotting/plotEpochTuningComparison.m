@@ -24,6 +24,9 @@ for iArray = 1:length(useArrays)
     tuningMethods = fieldnames(blt.(currArray));
     tuningPeriods = fieldnames(blt.(currArray).(tuningMethods{1}));
     
+    % these plots don't make sense for the whole file tuning
+    tuningPeriods = setdiff(tuningPeriods,'file');
+    
     if ismember('nonparametric',tuningMethods)
         
         useMethod = 'nonparametric';
@@ -59,6 +62,15 @@ for iArray = 1:length(useArrays)
                 if abs(utheta(1)) > utheta(end)
                     utheta = [utheta; abs(utheta(1))];
                     utheta(1) = [];
+                    
+                    mFR = [mFR mFR(:,1)];
+                    sFR_l = [sFR_l sFR_l(:,1)];
+                    sFR_h = [sFR_h sFR_h(:,1)];
+                    
+                    mFR(:,1) = [];
+                    sFR_l(:,1) = [];
+                    sFR_h(:,1) = [];
+                    
                 end
                 
                 useColors = plotColors{1};
@@ -77,6 +89,15 @@ for iArray = 1:length(useArrays)
                 if abs(utheta(1)) > utheta(end)
                     utheta = [utheta; abs(utheta(1))];
                     utheta(1) = [];
+                    
+                    mFR = [mFR mFR(:,1)];
+                    sFR_l = [sFR_l sFR_l(:,1)];
+                    sFR_h = [sFR_h sFR_h(:,1)];
+                    
+                    mFR(:,1) = [];
+                    sFR_l(:,1) = [];
+                    sFR_h(:,1) = [];
+                    
                 end
                 
                 useColors = plotColors{2};
@@ -95,6 +116,15 @@ for iArray = 1:length(useArrays)
                 if abs(utheta(1)) > utheta(end)
                     utheta = [utheta; abs(utheta(1))];
                     utheta(1) = [];
+                    
+                    mFR = [mFR mFR(:,1)];
+                    sFR_l = [sFR_l sFR_l(:,1)];
+                    sFR_h = [sFR_h sFR_h(:,1)];
+                    
+                    mFR(:,1) = [];
+                    sFR_l(:,1) = [];
+                    sFR_h(:,1) = [];
+                    
                 end
                 
                 useColors = plotColors{3};
@@ -108,7 +138,7 @@ for iArray = 1:length(useArrays)
                 axis('tight');
                 
                 V = axis;
-                axis([V(1) V(2) 0 V(4)]);
+                axis([min(utheta)*180/pi max(utheta)*180/pi 0 V(4)]);
                 
                 if ~isempty(saveFilePath)
                     fn = fullfile(saveFilePath,[currArray '_elec' num2str(sg_master(i,1)) 'unit' num2str(sg_master(i,2)) '_all_tc_' tuneType '.png']);

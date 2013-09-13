@@ -21,6 +21,9 @@ function adaptation = getAdaptationMetrics(expParamFile)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+% resampling for CO correlation purposes
+n = 3000;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -43,10 +46,23 @@ behavWin = str2double(params.behavior_window{1});
 winSize = str2double(params.movement_time{1});
 stepSize = str2double(params.behavior_step{1});
 filtWidth = str2double(params.filter_width{1});
+moveThresh = str2double(params.movement_threshold{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 saveFile = fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
+
+% for center out, get baseline movement trajectories to each target
+if strcmpi(taskType,'CO')
+    getFile = fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']);
+    if ~exist(getFile,'file')
+        error('Could not locate baseline file');
+    end
+    load(getFile);
+    
+    blTraces = getCOBaselineTrajectories(data);
+    
+end
 
 % load files
 for iEpoch = 1:length(epochs)
@@ -59,11 +75,9 @@ for iEpoch = 1:length(epochs)
     t = data.cont.t;
     vel = data.cont.vel;
     acc = data.cont.acc;
-
     
     % filter the data to smooth out curvature calculation
     f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
-
     svel = filter(f, 1, vel);
     sacc = filter(f, 1, acc);
     
@@ -71,13 +85,11 @@ for iEpoch = 1:length(epochs)
     vel = svel(filtWidth/2:end-filtWidth/2,:);
     acc = sacc(filtWidth/2:end-filtWidth/2,:);
     
-    spd = sqrt(vel(:,1).^2 + vel(:,2).^2);
+    %     figure;
+    %     hold all
+    %     plot(vel(1:3000),'b','LineWidth',2);
+    %     plot(y(w/2:3000+w/2),'r');
     
-%     figure;
-%     hold all
-%     plot(vel(1:3000),'b','LineWidth',2);
-%     plot(y(w/2:3000+w/2),'r');
-
     mt = filterMovementTable(data,false);
     holdTime = data.params.hold_time;
     
@@ -86,17 +98,9 @@ for iEpoch = 1:length(epochs)
     disp('Getting movement data...')
     moveWins = zeros(size(mt,1),2);
     for iMove = 1:size(mt,1)
-        mStart = mt(iMove,2);
-        mEnd = mt(iMove,end);
-        
-        % get the relevant velocity data
-        useT = t(t >= mStart & t < mEnd,:);
-        
-        % find the time of peak speed in that window
-        [~,idx] = max(spd(t >= mStart & t < mEnd,:));
-        mPeak = useT(idx);
-        
-        moveWins(iMove,:) = [mPeak-winSize/2, mPeak+winSize/2];
+        % movement table: [ target angle, on_time, go cue, move_time, peak_time, end_time ]
+        % has the start of movement window, end of movement window
+        moveWins(iMove,:) = [mt(iMove,5)-winSize/2, mt(iMove,5)+winSize/2];
     end
     
     % compute metrics
@@ -107,8 +111,8 @@ for iEpoch = 1:length(epochs)
     blockTimes = t(1):stepSize:t(end)-behavWin;
     
     % now group curvatures in blocks to track adaptation
-    curvMeans = zeros(length(blockTimes),1);
-    curvSTDs = zeros(length(blockTimes),1);
+    curvMeans = zeros(length(blockTimes),2);
+    curvMaxes = zeros(length(blockTimes),2);
     rtMeans = zeros(length(blockTimes),1);
     rtSTDs = zeros(length(blockTimes),1);
     tttMeans = zeros(length(blockTimes),1);
@@ -125,27 +129,44 @@ for iEpoch = 1:length(epochs)
         moveCount(tMove) = sum(moveWins(:,1) < blockTimes(tMove));
         
         relMoves = moveWins(relMoveInds,:);
-        allInds = [];
+        tempMean = zeros(size(relMoves,1),1);
+        tempMax = zeros(size(relMoves,1),1);
         for iMove = 1:size(relMoves,1)
             idx = find(t >= relMoves(iMove,1) & t < relMoves(iMove,2));
-            allInds = [allInds; idx];
             
-            %compute mean curvature over movement
-            curvMeans(tMove) = mean(moveCurvs(allInds));
-            curvSTDs(tMove) = std(moveCurvs(allInds));
+            tempAcc = acc(idx,:);
+            tempVel = vel(idx,:);
+            % ran into a problem sometimes where velocity/acc drop almost to
+            % zero seemingly sproadically so my curvatures went towards infinity
+            badInds = sqrt(tempVel(:,1).^2 + tempVel(:,2).^2) < moveThresh;
+            tempVel(badInds,:) = [];
+            tempAcc(badInds,:) = [];
             
-            % compute mean reaction time over movements
-            rtMeans(tMove) = mean(reactionTimes(relMoveInds));
-            rtSTDs(tMove) = std(reactionTimes(relMoveInds));
+            tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
             
-            % compute mean time to target over movements
-            tttMeans(tMove) = mean(timeToTargets(relMoveInds));
-            tttSTDs(tMove) = std(timeToTargets(relMoveInds));
+            tempMean(iMove) = mean(tempCurv);
+            tempMax(iMove) = max(abs(tempCurv));
         end
+        
+        curvMeans(tMove,:) = [mean(tempMean) std(tempMean)];
+        curvMaxes(tMove,:) = [mean(tempMax) std(tempMax)];
+        
+        % compute mean reaction time over movements
+        rtMeans(tMove) = mean(reactionTimes(relMoveInds));
+        rtSTDs(tMove) = std(reactionTimes(relMoveInds));
+        
+        % compute mean time to target over movements
+        tttMeans(tMove) = mean(timeToTargets(relMoveInds));
+        tttSTDs(tMove) = std(timeToTargets(relMoveInds));
+        
     end
-
+    
+    adaptation.(epochs{iEpoch}).vel = vel;
+    adaptation.(epochs{iEpoch}).acc = acc;
+    
     adaptation.(epochs{iEpoch}).curvature = moveCurvs;
-    adaptation.(epochs{iEpoch}).curvature_mean = [curvMeans curvSTDs];
+    adaptation.(epochs{iEpoch}).curvature_max = curvMaxes;
+    adaptation.(epochs{iEpoch}).curvature_mean = curvMeans;
     adaptation.(epochs{iEpoch}).reaction_time = reactionTimes;
     adaptation.(epochs{iEpoch}).reaction_time_mean = [rtMeans rtSTDs];
     adaptation.(epochs{iEpoch}).time_to_target = timeToTargets;
