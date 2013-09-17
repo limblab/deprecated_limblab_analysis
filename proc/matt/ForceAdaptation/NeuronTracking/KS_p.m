@@ -15,7 +15,7 @@ function[COMPS, ts_ISI, D_wave, lda_proj] = KS_p(data,conf)
 %   lda_proj: projection with LDA from distance space
 %
 % NOTES:
-% 
+%
 
 %% Calculate Empirical Test Statistics
 
@@ -80,12 +80,13 @@ for i = 1:length(sorted)-1 % Take a neuron
         if IDS(j,1)~=IDS(i,1) % If they're not on the same electrode...
             
             %%%% Add to NON-MATCH set %%%%%
+            if ~isempty(ISI{i}) && ~isempty(ISI{j})
+                % Perform Kolmogorov-Smirnov goodness-of-fit test on the ISIs
+                [~,~,k] = kstest2(ISI{i},ISI{j});
+                ts_ISI = [ts_ISI k];
+            end
             
-            % Perform Kolmogorov-Smirnov goodness-of-fit test on the ISIs
-            [~,~,k] = kstest2(ISI{i},ISI{j});
-            ts_ISI = [ts_ISI k];
-            
-%             fprintf('%d\n',length(ts_ISI));
+            %             fprintf('%d\n',length(ts_ISI));
             
             % Take wave shape
             xA = WAVE{i};
@@ -125,7 +126,7 @@ for i = 1:num_days % Loop through days
     COMPS{i}.inds = zeros(length(sort_inds{i}.inds),num_days);
     COMPS{i}.p_isi = zeros(length(sort_inds{i}.inds),num_days);
     COMPS{i}.p_wave = zeros(length(sort_inds{i}.inds),num_days);
-
+    
     for j = 1:length(sort_inds{i}.inds) % find ID of unit in day i
         
         % Compile isi/wave information
@@ -153,7 +154,11 @@ for i = 1:num_days % Loop through days
                 WAVE_2 = mean(data{k}.units.(['elec' num2str(chan2)]).(['unit' num2str(unit2)]).wf,2);
                 
                 % Perform KS goodness-of-fit on isi shapes
-                [~,~,kSTAT] = kstest2(ISI_1,ISI_2);
+                if ~isempty(ISI_1) && ~isempty(ISI_2)
+                    [~,~,kSTAT] = kstest2(ISI_1,ISI_2);
+                else
+                    kSTAT = 1;
+                end
                 
                 xA = WAVE_1; xB = WAVE_2;
                 
@@ -179,7 +184,7 @@ for i = 1:num_days % Loop through days
                 if p_isi*p_wave < conf % p_isi < conf && p_wave < conf
                     % Link the two as matched neurons
                     COMPS{i}.chan(j,k) = chan2 + 0.1*unit2;
-                    COMPS{i}.inds(j,k) = sorted_list_ind;                    
+                    COMPS{i}.inds(j,k) = sorted_list_ind;
                     COMPS{i}.p_isi(j,k) = p_isi;
                     COMPS{i}.p_wave(j,k) = p_wave;
                 elseif chan==chan2 && unit==unit2

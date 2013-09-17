@@ -66,7 +66,7 @@ for trial = 1:num_trials-1
     
     cue_array = [];
     for iCue = 1:length(cues)-1
-        if trial_result == double('R') && length(cues) <= num_targets + 1
+        if trial_result == double('R') && num_targets_attempted == num_targets
             sidx = find(bdf.vel(:,1) > cues(iCue),1,'first'):find(bdf.vel(:,1) > cues(iCue+1),1,'first');
             
             t = bdf.vel(sidx,1);                                % Set up time index vector
@@ -76,8 +76,11 @@ for trial = 1:num_trials-1
             dd = [diff(smooth(d,100)); 0];                      % d^2 Speed / dt^2
             peaks = dd(1:end-1)>0 & dd(2:end)<0;                % zero crossings are abs. acc. peaks
             
+            try
             mvt_peak = find(peaks & t(2:end) > cues(iCue) & d(2:end) > 1, 1, 'first');
-            
+            catch
+                keyboard
+            end
             % if it's empty it usually means the monkey never really
             % accelerated to the target... for instance, he was
             % mid-movement and it appeared in front of him

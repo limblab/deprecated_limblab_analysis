@@ -1,3 +1,7 @@
+% CO: center out day
+% RT: random target day
+% S: file has been sorted
+
 % Force field days
 ff_goodDays = {'2013-08-19', ... % S CO
                '2013-08-20', ... %   RT
@@ -16,6 +20,6 @@ ff_badDays = {'2013-08-13', ...  % S CO - force field at 90 degrees
 vr_goodDays = {'2013-09-03', ... % S CO
                '2013-09-04', ... % S RT
                '2013-09-05', ... % CO
-               '2013-09-06', ... % RT
+               '2013-09-06', ... % S RT
                '2013-09-09', ... % CO
                '2013-09-10'};    % RT

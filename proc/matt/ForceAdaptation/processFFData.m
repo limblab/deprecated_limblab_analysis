@@ -5,12 +5,12 @@
 close all;
 clear;
 clc;
-useUnsorted = false;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-goodDates = {'2013-09-04'};
-rewriteFiles = false;
+goodDates = {'2013-09-17'};
+rewriteFiles = true;
 paramFileDir = 'Z:\MrT_9I4\Matt';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,7 +61,7 @@ for iDate = 1:length(goodDates)
         disp('%%%  Tracking Neurons  %%%')
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         % do empirical test to track neurons across epochs
-        [~] = trackNeurons(expParamFile);
+        [~] = trackNeuronsAcrossEpochs(expParamFile);
         
         disp('');
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')

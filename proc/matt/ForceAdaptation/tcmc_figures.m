@@ -4,44 +4,107 @@ clear;
 close all;
 clc;
 
-baseDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
+baseDir = 'Z:\MrT_9I4\Matt\ProcessedData';
 
 xoffset = 5;
 yoffset = -35;
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %% 1) Demonstrate task (CO vs RT, FF vs VR)
-% % random target trace example
-% useDate = '2013-08-22';
-% load(fullfile(baseDir,useDate,['RT_FF_BL_' useDate '.mat']));
-% tt = data.trial_table;
-% t = data.cont.t;
-% pos = data.cont.pos;
-% clear data;
-%
-% n=50;
-% useTrials = n:n+2;
-%
-% usePos = [];
-% xcenters = [];
-% ycenters = [];
-% for i =1:length(useTrials)
-%     trial = tt(useTrials(i),:);
-%     usePos = [usePos; pos(t>=trial(1) & t<trial(end-1),:)];
-%     xcenters = [xcenters; tt(useTrials(i),[5,10,15,20])'];
-%     ycenters = [ycenters; tt(useTrials(i),[6,11,16,21])'];
-% end
-%
-% figure;
-% hold all;
-% % now plot red squares at target locations
-% for i = 1:2:length(xcenters)
-%     rectangle('Position',[xcenters(i)-1, ycenters(i)-1, 2, 2],'FaceColor','r');
-% end
-% axis('square');
-%
-% plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'LineWidth',2);
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 1) Demonstrate task (CO vs RT, FF vs VR)
+% random target trace example
+close all;
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_BL_' useDate '.mat']));
+tt = data.trial_table;
+t = data.cont.t;
+pos = data.cont.pos;
+clear data;
+
+n=50;
+useTrials = n:n+1;
+
+usePos = [];
+xcenters = [];
+ycenters = [];
+for i =1:length(useTrials)
+    trial = tt(useTrials(i),:);
+    usePos = [usePos; pos(t>=trial(1) & t<trial(end-1),:)];
+    xcenters = [xcenters; tt(useTrials(i),[5,10,15,20])'];
+    ycenters = [ycenters; tt(useTrials(i),[6,11,16,21])'];
+end
+
+figure;
+hold all;
+% now plot red squares at target locations
+for i = 1:2:length(xcenters)
+    rectangle('Position',[xcenters(i)-1, ycenters(i)-1, 2, 2],'FaceColor','r');
+end
+axis('square');
+
+plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'LineWidth',2);
+
+%%%% Now do an early adaptation example
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_AD_' useDate '.mat']));
+tt = data.trial_table;
+t = data.cont.t;
+pos = data.cont.pos;
+clear data;
+
+n=8;
+useTrials = n:n+1;
+
+usePos = [];
+xcenters = [];
+ycenters = [];
+for i =1:length(useTrials)
+    trial = tt(useTrials(i),:);
+    usePos = [usePos; pos(t>=trial(1) & t<trial(end-1),:)];
+    xcenters = [xcenters; tt(useTrials(i),[5,10,15,20])'];
+    ycenters = [ycenters; tt(useTrials(i),[6,11,16,21])'];
+end
+
+figure;
+hold all;
+% now plot red squares at target locations
+for i = 1:2:length(xcenters)
+    rectangle('Position',[xcenters(i)-1, ycenters(i)-1, 2, 2],'FaceColor','r');
+end
+axis('square');
+
+plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'LineWidth',2);
+
+%%%% Now do a late adaptation example
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_AD_' useDate '.mat']));
+tt = data.trial_table;
+t = data.cont.t;
+pos = data.cont.pos;
+clear data;
+
+n=209;
+useTrials = n:n+1;
+
+usePos = [];
+xcenters = [];
+ycenters = [];
+for i =1:length(useTrials)
+    trial = tt(useTrials(i),:);
+    usePos = [usePos; pos(t>=trial(1) & t<trial(end-1),:)];
+    xcenters = [xcenters; tt(useTrials(i),[5,10,15,20])'];
+    ycenters = [ycenters; tt(useTrials(i),[6,11,16,21])'];
+end
+
+figure;
+hold all;
+% now plot red squares at target locations
+for i = 1:2:length(xcenters)
+    rectangle('Position',[xcenters(i)-1, ycenters(i)-1, 2, 2],'FaceColor','r');
+end
+axis('square');
+
+plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'LineWidth',2);
+
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %% center out trace example
 % useDate = '2013-08-23';
@@ -84,7 +147,7 @@ yoffset = -35;
 plotXshift = 22.5;
 plotYshift = 23;
 
-useDate = '2013-08-13';
+useDate = '2013-08-23';
 numMoves = 1;
 numTargs = 8;
 targDist = 9;
@@ -101,24 +164,24 @@ clear data;
 fh = figure('Position', [50, 50, 1300, 900]);
 hold all;
 % plot target locations
-for i=1:numTargs
-    xcenter = targDist.*cos((i-1).*pi/4);
-    ycenter = targDist.*sin((i-1).*pi/4);
+for j=1:numTargs
+    xcenter = targDist.*cos((j-1).*pi/4);
+    ycenter = targDist.*sin((j-1).*pi/4);
     
     rectangle('Position',[xcenter-1, ycenter-1, 2, 2],'FaceColor','r');
 end
 rectangle('Position',[-1,-1,2,2],'FaceColor','g');
 
 % pick first movements to each target
-for i=1:numTargs
-    useInds = find(tt(:,2)==i-1,numMoves,'first');
+for j=1:numTargs
+    useInds = find(tt(:,2)==j-1,numMoves,'first');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
         plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'r','LineWidth',2);
     end
     
-    useInds = find(tt(:,2)==i-1,numMoves,'last');
+    useInds = find(tt(:,2)==j-1,numMoves,'last');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
@@ -136,24 +199,24 @@ clear data;
 pos(:,1) = pos(:,1)+plotXshift;
 
 % plot target locations
-for i=1:numTargs
-    xcenter = targDist.*cos((i-1).*pi/4)+plotXshift;
-    ycenter = targDist.*sin((i-1).*pi/4);
+for j=1:numTargs
+    xcenter = targDist.*cos((j-1).*pi/4)+plotXshift;
+    ycenter = targDist.*sin((j-1).*pi/4);
     
     rectangle('Position',[xcenter-1, ycenter-1, 2, 2],'FaceColor','r');
 end
 rectangle('Position',[-1+plotXshift,-1,2,2],'FaceColor','g');
 
 % pick first movements to each target
-for i=1:numTargs
-    useInds = find(tt(:,2)==i-1,numMoves,'first');
+for j=1:numTargs
+    useInds = find(tt(:,2)==j-1,numMoves,'first');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
         plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'r','LineWidth',2);
     end
     
-    useInds = find(tt(:,2)==i-1,numMoves,'last');
+    useInds = find(tt(:,2)==j-1,numMoves,'last');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
@@ -171,24 +234,24 @@ clear data;
 pos(:,1) = pos(:,1)+2*plotXshift;
 
 % plot target locations
-for i=1:numTargs
-    xcenter = targDist.*cos((i-1).*pi/4)+2*plotXshift;
-    ycenter = targDist.*sin((i-1).*pi/4);
+for j=1:numTargs
+    xcenter = targDist.*cos((j-1).*pi/4)+2*plotXshift;
+    ycenter = targDist.*sin((j-1).*pi/4);
     
     rectangle('Position',[xcenter-1, ycenter-1, 2, 2],'FaceColor','r');
 end
 rectangle('Position',[-1+2*plotXshift,-1,2,2],'FaceColor','g');
 
 % pick first movements to each target
-for i=1:numTargs
-    useInds = find(tt(:,2)==i-1,numMoves,'first');
+for j=1:numTargs
+    useInds = find(tt(:,2)==j-1,numMoves,'first');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
         plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'r','LineWidth',2);
     end
     
-    useInds = find(tt(:,2)==i-1,numMoves,'last');
+    useInds = find(tt(:,2)==j-1,numMoves,'last');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
@@ -214,23 +277,23 @@ clear data;
 pos(:,2) = pos(:,2) - plotYshift;
 
 % plot target locations
-for i=1:numTargs
-    xcenter = targDist.*cos((i-1).*pi/4);
-    ycenter = targDist.*sin((i-1).*pi/4) - plotYshift;
+for j=1:numTargs
+    xcenter = targDist.*cos((j-1).*pi/4);
+    ycenter = targDist.*sin((j-1).*pi/4) - plotYshift;
     
     rectangle('Position',[xcenter-1, ycenter-1, 2, 2],'FaceColor','r');
 end
 rectangle('Position',[-1,-1-plotYshift,2,2],'FaceColor','g');
 % pick first movements to each target
-for i=1:numTargs
-    useInds = find(tt(:,2)==i-1,numMoves,'first');
+for j=1:numTargs
+    useInds = find(tt(:,2)==j-1,numMoves,'first');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
         plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'r','LineWidth',2);
     end
     
-    useInds = find(tt(:,2)==i-1,numMoves,'last');
+    useInds = find(tt(:,2)==j-1,numMoves,'last');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
@@ -250,32 +313,32 @@ pos(:,2) = pos(:,2)-yoffset;
 % rotate the position data to be what monkey sees
 th = 30*pi/180;
 R = [cos(th) -sin(th); sin(th) cos(th)];
-for i = 1:length(pos)
-    pos(i,:) = R*(pos(i,:)');
+for j = 1:length(pos)
+    pos(j,:) = R*(pos(j,:)');
 end
 
 pos(:,1) = pos(:,1)+plotXshift;
 pos(:,2) = pos(:,2)-plotYshift;
 
 % plot target locations
-for i=1:numTargs
-    xcenter = targDist.*cos((i-1).*pi/4)+plotXshift;
-    ycenter = targDist.*sin((i-1).*pi/4)-plotYshift;
+for j=1:numTargs
+    xcenter = targDist.*cos((j-1).*pi/4)+plotXshift;
+    ycenter = targDist.*sin((j-1).*pi/4)-plotYshift;
     
     rectangle('Position',[xcenter-1, ycenter-1, 2, 2],'FaceColor','r');
 end
 rectangle('Position',[-1+plotXshift,-1-plotYshift,2,2],'FaceColor','g');
 
 % pick first movements to each target
-for i=1:numTargs
-    useInds = find(tt(:,2)==i-1,numMoves,'first');
+for j=1:numTargs
+    useInds = find(tt(:,2)==j-1,numMoves,'first');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
         plot(usePos(:,1),usePos(:,2),'r','LineWidth',2);
     end
     
-    useInds = find(tt(:,2)==i-1,numMoves,'last');
+    useInds = find(tt(:,2)==j-1,numMoves,'last');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
@@ -293,24 +356,24 @@ clear data;
 pos(:,1) = pos(:,1) + 2*plotXshift;
 pos(:,2) = pos(:,2) - plotYshift;
 % plot target locations
-for i=1:numTargs
-    xcenter = targDist.*cos((i-1).*pi/4)+2*plotXshift;
-    ycenter = targDist.*sin((i-1).*pi/4)-plotYshift;
+for j=1:numTargs
+    xcenter = targDist.*cos((j-1).*pi/4)+2*plotXshift;
+    ycenter = targDist.*sin((j-1).*pi/4)-plotYshift;
     
     rectangle('Position',[xcenter-1, ycenter-1, 2, 2],'FaceColor','r');
 end
 rectangle('Position',[-1+2*plotXshift,-1-plotYshift,2,2],'FaceColor','g');
 
 % pick first movements to each target
-for i=1:numTargs
-    useInds = find(tt(:,2)==i-1,numMoves,'first');
+for j=1:numTargs
+    useInds = find(tt(:,2)==j-1,numMoves,'first');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
         plot(usePos(:,1)-xoffset,usePos(:,2)-yoffset,'r','LineWidth',2);
     end
     
-    useInds = find(tt(:,2)==i-1,numMoves,'last');
+    useInds = find(tt(:,2)==j-1,numMoves,'last');
     for j = 1:length(useInds)
         trial = tt(useInds(j),:);
         usePos = pos(t>=trial(8) & t<trial(end),:);
@@ -320,13 +383,13 @@ end
 
 
 % make a legend
-plot([-10 -5],[-35 -35],'Color','r','LineWidth',3);
-plot([10 15],[-35 -35],'Color','b','LineWidth',3);
-text(-4,-35,'First Movement','FontSize',16);
-text(16,-35,'Last Movement','FontSize',16);
+plot([-10 -5],[13 13],'Color','r','LineWidth',3);
+plot([7 12],[13 13],'Color','b','LineWidth',3);
+text(-4,13,'First Movement','FontSize',16);
+text(13,13,'Last Movement','FontSize',16);
 
-set(gca,'XTick',[0 plotXshift 2*plotXshift],'XTickLabel',{'Baseline', 'Adaptation', 'Washout'},'YTick',[-plotYshift 0],'YTickLabel',{'Static Rotation','Force Field'},'TickLength',[0 0],'FontSize',16)
-axis([-11 11+2*plotXshift -14-plotYshift 11])
+set(gca,'XTick',[0 plotXshift 2*plotXshift],'XTickLabel',{'Baseline', 'Adaptation', 'Washout'},'YTick',[-plotYshift 0],'YTickLabel',{'Visual Rotation','Force Field'},'TickLength',[0 0],'FontSize',16)
+axis([-11 11+2*plotXshift -11-plotYshift 16])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Show example movement with tuning window
@@ -389,8 +452,9 @@ text(usePos(1)-xoffset-0.5,1,'\theta','FontSize',24);
 axis([-0.5 7 -0.5 7]);
 set(gca,'YTick',[],'XTick',[],'FontSize',16);
 
-%%
-% 3) Show tuning curves of individual neurons in each of three epochs
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 3) Show tuning curves of individual neurons in each of three epochs
 
 useDate = '2013-08-23';
 elec = 20;
@@ -426,7 +490,7 @@ hold all;
 h = area(utheta.*(180/pi),[sFR_l(useUnit,:)' sFR_h(useUnit,:)']);
 set(h(1),'FaceColor',[1 1 1]);
 set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
-plot(utheta.*(180/pi),mFR(useUnit,:),'b','LineWidth',2);
+plot(utheta.*(180/pi),mFR(useUnit,:),'b--','LineWidth',2);
 axis('tight');
 
 V = axis;
@@ -459,8 +523,9 @@ xlabel('Direction of Movement (Deg)','FontSize',18);
 ylabel('Firing Rate (Hz)','FontSize',18);
 set(gca,'FontSize',16);
 
-%%
-% 4) Summarize PD changes
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 4) Summarize PD changes
 useDate = '2013-08-22';
 classColors = {[0.2,0.2,0.2],[0.2 0.6 1],[0.9 0.1 0.1],'r','g'};
 epochs = {'BL','AD','WO'};
@@ -623,7 +688,7 @@ set(h,'Visible','on');
 
 set(gcf,'NextPlot','add');
 axes('position',[0.45 0 0.5 0.92]);
-h = title('Static Rotation','FontSize',18);
+h = title('Visual Rotation','FontSize',18);
 set(gca,'Visible','off');
 set(h,'Visible','on');
 
@@ -680,3 +745,726 @@ axis('tight');
 V=axis;
 axis([V(1) V(2) 0 8]);
 set(gca,'FontSize',16);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Make plots to show adaptation over time
+
+%% Now want to make some plots showing metrics over ti
+doFiltering = true;
+filtWidth = 5;
+
+useDate = '2013-08-22';
+
+load(fullfile(baseDir,useDate,['RT_FF_adaptation_' useDate '.mat']));
+
+% BASELINE
+a = adaptation.BL;
+moveCounts = a.movement_counts;
+mC = a.curvature_mean(:,1);
+if doFiltering
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+dividers(1) = moveCounts(end);
+allMoveCounts = moveCounts;
+allMC = mC;
+
+% ADAPTATION
+a = adaptation.AD;
+moveCounts = a.movement_counts+moveCounts(end);
+mC = a.curvature_mean(:,1);
+if doFiltering
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+dividers(2) = moveCounts(end);
+allMoveCounts = [allMoveCounts moveCounts];
+allMC = [allMC; mC];
+
+% WASHOUT
+a = adaptation.WO;
+moveCounts = a.movement_counts+moveCounts(end);
+mC = a.curvature_mean(:,1);
+if doFiltering
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+allMoveCounts = [allMoveCounts moveCounts];
+allMC = [allMC; mC];
+
+% % do additional filtering
+% if doFiltering
+%     f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+%     allMC = filter(f, 1, allMC);
+% end
+
+dividers_FF = dividers;
+allMoveCounts_FF = allMoveCounts;
+allMC_FF = allMC;
+
+
+% now do visual rotation
+useDate = '2013-09-04';
+load(fullfile(baseDir,useDate,['RT_VR_adaptation_' useDate '.mat']));
+
+% BASELINE
+a = adaptation.BL;
+moveCounts = a.movement_counts;
+mC = a.curvature_mean(:,1);
+if doFiltering
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+dividers(1) = moveCounts(end);
+allMoveCounts = moveCounts;
+allMC = mC;
+
+% ADAPTATION
+a = adaptation.AD;
+moveCounts = a.movement_counts+moveCounts(end);
+mC = a.curvature_mean(:,1);
+if doFiltering
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+dividers(2) = moveCounts(end);
+allMoveCounts = [allMoveCounts moveCounts];
+allMC = [allMC; mC];
+
+% WASHOUT
+a = adaptation.WO;
+moveCounts = a.movement_counts+moveCounts(end);
+mC = a.curvature_mean(:,1);
+
+if doFiltering
+    f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+    mC = filter(f, 1, mC);
+end
+
+allMoveCounts = [allMoveCounts moveCounts];
+allMC = [allMC; mC];
+
+% % do additional filtering
+% if doFiltering
+%     f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
+%     allMC = filter(f, 1, allMC);
+% end
+
+dividers_VR = dividers;
+allMoveCounts_VR = allMoveCounts;
+allMC_VR = allMC;
+
+fh = figure('Position', [200, 200, 800, 600]);
+hold all;
+plot(allMoveCounts_FF,allMC_FF','b','LineWidth',2);
+axis('tight');
+
+axis([90 1450 -0.4 0.4]);
+V = axis;
+
+plot([dividers_FF(1) dividers_FF(1)],[-0.4 0.28],'k--','LineWidth',1);
+plot([dividers_FF(2) dividers_FF(2)],[-0.4 0.28],'k--','LineWidth',1);
+
+set(gca,'TickLength',[0 0],'FontSize',16,'XTick',[]);
+
+% xlabel('Movements','FontSize',16);
+ylabel('Curvature (cm^-^1)','FontSize',16);
+
+% add labels and legend
+plot([950 1100],[0.38 0.38],'b','LineWidth',3);
+plot([950 1100],[0.33 0.33],'r','LineWidth',3);
+text(1150,0.38,'Force Field','FontSize',16);
+text(1150,0.33,'Rotation','FontSize',16);
+
+text(150,-0.35,'Baseline','FontSize',16);
+text(600,-0.35,'Adaptation','FontSize',16);
+text(1150,-0.35,'Washout','FontSize',16);
+
+% now add rotation traces
+h1=gca;
+h2=axes('position',get(h1,'position'));
+hold all;
+plot(allMoveCounts_VR,allMC_VR','r','LineWidth',2);
+axis('tight');
+
+axis([0 1000 -0.4 0.4]);
+V = axis;
+
+plot([dividers_VR(1) dividers_VR(1)],[-0.4 0.28],'k--','LineWidth',1);
+plot([dividers_VR(2) dividers_VR(2)],[-0.4 0.28],'k--','LineWidth',1);
+
+set(h2,'YAxisLocation','right','Color','none','XTickLabel',[],'YTickLabel',[],'TickLength',[0 0],'FontSize',16,'XTick',[])
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Compare firing rate of different cell classes in adaptation period
+useDate = '2013-09-04';
+load(fullfile(baseDir,useDate,['RT_VR_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_VR_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.AD.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.AD.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR,I] = sort(c);
+fr_VR = fr(:,I);
+
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_FF_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.AD.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.AD.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF,I] = sort(c);
+fr_FF = fr(:,I);
+
+fh = figure('Position',[200 200 800 600]);
+hold all;
+
+uclass=unique([c_VR; c_FF]);
+
+firstcount = 1;
+count = 0;
+for i = 1:length(uclass)
+    inds = c_FF==uclass(i);
+    fr = fr_FF(:,inds);
+%     [~,I] = sort(mean(fr,1));
+%     fr = fr(:,I);
+    
+    for j = 1:size(fr,2)
+        count = count + 1;
+        plot(count,mean(fr(:,j)),'bd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'b','LineWidth',2);
+    end
+    
+    inds = c_VR==uclass(i);
+    fr = fr_VR(:,inds);
+%     [~,I] = sort(mean(fr,1));
+%     fr = fr(:,I);
+    
+    for j = 1:size(fr,2)
+        count = count+1;
+        plot(count,mean(fr(:,j)),'rd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'r','LineWidth',2);
+    end
+    
+    plot([firstcount count],[-7 -7],'k','LineWidth',3);
+    count = count+4;
+    firstcount = count+1;
+end
+
+% add legend and labels
+V = axis;
+set(gca,'YTick',0:10:V(4),'YTickLabels',0:10:V(4),'XTick',[],'FontSize',16);
+ylabel('Firing Rate (Hz)','FontSize',16);
+
+axis([-2 V(2)+2 -20 V(4)+20]);
+% add labels for cell types
+text(7,-13,'Non-Adapting','FontSize',16);
+text(32.5,-13,'Adapting','FontSize',16);
+text(45,-13,'Memory','FontSize',16);
+
+% add legend for colors
+plot([2 8],[105 105],'b','LineWidth',3);
+plot([2 8],[97 97],'r','LineWidth',3);
+text(9,105,'Force Field','FontSize',16);
+text(9,97,'Visual Rotation','FontSize',16);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Calculate a firing rate index (change from baseline to adaptation)
+useDate = '2013-09-04';
+load(fullfile(baseDir,useDate,['RT_VR_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_VR_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.AD.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.AD.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR_AD,I] = sort(c);
+fr_VR_AD = fr(:,I);
+
+% get the baseline
+sg = tuning.BL.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.BL.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR_BL,I] = sort(c);
+fr_VR_BL = fr(:,I);
+
+% now find an index for how firing rate changes
+fri_VR = mean(fr_VR_AD,1)./mean(fr_VR_BL,1);
+
+
+%%%%%%%%%%%%
+% now the force field
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_FF_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.AD.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.AD.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF_AD,I] = sort(c);
+fr_FF_AD = fr(:,I);
+
+%%%%
+% now the baseline
+sg = tuning.BL.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.BL.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF_BL,I] = sort(c);
+fr_FF_BL = fr(:,I);
+
+fri_FF = mean(fr_FF_AD,1)./mean(fr_FF_BL,1);
+
+fh = figure('Position',[200 200 800 600]);
+hold all;
+
+uclass=unique([c_VR; c_FF]);
+
+firstcount = 1;
+count = 0;
+for i = 1:length(uclass)
+    inds = c_FF==uclass(i);
+    fr = fri_FF(:,inds);
+    
+    for j = 1:size(fr,2)
+        count = count + 1;
+        plot(count,mean(fr(:,j)),'bd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'b','LineWidth',2);
+    end
+    
+    inds = c_VR==uclass(i);
+    fr = fri_VR(:,inds);
+    
+    for j = 1:size(fr,2)
+        count = count+1;
+        plot(count,mean(fr(:,j)),'rd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'r','LineWidth',2);
+    end
+    
+    plot([firstcount count],[-0.2 -0.2],'k','LineWidth',3);
+    count = count+4;
+    firstcount = count+1;
+end
+
+
+% add legend and labels
+V = axis;
+plot([V(1) V(2)],[1 1],'k--','LineWidth',1);
+set(gca,'YTick',0:0.2:2,'YTickLabels',0:0.2:2,'XTick',[],'FontSize',16);
+ylabel('Adaptation / Baseline','FontSize',16);
+
+axis([-2 V(2)+2 -0.4 2]);
+% add labels for cell types
+text(7,-0.3,'Non-Adapting','FontSize',16);
+text(32.5,-0.3,'Adapting','FontSize',16);
+text(45,-0.3,'Memory','FontSize',16);
+
+% add legend for colors
+plot([2 8],[1.9 1.9],'b','LineWidth',3);
+plot([2 8],[1.8 1.8],'r','LineWidth',3);
+text(9,1.9,'Force Field','FontSize',16);
+text(9,1.8,'Visual Rotation','FontSize',16);
+
+%% do same but with washout relative to baseline
+useDate = '2013-09-04';
+load(fullfile(baseDir,useDate,['RT_VR_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_VR_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.WO.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.WO.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR_WO,I] = sort(c);
+fr_VR_WO = fr(:,I);
+
+% get the baseline
+sg = tuning.BL.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.BL.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR_BL,I] = sort(c);
+fr_VR_BL = fr(:,I);
+
+% now find an index for how firing rate changes
+fri_VR = mean(fr_VR_WO,1)./mean(fr_VR_BL,1);
+
+
+%%%%%%%%%%%%
+% now the force field
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_FF_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.WO.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.WO.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF_WO,I] = sort(c);
+fr_FF_WO = fr(:,I);
+
+%%%%
+% now the baseline
+sg = tuning.BL.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.BL.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF_BL,I] = sort(c);
+fr_FF_BL = fr(:,I);
+
+fri_FF = mean(fr_FF_WO,1)./mean(fr_FF_BL,1);
+
+fh = figure('Position',[200 200 800 600]);
+hold all;
+
+uclass=unique([c_VR; c_FF]);
+
+firstcount = 1;
+count = 0;
+for i = 1:length(uclass)
+    inds = c_FF==uclass(i);
+    fr = fri_FF(:,inds);
+    
+    for j = 1:size(fr,2)
+        count = count + 1;
+        plot(count,mean(fr(:,j)),'bd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'b','LineWidth',2);
+    end
+    
+    inds = c_VR==uclass(i);
+    fr = fri_VR(:,inds);
+    
+    for j = 1:size(fr,2)
+        count = count+1;
+        plot(count,mean(fr(:,j)),'rd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'r','LineWidth',2);
+    end
+    
+    plot([firstcount count],[-0.2 -0.2],'k','LineWidth',3);
+    count = count+4;
+    firstcount = count+1;
+end
+
+
+% add legend and labels
+V = axis;
+plot([V(1) V(2)],[1 1],'k--','LineWidth',1);
+set(gca,'YTick',0:0.2:2,'YTickLabels',0:0.2:2,'XTick',[],'FontSize',16);
+ylabel('Washout / Baseline','FontSize',16);
+
+axis([-2 V(2)+2 -0.4 2]);
+% add labels for cell types
+text(7,-0.3,'Non-Adapting','FontSize',16);
+text(32.5,-0.3,'Adapting','FontSize',16);
+text(45,-0.3,'Memory','FontSize',16);
+
+% add legend for colors
+plot([2 8],[1.9 1.9],'b','LineWidth',3);
+plot([2 8],[1.8 1.8],'r','LineWidth',3);
+text(9,1.9,'Force Field','FontSize',16);
+text(9,1.8,'Visual Rotation','FontSize',16);
+
+% we want to compare with t test washout and baseline
+H = ttest2(mean(fr_VR_WO,1),mean(fr_VR_BL,1))
+H = ttest2(mean(fr_FF_WO,1),mean(fr_FF_BL,1))
+
+%% do same but with washout relative to adaptation
+
+useDate = '2013-09-04';
+load(fullfile(baseDir,useDate,['RT_VR_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_VR_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.WO.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.WO.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR_WO,I] = sort(c);
+fr_VR_WO = fr(:,I);
+
+% get the baseline
+sg = tuning.AD.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.AD.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_VR_AD,I] = sort(c);
+fr_VR_AD = fr(:,I);
+
+% now find an index for how firing rate changes
+fri_VR = mean(fr_VR_WO,1)./mean(fr_VR_AD,1);
+
+
+%%%%%%%%%%%%
+% now the force field
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_classes_' useDate '.mat']));
+load(fullfile(baseDir,useDate,['RT_FF_tuning_' useDate '.mat']));
+
+tcs = classes.PMd.regression.peak.tuned_cells;
+
+tunedCells = classes.PMd.regression.peak.unit_guide(tcs,:);
+sg = tuning.WO.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.WO.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF_WO,I] = sort(c);
+fr_FF_WO = fr(:,I);
+
+%%%%
+% now the baseline
+sg = tuning.AD.PMd.regression.peak.unit_guide;
+[~,I] = intersect(sg,tunedCells,'rows');
+
+fr = tuning.AD.PMd.regression.peak.fr;
+
+% get firing rates for tuned cells
+fr = fr(:,I);
+c = classes.PMd.regression.peak.classes(tcs);
+
+% order the cells by classification
+[c_FF_AD,I] = sort(c);
+fr_FF_AD = fr(:,I);
+
+fri_FF = mean(fr_FF_WO,1)./mean(fr_FF_AD,1);
+
+fh = figure('Position',[200 200 800 600]);
+hold all;
+
+uclass=unique([c_VR; c_FF]);
+
+firstcount = 1;
+count = 0;
+for i = 1:length(uclass)
+    inds = c_FF==uclass(i);
+    fr = fri_FF(:,inds);
+    
+    for j = 1:size(fr,2)
+        count = count + 1;
+        plot(count,mean(fr(:,j)),'bd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'b','LineWidth',2);
+    end
+    
+    inds = c_VR==uclass(i);
+    fr = fri_VR(:,inds);
+    
+    for j = 1:size(fr,2)
+        count = count+1;
+        plot(count,mean(fr(:,j)),'rd','LineWidth',2);
+        plot([count count],[mean(fr(:,j))-std(fr(:,j)) mean(fr(:,j))+std(fr(:,j))],'r','LineWidth',2);
+    end
+    
+    plot([firstcount count],[-0.2 -0.2],'k','LineWidth',3);
+    count = count+4;
+    firstcount = count+1;
+end
+
+
+% add legend and labels
+V = axis;
+plot([V(1) V(2)],[1 1],'k--','LineWidth',1);
+set(gca,'YTick',0:0.2:2,'YTickLabels',0:0.2:2,'XTick',[],'FontSize',16);
+ylabel('Washout / Adaptation','FontSize',16);
+
+axis([-2 V(2)+2 -0.4 2]);
+% add labels for cell types
+text(7,-0.3,'Non-Adapting','FontSize',16);
+text(32.5,-0.3,'Adapting','FontSize',16);
+text(45,-0.3,'Memory','FontSize',16);
+
+% add legend for colors
+plot([2 8],[1.9 1.9],'b','LineWidth',3);
+plot([2 8],[1.8 1.8],'r','LineWidth',3);
+text(9,1.9,'Force Field','FontSize',16);
+text(9,1.8,'Visual Rotation','FontSize',16);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Plot array maps with classes
+useDate = '2013-08-22';
+load(fullfile(baseDir,useDate,['RT_FF_classes_' useDate '.mat']));
+
+inds = classes.PMd.regression.peak.tuned_cells;
+cells = classes.PMd.regression.peak.unit_guide(inds);
+classes = classes.PMd.regression.peak.classes(inds);
+
+% load the array map
+MrT_PMd_arraymap;
+
+% loop along the cells
+class_map = -1*ones(size(array_map));
+
+for unit = 1:length(inds)
+    currElec = cells(unit,1);
+    ind = array_map==currElec;
+    
+    if class_map(ind) == -1
+        class_map(ind) = classes(unit);
+    elseif class_map(ind) == classes(unit)
+        % do nothing
+    elseif class_map(ind) ~= classes(unit)
+        class_map(ind) = 0; % quick hack to fill in... fix it
+    else
+        error('something seems to be wrong here...');
+    end
+end
+
+fh = figure('Position',[200 200 1200 600]);
+subplot1(1,2);
+subplot1(1);
+% plot the array map
+imagesc(-class_map,[-3 1]); colormap('hot');
+ylabel(leftside,'FontSize',14);
+xlabel(bottomside,'FontSize',14);
+set(gca,'XTick',[],'YTick',[]);
+title('Force Field','FontSize',16);
+
+% now for a visual rotation day
+useDate = '2013-09-04';
+load(fullfile(baseDir,useDate,['RT_VR_classes_' useDate '.mat']));
+
+inds = classes.PMd.regression.peak.tuned_cells;
+cells = classes.PMd.regression.peak.unit_guide(inds);
+classes = classes.PMd.regression.peak.classes(inds);
+
+% load the array map
+MrT_PMd_arraymap;
+
+% loop along the cells
+class_map = -1*ones(size(array_map));
+
+for unit = 1:length(inds)
+    currElec = cells(unit,1);
+    ind = array_map==currElec;
+    
+    if class_map(ind) == -1
+        class_map(ind) = classes(unit);
+    elseif class_map(ind) == classes(unit)
+        % do nothing
+    elseif class_map(ind) ~= classes(unit)
+        class_map(ind) = 0; % quick hack to fill in... fix it
+    else
+        error('something seems to be wrong here...');
+    end
+end
+
+subplot1(2);
+ax = gca;
+% plot the array map
+imagesc(-class_map,[-3 1]); colormap('hot');
+xlabel(bottomside,'FontSize',14);
+set(gca,'XTick',[],'YTick',[]);
+title('Visual Rotation','FontSize',16);
+
+c = colorbar('East');
+set(c,'YTick',[-3 -2 -1 0 1],'YTickLabel',{'Memory','Adapting','Non-adapting','Mix','None'},'FontSize',14);
+
+
