@@ -1,4 +1,6 @@
 function blTraces = getCOBaselineTrajectories(data)
+% returns mean trace to each target for CO
+
 
 n = 3000;
 

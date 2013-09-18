@@ -214,6 +214,7 @@ for iEpoch = 1:length(epochs)
                     u.(chanName).(['unit' num2str(units(iu))]).p2p = p2p;
                     u.(chanName).(['unit' num2str(units(iu))]).misi = misi;
                     u.(chanName).(['unit' num2str(units(iu))]).mfr = mfr;
+                    u.(chanName).(['unit' num2str(units(iu))]).offline_sorter_channel = channel;
                     
                     
                 end

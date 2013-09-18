@@ -9,8 +9,8 @@ tuneMethod = 'regression';
 useArray = 'PMd';
 
 % list of parameter files for days to use
-paramFiles = {'Z:\MrT_9I4\Matt\ProcessedData\2013-09-04\2013-09-04_experiment_parameters.dat', ...
-    'Z:\MrT_9I4\Matt\ProcessedData\2013-09-06\2013-09-06_experiment_parameters.dat'};
+paramFiles = {'Z:\MrT_9I4\Matt\ProcessedData\2013-08-22\2013-08-22_experiment_parameters.dat', ...
+    'Z:\MrT_9I4\Matt\ProcessedData\2013-09-04\2013-09-04_experiment_parameters.dat'};
 
 tracking = trackNeuronsAcrossDays(paramFiles,false);
 
@@ -64,3 +64,5 @@ end
 
 % filter out untuned cells
 allClasses(any(allClasses==-1,2),:) = [];
+
+% now do some kind of plotting
