@@ -7,11 +7,18 @@
 % cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';
 % file_details.rot_handle = 1; 
 
-file_details.datapath = 'D:\Data\Kramer_10I1\';
-file_details.UF_file_prefix = 'Kramer_2013-08-30_UF_';
-file_details.RW_file_prefix = 'Kramer_2013-08-30_RW_';
-cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kramer 10I1\Kramer sept 2012 implant array mapping\6251-0922.cmp';
+file_details.datapath = 'D:\Data\Mini_7H1\';
+file_details.UF_file_prefix = 'Mini_2013-09-25_UF_';
+file_details.RW_file_prefix = '';
+file_details.RW_file_prefix = '';
+cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Mini 7H1\Blackrock array info\1025-0592.cmp';
 file_details.rot_handle = 0; 
+
+% file_details.datapath = 'D:\Data\Kramer_10I1\';
+% file_details.UF_file_prefix = 'Kramer_2013-08-30_UF_';
+% file_details.RW_file_prefix = 'Kramer_2013-08-30_RW_';
+% cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kramer 10I1\Kramer sept 2012 implant array mapping\6251-0922.cmp';
+% file_details.rot_handle = 0; 
 
 % file_details.datapath = 'D:\Data\TestData\';
 % file_details.UF_file_prefix = 'Test_2013-08-28_UF_001';
@@ -25,10 +32,10 @@ if filedate < datenum('2013-06-19')
     file_details.rot_handle = 0;
 end
 
-reload_data = 1;
-plot_behavior = 0;
+reload_data = 0;
+plot_behavior = 1;
 plot_emg = 0;
-plot_units = 1;
+plot_units = 0;
 plot_STAEMG = 0;
 plot_SSEP = 0;
 save_figs = 0;

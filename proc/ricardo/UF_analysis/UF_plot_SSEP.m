@@ -3,6 +3,10 @@ figHandles = [];
 figTitles = cell(0);
 if isfield(bdf,'units')
     channels = str2double([bdf.analog.channel]);
+    if isnan(channels)
+        channels = [bdf.analog.channel]';
+    end
+    
     SSEP_range = [0.02 0.05];
     plot_range = [-.05 .1];
     n_bumps = zeros(length(UF_struct.bias_indexes),length(UF_struct.field_indexes),length(UF_struct.field_indexes));
@@ -15,16 +19,38 @@ if isfield(bdf,'units')
     
     UF_struct.lfp_all = UF_struct.lfp_all - lfp_baseline;
     
-    for iChannel = 1:length(channels)
-        electrode = UF_struct.elec_map(UF_struct.elec_map(:,3)==channels(iChannel),4);
+    for iChannel = 1:length(channels)          
+        try
+            electrode = UF_struct.elec_map(find(UF_struct.elec_map(:,3)==channels(iChannel,1)),4);
+        catch  
+            electrode = UF_struct.elec_map{iChannel}{4};
+        end
         figHandles(end+1) = figure; 
         figure1_idx = gcf;
-        set(gcf,'name',['SSEP electrode: ' num2str(electrode)],'numbertitle','off')               
-        figTitles{end+1} = num2str(electrode,'%1.2d');              
+        
+        if ~isstr(electrode)
+            set(gcf,'name',['SSEP Electrode: ' num2str(electrode)],'numbertitle','off')   
+            figTitles{end+1} = num2str(electrode,'%1.2d');   
+        else
+            set(gcf,'name',['SSEP Electrode: ' electrode],'numbertitle','off')       
+            figTitles{end+1} = electrode;   
+        end
+        
+%         set(gcf,'name',['SSEP electrode: ' num2str(electrode)],'numbertitle','off')               
+%         figTitles{end+1} = num2str(electrode,'%1.2d');              
         figHandles(end+1) = figure; 
         figure2_idx = gcf;
-        set(gcf,'name',['SSEP electrode: ' num2str(electrode) ' summary'],'numbertitle','off')               
-        figTitles{end+1} = [num2str(electrode,'%1.2d') '_summary'];        
+%         set(gcf,'name',['SSEP electrode: ' num2str(electrode) ' summary'],'numbertitle','off')               
+%         figTitles{end+1} = [num2str(electrode,'%1.2d') '_summary'];  
+        
+        if ~isstr(electrode)
+            set(gcf,'name',['SSEP Electrode: ' num2str(electrode) ' summary'],'numbertitle','off')   
+            figTitles{end+1} = [num2str(electrode,'%1.2d') '_summary'];   
+        else
+            set(gcf,'name',['SSEP Electrode: ' electrode ' summary'],'numbertitle','off')       
+            figTitles{end+1} = [electrode '_summary'];   
+        end
+        
         lfp_idx = iChannel;
         lfp_temp = squeeze(UF_struct.lfp_all(lfp_idx,:,:));
 %         lfp_temp = filter_lfp(lfp_temp,UF_struct.t_axis,UF_struct.t_axis>.1);        
@@ -95,8 +121,17 @@ if isfield(bdf,'units')
         clear lfp_temp
         set(gcf,'NextPlot','add');
         gca = axes;
-        h = title({[UF_struct.UF_file_prefix];...
-            ['Elec: ' num2str(electrode) ' (Chan: ' num2str(channels(iChannel)) ')']},'Interpreter','none');
+        
+        if ~isstr(electrode)
+             h = title({[UF_struct.UF_file_prefix];...
+            ['Elec: ' num2str(electrode) ' (Chan: ' num2str(channels(iChannel)) ')']},'Interpreter','none');                      
+        else
+            h = title({[UF_struct.UF_file_prefix];...
+            ['Elec: ' electrode ' (Chan: ' channels{iChannel} ')']},'Interpreter','none');  
+        end        
+        
+%         h = title({[UF_struct.UF_file_prefix];...
+%             ['Elec: ' num2str(electrode) ' (Chan: ' num2str(channels(iChannel)) ')']},'Interpreter','none');
         set(gca,'Visible','off');
         set(h,'Visible','on');
         
@@ -169,8 +204,15 @@ if isfield(bdf,'units')
         
         set(gcf,'NextPlot','add');
         gca = axes;
-        h = title({[UF_struct.UF_file_prefix];...
-            ['Elec: ' num2str(electrode) ' (Chan: ' num2str(channels(iChannel)) ')']},'Interpreter','none');
+        if ~isstr(electrode)
+             h = title({[UF_struct.UF_file_prefix];...
+            ['Elec: ' num2str(electrode) ' (Chan: ' num2str(channels(iChannel)) ')']},'Interpreter','none');                      
+        else
+            h = title({[UF_struct.UF_file_prefix];...
+            ['Elec: ' electrode ' (Chan: ' channels{iChannel} ')']},'Interpreter','none');  
+        end    
+%         h = title({[UF_struct.UF_file_prefix];...
+%             ['Elec: ' num2str(electrode) ' (Chan: ' num2str(channels(iChannel)) ')']},'Interpreter','none');
         set(gca,'Visible','off');
         set(h,'Visible','on');
         
