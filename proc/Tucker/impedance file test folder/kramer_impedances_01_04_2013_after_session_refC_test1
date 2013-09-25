@@ -1,0 +1,137 @@
+* AutoImpedance measurements
+*  1\04\2013* 16:47:56
+*
+* m = 5.40
+* expected = 4460.00
+* b = 34.00
+*
+* Chan 	 RMS/Impedance
+*******	**************
+ elec93	   880 kOhm
+ elec92	  1369 kOhm
+ elec94	  1036 kOhm
+ elec95	  1491 kOhm
+ elec75	  1354 kOhm
+ elec96	   406 kOhm
+ elec85	  1194 kOhm
+ elec97	   436 kOhm
+ elec86	   481 kOhm
+ elec98	  1099 kOhm
+ elec87	   685 kOhm
+ elec88	   884 kOhm
+ elec77	   147 kOhm
+ elec99	   311 kOhm
+ elec66	  1415 kOhm
+ elec89	   562 kOhm
+ elec76	   906 kOhm
+ elec90	  1026 kOhm
+ elec67	   943 kOhm
+ elec79	  1057 kOhm
+ elec58	  1688 kOhm
+ elec80	   747 kOhm
+ elec78	   990 kOhm
+ elec70	   170 kOhm
+ elec68	   823 kOhm
+ elec60	   540 kOhm
+ elec69	  1445 kOhm
+ elec50	   908 kOhm
+ elec59	  1021 kOhm
+ elec40	   865 kOhm
+ elec49	  1254 kOhm
+ elec30	   501 kOhm
+ elec83	  1425 kOhm
+ elec84	  1371 kOhm
+ elec73	  1533 kOhm
+ elec74	  1694 kOhm
+ elec63	  1237 kOhm
+ elec64	  1383 kOhm
+ elec53	  1442 kOhm
+ elec54	  1568 kOhm
+ elec43	  1179 kOhm
+ elec55	  1581 kOhm
+ elec44	  1350 kOhm
+ elec45	  1433 kOhm
+ elec33	  1230 kOhm
+ elec46	  1684 kOhm
+ elec34	  1601 kOhm
+ elec65	   936 kOhm
+ elec24	  1133 kOhm
+ elec56	  1449 kOhm
+ elec35	  1546 kOhm
+ elec47	  1727 kOhm
+ elec25	  1306 kOhm
+ elec57	  1649 kOhm
+ elec26	  1390 kOhm
+ elec36	  1892 kOhm
+ elec27	  1295 kOhm
+ elec37	  1744 kOhm
+ elec28	   911 kOhm
+ elec38	  1446 kOhm
+ elec29	  1296 kOhm
+ elec48	  1663 kOhm
+ elec19	   923 kOhm
+ elec39	  1562 kOhm
+ elec81	   938 kOhm
+ elec82	  1178 kOhm
+ elec71	   968 kOhm
+ elec72	   943 kOhm
+ elec61	  1051 kOhm
+ elec62	  1389 kOhm
+ elec51	   681 kOhm
+ elec52	  1131 kOhm
+ elec41	   881 kOhm
+ elec42	  1619 kOhm
+ elec31	 12895 kOhm
+ elec32	  1131 kOhm
+ elec21	   610 kOhm
+ elec22	   953 kOhm
+ elec11	   107 kOhm
+ elec12	  1314 kOhm
+  elec2	   396 kOhm
+ elec23	 13689 kOhm
+  elec3	   214 kOhm
+ elec13	  1252 kOhm
+  elec4	   550 kOhm
+ elec14	  1083 kOhm
+ elec15	   109 kOhm
+  elec5	   789 kOhm
+ elec16	  1030 kOhm
+  elec6	   242 kOhm
+ elec17	   728 kOhm
+  elec7	   474 kOhm
+  elec8	   374 kOhm
+ elec18	   931 kOhm
+ elec20	   330 kOhm
+  elec9	   838 kOhm
+ chan97	    0.50 uV
+ chan98	    0.48 uV
+ chan99	    0.51 uV
+chan100	    0.53 uV
+chan101	    0.53 uV
+chan102	    0.51 uV
+chan103	    0.51 uV
+chan104	    0.49 uV
+chan105	    0.50 uV
+chan106	    0.51 uV
+chan107	    0.50 uV
+chan108	    0.51 uV
+chan109	    0.50 uV
+chan110	    0.50 uV
+chan111	    0.52 uV
+chan112	    0.49 uV
+chan113	    0.50 uV
+chan114	    0.51 uV
+chan115	    0.54 uV
+chan116	    0.50 uV
+chan117	    0.51 uV
+chan118	    0.52 uV
+chan119	    0.55 uV
+chan120	    0.52 uV
+chan121	    0.54 uV
+chan122	    0.53 uV
+chan123	 4316.77 uV
+chan124	    0.53 uV
+chan125	 4357.12 uV
+chan126	 4365.73 uV
+chan127	 4305.95 uV
+chan128	 4349.44 uV
