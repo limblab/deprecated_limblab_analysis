@@ -1,16 +1,14 @@
-function classes = findMemoryCells(expParamFile)
+function classes = findMemoryCells(expParamFile, paramSetName)
 % FINDMEMORYCELLS  Compares tuning of cells to classify their behavior
 %
 %   This function uses the tuning made by fitTuningCurves to classify them
 % based on their tuning behavior before, during, and after learning. There
 % are the following types:
 %       Kinematic (AAA, id=1) : no change with perturbation
-%       Dynamic (ABA, id=2)   : changes in response to the perturbation
-%       Memory I (ABB, id=3)  : changes with perturbation and hold tuning
+%       Dynamic   (ABA, id=2)   : changes in response to the perturbation
+%       Memory I  (ABB, id=3)  : changes with perturbation and hold tuning
 %       Memory II (AAB, id=4) : changes when perturbation is removed
-%       Other (ABC, id=5)     : Different tuning in every epoch
-%       Weird (???, id=6)     : Cells that don't fit above descriptions
-%           Personal note: these should be investigated...
+%       Other     (ABC, id=5)     : Different tuning in every epoch
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
@@ -27,6 +25,8 @@ function classes = findMemoryCells(expParamFile)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+compMethod = 'overlap';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,17 +42,17 @@ dataPath = fullfile(baseDir,useDate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(dataPath, paramSetName, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 tuningPeriods = params.tuning_periods;
 tuningMethods = params.tuning_methods;
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-saveFile = fullfile(dataPath,[taskType '_' adaptType '_classes_' useDate '.mat']);
+saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']);
 
 disp('Loading data to classify cells...')
-load(fullfile(dataPath,[taskType '_' adaptType '_tuning_' useDate '.mat']));
+load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']));
 
 load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']));
 arrays = data.meta.arrays;
@@ -73,7 +73,7 @@ for iArray = 1:length(arrays)
             if strcmpi(tuningPeriods{iPeriod},'file') && ~strcmpi(tuningMethods{iMethod},'glm')
                 warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
             else
-                [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod});
+                [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod},compMethod, paramSetName);
                 
                 % get cells that are significantly tuned in all epochs
                 tunedCells = find(cellClass(:,1)~=-1);

@@ -1,4 +1,4 @@
-function [tunCurves,ci_sig,md_sig,bo_sig] = regressTuningCurves(fr,theta,sigTest,varargin)
+function [tunCurves,ci_sig,md_sig,bo_sig,boot_pds,rs] = regressTuningCurves(fr,theta,sigTest,varargin)
 % Compute cosine tuning curves relating neural activity to output using a
 % linear regression method to get preferred directions
 %
@@ -19,6 +19,7 @@ function [tunCurves,ci_sig,md_sig,bo_sig] = regressTuningCurves(fr,theta,sigTest
 %               ...,'parameter_name',parameter_value,...
 %       Options:
 %           'doplots': (boolean) plot each unit with tuning curve?
+%           'domeanfr': (boolean) find mean fr by direction for cosine fit
 % OUTPUTS
 %   tunCurves: tuning of each model using b0+b1*cos(theta+b2)
 %                   tunCurves = [b0,b1,b2]
@@ -47,6 +48,7 @@ end
 %%%%% Define parameters
 % set defaults
 doPlots = false; % By default, don't plot
+doMeanFR = true; % by default find mean for fit
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'doplots'
@@ -72,17 +74,36 @@ switch lower(sigTest{1})
                 tempTheta(:,unit) = theta(randInds);
             end
 
-            tunCurves = regressTCs(tempfr,tempTheta,doPlots);
+            if doMeanFR
+                % find the mean firing rate for each direction
+                udir = unique(tempTheta(:,1));
+                
+                mtempfr = zeros(length(udir),size(tempfr,2));
+                for idir = 1:length(udir)
+                    for unit = 1:size(fr,2)
+                        mtempfr(idir,unit) = mean(tempfr(tempTheta(:,unit)==udir(idir),unit));
+                    end
+                end
+                
+                tempfr = mtempfr;
+                tempTheta = udir;
+            end
+            
+            
+            [tunCurves,r] = regressTCs(tempfr,tempTheta,doPlots);
 
             
             b0s(:,iter) = tunCurves(:,1);
             b1s(:,iter) = tunCurves(:,2);
             b2s(:,iter) = tunCurves(:,3);
             
+            rs(:,iter) = r;
+            
         end
         
-        % find confidence bounds on PD and return as sig
-        % IN THE FUTURE: maybe have confidence bounds for all three params?
+        boot_pds = b2s;
+        
+        % find confidence bounds and return as sig
         b2s = sort(b2s,2);
         ci_sig = [b2s(:,ceil(numIters - confLevel*numIters)), b2s(:,floor(confLevel*numIters))];
         
@@ -91,7 +112,7 @@ switch lower(sigTest{1})
         
         b0s = sort(b0s,2);
         bo_sig = [b0s(:,ceil(numIters - confLevel*numIters)), b0s(:,floor(confLevel*numIters))];
-        
+
         b0s = mean(b0s,2);
         b1s = mean(b1s,2);
         b2s = mean(b2s,2);
@@ -122,7 +143,7 @@ end %end main function
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Subfunction to regress the tuning curves
-function tunCurves = regressTCs(fr,theta,doPlots)
+function [tunCurves,r] = regressTCs(fr,theta,doPlots)
 %   tunCurves: tuning curve of model b0 + b1*cos(theta + b2)
 %       b2 is preferred direction
 
@@ -140,7 +161,7 @@ for iN = 1:size(fr,2)
     
     % model is b0+b1*cos(theta)+b2*sin(theta)
     [b,~,~,~,temp] = regress(fr(:,iN),X);
-    p(iN) = temp(1);
+    r(iN) = temp(1);
     
     % convert to model b0 + b1*cos(theta+b2)
     b  = [b(1); sqrt(b(2).^2 + b(3).^2); atan2(b(2),b(3))];
@@ -153,7 +174,7 @@ for iN = 1:size(fr,2)
         hold all
         plot(theta(:,iN).*(180/pi),fr(:,iN),'r.')
         plot([b(3) b(3)].*(180/pi),[0 max(fr(:,iN))],'k')
-        title(['r2 = ' num2str(p(iN))]);
+        title(['r2 = ' num2str(r(iN))]);
         pause;
         close all
     end

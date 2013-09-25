@@ -1,4 +1,4 @@
-function plotted = makeFFPlots(expParamFile,useUnsorted)
+function plotted = makeFFPlots(expParamFile,paramSetName,useUnsorted)
 % MAKEFFPLOTS  Wrapper function to save a lot of plots for adaptation analysis
 %
 %   This code will make a variety of plots from processed data.
@@ -33,12 +33,13 @@ clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 dataPath = fullfile(baseDir,useDate);
-figPath = fullfile(baseDir,useDate,'figs');
+genFigPath = fullfile(baseDir,useDate,'general_figs');
+figPath = fullfile(baseDir,useDate,paramSetName,'figs');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(dataPath, [ useDate '_plotting_parameters.dat']);
 params = parseExpParams(paramFile);
 forceThresh = str2double(params.vel_thresh{1});
 plotted.doForce = str2double(params.do_force{1});
@@ -57,6 +58,10 @@ if ~exist(figPath,'dir')
     mkdir(figPath);
 end
 
+if ~exist(genFigPath,'dir')
+    mkdir(genFigPath);
+end
+
 blFile = fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']);
 adFile = fullfile(dataPath,[taskType '_' adaptType '_AD_' useDate '.mat']);
 woFile = fullfile(dataPath,[taskType '_' adaptType '_WO_' useDate '.mat']);
@@ -65,7 +70,7 @@ woFile = fullfile(dataPath,[taskType '_' adaptType '_WO_' useDate '.mat']);
 disp('Loading data files for plotting...')
 
 if ~useUnsorted
-    tuneFile = fullfile(dataPath,[taskType '_' adaptType '_tuning_' useDate '.mat']);
+    tuneFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
     load(tuneFile);
     blt = tuning.BL;
     adt = tuning.AD;
@@ -81,30 +86,76 @@ load(woFile);
 wo = data;
 clear data;
 
+%% These plots are general and not analysis parameter specific
 % make force plots for AD
-if plotted.doForce && strcmpi(adaptType,'FF')
+if plotted.doForce && ( strcmpi(adaptType,'FF') || strcmpi(adaptType,'VRFF') )
     disp('Creating force plots...')
-    makeForcePlots(ad,figPath,forceThresh);
+    makeForcePlots(ad,genFigPath,forceThresh);
+    close all;
+end
+
+if plotted.doCOTrajectories && strcmpi(taskType,'CO')
+    disp('Creating center-out trajectory plots...');
+    % plot first and last movements to each target in adaptation period
+    plotCOTrajectoriesStartEnd(bl, genFigPath);
+    close all;
+    plotCOTrajectoriesStartEnd(ad, genFigPath);
+    close all;
+    plotCOTrajectoriesStartEnd(wo, genFigPath);
+    close all;
+    
+    % plot comparison of mean trajectories
+    plotCOMeanTrajectories(bl,genFigPath);
+    close all;
+    plotCOMeanTrajectories(ad,genFigPath);
+    close all;
+    plotCOMeanTrajectories(wo,genFigPath);
+    close all;
+    
+end
+
+if plotted.doCOTrajectories && strcmpi(taskType,'CRC')
+    disp('Creating center-out trajectory plots...');
+    % plot first and last movements to each target in adaptation period
+    plotCOTrajectoriesStartEnd(bl, genFigPath);
+    close all;
+    plotCOTrajectoriesStartEnd(wo, genFigPath);
     close all;
 end
 
 if plotted.doWF && ~useUnsorted
     disp('Creating waveform plots...')
-    makeWaveformPlots(bl,figPath);
+    makeWaveformPlots(bl,genFigPath);
     close all;
-    makeWaveformPlots(ad,figPath);
+    makeWaveformPlots(ad,genFigPath);
     close all;
-    makeWaveformPlots(wo,figPath);
+    makeWaveformPlots(wo,genFigPath);
     close all;
 end
 
 if plotted.doISI && ~useUnsorted
     disp('Creating ISI plots...')
-    makeISIPlots(bl,figPath);
+    makeISIPlots(bl,genFigPath);
     close all;
-    makeISIPlots(ad,figPath);
+    makeISIPlots(ad,genFigPath);
     close all;
-    makeISIPlots(wo,figPath);
+    makeISIPlots(wo,genFigPath);
+    close all;
+end
+
+%% These plots will change with parameters and thus go in subfolders
+if plotted.doBehavior
+    % THIS IS A HACK FOR NOW
+    %   Eventually I need to resolve how to set axes to be the same
+    % but for now, do it for curvature and find them brute force
+    disp('Creating adaptation/behavior plots...')
+    load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
+    curvLims = [min(structfun(@(x) min(x.sliding_curvature_mean(:,1)),adaptation)), max(structfun(@(x) max(x.sliding_curvature_mean(:,1)),adaptation))];
+    makeBehaviorPlots(adaptation.BL,figPath,curvLims);
+    close all;
+    makeBehaviorPlots(adaptation.AD,figPath,curvLims);
+    close all;
+    makeBehaviorPlots(adaptation.WO,figPath,curvLims);
     close all;
 end
 
@@ -124,52 +175,8 @@ if plotted.doEpochTuningComparison && ~useUnsorted
     close all;
 end
 
-if plotted.doBehavior
-    % THIS IS A HACK FOR NOW
-    %   Eventually I need to resolve how to set axes to be the same
-    % but for now, do it for curvature and find them brute force
-    disp('Creating adaptation/behavior plots...')
-    load(fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
-    curvLims = [min(structfun(@(x) min(x.curvature_max(:,1)),adaptation)), max(structfun(@(x) max(x.curvature_max(:,1)),adaptation))];
-    makeBehaviorPlots(adaptation.BL,figPath,curvLims);
-    close all;
-    makeBehaviorPlots(adaptation.AD,figPath,curvLims);
-    close all;
-    makeBehaviorPlots(adaptation.WO,figPath,curvLims);
-    close all;
-end
-
-if plotted.doCOTrajectories && strcmpi(taskType,'CO')
-    disp('Creating center-out trajectory plots...');
-    % plot first and last movements to each target in adaptation period
-    plotCOTrajectoriesStartEnd(bl, figPath);
-    close all;
-    plotCOTrajectoriesStartEnd(ad, figPath);
-    close all;
-    plotCOTrajectoriesStartEnd(wo, figPath);
-    close all;
-    
-    % plot comparison of mean trajectories
-    plotCOMeanTrajectories(bl,figPath);
-    close all;
-    plotCOMeanTrajectories(ad,figPath);
-    close all;
-    plotCOMeanTrajectories(wo,figPath);
-    close all;
-    
-end
-
-if plotted.doCOTrajectories && strcmpi(taskType,'CRC')
-    disp('Creating center-out trajectory plots...');
-    % plot first and last movements to each target in adaptation period
-    plotCOTrajectoriesStartEnd(bl, figPath);
-    close all;
-    plotCOTrajectoriesStartEnd(wo, figPath);
-    close all;
-end
-
 if plotted.doPDChange && ~useUnsorted
-    load(fullfile(dataPath,[taskType '_' adaptType '_classes_' useDate '.mat']));
+    load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
     load(fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']));
     plotPDChanges(blt,adt,wot,classes,tracking,sigMethod,figPath);
     close all;

@@ -1,4 +1,4 @@
-function html = makeSummaryReport(expParamFile,useUnsorted,html)
+function html = makeSummaryReport(expParamFile,paramSetName,useUnsorted,html)
 % NEURONREPORTS  Constructs html document to summarize a session's data
 %
 %   This function will load processed data and generate html for a summary
@@ -25,7 +25,6 @@ function html = makeSummaryReport(expParamFile,useUnsorted,html)
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 % set some parameters
-tuningPeriods = {'initial','peak','full'};
 tuningPeriods = {'peak'};
 tuningMethods = {'regression','nonparametric'};
 sigMethod = 'regression'; %what tuning method to look for for significance
@@ -36,7 +35,7 @@ tableColors = {'#ff55ff','#55ffff','#ffff55','#55aaaa','#eeee77','#cccccc'};
 classNames = {'kinematic','dynamic','memory I','memory II','other'};
 
 newHTML = false;
-if nargin < 3
+if nargin < 4
     newHTML = true;
     html = [];
 end
@@ -58,7 +57,7 @@ clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Load some more parameters
-paramFile = fullfile(baseDir, useDate, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(baseDir, useDate, paramSetName, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
 ciSig = str2double(params.ci_significance{1});
@@ -66,7 +65,8 @@ minFR = str2double(params.minimum_firing_rate{1});
 clear params;
 
 dataPath = fullfile(baseDir,useDate);
-figPath = fullfile(dataPath,'figs');
+genFigPath = fullfile(dataPath,'general_figs');
+figPath = fullfile(dataPath,paramSetName,'figs');
 
 dataFiles = cell(size(epochs));
 for iEpoch = 1:length(epochs)
@@ -74,13 +74,13 @@ for iEpoch = 1:length(epochs)
 end
 
 if ~useUnsorted
-    tuningFile = fullfile(dataPath,[taskType '_' adaptType '_tuning_' useDate '.mat']);
+    tuningFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
     load(tuningFile);
     t = tuning;
     clear tuning;
     
     % load the classification information
-    load(fullfile(dataPath,[taskType '_' adaptType '_classes_' useDate '.mat']));
+    load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
     
     % load neuron tracking data
     load(fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']));
@@ -161,11 +161,12 @@ if newHTML
     html = strcat(html,'</body></html>');
     
     if ~useUnsorted
-        fn = fullfile(dataPath, [useDate '_summary_report.html']);
+        fn = fullfile(dataPath, paramSetName, [useDate '_summary_report.html']);
     else
-        fn = fullfile(dataPath, [useDate '_unsorted_summary_report.html']);
+        fn = fullfile(dataPath, paramSetName, [useDate '_unsorted_summary_report.html']);
     end
     
     fid = fopen(fn,'w+');
     fprintf(fid,'%s',html);
+    fclose(fid);
 end

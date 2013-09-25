@@ -4,13 +4,19 @@
 clear;
 clc;
 
+% useDates = {'2013-08-22','2013-09-04'};
+useDates = {'2013-08-22','2013-09-04'};
+
 tunePeriod = 'peak';
 tuneMethod = 'regression';
 useArray = 'PMd';
 
-% list of parameter files for days to use
-paramFiles = {'Z:\MrT_9I4\Matt\ProcessedData\2013-08-22\2013-08-22_experiment_parameters.dat', ...
-    'Z:\MrT_9I4\Matt\ProcessedData\2013-09-04\2013-09-04_experiment_parameters.dat'};
+baseDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
+
+paramFiles = cell(1,length(useDates));
+for iDay = 1:length(useDates)
+    paramFiles{iDay} = fullfile(baseDir,useDates{iDay},[useDates{iDay} '_experiment_parameters.dat']);
+end
 
 tracking = trackNeuronsAcrossDays(paramFiles,false);
 
@@ -65,4 +71,31 @@ end
 % filter out untuned cells
 allClasses(any(allClasses==-1,2),:) = [];
 
+% look for types of cells
+%   NOTE: right now this is exclusively for two files, first is FF other VR
+%   1) same function in both perturbations (diff = 0)
+%   2) non-adapting in FF and adapting in VR (diff > 0)
+%   3) adapting in FF and non-adapting in VR (diff < 0)
+classDiff = diff(allClasses(:,2:end),[],2)~=0;
+celltypes = zeros(size(classDiff));
+inds = classDiff==0;
+celltypes(classDiff == 0) = 1;
+celltypes(classDiff > 0) = 2;
+celltypes(classDiff < 0) = 3;
+
+% how many of each type?
+numSame = sum(celltypes==1);
+numKin = sum(celltypes==2);
+numDyn = sum(celltypes==3);
+
+
+colors = {'k','r','b'};
 % now do some kind of plotting
+figure;
+hold all;
+for unit = 1:size(classDiff,1)
+    useColor = colors{celltypes(unit)};
+    plot([1 2],allClasses(unit,2:3),useColor);
+    plot([1 2],allClasses(unit,2:3),[useColor 'd']);
+end
+axis([0 3 -1 4]);

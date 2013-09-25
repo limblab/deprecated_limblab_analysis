@@ -1,4 +1,4 @@
-function adaptation = getAdaptationMetrics(expParamFile)
+function adaptation = getAdaptationMetrics(expParamFile, paramSetName)
 % NEURONREPORTS  Constructs html document to summarize a session's data
 %
 %   This function will load processed data and generate html for a summary
@@ -21,9 +21,6 @@ function adaptation = getAdaptationMetrics(expParamFile)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-% resampling for CO correlation purposes
-n = 3000;
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +37,7 @@ dataPath = fullfile(baseDir,useDate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(dataPath, paramSetName, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 behavWin = str2double(params.behavior_window{1});
 winSize = str2double(params.movement_time{1});
@@ -50,19 +47,21 @@ moveThresh = str2double(params.movement_threshold{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-saveFile = fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
+saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
 
-% for center out, get baseline movement trajectories to each target
-if strcmpi(taskType,'CO')
-    getFile = fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']);
-    if ~exist(getFile,'file')
-        error('Could not locate baseline file');
-    end
-    load(getFile);
-    
-    blTraces = getCOBaselineTrajectories(data);
-    
-end
+% resampling for CO correlation purposes
+% n = 3000;
+% % for center out, get baseline movement trajectories to each target
+% if strcmpi(taskType,'CO')
+%     getFile = fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']);
+%     if ~exist(getFile,'file')
+%         error('Could not locate baseline file');
+%     end
+%     load(getFile);
+%     
+%     blTraces = getCOBaselineTrajectories(data);
+%     
+% end
 
 % load files
 for iEpoch = 1:length(epochs)
@@ -90,17 +89,34 @@ for iEpoch = 1:length(epochs)
     %     plot(vel(1:3000),'b','LineWidth',2);
     %     plot(y(w/2:3000+w/2),'r');
     
-    mt = filterMovementTable(data,false);
+    mt = filterMovementTable(data,paramSetName,false);
     holdTime = data.params.hold_time;
     
     %% Get movement information
     % find times when velocity goes above that threshold
     disp('Getting movement data...')
     moveWins = zeros(size(mt,1),2);
+    allCurvMeans = zeros(size(mt,1),1);
     for iMove = 1:size(mt,1)
         % movement table: [ target angle, on_time, go cue, move_time, peak_time, end_time ]
         % has the start of movement window, end of movement window
         moveWins(iMove,:) = [mt(iMove,5)-winSize/2, mt(iMove,5)+winSize/2];
+        
+        % get curvature in that window
+        idx = find(t >= moveWins(1) & t < moveWins(2));
+        
+        tempAcc = acc(idx,:);
+        tempVel = vel(idx,:);
+        % ran into a problem sometimes where velocity/acc drop almost to
+        % zero seemingly sproadically so my curvatures went towards infinity
+        badInds = sqrt(tempVel(:,1).^2 + tempVel(:,2).^2) < moveThresh;
+        tempVel(badInds,:) = [];
+        tempAcc(badInds,:) = [];
+        
+        tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
+        
+        allCurvMeans(iMove) = mean(tempCurv);
+        
     end
     
     % compute metrics
@@ -165,8 +181,8 @@ for iEpoch = 1:length(epochs)
     adaptation.(epochs{iEpoch}).acc = acc;
     
     adaptation.(epochs{iEpoch}).curvature = moveCurvs;
-    adaptation.(epochs{iEpoch}).curvature_max = curvMaxes;
-    adaptation.(epochs{iEpoch}).curvature_mean = curvMeans;
+    adaptation.(epochs{iEpoch}).curvature_means = allCurvMeans;
+    adaptation.(epochs{iEpoch}).sliding_curvature_mean = curvMeans;
     adaptation.(epochs{iEpoch}).reaction_time = reactionTimes;
     adaptation.(epochs{iEpoch}).reaction_time_mean = [rtMeans rtSTDs];
     adaptation.(epochs{iEpoch}).time_to_target = timeToTargets;

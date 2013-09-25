@@ -10,7 +10,9 @@ x = resample(double(x),n,length(x),5);
 y = resample(double(y),n,length(y),5);
 
 % trim last point?
+if trimPoints > 0
 x = x(trimPoints:end-trimPoints);
 y = y(trimPoints:end-trimPoints);
+end
 
 end

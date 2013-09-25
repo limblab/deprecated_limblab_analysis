@@ -10,13 +10,13 @@ end
 html = strcat(html,'</tr><tr><td>First/Last</td>');
 
 for iEpoch = 1:length(epochs)
-    html = strcat(html,['<td><img src="' figPath '\' epochs{iEpoch} '_CO_trajectories_first_and_last.png" width="' num2str(imgWidth+200) '"></td>']);
+    html = strcat(html,['<td><img src="' genFigPath '\' epochs{iEpoch} '_CO_trajectories_first_and_last.png" width="' num2str(imgWidth+200) '"></td>']);
 end
 
 html = strcat(html,'</tr><tr><td>All Movements</td>');
 
 for iEpoch = 1:length(epochs)
-    html = strcat(html,['<td><img src="' figPath '\' epochs{iEpoch} '_CO_trajectories_all.png" width="' num2str(imgWidth+200) '"></td>']);
+    html = strcat(html,['<td><img src="' genFigPath '\' epochs{iEpoch} '_CO_trajectories_all.png" width="' num2str(imgWidth+200) '"></td>']);
 end
 
 html = strcat(html,'</tr></table><br><a href="#header">back to top</a></div><hr>');

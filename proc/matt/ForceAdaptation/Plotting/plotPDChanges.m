@@ -6,9 +6,8 @@ epochs = {'BL','AD','WO'};
 
 baseDir = bl.meta.out_directory;
 useDate = bl.meta.recording_date;
-paramFile = fullfile(baseDir, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(baseDir, [ useDate '_plotting_parameters.dat']);
 params = parseExpParams(paramFile);
-tuningPeriods = params.tuning_periods;
 fontSize = str2double(params.font_size{1});
 clear params;
 
@@ -18,6 +17,9 @@ arrays = bl.meta.arrays;
 fh = figure;
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
+
+    tuneMethods = fieldnames(classes.(currArray));
+    tuningPeriods = fieldnames(classes.(currArray).(tuneMethods{1}));
     
     useComp = tracking.(currArray){1}.chan;
     

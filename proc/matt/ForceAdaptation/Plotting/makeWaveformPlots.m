@@ -4,7 +4,7 @@ if nargin < 2
     saveFilePath = [];
 end
 
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_plotting_parameters.dat']);
 params = parseExpParams(paramFile);
 nBins = str2double(params.num_hist_bins{1});
 fontSize = str2double(params.font_size{1});

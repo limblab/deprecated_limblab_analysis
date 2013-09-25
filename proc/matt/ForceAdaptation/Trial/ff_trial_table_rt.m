@@ -5,7 +5,7 @@ function tt = ff_trial_table_rt(bdf)
 % Each row of the table coresponds to a single trial.  Columns are as
 % follows:
 %    1: Start time
-%    [2->1+(3*num_tgts)]: [go cue, onset, peak] for each target
+%    [2->1+(3*num_tgts)]: [go cue, onset, peak xcenter ycenter] for each target
 %    (1+3*num_tgts)+1   : Trial End time
 %    (1+3*num_tgts)+2   : Trial result    -- R, A, F, I or N (N coresponds to no-result)
 

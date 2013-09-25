@@ -1,13 +1,13 @@
-function out = nonparametricTuning(data,tuningPeriod,useArray,doPlots)
+function out = nonparametricTuning(data,tuningPeriod,useArray,paramSetName,doPlots)
 % bins firing rates for each movement direction and bootstraps to get CIs on mean
 
-if nargin < 4
+if nargin < 5
     doPlots = false;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_analysis_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
@@ -21,7 +21,7 @@ disp(['Nonparametric tuning, ' tuningPeriod ' movement, ' num2str(movementTime) 
 %% Get data
 sg = data.(useArray).unit_guide;
 
-[fr,theta] = getFR(data,useArray,tuningPeriod);
+[fr,theta] = getFR(data,useArray,tuningPeriod,paramSetName);
 
 utheta = unique(theta);
 

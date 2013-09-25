@@ -1,17 +1,17 @@
-function out = fitTuningCurves_Reg(data,tuningPeriod,tuningMethod,useArray,doPlots)
+function out = fitTuningCurves_Reg(data,tuningPeriod,tuningMethod,useArray,paramSetName,doPlots)
 % notes about inputs
 % notes about outputs
 % can pass tuning method in as cell array with multiple types
 %
 % NOTE: right now, target direction or 'pre' window for movement don't work with RT
 
-if nargin < 4
+if nargin < 5
     doPlots = false;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_analysis_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
@@ -26,14 +26,14 @@ disp([tuningMethod ' tuning, ' tuningPeriod ' movement, ' num2str(movementTime) 
 %% Get data
 sg = data.(useArray).unit_guide;
 
-[fr,theta,mt] = getFR(data,useArray,tuningPeriod);
+[fr,theta,mt] = getFR(data,useArray,tuningPeriod,paramSetName);
 
 % Do bootstrapping with regression
 statTestParams = {'bootstrap',bootNumIters,confLevel};
 
 switch lower(tuningMethod)
     case 'regression'
-        [tcs,pd_cis,md_cis] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
+        [tcs,pd_cis,md_cis, ~, boot_pds,rs] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
         pds = tcs(:,3);
         mds = tcs(:,2);
     case 'vectorsum'
@@ -44,6 +44,9 @@ end
 
 out.pds = [pds pd_cis];
 out.mds = [mds md_cis];
+
+out.boot_pds = boot_pds;
+out.r_squared = rs;
 
 out.unit_guide = sg;
 out.fr = fr;

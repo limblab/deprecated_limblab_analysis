@@ -1,4 +1,4 @@
-function adiff = angleDiff(angle1,angle2,useRad)
+function adiff = angleDiff(angle1,angle2,useRad,preserveSign)
 % ANGLEDIFF finds absolute value of difference in angle
 %
 % INPUTS:
@@ -13,8 +13,11 @@ function adiff = angleDiff(angle1,angle2,useRad)
 % written by Matt Perich; last updated July 2013
 %%%%%
 
-if nargin < 3 %default to degrees
-    useRad = false;
+if nargin < 4
+    preserveSign = false;
+    if nargin < 3 %default to degrees
+        useRad = false;
+    end
 end
 
 if useRad
@@ -31,4 +34,9 @@ for i = 1:length(adiff)
     if adiff(i) > a
         adiff(i) = abs(2*a-adiff(i));
     end
+end
+
+% preserve the sign... more counterclockwise is positive
+if preserveSign
+    adiff = sign(angle2-angle1).*adiff;
 end

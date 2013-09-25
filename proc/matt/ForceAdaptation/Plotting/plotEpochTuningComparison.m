@@ -8,7 +8,7 @@ if nargin < 4
     saveFilePath = [];
 end
 % Load some parameters
-paramFile = fullfile(blt.meta.out_directory, [blt.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(blt.meta.out_directory, [blt.meta.recording_date '_plotting_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
 clear params;

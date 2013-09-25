@@ -1,4 +1,4 @@
-function [cellClass,sg_bl] = classifyCells(blt,adt,wot,useArray,tuningPeriod,tuningMethod)
+function [cellClass,sg_bl] = classifyCells(blt,adt,wot,useArray,tuningPeriod,tuningMethod,compMethod, paramSetName)
 % first gets a matrix where ones show significant tuning between epochs
 %    BL  AD  WO
 % BL -   -   -
@@ -22,10 +22,13 @@ function [cellClass,sg_bl] = classifyCells(blt,adt,wot,useArray,tuningPeriod,tun
 % The classification is based on the number shown above (AAA=1,ABA=2,etc)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(blt.meta.out_directory, [blt.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_analysis_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 ciSig = str2double(params.ci_significance{1});
+confLevel = str2double(params.confidence_level{1});
+numIters = str2double(params.number_iterations{1});
+r2Min = str2double(params.r2_minimum{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -90,18 +93,52 @@ switch lower(tuningMethod)
         pds_ad = pds_ad(idx_ad,:);
         pds_wo = pds_wo(idx_wo,:);
         
+        rs_bl = blt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
+        rs_ad = adt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
+        rs_wo = wot.(useArray).(tuningMethod).(tuningPeriod).r_squared;
+        
+        rs_bl = sort(rs_bl(idx_bl,:),2);
+        rs_ad = sort(rs_ad(idx_ad,:),2);
+        rs_wo = sort(rs_wo(idx_wo,:),2);
+        
+        % get 95% CI for each
+        rs_bl = [rs_bl(:,ceil(numIters - confLevel*numIters)), rs_bl(:,floor(confLevel*numIters))];
+        rs_ad = [rs_ad(:,ceil(numIters - confLevel*numIters)), rs_ad(:,floor(confLevel*numIters))];
+        rs_wo = [rs_wo(:,ceil(numIters - confLevel*numIters)), rs_wo(:,floor(confLevel*numIters))];
+         
         % check significance
         istuned = zeros(size(sg_bl,1),1);
         for unit = 1:size(sg_bl,1)
+            % only consider cells that are tuned in all epochs
             t_bl = checkTuningCISignificance(pds_bl(unit,:),ciSig,true);
             t_ad = checkTuningCISignificance(pds_ad(unit,:),ciSig,true);
             t_wo = checkTuningCISignificance(pds_wo(unit,:),ciSig,true);
             
+            % also only consider cells that are described by cosines
+            %   have bootstrapped r2... see if 95% CI is > 0.5?
+            t_r_bl = rs_bl(unit,1) > r2Min;
+            t_r_ad = rs_ad(unit,1) > r2Min;
+            t_r_wo = rs_wo(unit,1) > r2Min;
+            
             % only consider cells that are tuned in all epochs
-            istuned(unit) = all([t_bl,t_ad,t_wo]);
+            istuned(unit) = all([t_bl,t_ad,t_wo]) & all([t_r_bl,t_r_ad,t_r_wo]);
         end
         
-        out = comparePDTuning({pds_bl,pds_ad,pds_wo},sg_bl);
+        switch lower(compMethod)
+            case 'overlap'
+                usePDs = {pds_bl,pds_ad,pds_wo};
+            case 'diff'
+                boot_pds_bl = blt.(useArray).(tuningMethod).(tuningPeriod).boot_pds;
+                boot_pds_ad = adt.(useArray).(tuningMethod).(tuningPeriod).boot_pds;
+                boot_pds_wo = wot.(useArray).(tuningMethod).(tuningPeriod).boot_pds;
+                
+                boot_pds_bl = boot_pds_bl(idx_bl,:);
+                boot_pds_ad = boot_pds_ad(idx_ad,:);
+                boot_pds_wo = boot_pds_wo(idx_wo,:);
+                usePDs = {boot_pds_bl,boot_pds_ad,boot_pds_wo};
+        end
+        
+        out = comparePDTuning(usePDs,sg_bl,compMethod);
 end
 
 % classify each cell based on output

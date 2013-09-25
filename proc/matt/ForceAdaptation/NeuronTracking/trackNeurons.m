@@ -22,16 +22,13 @@ function tracking = trackNeurons(arrays,varargin)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+confLevel = 0.9;
+
 if length(varargin) == 1
     varargin = varargin{1};
 end
 
 meta = varargin{1}.meta;
-
-paramFile = fullfile(meta.out_directory, [ meta.recording_date '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-confLevel = str2double(params.confidence_level{1});
-clear params;
 
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
@@ -53,6 +50,6 @@ for iArray = 1:length(arrays)
     
     disp(['Comparing cells for ' currArray '...'])
     
-    tracking.(currArray) = KS_p(data, (2*(1-confLevel)).^2);
+    tracking.(currArray) = KS_p(data, (confLevel).^2);
     
 end

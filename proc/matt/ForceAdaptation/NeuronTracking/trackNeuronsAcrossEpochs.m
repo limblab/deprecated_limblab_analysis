@@ -33,15 +33,6 @@ clear params
 dataPath = fullfile(baseDir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Load some of the analysis parameters
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-confLevel = str2double(params.confidence_level{1});
-clear params;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Loading data to track neurons...')
 load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']),'data');
 bl = data;

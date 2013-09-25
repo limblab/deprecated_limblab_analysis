@@ -6,7 +6,7 @@ if nargin < 3
 end
 
 % Load some parameters
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_plotting_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
 clear params;
@@ -96,10 +96,12 @@ for iArray = 1:length(useArrays)
             clf reset;
             
             hold all;
-            h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
-            set(h(1),'FaceColor',[1 1 1]);
-            set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
+            % h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
+            % set(h(1),'FaceColor',[1 1 1]);
+            % set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
             plot(utheta.*(180/pi),mFR(unit,:),'b','LineWidth',2);
+            plot(utheta.*(180/pi),sFR_l(unit,:),'b--','LineWidth',2);
+            plot(utheta.*(180/pi),sFR_h(unit,:),'b--','LineWidth',2);
             
             ylabel('Firing Rate (Hz)','FontSize',fontSize);
             xlabel('Movement Direction (deg)','FontSize',fontSize);

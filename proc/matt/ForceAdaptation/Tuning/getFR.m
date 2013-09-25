@@ -1,11 +1,11 @@
-function [fr, theta, mt] = getFR(data,useArray,tuningPeriod)
+function [fr, theta, mt] = getFR(data,useArray,tuningPeriod,paramSetName)
 % finds firing rates for each movement based on the windows identified in
 % the data struct. returns firing rate matrix (each unit against trial
 % number) and direction of each movement
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_analysis_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 angleBinSize = str2double(params.angle_bin_size{1});
@@ -20,7 +20,7 @@ clear params temp;
 sg = data.(useArray).unit_guide;
 
 % Get the movement table
-mt = filterMovementTable(data);
+mt = filterMovementTable(data, paramSetName);
 
 if size(mt,1)==0
     keyboard
@@ -45,6 +45,10 @@ for trial = 1:size(mt,1)
         useWin(trial,:) = [mt(trial,4)-movementTime, mt(trial,4)];
     elseif strcmpi(tuningPeriod,'full') % Use entire movement
         useWin(trial,:) = [mt(trial,3), mt(trial,end)];
+    elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak
+        useWin(trial,:) = [mt(trial,4), mt(trial,5)];
+    elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
+        useWin(trial,:) = [mt(trial,5)-movementTime, mt(trial,5)];
     end
     
     for unit = 1:size(sg,1)

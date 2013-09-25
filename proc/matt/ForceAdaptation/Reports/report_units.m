@@ -44,8 +44,8 @@ for iArray = 1:length(arrays)
                 end
                 
                 % plots for waveforms and isis
-                html = strcat(html,['</tr><tr><td><img src="' figPath '\' currArray '_elec' num2str(uElecs(i)) 'unit' num2str(units(j)) '_' epochs{iEpoch} '_wf.png" width="' num2str(imgWidth) '"></td>' ...
-                    '<td><img src="' figPath '\' currArray '_elec' num2str(uElecs(i)) 'unit' num2str(units(j)) '_' epochs{iEpoch} '_isi.png" width="' num2str(imgWidth) '"></td>']);
+                html = strcat(html,['</tr><tr><td><img src="' genFigPath '\' currArray '_elec' num2str(uElecs(i)) 'unit' num2str(units(j)) '_' epochs{iEpoch} '_wf.png" width="' num2str(imgWidth) '"></td>' ...
+                    '<td><img src="' genFigPath '\' currArray '_elec' num2str(uElecs(i)) 'unit' num2str(units(j)) '_' epochs{iEpoch} '_isi.png" width="' num2str(imgWidth) '"></td>']);
                 
                 % Add plots for tuning in each period
                 for iPeriod = 1:length(tuningPeriods)

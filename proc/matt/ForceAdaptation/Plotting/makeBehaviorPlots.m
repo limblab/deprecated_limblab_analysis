@@ -27,7 +27,7 @@ end
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(adaptation.meta.out_directory, [adaptation.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(adaptation.meta.out_directory, [adaptation.meta.recording_date '_plotting_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
 numBins = str2double(params.num_hist_bins{1});
@@ -92,8 +92,8 @@ end
 moveCounts = adaptation.movement_counts;
 
 %% plot curvature over time
-mC = adaptation.curvature_max(:,1);
-sC = adaptation.curvature_max(:,2);
+mC = adaptation.sliding_curvature_mean(:,1);
+sC = adaptation.sliding_curvature_mean(:,2);
 
 set(0, 'CurrentFigure', fh);
 clf reset;
