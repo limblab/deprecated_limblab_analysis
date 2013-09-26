@@ -522,8 +522,12 @@ for i = 1:(folds-1)
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
+                warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                warning('off','MATLAB:nearlySingularMatrix')
                 [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
                 [P_vald(z,:)] = WienerNonlinearity(y_pred_vald{i}(:,z), ytnew_vald{i}(:,z), PolynomialOrder);
+                warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                warning('off','MATLAB:nearlySingularMatrix')
             end
             y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
             y_pred_vald{i}(:,z) = polyval(P_vald(z,:),y_pred_vald{i}(:,z));            
