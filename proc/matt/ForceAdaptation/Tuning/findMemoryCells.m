@@ -42,7 +42,7 @@ dataPath = fullfile(baseDir,useDate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, paramSetName, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(dataPath, paramSetName, [ useDate '_tuning_parameters.dat']);
 params = parseExpParams(paramFile);
 tuningPeriods = params.tuning_periods;
 tuningMethods = params.tuning_methods;

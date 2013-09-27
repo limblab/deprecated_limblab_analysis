@@ -6,7 +6,7 @@ function out = fitTuningCurves_GLM(data,tuningPeriod,useArray,paramSetName)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
-paramFile = fullfile(data.meta.out_directory,paramSetName, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory,paramSetName, [data.meta.recording_date '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 movementTime = str2double(params.movement_time{1});

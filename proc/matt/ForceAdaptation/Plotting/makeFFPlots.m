@@ -149,7 +149,7 @@ if plotted.doBehavior
     %   Eventually I need to resolve how to set axes to be the same
     % but for now, do it for curvature and find them brute force
     disp('Creating adaptation/behavior plots...')
-    load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
+    load(fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
     curvLims = [min(structfun(@(x) min(x.sliding_curvature_mean(:,1)),adaptation)), max(structfun(@(x) max(x.sliding_curvature_mean(:,1)),adaptation))];
     makeBehaviorPlots(adaptation.BL,figPath,curvLims);
     close all;

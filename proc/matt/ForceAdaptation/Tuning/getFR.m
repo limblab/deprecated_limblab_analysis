@@ -5,7 +5,7 @@ function [fr, theta, mt] = getFR(data,useArray,tuningPeriod,paramSetName)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 angleBinSize = str2double(params.angle_bin_size{1});

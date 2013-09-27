@@ -17,15 +17,16 @@ rewriteFiles        = 1;
 
 doDataStruct        = 0;
 doAdaptationMetrics = 1;
-trackNeurons        = 0;
-doTuning            = 1;
-doClassification    = 1;
+doNeuronTracking    = 0;
+doTuning            = 0;
+doClassification    = 0;
 doPlotting          = 1;
 doReport            = 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+goodDates = {'2013-09-24','2013-09-25','2013-09-04','2013-08-22','2013-09-06','2013-09-10','2013-08-20','2013-08-21','2013-08-19','2013-08-30'};
 goodDates = {'2013-09-24'};
 
 paramFileDir = 'Z:\MrT_9I4\Matt';
@@ -55,12 +56,14 @@ for iDate = 1:length(goodDates)
     % if not specified above, load what is in default location
     if ~exist('paramSetName','var') || isempty(paramSetName)
         % now we want to get the name of the current parameter set
-        paramFile = fullfile(paramFileDir,'ff_analysis_parameters.dat');
+        paramFile = fullfile(paramFileDir,'ff_tuning_parameters.dat');
         params = parseExpParams(paramFile);
         paramSetName = params.parameter_set_name{1};
         clear params;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
+    
+    disp(['Using the "' paramSetName '" set of tuning parameters...']);
     
     paramSetDir = fullfile(dataPath,paramSetName);
     if ~exist(paramSetDir,'dir')
@@ -69,7 +72,7 @@ for iDate = 1:length(goodDates)
     
     % path to the analysis parameters. If not found, will copy the general one
     %   assumes the general one is in the paramFileDir
-    analysisParamFile = fullfile(paramSetDir,[useDate '_analysis_parameters.dat']);
+    analysisParamFile = fullfile(dataPath,[useDate '_analysis_parameters.dat']);
     if ~exist(analysisParamFile,'file') || rewriteFiles
         copyfile(fullfile(paramFileDir,'ff_analysis_parameters.dat'),analysisParamFile,'f');
     end
@@ -77,7 +80,10 @@ for iDate = 1:length(goodDates)
     if ~exist(plottingParamFile,'file') || rewriteFiles
         copyfile(fullfile(paramFileDir,'ff_plotting_parameters.dat'),plottingParamFile,'f');
     end
-    
+    tuningParamFile = fullfile(paramSetDir,[useDate '_tuning_parameters.dat']);
+    if ~exist(tuningParamFile,'file') || rewriteFiles
+        copyfile(fullfile(paramFileDir,'ff_tuning_parameters.dat'),tuningParamFile,'f');
+    end
     
     if doDataStruct
         disp('');
@@ -94,11 +100,11 @@ for iDate = 1:length(goodDates)
         disp('%%% Adaptation Metrics %%%')
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         % calculate some behavioral metrics over files
-        [~] = getAdaptationMetrics(expParamFile, paramSetName);
+        [~] = getAdaptationMetrics(expParamFile);
     end
     
     if ~useUnsorted
-        if trackNeurons
+        if doNeuronTracking
             disp('');
             disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
             disp('%%%  Tracking Neurons  %%%')

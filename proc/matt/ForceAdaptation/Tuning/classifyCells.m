@@ -22,7 +22,7 @@ function [cellClass,sg_bl] = classifyCells(blt,adt,wot,useArray,tuningPeriod,tun
 % The classification is based on the number shown above (AAA=1,ABA=2,etc)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 ciSig = str2double(params.ci_significance{1});

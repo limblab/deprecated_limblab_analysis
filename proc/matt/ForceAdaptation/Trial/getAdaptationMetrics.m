@@ -1,8 +1,8 @@
-function adaptation = getAdaptationMetrics(expParamFile, paramSetName)
-% NEURONREPORTS  Constructs html document to summarize a session's data
+function adaptation = getAdaptationMetrics(expParamFile)
+% GETADAPTATIONMETRICS  Gets metrics to show adaptation progression
 %
-%   This function will load processed data and generate html for a summary
-% report with data and figures.
+%   Current returns mean curvature for each movement and a sliding window
+% average of that curvature
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
@@ -37,31 +37,17 @@ dataPath = fullfile(baseDir,useDate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, paramSetName, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
+useMetrics = params.adaptation_metrics;
 behavWin = str2double(params.behavior_window{1});
-winSize = str2double(params.movement_time{1});
 stepSize = str2double(params.behavior_step{1});
 filtWidth = str2double(params.filter_width{1});
 moveThresh = str2double(params.movement_threshold{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
-
-% resampling for CO correlation purposes
-% n = 3000;
-% % for center out, get baseline movement trajectories to each target
-% if strcmpi(taskType,'CO')
-%     getFile = fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']);
-%     if ~exist(getFile,'file')
-%         error('Could not locate baseline file');
-%     end
-%     load(getFile);
-%     
-%     blTraces = getCOBaselineTrajectories(data);
-%     
-% end
+saveFile = fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
 
 % load files
 for iEpoch = 1:length(epochs)
@@ -84,71 +70,58 @@ for iEpoch = 1:length(epochs)
     vel = svel(filtWidth/2:end-filtWidth/2,:);
     acc = sacc(filtWidth/2:end-filtWidth/2,:);
     
-    %     figure;
-    %     hold all
-    %     plot(vel(1:3000),'b','LineWidth',2);
-    %     plot(y(w/2:3000+w/2),'r');
-    
-    mt = filterMovementTable(data,paramSetName,false);
+    mt = data.movement_table;
     holdTime = data.params.hold_time;
     
-    %% Get movement information
-    % find times when velocity goes above that threshold
+    % find the time windows of each movement
     disp('Getting movement data...')
     moveWins = zeros(size(mt,1),2);
-    allCurvMeans = zeros(size(mt,1),1);
     for iMove = 1:size(mt,1)
         % movement table: [ target angle, on_time, go cue, move_time, peak_time, end_time ]
         % has the start of movement window, end of movement window
-        moveWins(iMove,:) = [mt(iMove,5)-winSize/2, mt(iMove,5)+winSize/2];
-        
-        % get curvature in that window
-        idx = find(t >= moveWins(1) & t < moveWins(2));
-        
-        tempAcc = acc(idx,:);
-        tempVel = vel(idx,:);
-        % ran into a problem sometimes where velocity/acc drop almost to
-        % zero seemingly sproadically so my curvatures went towards infinity
-        badInds = sqrt(tempVel(:,1).^2 + tempVel(:,2).^2) < moveThresh;
-        tempVel(badInds,:) = [];
-        tempAcc(badInds,:) = [];
-        
-        tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
-        
-        allCurvMeans(iMove) = mean(tempCurv);
-        
+        moveWins(iMove,:) = [mt(iMove,4), mt(iMove,6)];
     end
     
-    % compute metrics
-    moveCurvs = ( vel(:,1).*acc(:,2) - vel(:,2).*acc(:,1) )./( (vel(:,1).^2 + vel(:,2).^2).^(3/2) );
+    blockTimes = 1:stepSize:size(mt,1)-behavWin;
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % get time to target and reaction time
     timeToTargets = ( mt(:,end) - mt(:,4) ) - holdTime;
     reactionTimes = mt(:,4) - mt(:,3);
     
-    blockTimes = t(1):stepSize:t(end)-behavWin;
-    
-    % now group curvatures in blocks to track adaptation
-    curvMeans = zeros(length(blockTimes),2);
-    curvMaxes = zeros(length(blockTimes),2);
-    rtMeans = zeros(length(blockTimes),1);
-    rtSTDs = zeros(length(blockTimes),1);
-    tttMeans = zeros(length(blockTimes),1);
-    tttSTDs = zeros(length(blockTimes),1);
-    
-    moveCount = zeros(length(blockTimes),1);
-    
-    disp('Getting adaptation data...')
-    for tMove = 1:length(blockTimes)
+    rtMeans = zeros(length(blockTimes)-1,1);
+    rtSTDs = zeros(length(blockTimes)-1,1);
+    tttMeans = zeros(length(blockTimes)-1,1);
+    tttSTDs = zeros(length(blockTimes)-1,1);
+    for iMove = 1:length(blockTimes)
+        relMoveInds = blockTimes(iMove):blockTimes(iMove)+behavWin;
         
-        relMoveInds = moveWins(:,1) >= blockTimes(tMove) & moveWins(:,1) < blockTimes(tMove) + behavWin;
+        % compute mean reaction time over movements
+        rtMeans(iMove) = mean(reactionTimes(relMoveInds));
+        rtSTDs(iMove) = std(reactionTimes(relMoveInds));
         
-        % how many total movements have occured up until this point?
-        moveCount(tMove) = sum(moveWins(:,1) < blockTimes(tMove));
+        % compute mean time to target over movements
+        tttMeans(iMove) = mean(timeToTargets(relMoveInds));
+        tttSTDs(iMove) = std(timeToTargets(relMoveInds));
         
-        relMoves = moveWins(relMoveInds,:);
-        tempMean = zeros(size(relMoves,1),1);
-        tempMax = zeros(size(relMoves,1),1);
-        for iMove = 1:size(relMoves,1)
-            idx = find(t >= relMoves(iMove,1) & t < relMoves(iMove,2));
+    end
+    
+    adaptation.(epochs{iEpoch}).reaction_time = reactionTimes;
+    adaptation.(epochs{iEpoch}).reaction_time_mean = [rtMeans rtSTDs];
+    adaptation.(epochs{iEpoch}).time_to_target = timeToTargets;
+    adaptation.(epochs{iEpoch}).time_to_target_mean = [tttMeans tttSTDs];
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Get movement information
+    if any(ismember(useMetrics,'curvature'))
+        % find times when velocity goes above that threshold
+        disp('Getting curvature data...')
+        allCurvMeans = zeros(size(mt,1),1);
+        for iMove = 1:size(mt,1)
+            % get curvature in that window
+            idx = find(t >= moveWins(1) & t < moveWins(2));
             
             tempAcc = acc(idx,:);
             tempVel = vel(idx,:);
@@ -159,41 +132,51 @@ for iEpoch = 1:length(epochs)
             tempAcc(badInds,:) = [];
             
             tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
-            
-            tempMean(iMove) = mean(tempCurv);
-            tempMax(iMove) = max(abs(tempCurv));
+            allCurvMeans(iMove) = mean(tempCurv);
         end
         
-        curvMeans(tMove,:) = [mean(tempMean) std(tempMean)];
-        curvMaxes(tMove,:) = [mean(tempMax) std(tempMax)];
+        % now group curvatures in blocks to track adaptation
+        curvMeans = zeros(length(blockTimes),2);
+        for tMove = 1:length(blockTimes)
+            relMoveInds = blockTimes(tMove):blockTimes(tMove)+behavWin;
+            relMoves = moveWins(relMoveInds,:);
+            
+            tempMean = zeros(size(relMoves,1),1);
+            for iMove = 1:size(relMoves,1)
+                idx = find(t >= relMoves(iMove,1) & t < relMoves(iMove,2));
+                tempAcc = acc(idx,:);
+                tempVel = vel(idx,:);
+                % ran into a problem sometimes where velocity/acc drop almost to
+                % zero seemingly sproadically so my curvatures went towards infinity
+                badInds = sqrt(tempVel(:,1).^2 + tempVel(:,2).^2) < moveThresh;
+                tempVel(badInds,:) = [];
+                tempAcc(badInds,:) = [];
+                
+                tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
+                tempMean(iMove) = mean(tempCurv);
+            end
+            
+            curvMeans(tMove,:) = [mean(tempMean) std(tempMean)];
+        end
         
-        % compute mean reaction time over movements
-        rtMeans(tMove) = mean(reactionTimes(relMoveInds));
-        rtSTDs(tMove) = std(reactionTimes(relMoveInds));
-        
-        % compute mean time to target over movements
-        tttMeans(tMove) = mean(timeToTargets(relMoveInds));
-        tttSTDs(tMove) = std(timeToTargets(relMoveInds));
-        
+        adaptation.(epochs{iEpoch}).curvature_means = allCurvMeans;
+        adaptation.(epochs{iEpoch}).sliding_curvature_mean = curvMeans;
     end
-    
-    adaptation.(epochs{iEpoch}).vel = vel;
-    adaptation.(epochs{iEpoch}).acc = acc;
-    
-    adaptation.(epochs{iEpoch}).curvature = moveCurvs;
-    adaptation.(epochs{iEpoch}).curvature_means = allCurvMeans;
-    adaptation.(epochs{iEpoch}).sliding_curvature_mean = curvMeans;
-    adaptation.(epochs{iEpoch}).reaction_time = reactionTimes;
-    adaptation.(epochs{iEpoch}).reaction_time_mean = [rtMeans rtSTDs];
-    adaptation.(epochs{iEpoch}).time_to_target = timeToTargets;
-    adaptation.(epochs{iEpoch}).time_to_target_mean = [tttMeans tttSTDs];
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     adaptation.(epochs{iEpoch}).movement_table = mt;
-    adaptation.(epochs{iEpoch}).movement_counts = moveCount';
+    adaptation.(epochs{iEpoch}).vel = vel;
+    adaptation.(epochs{iEpoch}).acc = acc;
     adaptation.(epochs{iEpoch}).block_times = blockTimes';
     adaptation.(epochs{iEpoch}).meta = data.meta;
-end
 
+    params.metrics = useMetrics;
+    params.behavior_window = behavWin;
+    params.step_size = stepSize;
+    params.filter_width = filtWidth;
+    params.movement_threshold = moveThresh;
+    adaptation.(epochs{iEpoch}).params = params;
+end
 
 % save the new file with adaptation info
 disp(['Saving data to ' saveFile]);

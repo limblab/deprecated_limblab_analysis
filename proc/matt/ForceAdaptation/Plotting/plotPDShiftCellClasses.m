@@ -17,19 +17,14 @@ binSize = 5; %degrees
 maxAngle = 45; %degrees
 classColors = {[0.2,0.2,0.2],[0.2 0.6 1],[0.9 0.1 0.1],'r','g'};
 figurePosition = [200, 200, 1400, 800];
-
-for i = 1:length(varargin)
+for i = 1:2:length(varargin)
     switch lower(varargin{i})
         case 'dir'
             baseDir = varargin{i+1};
-        case 'date'
+        case 'dates'
             useDate = varargin{i+1};
         case 'period'
             usePeriod = varargin{i+1};
-        case 'type'
-            adaptType = varargin{i+1};
-        case 'titles'
-            useTitles = varargin{i+1};
         case 'binsize'
             binSize = varargin{i+1};
         case 'maxangle'
@@ -41,20 +36,26 @@ for i = 1:length(varargin)
     end
 end
 
+% load plotting parameters
+fontSize = 16;
 
 histBins = -(maxAngle-binSize/2):binSize:(maxAngle-binSize/2);
 
 xticklabels = repmat({'Baseline','Adaptation','Washout'},1,length(useDate));
 
-adaptingCount = cell(1,length(useDate));
-nonadaptingCount = cell(1,length(useDate));
-fileDiffPDs = cell(1,length(useDate));
 xticks = [];
-for iFile = 1:length(useDate)
 
-    load(fullfile(baseDir, useDate{iFile},[useTask{iFile} '_' adaptType{iFile} '_classes_' useDate '.mat']));
-    load(fullfile(baseDir, useDate{iFile},[useTask{iFile} '_' adaptType{iFile} '_tracking_' useDate '.mat']));
-    load(fullfile(baseDir, useDate{iFile},[useTask{iFile} '_' adaptType{iFile} '_tuning_' useDate '.mat']));
+fh = figure('Position', figurePosition);
+hold all;
+
+adaptingCount = cell(1,size(useDate,1));
+nonadaptingCount = cell(1,size(useDate,1));
+fileDiffPDs = cell(1,size(useDate,1));
+for iFile = 1:size(useDate,1)
+
+    load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,4}, [useDate{iFile,3} '_' useDate{iFile,2} '_classes_' useDate{iFile,1} '.mat']));
+    load(fullfile(baseDir, useDate{iFile,1}, [useDate{iFile,3} '_' useDate{iFile,2} '_tracking_' useDate{iFile,1} '.mat']));
+    load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,4}, [useDate{iFile,3} '_' useDate{iFile,2} '_tuning_' useDate{iFile,1} '.mat']));
 
     % histograms of BL->AD and AD->WO
 
@@ -78,9 +79,6 @@ for iFile = 1:length(useDate)
     cellClasses = classes.PMd.regression.(usePeriod).classes;
 
     useComp = tracking.PMd{1}.chan;
-
-    fh = figure('Position', figurePosition);
-    hold all;
     
     % x position for this file (putting all files on same plot)
     xPos = 0.4*(iFile-1) + [2*(iFile-1), 1+2*(iFile-1), 2+2*(iFile-1)];
@@ -140,7 +138,7 @@ ylabel('Change in PD (Deg)','FontSize',fontSize);
 axis('tight');
 V = axis;
 % define boundaries
-axis([-0.1 max(xticks)+0.2 V(3)-2 V(4)+2]);
+axis([-0.1 max(xticks)+0.2 -45 45]);
 V = axis;
 % plot a separating line
 plot([max(xticks)/2 max(xticks)/2],V(3:4),'k','LineWidth',1);
@@ -154,10 +152,10 @@ text(4,36,'Adapting','FontSize',16);
 text(4,32,'Memory','FontSize',16);
 
 % add titles
-for iFile = 1:length(useDate)
+for iFile = 1:size(useDate,1)
     set(gcf,'NextPlot','add');
     axes('position',[0.05+0.4*(iFile-1), 0, 0.5, 0.92]);
-    h = title(useTitles{iFile},'FontSize',fontSize);
+    h = title(useDate{iFile,5},'FontSize',fontSize);
     set(gca,'Visible','off');
     set(h,'Visible','on');
 end

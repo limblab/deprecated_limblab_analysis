@@ -10,9 +10,10 @@ function mt = filterMovementTable(data,paramSetName,excludeTrials)
 if nargin < 3
     excludeTrials = true;
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_analysis_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 excludeFraction = str2double(params.exclude_fraction);

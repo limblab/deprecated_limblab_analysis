@@ -12,9 +12,9 @@ histBins = -(maxAngle-binSize/2):binSize:(maxAngle-binSize/2);
 classColors = {[0.2,0.2,0.2],[0.2 0.6 1],[0.9 0.1 0.1],'r','g'};
 epochs = {'BL','AD','WO'};
 
-load(fullfile(baseDir, useDate,['RT_VRFF_classes_' useDate '.mat']));
+load(fullfile(baseDir, useDate,'late',['RT_VRFF_classes_' useDate '.mat']));
 load(fullfile(baseDir, useDate,['RT_VRFF_tracking_' useDate '.mat']));
-load(fullfile(baseDir, useDate,['RT_VRFF_tuning_' useDate '.mat']));
+load(fullfile(baseDir, useDate,'late',['RT_VRFF_tuning_' useDate '.mat']));
 
 % histograms of BL->AD and AD->WO
 
@@ -90,11 +90,12 @@ adaptingCount_FF = sum(useClasses == 2 | useClasses == 3);
 nonadaptingCount_FF = sum(useClasses == 1 | useClasses == 4);
 
 %% now add visual rotation
-useDate = '2013-09-24';
 
-load(fullfile(baseDir, useDate,['RT_VRFF_classes_' useDate '.mat']));
+useDate = '2013-09-25';
+
+load(fullfile(baseDir, useDate,'standard',['RT_VRFF_classes_' useDate '.mat']));
 load(fullfile(baseDir, useDate,['RT_VRFF_tracking_' useDate '.mat']));
-load(fullfile(baseDir, useDate,['RT_VRFF_tuning_' useDate '.mat']));
+load(fullfile(baseDir, useDate,'standard',['RT_VRFF_tuning_' useDate '.mat']));
 
 tune_idx = classes.PMd.regression.(usePeriod).tuned_cells;
 tune_sg = classes.PMd.regression.(usePeriod).unit_guide;

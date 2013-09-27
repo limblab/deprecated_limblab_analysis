@@ -57,7 +57,7 @@ clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Load some more parameters
-paramFile = fullfile(baseDir, useDate, paramSetName, [ useDate '_analysis_parameters.dat']);
+paramFile = fullfile(baseDir, useDate, paramSetName, [ useDate '_tuning_parameters.dat']);
 params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
 ciSig = str2double(params.ci_significance{1});
