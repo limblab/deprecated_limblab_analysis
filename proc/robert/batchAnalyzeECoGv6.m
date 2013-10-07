@@ -167,7 +167,10 @@ for fileInd=1:length(infoStruct)
         fp=fp';
     end
     % CAR?
-    % fp=bsxfun(@minus,fp,mean(fp,2));
+    % fp=bsxfun(@minus,fp,mean(fp,1));
+    
+    % baseline subtract
+    %  fp=bsxfun(@minus,fp,mean(fp,2));
     
     if strncmpi(signalToDecode,'emg',3)
         % notch filter first

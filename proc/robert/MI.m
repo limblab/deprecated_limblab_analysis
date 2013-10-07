@@ -5,12 +5,16 @@ function varargout=MI(in1,in2)
 % calculated mutual information between inputs in1,in2.
 % does no pre-processing.
 
-
-
-
 N=9;   % precision of the mesh
 % arg2,3 are x_grid,y_grid. Use for: mesh(x_grid,y_grid,jpdf)
-[~,jpdf,~,~]=kde2d([rowBoat(in1) rowBoat(in2)],2^N);
+
+% in1,in2 need to be row vectors
+[nrow,ncol]=size(in1);
+if ncol > nrow, in1=in1'; end
+[nrow,ncol]=size(in2);
+if ncol > nrow, in2=in2'; end
+
+[~,jpdf,~,~]=kde2d([in1 in2],2^N);
 jpdf(jpdf<0)=0;
 jpdf=jpdf./sum(jpdf(:));
 margX=sum(jpdf,1); margY=sum(jpdf,2);

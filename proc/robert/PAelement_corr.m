@@ -5,8 +5,10 @@ combos=nchoosek(1:size(PA,1),2);
 
 for n=1:size(PA,2)
     for k=1:size(combos,1)
-        allElementCorr(n,k)=corr(squeeze(PA(combos(k,1),n,:)), ...
-            squeeze(PA(combos(k,2),n,:))); %#ok<*AGROW>
+%         allElementCorr(n,k)=corr(squeeze(PA(combos(k,1),n,:)), ...
+%             squeeze(PA(combos(k,2),n,:))); %#ok<*AGROW>
+        allElementCorr(n,k)=corr(smooth(squeeze(PA(combos(k,1),n,:)),21), ...
+            smooth(squeeze(PA(combos(k,2),n,:)),21)); %#ok<*AGROW>
     end
     fprintf(1,'%d,',n)
 end
