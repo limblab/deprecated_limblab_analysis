@@ -31,7 +31,7 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
         end
     else
         for iNEV = 1:length(NEVlist)
-            NEVNSxstruct(iNEV).NEV = openNEVlimblab('read', [filepath NEVlist(iNEV).name],'nosave');
+            NEVNSxstruct(iNEV).NEV = openNEVLimblab('read', [filepath NEVlist(iNEV).name],'nosave');
         end
     end
     
