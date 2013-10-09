@@ -3,7 +3,7 @@ function binnedData = convertBDF2binned(datastruct,varargin)
 %
 % binnedData = convertBDF2binned(datastruct,[arg_struct])
 %
-%         datastructname        : string of bdf.mat file path and name, or string of BDF in workspace, or BDF structure directly
+%         datastruct              : string of bdf.mat file path and name, or string of BDF in workspace, or BDF structure directly
 %
 %         arg_struct fields:        [default values]
 %             binsize             : [0.05] desired bin size in second
@@ -165,7 +165,7 @@ timeframe = timeframe.*(starttime:binsize:stoptime-binsize)';      %Time vector 
 %% Bin EMG Data
 
 if ~isfield(datastruct, 'emg')
-    disp(sprintf('No EMG data is found in structure " %s " ',datastructname));
+    disp(sprintf('No EMG data is found '));
     emgdatabin = [];
     emgguide = [];
 else
