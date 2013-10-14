@@ -15,7 +15,9 @@ function plotFigFileInAxes(plotInFigH,plotInAxH,toPlotPath)
 
 % open the figure, get appropriate handles.
 RMfig=openfig(toPlotPath,'reuse');
-RMax=gca;
+Axs=findobj(gcf,'Type','Axes');
+Axs(ismember(get(Axs,'Tag'),{'Colorbar','Legend'}))=[];
+RMax=Axs(1);
 
 % duplicate figure properties into the new parent from the child, 
 % with certain exceptions.
