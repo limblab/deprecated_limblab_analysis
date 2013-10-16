@@ -7,10 +7,10 @@ function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 % featShift is ZERO-BASED; i.e., to calculate feature 9, input 1,8 for
 % nfeat & featShift.
 
-numlags=1;
+numlags=10;
 wsz=256;
-nfeat=150; featShift=0;
-PolynomialOrder=0;
+nfeat=50; featShift=100;
+PolynomialOrder=3;
 smoothfeats=0;
 binsize=0.05;
 folds=10;
