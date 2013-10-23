@@ -25,14 +25,15 @@ function html = makeSummaryReport(expParamFile,paramSetName,useUnsorted,html)
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 % set some parameters
-tuningPeriods = {'peak'};
+tuningPeriods = '';
 tuningMethods = {'regression','nonparametric'};
 sigMethod = 'regression'; %what tuning method to look for for significance
+adaptationMetric = 'angle_error';
 
 imgWidth = 300; %pixels
 cssLoc = 'Z:\MrT_9I4\Matt\mainstyle.css';
 tableColors = {'#ff55ff','#55ffff','#ffff55','#55aaaa','#eeee77','#cccccc'};
-classNames = {'kinematic','dynamic','memory I','memory II','other'};
+classNames = {'non-adapting','adapting','memory I','memory II','other'};
 
 newHTML = false;
 if nargin < 4
@@ -57,7 +58,7 @@ clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Load some more parameters
-paramFile = fullfile(baseDir, useDate, paramSetName, [ useDate '_tuning_parameters.dat']);
+paramFile = fullfile(baseDir, useDate, paramSetName, [ useDate '_' paramSetName '_tuning_parameters.dat']);
 params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
 ciSig = str2double(params.ci_significance{1});
@@ -75,31 +76,31 @@ end
 
 if ~useUnsorted
     tuningFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
-    load(tuningFile);
-    t = tuning;
-    clear tuning;
+    t = load(tuningFile);
     
     % load the classification information
-    load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
+    classes = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
     
     % load neuron tracking data
-    load(fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']));
+    tracking = load(fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']));
 end
 
 % load data for each epoch
 disp('Loading data...')
 for iEpoch = 1:length(epochs)
-    load(dataFiles{iEpoch});
-    d.(epochs{iEpoch}) = data;
-    clear data;
+    d.(epochs{iEpoch}) = load(dataFiles{iEpoch});
 end
 
 disp('Done. Writing html...')
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if isempty(tuningPeriods) || ~exist('tuningPeriods','var')
+if isempty(tuningMethods) || ~exist('tuningMethods','var')
     tuningMethods = fieldnames(classes.(arrays{1}));
 end
+if ~iscell(tuningMethods)
+    tuningMethods = {tuningMethods};
+end
+
 % we don't really care about the nonparametric tuning atthis time
 tuningMethods = setdiff(tuningMethods,'nonparametric');
 
@@ -111,49 +112,54 @@ end
 if isempty(tuningPeriods) || ~exist('tuningPeriods','var')
     tuningPeriods = fieldnames(classes.(arrays{1}).(tuningMethods{1}));
 end
+if ~iscell(tuningPeriods)
+    tuningPeriods = {tuningPeriods};
+end
 
-
+%% Make parameter struct
+%   Before writing more html, compile this info into a handy struct
+p = struct('arrays',{arrays},'tuningPeriods',{tuningPeriods},'tuningMethods',{tuningMethods},'figPath',figPath,'genFigPath',genFigPath, 'sigMethod',sigMethod,'adaptationMetric',adaptationMetric, 'epochs', {epochs}, 'adaptType', adaptType, 'taskType', taskType, ...
+           'forceMag',forceMag,'forceAng',forceAng,'confLevel',confLevel,'ciSig',ciSig,'minFR',minFR,'imgWidth',imgWidth,'tableColors',{tableColors},'classNames',{classNames},'useUnsorted',useUnsorted);
+       
 %% Write meta data
 if newHTML
-    html = strcat(html,['<html><head><title>' useDate '&nbsp; &nbsp;' taskType '&nbsp; &nbsp;' adaptType '</title><link rel="stylesheet" href="' cssLoc '" /></head><body>']);
+    html = strcat(html,['<html><head><title>' useDate '&nbsp; &nbsp;' taskType '&nbsp; &nbsp;' adaptType '&nbsp; &nbsp;' paramSetName '</title><link rel="stylesheet" href="' cssLoc '" /></head><body>']);
 end
 
 html = strcat(html,['<div id="header"><h1>Data Summary:&nbsp;' monkey '&nbsp; | &nbsp' cell2mat(arrays) '&nbsp; | &nbsp' useDate '&nbsp; | &nbsp;' taskType '&nbsp; | &nbsp;' adaptType '</h1><hr></div>']);
 
 %% Make table of contents links
-report_tableOfContents;
+[html,uElecs,sg] = report_tableOfContents(html,d,tracking,p);
 
 %% Make summary, maybe with memory cells and stuff? link to the cell then
-report_summary;
+html = report_summary(html,d,p);
 
 %% Make plot showing adaptation/deadaptation over time
-report_adaptation;
+html = report_adaptation(html,p);
 
 %% Plot things for CO adaptation (pinwheel traces, etc)
 if strcmpi(taskType,'CO')
-    report_CO;
+    html = report_CO(html,p);
 end
 
 %% Make plot showing forces check out
 if strcmpi(adaptType,'FF')
-    report_forces;
+    html = report_forces(html,p);
 end
 
 %% Make plots of behavior metrics
-report_behaviorMetrics;
+html = report_behaviorMetrics(html,p);
 
-%% Add a list of tuned cells with their classification
+%% some neural stuff
 if ~useUnsorted
-    report_classification;
-end
+    % Add a list of tuned cells with their classification
+    html = report_classification(html,d,classes,tracking,p);
 
-if ~useUnsorted
-    report_pdChanges;
-end
+    % plots of pd changes
+    html = report_pdChanges(html,p);
 
-%% Print out data for units
-if ~useUnsorted
-    report_units;
+    % Print out data for units
+    html = report_units(html,d,t,classes,tracking,uElecs,sg,p);
 end
 
 %% close up shop
@@ -161,9 +167,9 @@ if newHTML
     html = strcat(html,'</body></html>');
     
     if ~useUnsorted
-        fn = fullfile(dataPath, paramSetName, [useDate '_summary_report.html']);
+        fn = fullfile(dataPath, paramSetName, [useDate '_' paramSetName '_summary_report.html']);
     else
-        fn = fullfile(dataPath, paramSetName, [useDate '_unsorted_summary_report.html']);
+        fn = fullfile(dataPath, paramSetName, [useDate '_' paramSetName '_unsorted_summary_report.html']);
     end
     
     fid = fopen(fn,'w+');

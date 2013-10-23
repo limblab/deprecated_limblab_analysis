@@ -14,7 +14,7 @@ switch task
         %    11: Peak speed time
         %    12: Movement end time
         %    13: Trial End time
-        mt = zeros(size(tt,1),6);
+        mt = -1*ones(size(tt,1),6);
         for iTrial = 1:size(tt,1)
             mt(iTrial,:) = [tt(iTrial,3),...
                 tt(iTrial,8),...
@@ -30,14 +30,15 @@ switch task
         %    (1+5*num_tgts)+1   : Trial End time
         %    (1+5*num_tgts)+2   : Trial result    -- R, A, F, I or N (N coresponds to no-result)
         
-        numTargets = (size(tt,2) - 3)/5;
+        numTargets = (size(tt,2) - 3)/5; % subtract one because I skip the first
+        numMoves = numTargets - 1;
         
-        mt = zeros(numTargets*size(tt,2),6);
+        mt = -1*ones(numMoves*size(tt,2),6);
         for iTrial = 1:size(tt,1)
             % we don't count movement to first target... think of it as
             % center target in center out paradigm
             for iTarg = 2:numTargets
-                % use the x/y centers of this and iTrial+1 to find movement angle
+                % use the x/y centers of this and iTrial+1 to find target angle
                 xc = tt(iTrial, 2+5*(iTarg-2)+3 );
                 yc = tt(iTrial, 2+5*(iTarg-2)+4 );
                 
@@ -49,16 +50,16 @@ switch task
 
                 % add angle, on time, move time, peak time, then make end time the on time of the next target
                 %   Note for RT go cue is assumed to be same as on time
-                mt(numTargets*(iTrial-1) + iTarg-1,:) = [moveAngle, ...                 %angle
+                mt(numMoves*(iTrial-1) + iTarg-1,:) = [moveAngle, ...                 %angle
                                                          tt(iTrial,2+5*(iTarg-1)), ...  %on time
                                                          tt(iTrial, 2+5*(iTarg-1):2+5*(iTarg-1)+2), ... % go cue, move time, peak time
                                                          tt(iTrial,2+5*(iTarg-1)+5)]; % trial end time
             end
         end
         
-        % remove any bad trials. NaNs usually pop up here if there is no
+        % remove any bad trials. NaNs sometimes pop up here if there is no
         % peak or onset identified
-        mt(isnan(mt(:,3)),:) = [];
+        mt(isnan(mt(:,4)),:) = [];
         
     otherwise
         error('task not recognized. only knows CO or RT');

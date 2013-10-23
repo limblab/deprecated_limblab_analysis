@@ -1,4 +1,4 @@
-function [tunCurves,ci_sig,md_sig,bo_sig,boot_pds,rs] = regressTuningCurves(fr,theta,sigTest,varargin)
+function [tunCurves,ci_sig,md_sig,bo_sig,boot_pds,boot_mds,boot_bos,rs] = regressTuningCurves(fr,theta,sigTest,varargin)
 % Compute cosine tuning curves relating neural activity to output using a
 % linear regression method to get preferred directions
 %
@@ -102,6 +102,8 @@ switch lower(sigTest{1})
         end
         
         boot_pds = b2s;
+        boot_mds = b1s;
+        boot_bos = b0s;
         
         % find confidence bounds and return as sig
         b2s = sort(b2s,2);

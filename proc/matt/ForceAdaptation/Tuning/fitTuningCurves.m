@@ -54,7 +54,7 @@ dataPath = fullfile(baseDir,useDate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, paramSetName, [ useDate '_tuning_parameters.dat']);
+paramFile = fullfile(dataPath, paramSetName, [ useDate '_' paramSetName '_tuning_parameters.dat']);
 params = parseExpParams(paramFile);
 tuningPeriods = params.tuning_periods;
 tuningMethods = params.tuning_methods;
@@ -69,7 +69,7 @@ saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' use
 
 for iEpoch = 1:length(epochs)
     getFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
-    load(getFile);
+    data = load(getFile);
     
     if ~exist('data','var')
         error('Data struct not found.');
@@ -115,4 +115,4 @@ for iEpoch = 1:length(epochs)
 end
 
 % save the new file with tuning info
-save(saveFile,'tuning');
+save(saveFile,'-struct','tuning');

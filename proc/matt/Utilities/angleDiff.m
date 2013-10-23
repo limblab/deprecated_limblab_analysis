@@ -16,7 +16,7 @@ function adiff = angleDiff(angle1,angle2,useRad,preserveSign)
 if nargin < 4
     preserveSign = false;
     if nargin < 3 %default to degrees
-        useRad = false;
+        useRad = true;
     end
 end
 

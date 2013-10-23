@@ -96,12 +96,10 @@ for iArray = 1:length(useArrays)
             clf reset;
             
             hold all;
-            % h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
-            % set(h(1),'FaceColor',[1 1 1]);
-            % set(h(2),'FaceColor',[0.8 0.9 1],'EdgeColor',[1 1 1]);
+            patch([utheta' fliplr(utheta')].*(180/pi),[sFR_l(unit,:) fliplr(sFR_h(unit,:))],[0.8 0.9 1],'EdgeColor',[0.8 0.9 1]);
             plot(utheta.*(180/pi),mFR(unit,:),'b','LineWidth',2);
-            plot(utheta.*(180/pi),sFR_l(unit,:),'b--','LineWidth',2);
-            plot(utheta.*(180/pi),sFR_h(unit,:),'b--','LineWidth',2);
+%             plot(utheta.*(180/pi),sFR_l(unit,:),'b--','LineWidth',2);
+%             plot(utheta.*(180/pi),sFR_h(unit,:),'b--','LineWidth',2);
             
             ylabel('Firing Rate (Hz)','FontSize',fontSize);
             xlabel('Movement Direction (deg)','FontSize',fontSize);

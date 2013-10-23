@@ -1,4 +1,4 @@
-function tracking = trackNeurons(arrays,varargin)
+function tracking = trackNeurons(criteria,arrays,varargin)
 % TRACKNEURONS  Run empirical KS test to check for stability of neurons
 %
 %   This function will allow you to track cells across files, sessions, or
@@ -58,6 +58,6 @@ for iArray = 1:length(arrays)
     
     disp(['Comparing cells for ' currArray '...'])
     
-    tracking.(currArray) = KS_p(data, (1-confLevel).^2);
+    tracking.(currArray) = KS_p(criteria,data, 1-confLevel);
     
 end

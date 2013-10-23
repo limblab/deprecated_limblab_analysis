@@ -15,6 +15,7 @@ function plotPDShiftCellClasses(varargin)
 % some defaults
 binSize = 5; %degrees
 maxAngle = 45; %degrees
+useArray = 'PMd';
 classColors = {[0.2,0.2,0.2],[0.2 0.6 1],[0.9 0.1 0.1],'r','g'};
 figurePosition = [200, 200, 1400, 800];
 for i = 1:2:length(varargin)
@@ -33,6 +34,8 @@ for i = 1:2:length(varargin)
             classColors = varargin{i+1};
         case 'figurepos'
             figurePosition = varargin{i+1};
+        case 'array'
+            useArray = varargin{i+1};
     end
 end
 
@@ -53,32 +56,32 @@ nonadaptingCount = cell(1,size(useDate,1));
 fileDiffPDs = cell(1,size(useDate,1));
 for iFile = 1:size(useDate,1)
 
-    load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,4}, [useDate{iFile,3} '_' useDate{iFile,2} '_classes_' useDate{iFile,1} '.mat']));
-    load(fullfile(baseDir, useDate{iFile,1}, [useDate{iFile,3} '_' useDate{iFile,2} '_tracking_' useDate{iFile,1} '.mat']));
-    load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,4}, [useDate{iFile,3} '_' useDate{iFile,2} '_tuning_' useDate{iFile,1} '.mat']));
+    classes = load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,4}, [useDate{iFile,3} '_' useDate{iFile,2} '_classes_' useDate{iFile,1} '.mat']));
+    tracking = load(fullfile(baseDir, useDate{iFile,1}, [useDate{iFile,3} '_' useDate{iFile,2} '_tracking_' useDate{iFile,1} '.mat']));
+    tuning = load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,4}, [useDate{iFile,3} '_' useDate{iFile,2} '_tuning_' useDate{iFile,1} '.mat']));
 
     % histograms of BL->AD and AD->WO
 
-    tune_idx = classes.PMd.regression.(usePeriod).tuned_cells;
-    tune_sg = classes.PMd.regression.(usePeriod).unit_guide;
+    tune_idx = classes.(useArray).regression.(usePeriod).tuned_cells;
+    tune_sg = classes.(useArray).regression.(usePeriod).unit_guide;
     tuned_cells = tune_sg(tune_idx,:);
 
     % get unit guides and pd matrices
-    sg_bl = tuning.BL.PMd.regression.(usePeriod).unit_guide;
-    sg_ad = tuning.AD.PMd.regression.(usePeriod).unit_guide;
-    sg_wo = tuning.WO.PMd.regression.(usePeriod).unit_guide;
+    sg_bl = tuning.BL.(useArray).regression.(usePeriod).unit_guide;
+    sg_ad = tuning.AD.(useArray).regression.(usePeriod).unit_guide;
+    sg_wo = tuning.WO.(useArray).regression.(usePeriod).unit_guide;
 
-    pds_bl = tuning.BL.PMd.regression.(usePeriod).pds;
-    pds_ad = tuning.AD.PMd.regression.(usePeriod).pds;
-    pds_wo = tuning.WO.PMd.regression.(usePeriod).pds;
+    pds_bl = tuning.BL.(useArray).regression.(usePeriod).pds;
+    pds_ad = tuning.AD.(useArray).regression.(usePeriod).pds;
+    pds_wo = tuning.WO.(useArray).regression.(usePeriod).pds;
 
     % check to make sure the unit guides are okay
     badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
     sg_master = setdiff(sg_bl,badUnits,'rows');
 
-    cellClasses = classes.PMd.regression.(usePeriod).classes;
+    cellClasses = classes.(useArray).regression.(usePeriod).classes;
 
-    useComp = tracking.PMd{1}.chan;
+    useComp = tracking.(useArray){1}.chan;
     
     % x position for this file (putting all files on same plot)
     xPos = 0.4*(iFile-1) + [2*(iFile-1), 1+2*(iFile-1), 2+2*(iFile-1)];

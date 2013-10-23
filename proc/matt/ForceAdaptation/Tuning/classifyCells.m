@@ -22,7 +22,7 @@ function [cellClass,sg_bl] = classifyCells(blt,adt,wot,useArray,tuningPeriod,tun
 % The classification is based on the number shown above (AAA=1,ABA=2,etc)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_tuning_parameters.dat']);
+paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 ciSig = str2double(params.ci_significance{1});
@@ -51,6 +51,7 @@ badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
 % make the cell to pass in the checking function
 switch lower(tuningMethod)
     case 'nonparametric'
+        disp('Skipping nonparametric tuning for now...');
         mfr_bl = blt.(useArray).(tuningMethod).(tuningPeriod).mfr;
         mfr_ad = adt.(useArray).(tuningMethod).(tuningPeriod).mfr;
         mfr_wo = wot.(useArray).(tuningMethod).(tuningPeriod).mfr;
@@ -105,7 +106,7 @@ switch lower(tuningMethod)
         rs_bl = [rs_bl(:,ceil(numIters - confLevel*numIters)), rs_bl(:,floor(confLevel*numIters))];
         rs_ad = [rs_ad(:,ceil(numIters - confLevel*numIters)), rs_ad(:,floor(confLevel*numIters))];
         rs_wo = [rs_wo(:,ceil(numIters - confLevel*numIters)), rs_wo(:,floor(confLevel*numIters))];
-         
+        
         % check significance
         istuned = zeros(size(sg_bl,1),1);
         for unit = 1:size(sg_bl,1)
@@ -136,14 +137,35 @@ switch lower(tuningMethod)
                 boot_pds_ad = boot_pds_ad(idx_ad,:);
                 boot_pds_wo = boot_pds_wo(idx_wo,:);
                 usePDs = {boot_pds_bl,boot_pds_ad,boot_pds_wo};
+                
+                boot_mds_bl = blt.(useArray).(tuningMethod).(tuningPeriod).boot_mds;
+                boot_mds_ad = adt.(useArray).(tuningMethod).(tuningPeriod).boot_mds;
+                boot_mds_wo = wot.(useArray).(tuningMethod).(tuningPeriod).boot_mds;
+                
+                boot_mds_bl = boot_mds_bl(idx_bl,:);
+                boot_mds_ad = boot_mds_ad(idx_ad,:);
+                boot_mds_wo = boot_mds_wo(idx_wo,:);
+                useMDs = {boot_mds_bl,boot_mds_ad,boot_mds_wo};
+                
+                boot_bos_bl = blt.(useArray).(tuningMethod).(tuningPeriod).boot_bos;
+                boot_bos_ad = adt.(useArray).(tuningMethod).(tuningPeriod).boot_bos;
+                boot_bos_wo = wot.(useArray).(tuningMethod).(tuningPeriod).boot_bos;
+                
+                boot_bos_bl = boot_bos_bl(idx_bl,:);
+                boot_bos_ad = boot_bos_ad(idx_ad,:);
+                boot_bos_wo = boot_bos_wo(idx_wo,:);
+                useBOs = {boot_bos_bl,boot_bos_ad,boot_bos_wo};
         end
         
-        out = comparePDTuning(usePDs,sg_bl,compMethod);
+        pd = compareTuningParameter('pd',usePDs,sg_bl,compMethod);
+        md = compareTuningParameter('md',useMDs,sg_bl,compMethod);
+        bo = compareTuningParameter('bo',useBOs,sg_bl,compMethod);
 end
 
 % classify each cell based on output
 for unit = 1:size(sg_bl,1)
-    diffMat = out.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
+    % preferred direction
+    diffMat = pd.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
     
     if istuned(unit)
         for k = 1:size(diffMat,3) % will be one if not nonparametric
@@ -152,15 +174,64 @@ for unit = 1:size(sg_bl,1)
             val = sum(sum(useDiff.*converterMatrix));
             idx = classMapping(:,1)==val;
             if sum(idx) ~= 0
-                cellClass(unit,k) = classMapping(idx,2);
+                cc(unit,k) = classMapping(idx,2);
             else
                 warning('DANGER! Class not recognized. Something is probably fishy...');
-                cellClass(unit,k) = NaN;
+                cc(unit,k) = NaN;
             end
         end
     else
-        cellClass(unit,:) = -1;
+        cc(unit,:) = -1;
+    end
+end
+
+cellClass(:,3) = cc;
+
+for unit = 1:size(sg_bl,1)
+    % modulation depth
+    diffMat = md.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
+    
+    if istuned(unit)
+        for k = 1:size(diffMat,3) % will be one if not nonparametric
+            useDiff = squeeze(diffMat(:,:,k));
+            
+            val = sum(sum(useDiff.*converterMatrix));
+            idx = classMapping(:,1)==val;
+            if sum(idx) ~= 0
+                cc(unit,k) = classMapping(idx,2);
+            else
+                warning('DANGER! Class not recognized. Something is probably fishy...');
+                cc(unit,k) = NaN;
+            end
+        end
+    else
+        cc(unit,:) = -1;
+    end
+end
+
+cellClass(:,2) = cc;
+
+for unit = 1:size(sg_bl,1)
+    % baseline offset
+    diffMat = bo.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
+    
+    if istuned(unit)
+        for k = 1:size(diffMat,3) % will be one if not nonparametric
+            useDiff = squeeze(diffMat(:,:,k));
+            
+            val = sum(sum(useDiff.*converterMatrix));
+            idx = classMapping(:,1)==val;
+            if sum(idx) ~= 0
+                cc(unit,k) = classMapping(idx,2);
+            else
+                warning('DANGER! Class not recognized. Something is probably fishy...');
+                cc(unit,k) = NaN;
+            end
+        end
+    else
+        cc(unit,:) = -1;
     end
     
 end
 
+cellClass(:,1) = cc;

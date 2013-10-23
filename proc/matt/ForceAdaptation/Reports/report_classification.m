@@ -1,4 +1,12 @@
 %% Add a list of tuned cells with their classification
+function html = report_classification(html,d,classes,tracking,p)
+epochs = p.epochs;
+arrays = p.arrays;
+tuningPeriods = p.tuningPeriods;
+sigMethod = p.sigMethod;
+classNames = p.classNames;
+minFR = p.minFR;
+
 html = strcat(html,'<div id="classes"><h2>Classes</h2>Showing cells that are significantly tuned in all three epochs<br>');
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
@@ -13,7 +21,7 @@ for iArray = 1:length(arrays)
         tunedCells = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).tuned_cells;
         
         if ~isempty(tunedCells)
-            html = strcat(html,'<table border="1" style="display:inline"> <tr> <td> Unit </td> <td> Classification </td> </tr>');
+            html = strcat(html,'<table border="1" style="display:inline"> <tr> <td> Unit </td> <td> PD </td> <td> MD </td> <td> BO </td> </tr>');
             for unit = 1:length(tunedCells)
                 
                 % mark the background as red if the neuron tracking says that the cells may be different in each epoch
@@ -36,7 +44,9 @@ for iArray = 1:length(arrays)
                     end
                     
                     html = strcat(html,['<tr bgcolor="' useColor '"><td> <a href="#' currArray 'elec' num2str(tune_sg(tunedCells(unit),1)) 'unit' num2str(tune_sg(tunedCells(unit),2)) '"> Elec' num2str(tune_sg(tunedCells(unit),1)) '/Unit' num2str(tune_sg(tunedCells(unit),2)) '</a></td>' ...
-                        '<td>' classNames{useClasses(tunedCells(unit))} '</td></tr>']);
+                        '<td>' classNames{useClasses(tunedCells(unit),3)} '</td>' ...
+                        '<td>' classNames{useClasses(tunedCells(unit),2)} '</td>' ...
+                        '<td>' classNames{useClasses(tunedCells(unit),1)} '</td></tr>']);
                 end
             end
         else

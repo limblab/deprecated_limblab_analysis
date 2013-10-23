@@ -1,4 +1,12 @@
-%% Make table of contents links
+% Make table of contents links
+function [html,uElecs,sg] = report_tableOfContents(html,d,tracking,p)
+arrays = p.arrays;
+epochs = p.epochs;
+adaptType = p.adaptType;
+taskType = p.taskType;
+useUnsorted = p.useUnsorted;
+confLevel = p.confLevel;
+
 html = strcat(html,'<div id="contents">');
 html = strcat(html,'<a href="#summary">Summary</a><br>');
 html = strcat(html,'<a href="#behavior">Behavior Metrics</a><br>');
@@ -38,8 +46,6 @@ if ~useUnsorted
         uElecs = unique(sg(:,1));
         
         html=strcat(html,[currArray '<br>']);
-        tunedCount = 0;
-        superTunedCount = 0;
         for i = 1:length(uElecs)
             idx = sg(:,1)==uElecs(i);
             units = sg(idx,2);

@@ -6,31 +6,48 @@ close all;
 clear;
 clc;
 
+% would be great to have proper database
+%   - could load monkey info
 
 useUnsorted = false;
 
-% exclude these analysis steps
-%   Note: I recommend if you change analysis parameters relevant to one of
-%   these you re-run them so that the parameter file in the folder is up to
-%   date with the actual data
-rewriteFiles        = 1;
+% if false, will not copy over new parameter files if they already exist
+rewriteFiles  = 1;
 
+% exclude these analysis steps
+%    Note: I recommend if you change analysis parameters relevant to one of
+%    these you re-run them so that the parameter file in the folder is up to
+%    date with the actual data
+% processing options
 doDataStruct        = 0;
-doAdaptationMetrics = 1;
-doNeuronTracking    = 0;
+doAdaptation        = 0;
+doTracking          = 1;
+% tuning options1
 doTuning            = 0;
 doClassification    = 0;
-doPlotting          = 1;
 doReport            = 1;
+% plotting options
+doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-goodDates = {'2013-09-24','2013-09-25','2013-09-04','2013-08-22','2013-09-06','2013-09-10','2013-08-20','2013-08-21','2013-08-19','2013-08-30'};
-goodDates = {'2013-09-24'};
+paramSetNames = {'early','late'};
 
-paramFileDir = 'Z:\MrT_9I4\Matt';
-paramSetName = '';
+monkey = 'MrT';
+
+switch monkey
+    case 'MrT'
+        paramFileDir = 'Z:\MrT_9I4\Matt\';
+        goodDates = {'2013-08-22'};
+        dataFileDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
+    case 'Chewie'
+        paramFileDir = 'Z:\Chewie_8I2\Matt\';
+        goodDates = {'2013-10-09'};
+        dataFileDir = 'Z:\Chewie_8I2\Matt\ProcessedData\';
+    otherwise
+        error('Monkey not recognized');
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +57,7 @@ for iDate = 1:length(goodDates)
     disp(['Processing data for ' useDate '...']);
     
     % Process a day's experimental data
-    expParamFile = ['Z:\MrT_9I4\Matt\ProcessedData\' useDate '\' useDate '_experiment_parameters.dat'];
+    expParamFile = fullfile(dataFileDir, useDate,[useDate '_experiment_parameters.dat']);
     
     % get parameters
     params = parseExpParams(expParamFile);
@@ -54,35 +71,28 @@ for iDate = 1:length(goodDates)
     expParamFile = fullfile(dataPath,[useDate '_experiment_parameters.dat']);
     
     % if not specified above, load what is in default location
-    if ~exist('paramSetName','var') || isempty(paramSetName)
+    if ~exist('paramSetNames','var') || isempty(paramSetNames)
         % now we want to get the name of the current parameter set
-        paramFile = fullfile(paramFileDir,'ff_tuning_parameters.dat');
+        paramFile = fullfile(paramFileDir,[monkey '_tuning_parameters.dat']);
         params = parseExpParams(paramFile);
-        paramSetName = params.parameter_set_name{1};
+        paramSetNames = params.parameter_set_name{1};
         clear params;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
     
-    disp(['Using the "' paramSetName '" set of tuning parameters...']);
-    
-    paramSetDir = fullfile(dataPath,paramSetName);
-    if ~exist(paramSetDir,'dir')
-        mkdir(paramSetDir);
+    if ~iscell(paramSetNames)
+        paramSetNames = {paramSetNames};
     end
     
     % path to the analysis parameters. If not found, will copy the general one
     %   assumes the general one is in the paramFileDir
     analysisParamFile = fullfile(dataPath,[useDate '_analysis_parameters.dat']);
     if ~exist(analysisParamFile,'file') || rewriteFiles
-        copyfile(fullfile(paramFileDir,'ff_analysis_parameters.dat'),analysisParamFile,'f');
+        copyfile(fullfile(paramFileDir,[monkey '_analysis_parameters.dat']),analysisParamFile,'f');
     end
     plottingParamFile = fullfile(dataPath,[useDate '_plotting_parameters.dat']);
     if ~exist(plottingParamFile,'file') || rewriteFiles
-        copyfile(fullfile(paramFileDir,'ff_plotting_parameters.dat'),plottingParamFile,'f');
-    end
-    tuningParamFile = fullfile(paramSetDir,[useDate '_tuning_parameters.dat']);
-    if ~exist(tuningParamFile,'file') || rewriteFiles
-        copyfile(fullfile(paramFileDir,'ff_tuning_parameters.dat'),tuningParamFile,'f');
+        copyfile(fullfile(paramFileDir,[monkey '_plotting_parameters.dat']),plottingParamFile,'f');
     end
     
     if doDataStruct
@@ -91,10 +101,10 @@ for iDate = 1:length(goodDates)
         disp('%%% Making Data Struct %%%')
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         % make my data file (will convert things to BDF if necessary
-        [~,useUnsorted] = makeDataStruct(expParamFile);
+        [~,useUnsorted] = makeDataStruct(expParamFile, 'nevnsx', false, useUnsorted);
     end
     
-    if doAdaptationMetrics
+    if doAdaptation
         disp('');
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         disp('%%% Adaptation Metrics %%%')
@@ -103,56 +113,81 @@ for iDate = 1:length(goodDates)
         [~] = getAdaptationMetrics(expParamFile);
     end
     
-    if ~useUnsorted
-        if doNeuronTracking
-            disp('');
-            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-            disp('%%%  Tracking Neurons  %%%')
-            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-            % do empirical test to track neurons across epochs
-            [~] = trackNeuronsAcrossEpochs(expParamFile);
-        end
-        
-        if doTuning
-            disp('');
-            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-            disp('%%%  Fit Tuning Curves %%%')
-            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-            % calculate tuning curves
-            [~] = fitTuningCurves(expParamFile, paramSetName);
-        end
-        
-        if doClassification
-            disp('');
-            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-            disp('%%% Classifying Cells  %%%')
-            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-            % Look for memory cells
-            [~] = findMemoryCells(expParamFile, paramSetName);
-        end
-        
+    if doTracking && ~useUnsorted
+        disp('');
+        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+        disp('%%%  Tracking Neurons  %%%')
+        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+        % do empirical test to track neurons across epochs
+        [~] = trackNeuronsAcrossEpochs(expParamFile,{'wf'});
     end
     
+    % Now loop along the tuning parameter sets
+    for iParam = 1:length(paramSetNames)
+        paramSetName = paramSetNames{iParam};
+        
+        disp(['Using the "' paramSetName '" set of tuning parameters...']);
+        
+        paramSetDir = fullfile(dataPath,paramSetName);
+        if ~exist(paramSetDir,'dir')
+            mkdir(paramSetDir);
+        end
+        
+        tuningParamFile = fullfile(paramSetDir,[useDate '_' paramSetName '_tuning_parameters.dat']);
+        if ~exist(tuningParamFile,'file') || rewriteFiles
+            copyfile(fullfile(paramFileDir,[monkey '_' paramSetName '_tuning_parameters.dat']),tuningParamFile,'f');
+        end
+        
+        if ~useUnsorted
+            if doTuning
+                disp('');
+                disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                disp('%%%  Fit Tuning Curves %%%')
+                disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                % calculate tuning curves
+                [~] = fitTuningCurves(expParamFile, paramSetName);
+            end
+            
+            if doClassification
+                disp('');
+                disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                disp('%%% Classifying Cells  %%%')
+                disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                % Look for memory cells
+                [~] = findMemoryCells(expParamFile, paramSetName,'diff');
+            end
+        end
+        
+        if doReport
+            disp('');
+            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+            disp('%%% Generating Report  %%%')
+            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+            % make an HTML document detailing it all
+            [~] = makeSummaryReport(expParamFile, paramSetName, useUnsorted);
+        end
+    end
+    
+    % do the plotting outside of that loop so that we don't have to
+    % continually reload any data
     if doPlotting
         disp('');
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         disp('%%% Saving Data Plots  %%%')
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         % make my plots
-        [~] = makeFFPlots(expParamFile,paramSetName,useUnsorted);
+        if doPlotting == 1
+            [~] = makeFFPlots(expParamFile,paramSetNames,useUnsorted);
+        elseif doPlotting == 2
+            [~] = makeFFPlots(expParamFile,'',useUnsorted);
+        elseif doPlotting == 3
+            [~] = makeFFPlots(expParamFile,paramSetNames,useUnsorted,true);
+        else
+            error('Not sure what to plot!');
+        end
     end
-    
-    if doReport
-        disp('');
-        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-        disp('%%% Generating Report  %%%')
-        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-        % make an HTML document detailing it all
-        [~] = makeSummaryReport(expParamFile, paramSetName, useUnsorted);
-    end
-    
-    clc;
 end
+
 disp('');
 disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
 disp('%%%  ALL DONE!  YAY!   %%%')

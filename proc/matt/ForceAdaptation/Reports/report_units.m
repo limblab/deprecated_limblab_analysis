@@ -1,4 +1,17 @@
 %% Print out data for units
+function html = report_units(html,d,t,classes,tracking,uElecs,sg,p)
+arrays = p.arrays;
+epochs = p.epochs;
+tuningPeriods = p.tuningPeriods;
+tuningMethods = p.tuningMethods;
+classNames = p.classNames;
+tableColors = p.tableColors;
+sigMethod = p.sigMethod;
+imgWidth = p.imgWidth;
+genFigPath = p.genFigPath;
+figPath = p.figPath;
+
+
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
     

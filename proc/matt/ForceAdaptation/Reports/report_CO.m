@@ -1,4 +1,9 @@
 %% Make plot showing CO traces
+function html = report_CO(html,p)
+genFigPath = p.genFigPath;
+epochs = p.epochs;
+imgWidth = p.imgWidth;
+
 html = strcat(html,['<div id="CO"><h2>Center Out Plots</h2>' ...
     'average of first two (red) and last two (blue) traces to each target... first target shown in green' ...
     '<table style="text-align:center"><tr> <td>&nbsp;</td>']);

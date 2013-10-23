@@ -30,6 +30,7 @@ useDate = params.date{1};
 taskType = params.task{1};
 adaptType = params.adaptation_type{1};
 epochs = params.epochs;
+rotationAngle = str2double(params.rotation_angle{1});
 clear params
 
 dataPath = fullfile(baseDir,useDate);
@@ -53,13 +54,16 @@ saveFile = fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.ma
 for iEpoch = 1:length(epochs)
     
     disp(['Loading data for ' epochs{iEpoch} '...']);
-    
+
     getFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
-    load(getFile);
+    load(getFile,'cont');
+    load(getFile,'params');
+    load(getFile,'meta');
     
-    t = data.cont.t;
-    vel = data.cont.vel;
-    acc = data.cont.acc;
+    t = cont.t;
+    pos = cont.pos;
+    vel = cont.vel;
+    acc = cont.acc;
     
     % filter the data to smooth out curvature calculation
     f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
@@ -70,8 +74,10 @@ for iEpoch = 1:length(epochs)
     vel = svel(filtWidth/2:end-filtWidth/2,:);
     acc = sacc(filtWidth/2:end-filtWidth/2,:);
     
-    mt = data.movement_table;
-    holdTime = data.params.hold_time;
+    load(getFile,'movement_table');
+    mt = movement_table;
+    clear movement_table;
+    holdTime = params.hold_time;
     
     % find the time windows of each movement
     disp('Getting movement data...')
@@ -162,14 +168,54 @@ for iEpoch = 1:length(epochs)
         adaptation.(epochs{iEpoch}).curvature_means = allCurvMeans;
         adaptation.(epochs{iEpoch}).sliding_curvature_mean = curvMeans;
     end
+    
+    if any(ismember(useMetrics,'angle_error'))
+        % look at error between angle at peak speed and target angle
+        targAngs = mt(:,1);
+                
+        % loop along all movements and get angle at time of peak speed
+        % peak speed is mt(trial,5)
+        moveAngs = zeros(size(mt,1),1);
+        for iMove = 1:size(mt,1)
+            t_start = mt(iMove,3);
+            t_peak = mt(iMove,5);
+            
+            % find direction of movement at time of peak speed
+            %   compare position and peak to position at start
+            pos_start = pos(find(t <= t_start,1,'last'),:);
+            pos_peak = pos(find(t <= t_peak,1,'last'),:);
+            
+            moveAngs(iMove,1) = atan2(pos_peak(2)-pos_start(2),pos_peak(1)-pos_start(1));
+            
+        end
+        
+        % if it's visual rotation, must adjust for visual offset
+        if (strcmp(adaptType,'VR') || strcmp(adaptType,'VRFF')) && strcmp(epochs{iEpoch},'AD')
+            moveAngs = moveAngs + rotationAngle;
+        end
+        
+        errs = angleDiff( targAngs, moveAngs, true, true);
+        
+        % now group error in blocks to track adaptation
+        errMeans = zeros(length(blockTimes),2);
+        for tMove = 1:length(blockTimes)
+            relMoveInds = blockTimes(tMove):blockTimes(tMove)+behavWin;
+            relErrs = errs(relMoveInds,:);
+            
+            errMeans(tMove,:) = [mean(relErrs) std(relErrs)];
+        end
+        
+        adaptation.(epochs{iEpoch}).errors = errs;
+        adaptation.(epochs{iEpoch}).sliding_error_mean = errMeans;
+    end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     adaptation.(epochs{iEpoch}).movement_table = mt;
     adaptation.(epochs{iEpoch}).vel = vel;
     adaptation.(epochs{iEpoch}).acc = acc;
     adaptation.(epochs{iEpoch}).block_times = blockTimes';
-    adaptation.(epochs{iEpoch}).meta = data.meta;
-
+    adaptation.(epochs{iEpoch}).meta = meta;
+    
     params.metrics = useMetrics;
     params.behavior_window = behavWin;
     params.step_size = stepSize;
@@ -180,5 +226,5 @@ end
 
 % save the new file with adaptation info
 disp(['Saving data to ' saveFile]);
-save(saveFile,'adaptation');
+save(saveFile,'-struct','adaptation');
 

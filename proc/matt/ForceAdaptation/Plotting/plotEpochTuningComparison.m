@@ -74,9 +74,7 @@ for iArray = 1:length(useArrays)
                 end
                 
                 useColors = plotColors{1};
-                h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
-                set(h(1),'FaceColor',[1 1 1]);
-                set(h(2),'FaceColor',useColors{2},'EdgeColor',[1 1 1]);
+                patch([utheta' fliplr(utheta')].*(180/pi),[sFR_l(unit,:) fliplr(sFR_h(unit,:))],useColors{2},'EdgeColor',useColors{2});
                 plot(utheta.*(180/pi),mFR(unit,:),useColors{1},'LineWidth',2);
                 
                 % adaptation
@@ -101,9 +99,7 @@ for iArray = 1:length(useArrays)
                 end
                 
                 useColors = plotColors{2};
-                h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
-                set(h(1),'FaceColor',[1 1 1]);
-                set(h(2),'FaceColor',useColors{2},'EdgeColor',[1 1 1]);
+                patch([utheta' fliplr(utheta')].*(180/pi),[sFR_l(unit,:) fliplr(sFR_h(unit,:))],useColors{2},'EdgeColor',useColors{2});
                 plot(utheta.*(180/pi),mFR(unit,:),useColors{1},'LineWidth',2);
                 
                 % washout
@@ -128,9 +124,7 @@ for iArray = 1:length(useArrays)
                 end
                 
                 useColors = plotColors{3};
-                h = area(utheta.*(180/pi),[sFR_l(unit,:)' sFR_h(unit,:)']);
-                set(h(1),'FaceColor',[1 1 1]);
-                set(h(2),'FaceColor',useColors{2},'EdgeColor',[1 1 1]);
+                patch([utheta' fliplr(utheta')].*(180/pi),[sFR_l(unit,:) fliplr(sFR_h(unit,:))],useColors{2},'EdgeColor',useColors{2});
                 plot(utheta.*(180/pi),mFR(unit,:),useColors{1},'LineWidth',2);
                 
                 ylabel('Firing Rate (Hz)','FontSize',fontSize);

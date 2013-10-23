@@ -5,7 +5,7 @@ function [fr, theta, mt] = getFR(data,useArray,tuningPeriod,paramSetName)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_tuning_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 angleBinSize = str2double(params.angle_bin_size{1});
@@ -42,7 +42,7 @@ for trial = 1:size(mt,1)
     elseif strcmpi(tuningPeriod,'final') % Use the final movement period
         useWin(trial,:) = [mt(trial,end)-movementTime, mt(trial,end)];
     elseif strcmpi(tuningPeriod,'pre') % Use pre-movement period
-        useWin(trial,:) = [mt(trial,4)-movementTime, mt(trial,4)];
+        useWin(trial,:) = [mt(trial,2), mt(trial,4)];
     elseif strcmpi(tuningPeriod,'full') % Use entire movement
         useWin(trial,:) = [mt(trial,3), mt(trial,end)];
     elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak

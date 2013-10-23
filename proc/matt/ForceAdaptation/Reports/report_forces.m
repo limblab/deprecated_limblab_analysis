@@ -1,4 +1,10 @@
 %% Make plot showing forces check out
+function html = report_forces(html,p)
+genFigPath = p.genFigPath;
+forceMag = p.forceMag;
+forceAng = p.forceAng;
+imgWidth = p.imgWidth;
+
 html = strcat(html,['<div id="force">' ...
     '<table><tr><td><h2>Forces</h2></td><td>Strength:</td><td>' num2str(forceMag) ' Ns/cm</td><td>Direction:</td><td>' num2str(forceAng.*180/pi) ' deg </td></tr></table>' ...
     '<img src="' genFigPath '\force_vel.png" width="' num2str(imgWidth+200) '">' ...

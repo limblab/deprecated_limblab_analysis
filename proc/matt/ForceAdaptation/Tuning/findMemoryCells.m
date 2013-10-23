@@ -1,4 +1,4 @@
-function classes = findMemoryCells(expParamFile, paramSetName)
+function classes = findMemoryCells(expParamFile, paramSetName, compMethod)
 % FINDMEMORYCELLS  Compares tuning of cells to classify their behavior
 %
 %   This function uses the tuning made by fitTuningCurves to classify them
@@ -25,7 +25,9 @@ function classes = findMemoryCells(expParamFile, paramSetName)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-compMethod = 'overlap';
+if nargin < 3
+    compMethod = 'diff';
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
@@ -42,7 +44,7 @@ dataPath = fullfile(baseDir,useDate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, paramSetName, [ useDate '_tuning_parameters.dat']);
+paramFile = fullfile(dataPath, paramSetName, [ useDate '_' paramSetName '_tuning_parameters.dat']);
 params = parseExpParams(paramFile);
 tuningPeriods = params.tuning_periods;
 tuningMethods = params.tuning_methods;
@@ -52,16 +54,12 @@ clear params;
 saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']);
 
 disp('Loading data to classify cells...')
-load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']));
+tuningFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
+load(tuningFile,'BL');
+load(tuningFile,'AD');
+load(tuningFile,'WO');
 
-load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']));
-arrays = data.meta.arrays;
-blt = tuning.BL;
-load(fullfile(dataPath,[taskType '_' adaptType '_AD_' useDate '.mat']));
-adt = tuning.AD;
-load(fullfile(dataPath,[taskType '_' adaptType '_WO_' useDate '.mat']));
-wot = tuning.WO;
-clear data tuning;
+arrays = BL.meta.arrays;
 
 for iArray = 1:length(arrays)
     useArray = arrays{iArray};
@@ -72,8 +70,10 @@ for iArray = 1:length(arrays)
             % only glm can use the full file tuning
             if strcmpi(tuningPeriods{iPeriod},'file') && ~strcmpi(tuningMethods{iMethod},'glm')
                 warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
+            elseif strcmpi(tuningMethods{iMethod},'nonparametric')
+                warning(['Classification not supported for ' tuningMethods{iMethod} ' method...']);
             else
-                [cellClass,sg] = classifyCells(blt,adt,wot,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod},compMethod, paramSetName);
+                [cellClass,sg] = classifyCells(BL,AD,WO,useArray,tuningPeriods{iPeriod},tuningMethods{iMethod},compMethod, paramSetName);
                 
                 % get cells that are significantly tuned in all epochs
                 tunedCells = find(cellClass(:,1)~=-1);
@@ -89,5 +89,5 @@ end
 
 % save the new file with classification info
 disp(['Saving data to ' saveFile]);
-save(saveFile,'classes');
+save(saveFile,'-struct','classes');
 

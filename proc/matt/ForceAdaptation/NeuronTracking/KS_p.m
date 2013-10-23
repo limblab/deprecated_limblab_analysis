@@ -1,4 +1,4 @@
-function[COMPS, ts_ISI, D_wave, lda_proj] = KS_p(data,conf)
+function[COMPS, ts_ISI, D_wave, lda_proj] = KS_p(criteria,data,conf)
 % KS_p  Run empirical KS test to check for stability of neurons
 %
 %   This function uses empirical p-value computations to find multi-day
@@ -171,9 +171,14 @@ for i = 1:num_days % Loop through days
                 lda_dist = dist_w*coeff(1,2).linear;
                 
                 % Find p value for ISI using KS statistic
-                p_isi = interp1(sortrows(ts_ISI'),1:length(ts_ISI),kSTAT,'linear')./length(ts_ISI);
+                try
+                p_isi = interp1(sortrows(unique(ts_ISI)'),1:length(unique(ts_ISI)),kSTAT,'linear')./length(unique(ts_ISI));
+                catch
+                    keyboard
+                    end
+                
                 if isnan(p_isi)
-                    p_isi = interp1(sortrows(ts_ISI'),1:length(ts_ISI),kSTAT,'linear','extrap')./length(ts_ISI);
+                    p_isi = interp1(sortrows(unique(ts_ISI)'),1:length(unique(ts_ISI)),kSTAT,'linear','extrap')./length(unique(ts_ISI));
                 end
                 
                 % Find p value for wave shape using linear projection
@@ -181,7 +186,15 @@ for i = 1:num_days % Loop through days
                     lda_dist,'linear','extrap')./length(lda_proj);
                 
                 % If the combined p value is within specified confidence level
-                if p_isi*p_wave < conf % p_isi < conf && p_wave < conf
+                temp = 1;
+                if ismember('isi',criteria)
+                    temp = temp*p_isi;
+                end
+                if ismember('wf',criteria)
+                    temp = temp*p_wave;
+                end
+                
+                if temp < conf^(length(criteria))
                     % Link the two as matched neurons
                     COMPS{i}.chan(j,k) = chan2 + 0.1*unit2;
                     COMPS{i}.inds(j,k) = sorted_list_ind;

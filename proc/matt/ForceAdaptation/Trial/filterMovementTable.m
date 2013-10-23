@@ -13,10 +13,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_tuning_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
-excludeFraction = str2double(params.exclude_fraction);
+ADexcludeFraction = str2double(params.ad_exclude_fraction);
+WOexcludeFraction = str2double(params.wo_exclude_fraction);
 minReactionTime = str2double(params.min_reaction_time{1});
 maxReactionTime = str2double(params.max_reaction_time{1});
 minTimeToTarget = str2double(params.min_time_to_target{1});
@@ -31,18 +32,33 @@ mt = data.movement_table;
 reactionTime = mt(:,4) - mt(:,3);
 timeToTarget = ( mt(:,end) - mt(:,4) ) - holdTime;
 
-mt = mt(reactionTime >= minReactionTime & reactionTime <= maxReactionTime & timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget,:);
+if minReactionTime ~= -1 && maxReactionTime ~= -1
+    mt = mt(reactionTime >= minReactionTime & reactionTime <= maxReactionTime & timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget,:);
+end
 
-% for adaptation, exclude first set of trials
-if excludeTrials && (length(excludeFraction) > 0) && (strcmp(data.meta.epoch,'AD') || strcmp(data.meta.epoch,'WO'));
-    if length(excludeFraction) == 1
+% for adaptation, exclude some trials
+if excludeTrials && (length(ADexcludeFraction) > 0) && strcmp(data.meta.epoch,'AD')
+    if length(ADexcludeFraction) == 1
         % remove the first however many trials
-        mt = mt(floor(excludeFraction*size(mt,1)):end,:);
+        mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
     else
-        start = floor(excludeFraction(1)*size(mt,1));
+        start = floor(ADexcludeFraction(1)*size(mt,1));
         if start <= 0
             start = 1;
         end
-        mt = mt(start:floor(excludeFraction(2)*size(mt,1)),:);
+        mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
+    end
+end
+
+if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'WO')
+    if length(WOexcludeFraction) == 1
+        % remove the first however many trials
+        mt = mt(floor(WOexcludeFraction*size(mt,1)):end,:);
+    else
+        start = floor(WOexcludeFraction(1)*size(mt,1));
+        if start <= 0
+            start = 1;
+        end
+        mt = mt(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
     end
 end
