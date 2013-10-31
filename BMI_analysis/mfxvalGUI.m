@@ -76,19 +76,21 @@ function varargout = mfxvalGUI_OutputFcn(hObject, eventdata, handles)
 
     % UIWAIT makes mfxvalGUI wait for user response (see UIRESUME)
     uiwait(handles.figure1);
+   
+    options = struct(...
+    'PredEMGs', get(handles.PredEMG_cbx, 'Value'),...
+    'PredForce',get(handles.PredForce_cbx, 'Value'),...
+    'PredCursPos',get(handles.PredCurs_cbx, 'Value'),...
+    'PredVeloc',get(handles.PredVeloc_cbx, 'Value'),...
+    'fillen',get(handles.fillen_txtbx,'Value'),...
+    'UseAllInputs',get(handles.Inputs_popup,'Value')-1,...
+    'PolynomialOrder',get(handles.Polyn_Order_txtbx,'Value'),...
+    'Use_SD', get(handles.States_popup,'Value')-1,...
+    'foldlength', get(handles.fold_length_txtbx,'Value') ...   
+    );
 
-    lagtime = get(handles.fillen_txtbx,'Value');
-    Inputs = get(handles.Inputs_popup,'Value')-1;
-    Polyn_Order = get(handles.Polyn_Order_txtbx,'Value');
-    foldlength = get(handles.fold_length_txtbx,'Value');
-    PredEMGs = get(handles.PredEMG_cbx, 'Value');
-    PredForce = get(handles.PredForce_cbx, 'Value');
-    PredCurs = get(handles.PredCurs_cbx, 'Value');
-    PredVeloc = get(handles.PredVeloc_cbx, 'Value');
-    Use_States = get(handles.States_popup,'Value')-1;
-     
 %     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-     varargout = {lagtime, Inputs, Polyn_Order, foldlength, PredEMGs, PredForce, PredCurs, PredVeloc, Use_States};
+     varargout = {options};
       
     set(handles.figure1,'Visible','off');
     close(handles.figure1);
@@ -103,9 +105,9 @@ function OK_Button_Callback(hObject, eventdata, handles)
     if mod(round(1000*get(handles.fillen_txtbx,'Value')),round(1000*handles.binsize))
         %1- Check that filter length is a multiple of binsize
         errordlg('Filter Length must be a multiple of binsize','Stop farting around!');
-    elseif get(handles.Polyn_Order_txtbx,'Value')>4 || get(handles.Polyn_Order_txtbx,'Value') <1
+    elseif get(handles.Polyn_Order_txtbx,'Value')>4 || get(handles.Polyn_Order_txtbx,'Value') <0
         %2- check that the polynomial order is within reasonable limits
-        errordlg('Polynomial Order must be between 1 and 4','Stop farting around!');
+        errordlg('Polynomial Order must be between 0 and 4','Stop farting around!');
     else      
         uiresume(handles.figure1);
     end

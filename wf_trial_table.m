@@ -11,6 +11,8 @@ function [varargout] = wf_trial_table(bdf)
 %    8: Trial End time
 %    9: Trial result        -- R, A, I, or F 
 %   10: Target ID           -- Target ID (based on location)
+%   11: Catch               -- 0 or 1, regular or catch trial
+%   12: Adapt               -- 0 or 1, regular or adapt trial (as of 2013-10-18, adapt only during catch)
 
 % $Id$
 
@@ -30,13 +32,20 @@ ot_on_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_ot_on, 2);
 word_go = hex2dec('31');
 go_cues = words(words(:,2) == word_go, 1);
 
+word_catch = hex2dec('32');
+catch_words= words(words(:,2)==word_catch,1);
+
+word_adapt = hex2dec('B0');
+adapt_words= words(words(:,2)==word_adapt,1);
+
+
 word_end = hex2dec('20');
 end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
 end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
 dbtimes = vertcat(bdf.databursts{:,1});
 
-tt = zeros(num_trials-1, 10) - 1;
+tt = zeros(num_trials-1, 12) - 1;
 
 for trial = 1:num_trials-1
     start_time = start_words(trial);
@@ -77,13 +86,34 @@ for trial = 1:num_trials-1
         target_id = get_tgt_id(target);
     end
     
-    % Go cue
+    % Go cue ts
     go_cue_idx = find(go_cues > start_time & go_cues < stop_time, 1, 'first');
     if isempty(go_cue_idx)
-        go_cue = -1;
+        catch_word_idx = find(catch_words > start_time & catch_words < stop_time, 1, 'first');
+        if isempty(catch_word_idx)
+            go_cue = -1;
+        else
+            go_cue = catch_words(catch_word_idx);
+        end
     else
         go_cue = go_cues(go_cue_idx);
     end
+    
+    % catch
+    catch_word_idx = find(catch_words > start_time & catch_words < stop_time, 1, 'first');
+    if isempty(catch_word_idx)
+        catch_word = 0;
+    else
+        catch_word = 1;
+    end   
+
+   % Adapt
+    adapt_word_idx = find(adapt_words > start_time & adapt_words < stop_time, 1, 'first');
+    if isempty(adapt_word_idx)
+        adapt_word = 0;
+    else
+        adapt_word = 1;
+    end       
             
     % Build table
     tt(trial,:) = [...
@@ -93,7 +123,9 @@ for trial = 1:num_trials-1
         go_cue, ...     % Timestamp of Go Cue
         stop_time, ...  % End of trial
         trial_result,...% Result of trial ('R', 'A', 'I', or 'N')
-        target_id ];    % Target ID based on location
+        target_id,...   % Target ID based on location
+        catch_word,...  % whether or not trial is a catch trial
+        adapt_word];    % whether or not trial is an adaptation trial
 end
 
 tt_labels = ['trial start time ' ;...
@@ -102,10 +134,12 @@ tt_labels = ['trial start time ' ;...
              'tgt LRx          ' ;...
              'tgt LRy          ' ;...
              'outer target time' ;...
-             'go cue           ' ;...
+             'go/catch         ' ;...
              'trial end time   ' ;...
              'Result(R,A,I,orN)' ;...
-             'tgt_id           '];
+             'tgt_id           ' ;...
+             'catch            ' ;...
+             'adapt            ' ];
     
 varargout = {tt,tt_labels};
 

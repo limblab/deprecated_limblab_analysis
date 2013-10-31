@@ -1,4 +1,18 @@
 function [PredData, varargout] = predictSignals(varargin)
+% [PredData, varargout] = predictSignals(varargin)
+%   
+%    varargin = {decoder, binnedData, FiltPred, Adapt, numPCs};   
+%       decoder     : decoder structure
+%       binnedData  : binned data structure
+%       FiltPred    : boolean, 0=no filter, 1= 4pole butter 2Hz LP
+%       Adapt       : Adaptation structure (contains adapt params)
+%       numPCs      : number of principal components to use (decoder.inputtype has to be 'princomp'
+%
+%    PredData : Output structure including predictions
+%    varargout= {H}
+%       H           : deoder weights (updated if Adapt was on)
+%
+%%
 
 filter       = varargin{1};
 BinnedData   = varargin{2};
@@ -49,15 +63,8 @@ if isfield(filter,'input_type')
     end   
 end
 
-%De-means:
-if isfield(filter,'input_mean')
-    for i=1:size(Inputs,2)
-        Inputs(:,i) = Inputs(:,i)-filter.input_mean(i);
-    end
-else
-    warning(['Ho, can''t find a field called ''input_mean''.'...
-            'You''re supposed to provide that, now you might have an offset problem']);
-end
+% add vector of ones for linear offset compensation
+% Inputs = [ones(size(Inputs,1),1) Inputs];
 
 %% Outputs:  assign memory with dummy data, just cause predMIMO requires something there
 % just send dummy data as outputs for the function
@@ -68,12 +75,12 @@ numsides=1; fs=1;
 if Adapt.Enable
 %     [PredictedData,spikeDataNew,Hnew] = predAdaptEMGs(BinnedData,usableSpikeData,filter.H,Adapt);
     [PredictedData,spikeDataNew,Hnew] = predAdapt(BinnedData,Inputs,filter.H,Adapt);
-    varargout(1) = {Hnew};
+    varargout = {Hnew};
 else
-    [PredictedData,spikeDataNew,ActualEMGsNew]=predMIMO3(Inputs,filter.H,numsides,fs,ActualData);
+    [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,filter.H,numsides,fs,ActualData);
 %     [PredictedData]=predMIMOCE1(usableSpikeData,filter.H,numlags);
 %     PredictedData = PredictedData(numlags:end,:);
-    varargout(1) = {filter.H};
+    varargout = {filter.H};
 end
 
 clear ActualData spikeData;
@@ -97,22 +104,15 @@ if ~isempty(filter.P)
     PredictedData=Ynonlinear;
 end
 
-%% Smooth EMG Predictions, moving average with variable length based on 1st deriv of ave FR
+%% Smooth EMG Predictions, with a low-pass of 1.5 Hz
 if FiltPred
-   [PredictedData] = FiltPred(PredictedData,spikeDataNew,binsize);
-end
-
-%% Add back Output means
-if isfield(filter,'output_mean')
-    for i=1:size(PredictedData,2)
-        PredictedData(:,i) = PredictedData(:,i)+filter.output_mean(i);
-    end
+   [PredictedData] = FiltPred(PredictedData,binsize,2);
 end
 
 %% Aggregate Outputs in a Structure
 
 [numpts,Nx]=size(Inputs);
-[nr,Ny]=size(filter.H);
+[nr]=size(filter.H,1)-1;
 fillen=nr/Nx;
 timeframeNew = BinnedData.timeframe(fillen:numpts);
 spikeDataNew = Inputs(fillen:numpts,:);

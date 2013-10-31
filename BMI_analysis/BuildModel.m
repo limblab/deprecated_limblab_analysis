@@ -1,21 +1,33 @@
-function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, varargin)
-%    [filter, varargout] = BuildModel(binnedData, dataPath, UseAllInputsOption, xvalidate_flag)
+function [filter, varargout]=BuildModel(binnedData, options)
+%    [filter, varargout] = BuildModel(binnedData, options)
 %
-%       filter: structure of filter data (neuronIDs,H,P,emgguide,fillen,binsize)
-%       varargout = {PredData}
-%           [PredData]      : structure with EMG prediction data (fit)
+%
 %       binnedData          : data structure to build model from
-%       dataPath            : string of the path of the data folder
-%       fillen              : filter length (in seconds)
-%       UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
-%       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos,PredVeloc,Use_Thresh,Use_EMGs,Use_Ridge,numPCs}
-%                           :   flags to include EMG, Force, Cursor Position
+%       options             : structure with fields:
+%           fillen              : filter length in seconds (tipically 0.5)
+%           UseAllInputs        : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
+%           PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
+%           PredEMG, PredForce, PredCursPos, PredVeloc, numPCs :
+%                               flags to include EMG, Force, Cursor Position
 %                               and Velocity in the prediction model
 %                               (0=no,1=yes), if numPCs is present, will
 %                               use numPCs components as inputs instead of
 %                               spikeratedata
+%           Use_Thresh,Use_EMGs,Use_Ridge:
+%                               options to fit only data above a certain
+%                               threshold, use EMGs as inputs instead of
+%                               spikes, or use a ridge regression to fit model
+%           plotflag            : plot predictions after xval
 %
+%       Note on options: not all the fields have to be present in the
+%       'option' structure provided in arguments. Those that are not will
+%       be filled with the values from 'ModelBuildingDefault.m'
+%
+%       filter: structure of filter data (neuronIDs,H,P,emgguide,fillen,binsize)
+%       varargout = {PredData}
+%           [PredData]      : structure with EMG prediction data (fit)% 
+%
+%% Argument handling
    
     if ~isstruct(binnedData)
         binnedData = LoadDataStruct(binnedData);
@@ -28,62 +40,43 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         return;
     end    
     
-    % default values for prediction flags
-    PredEMG      = 1;
-    PredForce    = 0;
-    PredCursPos  = 0;
-    PredVeloc    = 0;
-    Use_Thresh   = 0;
-    Use_PrinComp = 0;
-    Use_EMGs     = 0;
-    Use_Ridge    = 0;
-    
-    %overwrite if specified in arguments
-    if nargin > 5
-        PredEMG = varargin{1};
-        if nargin > 6
-            PredForce = varargin{2};
-            if nargin > 7
-                PredCursPos = varargin{3};
-                if nargin > 8
-                    PredVeloc = varargin{4};
-                    if nargin > 9
-                        Use_Thresh =varargin{5};
-                        if nargin >10
-                            Use_EMGs = varargin{6};
-                            if nargin >11
-                                Use_Ridge = varargin{7};
-                                if nargin > 12
-                                    Use_PrinComp = true;
-                                    numPCs = varargin{8};
-                                end
-                            end
-                        end
-                    end
-                end
-            end
+    % default values for options:
+    default_options = ModelBuildingDefault();
+    % fill other options as provided
+    all_option_names = fieldnames(default_options);
+    for i=1:numel(all_option_names)
+        if ~isfield(options,all_option_names(i))
+            options.(all_option_names{i}) = default_options.(all_option_names{i});
         end
     end
     
-    if ~(PredEMG || PredForce || PredCursPos || PredVeloc)
+    if ~(options.PredEMGs || options.PredForce || options.PredCursPos || options.PredVeloc)
         disp('No Outputs are Selected, Model Building Cancelled');
+        filter = [];
+        varargout = {};
         return;
     end
+
+
+%% Inputs    
     
-    %%%Need to be able to find which column(s) is the requested input(s) and only
-    %%%use those to build the models.
-    %%
-    %%%Default is to use all the available inputs, otherwise ask for a list of
-    %%%the ones you want to use.
-    %%
-    %%%desiredInputs are the columns in the firing rate matrix that are to be
-    %%%used as inputs for the models  
-    if size(UseAllInputsOption,1)>1
-        NeuronIDs = UseAllInputsOption;
+    %Need to be able to find which column(s) is the requested input(s) and only
+    %use those to build the models.
+    %Default is to use all the available inputs, otherwise ask for a list of
+    %the ones you want to use.
+    %desiredInputs are the columns in the firing rate matrix that are to be
+    %used as inputs for the models
+    
+    if size(options.UseAllInputs,1)>1
+        NeuronIDs = options.UseAllInputs;
         desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
-    elseif UseAllInputsOption
+    elseif options.UseAllInputs
 %        disp('Using all available inputs')
-        neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
+        if ~isfield(binnedData,'neuronIDs')
+            neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
+        else
+            neuronIDs=binnedData.neuronIDs;
+        end
         desiredInputs=1:size(neuronIDs,1);
     else
         if ~exist('NeuronIDsFile','var')
@@ -104,23 +97,20 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         return;
     end
 
-
-%% Calculate the filter
-
-    numlags= round(fillen/binsize);%Designate the length of the filters/number of time lags
+    numlags= round(options.fillen/binsize);%Designate the length of the filters/number of time lags
                                    % round helps getting rid of floating point error but care should
                                    % be taken in making sure fillen is a multiple of binsize.
     
     numsides=1;    %For a one-sided or causal filter
 
     %Select decoder inputs:
-    if Use_EMGs
+    if options.Use_EMGs
         Inputs = binnedData.emgdatabin;
         input_type = 'EMG';
-    elseif Use_PrinComp
+    elseif options.numPCs
         Inputs = binnedData.spikeratedata(:,desiredInputs);
         [PCoeffs,Inputs] = princomp(zscore(Inputs));
-        Inputs = Inputs(:,1:numPCs);
+        Inputs = Inputs(:,1:options.numPCs);
         input_type = 'princomp';
     else
         Inputs = binnedData.spikeratedata(:,desiredInputs);
@@ -128,38 +118,36 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
     end
 
 %     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
-           
+
+    % add a vector of 'ones' to provide correction for offsets
+%     Inputs = [ones(size(Inputs,1),1) Inputs];           
+%% Outputs
+    
     Outputs = [];
     OutNames = [];
     
     %Decoder Outputs:
-    if PredEMG
+    if options.PredEMGs
        Outputs= [Outputs binnedData.emgdatabin];
        OutNames = [OutNames binnedData.emgguide];
     end
-    if PredForce
+    if options.PredForce
         Outputs = [Outputs binnedData.forcedatabin];
         OutNames = [OutNames; binnedData.forcelabels];
     end
-    if PredCursPos
+    if options.PredCursPos
         Outputs = [Outputs binnedData.cursorposbin];
         OutNames = [OutNames;  binnedData.cursorposlabels];
     end
-    if PredVeloc
+    if options.PredVeloc
         Outputs = [Outputs binnedData.velocbin];
         OutNames = [OutNames;  binnedData.veloclabels];
     end
-    numOutputs = size(Outputs,2);
         
-    InputMean = mean(Inputs);
-    OutputMean= mean(Outputs);
-
-    Inputs = detrend(Inputs,'constant');
-    Outputs= detrend(Outputs,'constant');
-
+%% Calculate Filter
 
     %The following calculates the linear filters (H) that relate the inputs and outputs
-    if Use_Ridge
+    if options.Use_Ridge
         % Specify condition desired
         condition_desired = 10^4;
         % Duplicate and shift
@@ -167,7 +155,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
         % Train ridge model
         H = train_ridge(Inputs',Outputs',condition_desired);
     else
-        [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+        [H,v,mcc]=filMIMO4(Inputs,Outputs,numlags,numsides,1);
 %     H = MIMOCE1(Inputs,Outputs,numlags);
 %     H = Inputs\Outputs;
 %     Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
@@ -176,27 +164,15 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
 %% Then, add non-linearity if applicable
 
     fs=1; numsides=1;
-
-    if Use_Ridge
-        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs',H,numsides,fs,Outputs');
-    else
-        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
-    end
-    
-% %     PredictedData = Inputs*H;
-% %     LP = 5; %10 Hz low pass...
-% %     PredictedData = FiltPred(PredictedData,1/binsize,LP);
-% %     ActualDataNew = Outputs;
-% %     spikeDataNew = binnedData.spikeratedata(numlags:end,:);
-    
-    P=[];    
-    T=[];
+    P=[]; T=[];
     patch = [];
-    
-    if PolynomialOrder
+
+    [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,H,numsides,fs,Outputs);
+        
+    if options.PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity
         for z=1:size(PredictedData,2)
-            if Use_Thresh            
+            if options.Use_Thresh
                 %Find Threshold
                 T_default = 1.25*std(PredictedData(:,z));
                 [T(z,1), T(z,2), patch(z)] = findThresh(ActualDataNew(:,z),PredictedData(:,z),T_default);
@@ -212,7 +188,7 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 Act_patches = mean(ActualDataNew(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
 
                 %Find Polynomial to Thresholded Data
-                [P(:,z)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+                [P(:,z)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], options.PolynomialOrder,'plot');
                 
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -227,33 +203,26 @@ function [filter, varargout]=BuildModel(binnedData, dataPath, fillen, UseAllInpu
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else
                 %Find and apply polynomial
-                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), options.PolynomialOrder);
             end
             PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
         end
     end
     
-%% Add back the Output mean
-for i=1:numOutputs
-    PredictedData(:,i) = PredictedData(:,i)+OutputMean(i);
-end
-    
 %% Outputs
 
     filter = struct('neuronIDs', neuronIDs,...
-                    'input_mean',InputMean,...
-                    'output_mean', OutputMean,...
                     'H', H,...
                     'P', P,...
                     'T',T,...
                     'patch',patch,...
                     'outnames', OutNames,...
-                    'fillen',fillen,...
+                    'fillen',options.fillen,...
                     'binsize', binsize,...
                     'input_type',input_type);
 
-    if Use_PrinComp
-        filter.PC = PCoeffs(:,1:numPCs);
+    if options.numPCs
+        filter.PC = PCoeffs(:,1:options.numPCs);
     end
     
     if nargout > 1

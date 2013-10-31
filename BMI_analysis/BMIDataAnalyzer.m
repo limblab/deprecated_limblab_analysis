@@ -20,9 +20,9 @@ function BMIDataAnalyzer()
 %           |               from Plexon
 %           - NeuronIDfiles\ to store files specifying
 %           |               units to use for model building
-%           - OLPreds\      for storing off-line EMG predictions
+%           - OLPreds\      for storing off-line  predictions
 %           |
-%           - RTPreds\      for storing real-time EMG predictions
+%           - RTPreds\      for storing real-time  predictions
 %           |
 %           - SavedFilters\ for storing the models
 %
@@ -58,18 +58,6 @@ function BMIDataAnalyzer()
 %   this way. I added WS button for each type of file, which will load
 %   the corresponding data into the Matlab's base workspace.
 %
-%   (4) Bugs:
-%       -Out of Memory error occurs when binning data files. In my
-%           case, I found that with 12 EMGS and >100 spike units, I can
-%           bin files up to 23 mins long, but Matlab crashes for longer
-%           files.
-%
-%       -Segmentation Fault error occurs from time to time, especially
-%           when binning data right after having converted a .nev file
-%           to BDF. Again, this is a problem with Matlab, not my code.
-%   
-%       + For both these error and for most others, restarting Matlab
-%       will solve the problems.
 %
 % $Id$
     
@@ -77,7 +65,7 @@ function BMIDataAnalyzer()
     
 %% Globals
     
-    dataPath = 'D:\Monkey\Spike\Data';
+    dataPath = 'Y:\';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
     Use_State =0;
     
@@ -109,8 +97,8 @@ function BMIDataAnalyzer()
     BDF_Panel = uipanel('Parent',UI,'Title','BDF Struct','Position', [0.015 PanelsPos(6) 0.97 .13]);
     Bin_Panel =uipanel('Parent',UI,'Title','BinnedData','Position',[0.015 PanelsPos(5) 0.97 .13]);
     Filt_Panel =uipanel('Parent',UI,'Title','Decoder','Position',[0.015 PanelsPos(4) 0.97 .13]);
-    OLPred_Panel =uipanel('Parent',UI,'Title','Offline EMG Predictions','Position',[0.015 PanelsPos(3) 0.97 .13]);
-    RTPred_Panel = uipanel('Parent',UI,'Title','Real-Time EMG Predictions','Position',[0.015 PanelsPos(2) 0.97 .13]);
+    OLPred_Panel =uipanel('Parent',UI,'Title','Offline  Predictions','Position',[0.015 PanelsPos(3) 0.97 .13]);
+    RTPred_Panel = uipanel('Parent',UI,'Title','Real-Time  Predictions','Position',[0.015 PanelsPos(2) 0.97 .13]);
     SC_Panel =uipanel('Parent',UI,'Title','Stimulator PW Commands','Position',[0.015 PanelsPos(1) 0.97 .13]);
     
 
@@ -126,10 +114,6 @@ function BMIDataAnalyzer()
     %Callbacks
     function CB_LoadButton_Callback(obj,event)
         [CB_FileName, PathName] = uigetfile( {'*.nev;*.plx'},'Open .nev or .plx Data File',dataPath );
-       
-
-%         [CB_FileName, PathName] = uigetfile( { [dataPath '\CerebusData\*.nev'];[dataPath '\PlexonData\*.plx']},...
-%                                                'Open .nev or .plx Data File' );
         
         if isequal(CB_FileName,0) || isequal(PathName,0)
           %  CB_FileName = 'User Cancelled File Loading';
@@ -353,15 +337,15 @@ function BMIDataAnalyzer()
             statemethods = mat2cell(binnedData.statemethods,ones(1,m),n);
         end
         
-        [fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc,Use_State,Use_Thresh,Use_EMGs,Use_Ridge] = BuildModelGUI(binsize,statemethods);
-        if isempty(fillen)
+        [DecoderOptions] = BuildModelGUI(binsize,statemethods);
+        if isempty(DecoderOptions)
             %user hit cancel
             disp('Cancelled');
             return;
         end
-        if Use_State
-            [filt_struct] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_State);
-        else [filt_struct, OLPredData] = BuildModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, Pred_EMG, Pred_Force, Pred_CursPos, Pred_Veloc, Use_Thresh, Use_EMGs, Use_Ridge);
+        if DecoderOptions.Use_SD
+            [filt_struct] = BuildSDModel(binnedData, DecoderOptions);
+        else [filt_struct, OLPredData] = BuildModel(binnedData, DecoderOptions);
         end
         disp('Done.');
         
@@ -372,7 +356,7 @@ function BMIDataAnalyzer()
         
         disp('Saving prediction model...');
         Filt_FileName = [Bin_FileName(1:end-4) '_Decoder.mat'];
-        if ~Use_State
+        if ~DecoderOptions.Use_SD
             filt_struct.FromData = Bin_FileName;
             [Filt_FileName, PathName] = saveDataStruct(filt_struct,dataPath,Filt_FileName,'filter');            
         else
@@ -391,14 +375,14 @@ function BMIDataAnalyzer()
             disp('User action cancelled');
         else
             Filt_FullFileName = fullfile(PathName,Filt_FileName);
-            if ~Use_State
+            if ~DecoderOptions.Use_SD
                 %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
                 save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
             else
                 %This assumes class methods={velthres,CompBayes,PeakBayes,CompLDA,PeakLDA};
                 ClassMethods = {'Vel Thresh','Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};
                 VelThresh = 1; CompBayes = 2; PeakBayes = 3; CompLDA = 4; PeakLDA = 5;
-                switch Use_State
+                switch DecoderOptions.Use_SD
                     case VelThresh
                         posture_classifier = binnedData.classifiers{1};
                         movement_classifier= binnedData.classifiers{1};
@@ -424,9 +408,9 @@ function BMIDataAnalyzer()
             Filt_FileLabel = uicontrol('Parent',Filt_Panel,'Style','text','String',['Model : ' Filt_FileName],'Units',...
                                       'normalized','Position',[0 .65 1 0.2]);
         end
-        if ~Use_State
+        if ~DecoderOptions.Use_SD
             %no Predictions are made at this stage when State dependent algorithm is built
-            disp('Saving Offline EMG Predictions...');
+            disp('Saving Offline  Predictions...');
             OLPred_FileName = [sprintf('OLPred_DATA-%s_Filter-%s', Bin_FileName(1:end-4),Filt_FileName(1:end-4)) '.mat'];
             [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
 
@@ -443,7 +427,7 @@ function BMIDataAnalyzer()
             end
         end
         clear binnedData OLPredData filt_struct posture_decoder movement_decoder general_decoder posture_classifier movement_classifier;
-        clear fillen UseAllInputsOption PolynomialOrder Pred_EMG Pred_Force Pred_CursPos Pred_Veloc Use_State;
+        clear DecoderOptions;
     end
 
     function Bin_ClassButton_Callback(obj,event)
@@ -484,13 +468,13 @@ function BMIDataAnalyzer()
             statemethods = mat2cell(binnedData.statemethods,ones(1,m),n);
         end
         
-        [fillen, UseAllInputsOption, PolynomialOrder, fold_length, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States] = mfxvalGUI(binsize, statemethods);        
-        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', fold_length));
+        [DecoderOptions] = mfxvalGUI(binsize, statemethods);        
+        disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', DecoderOptions.foldlength));
         plotflag = 1;
-        if Use_States
-            [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxvalSD(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
+        if DecoderOptions.Use_SD
+            [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxvalSD(binnedData, DecoderOptions);
         else
-            [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxval(binnedData, dataPath, fold_length, fillen, UseAllInputsOption, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
+            [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxval(binnedData, DecoderOptions);
         end
             
         %put the results in the base workspace for easy access
@@ -502,7 +486,7 @@ function BMIDataAnalyzer()
 
         disp('Done.');
 
-        disp('Saving Offline EMG Predictions...');
+        disp('Saving Offline Predictions...');
         OLPred_FileName = [sprintf('OLPred_mfxval_%s', Bin_FileName(1:end-4)) '.mat'];
         [OLPred_FileName, PathName] = saveDataStruct(OLPredData,dataPath,OLPred_FileName,'OLpred');
 
@@ -519,7 +503,7 @@ function BMIDataAnalyzer()
         end
 
         clear binnedData OLPredData;
-        clear fillen UseAllInputsOption PolynomialOrder fold_length PredEMG PredForce PredCursPos PredVeloc Use_States;
+        clear DecoderOptions;
         
     end
 

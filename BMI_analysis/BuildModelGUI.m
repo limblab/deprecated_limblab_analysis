@@ -76,31 +76,29 @@ function varargout = BuildModelGUI_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-    
-    lagtime      = get(handles.fillen_txtbx,'Value');
-    Inputs       = get(handles.Inputs_popup,'Value')-1;
-    Polyn_Order  = get(handles.Polyn_Order_txtbx,'Value');
-    Pred_EMG     = get(handles.EMG_cbx,'Value');
-    Pred_Force   = get(handles.Force_cbx,'Value');
-    Pred_CursPos = get(handles.CursPos_cbx,'Value');
-    Pred_Veloc   = get(handles.Veloc_cbx,'Value');
-    Use_State    = get(handles.States_popup,'Value')-1;
-    Use_Thresh   = get(handles.useThresh_cbx,'Value');
-    Use_Ridge    = get(handles.Ridge_popup,'Value')-1;
-    Use_EMGs     = get(handles.EMGsInputRadio,'Value');
+        
+    options = struct(...
+    'PredEMGs', get(handles.EMG_cbx,'Value'),...
+    'PredForce',get(handles.Force_cbx,'Value'),...
+    'PredCursPos',get(handles.CursPos_cbx,'Value'),...
+    'PredVeloc',get(handles.Veloc_cbx,'Value'),...
+    'fillen',get(handles.fillen_txtbx,'Value'),...
+    'UseAllInputs',get(handles.Inputs_popup,'Value')-1,...
+    'PolynomialOrder',get(handles.Polyn_Order_txtbx,'Value'),...
+    'numPCs',0,...
+    'Use_Thresh',get(handles.useThresh_cbx,'Value'),...
+    'Use_EMGs',get(handles.EMGsInputRadio,'Value'),...
+    'Use_Ridge',get(handles.Ridge_popup,'Value')-1,...
+    'Use_SD',get(handles.States_popup,'Value')-1 ...
+    );
     
 %     xval_flag = get(handles.mfxval_checkbox,'Value');
 %     foldlength = get(handles.Fold_length_txtbx,'Value');
-     
-%     varargout = {lagtime, Inputs, Polyn_Order, xval_flag, foldlength};
-%     varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh};
-    if handles.OK
-        varargout = {lagtime, Inputs, Polyn_Order,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc,Use_State,Use_Thresh,Use_EMGs,Use_Ridge};
-    else
-        for i = 1:nargout
-            varargout{i} = [];
-        end
-    end    
+
+    if ~handles.OK
+        options = [];
+    end
+    varargout = {options};
     close(handles.figure1);
 
 % --- Executes on button press in OK_Button.

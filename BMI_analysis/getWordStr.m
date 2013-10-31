@@ -36,6 +36,8 @@ OT_On = hex2dec('40'):hex2dec('4F'); % Also outer target On
             Word = 'CT_Hold';
         case w.OT_Hold
             Word = 'OT_Hold';
+        case w.Adapt
+            Word = 'Adapt';
         otherwise
             Word = 'Unknown Word';
     end

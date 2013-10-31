@@ -1,64 +1,51 @@
-function [R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder, varargin)
-%[R2, varargout] = mfxvalSD(binnedData, dataPath, foldlength, fillen, UseAllInputsOption, PolynomialOrder, varargin)
-%
-%       R2                  : returns a (numFold,numSignals) array of R2 values, and number of folds 
+function [R2, varargout] = mfxvalSD(binnedData, options)
+%       R2                  : returns a (numFold,numSignals) array of R2 values 
 %
 %       binnedData          : data structure to build model from
-%       dataPath            : string of the path of the data folder
-%       foldlength          : fold length in seconds (typically 60)
-%       fillen              : filter length in seconds (tipically 0.5)
-%       UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
-%       PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       varargin = {PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD, plotflag} : flags to include
-%       EMG, Force, CursPos, Velocity in the prediction model (0=no,1=yes) also options to use State-dependent dec.
+%       options             : structure with fields:
+%           dataPath            : string of the path of the data folder
+%           foldlength          : fold length in seconds (typically 60)
+%           fillen              : filter length in seconds (tipically 0.5)
+%           UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
+%           PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
+%           PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD,plotflag, EMGcascade:
+%                                 flags to include EMG, Force, CursPos, Velocity in the prediction model (0=no,1=yes)
+%                                 also options to use State-dependent or EMG cascade dec.
+%                                 Note on Use_SD      : The value of Use_SD should be set to correspond to the column index in binnedData.states
+%                                 that the user wants to use. In other words, its value determines the classification method
+%                                 to be used.
+%           EMGcascade          : will call BuildModel twice, to
+%                                 provide a neuron-to-emg decoder followed 
+%                                 by an emg-to-cursorposition decoder
+%           plotflag            : plot predictions after xval
+%
+%       Note on options: not all the fields have to be present in the
+%       'option' structure provided in arguments. Those that are not will
+%       be filled with the values from 'ModelBuildingDefault.m'
+%
 %       Note on Use_SD      : The value of Use_SD should be set to correspond to the column index in binnedData.states
 %                             that the user wants to use. In other words, its value determines the classification method
 %                             to be used.
+%
+%       varargout = {vaf, mse, AllPredData, binnedData};
 
+%% Argument Options
 if ~isstruct(binnedData)
     binnedData = LoadDataStruct(binnedData, 'binned');
 end
 
-% default value for prediction flags
-PredEMG = 1;
-PredForce = 0;
-PredCursPos = 0;
-PredVeloc = 0;
-plotflag = 0;
-numSig    = 0;
-
-%overwrite if specified in arguments
-if nargin > 6
-    PredEMG = varargin{1};
-    if PredEMG
-        numSig = numSig+size(binnedData.emgguide,1);
-    end
-    if nargin > 7
-        PredForce = varargin{2};
-        if PredForce
-            numSig = numSig+size(binnedData.forcelabels,1);
-        end
-        if nargin > 8
-            PredCursPos = varargin{3};
-            if PredCursPos
-                numSig = numSig+size(binnedData.cursorposlabels,1);
-            end
-            if nargin > 9
-                PredVeloc = varargin{4};
-                if PredVeloc
-                    numSig = numSig+size(binnedData.veloclabels,1);
-                end
-                if nargin > 10
-                    Use_SD= varargin{5};
-                    if nargin >12
-                        plotflag = varargin{6};
-                    end
-                end
-            end
-        end
+% default values for options:
+default_options = ModelBuildingDefault();
+% fill other options as provided
+all_option_names = fieldnames(default_options);
+for i=1:numel(all_option_names)
+    if ~isfield(options,all_option_names(i))
+        options.(all_option_names{i}) = default_options.(all_option_names{i});
     end
 end
+clear default_options all_option_names;
 
+%% 
 binsize = binnedData.timeframe(2)-binnedData.timeframe(1);
 
 if mod(round(foldlength*1000), round(binsize*1000)) %all this rounding because of floating point errors

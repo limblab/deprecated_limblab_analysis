@@ -1,73 +1,52 @@
-function [Models] = BuildSDModel(binnedData, dataPath, fillen, UseAllInputsOption, PolynomialOrder, varargin)
-% Outputs:
+function [Models] = BuildSDModel(binnedData, options)
+% argout
 %       1.Models                : a structure (or a cell array of structures) containing the computed model(s)
 %                               (neuronIDs,H,P,emgguide,fillen,binsize,etc.
-% Inputs:
-%       1.binnedData          : data structure to build model from
-%       2.fillen              : Filter length, in seconds
-%       3.dataPath            : string of the path of the data folder
-%       4.UseAllInputsOption  : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
-%       5.PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%       6-11 varargin :
-%          6.PredEMG, 7.PredForce,8.PredCursPos,9.PredVeloc
-%                         : flags to include EMG, Force, Cursor Position
-%                           and Thresholding in the prediction model (0=no,1=yes).
-%          10.Use_State   : if non-zero, the function will return as many models as there are
-%                           different classification in binnedData.states(:,Use_State). Use_State
-%                           is both a flag to enable multiple decoders and an index 
-%                           to select the classification method.
-%          11. numPCs     : if non-zero, it uses N = numPCs principal components as inputs instead of
-%                           the spike rate of all the units
+% Argin
+%        options             : structure with fields:
+%           fillen              : filter length in seconds (tipically 0.5)
+%           UseAllInputs        : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
+%           PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
+%           PredEMG, PredForce, PredCursPos, PredVeloc, numPCs :
+%                               flags to include EMG, Force, Cursor Position
+%                               and Velocity in the prediction model
+%                               (0=no,1=yes), if numPCs is present, will
+%                               use numPCs components as inputs instead of
+%                               spikeratedata
+%           Use_Thresh,Use_EMGs,Use_Ridge:
+%                               options to fit only data above a certain
+%                               threshold, use EMGs as inputs instead of
+%                               spikes, or use a ridge regression to fit model
+%           plotflag            : plot predictions after xval
 %
+%       Note on options: not every possible fields have to be present in
+%       the option structure
+%       
+%% Argument handling
+   
+    if ~isstruct(binnedData)
+        binnedData = LoadDataStruct(binnedData);
+    end
 
-if ~isstruct(binnedData)
-    binnedData = LoadDataStruct(binnedData);
-end
-
-binsize = double(binnedData.timeframe(2)-binnedData.timeframe(1));
-
-if nargout > 2
-    disp('Wrong number of output arguments');
-    return;
-end    
-
-% default values for prediction flags
-PredEMG      = 1;
-PredForce    = 0;
-PredCursPos  = 0;
-PredVeloc    = 0;
-Use_State    = 0;
-numPCs       = 0;
-if isfield(binnedData,'PC')
-    PCoeffs = binnedData.PC;
-else
-    PCoeffs      = [];
-end
-
-%overwrite if specified in arguments
-if nargin > 5
-    PredEMG = varargin{1};
-    if nargin > 6
-        PredForce = varargin{2};
-        if nargin > 7
-            PredCursPos = varargin{3};
-            if nargin > 8
-                PredVeloc = varargin{4};
-                if nargin > 9
-                    Use_State = varargin{5};
-                    if nargin > 10
-                        numPCs = varargin{6};
-                    end
-                end
-            end
+    binsize = double(binnedData.timeframe(2)-binnedData.timeframe(1));
+    
+    % default values for options:
+    default_options = ModelBuildingDefault();
+    % fill other options as provided
+    all_option_names = fieldnames(default_options);
+    for i=1:numel(all_option_names)
+        if ~isfield(options,all_option_names(i))
+            options.(all_option_names{i}) = default_options.(all_option_names{i});
         end
     end
-end
+    
+    if ~(options.PredEMGs || options.PredForce || options.PredCursPos || options.PredVeloc)
+        disp('No Outputs are Selected, Model Building Cancelled');
+        filter = [];
+        varargout = {};
+        return;
+    end
 
-if ~(PredEMG || PredForce || PredCursPos || PredVeloc)
-    disp('No Outputs are Selected, Model Building Cancelled');
-    return;
-end
 
 %%  Inputs
 %%%Need to be able to find which column(s) is the requested input(s) and only
@@ -78,10 +57,10 @@ end
 %%
 %%%desiredInputs are the columns in the firing rate matrix that are to be
 %%%used as inputs for the models  
-if size(UseAllInputsOption,1)>1
-    NeuronIDs = UseAllInputsOption;
+if size(options.UseAllInputs,1)>1
+    NeuronIDs = options.UseAllInputs;
     desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
-elseif UseAllInputsOption
+elseif options.UseAllInputs
 %        disp('Using all available inputs')
     neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
     desiredInputs=1:size(neuronIDs,1);
@@ -103,7 +82,7 @@ end
 
 %% Setup Inputs/Outputs
 
-numlags= round(fillen/binsize); %%%Designate the length of the filters/number of time lags
+numlags= round(options.fillen/binsize); %%%Designate the length of the filters/number of time lags
     % round helps getting rid of floating point error but care should
     % be taken in making sure fillen is a multiple of binsize.
 numsides=1;     %%%For a one-sided or causal filter
@@ -115,28 +94,30 @@ numlags = 1;
 %Uncomment next line to use EMG as inputs for predictions
 %     Inputs = binnedData.emgdatabin;
 
-if numPCs > 0
-%         [PCoeffs,Inputs] = princomp(zscore(Inputs));
-%         Inputs = Inputs(:,1:numPCs);
-    Inputs = Inputs*binnedData.PC(:,1:numPCs);
+if options.numPCs > 0
+    [PCoeffs,Inputs] = princomp(zscore(Inputs));
+    Inputs = Inputs(:,1:numPCs);
+    Inputs = Inputs*binnedData.PC(:,1:options.numPCs);
+else
+    PCoeffs = [];
 end
 
 Outputs = [];
 OutNames = [];
 
-if PredEMG
+if options.PredEMGs
     Outputs= [Outputs binnedData.emgdatabin];
     OutNames = [OutNames binnedData.emgguide];
 end
-if PredForce
+if options.PredForce
     Outputs = [Outputs binnedData.forcedatabin];
     OutNames = [OutNames; binnedData.forcelabels];
 end
-if PredCursPos
+if options.PredCursPos
     Outputs = [Outputs binnedData.cursorposbin];
     OutNames = [OutNames;  binnedData.cursorposlabels];
 end
-if PredVeloc
+if options.PredVeloc
     Outputs = [Outputs binnedData.velocbin];
     OutNames = [OutNames;  binnedData.veloclabels];
 end    
@@ -146,30 +127,30 @@ end
 
 % Add non-linearity if applicable    
 [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,1,Outputs);
-if PolynomialOrder
+if options.PolynomialOrder
     numouts = size(PredictedData,2);
-    P = zeros(PolynomialOrder+1,numouts);
+    P = zeros(options.PolynomialOrder+1,numouts);
     %%%Find a Wiener Cascade Nonlinearity
     for z=1:size(PredictedData,2)
         %Find and apply polynomial
-        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), options.PolynomialOrder);
         PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
     end
 else
     P=[];
 end
 
-general_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+general_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
 Models{1} = general_decoder;
 
 %% Now calculate a model for each State:
-if Use_State
-    numStates = 1+range(binnedData.states(:,Use_State));
+if options.Use_SD
+    numStates = 1+range(binnedData.states(:,options.Use_SD));
     for state = 1:numStates
 
 %         Ins = DS_spikes(state-1==binnedData.states(:,state),:);
-        Ins = Inputs (state-1==binnedData.states(:,Use_State),:);
-        Outs= Outputs(state-1==binnedData.states(:,Use_State),:);
+        Ins = Inputs (state-1==binnedData.states(:,options.Use_SD),:);
+        Outs= Outputs(state-1==binnedData.states(:,options.Use_SD),:);
 
         if isempty(Ins) || isempty(Outs)
             continue;
@@ -180,19 +161,19 @@ if Use_State
         %     H = Ins\Outs;
         %     toc;
 
-        [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);    
+        [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);
 
         %% Add non-linearity if applicable    
         [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Ins,H,numsides,1,Outs);
     %     PredictedData = Ins*H;
     %     ActualDataNew = Outs;
-        if PolynomialOrder
+        if options.PolynomialOrder
             numouts = size(PredictedData,2);
-            P = zeros(PolynomialOrder+1,numouts);
+            P = zeros(options.PolynomialOrder+1,numouts);
             %%%Find a Wiener Cascade Nonlinearity
             for z=1:size(PredictedData,2)
                 %Find and apply polynomial
-                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), PolynomialOrder);
+                [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), options.PolynomialOrder);
                 PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
             end
         else
@@ -200,10 +181,10 @@ if Use_State
         end
         
         if state == 1
-            posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+            posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
             Models{2} = posture_decoder;
         elseif state == 2
-            movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+            movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
             Models{3} = movement_decoder;
         end
     end

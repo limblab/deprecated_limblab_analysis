@@ -24,6 +24,7 @@ w.Mvmt_Onset = hex2dec('80');
 w.Pickup = hex2dec('90');
 w.CT_Hold= hex2dec('A0');
 w.OT_Hold= hex2dec('A1');
+w.Adapt  = hex2dec('B0');
 
 % end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
 w.IsEndWord = @endwrd;

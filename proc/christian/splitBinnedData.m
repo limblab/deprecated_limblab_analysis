@@ -1,65 +1,126 @@
-function [trainData,testData] = splitBinnedData(binnedData,splitTime)
+function [trainData,testData] = splitBinnedData(binnedData,testStartTime,testEndTime)
 
-    trainData = binnedData;
-    testData  = binnedData;
+trainBins = binnedData.timeframe < testStartTime | binnedData.timeframe >  testEndTime;    
+testBins  = binnedData.timeframe >=testStartTime & binnedData.timeframe <= testEndTime;
+
+%% Meta
+if isfield(binnedData,'meta')
+    trainData.meta = binnedData.meta;
+    testData.meta  = binnedData.meta;
+end
     
-    binsize = round(1000*(binnedData.timeframe(2)-binnedData.timeframe(1)))/1000;
-    splitBin  = round(splitTime/binsize);
-
 %% Timeframes
-    
-    trainData.timeframe = binnedData.timeframe(1:splitBin);
-    testData.timeframe  = binnedData.timeframe(splitBin+1:end);
-
+trainData.timeframe= binnedData.timeframe(trainBins,:);    
+testData.timeframe = binnedData.timeframe(testBins,:);
 
 %% EMGs
-
-    trainData.emgdatabin = binnedData.emgdatabin(1:splitBin,:);
-    testData.emgdatabin  = binnedData.emgdatabin(splitBin+1:end,:);
-    
+if isfield(binnedData,'emgdatabin')
+    if ~isempty(binnedData.emgdatabin)
+        trainData.emgdatabin= binnedData.emgdatabin(trainBins,:);
+        testData.emgdatabin = binnedData.emgdatabin(testBins,:);
+    end    
+end
+if isfield(binnedData,'emgguide')
+    trainData.emgguide = binnedData.emgguide;
+    testData.emgguide  = binnedData.emgguide;
+end
 %% Spikes
-
-    trainData.spikeratedata = binnedData.spikeratedata(1:splitBin,:);
-    testData.spikeratedata  = binnedData.spikeratedata(splitBin+1:end,:);
-    
+if isfield(binnedData,'spikeratedata')
+    if ~isempty(binnedData.spikeratedata)
+        trainData.spikeratedata = binnedData.spikeratedata(trainBins,:);
+        testData.spikeratedata  = binnedData.spikeratedata(testBins,:);    
+    end
+end
+if isfield(binnedData,'spikeguide')
+    trainData.spikeguide = binnedData.spikeguide;
+    testData.spikeguide  = binnedData.spikeguide;
+end
 %% Force
-
-    trainData.forcedatabin = binnedData.forcedatabin(1:splitBin,:);
-    testData.forcedatabin  = binnedData.forcedatabin(splitBin+1:end,:);
-
+if isfield(binnedData,'forcedatabin')
+    if ~isempty(binnedData.forcedatabin)
+        trainData.forcedatabin = binnedData.forcedatabin(trainBins,:);
+        testData.forcedatabin  = binnedData.forcedatabin(testBins,:);
+    end
+end
+if isfield(binnedData,'forcelabels')
+    trainData.forcelabels = binnedData.forcelabels;
+    testData.forcelabels  = binnedData.forcelabels;
+end
 %% Pos
-
-    trainData.cursorposbin = binnedData.cursorposbin(1:splitBin,:);
-    testData.cursorposbin  = binnedData.cursorposbin(splitBin+1:end,:);
-
+if isfield(binnedData,'cursorposbin')
+    if ~isempty(binnedData.cursorposbin)
+        trainData.cursorposbin = binnedData.cursorposbin(trainBins,:);
+        testData.cursorposbin  = binnedData.cursorposbin(testBins,:);
+    end
+end
+if isfield(binnedData,'cursorposlabels')
+    trainData.cursorposlabels = binnedData.cursorposlabels;
+    testData.cursorposlabels  = binnedData.cursorposlabels;
+end
 %% Vel
-
-    trainData.velocbin = binnedData.velocbin(1:splitBin,:);
-    testData.velocbin  = binnedData.velocbin(splitBin+1:end,:);
+if isfield(binnedData,'velocbin')
+    if ~isempty(binnedData.velocbin)
+        trainData.velocbin = binnedData.velocbin(trainBins,:);
+        testData.velocbin  = binnedData.velocbin(testBins,:);
+    end
+end
+if isfield(binnedData,'veloclabels')
+    trainData.veloclabels = binnedData.veloclabels;
+    testData.veloclabels  = binnedData.veloclabels;
+end
+%% Acceleration
+if isfield(binnedData,'accelbin')
+    if ~isempty(binnedData.accelbin)
+        trainData.accelbin = binnedData.accelbin(trainBins,:);
+        testData.accelbin  = binnedData.accelbin(testBins,:);
+    end
+end
+if isfield(binnedData,'acclabels')
+    trainData.acclabels = binnedData.acclabels;
+    testData.acclabels  = binnedData.acclabels;
+end
 
 %% States
 
 
 
 %% Trialtable
-
-    trainData.trialtable = binnedData.trialtable(binnedData.trialtable(:,1)<=splitTime,:);
-    testData.trialtable  = binnedData.trialtable(binnedData.trialtable(:,1)>splitTime,:);
+if isfield(binnedData,'trialtable')
+    if ~isempty(binnedData.trialtable)
+        trainData.trialtable = binnedData.trialtable(binnedData.trialtable(:,1)<testStartTime ...
+                                                  | binnedData.trialtable(:,1)>testEndTime,:);
+        testData.trialtable  = binnedData.trialtable(binnedData.trialtable(:,1)>=testStartTime ...
+                                                  & binnedData.trialtable(:,1)<=testEndTime,:);
+    end
+end
+if isfield(binnedData,'trialtablelabels')
+    trainData.trialtablelabels = binnedData.trialtablelabels;
+    testData.trialtablelabels  = binnedData.trialtablelabels;
+end
 
 %% Words
-    trainData.words = binnedData.words(binnedData.words(:,1)<=splitTime,:);
-    testData.words  = binnedData.words(binnedData.words(:,1)>splitTime,:);
-
-    
+if isfield(binnedData,'words')
+    if ~isempty(binnedData.words)
+        trainData.words = binnedData.words(binnedData.words(:,1)<testStartTime ...
+                                                  | binnedData.words(:,1)>testEndTime,:);
+        testData.words  = binnedData.words(binnedData.words(:,1)>=testStartTime ...
+                                                  & binnedData.words(:,1)<=testEndTime,:);
+    end
+end
 
 %% Targets
-
-   trainData.targets.corners = binnedData.targets.corners(binnedData.targets.corners(:,1)<=splitTime,:);
-   testData.targets.corners  = binnedData.targets.corners(binnedData.targets.corners(:,1)>splitTime,:);
-
-   trainData.targets.rotation = binnedData.targets.rotation(binnedData.targets.rotation(:,1)<=splitTime,:);
-   testData.targets.rotation  = binnedData.targets.rotation(binnedData.targets.rotation(:,1)>splitTime,:);
-
+if isfield(binnedData,'targets')
+    if ~isempty(binnedData.targets)
+       trainData.targets.corners = binnedData.targets.corners(binnedData.targets.corners(:,1)<testStartTime ...
+                                                           | binnedData.targets.corners(:,1)>testEndTime,:);   
+       testData.targets.corners  = binnedData.targets.corners(binnedData.targets.corners(:,1)>=testStartTime ...
+                                                           & binnedData.targets.corners(:,1)<=testEndTime,:);
+       trainData.targets.rotation = binnedData.targets.rotation(binnedData.targets.rotation(:,1)<testStartTime ...
+                                                           | binnedData.targets.rotation(:,1)>testEndTime,:);   
+       testData.targets.rotation  = binnedData.targets.rotation(binnedData.targets.rotation(:,1)>=testStartTime ...
+                                                           & binnedData.targets.rotation(:,1)<=testEndTime,:);
+    end
+end
 
 %% Stim
 end

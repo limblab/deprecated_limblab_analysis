@@ -343,7 +343,7 @@ acclabels(3,1:8)= 'acc_magn';
 if ~isfield(datastruct, 'units')
     disp(sprintf('No spike data is found in structure " %s " ',datastructname));
     spikeratedata = [];
-    spikeguide = [];
+    neuronIDs = [];
 else
 
     %decide which signals to use: minimum of "minFiringRate spikes/sec on average:
@@ -391,12 +391,15 @@ else
     else   
 
         % Pre-allocate accordingly!
-        spikeguide= char(zeros(numusableunits,length('ee00u0'))); %preallocate space for spikeguide
+        spikeguide= char(zeros(numusableunits,length('ee000u0'))); %preallocate space for spikeguide
+        neuronIDs = zeros(numusableunits,2);
         spikeratedata=zeros(numberbins,numusableunits);
 
+        
         % Create the spikeguide with electrode names
         for i=1:numusableunits
-            spikeguide(i,:)=['ee' sprintf('%02d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
+            spikeguide(i,:)=['ee' sprintf('%03d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
+            neuronIDs = datastruct.units(units_to_use(i)).id;
         end
 
        if TriKernel == 0; 
@@ -550,6 +553,7 @@ binnedData = struct('timeframe',timeframe,...
                     'forcelabels',forcelabels,...
                     'forcedatabin',forcedatabin,...
                     'spikeguide',spikeguide,...
+                    'neuronIDs',neuronIDs,...
                     'spikeratedata',spikeratedata,...
                     'cursorposlabels',cursposlabels,...
                     'cursorposbin',cursorposbin,...
