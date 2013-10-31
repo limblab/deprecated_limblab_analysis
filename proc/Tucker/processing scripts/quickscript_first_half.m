@@ -241,7 +241,7 @@ title('Psychometric polar 20uA inverted compressed')
 
  %save the executing script to the same folder as the figures and data
 
-fname=strcat(mfilename,'.m');
+fname=strcat(mfilename('fullpath'),'.m');
 [SUCCESS,MESSAGE,MESSAGEID] = copyfile(fname,folderpath);
 if SUCCESS
     disp(strcat('successfully copied the running script to the processed data folder'))

@@ -71,7 +71,7 @@ if (include_unsorted && length(u1)~=length(moddepth))
     u1=u1(~u1(:,2),:);
 end
 %set_outputs
-outdata=[u1(:,1),pds,moddepth,errs];
+outdata=[double(u1(:,1)),pds,moddepth,errs];
 
 %% identify channels with excessive modulation depth
 %% identify channels with excessive modulation depth

@@ -42,7 +42,7 @@ disp('If actual db version does not match assumed version, fix the trial table c
 
 
 
-tt = zeros(num_trials-1, 38);
+tt = zeros(num_trials-1, 35);
 skip_counter=0;
 for trial = 1:num_trials-1
     
@@ -150,7 +150,7 @@ for trial = 1:num_trials-1
         target_floor=bytes2float(db(15:18));
         target_ceiling=bytes2float(db(19:22));
         target_incr=bytes2float(db(23:26));
-        bump_mag=bytes2float(db(26:30));
+        bump_mag=bytes2float(db(27:30));
         bump_dir=bytes2float(db(31:34));
         bump_duration=bytes2float(db(35:38));
         bump_ramp=bytes2float(db(39:42));
@@ -171,11 +171,10 @@ for trial = 1:num_trials-1
         temprow =  [     numbytes,                  db_version,                 C,                          O,                          B, ...%5
                          behavior_version_maj,      behavior_version_minor,     behavior_version_micro1,    behavior_version_micro2,    target_angle,...%5
                          random_target,             target_floor,               target_ceiling,             target_incr,                bump_mag,...
-                         bump_dir,                  bump_duration,              bump_ramp,                  bump_floor,                 bump_ceiling,...
-                         bump_incr,                 stim_flag,                  stim_prob,                  target_radius,              target_size,...
-                         intertrial,                penalty_time,               bump_hold_time,             center_hold_time,           bump_delay,...
-                         hidden_cursor,             hidden_cursor_radius,       trial_result,               start_time,                 bump_time,...
-                         go_cue,                    end_time,                   stim_code];
+                         bump_dir,                  bump_duration,              bump_ramp,                  stim_flag,                  stim_prob,...
+                         target_radius,              target_size,               intertrial,                 penalty_time,               bump_hold_time,...
+                         center_hold_time,           bump_delay,                hidden_cursor,             hidden_cursor_radius,       trial_result,...
+                         start_time,                 bump_time,                 go_cue,                    end_time,                   stim_code];
         if ~isempty(find(abs(temprow)>100000000000))
             skip_counter=skip_counter+1;
             continue
@@ -189,9 +188,6 @@ disp(strcat('Found ',num2str(skip_counter),' bad databursts. Trials associated w
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %build hdr object with associated column numbers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
 
 hdr.numbytes                =   1;%     bytes transmitted
 hdr.db_version              =   2;%     db_version=db(2);%2
@@ -210,27 +206,22 @@ hdr.tgt_incr                =   14;%    target incriment(deg)
 hdr.bump_mag                =   15;%    bump_mag=bytes2float(db(32:35));%18
 hdr.bump_angle              =   16;%    bump_dir=bytes2float(db(19:22));%14
 hdr.bump_dur                =   17;%    bump_dur=bytes2float(db(36:39));%19
-hdr.bump_duration           =   18;
-hdr.bump_ramp               =   19;%    bump_ramp=bytes2float(db(40:43));%20
-hdr.bump_floor              =   20;%    bump_floor=bytes2float(db(45:48));%22
-hdr.bump_ceil               =   21;%    bump_ceil=bytes2float(db(49:52));%23
-hdr.bump_incr               =   22;
-hdr.stim_trial              =   23;%    stim_trial_flag=db(57);%25
-hdr.stim_freq               =   23;%    stim_freq=bytes2float(db(63:66));%28
-hdr.tgt_radius              =   24;%    tgt_radius=bytes2float(db(68:71));%30
-hdr.tgt_size                =   25;%    tgt_size=bytes2float(db(72:75));%31
-hdr.intertrial_time         =   26;%    intertrial_time=bytes2float(db(76:79));
-hdr.penalty_time            =   27;%    penalty_time=bytes2float(db(80:83));
-hdr.bump_hold_time          =   28;%    bump_hold_time=bytes2float(db(84:87));
-hdr.ct_hold_time            =   29;%    ct_hold_time=bytes2float(db(88:71));
-hdr.bump_delay              =   30;%    bump_delay_time=bytes2float(db(82:85));
-hdr.hidden_cursor           =   31;
-hdr.hidden_cursor_radius    =   32;
-hdr.trial_result            =   33;%    result of the trial
-hdr.start_time              =   34;%    start time
-hdr.bump_time               =   35;%    bump time
-hdr.go_cue                  =   36;%    time of the go cue
-hdr.end_time                =   37;%    time the trial ended
-hdr.stim_code               =   38;%    the code for the stimulus with the base stim word removed
-
+hdr.bump_ramp               =   18;%    bump_ramp=bytes2float(db(40:43));%20
+hdr.stim_trial              =   19;%    stim_trial_flag=db(57);%25
+hdr.stim_freq               =   20;%    stim_freq=bytes2float(db(63:66));%28
+hdr.tgt_radius              =   21;%    tgt_radius=bytes2float(db(68:71));%30
+hdr.tgt_size                =   22;%    tgt_size=bytes2float(db(72:75));%31
+hdr.intertrial_time         =   23;%    intertrial_time=bytes2float(db(76:79));
+hdr.penalty_time            =   24;%    penalty_time=bytes2float(db(80:83));
+hdr.bump_hold_time          =   25;%    bump_hold_time=bytes2float(db(84:87));
+hdr.ct_hold_time            =   26;%    ct_hold_time=bytes2float(db(88:71));
+hdr.bump_delay              =   27;%    bump_delay_time=bytes2float(db(82:85));
+hdr.hidden_cursor           =   28;
+hdr.hidden_cursor_radius    =   29;
+hdr.trial_result            =   30;%    result of the trial
+hdr.start_time              =   31;%    start time
+hdr.bump_time               =   32;%    bump time
+hdr.go_cue                  =   33;%    time of the go cue
+hdr.end_time                =   34;%    time the trial ended
+hdr.stim_code               =   35;%    the code for the stimulus with the base stim word removed
 

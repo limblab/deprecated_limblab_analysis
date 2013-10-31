@@ -2,14 +2,14 @@
 close all
 
 % %set the mount drive to scan and convert
-folderpath_base='E:\processing\CO_bump_training\';
-matchstring='Kramer_09252013_CObump_tucker_no_stim_no_spike_001';
+folderpath_base='E:\processing\CO_bump\CO_bump\21deg stim\';
+matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
 file_list=autoconvert_nev_to_bdf(folderpath_base,matchstring);
 % autoconvert_nev_to_bdf(folderpath,matchstring2)
 disp('concatenating bdfs into single structure')
-bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,0);
+bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,1,0);
 %load('E:\processing\210degstim2\Kramer_BC_03182013_tucker_4ch_stim_001.mat')
 
 [bdf.tt,bdf.tt_hdr]=CO_bump_trial_table(bdf);
@@ -34,22 +34,27 @@ if isfield(bdf,'units')
 end
 
 
-h=plot_move_paths_CO_bump(bdf);
-print('-dpdf',H,strcat(folderpath,'move_paths.pdf'))
-
 
 %make folder to save into:
-mkdir(folderpath_base,strcat('Psychometrics_',date));
-folderpath=strcat(folderpath_base,'Psychometrics_',date,'\');
+mkdir(folderpath_base,strcat('Move_paths_',date));
+folderpath=strcat(folderpath_base,'Move_paths_',date,'\');
 disp('saving new figures and files to:')
 disp(folderpath)
 fid=fopen(strcat(folderpath,'file_list.txt'),'w+');
 fprintf(fid,'%s',file_list);
 fclose(fid);
 
+
+H=plot_move_paths_CO_bump_split(bdf,'go','pos','center');
+set(H,'Position',[100 100 1200 1200])
+print('-dpdf',H,strcat(folderpath,'move_paths.pdf'))
+H=plot_mean_move_paths_CO_bump(bdf,'go','pos','center');
+set(H,'Position',[100 100 1200 1200])
+print('-dpdf',H,strcat(folderpath,'mean_move_paths.pdf'))
+
  %save the executing script to the same folder as the figures and data
 
-fname=strcat(mfilename,'.m');
+fname=strcat(mfilename('fullpath'),'.m')
 [SUCCESS,MESSAGE,MESSAGEID] = copyfile(fname,folderpath);
 if SUCCESS
     disp(strcat('successfully copied the running script to the processed data folder'))

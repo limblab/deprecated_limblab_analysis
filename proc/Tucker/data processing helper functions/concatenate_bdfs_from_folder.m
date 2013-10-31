@@ -1,4 +1,4 @@
-function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring,do_units,do_kin)
+function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring,do_units,do_kin,do_force)
     %concatinates all the bdf's in the specified folder path into a single
     %object.  All bdf's are assumed to have the same channel arrangement,
     %and are concatinated in alphabetical order by filename. This function
@@ -23,7 +23,8 @@ function full_bdf=concatenate_bdfs_from_folder(folderpath,matchstring,do_units,d
                 else
                     %if our new bdf already has something in it, append to
                     %the end of the new bdf
-                    full_bdf=concatenate_bdfs(full_bdf,bdf,30,do_units,do_kin);
+                    full_bdf=concatenate_bdfs(  full_bdf,   bdf,    30,     do_units,   do_kin, do_force);
+	
                     
                 end
                 

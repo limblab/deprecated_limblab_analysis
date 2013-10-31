@@ -3,14 +3,14 @@
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\post_DARPA\bump_task\210deg stim\';
+folderpath_base='E:\processing\CO_bump\BD efficacy checking\21deg\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
 file_list=autoconvert_nev_to_bdf(folderpath_base,matchstring);
 % autoconvert_nev_to_bdf(folderpath,matchstring2)
 disp('concatenating bdfs into single structure')
-bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,0);
+bdf=concatenate_bdfs_from_folder(folderpath_base,matchstring,0,0,0);
 %load('E:\processing\210degstim2\Kramer_BC_03182013_tucker_4ch_stim_001.mat')
 
 make_tdf
@@ -113,7 +113,7 @@ title('Psychometric polar 20uA inverted compressed')
 
  %save the executing script to the same folder as the figures and data
 
-fname=strcat(mfilename,'.m');
+fname=strcat(mfilename('fullpath'),'.m');
 [SUCCESS,MESSAGE,MESSAGEID] = copyfile(fname,folderpath);
 if SUCCESS
     disp(strcat('successfully copied the running script to the processed data folder'))

@@ -1,4 +1,4 @@
-function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_error)
+function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_1] = bc_psychometric_curve_stim3_cosplot_compressed(tt,tt_hdr,stimcode,invert_dir,plot_error,invert_error)
     %receives a trial table and a header object for the trial table. The
     %header object must include the fields bump_angle, trial_result and
     %stim_trial
@@ -20,17 +20,24 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
 
     % exclude aborts
     tt = tt( ( tt(:,tt_hdr.trial_result) ~= 1 ) ,  :); 
-
+    %map the 180deg-360deg directions to the 0-180 hemispace
+    for i=1:length(tt(:,1))
+        if(tt(i,tt_hdr.bump_angle)>180)
+            tt(i,tt_hdr.bump_angle)=360-tt(i,tt_hdr.bump_angle);
+        end
+    end
 
     %get only stim trials
     tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
-
     
     
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'))
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
     %get a list of the bump directions durign stim
     dirs_stim = sort(unique(tt_stim(:,tt_hdr.bump_angle)));
+    
+
+    
     disp(strcat('Found ',num2str(length(dirs_stim)),' bump directions during stim'))
     
     %generate a vector containing a 1 if the reach was leftward along the
@@ -41,6 +48,10 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
         tt_stim(:,tt_hdr.trial_result)==2 & -90 <= tt_stim(:,tt_hdr.bump_angle) & tt_stim(:,tt_hdr.bump_angle) <= 90 |...
         tt_stim(:,tt_hdr.trial_result)==2 & 270 <= tt_stim(:,tt_hdr.bump_angle) & tt_stim(:,tt_hdr.bump_angle) <= 360  );
 
+    if(invert_dir)
+         is_left_reach_stim= abs(is_left_reach_stim-1);
+    end
+    
     %get_stim reaching rates
     proportion_stim = zeros(size(dirs_stim));
     number_reaches_stim = zeros(size(dirs_stim));
@@ -52,38 +63,14 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
         number_reaches_stim(i) = length(reaches_stim);                                %total count of reaches to the specified direction
     end
 
-    %segregate the bump angles by hemispace relative to the target axis 
-    %(some trials have shown different biases in the upper and lower 
-    %hemispaces)
-    up_dirs_stim = dirs_stim(dirs_stim<=180);
-    down_dirs_stim = dirs_stim(dirs_stim>=180);
-    %re-map the angles so that the left and right bumps can plot along the
-    %same axis, and the curve fitting works properly
-    down_dirs_stim = 360-down_dirs_stim;
-    
-    
-    %split the reach counts to upper and lower hemispaces
-    %stim:
-    proportion_stim_upper = proportion_stim(dirs_stim<=180);
-    proportion_stim_lower = proportion_stim(dirs_stim>=180);
-    num_left_reaches_stim_upper = num_left_reaches_stim(dirs_stim<=180);
-    num_left_reaches_stim_lower = num_left_reaches_stim(dirs_stim>=180);
-    number_reaches_stim_upper = number_reaches_stim(dirs_stim<=180);
-    number_reaches_stim_lower = number_reaches_stim(dirs_stim>=180);
 
     
+    %set the angle interval on which the fit curves will be displayed
+    dd = 0:.01:180;
+           
+   g_stim = lsqcurvefit(@sigmoid,[0,1,90,.2],dirs_stim,proportion_stim);
+    reach_fit_stim = sigmoid(g_stim,dd);
 
-    
-    %recombine the hemispaces
-    %re-shift the directions in the lower hemispace
-    down_dirs_stim=360-down_dirs_stim;
-    
-    %dirs
-    dirs_stim=[up_dirs_stim;down_dirs_stim];
-    %proportion reaches
-    proportion_stim=[proportion_stim_upper;proportion_stim_lower];
-    %number of reaches
-    number_reaches_stim=[number_reaches_stim_upper;number_reaches_stim_lower];
     
     
     if(plot_error)
@@ -94,37 +81,39 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
             end
 
         end
-
+        for i=1:length(dd)
+            if (dd(i) > 90 && dd(i) < 270)
+                reach_fit_stim(i)=1-reach_fit_stim(i);
+            end
+            
+        end
         if invert_error %inverts all the errors
             proportion_stim=1-proportion_stim;
+            reach_fit_stim=1-reach_fit_stim;
         end
     end
     %plot the stim rate data points and the psychometric fit for the stim
     %trials
-
-    
-    H_2=figure; %cartesian plot
-    subplot(2,1,1),plot(dirs_stim,proportion_stim,'rx')
+    H_1=figure; %cartesian plot
+    dirs_stim=cos(dirs_stim*3.14159/180);
+    plot(dirs_stim,proportion_stim,'rx')
     hold on
+    dd=cos(dd*3.14159/180);
+    plot(dd,reach_fit_stim,'r')
 
-    subplot(2,1,2),plot(dirs_stim,number_reaches_stim,'rx')
-    hold on
-    
-    
     %display number of reach stats so the user can estimate the quality of
     %the fits
     disp(strcat('Mean reaches per direction under stim: ',num2str(mean(number_reaches_stim))))
     disp(strcat('Min reaches per direction under stim: ',num2str(min(number_reaches_stim))))
     
-    
 
-    
-    
     %get non stim trials
     tt_no_stim=tt(( tt(:,tt_hdr.stim_trial) ~= 1 ) ,  :);
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) ~= 1)),' stim trials'))
     
     dirs_no_stim = sort(unique(tt_no_stim(:,tt_hdr.bump_angle)));
+        %map the 180deg-360deg directions to the 0-180 hemispace
+    
     disp(strcat('Found ',num2str(length(dirs_no_stim)),' bump directions during no stim'))
     %generate a vector containing a 1 if the reach was leftward along the
     %target axis, and zero if the reach was rightward
@@ -134,11 +123,10 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
         tt_no_stim(:,tt_hdr.trial_result)==2 & -90 <= tt_no_stim(:,tt_hdr.bump_angle) & tt_no_stim(:,tt_hdr.bump_angle) <= 90 |...
         tt_no_stim(:,tt_hdr.trial_result)==2 & 270 <= tt_no_stim(:,tt_hdr.bump_angle) & tt_no_stim(:,tt_hdr.bump_angle) <= 360  );
     
-    up_dirs_no_stim = dirs_no_stim(dirs_no_stim<=180);
-    down_dirs_no_stim = dirs_no_stim(dirs_no_stim>=180);
-    %re-map the angles so that the left and right bumps can plot along the same axis
-    %right_dirs = right_dirs-180;%remapps the angles so that the left and right bumps can plot along the same axis
-    down_dirs_no_stim = 360-down_dirs_no_stim;
+    if(invert_dir)
+         is_left_reach_no_stim= abs(is_left_reach_no_stim-1);
+    end
+
     
     %get_no_stim reaching rates
     proportion_no_stim = zeros(size(dirs_no_stim));
@@ -150,30 +138,22 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
         proportion_no_stim(i) = sum(is_left_reach_no_stim(reaches_no_stim)) / length(reaches_no_stim);      %ratio of left reaches to total reaches at a specific direction
         number_reaches_no_stim(i) = length(reaches_no_stim);                                %total count of reaches to the specified direction
     end    
-    
-    %split the reach counts to upper and lower hemispaces
-    %no stim
-    proportion_no_stim_upper = proportion_no_stim(dirs_no_stim<=180);
-    proportion_no_stim_lower = proportion_no_stim(dirs_no_stim>=180);
-    num_left_reaches_no_stim_upper = num_left_reaches_no_stim(dirs_no_stim<=180);
-    num_left_reaches_no_stim_lower = num_left_reaches_no_stim(dirs_no_stim>=180);
-    number_reaches_no_stim_upper = number_reaches_no_stim(dirs_no_stim<=180);
-    number_reaches_no_stim_lower = number_reaches_no_stim(dirs_no_stim>=180);    
+  
     
     
-    %recombine the hemispaces
-    %re-shift the directions in the lower hemispace
-    down_dirs_no_stim=360-down_dirs_no_stim;
+    %set the angle interval on which the fit curves will be displayed
+    dd = 0:.01:180;
+    %get the parameters of the maximum likelyhood model of the psychometric
+    %curve for no-stim reaches in the upper hemispace (0-180deg bumps)
     
-    %dirs
-    dirs_no_stim=[up_dirs_no_stim;down_dirs_no_stim];
-    %proportion reaches
-    proportion_no_stim=[proportion_no_stim_upper;proportion_no_stim_lower];
+    g_no_stim = lsqcurvefit(@sigmoid,[0,1,90,.2],dirs_no_stim,proportion_no_stim);
+    reach_fit_no_stim = sigmoid(g_no_stim ,dd);
 
-    %number of reaches
-    number_reaches_no_stim=[number_reaches_no_stim_upper;number_reaches_no_stim_lower];
     
-    
+    %plot the stim rate data points and the psychometric fit for the stim
+    %trials
+    figure(H_1)
+
     if(plot_error)
         %invert the proportion of reaches in the 90-270deg space
         for i=1:length(dirs_no_stim)
@@ -182,27 +162,30 @@ function g = bc_psychometric_curve_stim(tt,tt_hdr,stimcode,plot_error,invert_err
             end
 
         end
-
+        for i=1:length(dd)
+            if (dd(i) > 90 && dd(i) < 270)
+                reach_fit_no_stim(i)=1-reach_fit_no_stim(i);
+            end
+            
+        end
         if invert_error %inverts all the errors
             proportion_no_stim=1-proportion_no_stim;
+            reach_fit_no_stim=1-reach_fit_no_stim;
         end
     end
     %plot the stim rate data points and the psychometric fit for the stim
     %trials
 
-    %fix the axes so that the psychometric and the reach counts use the
-    %same x axis
-    max_reaches=max(max(number_reaches_no_stim),max(number_reaches_stim));
-    axis([0,370,0,10*(floor(max_reaches/10)+1)])
-    figure(H_2); %cartesian plot
-    subplot(2,1,1),plot(dirs_no_stim,proportion_no_stim,'bo')
-    axis([0,370,-0.5,1.5])
-    subplot(2,1,2),plot(dirs_no_stim,number_reaches_no_stim,'bo')
-    %fix the axes so that the psychometric and the reach counts use the
-    %same x axis
-    axis([0,370,0,10*(floor(max_reaches/10)+1)])
-    disp(strcat('Mean reaches per direction without stim: ',num2str(mean(number_reaches_no_stim))))
-    disp(strcat('Min reaches per direction without stim: ',num2str(min(number_reaches_no_stim))))
+   % subplot(2,1,1),plot(dirs,ps,'ko')
+
+    figure(H_1) %cartesian plot
+    dirs_no_stim=cos(dirs_no_stim*3.14159/180);
+    plot(dirs_no_stim,proportion_no_stim,'bo')
+    hold on;
+    dd=cos(dd*3.14159/180);
+    plot(dd,reach_fit_no_stim,'b')
+
+    
 
 
 end

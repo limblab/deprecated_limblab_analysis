@@ -1,4 +1,4 @@
-function full_bdf=concatenate_bdfs(bdf1,bdf2,lag,do_units,do_kin)
+function full_bdf=concatenate_bdfs(bdf1,bdf2,lag,do_units,do_kin,do_force)
     %concatenates two bdf's into a single bdf. Ignores the raw fields.
     %Inserts a lag the specified amount between the last timestamp of the
     %first bdf and the first timestamp of the second bdf. the lag should be
@@ -58,7 +58,8 @@ function full_bdf=concatenate_bdfs(bdf1,bdf2,lag,do_units,do_kin)
         %acc
         bdf2.acc(:,1) = bdf2.acc(:,1) + shift_time;
         full_bdf.acc = [bdf1.acc ; bdf2.acc];
-
+    end
+    if(do_force)
         %force
         bdf2.force(:,1) = bdf2.force(:,1) + shift_time;
         full_bdf.force = [bdf1.force ; bdf2.force];

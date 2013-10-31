@@ -76,7 +76,7 @@ plot_center_choices(bdf.tt,bdf.tt_hdr,4)
  
   %save the executing script to the same folder as the figures and data
 
-fname=strcat(mfilename,'.m');
+fname=strcat(mfilename('fullpath'),'.m');
 [SUCCESS,MESSAGE,MESSAGEID] = copyfile(fname,folderpath_center);
 if SUCCESS
     disp(strcat('successfully copied the running script to the processed data folder'))

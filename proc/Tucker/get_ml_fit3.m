@@ -1,4 +1,4 @@
-function [g,CI]=get_ml_fit2(dirs,num_left_reaches,number_reaches)
+function [g,CI]=get_ml_fit3(dirs,num_left_reaches,number_reaches)
     %returns a maximum likelyhood fit for a psychometric curve to bump
     %choice data. 
     %Inputs are:
