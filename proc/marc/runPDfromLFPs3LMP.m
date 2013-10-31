@@ -3,46 +3,11 @@
 
 chinds=1:96;
 
-% 'Chewie_Spike_LFP_0919201100','Chewie_Spike_LFP_0926201100','Chewie_Spike_LFP_1024201100','Chewie_Spike_LFP_0106201200',...
-%     'Chewie_Spike_LFP_0117201200','Chewie_Spike_LFP_0130201200','Chewie_Spike_LFP_0215201200','Chewie_Spike_LFP_0217201200'}
-% numlist={'2','4','7','9','8','2','3','3'};
-% chinds=chanIDs;
-% bandstart=[0 70 130];
-% bandend=[4 115 199];
-% bandstart=[];
-% bandend=[];
-%
-% filelist={'Chewie_Spike_LFP_0902201100','Chewie_Spike_LFP_0906201100',...
-%     'Chewie_Spike_LFP_0907201100','Chewie_Spike_LFP_0908201100',...
-%     'Chewie_Spike_LFP_0919201100','Chewie_Spike_LFP_1024201100','Chewie_Spike_LFP_0106201200',...
-%     'Chewie_Spike_LFP_0117201200','Chewie_Spike_LFP_0130201200','Chewie_Spike_LFP_0215201200','Chewie_Spike_LFP_0217201200',...
-%    'Chewie_Spike_LFP_0217201200','Chewie_Spike_LFP_0321201200'}
-% numlist = {'1','1','1','1','1','4','1','6','1','6','1','5','1'}; % HAND CONTROL FILE NUMBERS!
-% % filelist={'Chewie_Spike_LFP_0902201100','Chewie_Spike_LFP_0902201100','Chewie_Spike_LFP_0906201100',...
-% %     'Chewie_Spike_LFP_0907201100','Chewie_Spike_LFP_0907201100','Chewie_Spike_LFP_0908201100','Chewie_Spike_LFP_0908201100',...
-% %     'Chewie_Spike_LFP_0321201200','Chewie_Spike_LFP_0321201200'};
-% % numlist={'2','3','2','3','4','2','3','2','3'};
-% % bandstart=70;
-% % bandend=115;
-% if ~exist('chinds','var')
-%     disp('Please tell me which channels to run!')
-%     break
-% end
-%%
-% load 'filelist_Xcorr_decoder2.mat'
-bandstart=[0, 7, 70, 130, 200];
-bandend=[4, 20, 115, 200, 300];
+bandstart=[];
+bandend=[];
 
-filelist= Chewie_LFP_BC_Decoder1_filenames(278:end);
-%     'Chewie_Spike_LFP_0919201100','Chewie_Spike_LFP_1024201100','Chewie_Spike_LFP_0106201200',...
-%     'Chewie_Spike_LFP_0117201200','Chewie_Spike_LFP_0130201200','Chewie_Spike_LFP_0215201200','Chewie_Spike_LFP_0217201200',...
-%    'Chewie_Spike_LFP_0217201200','Chewie_Spike_LFP_0321201200'}
-% for i=1:length(BDFlist_all)
-% filelist=BDFlist_all(1:76)';
-% filelist=filesC(1:2:end);
+filelist= ChewieLFP2fileNames;
 
-% end
-% numlist = {'1','1','1','1','1','4','1','6','1','6','1','5','1'}; % HAND CONTROL FILE NUMBERS!
 if ~exist('chinds','var')
     disp('Please tell me which channels to run!')
     break
