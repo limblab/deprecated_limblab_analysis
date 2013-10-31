@@ -31,16 +31,11 @@ catch_trial_times = [binnedData.trialtable(binnedData.trialtable(:,11)==1,7) ...
                       binnedData.trialtable(binnedData.trialtable(:,11)==1,8)];
 
 adapt_stats = zeros(num_catch,2,2);
-offline_stats= zeros(num_trials-num_catch,2,2);
+offline_stats= zeros(num_catch,2,2);
 
 if plotflag
-    fig_x = figure; hold on;
-    fig_y = figure; hold on;
-
-    plot(fig_x,binnedData.timeframe,actual_force(:,1),'k'); title(figx,'Force X');
-    plot(fig_x,offline_preds.timeframe,offline_preds.preddatabin(:,1),'r');
-    plot(fig_y,binnedData.timeframe,actual_force(:,2),'k'); title(figx,'Force Y');
-    plot(fig_y,offline_preds.timeframe,offline_preds.preddatabin(:,2),'r');
+    figure; hold on; fig_x = gca;
+    figure; hold on; fig_y = gca;
 end
     
 for i = 1:num_catch
@@ -62,35 +57,51 @@ for i = 1:num_catch
     offline_stats(i,2,:) = 1-  sum( (Preds-Act).^2 ) ./ sum( (Act - repmat(mean(Act),size(Act,1),1)).^2);
     
     if plotflag
-        plot(fig_x, binnedData.timeframe(catch_idx),binnedData.cursorposbin(catch_idx,1),'b');
-        plot(fig_y, binnedData.timeframe(catch_idx),binnedData.cursorposbin(catch_idx,2),'b');
-        
         xx = binnedData.timeframe(catch_idx);
-        ytop = 10*ones(length(xx));
+        ytop = 10*ones(length(xx),1);
         ybot = -ytop;
         yarea = [ytop; ybot(end:-1:1)];
+        xx = [xx; xx(end:-1:1)];
         area(fig_x,xx,yarea,'Facecolor',[.5 .5 .5],'LineStyle','none');
         area(fig_y,xx,yarea,'Facecolor',[.5 .5 .5],'LineStyle','none');
+        
+        plot(fig_x, binnedData.timeframe(catch_idx),binnedData.cursorposbin(catch_idx,1),'b');
+        plot(fig_y, binnedData.timeframe(catch_idx),binnedData.cursorposbin(catch_idx,2),'b');
+    
     end
 end
 
 if plotflag
+    plot(fig_x,binnedData.timeframe,actual_force(:,1),'k'); title(fig_x,'Force X');
+    plot(fig_x,offline_preds.timeframe,offline_preds.preddatabin(:,1),'r');
+    plot(fig_y,binnedData.timeframe,actual_force(:,2),'k'); title(fig_y,'Force Y');
+    plot(fig_y,offline_preds.timeframe,offline_preds.preddatabin(:,2),'r');
+
     last_adapt_trial = find(catch_trial_times(:,2)<=fix_time,1,'last');
     plot(fig_x,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
-          [12 -12],'k--','linewidth',2);
+          [12 -12],'k--','LineWidth',2);
     plot(fig_x,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
-          [12 -12],'k--','linewidth',2);  
+          [12 -12],'k--','LineWidth',2);  
 
-    x_vaf = figure; hold on;
-    plot(x_vaf,offline_stats(:,2,1),'ro-',linewidth,'2'); title('vaf X');
-    plot(x_vaf,adapt_stats(:,2,1),'bo-',linewidth,'2');
-    plot(x_vaf,[last_adapt_trial last_adapt_trial],[0 1],'k--','linewidth',2);
- 
+    figure; x_vaf =gca; hold on;
+    plot(x_vaf,1:num_catch,offline_stats(:,2,1),'ro-','LineWidth',2); title('vaf X');
+    plot(x_vaf,1:num_catch,adapt_stats(:,2,1),'bo-','LineWidth',2);
+    plot(x_vaf,[last_adapt_trial last_adapt_trial],[0 1],'k--','LineWidth',2);
     
-    y_vaf= figure; hold on;
-    plot(y_vaf,offline_stats(:,2,2),'ro-',linewidth,'2'); title('vaf Y');
-    plot(y_vaf,adapt_stats(:,2,y),'bo-',linewidth,'2');
-    plot(y_vaf,[last_adapt_trial last_adapt_trial],[0 1],'k--','linewidth',2);
+    figure; y_vaf = gca; hold on;
+    plot(y_vaf,1:num_catch,offline_stats(:,2,2),'ro-','LineWidth',2); title('vaf Y');
+    plot(y_vaf,1:num_catch,adapt_stats(:,2,2),'bo-','LineWidth',2);
+    plot(y_vaf,[last_adapt_trial last_adapt_trial],[0 1],'k--','LineWidth',2);
+    
+    figure; x_R2 =gca; hold on;
+    plot(x_R2,1:num_catch,offline_stats(:,1,1),'ro-','LineWidth',2); title('vaf X');
+    plot(x_R2,1:num_catch,adapt_stats(:,1,1),'bo-','LineWidth',2);
+    plot(x_R2,[last_adapt_trial last_adapt_trial],[0 1],'k--','LineWidth',2);
+    
+    figure; y_R2 = gca; hold on;
+    plot(y_R2,1:num_catch,offline_stats(:,1,2),'ro-','LineWidth',2); title('vaf Y');
+    plot(y_R2,1:num_catch,adapt_stats(:,1,2),'bo-','LineWidth',2);
+    plot(y_R2,[last_adapt_trial last_adapt_trial],[0 1],'k--','LineWidth',2);
     
 end
 

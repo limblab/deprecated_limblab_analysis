@@ -123,10 +123,10 @@ if options.PredVeloc
 end    
 
 %% 1- Calculate Fixed Linear Decoder:
-[H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+[H,v,mcc]=filMIMO4(Inputs,Outputs,numlags,numsides,1);
 
 % Add non-linearity if applicable    
-[PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,1,Outputs);
+[PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,H,numsides,1,Outputs);
 if options.PolynomialOrder
     numouts = size(PredictedData,2);
     P = zeros(options.PolynomialOrder+1,numouts);
@@ -161,10 +161,10 @@ if options.Use_SD
         %     H = Ins\Outs;
         %     toc;
 
-        [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);
+        [H,v,mcc]=filMIMO4(Ins,Outs,numlags,numsides,1);
 
         %% Add non-linearity if applicable    
-        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Ins,H,numsides,1,Outs);
+        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Ins,H,numsides,1,Outs);
     %     PredictedData = Ins*H;
     %     ActualDataNew = Outs;
         if options.PolynomialOrder
