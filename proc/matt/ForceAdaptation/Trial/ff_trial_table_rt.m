@@ -1,4 +1,4 @@
-function tt = ff_trial_table_rt(bdf)
+function [tt, x_offset, y_offset, tgt_size] = ff_trial_table_rt(bdf)
 % FF_TRIAL_TABLE_RT - returns a table containing the key timestamps for all of
 %                  the random walk trials in BDF
 %
@@ -8,7 +8,6 @@ function tt = ff_trial_table_rt(bdf)
 %    [2->1+(3*num_tgts)]: [go cue, onset, peak xcenter ycenter] for each target
 %    (1+3*num_tgts)+1   : Trial End time
 %    (1+3*num_tgts)+2   : Trial result    -- R, A, F, I or N (N coresponds to no-result)
-
 
 words = bdf.words;
 
@@ -26,14 +25,19 @@ word_end = hex2dec('20');
 end_words = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 1);
 end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
-num_targets = (bdf.databursts{1,2}(1)-18)/8;
+databursts = bdf.databursts;
+% remove any databursts before 1
+remInds = find(cell2mat(databursts(:,1)) < 1);
+databursts(remInds,:) = [];
+
+num_targets = (databursts{1,2}(1)-18)/8;
 
 %tt= [-1 -1 -1 -1 -1 -1 NaN ... NaN -1 -1]
 tt = [(zeros(num_trials-1,1)-1)  NaN(num_trials-1,5*num_targets)  (zeros(num_trials-1,2)-1) ];
 
 for trial = 1:num_trials-1
     start_time = start_words(trial);
-    if (bdf.databursts{trial,2}(1)-18)/8 ~= num_targets
+    if (databursts{trial,2}(1)-18)/8 ~= num_targets
         warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, operation interrupted',start_time);
 %         tt = tt(1:trial-1,:);
         continue;
@@ -111,8 +115,17 @@ for trial = 1:num_trials-1
             end
             
             try
-                tgt_center_x = bytes2float(bdf.databursts{trial,2}(19+8*(iCue-1):19+8*(iCue-1)+3));
-                tgt_center_y = bytes2float(bdf.databursts{trial,2}(19+8*(iCue-1)+4:19+8*(iCue-1)+7));
+                tgt_center_x = bytes2float(databursts{trial,2}(19+8*(iCue-1):19+8*(iCue-1)+3));
+                tgt_center_y = bytes2float(databursts{trial,2}(19+8*(iCue-1)+4:19+8*(iCue-1)+7));
+                
+                if abs(tgt_center_x) > 1000
+                    tgt_center_x = NaN;
+                end
+                
+                if abs(tgt_center_y) > 1000
+                    tgt_center_y = NaN;
+                end
+                
             catch
                 keyboard
             end
@@ -122,9 +135,9 @@ for trial = 1:num_trials-1
     end
     
     % Offsets, target size
-    %     x_offset = bytes2float(bdf.databursts{trial,2}(7:10));
-    %     y_offset = bytes2float(bdf.databursts{trial,2}(11:14));
-    %     tgt_size = bytes2float(bdf.databursts{trial,2}(15:18));
+        x_offset = bytes2float(databursts{trial,2}(7:10));
+        y_offset = bytes2float(databursts{trial,2}(11:14));
+        tgt_size = bytes2float(databursts{trial,2}(15:18));
     
     % Build table
     % throws a bug sometimes, gotta figure it out, but for now just ditch

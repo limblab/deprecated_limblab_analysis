@@ -1,12 +1,23 @@
 %% 1) Demonstrate task (CO vs RT, FF vs VR)
 % random target trace example
 close all;
+baseDir = 'Z:\MrT_9I4\Matt\ProcessedData';
+
+ffColor = 'b';
+vrColor = 'r';
+
+outTargColor = [0.7 0 0];
+inTargColor = [0 0.7 0];
+
+xoffset = 5;
+yoffset = -35;
+
 useDate = '2013-08-20';
 filePre = 'RT_FF';
 
 %%
 close all
-load(fullfile(baseDir,useDate,[filePre '_BL_' useDate '.mat']));
+data = load(fullfile(baseDir,useDate,[filePre '_BL_' useDate '.mat']));
 tt = data.trial_table;
 t = data.cont.t;
 pos = data.cont.pos;

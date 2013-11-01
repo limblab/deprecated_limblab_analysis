@@ -5,6 +5,7 @@ function adiff = angleDiff(angle1,angle2,useRad,preserveSign)
 %   angle1: an angle or vector of angles
 %   angle2: another angle or vector of angles. Same size as angle1
 %   useRad: (boolean) if true, inputs are in radians
+%   preserveSign: (boolean) if true, will not return absolute value
 %
 % OUTPUTS:
 %   adiff: element-wise difference between the angles

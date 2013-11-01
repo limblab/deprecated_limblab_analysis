@@ -57,7 +57,7 @@ epochs = params.epochs;
 holdTime = str2double(params.target_hold_low{1});
 forceMag = str2double(params.force_magnitude{1});
 forceAng = str2double(params.force_angle{1});
-rotationAng = str2double(params.rotation_angle{1});
+rotationAngle = str2double(params.rotation_angle{1});
 clear params
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -117,10 +117,40 @@ for iEpoch = 1:length(epochs)
         tempTask = task;
     end
     
-    tt = ff_trial_table(tempTask,out_struct);
+    disp('Getting trial table...');
+    [tt, x_offset, y_offset, tgt_size] = ff_trial_table(tempTask,out_struct);
+    
+    pos(:,1) = pos(:,1)+(x_offset-2);
+    pos(:,2) = pos(:,2)+(y_offset+2);
     
     %% Turn that into a movement table
-    mt = getMovementTable(tt,tempTask);
+    if strcmpi(tempTask,'RT')
+        % rotate position to get target directions
+
+        if strcmpi(adaptType,'VR') || strcmpi(adaptType,'VRFF')
+            R = [cos(rotationAngle) -sin(rotationAngle); sin(rotationAngle) cos(rotationAngle)];
+            newPos = zeros(size(pos));
+            for j = 1:length(pos)
+                newPos(j,:) = R*(pos(j,:)');
+            end
+            newPos = zeros(size(pos));
+            for j = 1:length(pos)
+                newPos(j,:) = R*(pos(j,:)');
+            end
+            
+            % adjust for an offset from my math above
+            offset = [newPos(1,1)-pos(1,1), newPos(1,2)-pos(1,2)];
+            newPos(:,1) = pos(:,1)+offset(1);
+            newPos(:,2) = pos(:,2)+offset(2);
+        else
+            newPos = pos;
+        end
+        
+        mt = getMovementTable(tt,tempTask,t,newPos);
+        clear newPos;
+    else
+        mt = getMovementTable(tt,tempTask);
+    end
     
     clear moveWins moveCurvs allInds useT idx mPeak mStart mEnd iMove tMove relMoves blockTimes moveCurves spd;
     
@@ -359,8 +389,11 @@ for iEpoch = 1:length(epochs)
     p.hold_time = holdTime;
     p.force_magnitude = forceMag;
     p.force_angle = forceAng;
-    p.rotation_angle = rotationAng;
+    p.rotation_angle = rotationAngle;
     p.unit_count = unitCount;
+    p.target_size = tgt_size;
+    p.x_offset = x_offset;
+    p.y_offset = y_offset;
     
     data.meta = m;
     data.cont = c;

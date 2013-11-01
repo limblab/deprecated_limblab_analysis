@@ -34,7 +34,7 @@ epoch = adaptation.meta.epoch;
 
 fh = figure;
 
-% plot histogram of reaction time
+%% plot histogram of reaction time
 set(0, 'CurrentFigure', fh);
 clf reset;
 hist(adaptation.reaction_time.*1000,numBins);
@@ -48,7 +48,7 @@ else
     pause;
 end
 
-% plot histogram of time to target
+%% plot histogram of time to target
 set(0, 'CurrentFigure', fh);
 clf reset;
 hist(adaptation.time_to_target.*1000,numBins);
@@ -63,7 +63,7 @@ else
 end
 
 
-% plot histogram of target directions
+%% plot histogram of target directions
 numTargs = length(unique(adaptation.movement_table(:,1)));
 % if we only have 8 targets don't need a ton of bins
 if numTargs < numBins
@@ -83,5 +83,33 @@ else
     pause;
 end
 
+
+%% plot histogram of time between onset and peak
+set(0, 'CurrentFigure', fh);
+clf reset;
+hist(adaptation.move_to_peak.*1000,numBins);
+xlabel('Reaction Time (ms)','FontSize',fontSize);
+axis('tight');
+
+if ~isempty(saveFilePath)
+    fn = fullfile(saveFilePath,[epoch '_behavior_move_to_peak.png']);
+    saveas(fh,fn,'png');
+else
+    pause;
+end
+
+%% plot histogram of time between presentation and peak
+set(0, 'CurrentFigure', fh);
+clf reset;
+hist(adaptation.targ_to_peak.*1000,numBins);
+xlabel('Reaction Time (ms)','FontSize',fontSize);
+axis('tight');
+
+if ~isempty(saveFilePath)
+    fn = fullfile(saveFilePath,[epoch '_behavior_targ_to_peak.png']);
+    saveas(fh,fn,'png');
+else
+    pause;
+end
 
 

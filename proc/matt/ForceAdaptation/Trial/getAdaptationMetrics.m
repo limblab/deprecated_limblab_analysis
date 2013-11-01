@@ -65,6 +65,29 @@ for iEpoch = 1:length(epochs)
     vel = cont.vel;
     acc = cont.acc;
     
+    % put hand coordinates into cursor coordinates
+    if ( strcmp(adaptType,'VR') || strcmp(adaptType,'VRFF') ) && strcmp(epochs{iEpoch},'AD')
+        xoffset = 5;
+        yoffset = -35;
+        pos(:,1) = pos(:,1)-xoffset;
+        pos(:,2) = pos(:,2)-yoffset;
+        
+        R = [cos(rotationAngle) -sin(rotationAngle); sin(rotationAngle) cos(rotationAngle)];
+        newPos = zeros(size(pos));
+        for j = 1:length(pos)
+            newPos(j,:) = R*(pos(j,:)');
+        end
+        
+        % adjust for an offset from my math above
+        offset = [newPos(1,1)-pos(1,1), newPos(1,2)-pos(1,2)];
+        pos(:,1) = pos(:,1)+offset(1);
+        pos(:,2) = pos(:,2)+offset(2);
+        
+        rotAng = rotationAngle;
+    else
+        rotAng = 0;
+    end
+    
     % filter the data to smooth out curvature calculation
     f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
     svel = filter(f, 1, vel);
@@ -117,6 +140,10 @@ for iEpoch = 1:length(epochs)
     adaptation.(epochs{iEpoch}).reaction_time_mean = [rtMeans rtSTDs];
     adaptation.(epochs{iEpoch}).time_to_target = timeToTargets;
     adaptation.(epochs{iEpoch}).time_to_target_mean = [tttMeans tttSTDs];
+    
+    % time from movement onset to peak
+    adaptation.(epochs{iEpoch}).move_to_peak = mt(:,5) - mt(:,4);
+    adaptation.(epochs{iEpoch}).targ_to_peak = mt(:,5) - mt(:,3);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -177,15 +204,20 @@ for iEpoch = 1:length(epochs)
         % peak speed is mt(trial,5)
         moveAngs = zeros(size(mt,1),1);
         for iMove = 1:size(mt,1)
-            t_start = mt(iMove,3);
+            t_start = mt(iMove,4);
             t_peak = mt(iMove,5);
-            
+            t_end = mt(iMove,6);
+
             % find direction of movement at time of peak speed
             %   compare position and peak to position at start
             pos_start = pos(find(t <= t_start,1,'last'),:);
             pos_peak = pos(find(t <= t_peak,1,'last'),:);
-            
+            pos_end = pos(find(t <= t_end,1,'last'),:);
+
+            % get takeoff angle
             moveAngs(iMove,1) = atan2(pos_peak(2)-pos_start(2),pos_peak(1)-pos_start(1));
+
+            targAngs(iMove,1) = atan2(pos_end(2)-pos_start(2),pos_end(1)-pos_start(1))+rotAng;
             
         end
         

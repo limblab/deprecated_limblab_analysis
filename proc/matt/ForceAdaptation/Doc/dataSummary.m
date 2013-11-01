@@ -39,8 +39,18 @@ ff_iffyDays = {};    % S RT
 ff_badDays = {};     % S RT
 
 % Visual rotation days
-vr_goodDays = {'2013-10-03'}; % S CO
-           
-vrff_goodDays = {};    % S RT
-             
+vr_goodDays = {'2013-10-03', ... % S CO
+               '2013-10-09', ... % S RT
+               '2013-10-10', ... % S CO
+               '2013-10-11'};    % S RT
+
+ff_goodDays = {'2013-10-28', ... %   RT
+               '2013-10-29', ....%   RT
+               '2013-10-31'};    %   CO
+
+ff_iffyDays = {'2013-10-17', ... % S RT 0.13 force mag
+               '2013-10-18', ... % S RT 0.1 force mag
+               '2013-10-22', ... % S CO
+               '2013-10-23'};    %   CO
+
              

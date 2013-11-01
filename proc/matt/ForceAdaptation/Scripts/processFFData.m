@@ -10,6 +10,7 @@ clc;
 %   - could load monkey info
 
 useUnsorted = false;
+sigCompMethod = 'diff';
 
 % if false, will not copy over new parameter files if they already exist
 rewriteFiles  = 1;
@@ -21,29 +22,35 @@ rewriteFiles  = 1;
 % processing options
 doDataStruct        = 0;
 doAdaptation        = 0;
-doTracking          = 1;
+doTracking          = 0;
 % tuning options1
-doTuning            = 0;
-doClassification    = 0;
-doReport            = 1;
+doTuning            = 1;
+doClassification    = 1;
+doReport            = 0;
 % plotting options
 doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramSetNames = {'early','late'};
+paramSetNames = {'middle1','middle2','end','targmiddle1','targmiddle2','targend'};
 
 monkey = 'MrT';
 
 switch monkey
     case 'MrT'
         paramFileDir = 'Z:\MrT_9I4\Matt\';
-        goodDates = {'2013-08-22'};
+        goodDates = {'2013-09-10', ...
+            '2013-09-06', ...
+            '2013-09-04', ...
+            '2013-08-20', ... % S RT
+            '2013-08-22', ... % S RT
+            '2013-08-30'};
+        
         dataFileDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
     case 'Chewie'
         paramFileDir = 'Z:\Chewie_8I2\Matt\';
-        goodDates = {'2013-10-09'};
+        goodDates = {'2013-10-11','2013-10-09'};
         dataFileDir = 'Z:\Chewie_8I2\Matt\ProcessedData\';
     otherwise
         error('Monkey not recognized');
@@ -101,7 +108,7 @@ for iDate = 1:length(goodDates)
         disp('%%% Making Data Struct %%%')
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         % make my data file (will convert things to BDF if necessary
-        [~,useUnsorted] = makeDataStruct(expParamFile, 'nevnsx', false, useUnsorted);
+        [~,useUnsorted] = makeDataStruct(expParamFile, 'nev', false, useUnsorted);
     end
     
     if doAdaptation
@@ -154,7 +161,7 @@ for iDate = 1:length(goodDates)
                 disp('%%% Classifying Cells  %%%')
                 disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
                 % Look for memory cells
-                [~] = findMemoryCells(expParamFile, paramSetName,'diff');
+                [~] = findMemoryCells(expParamFile, paramSetName,sigCompMethod);
             end
         end
         
@@ -171,6 +178,7 @@ for iDate = 1:length(goodDates)
     % do the plotting outside of that loop so that we don't have to
     % continually reload any data
     if doPlotting
+        try
         disp('');
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         disp('%%% Saving Data Plots  %%%')
@@ -184,6 +192,9 @@ for iDate = 1:length(goodDates)
             [~] = makeFFPlots(expParamFile,paramSetNames,useUnsorted,true);
         else
             error('Not sure what to plot!');
+        end
+        catch
+            disp('error in plotting')
         end
     end
 end

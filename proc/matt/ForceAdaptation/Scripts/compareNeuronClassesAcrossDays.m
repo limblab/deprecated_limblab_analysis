@@ -4,21 +4,33 @@
 clear;
 clc;
 
-% useDates = {'2013-08-22','2013-09-04'};
-useDates = {'2013-08-22','2013-09-04'};
 
-tunePeriod = 'peak';
-tuneMethod = 'regression';
+monkey = 'MrT';
 useArray = 'PMd';
+paramSetName = 'late';
+tunePeriod = 'initial';
+tuneMethod = 'regression';
 
-baseDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
+switch monkey
+    case 'MrT'
+        paramFileDir = 'Z:\MrT_9I4\Matt\';
+        goodDates = {'2013-09-04','2013-09-06','2013-09-10'};
+        dataFileDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
+    case 'Chewie'
+        paramFileDir = 'Z:\Chewie_8I2\Matt\';
+        goodDates = {'2013-10-09'};
+        dataFileDir = 'Z:\Chewie_8I2\Matt\ProcessedData\';
+    otherwise
+        error('Monkey not recognized');
+end
+saveData = false;
 
-paramFiles = cell(1,length(useDates));
-for iDay = 1:length(useDates)
-    paramFiles{iDay} = fullfile(baseDir,useDates{iDay},[useDates{iDay} '_experiment_parameters.dat']);
+for i = 1:length(goodDates)
+    paramFiles{i} = fullfile(dataFileDir,goodDates{i},[goodDates{i} '_experiment_parameters.dat']);
 end
 
-tracking = trackNeuronsAcrossDays(paramFiles,false);
+% now do the tracking
+tracking = trackNeuronsAcrossDays(paramFiles,{'wf'},false);
 
 % find which cells are consistent for all of the days
 comp = tracking.(useArray){1}.chan;
@@ -48,7 +60,7 @@ for iDay = 1:size(comp,2)
     dataPath = fullfile(baseDir,useDate);
     
     % load the class data
-    load(fullfile(dataPath,[taskType '_' adaptType '_classes_' useDate '.mat']));
+    classes = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
     
     % get the classes for the current cell
     sg = classes.(useArray).(tuneMethod).(tunePeriod).unit_guide;

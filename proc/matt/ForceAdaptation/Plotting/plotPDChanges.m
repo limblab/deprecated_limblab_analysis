@@ -72,7 +72,7 @@ for iArray = 1:length(arrays)
                     classInd = tune_sg(:,1)==sg_master(unit,1) & tune_sg(:,2)==sg_master(unit,2);
                     
                     % color the traces based on the classification
-                    useColor = classColors{cellClasses(classInd)};
+                    useColor = classColors{cellClasses(classInd,3)};
                     
                     plot([0 1 2],diffPDs.*180/pi,useColor,'LineWidth',2);
                     plot([0 1 2],diffPDs.*180/pi,[useColor 'd'],'LineWidth',3);

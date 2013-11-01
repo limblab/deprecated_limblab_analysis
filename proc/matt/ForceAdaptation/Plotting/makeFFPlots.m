@@ -132,14 +132,14 @@ if ~tuningFlag
         % THIS IS A HACK FOR NOW
         %   Eventually I need to resolve how to set axes to be the same
         % but for now, do it for curvature and find them brute force
-        disp('Creating adaptation/behavior plots...')
-        adaptation = load(fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
-        plotBehaviorHistograms(adaptation.BL,genFigPath);
-        close all;
-        plotBehaviorHistograms(adaptation.AD,genFigPath);
-        close all;
-        plotBehaviorHistograms(adaptation.WO,genFigPath);
-        close all;
+%         disp('Creating adaptation/behavior plots...')
+%         adaptation = load(fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']));
+%         plotBehaviorHistograms(adaptation.BL,genFigPath);
+%         close all;
+%         plotBehaviorHistograms(adaptation.AD,genFigPath);
+%         close all;
+%         plotBehaviorHistograms(adaptation.WO,genFigPath);
+%         close all;
         
         % plot adaptation over time
         % cell array to pass into function.... {date, task, perturbation, plot label}

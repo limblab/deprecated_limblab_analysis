@@ -94,6 +94,24 @@ switch lower(tuningMethod)
         pds_ad = pds_ad(idx_ad,:);
         pds_wo = pds_wo(idx_wo,:);
         
+        mds_bl = blt.(useArray).(tuningMethod).(tuningPeriod).mds;
+        mds_ad = adt.(useArray).(tuningMethod).(tuningPeriod).mds;
+        mds_wo = wot.(useArray).(tuningMethod).(tuningPeriod).mds;
+        
+        mds_bl = mds_bl(idx_bl,:);
+        mds_ad = mds_ad(idx_ad,:);
+        mds_wo = mds_wo(idx_wo,:);
+        
+        bos_bl = blt.(useArray).(tuningMethod).(tuningPeriod).bos;
+        bos_ad = adt.(useArray).(tuningMethod).(tuningPeriod).bos;
+        bos_wo = wot.(useArray).(tuningMethod).(tuningPeriod).bos;
+        
+        bos_bl = bos_bl(idx_bl,:);
+        bos_ad = bos_ad(idx_ad,:);
+        bos_wo = bos_wo(idx_wo,:);
+        
+        
+        
         rs_bl = blt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
         rs_ad = adt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
         rs_wo = wot.(useArray).(tuningMethod).(tuningPeriod).r_squared;
@@ -128,6 +146,8 @@ switch lower(tuningMethod)
         switch lower(compMethod)
             case 'overlap'
                 usePDs = {pds_bl,pds_ad,pds_wo};
+                useMDs = {mds_bl,mds_ad,mds_wo};
+                useBOs = {pds_bl,pds_ad,pds_wo};
             case 'diff'
                 boot_pds_bl = blt.(useArray).(tuningMethod).(tuningPeriod).boot_pds;
                 boot_pds_ad = adt.(useArray).(tuningMethod).(tuningPeriod).boot_pds;

@@ -79,7 +79,7 @@ for iFile = 1:size(useDate,1)
     badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
     sg_master = setdiff(sg_bl,badUnits,'rows');
 
-    cellClasses = classes.(useArray).regression.(usePeriod).classes;
+    cellClasses = classes.(useArray).regression.(usePeriod).classes(:,3);
 
     useComp = tracking.(useArray){1}.chan;
     

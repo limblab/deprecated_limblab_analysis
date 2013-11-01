@@ -12,7 +12,7 @@ angleBinSize = str2double(params.angle_bin_size{1});
 latency = str2double(params.([lower(useArray) '_latency']){1});
 movementTime = str2double(params.movement_time{1});
 tuneDir = params.tuning_direction{1};
-binAngles = str2double(params.bin_angles{1});
+doBinAngles = str2double(params.bin_angles{1});
 clear params temp;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -89,23 +89,7 @@ end
 
 % theta = wrapAngle(theta,0); % make sure it goes from [-pi,pi)
 
-if binAngles % put in bins for regression
-    theta = round(theta./angleBinSize).*angleBinSize;
-    % -pi and pi are the same thing
-    if length(unique(theta)) > int16(2*pi/angleBinSize)
-        % probably true that -pi and pi both exist
-        utheta = unique(theta);
-        if utheta(1)==-utheta(end)
-            % almost definitely true that -pi and pi both exist
-            theta(theta==utheta(1)) = utheta(end);
-        elseif abs(utheta(1)) > abs(utheta(end))
-            theta(theta==utheta(1)) = -utheta(1);
-            % probably means that -pi instead of pi
-        else            
-            disp('Something fishy is going on with this binning...')
-            keyboard
-        end
-    end
-    
+if doBinAngles % put in bins for regression
+    theta = binAngles(theta,angleBinSize);
 end
 

@@ -20,16 +20,30 @@ function plotAdaptationOverTime(varargin)
 
 %%
 % Make curvature plots to show adaptation over time
-useDate = {'2013-08-22','RT','FF','title1'; ...
-    '2013-09-04','RT','VR','title2'};
-traceWidth = 3;
+baseDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
+useDate = {'2013-09-04','RT','VR','9-04'; ...
+           '2013-09-06','RT','VR','9-06'; ...
+           '2013-09-10','RT','VR','9-10'; ...
+           '2013-08-20','RT','FF','8-20'; ...
+           '2013-08-22','RT','FF','8-22'; ...
+           '2013-08-30','RT','FF','8-30'};
+% useDate = {'2013-09-24','RT','VRFF','9-24'; ...
+%            '2013-09-25','RT','VRFF','9-25'; ...
+%            '2013-09-27','RT','VRFF','9-27 '};
+% useDate = {'2013-09-03','CO','VR','9-04'; ...
+%            '2013-09-05','CO','VR','9-06'; ...
+%            '2013-09-09','CO','VR','9-10'; ...
+%            '2013-08-19','CO','FF','8-20'; ...
+%            '2013-08-21','CO','FF','8-22'; ...
+%            '2013-08-23','CO','FF','8-30'};
+traceWidth = 1;
 doFiltering = true;
-filtWidth = 4;
+filtWidth = 15;
 epochs = {'BL','AD','WO'};
 figurePosition =  [200, 200, 800, 600];
 plotBuffer = [0.1 0.1];
-plotColors = {'b','r'};
-useMetric = 'curvature';
+plotColors = {'b','b','b','r','r','r'};
+useMetric = 'angle_error';
 saveFilePath = [];
 for i = 1:2:length(varargin)
     switch lower(varargin{i})
@@ -90,7 +104,12 @@ for iDate = 1:size(useDate,1)
         end
         
         dividers(iEpoch+1) = dividers(iEpoch) + length(mC);
+        
         allMC = [allMC; mC];
+    end
+    
+    if strcmpi(useMetric,'angle_error')
+        allMC = allMC.*(180/pi);
     end
     
     dateDividers{iDate} = dividers;
@@ -108,6 +127,7 @@ maxMC = max(maxMC);
 fh = figure('Position', figurePosition);
 hold all;
 set(gca,'TickLength',[0 0],'FontSize',fontSize,'XTick',[]);
+axis([0 1 minMC maxMC]);
 
 xlabel('Movements','FontSize',16);
 
@@ -115,8 +135,10 @@ switch useMetric
     case 'curvature'
         ylabel('Curvature (cm^-^1)','FontSize',fontSize);
     case 'angle_error'
-        ylabel('Angular error (rad)','FontSize',fontSize);
+        ylabel('Angular error (deg)','FontSize',fontSize);
 end
+
+
 
 % add labels and legend
 % plot([950 1100],[0.38 0.38],'b','LineWidth',3);
@@ -130,26 +152,28 @@ end
 
 % now plot data, each on its own axis
 for iDate = 1:size(useDate,1)
-    h1=gca;
-    h2=axes('position',get(h1,'position'));
+%     h1=gca;
+%     h2=axes('position',get(h1,'position'));
     hold all;
     
-    plot(dateMC{iDate}',plotColors{iDate},'LineWidth',traceWidth);
+    dd = dateDividers{iDate};
+    mc = dateMC{iDate}';
+
+    for j = 2:length(dd)
+        plot( linspace((0.33333.*(j-2)),(0.33333.*(j-1)),dd(j)-dd(j-1)), mc(dd(j-1)+1:dd(j)),'Color',plotColors{iDate},'LineWidth',traceWidth);
+    end
+%     plot(dateMC{iDate}',plotColors{iDate},'LineWidth',traceWidth);
+%     plot([dd(2) dd(2)],[minMC-plotBuffer(1) maxMC+plotBuffer(2)],'--','LineWidth',1,'Color',plotColors{iDate});
+%     plot([dd(3) dd(3)],[minMC-plotBuffer(1) maxMC+plotBuffer(2)],'--','LineWidth',1,'Color',plotColors{iDate});
+%     axis([0 length(dateMC{iDate}) minMC-plotBuffer(1) maxMC+plotBuffer(2)]);
     
-    plot([dateDividers{iDate}(1) dateDividers{iDate}(1)],[minMC-plotBuffer(1) maxMC+plotBuffer(2)],'k--','LineWidth',1);
-    plot([dateDividers{iDate}(2) dateDividers{iDate}(2)],[minMC-plotBuffer(1) maxMC+plotBuffer(2)],'k--','LineWidth',1);
-    
-    axis('tight');
-    
-    axis([0 length(dateMC{iDate}) minMC-plotBuffer(1) maxMC+plotBuffer(2)]);
-    
-    set(h2,'YAxisLocation','right','Color','none','XTickLabel',[],'YTickLabel',[],'TickLength',[0 0],'FontSize',16,'XTick',[]);
+%     set(h2,'YAxisLocation','right','Color','none','XTickLabel',[],'YTickLabel',[],'TickLength',[0 0],'FontSize',16,'XTick',[]);
 end
 
 if ~isempty(saveFilePath)
     fn = fullfile(saveFilePath,['adaptation_' useMetric '.png']);
     saveas(fh,fn,'png');
 else
-    pause;
+%     pause;
 end
 
