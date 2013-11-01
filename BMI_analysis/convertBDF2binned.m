@@ -352,7 +352,7 @@ else
     numusableunits = 0;
     units_to_use = zeros(1,totalnumunits);
     maxnum_ts = 0;
-
+    
     %Identify the sorted units %%%with minimum spike rate%%%
     for i=1:totalnumunits
 
@@ -399,7 +399,7 @@ else
         % Create the spikeguide with electrode names
         for i=1:numusableunits
             spikeguide(i,:)=['ee' sprintf('%03d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
-            neuronIDs = datastruct.units(units_to_use(i)).id;
+            neuronIDs(i,:) = datastruct.units(units_to_use(i)).id;
         end
 
        if TriKernel == 0; 

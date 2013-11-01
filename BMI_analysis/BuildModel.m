@@ -118,9 +118,7 @@ function [filter, varargout]=BuildModel(binnedData, options)
     end
 
 %     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
-
-    % add a vector of 'ones' to provide correction for offsets
-%     Inputs = [ones(size(Inputs,1),1) Inputs];           
+    
 %% Outputs
     
     Outputs = [];

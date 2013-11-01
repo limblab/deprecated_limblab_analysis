@@ -9,21 +9,25 @@ plotflag = 1;
 if nargin >1
     plotflag = varargin{1};
 end
+% scale force to cursor pos
+actual_force    = [binnedData.forcedatabin(:,1)/cursgain+offset_x ...
+                    binnedData.forcedatabin(:,2)/cursgain+offset_y]; 
+binnedData.forcedatabin = actual_force;
+                
 if nargin>2
     offline_decoder = varargin{2};
 else
-    binnedData = set_catch_states(binnedData);
-    options.PredCursPos = 1; options.Use_SD = 1;
-    OfflineDecoder = BuildSDModel(binnedData, options);
-    offline_decoder = OfflineDecoder{1};
+%     binnedData = set_catch_states(binnedData);
+%     options.PredCursPos = 1; options.Use_SD = 1;
+%     OfflineDecoder = BuildSDModel(binnedData, options);
+%     offline_decoder = OfflineDecoder{1};
+    options = [];
+    options.PredForce = 1;
+    offline_decoder = BuildModel(binnedData,options);
+
 end
 
 offline_preds   = predictSignals(offline_decoder,binnedData);
-
-% scale force to cursor pos
-actual_force    = [binnedData.forcedatabin(:,1)/cursgain+offset_x ...
-                    binnedData.forcedatabin(:,2)/cursgain+offset_y];
- 
 
 num_adapt = sum(binnedData.trialtable(:,12));
 num_trials= size(binnedData.trialtable,1);
