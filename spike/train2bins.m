@@ -20,21 +20,30 @@ if isscalar(b)
     t = 0:b:lastbin;
 else
     t = b;
+    b = b(2)-b(1);
 end
 
 if ~issorted(s)
     s = sort(s);
 end
 
-%d = zeros(size(t));
-%for i = 1:length(d)
-%    d(i) = sum(sum( s>t(i) & s<=t(i)+b ));
-%end
+d = zeros(size(t));
 
-if isempty(s)
-    % return an empty train rather than crashing if there are no spikes
-    d = zeros(size(t));
-else
-    d = train2bins_mex(s,t);
+if ~isempty(s)
+
+        %spike index on first ts > t(1)
+    s_i = find(s>=t(1),1,'first');
+
+    for i = 1:length(d)-1
+        while s_i<=length(s) && s(s_i)<t(i+1)
+            d(i) = d(i)+1;
+            s_i  = s_i +1;
+        end
+    end
+
+    while s_i<=length(s) && s(s_i)<t(end)+b
+        d(end) = d(end)+1;
+        s_i  = s_i +1;
+    end
 end
 

@@ -4,6 +4,8 @@ function NormW = plotH(H,numlags,subplot_flag)
 % the weigths are all normalized between -1 and 1, and returned
 % as array
 
+H= H(2:end,:);
+
 Nin  = size(H,1)/numlags;
 Nout = size(H,2);
 
