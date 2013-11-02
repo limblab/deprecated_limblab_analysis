@@ -3,7 +3,7 @@ function [adapt_stats,offline_stats] = EvalOnlineAdapt(binnedData, varargin)
 offset_x = 6;
 offset_y = 1.55;
 cursgain = 55;
-fix_time = 1188;
+fix_time = 1200;
 plotflag = 1;
 
 if nargin >1
@@ -46,12 +46,12 @@ end
 for i = 1:num_adapt
     catch_idx = binnedData.timeframe>catch_trial_times(i,1) & ...
                 binnedData.timeframe<catch_trial_times(i,2);
-    Act = actual_force(catch_idx,:);
+    Act = double(actual_force(catch_idx,:));
     
     Curs= binnedData.cursorposbin(catch_idx,:);
     
-    catch_idx = offline_preds.timeframe>=catch_trial_times(i,1) & ...
-                offline_preds.timeframe<=catch_trial_times(i,2);
+    catch_idx = offline_preds.timeframe>catch_trial_times(i,1) & ...
+                offline_preds.timeframe<catch_trial_times(i,2);
             
     Preds= offline_preds.preddatabin(catch_idx,:);
             
@@ -84,61 +84,40 @@ if plotflag
     plot(fig_y,binnedData.timeframe,actual_force(:,2),'k'); title(fig_y,'Force Y');
     plot(fig_y,offline_preds.timeframe,offline_preds.preddatabin(:,2),'r');
 
-    last_adapt_trial = find(catch_trial_times(:,2)<=fix_time,1,'last');
-    plot(fig_x,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
-          ylim(),'k--','LineWidth',2);
-%       legend(fig_x,'online adapt preds','actual force','offline predictions');
-    plot(fig_y,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
-          ylim(),'k--','LineWidth',2);  
-%       legend(fig_y,'online adapt preds','actual force','offline predictions');
-
-    figure; x_vaf =gca; hold on;
-    plot(x_vaf,1:num_adapt,offline_stats(:,2,1),'ro-','LineWidth',2); title('vaf X');
-    plot(x_vaf,1:num_adapt,adapt_stats(:,2,1),'bo-','LineWidth',2);
-    plot(x_vaf,[last_adapt_trial last_adapt_trial],ylim(),'k--','LineWidth',2);
-    legend('offline training','online adaptation');
+     last_adapt_trial = find(catch_trial_times(:,2)<=fix_time,1,'last');
+%     plot(fig_x,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
+%           ylim(),'k--','LineWidth',2);
+% %       legend(fig_x,'online adapt preds','actual force','offline predictions');
+%     plot(fig_y,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
+%           ylim(),'k--','LineWidth',2);  
+% %       legend(fig_y,'online adapt preds','actual force','offline predictions');
+% 
+    plot_adapt_stats(offline_stats,adapt_stats);
     
-    figure; y_vaf = gca; hold on;
-    plot(y_vaf,1:num_adapt,offline_stats(:,2,2),'ro-','LineWidth',2); title('vaf Y');
-    plot(y_vaf,1:num_adapt,adapt_stats(:,2,2),'bo-','LineWidth',2);
-    plot(y_vaf,[last_adapt_trial last_adapt_trial],ylim(),'k--','LineWidth',2);
-    legend('offline training','online adaptation');
-    
-    figure; x_R2 =gca; hold on;
-    plot(x_R2,1:num_adapt,offline_stats(:,1,1),'ro-','LineWidth',2); title('R^2 X');
-    plot(x_R2,1:num_adapt,adapt_stats(:,1,1),'bo-','LineWidth',2);
-    plot(x_R2,[last_adapt_trial last_adapt_trial],ylim(),'k--','LineWidth',2);
-    legend('offline training','online adaptation');
-    
-    figure; y_R2 = gca; hold on;
-    plot(y_R2,1:num_adapt,offline_stats(:,1,2),'ro-','LineWidth',2); title('R^2 Y');
-    plot(y_R2,1:num_adapt,adapt_stats(:,1,2),'bo-','LineWidth',2);
-    plot(y_R2,[last_adapt_trial last_adapt_trial],ylim(),'k--','LineWidth',2);
-    legend('offline training','online adaptation');
-    
-    figure; x_mse =gca; hold on;
-    plot(x_mse,1:num_adapt,offline_stats(:,3,1),'ro-','LineWidth',2); title('mse X');
-    plot(x_mse,1:num_adapt,adapt_stats(:,3,1),'bo-','LineWidth',2);
-    plot(x_mse,[last_adapt_trial last_adapt_trial],ylim(),'k--','LineWidth',2);
-    legend('offline training','online adaptation');
-    
-    figure; y_mse = gca; hold on;
-    plot(y_mse,1:num_adapt,offline_stats(:,3,2),'ro-','LineWidth',2); title('mse Y');
-    plot(y_mse,1:num_adapt,adapt_stats(:,3,2),'bo-','LineWidth',2);
-    plot(y_mse,[last_adapt_trial last_adapt_trial],ylim(),'k--','LineWidth',2);
-    legend('offline training','online adaptation');
 end
 
+end
+
+
+% %%
+%--------------------------------
+% mov_window = 5;
 % 
-% for i = 1:num_trials-num_catch
-%     norm_idx = binnedData.timeframe>=normal_trial_times(i,1) & ...
-%                 binnedData.timeframe<=normal_trial_times(i,2);
-%     Act = actual_force(norm_idx,:);
+% mas = mean(adapt_stats,3);
+% mos = mean(offline_stats,3);
+% 
+% plot_adapt_stats(mos,mas,49);
+% 
+% 
+% num_adapt = size(adapt_stats,1);
+% 
+% movav_adapt_stats   = zeros(num_adapt-mov_window,3,2);
+% movav_offline_stats = zeros(num_adapt-mov_window,3,2);
+% 
+% for i = 1:num_adapt-mov_window
 %     
-%     norm_idx = offline_preds.timeframe>=normal_trial_times(i,1) & ...
-%                 offline_preds.timeframe<=normal_trial_times(i,2);
-%     Pred= offline_preds.preddatabin(norm_idx,:);
-%             
-%     normal_stats(i,1,:) = CalculateR2(Act,Pred);
-%     normal_stats(i,2,:) = 1-  sum( (Pred-Act).^2 ) ./ sum( (Act - repmat(mean(Act),size(Act,1),1)).^2);
+%     movav_adapt_stats(i,:,:)  = mean(adapt_stats(i:i+mov_window,:,:));
+%     movav_offline_stats(i,:,:)= mean(offline_stats(i:i+mov_window,:,:)); 
 % end
+% 
+% plot_adapt_stats(movav_offline_stats,movav_adapt_stats,49); 
