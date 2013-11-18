@@ -1,38 +1,11 @@
-function [PB r1 sr featind] = MRScalcFeatMat(sig, signal, numfp, ...
+function [PB r1 sr featind y] = MRScalcFeatMat(sig, signal, numfp, ...
     binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
-%2009-07-10 Marc predicts MIMO from field potentials
-%addpath mimo
-%addpath spike
-%addpath bdf
-%revised version has binsize input
-%v4hum is for human subjects (or any with slow sig sampling rate. Doesn't interpolate fp
-%but rather PB, later..
-% v4hum also includes numsides, which is 1 if causal/ 2 if acausal
-%v4all is for humans and monkeys, includes emg pred and outputs r2 as 2d
-%array
-%v5all is the same as 4all but adds Tikhunov regularization
+%2013-05-28 Calculates PB, interpolated y (signal being predicted) and
+%outputs the highest ranked features
 
-%samprate is the fp sampling rate (don't need sig sampling rate since we
-%have analog_time_base for that
-%binsize is in seconds
-%%%% Usage (for cyberglove):
-% [vaf,vmean,vsd,y_test,y_pred,r2mean,r2sd,r2,vaftr,bestf,bestc,H,bestfeat,x,y,ytnew,xtnew] =...
-% predictionsfromfp5all(vel,'vel',64,0.1,10,10,1,samprate,...
-% fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder,Use_Thresh,H,words,emgsamplerate,lambda);
-
-%samprate is the fp sampling rate
-
-%Polynomial order is the order of polynomial to use. Use_Thresh: default is
-%0 (no threshold); setting to 1 uses a threshold to determine how to fit
-%the polynomial (but not to decode with it).
-%numsides should be 1 for causal predictions (2 for acausal).
-
-%modified 9/24/10 to get rid of 1st samples the length of the filter and to
-%not remove the mean in this function (since FILMIMO does that already)
-%modified 10/5/10 to add lambda as an input
-%Modified 1/20/13 to calculate only the feature matrix, PB.
+% CalcWhat      - if 1 calculate y only, if 2 PB only, if 3 both.
 
 tic
 if length(varargin)>0
@@ -60,6 +33,9 @@ if length(varargin)>0
                                                 P=varargin{11};
                                                 if length(varargin)>11 && ~isempty(varargin{12})
                                                     featMat = varargin{12};
+                                                    if length(varargin)>12 && ~isempty(varargin{13})
+                                                        CalcWhat = varargin{13};
+                                                    end
                                                 end
                                             end
                                         end
@@ -79,7 +55,12 @@ if length(varargin)>0
                                         featind=varargin{10};
                                         if length(varargin)>10 && ~isempty(varargin{11})
                                             featMat = varargin{11};
+                                            if length(varargin)>12 && ~isempty(varargin{12})
+                                                CalcWhat = varargin{13};
+                                            end
                                         end
+                                    else
+                                        CalcWhat = varargin{13};
                                     end
                                 end
                             end
@@ -140,25 +121,35 @@ if ~exist('wsz','var')
     wsz=256;    %FFT window size
 end
 
-%MRS modified 12/13/11
-% Using binsize ms bins
-if fptimes(end)~= analog_times(end,1)
-    stop_time = min(analog_times(end,1),fptimes(end));
-    fptimesadj = analog_times(1):1/samprate:stop_time;
+if CalcWhat == 0
+    return
+end
+
+if CalcWhat == 1 || CalcWhat == 3
     
-    %          fptimes=1:samp_fact:length(fp);
-    if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of
-        % get_plexon_data silly way of labeling time vector)
+    
+    PB = [];
+    r1 = [];
+    sr = []; 
+    featind = []; 
+    
+    %MRS modified 12/13/11
+    % Using binsize ms bins
+ if length(fp)~=length(y)
+    stop_time = min(length(y),length(fp))/samprate;
+    if stop_time < 50 % BC case.
+        stop_time = min(length(y),length(fp))/binsamprate;
+    end
+    fptimesadj = analog_times(1):1/samprate:stop_time;
+%          fptimes=1:samp_fact:length(fp);
+    if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
         fpadj=interp1(fptimes,fp',fptimesadj);
         fp=fpadj';
-        %         clear fpadj
+        clear fpadj
         numbins=floor(length(fptimes)/bs);
     end
 end
-
 t = analog_times(1):binsize:analog_times(end);
-
-
 while ((numbins-1)*bs+wsz)>length(fp)
     numbins=numbins-1;  %if wsz is much bigger than bs, may be too close to end of file
 end
@@ -172,151 +163,150 @@ end
 if t(1)<analog_times(1)
     t(1)=analog_times(1);   %Do this to avoid NaNs when interpolating
 end
-y = interp1(analog_times, y, t);    % This should work for all numbers of outputs
-% as long as they are in columns of y
+y = interp1(analog_times, y, t);    %This should work for all numbers of outputs as long as they are in columns of y
 if size(y,1)==1
     y=y(:); %make sure it's a column vector
 end
-% else
-%     y=interp1(analog_times, y(:,1), t)';    %Must be a column vector
-% end
-% filter out inactive regions
+
 % Find active regions
 if exist('words','var') && ~isempty(words)
     q = find_active_regions_words(words,analog_times);
 else
-    q=ones(1,length(analog_times));   % Temp kludge b/c find_active_regions gives
-    % too long of a vector back
+    q=ones(1,length(analog_times));   %Temp kludge b/c find_active_regions gives too long of a vector back
 end
-
-q = interp1(analog_times, q, t);
-
-disp('2nd part:assign t,y,q')
-toc
-%LMP=zeros(numfp,length(y));
-
-tic
-%% Calculate LMP
-win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
-tfmat=zeros(wsz,numfp,numbins,'single');
-%% Notch filter for 60 Hz noise
-[b,a]=butter(2,[58 62]/(samprate/2),'stop');
-fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
-clear fp
-itemp=1:10;
-firstind=find(bs*itemp>wsz,1,'first');
-for i=1:numbins
-    ishift=i-firstind+1;
-    if ishift<=0
-        continue
-    elseif ishift == 1
-        LMP=zeros(numfp,length(y)-firstind+1);
+q = interp1(analog_times, double(q), t);
+    
+    disp('2nd part:assign t,y,q')
+    toc
+    %LMP=zeros(numfp,length(y));
+    
+    tic
+    
+end   
+    %% Calculate LMP
+if CalcWhat == 2 || CalcWhat == 3
+    
+    win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
+    tfmat=zeros(wsz,numfp,numbins,'single');
+    %% Notch filter for 60 Hz noise
+    %[b,a]=butter(2,[58 62]/(samprate/2),'stop');
+    %fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
+    fpf =fp;
+    clear fp
+    itemp=1:numlags;
+    firstind=find(bs*itemp>wsz,1,'first');
+    for i=1:numbins
+        ishift=i-firstind+1;
+        if ishift<=0
+            continue
+        elseif ishift == 1
+            LMP=zeros(numfp,length(y)-firstind+1);
+        end
+        %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
+        tmp=fpf(:,(bs*i-wsz+1:bs*i))';    %Make tmp samples X channels
+        LMP(:,ishift)=mean(tmp',2);
+        %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
+        %     tmp=detrend(tmp);
+        tmp=win.*tmp;
+        tfmat(:,:,ishift)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+        clear tmp tftmp
     end
-    %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
-    tmp=fpf(:,(bs*i-wsz+1:bs*i))';    %Make tmp samples X channels
-    LMP(:,ishift)=mean(tmp',2);
-    %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
-    %     tmp=detrend(tmp);
-    tmp=win.*tmp;
-    tfmat(:,:,ishift)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
-    clear tmp tftmp
-end
-%Now need to clean up tfmat to account for cutting off the firstind bins
-tfmat(:,:,(ishift+1:end))=[];
-numbins=numbins-firstind+1;
-
-% t=t(1:numbins-firstind+1);
-t=t(1:numbins);
-y(ishift+1:end,:)=[];
-q(:,ishift+1:end)=[];
-clear fpf
-freqs=linspace(0,samprate/2,wsz/2+1);
-freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
-tvect=(firstind:numbins)*(bs)-bs/2;
-
-disp('3rd part: calculate FFTs')
-toc
-tic
-%% Calculate bandpower
-% remove DC component of frequency vector
-Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;
-%0.75 factor comes from newtimef (correction for hanning window)
-
-% Pmean=mean(Pmat,3); %take mean over all times
-% instead of taking the mean over all times, calculate a running average
-% (more similar to how BrainReader does it).  To use filter, must rearrange
-% so that time is the first dimension
-% Pmean=shiftdim(Pmat,2);
-% now shift back to original dimensions
-Pmean=mean(Pmat,3); %take mean over all times
-PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
-clear Pmat
-
-%Define freq bands
-delta=freqs<4;
-mu=((freqs>7) & (freqs<20));
-gam1=(freqs>70)&(freqs<115);
-gam2=(freqs>130)&(freqs<200);
-gam3=(freqs>200)&(freqs<300);
-PB(1,:,:)=LMP;
-PB(2,:,:)=mean(PA(delta,:,:),1);
-PB(3,:,:)=mean(PA(mu,:,:),1);
-PB(4,:,:)=mean(PA(gam1,:,:),1);
-%MRS 8/31/11
-PB(5,:,:)=mean(PA(gam2,:,:),1);
-if samprate>600
-    PB(6,:,:)=mean(PA(gam3,:,:),1);
-end
-% PB has dims freqs X chans X bins
-disp('4th part: calculate bandpower')
-toc
-tic
-
-
-if ~verLessThan('matlab','7.7.0') || size(y,2)>1
-    for c=1:size(PB,2)
-        for f=1:size(PB,1)
-            rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-            if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use
-                % ALL outputs in calculating bestfeat
-                % (orig modified 12/13/10 for 2 outputs)
-                rsum=abs(rt1);
-                for n=2:size(y,2)
-                    rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                    rsum=rsum+abs(rtemp);
+    %Now need to clean up tfmat to account for cutting off the firstind bins
+    tfmat(:,:,(ishift+1:end))=[];
+    numbins=numbins-firstind+1;
+    
+    % t=t(1:numbins-firstind+1);
+    t=t(1:numbins);
+    y(ishift+1:end,:)=[];
+    q(:,ishift+1:end)=[];
+    clear fpf
+    freqs=linspace(0,samprate/2,wsz/2+1);
+    freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
+    tvect=(firstind:numbins)*(bs)-bs/2;
+    
+    disp('3rd part: calculate FFTs')
+    toc
+    tic
+    %% Calculate bandpower
+    % remove DC component of frequency vector
+    Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;
+    %0.75 factor comes from newtimef (correction for hanning window)
+    
+    % Pmean=mean(Pmat,3); %take mean over all times
+    % instead of taking the mean over all times, calculate a running average
+    % (more similar to how BrainReader does it).  To use filter, must rearrange
+    % so that time is the first dimension
+    % Pmean=shiftdim(Pmat,2);
+    % now shift back to original dimensions
+    Pmean=mean(Pmat,3); %take mean over all times
+    PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
+    clear Pmat
+    
+    %Define freq bands
+    delta=freqs<4;
+    mu=((freqs>7) & (freqs<20));
+    gam1=(freqs>70)&(freqs<115);
+    gam2=(freqs>130)&(freqs<200);
+    gam3=(freqs>200)&(freqs<300);
+    PB(1,:,:)=LMP;
+    PB(2,:,:)=mean(PA(delta,:,:),1);
+    PB(3,:,:)=mean(PA(mu,:,:),1);
+    PB(4,:,:)=mean(PA(gam1,:,:),1);
+    %MRS 8/31/11
+    PB(5,:,:)=mean(PA(gam2,:,:),1);
+    if samprate>600
+        PB(6,:,:)=mean(PA(gam3,:,:),1);
+    end
+    % PB has dims freqs X chans X bins
+    disp('4th part: calculate bandpower')
+    toc
+    tic
+    
+    
+    if ~verLessThan('matlab','7.7.0') || size(y,2)>1
+        for c=1:size(PB,2)
+            for f=1:size(PB,1)
+                rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+                if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use
+                    % ALL outputs in calculating bestfeat
+                    % (orig modified 12/13/10 for 2 outputs)
+                    rsum=abs(rt1);
+                    for n=2:size(y,2)
+                        rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+                        rsum=rsum+abs(rtemp);
+                    end
+                    rt=rsum/n;
+                    %                 rt=(abs(rt1)+abs(rt2))/2;
+                else
+                    rt=rt1;
                 end
-                rt=rsum/n;
-                %                 rt=(abs(rt1)+abs(rt2))/2;
-            else
-                rt=rt1;
+                r(f,c)=rt(1,2);    %take absolute value of r
             end
-            r(f,c)=rt(1,2);    %take absolute value of r
+        end
+    else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar;
+        % in newer versions it outputs matrix for vectors
+        for c=1:size(PB,2)
+            for f=1:size(PB,1)
+                rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+                if size(y,2)>1
+                    rsum=abs(rt1);
+                    for n=2:size(y,2)
+                        rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+                        rsum=rsum+abs(rtemp);
+                    end
+                    rt=rsum/n;
+                else
+                    rt=rt1;
+                end
+                
+                r(f,c)=abs(rt);    %take absolute value of r
+            end
         end
     end
-else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar;
-    % in newer versions it outputs matrix for vectors
-    for c=1:size(PB,2)
-        for f=1:size(PB,1)
-            rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-            if size(y,2)>1
-                rsum=abs(rt1);
-                for n=2:size(y,2)
-                    rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                    rsum=rsum+abs(rtemp);
-                end
-                rt=rsum/n;
-            else
-                rt=rt1;
-            end
-            
-            r(f,c)=abs(rt);    %take absolute value of r
-        end
-    end
+    r1=reshape(r,1,[]);
+    r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
+    
+    [sr,featind]=sort(r1,'descend');
 end
-r1=reshape(r,1,[]);
-r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
-
-[sr,featind]=sort(r1,'descend');
-
 end
 

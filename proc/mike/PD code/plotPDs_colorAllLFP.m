@@ -1,5 +1,5 @@
-
-filelist= Chewie_LFP_BC_Decoder1_filenames(:,1);
+%Need filelist, bestc and bestf for monkey
+filelist= ChewieLFP2fileNames(:);
 
 plotOn = 0;
 
@@ -17,19 +17,19 @@ for i=1:length(filelist)
 %     catch
 %         continue
 %     end
-    LFPOnlinepds=LFPfilesPDs{1};
+    LFP_PDs=LFPfilesPDs{1};
     k =1;
     
-    for l = 1:length(bestc)
+    for l = 1:length(bestc_bychan)
         
-        if bestf(l) == 1
+        if bestf_bychan(l) == 1
             continue
         else
-            LFPdir(k,i+2) = LFPOnlinepds{bestf(l)-1}(bestc(l),2);
-            %LFPdir(k,i+2) = LFPOnlinepds(bestc(l),2);
-            NonLMPInd(k,:) = [bestf(l) bestc(l)];
-            LFPdir(k,1) = bestc(l);
-            LFPdir(k,2) = bestf(l);
+            LFP_OnlinePDs(k,i+2) = LFP_PDs{bestf_bychan(l)-1}(bestc_bychan(l),2);
+            %LFP_OnlinePDs(k,i+2) = LFP_PDs(bestc_bychan(l),2);
+            NonLMPInd(k,:) = [bestf_bychan(l) bestc_bychan(l)];
+            LFP_OnlinePDs(k,1) = bestc_bychan(l);
+            LFP_OnlinePDs(k,2) = bestf_bychan(l);
             k=k+1;
         end
         
@@ -38,29 +38,29 @@ for i=1:length(filelist)
     NonLMPIndSorted = sortrows(NonLMPInd,-2);
     
     for n = 1 : size(NonLMPInd,1)
-        LFPOnlinepds{NonLMPIndSorted(n,1)-1}(NonLMPIndSorted(n,2),:) = [];
-        %LFPOnlinepds(NonLMPIndSorted(n,2),:) = [];
+        LFP_PDs{NonLMPIndSorted(n,1)-1}(NonLMPIndSorted(n,2),:) = [];
+        %LFP_PDs(NonLMPIndSorted(n,2),:) = [];
     end
     
     if ~exist('LFPOfflinePDs','var')
-        LFPOnlinepds{1}(:,8)=repmat(2,size(LFPOnlinepds{1},1),1);
-        LFPOnlinepds{2}(:,8)=repmat(3,size(LFPOnlinepds{2},1),1);
-        LFPOnlinepds{3}(:,8)=repmat(4,size(LFPOnlinepds{3},1),1);
-        LFPOnlinepds{4}(:,8)=repmat(5,size(LFPOnlinepds{4},1),1);
-        LFPOnlinepds{5}(:,8)=repmat(6,size(LFPOnlinepds{5},1),1);
-        LFPOfflinePDinfo = cell2mat(LFPOnlinepds');
-        %LFPOfflinePDinfo = LFPOnlinepds;
+        LFP_PDs{1}(:,8)=repmat(2,size(LFP_PDs{1},1),1);
+        LFP_PDs{2}(:,8)=repmat(3,size(LFP_PDs{2},1),1);
+        LFP_PDs{3}(:,8)=repmat(4,size(LFP_PDs{3},1),1);
+        LFP_PDs{4}(:,8)=repmat(5,size(LFP_PDs{4},1),1);
+        LFP_PDs{5}(:,8)=repmat(6,size(LFP_PDs{5},1),1);
+        LFPOfflinePDinfo = cell2mat(LFP_PDs');
+        %LFPOfflinePDinfo = LFP_PDs;
         LFPOfflinePDs(:,1) = LFPOfflinePDinfo(:,5);
         LFPOfflinePDs(:,2) = LFPOfflinePDinfo(:,8);
         LFPOfflinePDs(:,i+2) = LFPOfflinePDinfo(:,2);
     else
-        LFPOnlinepds{1}(:,8)=repmat(2,size(LFPOnlinepds{1},1),1);
-        LFPOnlinepds{2}(:,8)=repmat(3,size(LFPOnlinepds{2},1),1);
-        LFPOnlinepds{3}(:,8)=repmat(4,size(LFPOnlinepds{3},1),1);
-        LFPOnlinepds{4}(:,8)=repmat(5,size(LFPOnlinepds{4},1),1);
-        LFPOnlinepds{5}(:,8)=repmat(6,size(LFPOnlinepds{5},1),1);
-        LFPOfflinePDinfo = cell2mat(LFPOnlinepds');
-        %LFPOfflinePDinfo = LFPOnlinepds;
+        LFP_PDs{1}(:,8)=repmat(2,size(LFP_PDs{1},1),1);
+        LFP_PDs{2}(:,8)=repmat(3,size(LFP_PDs{2},1),1);
+        LFP_PDs{3}(:,8)=repmat(4,size(LFP_PDs{3},1),1);
+        LFP_PDs{4}(:,8)=repmat(5,size(LFP_PDs{4},1),1);
+        LFP_PDs{5}(:,8)=repmat(6,size(LFP_PDs{5},1),1);
+        LFPOfflinePDinfo = cell2mat(LFP_PDs');
+        %LFPOfflinePDinfo = LFP_PDs;
         LFPOfflinePDs(:,i+2) = LFPOfflinePDinfo(:,2);
     end
     
@@ -70,14 +70,24 @@ end
 if plotOn ==1
     figure
     
-    LFPdirSorted = sortrows(LFPdir,[2 -3]);
+    LFP_OnlinePDs_Sorted = sortrows(LFP_OnlinePDs,[2 -3]);
+    %Chewie
     imagesc(LFPdirSorted(34:end,3:end));figure(gcf);
-    
-    set(gca,'YTick',[1,5,26,51],'YTickLabel',{'Mu','70-115','130-200','200-300'})
     
     figure
     LFPOfflinePDsSorted = sortrows(LFPOfflinePDs,[2 -3]);
     imagesc(LFPOfflinePDsSorted(64:end,3:end));figure(gcf);
+    
+    %Mini
+    imagesc(LFPdirSorted(50:end,3:end));figure(gcf);
+    figure
+    LFPOfflinePDsSorted = sortrows(LFPOfflinePDs,[2 -3]);
+    imagesc(LFPOfflinePDsSorted(48:end,3:end));figure(gcf);
+    
+    
+    set(gca,'YTick',[1,5,26,51],'YTickLabel',{'Mu','70-115','130-200','200-300'})
+    
+    
     
     set(gca,'YTick',[1,96,192,272],'YTickLabel',{'Mu','70-115','130-200','200-300'})
     set(gca,'YTick',[1,91,166,237],'YTickLabel',{'Mu','70-115','130-200','200-300'})

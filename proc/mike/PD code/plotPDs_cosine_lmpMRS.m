@@ -96,6 +96,7 @@ if exist('H','var') %if H matrix is loaded
     [chs,chnum]=sort(chmax);
     
     bestchans=bestc(chnum(end-24:end));
+    bestFeats=bestf(chnum(end-24:end));
 %     BSCN=SCNorm(bestchans,:,:);
     BSC=SCModel(bestchans,:,:);
     for i=1:numfiles-badfiles

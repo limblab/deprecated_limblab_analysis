@@ -1,4 +1,4 @@
-function [DateNames FileList] = CalcDecoderAge(FileList, DecoderStartDate)
+function [FileList] = CalcDecoderAge(FileList, DecoderStartDate)
 
 % Input
 

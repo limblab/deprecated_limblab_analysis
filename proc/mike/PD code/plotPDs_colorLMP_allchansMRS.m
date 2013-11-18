@@ -1,5 +1,5 @@
 
-filelist= Chewie_filenames;
+filelist= MiniLFP2fileNames;
 
 for i=1:length(filelist)
  fnam=[filelist{i}]
@@ -26,7 +26,7 @@ dummy=1:96;
 chanindsL=dummy(goodL);
 % g1c=bestc(bestf==4)';
 % g2c=bestc(bestf==5)';
-Lc=bestc(bestf==1)';
+%Lc=bestc(bestf==1)';
 % for n=1:length(g1c)
 % g1cc(n)=find(g1c(n)==chanIDs);
 % end
@@ -39,7 +39,7 @@ Lc=bestc(bestf==1)';
 
 % gam1dir(:,i)=LG1(good1,2);
 % gam2dir(:,i)=LG2(good2,2);
-LMPdir(:,i)=LMP(goodL,2);
+LMPdir(:,i)=LMP(:,2);
 end
 figure
 % subplot(2,1,1)

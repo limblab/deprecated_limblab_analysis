@@ -1,6 +1,6 @@
 %runpredfp6 
 %Uses MRSpredictionsfromfp6allDecoderBuild
-input = 1;
+input = 2;
 Usefeatmat = 0;
 %Use 1 if loading files from folder structure, use 2 if using list of
 %filenames and obtaining path from citadel
@@ -23,7 +23,8 @@ if input == 1 % Remember to clear featind if building decoders on diff feat
 elseif input == 2
     % Need to start out with list of file names if using input =2
     %DaysNames = [{kinStructOut.name}' {kinStructOut.decoder_age}'];
-    DaysNames = [BDFlist_all mat2cell(DecoderAges(:),repmat(1,length(BDFlist_all),1),1)];
+    %DaysNames = [BDFlist_all mat2cell(DecoderAges(:),repmat(1,length(BDFlist_all),1),1)];
+    DaysNames = FileList;
     %DaysNames = DaysNames(cellfun(@isnan,{kinStructOut.decoder_age})==0,:);
     direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Mini';
     
@@ -46,8 +47,8 @@ for i = 1%:length(DaysNames)]
 %         end
 %     
     else
-        MATfiles = 1;
-        DecoderAge = DaysNames{i,2};
+        MATfiles = DaysNames;
+        %DecoderAge = DaysNames{i,2};
     end
 
 %% ***Declare all input arguments that stay constant through all loop
@@ -57,7 +58,7 @@ for i = 1%:length(DaysNames)]
     signalType = 'vel';
     %numberOfFps
     binsize = .1;
-    folds = 10;
+    folds = 1;
     numlags = 10;
     numsides = 1;
     %samprate
