@@ -388,6 +388,7 @@ else
         disp(sprintf('The data does not contain any unit with a minimum of %g spike/sec',minFiringRate));
         spikeratedata = [];
         spikeguide = [];
+        neuronIDs = [];
     else   
 
         % Pre-allocate accordingly!

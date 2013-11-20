@@ -3,8 +3,10 @@ function [adapt_stats,offline_stats] = EvalOnlineAdapt(binnedData, varargin)
 offset_x = 6;
 offset_y = 1.55;
 cursgain = 55;
-fix_time = 1200;
 plotflag = 1;
+
+neural_control_pct = [0.5 0.5 0.75 1 1];
+npc_times = [12 23 35 47 59]*60;
 
 if nargin >1
     plotflag = varargin{1};
@@ -16,6 +18,13 @@ binnedData.forcedatabin = actual_force;
                 
 if nargin>2
     offline_decoder = varargin{2};
+    if isfield(offline_decoder,'H')
+       offline_preds   = predictSignals(offline_decoder,binnedData);
+    else
+        %offline predictions are provided instead of decoder
+        offline_preds = varargin{2};
+    end
+    clear offline_decoder;
 else
 %     binnedData = set_catch_states(binnedData);
 %     options.PredCursPos = 1; options.Use_SD = 1;
@@ -23,11 +32,10 @@ else
 %     offline_decoder = OfflineDecoder{1};
     options = [];
     options.PredForce = 1;
-    offline_decoder = BuildModel(binnedData,options);
-
+    offline_decoder = BuildModel(binnedData,options);   
+    offline_preds   = predictSignals(offline_decoder,binnedData);
+%     [offR2, offvaf, offmse, offline_preds] = mfxval(binnedData,options); 
 end
-
-offline_preds   = predictSignals(offline_decoder,binnedData);
 
 num_adapt = sum(binnedData.trialtable(:,12));
 num_trials= size(binnedData.trialtable,1);
@@ -44,27 +52,42 @@ if plotflag
 end
     
 for i = 1:num_adapt
-    catch_idx = binnedData.timeframe>catch_trial_times(i,1) & ...
+        
+%     ncp = neural_control_pct(ceil(catch_trial_times(i,1)/(adapt_dur+fixed_dur)));
+    time = catch_trial_times(i,1);
+    
+    ncp = neural_control_pct(find(npc_times>time,1,'first'));
+        
+    act_catch_idx = binnedData.timeframe>catch_trial_times(i,1) & ...
                 binnedData.timeframe<catch_trial_times(i,2);
-    Act = double(actual_force(catch_idx,:));
     
-    Curs= binnedData.cursorposbin(catch_idx,:);
+    %delay one bin?        
+%     act_catch_idx = [false; act_catch_idx(1:end-1)];
     
-    catch_idx = offline_preds.timeframe>catch_trial_times(i,1) & ...
+    Act = double(actual_force(act_catch_idx,:));
+    
+    Curs= binnedData.cursorposbin(act_catch_idx,:);
+    
+    online_preds = (Curs - Act*(1-ncp))/ncp;
+    
+    off_catch_idx = offline_preds.timeframe>catch_trial_times(i,1) & ...
                 offline_preds.timeframe<catch_trial_times(i,2);
+        
+    %delay one bin?        
+%     off_catch_idx = [false; off_catch_idx(1:end-1)];
             
-    Preds= offline_preds.preddatabin(catch_idx,:);
+    Preds= offline_preds.preddatabin(off_catch_idx,:);
             
-    adapt_stats(i,1,:) = CalculateR2(Act,Curs);
-    adapt_stats(i,2,:) = 1-  sum( (Curs-Act).^2 ) ./ sum( (Act - repmat(mean(Act),size(Act,1),1)).^2);
-    adapt_stats(i,3,:) = mean((Curs-Act).^2);
+    adapt_stats(i,1,:) = CalculateR2(Act,online_preds);
+    adapt_stats(i,2,:) = 1-  sum( (online_preds-Act).^2 ) ./ sum( (Act - repmat(mean(Act),size(Act,1),1)).^2);
+    adapt_stats(i,3,:) = mean((online_preds-Act).^2);
     
     offline_stats(i,1,:) = CalculateR2(Act,Preds);
     offline_stats(i,2,:) = 1-  sum( (Preds-Act).^2 ) ./ sum( (Act - repmat(mean(Act),size(Act,1),1)).^2);
     offline_stats(i,3,:) = mean((Preds-Act).^2);
     
     if plotflag
-        xx = binnedData.timeframe(catch_idx);
+        xx = binnedData.timeframe(act_catch_idx);
         ytop = 10*ones(length(xx),1);
         ybot = -ytop;
         yarea = [ytop; ybot(end:-1:1)];
@@ -72,28 +95,40 @@ for i = 1:num_adapt
         area(fig_x,xx,yarea,'Facecolor',[.5 .5 .5],'LineStyle','none');
         area(fig_y,xx,yarea,'Facecolor',[.5 .5 .5],'LineStyle','none');
         
-        plot(fig_x, binnedData.timeframe(catch_idx),binnedData.cursorposbin(catch_idx,1),'b');
-        plot(fig_y, binnedData.timeframe(catch_idx),binnedData.cursorposbin(catch_idx,2),'b');
+        plot(fig_x, binnedData.timeframe(act_catch_idx),binnedData.cursorposbin(act_catch_idx,1),'b');
+        plot(fig_x, binnedData.timeframe(act_catch_idx),online_preds(:,1),'m');
+        plot(fig_y, binnedData.timeframe(act_catch_idx),binnedData.cursorposbin(act_catch_idx,2),'b');
+        plot(fig_y, binnedData.timeframe(act_catch_idx),online_preds(:,2),'m');
     
     end
 end
 
 if plotflag
+    
     plot(fig_x,binnedData.timeframe,actual_force(:,1),'k'); title(fig_x,'Force X');
     plot(fig_x,offline_preds.timeframe,offline_preds.preddatabin(:,1),'r');
     plot(fig_y,binnedData.timeframe,actual_force(:,2),'k'); title(fig_y,'Force Y');
     plot(fig_y,offline_preds.timeframe,offline_preds.preddatabin(:,2),'r');
 
-     last_adapt_trial = find(catch_trial_times(:,2)<=fix_time,1,'last');
-%     plot(fig_x,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
-%           ylim(),'k--','LineWidth',2);
-% %       legend(fig_x,'online adapt preds','actual force','offline predictions');
-%     plot(fig_y,[catch_trial_times(last_adapt_trial,2) catch_trial_times(last_adapt_trial,2)],...
-%           ylim(),'k--','LineWidth',2);  
-% %       legend(fig_y,'online adapt preds','actual force','offline predictions');
-% 
-    plot_adapt_stats(offline_stats,adapt_stats);
     
+
+    mas = nan(size(adapt_stats,1),3);
+    mos = nan(size(offline_stats,1),3);
+    for i = 1:3        
+        mas(:,i,:)= mean(adapt_stats(:,i,:),3);
+        mos(:,i,:)= mean(offline_stats(:,i,:),3);
+    end
+%     plot_adapt_stats(offline_stats,adapt_stats);
+    plot_adapt_stats(smoothCE(mos),smoothCE(mas));
+% 
+%     masR2 = mean(adapt_stats(:,1,:),3);
+%     mosR2 = mean(offline_stats(:,1,:),3);
+% 
+%     % plot_adapt_stats(smooth(mos),smooth(mas));
+%     figure; plot([smoothCE(masR2) smoothCE(mosR2)]);
+%     title('smoothed R2');legend('online adapt','offline training');
+%     figure; plot(smoothCE(masR2)./smoothCE(mosR2));
+%     title('R2 ratio, adapt/training');
 end
 
 end
@@ -101,23 +136,30 @@ end
 
 % %%
 %--------------------------------
+% as = adapt_stats(1:end-4,:,:);
+% os = offline_stats(1:end-4,:,:);
+% 
 % mov_window = 5;
 % 
-% mas = mean(adapt_stats,3);
-% mos = mean(offline_stats,3);
+% mas = mean(as(:,1,:),3);
+% mos = mean(os(:,1,:),3);
 % 
-% plot_adapt_stats(mos,mas,49);
+% % plot_adapt_stats(smooth(mos),smooth(mas));
+% plot([smoothCE(mas) smoothCE(mos)]);
+% figure; plot(smoothCE(mas)./smoothCE(mos));
 % 
+% num_adapt = size(as,1);
 % 
-% num_adapt = size(adapt_stats,1);
-% 
-% movav_adapt_stats   = zeros(num_adapt-mov_window,3,2);
-% movav_offline_stats = zeros(num_adapt-mov_window,3,2);
+% movav_adapt_stats   = zeros(num_adapt-mov_window,3,1);
+% movav_offline_stats = zeros(num_adapt-mov_window,3,1);
 % 
 % for i = 1:num_adapt-mov_window
-%     
-%     movav_adapt_stats(i,:,:)  = mean(adapt_stats(i:i+mov_window,:,:));
-%     movav_offline_stats(i,:,:)= mean(offline_stats(i:i+mov_window,:,:)); 
+% %     movav_adapt_stats(i,:,:)  = mean(mas(i:i+mov_window,:,:));
+% %     movav_offline_stats(i,:,:)= mean(mos(i:i+mov_window,:,:)); 
+% 
+%     movav_adapt_stats(i,:,:)  = mean(mas(i:i+mov_window,:,:));
+%     movav_offline_stats(i,:,:)= mean(mos(i:i+mov_window,:,:)); 
+% 
 % end
 % 
-% plot_adapt_stats(movav_offline_stats,movav_adapt_stats,49); 
+% plot_adapt_stats(movav_offline_stats,movav_adapt_stats);

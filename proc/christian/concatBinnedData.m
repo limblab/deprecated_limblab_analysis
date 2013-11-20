@@ -82,6 +82,7 @@ if isfield(struct1, 'spikeguide') && isfield(struct2, 'spikeguide')
             end
         end
         binnedData.spikeguide = neuronIDs2spikeguide(neuronIDs);
+        binnedData.neuronIDs = neuronIDs;
         binnedData.spikeratedata = [struct1.spikeratedata(:,s1_i); struct2.spikeratedata(:,s2_i)];
         clear Neurons1 Neurons2 num_units s1_i s2_i spot1 spot2;
     end
@@ -141,6 +142,24 @@ if isfield(struct1, 'veloclabels') && isfield(struct2, 'veloclabels')
         return;
     else
         binnedData.velocbin = [struct1.velocbin; struct2.velocbin];
+    end
+end
+%% Concat Acceleration
+if isfield(struct1, 'acclabels') && isfield(struct2, 'acclabels')
+    for i = 1:size(struct1.acclabels,1)
+        if ~strcmp(deblank(struct1.acclabels(i,:)),deblank(struct2.acclabels(i,:)))
+            disp('incompatible acceleration labels - concatenation aborted');
+            binnedData = struct1;
+            return;
+        end
+    end
+
+    if ~isfield(struct1, 'accelbin') || ~isfield(struct2, 'accelbin') || (size(struct1.acclabels,1)~=size(struct2.acclabels,1))
+        disp('incompatible acceleration data - concatenation aborted');
+        binnedData = struct1;
+        return;
+    else
+        binnedData.accelbin = [struct1.accelbin; struct2.accelbin];
     end
 end
 
