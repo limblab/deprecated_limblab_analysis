@@ -1,10 +1,10 @@
 function UF_plot_units(UF_struct,bdf,rw_bdf,save_figs)
 figHandles = [];
 figTitles = cell(0);
-x_limits = [-.1 .15];
-histograms = 1;
+x_limits = [-.05 .1];
+firing_rate_method = 'moving'; % 'moving', 'hist','gaussian'
 hist_bin_width = 0.01;
-fr_tc = 0.005;
+fr_tc = 0.02;
 
     if isfield(bdf,'units')
         UF_struct.t_axis = UF_struct.trial_range(1); 
@@ -23,8 +23,7 @@ fr_tc = 0.005;
 
         bin_size = dt;
         neuron_t_axis = (0:(UF_struct.trial_range(2)-UF_struct.trial_range(1))/bin_size-1)*bin_size+UF_struct.trial_range(1);
-        hist_t_axis = UF_struct.trial_range(1):hist_bin_width:UF_struct.trial_range(2);
-    %     bin_width = 0.02;
+        hist_t_axis = UF_struct.trial_range(1):hist_bin_width:UF_struct.trial_range(2);        
 
         bin_width = 0.01;
         analysis_bin_edges = 0.015:bin_width:0.085;
@@ -76,7 +75,12 @@ fr_tc = 0.005;
     %         fr_mat = zeros(size(trial_table,1),length(neuron_t_axis));
 
             unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));    
-            fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc); 
+            
+            if strcmp(firing_rate_method,'gaussian')
+                fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc); 
+            else
+                fr = spikes2FrMovAve(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc); 
+            end
             spike_hist = zeros(size(UF_struct.trial_table,1),length(hist_t_axis));
             unit_all_trials = zeros(size(UF_struct.trial_table,1),length(neuron_t_axis));
             spikes_vector = [];
@@ -134,11 +138,12 @@ fr_tc = 0.005;
                                 UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),'LineWidth',2)
                             idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump});
                             idx = intersect(idx,UF_struct.bias_indexes{iBias});
-                            if histograms
-                                max_y = max(max_y,max(mean(spike_hist(idx,:)/hist_bin_width,1)));
-                            else
-                                max_y = max(max_y,max(mean(unit_all_trials(idx,:),1)));
-                            end
+                            switch firing_rate_method
+                                case 'hist'                            
+                                    max_y = max(max_y,max(mean(spike_hist(idx,:)/hist_bin_width,1)));
+                                otherwise
+                                    max_y = max(max_y,max(mean(unit_all_trials(idx,:),1)));                                
+                            end  
                         end
                     end
                 end
@@ -170,7 +175,7 @@ fr_tc = 0.005;
                             idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump});
                             idx = intersect(idx,UF_struct.bias_indexes{iBias});
                             subplot(2,length(UF_struct.bump_indexes)/2,iBump) 
-                            if histograms
+                            if strcmp(firing_rate_method,'hist')
                                 plot(hist_t_axis,mean(spike_hist(idx,:),1)/hist_bin_width,'Color',...
                                     UF_struct.colors_field_bias((iBias-1)*length(UF_struct.field_indexes)+iField,:),'LineWidth',2)
                                 errorarea(hist_t_axis,mean(spike_hist(idx,:),1)/hist_bin_width,...
@@ -244,7 +249,7 @@ fr_tc = 0.005;
     %                 sum(neuron_t_axis > analysis_bin_edges(1) & neuron_t_axis < analysis_bin_edges(end)));
     %             unit_binned_mean_fr = zeros(length(unique(trial_type_vector)),size(idx_mat,2));
     %             unit_binned_std_fr = zeros(length(unique(trial_type_vector)),size(idx_mat,2));
-                if histograms
+                if strcmp(firing_rate_method,'hist')
                     unit_binned_mean_fr = zeros(size(trial_type_mat,1),size(spike_hist,2));
                     unit_binned_std_fr = zeros(size(trial_type_mat,1),size(spike_hist,2));
                     iTrialType = 0;
@@ -372,13 +377,14 @@ fr_tc = 0.005;
     %             a = mean(mean_fr_bump);
     %             b = (max(mean_fr_bump)-min(mean_fr_bump))/2;
     %             cosine = [num2str(a,10) '+' num2str(b,10) '*cos(x*10/(2*pi) + d)'];
-                exp_cosine = 'a + exp(b*cos(x - d))/e';
-                s = fitoptions('Method','NonlinearLeastSquares','StartPoint',[0 1 pi 1],'Lower',[0 0 0 0],...
-                    'Upper',[100 100 2*pi 100]);
-                f = fittype(exp_cosine,'options',s);
-                fit_cosine = fit(UF_struct.bump_dir_actual,mean_fr_bump,f);
+
                 
                 if isfield(UF_struct,'PDs')
+                    exp_cosine = 'a + exp(b*cos(x - d))/e';
+                    s = fitoptions('Method','NonlinearLeastSquares','StartPoint',[0 1 pi 1],'Lower',[0 0 0 0],...
+                        'Upper',[100 100 2*pi 100]);
+                    f = fittype(exp_cosine,'options',s);
+                    fit_cosine = fit(UF_struct.bump_dir_actual,mean_fr_bump,f);
                     active_PD(rw_unit_idx) = fit_cosine.d;
         %             compass(max_radius*cos(active_PD(rw_unit_idx)),max_radius*sin(active_PD(rw_unit_idx)),'r');
                     plot([active_PD(rw_unit_idx) active_PD(rw_unit_idx)]*180/pi,[0 max_radius],'r')
@@ -476,8 +482,6 @@ fr_tc = 0.005;
                 set(gca_temp,'Visible','off');
                 set(h,'Visible','on');
     %             pause
-
-
 
             else
                 disp('Less than 50 spikes, skipping plotting')

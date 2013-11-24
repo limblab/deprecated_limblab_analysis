@@ -155,7 +155,7 @@ remove_index = find(isnan(trial_table(:,tc.x_offset)) | isnan(trial_table(:,tc.t
     (trial_table(:,tc.result)==32 & isnan(trial_table(:,tc.t_ct_hold_on))));
 for iCol = 9:length(fieldnames(tc))    
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
-    remove_index = [remove_index temp'];
+    remove_index = [remove_index; temp];
 end
 remove_index = unique(remove_index);
 trial_table(remove_index,:) = [];

@@ -33,6 +33,7 @@ function UF_plot_EMG(UF_struct,save_figs)
                     idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump}); 
                     idx = intersect(idx,UF_struct.bias_indexes{iBias}); 
                     idx = intersect(idx,plot_idx);
+                    disp(['Removed ' num2str(sum((std(temp_emg(idx,:)') > 3*mean(std(temp_emg(idx,:)'))))) ' trials from EMG plot'])
                     idx = idx(~(std(temp_emg(idx,:)') > 3*mean(std(temp_emg(idx,:)'))));
                     subplot(2,length(UF_struct.bump_indexes)/2,iBump)            
                     hold on

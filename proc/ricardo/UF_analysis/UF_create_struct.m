@@ -1,6 +1,7 @@
 function UF_struct = UF_create_struct(bdf,file_details)
 
 UF_struct = file_details;
+UF_struct.trial_range = [-.1 .2];
 
 [UF_struct.trial_table,UF_struct.table_columns] = UF_trial_table(bdf);
 
@@ -32,10 +33,10 @@ UF_struct.markerlist = {'^','o','.','*'};
 UF_struct.linelist = {'-','-.','--',':'};
 
 rewarded_trials = find(UF_struct.trial_table(:,UF_struct.table_columns.result)==32);
+fail_trials = find(UF_struct.trial_table(:,UF_struct.table_columns.result)==34);
 
-UF_struct.trial_range = [-.5 .5];
 if isfield(bdf,'emg')
-    UF_struct.num_emg = size(bdf.emg.emgnames,2);
+    UF_struct.num_emg = length(bdf.emg.emgnames);
     UF_struct.emgnames = bdf.emg.emgnames;
 else
     UF_struct.num_emg = 0;
@@ -63,7 +64,7 @@ acc(:,1) = bdf.pos(:,1);
 acc(:,2) = [0 ; diff(vel(:,2))*UF_struct.fs];
 acc(:,3) = [0 ; diff(vel(:,3))*UF_struct.fs];
 
-trial_table_temp = UF_struct.trial_table(rewarded_trials,:);
+trial_table_temp = UF_struct.trial_table(sort([rewarded_trials;fail_trials]),:);
 trial_table_temp = trial_table_temp(1:end-1,:);
 UF_struct.trial_table = trial_table_temp;
 
@@ -91,11 +92,44 @@ x_temp = UF_struct.x_pos_translated(:,UF_struct.t_zero_idx:t_end_idx);
 y_temp = UF_struct.y_pos_translated(:,UF_struct.t_zero_idx:t_end_idx);
 max_x_pos = sign(x_temp(:,end)).*max(abs(x_temp),[],2);
 max_y_pos = sign(y_temp(:,end)).*max(abs(y_temp),[],2);
-actual_bump_directions = atan2(max_y_pos,max_x_pos);
-actual_bump_directions(actual_bump_directions<0) = actual_bump_directions(actual_bump_directions<0)+2*pi;
-keep_idx = abs(actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5 |...
-    abs(-2*pi+actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5;
-UF_struct.trial_table = UF_struct.trial_table(keep_idx,:);
+
+if ~UF_struct.trial_table(1,UF_struct.table_columns.force_bump)
+    actual_bump_directions = atan2(max_y_pos,max_x_pos);
+    actual_bump_directions(actual_bump_directions<0) = actual_bump_directions(actual_bump_directions<0)+2*pi;
+    keep_idx = abs(actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5 |...
+        abs(-2*pi+actual_bump_directions - UF_struct.trial_table(:,UF_struct.table_columns.bump_direction))<.5;
+    UF_struct.trial_table = UF_struct.trial_table(keep_idx,:);
+    disp(['Removed ' num2str(sum(~keep_idx)) ' trials'])
+else
+    field_orientations = unique(UF_struct.trial_table(:,UF_struct.table_columns.field_orientation));
+    bump_directions = unique(UF_struct.trial_table(:,UF_struct.table_columns.bump_direction));
+    bias_force_directions = unique(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_dir));
+    for iField = 1:length(field_orientations)
+        field_indexes{iField} = find(UF_struct.trial_table(:,UF_struct.table_columns.field_orientation)==field_orientations(iField));
+    end
+    for iBump = 1:length(bump_directions)
+        bump_indexes{iBump} = find(UF_struct.trial_table(:,UF_struct.table_columns.bump_direction)==bump_directions(iBump));
+    end
+
+    for iBias = 1:length(bias_force_directions)
+        bias_indexes{iBias} = find(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_dir)==bias_force_directions(iBias));
+    end
+    remove_idx = [];
+    for iBias = 1:length(bias_force_directions)
+        for iField = 1:length(field_orientations)
+            for iBump = 1:length(bump_directions)
+                idx = intersect(bias_indexes{iBias},field_indexes{iField});
+                idx = intersect(idx,bump_indexes{iBump});
+                remove_idx = [remove_idx; idx(max_x_pos(idx) > mean(max_x_pos(idx)) + 3*std(max_x_pos(idx)))];
+                remove_idx = [remove_idx; idx(max_x_pos(idx) < mean(max_x_pos(idx)) - 3*std(max_x_pos(idx)))];
+                remove_idx = [remove_idx; idx(max_y_pos(idx) > mean(max_y_pos(idx)) + 3*std(max_y_pos(idx)))];
+                remove_idx = [remove_idx; idx(max_y_pos(idx) < mean(max_y_pos(idx)) - 3*std(max_y_pos(idx)))];
+            end
+        end
+    end
+    UF_struct.trial_table(remove_idx,:) = [];
+    disp(['Removed ' num2str(length(remove_idx)) ' trials'])
+end
 
 %%
 temp = min(20,size(UF_struct.trial_table,1));
@@ -242,4 +276,15 @@ UF_struct.bump_force_dir_actual = atan2(mean(UF_struct.y_force(:,UF_struct.t_axi
     mean(UF_struct.x_force(:,UF_struct.t_axis>0.03 & UF_struct.t_axis<UF_struct.bump_duration),2)-...
     mean(UF_struct.x_force(:,UF_struct.t_axis>-.05 & UF_struct.t_axis<0),2));
 UF_struct.bump_force_dir_actual(UF_struct.bump_force_dir_actual<0) = UF_struct.bump_force_dir_actual(UF_struct.bump_force_dir_actual<0)+2*pi;
+
+units = unit_list(bdf);
+UF_struct.firingrates = zeros([size(UF_struct.idx_table) length(units)]);
+all_chans = reshape([bdf.units.id],2,[])';
+fr_tc = 0.02;
+
+for iUnit = 1:size(units,1)    
+    unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));
+    fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc); 
+    UF_struct.firingrates(:,:,iUnit) = fr(UF_struct.idx_table);
+end
 

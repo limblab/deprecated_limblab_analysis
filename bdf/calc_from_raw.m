@@ -349,6 +349,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 % Chris: you should reconsider and remove the "robot_task" from below!
 if robot_task && isfield(out_struct,'emg')
     new_emg = interp1(out_struct.emg.data(:,1), out_struct.emg.data(:,2:end), analog_time_base);
+    new_emg = reshape(new_emg,length(analog_time_base),[]);
     out_struct.emg.data = [analog_time_base' new_emg];
     out_struct.emg.emgfreq = round(1/mode(diff(analog_time_base(1:1000))));
     clear new_emg;

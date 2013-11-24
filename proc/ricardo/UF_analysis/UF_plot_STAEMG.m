@@ -15,7 +15,15 @@ if isfield(bdf,'units')
 
     for iUnit = 1:size(units,1)    
         unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));
-        electrode = UF_struct.elec_map(find(UF_struct.elec_map(:,3)==all_chans(unit_idx,1)),4);  
+        try
+            electrode = UF_struct.elec_map(find(UF_struct.elec_map(:,3)==all_chans(unit_idx,1)),4);
+        catch  
+            temp = reshape([UF_struct.elec_map{:}]',4,[])';
+            temp = [temp{:,3}]';
+            temp = find(temp==all_chans(unit_idx,1));
+            electrode = UF_struct.elec_map{temp}{4};
+        end
+%         electrode = UF_struct.elec_map(find(UF_struct.elec_map(:,3)==all_chans(unit_idx,1)),4);  
         ts = bdf.units(unit_idx).ts; 
         ts = round(ts/dt)*dt;
         
@@ -26,7 +34,7 @@ if isfield(bdf,'units')
         
         figHandles(end+1) = figure;
         set(gcf,'name',['STAEMG Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2))],'numbertitle','off')                
-        figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2)) '_raster'];
+        figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2))];
         
         for iEMG = 1:UF_struct.num_emg
             emg_mat = zeros(length(ts),length(emg_window));
