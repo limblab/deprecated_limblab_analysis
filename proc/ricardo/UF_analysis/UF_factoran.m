@@ -1,5 +1,6 @@
 function UF_factoran(UF_struct,save_figs)
-num_factors = 3;
+show_dots = 1;
+num_factors = 2;
 interesting_idx = UF_struct.bump_indexes{3};
 interesting_idx = [];
 
@@ -64,7 +65,9 @@ ylim([min(y(:)) max(y(:))])
 if num_factors>2
     zlim([min(z(:)) max(z(:))])
 end
-
+if ~show_dots
+    set(hDots,'Visible','off')
+end
 for iT = 2:length(UF_struct.t_axis)
     for iField = 1:length(UF_struct.field_indexes)
         [~,idx,~] = intersect(interesting_idx,UF_struct.field_indexes{iField});
