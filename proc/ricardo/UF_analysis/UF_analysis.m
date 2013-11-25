@@ -8,9 +8,9 @@
 % file_details.rot_handle = 1; 
 
 file_details.datapath = 'D:\Data\Mini_7H1\';
-file_details.UF_file_prefix = 'Mini_2013-11-22_UF_';
-file_details.RW_file_prefix = '';
-file_details.RW_file_prefix = '';
+file_details.UF_file_prefix = 'Mini_2013-11-25_UF_';
+file_details.RW_file_prefix = 'Mini_2013-11-25_RW_';
+% file_details.RW_file_prefix = '';
 cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Mini 7H1\Blackrock array info\1025-0592.cmp';
 file_details.rot_handle = 1; 
 
@@ -32,15 +32,15 @@ if filedate < datenum('2013-06-19')
     file_details.rot_handle = 0;
 end
 
-reload_data = 0;
+reload_data = 1;
 plot_behavior = 0;
 plot_emg = 0;
-plot_units = 0;
+plot_units = 1;
 plot_STAEMG = 0;
 plot_SSEP = 0;
 plot_decode = 0;
 decode_input = {'kinematics','emg','units'};
-save_figs = 1;
+save_figs = 0;
 
 wrong_file_loaded = 0;
 if exist('UF_struct','var')
