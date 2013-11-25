@@ -4,32 +4,50 @@ function pathToBDF=findBDFonCitadel(nameIn,suppressDialog)
 %
 % looks for a BDF-formatted file on Citadel, making a few assumptions about
 % where such things live.
+%
+% UPDATE: 11/25/2013
+%       findBDFonCitadel.m now saves a cache file, findBDFonCitadel.cache
+%       each time a BDF file is successfully found.  This is a text file
+%       with one path per line.  Files that have been found previously
+%       and are stored in the cache will have their path returned from
+%       the file instead of re-searching.  This should speed up the finding
+%       process dramatically for such repeat searches.
+%
+%       Note: NEVER, EVER commit findBDFonCitadel.cache to any SVN
+%       repository.  The function will create it automatically in the local
+%       folder where findBDFonCitadel.m lives.  The path to citadel in
+%       general (the drive letter in particular) will change from machine
+%       to machine, so it is a LARGE ERROR to move this cache file around.
+%       Just let each machine create its own file in its own good time.
+
+% todo: if the cache file has grown too big, lop off the oldest 
+% saved results
 
 if nargin < 2
     suppressDialog=0;
 end
 
 % look for a cache file in the same directory as this function
-[~,thisDpath,~]=which('findBDFonCitadel.m');
+[thisDpath,~,~]=fileparts(which('findBDFonCitadel.m'));
 thisD=dir(thisDpath);
-if ~isempty(cellfun(@isempty,regexp({thisD.name}, ...
+if nnz(cellfun(@isempty,regexp({thisD.name}, ...
         'findBDFonCitadel.cache','match','once'))==0)
     % load the path from the cache file instead
-    fid=fopen(pathIn);
+    fid=fopen(fullfile(thisDpath,'findBDFonCitadel.cache'));
     strData=fscanf(fid,'%c');
     fclose(fid); clear fid
     
     nCharPerLine = diff([0 find(strData == char(10)) numel(strData)]);
     cellData = strtrim(mat2cell(strData,1,nCharPerLine));
     clear strData nCharPerLine
-    
-    start_ind=size(cellData,2)-TimePoints;
-    cellData(start_ind:length(cellData))= ...
-        cellfun(@(s) {sscanf(s,'%f',[1 inf])}, ...
-        cellData(start_ind:length(cellData)));
-    
-    AllData=cat(1,cellData{start_ind:length(cellData)});
-    return
+
+    pathToBDFind=find(cellfun(@isempty,regexp(cellData,nameIn))==0);
+    if ~isempty(pathToBDFind)
+        pathToBDF=cellData{pathToBDFind};
+        pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
+        % returning here will preclude repeats appearing in the cache file.
+        return
+    end
 end
 
 % if the file name has a .mat extension, keep it.
@@ -57,35 +75,9 @@ if ismac
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=unix(['find ',pathToCitadelData,' -name "',nameIn,'" -print']);
 else
-    % PC case.  Probably running on GOB/BumbleBeeMan, either during a
-    % superBatch run, or stand-alone.  If stand-alone, slightly
-    % more likely that the path of the data file in will be
-    % citadel than local. If during superBatch, the network copy of the
-    % BDF almost certainly won't exist yet.  Either way, assume
-    % no local copies of brainReader logs exist.
-    [status,result]=dos('net use');
-    % if successful, will output something like this:
-    %
-    %     result =
-    %
-    %     New connections will be remembered.
-    %
-    %
-    %     Status       Local     Remote                    Network
-    %
-    %     -------------------------------------------------------------------------------
-    %     OK           Y:        \\citadel\limblab         Microsoft Windows Network
-    %     OK           Z:        \\citadel\data            Microsoft Windows Network
-    %     The command completed successfully.
-    %
-    % therefore, use the structure to your advantage.
-    if status==0
-        remoteDriveLetter=[result(regexp(result,'[A-Z](?=:\s+\\\\citadel\\data)')),':'];
-    else % take a guess.
-        remoteDriveLetter='Z:';
-    end
-    if isequal(remoteDriveLetter,':')
-        error(result)
+    remoteDriveLetter=[citadelDriveLetter,':'];
+    if isequal(remoteDriveLetter,':') || isempty(remoteDriveLetter)
+        error('problem with citadelDriveLetter.m')
     end
     pathToCitadelData=fullfile(remoteDriveLetter, ...
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
@@ -108,7 +100,8 @@ end
 pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
 
 % save a cache file to speed future searches
-% findBDFonCitadel.cache
-
+fid=fopen(fullfile(thisDpath,'findBDFonCitadel.cache'),'a');
+fprintf(fid,'%s\n',pathToBDF);
+fclose(fid);
 
 
