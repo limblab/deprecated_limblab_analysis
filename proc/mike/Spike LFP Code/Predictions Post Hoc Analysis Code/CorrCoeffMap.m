@@ -30,21 +30,21 @@ if PlotOn == 1
         x = DecoderAge;
     end
     
-    plot(x(32:end), r_map_mean_Offline(32:end),'ko')
+    plot(x, r_map_mean,'ko')
     xlabel('Decoder Age')
     ylabel('Mean Correlation Coefficient')
     title('Mean Corr Coeff of PD Map')
     
-    Xticks = x(1:5:end); % size(Xlabels,1)];
-    Xticks = [Xticks' get(gca,'Xtick')]';
-    Xticks = sort(Xticks)
-    Xticks = unique(Xticks);
+    Xticks = x(1:4:end); % size(Xlabels,1)];
+%     Xticks = [Xticks' get(gca,'Xtick')]';
+%     Xticks = sort(Xticks)
+%     Xticks = unique(Xticks);
     set(gca,'XTick',Xticks,'XTickLabel',Xticks)
     
     hold on 
     p = polyfit(x,r_map_mean,1);
     f = polyval(p,x);
-    plot(x(32:end),f(32:end),'k-')
+    plot(x,f,'k-')
     
     [rho pval] = corr(x',r_map_mean')
     legend('Mean PD Map Correlation',['Linear Fit - ','R= ' num2str(rho,4) '  (P = ',num2str(pval),')'])

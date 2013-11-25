@@ -152,16 +152,16 @@ allBands={'LMP','Delta','Mu','70-100','130-200','200-300'};
 set(gca,'YTick',uBandYticks,'YTickLabel',allBands(uBands))
 
 %x-label - Chewie
-Xlabels=ChewieLFP2_DayNames;
+Xlabels=Mini_DayNames;
 
-Xticks=[1:5:size(Xlabels,1) size(Xlabels,1)];
-allXticks= [ChewieLFP2_DayNames_Valid(1:5:end,2); ChewieLFP2_DayNames_Valid(end,2)];
+Xticks=[1:5:size(Xlabels,1)];% size(Xlabels,1)];
+allXticks= [Mini_DayNames(1:5:end,2); Mini_DayNames(end,2)];
 set(gca,'XTick',Xticks,'XTickLabel',allXticks)
 
-%x-label Mini
+%x-label Chewie
 Xlabels=r2_X_SingleUnits_Dayavg_sorted(13:end,:);
 
 Xticks=[1:4:size(Xlabels,2)] %size(Xlabels,2)-1];
-allXticks= [Mini_DayNames(1:4:end,2)]%; Mini_DayNames_BadFileRemov(end,2)];
+allXticks= [Chewie_DayNames(1:4:end,2)]%; Chewie_DayNames_BadFileRemov(end,2)];
 set(gca,'XTick',Xticks,'XTickLabel',allXticks)
 

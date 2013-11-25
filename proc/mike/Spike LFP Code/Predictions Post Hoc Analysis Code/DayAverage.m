@@ -57,7 +57,7 @@ end
 
 DayAvgDataX(:,j) = DayAvgDataX(:,j)/FilesCounter;
 DayAvgDataY(:,j) = DayAvgDataY(:,j)/FilesCounter;
-DayNames{j,1} = DayNamesIn{i};
-DayNames{j,2} = DayNumber{i};
+DayNames{j,1} = DayNamesIn{i+1};
+DayNames{j,2} = DayNumber{i+1};
         
         
