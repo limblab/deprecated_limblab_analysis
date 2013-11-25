@@ -9,6 +9,29 @@ if nargin < 2
     suppressDialog=0;
 end
 
+% look for a cache file in the same directory as this function
+[~,thisDpath,~]=which('findBDFonCitadel.m');
+thisD=dir(thisDpath);
+if ~isempty(cellfun(@isempty,regexp({thisD.name}, ...
+        'findBDFonCitadel.cache','match','once'))==0)
+    % load the path from the cache file instead
+    fid=fopen(pathIn);
+    strData=fscanf(fid,'%c');
+    fclose(fid); clear fid
+    
+    nCharPerLine = diff([0 find(strData == char(10)) numel(strData)]);
+    cellData = strtrim(mat2cell(strData,1,nCharPerLine));
+    clear strData nCharPerLine
+    
+    start_ind=size(cellData,2)-TimePoints;
+    cellData(start_ind:length(cellData))= ...
+        cellfun(@(s) {sscanf(s,'%f',[1 inf])}, ...
+        cellData(start_ind:length(cellData)));
+    
+    AllData=cat(1,cellData{start_ind:length(cellData)});
+    return
+end
+
 % if the file name has a .mat extension, keep it.
 [~,~,ext]=fileparts(nameIn);
 
@@ -20,7 +43,7 @@ switch ext
     case '.txt'
          nameIn=regexprep(nameIn,'\.txt','.mat');
     case '.mat'
-        nameIn=nameIn;
+%         nameIn=nameIn;
     otherwise
         nameIn=[nameIn, '.mat'];
 end
@@ -83,3 +106,9 @@ else
     end
 end
 pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
+
+% save a cache file to speed future searches
+% findBDFonCitadel.cache
+
+
+

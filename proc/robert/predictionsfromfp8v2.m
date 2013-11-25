@@ -207,9 +207,11 @@ tic
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
 tfmat=zeros(wsz,numfp,numbins,'single');
 % Notch filter for 60 Hz noise
-[b,a]=butter(2,[58 62]/(samprate/2),'stop');
+[b,a]=butter(4,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
-[b,a]=butter(2,[178 182]/(samprate/2),'stop');
+[b,a]=butter(4,[88 92]/(samprate/2),'stop');
+fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
+[b,a]=butter(4,[178 182]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 clear fp
 itemp=1:numlags;
