@@ -1,5 +1,5 @@
-function UF_factoran(UF_struct,interesting_idx,factor_offset,save_figs)
-show_dots = 1;
+function UF_factoran(UF_struct,interesting_idx,factor_offset,show_dots,save_figs)
+% show_dots = 0;
 num_factors = 2;
 
 if isempty(interesting_idx)
