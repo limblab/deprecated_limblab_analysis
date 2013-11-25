@@ -27,7 +27,7 @@ function UF_plot_EMG(UF_struct,save_figs)
                 idx = intersect(idx,plot_idx);
                 baseline = temp_emg(idx,baseline_idx);
                 baseline_mean(iBias,iField) = mean(baseline(:));
-                baseline_sem(iBias,iField) = std(mean(baseline,2))/sqrt(length(idx));
+                baseline_sem(iBias,iField) = 1.96*std(mean(baseline,2))/sqrt(length(idx));
 
                 for iBump = 1:length(UF_struct.bump_indexes)
                     idx = intersect(UF_struct.field_indexes{iField},UF_struct.bump_indexes{iBump}); 
@@ -60,7 +60,7 @@ function UF_plot_EMG(UF_struct,save_figs)
                     emg_mean(iBias,iField,iBump) = mean(temp_emg_short(:));
     %                 emg_std(iBias,iField,iBump) = std(mean(temp_emg(idx,UF_struct.t_axis>mean_range(1) & UF_struct.t_axis<mean_range(2))));
                     emg_std(iBias,iField,iBump) = std(mean(temp_emg_short,2));
-                    emg_sem(iBias,iField,iBump) = std(mean(temp_emg_short,2))/sqrt(size(temp_emg_short,1));
+                    emg_sem(iBias,iField,iBump) = 1.96*std(mean(temp_emg_short,2))/sqrt(size(temp_emg_short,1));
 
                     min_n = min(min_n,length(idx));
                     max_n = max(max_n,length(idx));
