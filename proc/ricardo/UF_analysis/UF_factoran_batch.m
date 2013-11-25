@@ -1,11 +1,11 @@
-% Separation by bump direction with dots
-% Mini_2013-11-25_UF_
-UF_struct = UF_struct_25;
-show_dots = 1;
-factor_offset = .1; 
-interesting_idx = UF_struct.field_indexes{1};
-UF_struct.colors_field = [0 0 1; 1 0 0];
-UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
+% % Separation by bump direction with dots
+% % Mini_2013-11-25_UF_
+% UF_struct = UF_struct_25;
+% show_dots = 0;
+% factor_offset = .1; 
+% interesting_idx = UF_struct.field_indexes{1};
+% UF_struct.colors_field = [0 0 1; 1 0 0];
+% UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
 % 
 % % Separation by bump direction, without dots
 % % Mini_2013-11-25_UF_
@@ -29,9 +29,9 @@ UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
 % % Mini_2013-11-05_UF_
 % UF_struct = UF_struct_05;
 % factor_offset = -.1; 
-% show_dots = 1;
+% show_dots = 0;
 % interesting_idx = UF_struct.bias_indexes{2};
-% UF_struct.colors_field = [0 0 1; 1 0 0];
+% % UF_struct.colors_field = [0 0 1; 1 0 0];
 % UF_factoran(UF_struct,interesting_idx,factor_offset,show_dots,0)
 
 % % Different when force pulse
@@ -54,7 +54,7 @@ UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
 
 % % % Very different EMG vs neuron patterns!
 % % Mini_2013-11-25_UF_
-% UF_struct = UF_struct_25;
+% UF_struct = UF_struct_22;
 % show_dots = 0;
 % factor_offset = .1; 
 % interesting_idx = UF_struct.field_indexes{1};
