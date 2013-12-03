@@ -1,16 +1,30 @@
 % assumes a BDF formatted structure called out_struct
 
+temp=out_struct.raw.analog.ts;
+allFPstartTS=cat(2,temp{:}); clear temp
+
 disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)),1);
 if ~isempty(disJoint)
-    disp('error, mismatched lengths in out_struct.raw.analog.data.  attempting to correct...')
-	setLength=min(unique(cellfun(@length,out_struct.raw.analog.data)));
-    for n=1:length(out_struct.raw.analog.data)
-        out_struct.raw.analog.data{n}=out_struct.raw.analog.data{n}(1:setLength);
-    end, clear n
+    disp('mismatched lengths in out_struct.raw.analog.data.  attempting to correct...')
+    % whichever one starts later, we want to make that the start point (and
+    % keep it in mind!)
+    earlyStarters=find(allFPstartTS < max(allFPstartTS));
+    if ~isempty(earlyStarters)
+        for n=1:length(earlyStarters)
+            out_struct.raw.analog.data{earlyStarters(n)}= ...
+                out_struct.raw.analog.data{earlyStarters(n)}(2:end);
+        end, clear n
+    else
+        setLength=min(unique(cellfun(@length,out_struct.raw.analog.data)));
+        for n=1:length(out_struct.raw.analog.data)
+            out_struct.raw.analog.data{n}=out_struct.raw.analog.data{n}(1:setLength);
+        end, clear n
+    end
 end
 disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)));
 if ~isempty(disJoint)
     disp('still mismatched lengths in out_struct.raw.analog.data.  quitting...')
+    return
 end
 
 fpchans=find(cellfun(@isempty,regexp(out_struct.raw.analog.channels,'FP[0-9]+'))==0);
@@ -37,6 +51,7 @@ samprate=out_struct.raw.analog.adfreq(fpchans(1));
 
 % are all ts values the same for all channels?  Could be different on
 % different preamps.
-fptimes=out_struct.raw.analog.ts{1}(1):1/samprate: ...
-    (size(out_struct.raw.analog.data{1},1)/samprate+out_struct.raw.analog.ts{1}(1));
+fptimes=max(allFPstartTS):1/samprate: ...
+    (size(out_struct.raw.analog.data{1},1)/samprate + max(allFPstartTS));
 if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
+clear earlyStarters allFPstartTS disJoint setLength
