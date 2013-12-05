@@ -2,7 +2,7 @@
 close all
 
 % %set the mount drive to scan and convert
-folderpath_base='E:\processing\CO_bump\CO_bump\21deg stim\';
+folderpath_base='E:\processing\CO_bump\CO_bump_training\Dec_3\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')
@@ -33,8 +33,6 @@ if isfield(bdf,'units')
     end
 end
 
-
-
 %make folder to save into:
 mkdir(folderpath_base,strcat('Move_paths_',date));
 folderpath=strcat(folderpath_base,'Move_paths_',date,'\');
@@ -44,13 +42,14 @@ fid=fopen(strcat(folderpath,'file_list.txt'),'w+');
 fprintf(fid,'%s',file_list);
 fclose(fid);
 
-
-H=plot_move_paths_CO_bump_split(bdf,'go','pos','center');
+H=plot_move_paths_CO_bump_split2(bdf,'go','pos','center');
 set(H,'Position',[100 100 1200 1200])
 print('-dpdf',H,strcat(folderpath,'move_paths.pdf'))
-H=plot_mean_move_paths_CO_bump(bdf,'go','pos','center');
+H=plot_mean_move_paths_CO_bump2(bdf,'go','pos','center');
 set(H,'Position',[100 100 1200 1200])
 print('-dpdf',H,strcat(folderpath,'mean_move_paths.pdf'))
+
+close all
 
  %save the executing script to the same folder as the figures and data
 
