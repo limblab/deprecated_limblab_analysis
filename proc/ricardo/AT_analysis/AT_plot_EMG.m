@@ -199,7 +199,7 @@ function AT_plot_EMG(AT_struct,save_figs)
         set(h,'Visible','on');      
     end
     if save_figs
-        save_figures(figHandles,AT_struct.UF_file_prefix,AT_struct.datapath,'',figTitles)
+        save_figures(figHandles,AT_struct.AT_file_prefix,AT_struct.datapath,'',figTitles)
     end
 end
 

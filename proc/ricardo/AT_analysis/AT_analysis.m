@@ -1,7 +1,7 @@
 
 
 file_details.datapath = 'D:\Data\Kevin_12A2\Data\';
-file_details.AT_file_prefix = 'Kevin_2013-11-21_AT_';
+file_details.AT_file_prefix = 'Kevin_2013-12-06_AT_';
 file_details.RW_file_prefix = [];
 file_details.RW_file_prefix = '';
 cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';

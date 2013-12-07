@@ -189,6 +189,7 @@ UF_struct.colors_bump = lines(length(UF_struct.bump_directions));
 UF_struct.colors_field = lines(length(UF_struct.field_orientations));
 % UF_struct.colors_field = [0 0 1; 1 0 0; 0 1 0];
 UF_struct.colors_bump_mag = lines(length(UF_struct.bump_magnitudes));
+UF_struct.colors_field_bump = lines(8);
 
 UF_struct.colors_field_bias = lines(length(UF_struct.field_orientations)*length(UF_struct.bias_force_directions));
 

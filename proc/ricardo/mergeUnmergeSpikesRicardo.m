@@ -7,10 +7,10 @@
 % sure that you create different bdfs for each task (unless you know
 % what you're doing.)
 
-% file_path = 'D:\Data\Kevin_12A2\Data\';
-% file_prefix_all = 'Kevin_2013-11-22_';
-file_path = 'D:\Data\Mini_7H1\';
-file_prefix_all = 'Mini_2013-11-25_';
+file_path = 'D:\Data\Kevin_12A2\Data\';
+file_prefix_all = 'Kevin_2013-12-06_';
+% file_path = 'D:\Data\Mini_7H1\';
+% file_prefix_all = 'Mini_2013-12-06_UF_';
 % file_prefix_some = 'Kevin_2013-10-07_UF_001';
 
 % Run processSpikesForSorting for the first time to combine spike data from

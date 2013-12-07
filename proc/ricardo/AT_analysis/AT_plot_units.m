@@ -81,10 +81,19 @@ function AT_plot_units(AT_struct,bdf,rw_bdf,save_figs)
             max_y = 0;
 
             if length([ts_cell{:}])>20
-                figure
+                figHandles(end+1) = figure;
+                clf
+                if ~isstr(electrode)
+                    set(gcf,'name',['Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2)) ' raster'],'numbertitle','off')   
+                    figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2)) '_raster'];   
+                else
+                    set(gcf,'name',['Electrode: ' electrode ' - ' num2str(units(iUnit,2)) ' raster'],'numbertitle','off')       
+                    figTitles{end+1} = [electrode '-' num2str(units(iUnit,2)) '_raster'];   
+                end
+                
                 max_y = 0;
                 for iBump = 1:size(AT_struct.proprio_idx)
-                    subplot(2,2,iBump)
+                    subplot(2,length(AT_struct.bump_indexes)/2,iBump)  
                     hold on
     %                 error_y_proprio = std(fr_cell{iUnit}(AT_struct.proprio_idx{iBump},:),[],1);                
     %                 error_y_visual = std(fr_cell{iUnit}(AT_struct.visual_idx{iBump},:),[],1);
@@ -123,7 +132,7 @@ function AT_plot_units(AT_struct,bdf,rw_bdf,save_figs)
 
                 end
                 for iBump = 1:size(AT_struct.proprio_idx)
-                    subplot(2,2,iBump)
+                    subplot(2,length(AT_struct.bump_indexes)/2,iBump)  
                     xlim([x_limits])
                     ylim([0 max_y+5])
     %                 plot(AT_struct.t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(AT_struct.averaged_x_projection_proprio(iBump,:))/max(diff(AT_struct.averaged_x_projection_proprio(iBump,:))),'r')
@@ -132,10 +141,32 @@ function AT_plot_units(AT_struct,bdf,rw_bdf,save_figs)
                     text(AT_struct.t_axis(100),max_y*0.75+2,['n = ' num2str(length(AT_struct.visual_idx{iBump}))],'Color','b')
                 end
                 
-                figure
+                set(gcf,'NextPlot','add');
+                gca_temp = axes;                
+                if ~isstr(electrode)
+                     h = title({[AT_struct.AT_file_prefix ' ' AT_struct.RW_file_prefix];...
+                    ['Elec: ' num2str(electrode) ' (Chan: ' num2str(units(iUnit,1)) ') Unit: ' num2str(units(iUnit,2))]},...
+                    'Interpreter','none');                      
+                else
+                    h = title({[AT_struct.AT_file_prefix ' ' AT_struct.RW_file_prefix];...
+                    ['Elec: ' electrode ' (Chan: ' num2str(units(iUnit,1)) ') Unit: ' num2str(units(iUnit,2))]},...
+                    'Interpreter','none');  
+                end      
+                set(gca_temp,'Visible','off');
+                set(h,'Visible','on');
+                
+                figHandles(end+1) = figure;
+                clf
+                if ~isstr(electrode)
+                    set(gcf,'name',['Electrode: ' num2str(electrode) ' - ' num2str(units(iUnit,2)) ' visual raster'],'numbertitle','off')   
+                    figTitles{end+1} = [num2str(electrode,'%1.2d') '-' num2str(units(iUnit,2)) '_visual_raster'];   
+                else
+                    set(gcf,'name',['Electrode: ' electrode ' - ' num2str(units(iUnit,2)) ' visual raster'],'numbertitle','off')       
+                    figTitles{end+1} = [electrode '-' num2str(units(iUnit,2)) '_visual_raster'];   
+                end
                 max_y = 0;
                 for iBump = 1:size(AT_struct.proprio_idx)
-                    subplot(2,2,iBump)
+                    subplot(2,length(AT_struct.bump_indexes)/2,iBump)  
                     hold on
                     errorarea(AT_struct.t_axis,mean(fr_cell{iUnit}(AT_struct.visual_difficult_correct_trials{iBump},:),1),...
                         1.96*std(fr_cell{iUnit}(AT_struct.visual_difficult_correct_trials{iBump},:),[],1)/...
@@ -164,7 +195,7 @@ function AT_plot_units(AT_struct,bdf,rw_bdf,save_figs)
 
                 end
                 for iBump = 1:size(AT_struct.proprio_idx)
-                    subplot(2,2,iBump)
+                    subplot(2,length(AT_struct.bump_indexes)/2,iBump)  
                     xlim([x_limits])
                     ylim([0 max_y+5])
     %                 plot(AT_struct.t_axis(1:end-1),.9*(max_y+5)+.1*(max_y+5)*diff(AT_struct.averaged_x_projection_proprio(iBump,:))/max(diff(AT_struct.averaged_x_projection_proprio(iBump,:))),'r')
@@ -172,11 +203,27 @@ function AT_plot_units(AT_struct,bdf,rw_bdf,save_figs)
                     text(AT_struct.t_axis(100),max_y*0.8+3,['n = ' num2str(length(AT_struct.visual_difficult_correct_trials{iBump}))],'Color','r')
                     text(AT_struct.t_axis(100),max_y*0.75+2,['n = ' num2str(length(AT_struct.visual_difficult_fail_trials{iBump}))],'Color','b')
                 end
-
+                
+                set(gcf,'NextPlot','add');
+                gca_temp = axes;                
+                if ~isstr(electrode)
+                     h = title({[AT_struct.AT_file_prefix ' ' AT_struct.RW_file_prefix];...
+                    ['Elec: ' num2str(electrode) ' (Chan: ' num2str(units(iUnit,1)) ') Unit: ' num2str(units(iUnit,2))]},...
+                    'Interpreter','none');                      
+                else
+                    h = title({[AT_struct.AT_file_prefix ' ' AT_struct.RW_file_prefix];...
+                    ['Elec: ' electrode ' (Chan: ' num2str(units(iUnit,1)) ') Unit: ' num2str(units(iUnit,2))]},...
+                    'Interpreter','none');  
+                end      
+                set(gca_temp,'Visible','off');
+                set(h,'Visible','on');
     %             pause
             end
 
         end
+    end
+    if save_figs
+        save_figures(figHandles,AT_struct.AT_file_prefix,AT_struct.datapath,'Units',figTitles)
     end
 end
 

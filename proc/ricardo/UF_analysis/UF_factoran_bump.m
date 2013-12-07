@@ -1,5 +1,5 @@
 function UF_factoran(UF_struct,interesting_idx,factor_offset,show_dots,save_figs)
-% show_dots = 0;
+
 num_factors = 2;
 
 if isempty(interesting_idx)
@@ -75,8 +75,8 @@ hSubEMG = subplot(224);
 xlim([0 3*max(mean(UF_struct.emg_all(1,:,:),2))])
 ylim([0 3*max(mean(UF_struct.emg_all(2,:,:),2))])
 axis square
-xlabel('EMG BI (a.u.)')
-ylabel('EMG TRI (a.u.)')
+xlabel([UF_struct.emgnames{1} ' (a.u.)'])
+ylabel([UF_struct.emgnames{2} ' (a.u.)'])
 hold on
 
 for iBump = 1:length(UF_struct.bump_indexes)
@@ -240,3 +240,4 @@ for iT = 2:length(UF_struct.t_axis)
     drawnow
     pause(.05)    
 end
+toc

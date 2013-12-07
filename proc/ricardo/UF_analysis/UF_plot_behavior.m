@@ -164,8 +164,8 @@ title(UF_struct.UF_file_prefix,'Interpreter','none');
 figHandles(end+1) = figure;
 figuretitle{end+1} = {'Starting_force'};
 hold on
-x_force_pre_bump = mean(UF_struct.x_force(:,UF_struct.t_axis>-0.01 & UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,2));
-y_force_pre_bump = mean(UF_struct.y_force(:,UF_struct.t_axis>-0.01 & UF_struct.t_axis<0),2) +  (1-2*file_details.rot_handle)*mean(bdf.force(:,3));
+x_force_pre_bump = mean(UF_struct.x_force(:,UF_struct.t_axis>-0.05 & UF_struct.t_axis<0),2) + (1-2*file_details.rot_handle)*mean(bdf.force(:,2));
+y_force_pre_bump = mean(UF_struct.y_force(:,UF_struct.t_axis>-0.05 & UF_struct.t_axis<0),2) + (1-2*file_details.rot_handle)*mean(bdf.force(:,3));
 bias_force_mag = mode(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_mag));
 target_radius = unique(UF_struct.trial_table(:,UF_struct.table_columns.force_target_diameter))/2;
 

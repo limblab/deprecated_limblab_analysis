@@ -8,8 +8,8 @@
 % file_details.rot_handle = 1; 
 
 file_details.datapath = 'D:\Data\Mini_7H1\';
-file_details.UF_file_prefix = 'Mini_2013-11-25_UF_';
-file_details.RW_file_prefix = 'Mini_2013-11-25_RW_';
+file_details.UF_file_prefix = 'Mini_2013-12-06_UF_';
+file_details.RW_file_prefix = [];
 % file_details.RW_file_prefix = '';
 cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Mini 7H1\Blackrock array info\1025-0592.cmp';
 file_details.rot_handle = 1; 
