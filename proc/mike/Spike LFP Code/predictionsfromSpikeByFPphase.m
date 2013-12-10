@@ -1,4 +1,4 @@
-function [vaf,vmean,vsd,y_test,y_pred,varargout] =  predictionsfromSpikeByFPphase(sig, signal, numfp, ...
+function [vafall,vmean,vsd,y_test,y_pred,varargout] =  predictionsfromSpikeByFPphase(sig, signal, numfp, ...
     binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
@@ -188,54 +188,49 @@ tic
 
 %% Calculate LMP
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
-tfmat=zeros(wsz,numfp,numbins,'single');
+tfmat=zeros(wsz,numfp,size(fp,2),'single'); %numfp
 %% Notch filter for 60 Hz noise
-[b,a]=butter(2,[58 62]/(samprate/2),'stop');
-fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
+
+[b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
+fpf=filtfilt(b0,a0,fp')';
 clear fp
-itemp=1:10;
-firstind=find(bs*itemp>wsz,1,'first');
-for i=1:numbins
-    ishift=i-firstind+1;
-    if ishift<=0
-        continue
-    elseif ishift == 1
-        LMP=zeros(numfp,length(y)-firstind+1);
-    end
-    %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
-    tmp=fpf(:,(bs*i-wsz+1:bs*i))';    %Make tmp samples X channels
-    LMP(:,ishift)=mean(tmp',2);
-    %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
-    %     tmp=detrend(tmp);
-    tmp=win.*tmp;
-    tfmat(:,:,ishift)=hilbert(tmp,wsz);      %tfmat is freqs X chans X bins
-    clear tmp tftmp
+
+%% Bandpass filter all interesting freqs
+freqs = [4 8 12 20:10:300];
+b = zeros(length(freqs),5);
+a = zeros(length(freqs),5);
+
+[b1,a1]=butter(2,4/(samprate/2),'low');
+tfmat(1,:,:)=reshape(hilbert(filtfilt(b1,a1,fpf')),1,96,size(fpf,2));
+beep
+
+for fi = 1:length(freqs)
+
+[b(fi+1),a(fi+1)]=butter(2,[freqs(fi) freqs(fi+1)]/(samprate/2));
+pbFP=filtfilt(b(fi),a(fi),fpf')';
+tfmat(fi+1,:,:)=reshape(hilbert(pbFP),1,96,size(pbFP,2)); 
+clear pbFP
 end
-%Now need to clean up tfmat to account for cutting off the firstind bins
-tfmat(:,:,(ishift+1:end))=[];
-numbins=numbins-firstind+1;
 
-t=t(1:length(t)-firstind+1);
-y(ishift+1:end,:)=[];
-%q(:,ishift+1:end)=[];
-clear fpf
-freqs=linspace(0,samprate/2,wsz/2+1);
-freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
-tvect=(firstind:numbins)*(bs)-bs/2;
-
-%% Bin Spikes by FP Phase
-
+%tfmat(:,:,(ishift+1:end))=[];
 PhaseMat = angle(tfmat);
+
+save('tfmat_Chewie','tfmat')
 
 tic
 [p_i] = findPhaseIndex(PhaseMat);
 toc
 
-x = zeros(length(y), 96); % num chans = 96
+save('PhaseMatIndex_Chewie','p_i')
+
+%% Bin Spikes and match to FP matrix
+
+x = zeros(length(y), 1); % num chans = 96
+
 for i = 1:length(cells)
     if cells(i,1) ~= 0
         ts = get_unit(bdf, cells(i, 1), cells(i, 2));
-        b = train2bins(ts, t);
+        b = train2bins(ts,analog_times);
         if cells(i,1) < 33
             x(:,cells(i,1)+64) = b;
         else
@@ -246,37 +241,59 @@ for i = 1:length(cells)
     end
 end
 
+% Don't think I need this since hilbert doesn't cut any points off
+% x((ishift+1:end),:)=[];
 
+%% Now cut off appropriate bins in signal and time vector used for
+%% predictions
+
+firstind=find(bs*itemp>wsz,1,'first');
+for i=1:numbins
+    ishift=i-firstind+1;
+    if ishift<=0
+        continue
+    end
+end
+% t=t(1:length(t)-firstind+1);
+% y(ishift+1:end,:)=[];
+% q(:,ishift+1:end)=[];
+clear fpf
 
 % Build loop around predictions here
-for c = 1%:size(p_i,2)
-    for u = 1%:size(p_i{c},2)
+for c = 1:size(p_i,1)
+    for u = 1:size(p_i{c},2)
         
         xTemp = x;
         %% Zero spike bins that are out of phase
         % Take coherent phase indices for all bins of this freq (c) - phase (u)
         % pair and convert to matrix (InPhaseIndex) to apply to binned spike 
         % matrix (x)
-        InPhaseIndex = reshape(p_i{c}(:,u,1:end),96,size(y,1))';
+        InPhaseIndex = reshape(p_i{c}(:,u,1:end),96,size(PhaseMat,3))'; % 96
         
         % Here is the step where incoherent spike bins are zeroed
         xTemp(InPhaseIndex==0) = 0;
         
+        % Now bin spikes for predictions
+        for bin = 1:size(y)%numbins 
+        
+            xTempBin(bin,:) = sum(xTemp(bs*bin-bs+1:bs*bin,:));
+        
+        end
         clear InPhaseIndex
         % Keep track of number of spikes of each unit for each phase/freq
         % pair
-        TotalSpikes_PerUnit(c,u,:) = sum(xTemp);
+        TotalSpikes_PerUnit(c,u,:) = sum(xTempBin);
         
         % Remove units that have no coherent spikes
-        if nnz(sum(xTemp)) ~= size(xTemp,2)
+        if nnz(sum(xTempBin)) ~= size(xTempBin,2)
             
-            xTemp(:,(sum(xTemp) == 0)==1) = [];
+            xTempBin(:,(sum(xTempBin) == 0)==1) = [];
         
         end
         
         % Keep track of number of units with coherent spikes for each
         % phase/freq
-        TotalUnits(c,u) = size(xTemp,2);
+        TotalUnits(c,u) = size(xTempBin,2);
         
         y = y; % (q==1,:); -- this is the step where In_Active_regions are removed 
         % Not sure if I should consider replacing this with a more appropriate 
@@ -300,17 +317,23 @@ for c = 1%:size(p_i,2)
                 fold_start = (i-1) * fold_length + 1;
                 fold_end = fold_start + fold_length-1;
                 
-                x_test{i} = xTemp(fold_start:fold_end,:);
+                x_test{i} = xTempBin(fold_start:fold_end,:);
                 y_test{i} = y(fold_start:fold_end,:);
                 
-                x_train = [xTemp(1:fold_start,:); xTemp(fold_end:end,:)];
+                x_train = [xTempBin(1:fold_start,:); xTempBin(fold_end:end,:)];
                 y_train = [y(1:fold_start,:); y(fold_end:end,:)];
                 
             else
-                x_test{i} = xTemp;
+                
+                x_test{i} = xTempBin;
                 y_test{i} = y;
-                x_train = xTemp;
+                x_train = xTempBin;
                 y_train = y;
+                % Did this for testing
+%                 x_test{i} = [1:size(xTempBin,1)]'; %xTempBin
+%                 y_test{i} = repmat(1:size(y,1),2,1)'; % y
+%                 x_train = [1:size(xTempBin,1)]'; % xTempBin
+%                 y_train = repmat(1:size(y),2,1)'; % y
             end
             %%
             %%Try z-score instead of mean sub
@@ -333,7 +356,7 @@ for c = 1%:size(p_i,2)
             end
             
             %Continue filling H if creating a decoder
-            if exist('H','var') && length(H) < i
+            if exist('H','var')
                 [H{i,c,u},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1); %binsamprate = 1
                 i
             end
@@ -443,13 +466,14 @@ for c = 1%:size(p_i,2)
         end
         
         %% Extract appropriate metrics here
+        beep
         
-        vafall(c,u,:) = vaf;
-        vmean(c,u)=mean(vaf);
-        vsd(c,u,:)=std(vaf,0,1);
-        r2all(c,u,:) = r2;
-        r2mean(c,u)=mean(r2)
-        r2sd(c,u,:)=std(r2);
+        vafall{c,u} = vaf;
+        vmean(c,u,:)=mean(vaf);
+        vsd{c,u}=std(vaf,0,1);
+        r2all{c,u} = r2;
+        r2mean(c,u,:)=mean(r2);
+        r2sd{c,u}=std(r2);
         
     end
     
@@ -489,45 +513,45 @@ if nargout>5
             end
             
             if nargout>9
-                varargout{5}=bestf;
-                varargout{6}=bestc;
+                varargout{5}=TotalUnits;%bestf;
+                varargout{6}=TotalSpikes_PerUnit;%bestc;
                 if nargout>11
-                    varargout{7}=H;
+                    varargout{7}=PhaseMat;%H;
                 end
                 if nargout>12
-                    varargout{8}=bestPB;
-                    if nargout>13
-                        %if outputting the whole PB matrix, put it in
-                        %different dimensions: bins X (freqs*chans). Each
-                        %column will be samples for one freq-chan
-                        %combination, ordered by (f1c1,f2c1,f3c1...f6c1
-                        %f1c2...)'
-                        if ~exist('featMat','var')
-                            pbrot=shiftdim(PB,2);
-                            featMat=reshape(pbrot,[],size(PB,1)*size(PB,2));
-                            featMat=featMat(q==1,:);
-                        end
-                        varargout{9}=x;   %featMat contains ALL features
-                        varargout{10}=y;
-                        varargout{11}=featMat;
-                        if nargout>16
-                            varargout{12}=ytnew;
-                            varargout{13}=xtnew;
-                            varargout{14}=t;
-                            if nargout>19
-                                if exist('P','var')
-                                    varargout{15} = P;
-                                else
-                                    varargout{15} = 0;
-                                end
-                                varargout{16}=featind;
-                                %MRS modified 12/13/11
-                                if nargout>21 && exist('sr','var')
-                                    varargout{17}=sr;
-                                end
-                            end
-                        end
-                    end
+                    varargout{8}=H;%bestPB;
+%                     if nargout>13
+%                         %if outputting the whole PB matrix, put it in
+%                         %different dimensions: bins X (freqs*chans). Each
+%                         %column will be samples for one freq-chan
+%                         %combination, ordered by (f1c1,f2c1,f3c1...f6c1
+%                         %f1c2...)'
+%                         if ~exist('featMat','var')
+%                             pbrot=shiftdim(PB,2);
+%                             featMat=reshape(pbrot,[],size(PB,1)*size(PB,2));
+%                             featMat=featMat(q==1,:);
+%                         end
+%                         varargout{9}=x;   %featMat contains ALL features
+%                         varargout{10}=y;
+%                         varargout{11}=featMat;
+%                         if nargout>16
+%                             varargout{12}=ytnew;
+%                             varargout{13}=xtnew;
+%                             varargout{14}=t;
+%                             if nargout>19
+%                                 if exist('P','var')
+%                                     varargout{15} = P;
+%                                 else
+%                                     varargout{15} = 0;
+%                                 end
+%                                 varargout{16}=featind;
+%                                 %MRS modified 12/13/11
+%                                 if nargout>21 && exist('sr','var')
+%                                     varargout{17}=sr;
+%                                 end
+%                             end
+%                         end
+%                     end
                 end
             end
         end

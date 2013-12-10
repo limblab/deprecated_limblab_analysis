@@ -14,7 +14,7 @@ p_i = cell(256,1);
 
 for p = 1:size(Phases,1)
     for i = 1:size(PhaseMat,2)
-        for v = 1%:size(PhaseMat,1)
+        for v = 1:size(PhaseMat,1)
             if p == 5
                 %This is for the case where phase equals 180 (pi).  The
                 %hilbert transform flips the phase once it gets past 180
