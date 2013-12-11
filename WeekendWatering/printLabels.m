@@ -17,11 +17,11 @@ num_cols = 3;
 % Find interesting data
 AnimalCell = cell(size(result));
 AnimalCell(:) = {'Animal'};
-[AnimalY AnimalX] = find(cellfun(@strcmp,result,AnimalCell));
+[AnimalY,AnimalX] = find(cellfun(@strcmp,result,AnimalCell));
 
 SupervisorCell = cell(size(result));
 SupervisorCell(:) = {'Supervisor Check'};
-[SupervisorY SupervisorX] = find(cellfun(@strcmp,result,SupervisorCell));
+[SupervisorY,SupervisorX] = find(cellfun(@strcmp,result,SupervisorCell));
 
 num_rooms = length(AnimalX);
 num_days = size(result,2) - AnimalX;
@@ -57,13 +57,10 @@ for iPage = 1:num_pages
     set(h,'Position',[0 0 8.5 11])
     hold on
     
-%     for iLabel = 1:length(page_data)
     iLabel = 0;
     for iRow = 1:num_rows
         for iCol = 1:num_cols
             iLabel = iLabel+1;
-%         iRow = floor((iLabel-1)/3)+1;
-%         iCol = mod(iLabel-1,3);
             x = x_offset + (iCol-1)*label_width + 0.5 * label_width;
             y = y_offset + (iRow)*label_height + 0.5 * label_height;
             if iLabel <= length(page_data)
