@@ -13,9 +13,9 @@ function [vafall,vmean,vsd,y_test,y_pred,varargout] =  predictionsfromSpikeByFPp
 
 %samprate is the fp sampling rate
 
-% Polynomial order is the order of polynomial to use. 
+% Polynomial order is the order of polynomial to use.
 
-% Use_Thresh: default is 0 (no threshold); setting to 1 uses a threshold 
+% Use_Thresh: default is 0 (no threshold); setting to 1 uses a threshold
 % to determine how to fit the polynomial (but not to decode with it).
 
 % numsides: should be 1 for causal predictions (2 for acausal).
@@ -186,98 +186,107 @@ toc
 
 tic
 
-%% Calculate LMP
-win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
-tfmat=zeros(wsz,numfp,size(fp,2),'single'); %numfp
+%win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
+
 %% Notch filter for 60 Hz noise
 
 [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
-fpf=filtfilt(b0,a0,fp')';
+fpf=filtfilt(b0,a0,fp');
 clear fp
 
 %% Bandpass filter all interesting freqs
 freqs = [4 8 12 20:10:300];
 b = zeros(length(freqs),5);
 a = zeros(length(freqs),5);
+tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
 
-[b1,a1]=butter(2,4/(samprate/2),'low');
-tfmat(1,:,:)=reshape(hilbert(filtfilt(b1,a1,fpf')),1,96,size(fpf,2));
-beep
+for c = 1:size(freqs,2)
+    
+    if c == 1
+        [b1,a1]=butter(2,4/(samprate/2),'low');
+        tfmat(1,:,:)=reshape(hilbert(filtfilt(b1,a1,fpf)),1,96,size(fpf,1));
+        beep
+        
+    elseif c > 1
+        
+        [b,a]=butter(2,[freqs(c-1) freqs(c)]/(samprate/2));
+        tfmat(1,:,:)=reshape(hilbert(filtfilt(b,a,fpf)),1,96,size(fpf,1));
+        
+    end
+ 
+    %tfmat(:,:,(ishift+1:end))=[];
+    PhaseMat = angle(tfmat);
+    clear tfmat a b
 
-for fi = 1:length(freqs)
+    tic
+    [p_i] = findPhaseIndex(PhaseMat);
+    toc
 
-[b(fi+1),a(fi+1)]=butter(2,[freqs(fi) freqs(fi+1)]/(samprate/2));
-pbFP=filtfilt(b(fi),a(fi),fpf')';
-tfmat(fi+1,:,:)=reshape(hilbert(pbFP),1,96,size(pbFP,2)); 
-clear pbFP
-end
-
-%tfmat(:,:,(ishift+1:end))=[];
-PhaseMat = angle(tfmat);
-
-save('tfmat_Chewie','tfmat')
-
-tic
-[p_i] = findPhaseIndex(PhaseMat);
-toc
-
-save('PhaseMatIndex_Chewie','p_i')
-
-%% Bin Spikes and match to FP matrix
-
-x = zeros(length(y), 1); % num chans = 96
-
-for i = 1:length(cells)
-    if cells(i,1) ~= 0
-        ts = get_unit(bdf, cells(i, 1), cells(i, 2));
-        b = train2bins(ts,analog_times);
-        if cells(i,1) < 33
-            x(:,cells(i,1)+64) = b;
+%     if c >1
+%     save(['PhaseInfo_',num2str(freqs(c-1)),'-',num2str(freqs(c)),'_Chewie'],'p_i','PhaseMat')
+%     elseif c==1
+%     save(['PhaseInfo_','0-4','_Chewie'],'p_i','PhaseMat')
+%     end
+    
+    clear PhaseMat
+    %% Bin Spikes and match to FP matrix
+    
+    x = zeros(size(fpf,1), 1); % num chans = 96
+    
+    for i = 1:length(cells)
+        if cells(i,1) ~= 0
+            ts = get_unit(bdf, cells(i, 1), cells(i, 2));
+            b = train2bins(ts,fptimesadj);
+            if cells(i,1) < 33
+                x(:,cells(i,1)+64) = b;
+            else
+                x(:,cells(i,1)-32) = b;
+            end
         else
-            x(:,cells(i,1)-32) = b;
+            x(:,i) = zeros(length(y),1);
         end
-    else
-        x(:,i) = zeros(length(y),1);
     end
-end
-
-% Don't think I need this since hilbert doesn't cut any points off
-% x((ishift+1:end),:)=[];
-
-%% Now cut off appropriate bins in signal and time vector used for
-%% predictions
-
-firstind=find(bs*itemp>wsz,1,'first');
-for i=1:numbins
-    ishift=i-firstind+1;
-    if ishift<=0
-        continue
-    end
-end
-% t=t(1:length(t)-firstind+1);
-% y(ishift+1:end,:)=[];
-% q(:,ishift+1:end)=[];
-clear fpf
-
-% Build loop around predictions here
-for c = 1:size(p_i,1)
-    for u = 1:size(p_i{c},2)
+    
+    % Don't think I need this since hilbert doesn't require any any points
+    % to be cut off
+    % x((ishift+1:end),:)=[];
+    
+    %% Now cut off appropriate bins in signal and time vector used for
+    %% predictions
+    
+%     firstind=find(bs*itemp>wsz,1,'first');
+%     for i=1:numbins
+%         ishift=i-firstind+1;
+%         if ishift<=0
+%             continue
+%         end
+%     end
+    % Don't think I need this since hilbert doesn't require any any points
+    % to be cut off
+    % t=t(1:length(t)-firstind+1);
+    % y(ishift+1:end,:)=[];
+    % q(:,ishift+1:end)=[];
+    
+%% Now loop and do predictions for all phases
+% for c = 1:size(p_i,1)   
+    for u = 1:size(p_i{1},2)
         
         xTemp = x;
         %% Zero spike bins that are out of phase
         % Take coherent phase indices for all bins of this freq (c) - phase (u)
-        % pair and convert to matrix (InPhaseIndex) to apply to binned spike 
+        % pair and convert to matrix (InPhaseIndex) to apply to binned spike
         % matrix (x)
-        InPhaseIndex = reshape(p_i{c}(:,u,1:end),96,size(PhaseMat,3))'; % 96
+        InPhaseIndex = reshape(p_i{1}(:,u,1:end),96,size(fpf,1))'; % 96
         
         % Here is the step where incoherent spike bins are zeroed
         xTemp(InPhaseIndex==0) = 0;
         
+        xTempBin = zeros(size(y,1),size(fpf,2));
         % Now bin spikes for predictions
-        for bin = 1:size(y)%numbins 
-        
-            xTempBin(bin,:) = sum(xTemp(bs*bin-bs+1:bs*bin,:));
-        
+        for bin = 1:size(y,1)%numbins
+            
+            xTempBin(bin,:) = sum(xTemp(bs*(bin-1)+1:bs*bin,:));
+            
         end
         clear InPhaseIndex
         % Keep track of number of spikes of each unit for each phase/freq
@@ -288,19 +297,19 @@ for c = 1:size(p_i,1)
         if nnz(sum(xTempBin)) ~= size(xTempBin,2)
             
             xTempBin(:,(sum(xTempBin) == 0)==1) = [];
-        
+            
         end
         
         % Keep track of number of units with coherent spikes for each
         % phase/freq
         TotalUnits(c,u) = size(xTempBin,2);
         
-        y = y; % (q==1,:); -- this is the step where In_Active_regions are removed 
-        % Not sure if I should consider replacing this with a more appropriate 
-        % trial selection paradigm 
+        y = y; % (q==1,:); -- this is the step where In_Active_regions are removed
+        % Not sure if I should consider replacing this with a more appropriate
+        % trial selection paradigm
         
         % Now do predictions with all units with respective coherent spike
-        % bins        
+        % bins
         vaf = zeros(folds,size(y,2));
         r2 = zeros(folds,2);
         fold_length = floor(length(y) ./ folds);
@@ -330,10 +339,10 @@ for c = 1:size(p_i,1)
                 x_train = xTempBin;
                 y_train = y;
                 % Did this for testing
-%                 x_test{i} = [1:size(xTempBin,1)]'; %xTempBin
-%                 y_test{i} = repmat(1:size(y,1),2,1)'; % y
-%                 x_train = [1:size(xTempBin,1)]'; % xTempBin
-%                 y_train = repmat(1:size(y),2,1)'; % y
+                %                 x_test{i} = [1:size(xTempBin,1)]'; %xTempBin
+                %                 y_test{i} = repmat(1:size(y,1),2,1)'; % y
+                %                 x_train = [1:size(xTempBin,1)]'; % xTempBin
+                %                 y_train = repmat(1:size(y),2,1)'; % y
             end
             %%
             %%Try z-score instead of mean sub
@@ -370,66 +379,66 @@ for c = 1:size(p_i,1)
                 [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i,c,u},numsides,10,y_test{i});
             end
             
-%             if exist('P','var') && size(P,1) == 1
-%                 y_pred{i} = y_pred{i} + repmat(P,size(y_pred{i},1),1);
-%                 disp('Adding offset')
-%             end
+            %             if exist('P','var') && size(P,1) == 1
+            %                 y_pred{i} = y_pred{i} + repmat(P,size(y_pred{i},1),1);
+            %                 disp('Adding offset')
+            %             end
             %ytnew and xtnew are shifted by the length of the filter since the
             %first fillen time period is garbage prediction & gets thrown out in
             %predMIMO3 (9-24-10)
             
-%             if exist('PolynomialOrder','var') && ~exist('P','var') && PolynomialOrder~=0
-%                 
-%                 P=[];
-%                 T=[];
-%                 patch = [];
-%                 
-%                 %%%Find a Wiener Cascade Nonlinearity
-%                 for z=1:size(y_pred{i},2)
-%                     if Use_Thresh
-%                         %Find Threshold
-%                         T_default = 1.25*std(y_pred{i}(:,z));
-%                         [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
-%                         IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
-%                         
-%                         %Apply Threshold to linear predictions and Actual Data
-%                         PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
-%                         ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
-%                         
-%                         %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial
-%                         Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
-%                             (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
-%                         Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
-%                         
-%                         %Find Polynomial to Thresholded Data
-%                         [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], ...
-%                             [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-%                         
-%                         
-%                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                         %%%%%% Use only one of the following 2 lines:
-%                         %
-%                         %   1-Use the threshold only to find polynomial, but not in the model data
-%                         T=[]; patch=[];
-%                         %
-%                         %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%                         %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
-%                         %
-%                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                     else
-%                         %Find and apply polynomial
-%                         % MRS added 4/24/12 - Transpose P to match how brainreader
-%                         % accepts P
-%                         [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
-%                     end
-%                     y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
-%                         P(z,3)*y_pred{i}(:,z);
-%                     
-%                     y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
-%                     ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
-%                 end
-%                 
-%             end
+            %             if exist('PolynomialOrder','var') && ~exist('P','var') && PolynomialOrder~=0
+            %
+            %                 P=[];
+            %                 T=[];
+            %                 patch = [];
+            %
+            %                 %%%Find a Wiener Cascade Nonlinearity
+            %                 for z=1:size(y_pred{i},2)
+            %                     if Use_Thresh
+            %                         %Find Threshold
+            %                         T_default = 1.25*std(y_pred{i}(:,z));
+            %                         [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
+            %                         IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
+            %
+            %                         %Apply Threshold to linear predictions and Actual Data
+            %                         PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
+            %                         ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
+            %
+            %                         %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial
+            %                         Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
+            %                             (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
+            %                         Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
+            %
+            %                         %Find Polynomial to Thresholded Data
+            %                         [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], ...
+            %                             [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+            %
+            %
+            %                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %                         %%%%%% Use only one of the following 2 lines:
+            %                         %
+            %                         %   1-Use the threshold only to find polynomial, but not in the model data
+            %                         T=[]; patch=[];
+            %                         %
+            %                         %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
+            %                         %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
+            %                         %
+            %                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %                     else
+            %                         %Find and apply polynomial
+            %                         % MRS added 4/24/12 - Transpose P to match how brainreader
+            %                         % accepts P
+            %                         [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+            %                     end
+            %                     y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
+            %                         P(z,3)*y_pred{i}(:,z);
+            %
+            %                     y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
+            %                     ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
+            %                 end
+            %
+            %             end
             
             %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
             if exist('v','var')
@@ -475,8 +484,11 @@ for c = 1:size(p_i,1)
         r2mean(c,u,:)=mean(r2);
         r2sd{c,u}=std(r2);
         
+        clear xTempBin
+        
     end
     
+    clear p_i
     
 end
 
@@ -516,42 +528,42 @@ if nargout>5
                 varargout{5}=TotalUnits;%bestf;
                 varargout{6}=TotalSpikes_PerUnit;%bestc;
                 if nargout>11
-                    varargout{7}=PhaseMat;%H;
+                    varargout{7}=[];%PhaseMat;%H;
                 end
                 if nargout>12
                     varargout{8}=H;%bestPB;
-%                     if nargout>13
-%                         %if outputting the whole PB matrix, put it in
-%                         %different dimensions: bins X (freqs*chans). Each
-%                         %column will be samples for one freq-chan
-%                         %combination, ordered by (f1c1,f2c1,f3c1...f6c1
-%                         %f1c2...)'
-%                         if ~exist('featMat','var')
-%                             pbrot=shiftdim(PB,2);
-%                             featMat=reshape(pbrot,[],size(PB,1)*size(PB,2));
-%                             featMat=featMat(q==1,:);
-%                         end
-%                         varargout{9}=x;   %featMat contains ALL features
-%                         varargout{10}=y;
-%                         varargout{11}=featMat;
-%                         if nargout>16
-%                             varargout{12}=ytnew;
-%                             varargout{13}=xtnew;
-%                             varargout{14}=t;
-%                             if nargout>19
-%                                 if exist('P','var')
-%                                     varargout{15} = P;
-%                                 else
-%                                     varargout{15} = 0;
-%                                 end
-%                                 varargout{16}=featind;
-%                                 %MRS modified 12/13/11
-%                                 if nargout>21 && exist('sr','var')
-%                                     varargout{17}=sr;
-%                                 end
-%                             end
-%                         end
-%                     end
+                    %                     if nargout>13
+                    %                         %if outputting the whole PB matrix, put it in
+                    %                         %different dimensions: bins X (freqs*chans). Each
+                    %                         %column will be samples for one freq-chan
+                    %                         %combination, ordered by (f1c1,f2c1,f3c1...f6c1
+                    %                         %f1c2...)'
+                    %                         if ~exist('featMat','var')
+                    %                             pbrot=shiftdim(PB,2);
+                    %                             featMat=reshape(pbrot,[],size(PB,1)*size(PB,2));
+                    %                             featMat=featMat(q==1,:);
+                    %                         end
+                    %                         varargout{9}=x;   %featMat contains ALL features
+                    %                         varargout{10}=y;
+                    %                         varargout{11}=featMat;
+                    %                         if nargout>16
+                    %                             varargout{12}=ytnew;
+                    %                             varargout{13}=xtnew;
+                    %                             varargout{14}=t;
+                    %                             if nargout>19
+                    %                                 if exist('P','var')
+                    %                                     varargout{15} = P;
+                    %                                 else
+                    %                                     varargout{15} = 0;
+                    %                                 end
+                    %                                 varargout{16}=featind;
+                    %                                 %MRS modified 12/13/11
+                    %                                 if nargout>21 && exist('sr','var')
+                    %                                     varargout{17}=sr;
+                    %                                 end
+                    %                             end
+                    %                         end
+                    %                     end
                 end
             end
         end

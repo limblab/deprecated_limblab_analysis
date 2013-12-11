@@ -71,4 +71,4 @@ tic
     Use_Thresh,[],words,emgsamplerate,lambda,0,[],[],[],bdf, cells); %< --- last input is featmat
 toc
 %% Save output
-save([sname,'SpikesByPhase tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','y*','x*','r*','Total*','PhaseMat');
+save(['ChewieSpikesByPhase_CO tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','y*','r*','Total*','PhaseMat');
