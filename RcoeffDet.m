@@ -4,7 +4,7 @@ function r2=RcoeffDet(ypred,yobs)
 %
 % in the 'ytest' vernacular, yobs=ytest
 %
-% will this fail for matrices?
+% works for column-wise matrices.
 
 sse=sum(((yobs-ypred).^2));
 sstot=var(yobs)*length(yobs);
