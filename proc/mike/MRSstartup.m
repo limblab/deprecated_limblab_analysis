@@ -1,4 +1,3 @@
-addpath(genpath('\\Citadel\limblab\user_folders\Marc\matlab code'))
 addpath(genpath('C:\Documents and Settings\Administrator\Desktop\RobertF\my code_mods'))
 addpath(genpath('C:\Documents and Settings\Administrator\My Documents\s1_analysis'))
 addpath(genpath('Y:\user_folders\Marc\circ_stat'))
