@@ -5,21 +5,41 @@ binsize = 50;
 samplerate = 1000;
 wsz = 256;
 
+%% Condition and organize fps
 [sig, samplerate, words, fp,~,~,~,~,fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
-
 [y, fp, t] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
 
-params.tapers = [5 9];
+%% Condition and organize spikes
+cells = unit_list(bdf);
+for i = 1:length(cells)
+    if cells(i,1) ~= 0
+        ts = get_unit(bdf, cells(i, 1), cells(i, 2));
+        b = train2bins(ts,t);
+        if cells(i,1) < 33
+            x(:,cells(i,1)+64) = b;
+        else
+            x(:,cells(i,1)-32) = b;
+        end
+    else
+        x(:,i) = zeros(length(y),1);
+    end
+end
 
-params.Fs = .001;
-    
-params.fpass = [0 300];
+%% Set input params for multitaper spectrum
+
+paramsFP.tapers = [5 9];
+paramsFP.Fs = .001;  
+paramsFP.fpass = [0 300];
 % params.pad
 % params.err  
-params.trialave = 0;
-win = [SizeofWindow WindowStepsize]
+paramsFP.trialave = 0;
+win = [.256 .050]
+segave = 0;
 
-[S,f,varS,C,Serr]=mtspectrumsegc(data,win,params,segave)
+
+% data = time x channels/trials
+[S_FP,f_FP,varS_FP,C_FP,Serr_FP]=mtspectrumsegc(data,win,paramsFP,segave)
+[S,f,varS,C,Serr]=mtspectrumsegpb(x,win,params,segave)
 
 
 c = xcov(S,'coef')
