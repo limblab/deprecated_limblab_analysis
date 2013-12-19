@@ -1,7 +1,11 @@
 % assumes a BDF formatted structure called out_struct
 
-temp=out_struct.raw.analog.ts;
-allFPstartTS=cat(2,temp{:}); clear temp
+temp=cellfun(@min,out_struct.raw.analog.ts);
+if iscell(temp)
+    allFPstartTS=cat(2,temp{:}); clear temp
+else
+    allFPstartTS=temp; clear temp
+end
 
 disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)),1);
 if ~isempty(disJoint)
@@ -23,8 +27,15 @@ if ~isempty(disJoint)
 end
 disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)));
 if ~isempty(disJoint)
-    disp('still mismatched lengths in out_struct.raw.analog.data.  quitting...')
-    return
+    disp('still mismatched lengths in out_struct.raw.analog.data.  trying again...')
+    setLength=min(unique(cellfun(@length,out_struct.raw.analog.data)));
+    for n=1:length(out_struct.raw.analog.data)
+        out_struct.raw.analog.data{n}=out_struct.raw.analog.data{n}(1:setLength);
+    end, clear n
+    disJoint=find(diff(cellfun(@length,out_struct.raw.analog.data)));                       %#ok<*EFIND>
+    if ~isempty(disJoint)
+        error('all attempts to equalize fp length across channels have failed')
+    end
 end
 
 fpchans=find(cellfun(@isempty,regexp(out_struct.raw.analog.channels,'FP[0-9]+'))==0);
