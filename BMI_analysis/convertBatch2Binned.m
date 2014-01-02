@@ -55,9 +55,19 @@ function Bin_FileNames = convertBatch2Binned(varargin)
 
     Bin_FileNames = BDF_FileNames;    
     
+    
+    
     for i=1:size(BDF_FileNames,2)
+        
+        BDF = LoadDataStruct([dataPath '\' BDF_FileNames{:,i}]);
+        
+        if BDF2BinArgs.ArtRemEnable
+            disp('Looking for Artifacts...');
+            BDF = artifact_removal(BDF,BDF2BinArgs.NumChan,BDF2BinArgs.TimeWind, 1);
+        end
         disp(sprintf('Binning %s structure...', BDF_FileNames{:,i} ));
-        binnedData = convertBDF2binned([dataPath '\' BDF_FileNames{:,i}],BDF2BinArgs);
+%         binnedData = convertBDF2binned([dataPath '\' BDF_FileNames{:,i}],BDF2BinArgs);
+        binnedData = convertBDF2binned(BDF,BDF2BinArgs);
         disp(sprintf('Saving binned data file %s...',Bin_FileNames{:,i}));
         save([savePath '\' Bin_FileNames{:,i} ], 'binnedData');
         disp('Done.');

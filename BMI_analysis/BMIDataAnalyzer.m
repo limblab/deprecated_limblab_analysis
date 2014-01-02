@@ -221,7 +221,6 @@ function BMIDataAnalyzer()
             clear states statemethods;
         end
         
-        
         disp('Done.');
         
         disp('Saving binned data...');
