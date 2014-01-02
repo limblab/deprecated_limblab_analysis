@@ -293,7 +293,7 @@ function out_struct = get_cerebus_data(varargin)
             waitbar(progress,h,sprintf('Opening: %s\nExtracting EMGs...', filename));
         end
 
-        [~,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
+        [dummy,emg_info] = ns_GetAnalogInfo(hfile, emg_list);
         out_struct.emg.emgnames = {EntityInfo(emg_list).EntityLabel};
         % ensure all emg channels have the same frequency
         if ~all( [emg_info.SampleRate] == emg_info(1).SampleRate)
