@@ -32,6 +32,7 @@ function raw = get_raw_plx(filename, opts)
 
                 tmp_data{chan_count} = ad;
                 tmp_ts{chan_count} = ts;
+                tmp_fn{chan_count} = fn;
 
                 chan_count = chan_count + 1;
             end           
@@ -44,6 +45,7 @@ function raw = get_raw_plx(filename, opts)
 
         raw.analog.channels = tmp_channels;
         raw.analog.ts = tmp_ts;
+        raw.analog.fn = tmp_fn;
         for i = 1:length(tmp_channels)
             raw.analog.data{i} = tmp_data{i}; %/ 409.3; % scaling factor to convert a/d units to Volts
             raw.analog.adfreq(i) = adfreq; % This will always be the same for Plexon, but not necessarily for Cerebus
