@@ -8,7 +8,7 @@ folds = 10;
 numlags = 10;
 numsides = 1;
 windowsize= 256;
-nfeat = 150;
+nfeat = 576;
 PolynomialOrder = 0;  %for Wiener Nonlinear cascade
 Use_Thresh = 0;
 emgsamplerate = 1000;
@@ -37,7 +37,7 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
         fnam=findBDFonCitadel(DaysNames{l}); fprintf(1,'\n%s\n',fnam);
         try
             load(fnam)
-        catch exception
+        catch exception                                                    %#ok<*NASGU>
             continue
         end
         
@@ -57,7 +57,7 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
             y,featMat,ytnew,xtnew,predtbase,~] =... %,sr]...
             MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
             samprate,fp,fptimes,sig(:,1),fnam,windowsize,nfeat,PolynomialOrder,...
-            Use_Thresh,H,[],emgsamplerate,lambda,0,featind);
+            Use_Thresh,H,[],emgsamplerate,lambda,0,featind);                %#ok<*ASGLU>
         
         H_SingleUnits(:,l,m) = H';                                          %#ok<*AGROW>
         if ~exist('H_SingleUnits.mat','file')

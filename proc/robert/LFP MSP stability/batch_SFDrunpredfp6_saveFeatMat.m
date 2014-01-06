@@ -1,4 +1,4 @@
-function [r2_X_SingleUnits,r2_Y_SingleUnits,H_SingleUnits]=batch_SFDrunpredfp6_saveFeatMat(Monkeys,featind)
+function [r2_X_SingleUnits,r2_Y_SingleUnits,H_SingleUnits,bestc,bestf]=batch_SFDrunpredfp6_saveFeatMat(Monkeys,featind)
 
 dbstop if error
 
@@ -8,7 +8,7 @@ folds = 10;
 numlags = 10;
 numsides = 1;
 windowsize= 256;
-nfeat = 150;
+nfeat = 576;
 PolynomialOrder = 0;  %for Wiener Nonlinear cascade
 Use_Thresh = 0;
 emgsamplerate = 1000;
@@ -37,17 +37,59 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
         fnam=findBDFonCitadel(DaysNames{l}); fprintf(1,'\n%s\n',fnam);
         try
             load(fnam)
-        catch exception
+        catch exception                                                     %#ok<*NASGU>
             continue
         end
         
-        fpAssignScript
+        try
+            fpAssignScript2
+        catch exception
+            if strcmp(exception.identifier,'MATLAB:nonExistentField')
+                fpAssignScript
+            else
+                rethrow(exception)
+            end
+        end
         if exist('out_struct','var')
             bdf = out_struct;
             clear out_struct
         end
-        bdf.vel=removeVelocityArtifacts(bdf.vel);
+        % remove sections from fp and sig, if they correspond to velocity
+        % blowups.  removeVelocityArtifacts.m just interpolates around
+        % those sections, we want to remove them entirely.
+        [bdf.vel,badStartInds,badEndInds]=removeVelocityArtifacts(bdf.vel);
         sig=bdf.vel;
+        
+        removeFPind=[]; removeSIGind=[];
+        for n=1:length(badStartInds)
+            for k=1:length(badStartInds{n})
+                badStartTimesInd=find(fptimes>=sig(badStartInds{n}(k),1),1,'first');
+                badEndTimesInd=find(fptimes<=sig(badEndInds{n}(k),1),1,'last');
+                if badStartTimesInd==1, badStartTimesInd=2; end
+                if badEndTimesInd==size(fp,2), badEndTimesInd=size(fp,2)-1; end
+                removeFPind=[removeFPind, (badStartTimesInd-1):(badEndTimesInd+1)];
+                
+%                 if badStartInds{n}(k)==1, badStartInds{n}(k)=2; end
+%                 if badEndInds{n}(k)==size(sig,1), badEndInds{n}(k)=size(sig,1)-1; end
+                removeSIGind=[removeSIGind, ...
+                    (badStartInds{n}(k)):(badEndInds{n}(k))];
+            end, clear k
+        end, clear n
+        fp(:,unique(removeFPind))=[];
+        temp=cellfun(@min,bdf.raw.analog.ts);
+        if iscell(temp)
+            allFPstartTS=cat(2,temp{:});
+        else
+            allFPstartTS=temp;
+        end, clear temp
+        fptimes=max(allFPstartTS):1/samprate: ...
+            (size(fp,2)/samprate + max(allFPstartTS));
+        if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
+        clear allFPstartTS
+        sig(unique(removeSIGind),:)=[];
+        temp=sig(1,1):binsize:(binsize*(size(sig,1)+floor(sig(1,1)/binsize)));
+        sig(:,1)=temp(1:end-1); clear temp
+        
         H = [];
         P = [];
         numberOfFps=size(fp,1);
@@ -57,7 +99,7 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
             y,featMat,ytnew,xtnew,predtbase,~] =... %,sr]...
             MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
             samprate,fp,fptimes,sig(:,1),fnam,windowsize,nfeat,PolynomialOrder,...
-            Use_Thresh,H,[],emgsamplerate,lambda,0,featind);
+            Use_Thresh,H,[],emgsamplerate,lambda,0,featind);                %#ok<*ASGLU>
         
         H_SingleUnits(:,l,m) = H';                                          %#ok<*AGROW>
         if ~exist('H_SingleUnits.mat','file')
@@ -66,10 +108,14 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
             HbankDays{l}=MATfiles{l};
         end
         save('H_SingleUnits.mat','H_SingleUnits','HbankDays','bestf','bestc','featind')
-        
+        varName=['featMat_',regexp(DaysNames{l},'.*(?=\.mat)','match','once')];
+        varName2=['sig_',regexp(DaysNames{l},'.*(?=\.mat)','match','once')];
+        eval([varName,'=featMat;'])
+        eval([varName2,'=sig;'])
+        save(fullfile('featMats',[varName,'.mat']),varName,varName2)
         clear v* y* x* r* bdf out_struct sig numfp samprate fp ...
-            fptimes analog_times fnam words
-        close all
+            fptimes analog_times fnam words featMat*
+%         close all
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,32 +124,78 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
     fC = 1;
     for k = length(MATfiles)-6:length(MATfiles)-1        
         for q = 1:length(MATfiles)
-            if q==1                
+            if q==1
                 try
-                    fnam=findBDFonCitadel(MATfiles{k});
-                    fprintf(1,'testing on %s...\n',MATfiles{k})
-                    load(fnam)
-                    bdf{k}=out_struct;
+                    varName=['featMat_',regexp(MATfiles{k},'.*(?=\.mat)','match','once')];
+                    varName2=['sig_',regexp(MATfiles{k},'.*(?=\.mat)','match','once')];
+                    load(fullfile('featMats',[varName,'.mat']),varName,varName2)
+                    featMat=eval(varName);
+                    sig{k}=eval(varName2);
                 catch exception
-                    continue
+                    try
+                        fnam=findBDFonCitadel(MATfiles{k});
+                        fprintf(1,'testing on %s...\n',MATfiles{k})
+                        load(fnam)
+                        bdf{k}=out_struct;
+                    catch exception
+                        continue
+                    end
                 end
             else
-                out_struct=bdf{k};
+%                 out_struct=bdf{k};
+%                 fpAssignScript2
+%                 numfp=size(fp,1);
+                
+                % remove sections from fp and sig, if they correspond to velocity
+                % blowups.  removeVelocityArtifacts.m just interpolates around
+                % those sections, we want to remove them entirely.
+%                 [out_struct.vel,badStartInds,badEndInds]=removeVelocityArtifacts(out_struct.vel);
+%                 sig=out_struct.vel;
+%                 removeFPind=[]; removeSIGind=[];
+%                 for n=1:length(badStartInds)
+%                     for kk=1:length(badStartInds{n})
+%                         badStartTimesInd=find(fptimes>=sig(badStartInds{n}(kk),1),1,'first');
+%                         badEndTimesInd=find(fptimes<=sig(badEndInds{n}(kk),1),1,'last');
+%                         if badStartTimesInd==1, badStartTimesInd=2; end
+%                         if badEndTimesInd==size(fp,2), badEndTimesInd=size(fp,2)-1; end
+%                         removeFPind=[removeFPind, (badStartTimesInd-1):(badEndTimesInd+1)];
+%                         
+%                         if badStartInds{n}(kk)==1, badStartInds{n}(kk)=2; end
+%                         if badEndInds{n}(kk)==size(sig,1), badEndInds{n}(kk)=size(sig,1)-1; end
+%                         removeSIGind=[removeSIGind, ...
+%                             (badStartInds{n}(kk)-1):(badEndInds{n}(kk)+1)];
+%                     end, clear kk
+%                 end, clear n
+%                 fp(:,unique(removeFPind))=[];
+%                 temp=cellfun(@min,out_struct.raw.analog.ts);
+%                 if iscell(temp)
+%                     allFPstartTS=cat(2,temp{:});
+%                 else
+%                     allFPstartTS=temp;
+%                 end, clear temp
+%                 fptimes=max(allFPstartTS):1/samprate: ...
+%                     (size(fp,2)/samprate + max(allFPstartTS));
+%                 if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
+%                 clear allFPstartTS
+%                 sig(unique(removeSIGind),:)=[];
+%                 temp=sig(1,1):binsize:(binsize*(size(sig,1)+floor(sig(1,1)/binsize)));
+%                 sig(:,1)=temp(1:end-1); clear temp
+
             end
-            fpAssignScript
-            out_struct.vel=removeVelocityArtifacts(out_struct.vel);
-            sig=out_struct.vel;
+            fprintf(1,'testing %s on %s...\n',MATfiles{q},MATfiles{k})
+
             H = [];
             P = [];
+            numfp=96; fp=[]; fptimes=[]; samprate=1000; fnam='';
             
             [vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2,vaftr,~,~,H,bestfeat,x,...
                 y,featMat,ytnew,xtnew,predtbase,P,~] =... %,sr]...
-                MRSpredictionsSingleUnitfromfp6all(sig,signalType,numberOfFps,binsize, ...
+                MRSpredictionsSingleUnitfromfp6all(sig{k},signalType,numfp,binsize, ...
                 folds,numlags,numsides,samprate,fp,fptimes,sig(:,1),fnam,windowsize, ...
                 nfeat,PolynomialOrder,Use_Thresh,H_SingleUnits(:,q),[],... % <- Empty words for BC, pass in for HC
-                emgsamplerate,lambda,0,featind,0,[]);
+                emgsamplerate,lambda,0,featind,0,featMat);
             
-            close all, clear fp numfp analog_times fptimes
+            clear fp numfp analog_times fptimes
             
             vaf_X_SingleUnits{m,q,fC} = squeeze(vaf(:,1,:));
             vaf_Y_SingleUnits{m,q,fC} = squeeze(vaf(:,2,:));
@@ -113,12 +205,12 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
             KQ=[k q];
             save([mfilename,'_interstitial.mat'],'vaf_X_SingleUnits', ...
                 'vaf_Y_SingleUnits','r2_X_SingleUnits', ...
-                'r2_Y_SingleUnits','featind','H_SingleUnits','KQ');
+                'r2_Y_SingleUnits','featind','KQ');
         end        
         fC = fC+1;
     end
 end
-
+% rmdir('featMats','s')
 return
 % Plot code
 

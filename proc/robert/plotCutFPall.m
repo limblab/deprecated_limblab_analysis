@@ -19,13 +19,15 @@ end
 
 switch lower(machineName)
     case 'bumblebeeman'
-        figure, set(gcf,'Position',[41         101        1440         801])
-        set(gca,'Position',[0.0271    0.0499    0.9465    0.9026])
+        figure, set(gcf,'Position',[32 59 972 636])
+        % another valid figure position is [41 101 1440 801]
+        % another valid figure position is [32 59 972 636]
+        set(gca,'Position',[0.0271 0.0499 0.9465 0.9026])
     otherwise
-        figure, set(gcf,'Position',[1         0        1440         801])
+        figure, set(gcf,'Position',[1 0 1440 801])
         % second monitor
-        % set(gcf,'Position',[-479         879        1920        1007])
-        set(gca,'Position',[0.0281    0.0437    0.9562    0.9315])
+        % set(gcf,'Position',[-479 879 1920 1007])
+        set(gca,'Position',[0.0281 0.0437 0.9562 0.9315])
 end
 
 scaleFactor=1000;

@@ -1,6 +1,6 @@
-function cleanSignal=removeVelocityArtifacts(velStruct,rejectionThreshold)
+function [cleanSignal,badStartInds,badEndInds]=removeVelocityArtifacts(velStruct,rejectionThreshold)
 
-% syntax cleanSignal=removeVelocityArtifacts(velStruct,rejectionThreshold);
+% syntax [cleanSignal,badStartInds,badEndInds]=removeVelocityArtifacts(velStruct,rejectionThreshold);
 %
 %       INPUTS
 %               velStruct           - the outstruct.vel array, should have 
@@ -10,10 +10,14 @@ function cleanSignal=removeVelocityArtifacts(velStruct,rejectionThreshold)
 %       OUTPUTS
 %               cleanSignal         - copy of the original signal, with
 %                                     artifacts removed.
+%               badStartInds        -cell array of all marked badstartinds
+%               badEndInds          -cell array of all marked badendinds
 
 if nargin < 2
     rejectionThreshold=100;
 end
+badStartInds=cell(size(velStruct,2)-1,1);
+badEndInds=badStartInds;
 
 for j=2:size(velStruct,2)
     clear badinds badepoch badstartinds badendinds
@@ -37,6 +41,7 @@ for j=2:size(velStruct,2)
         end
 %     else
 %         signalNew(:,j)=signalIn(:,j);
+    badStartInds{j-1}=badstartinds; badEndInds{j-1}=badendinds;
     end
 end
 cleanSignal=velStruct;

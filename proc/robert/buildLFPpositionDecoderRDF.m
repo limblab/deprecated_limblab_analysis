@@ -69,7 +69,7 @@ sig=out_struct.(signal);
 analog_times=sig(:,1);
 
 % assign FPs, offloaded to script so it can be used in other places.
-fpAssignScript
+fpAssignScript2
 
 if nfeat > size(fp,1)*6
     nfeat=6*size(fp,1);

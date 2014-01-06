@@ -248,7 +248,15 @@ bdf.meta.decoder_age=bdfDate-decoderDate;
 % that info in bdf.meta.brain_control, rather than just a 1.
 
 original_words=bdf.words;
-opts=struct('version',2);
+try
+    opts=evalin('caller','opts');
+catch exception
+    if strcmp(exception.identifier,'MATLAB:UndefinedFunction')
+        opts=struct('version',2,'includeFails',0);
+    else
+        rethrow(exception)
+    end
+end
 if floor(datenum(bdf.meta.datetime)) <= datenum('09-12-2011')
     opts.version=1; opts.hold_time=0.1;
     % Inside get_cursor_kinematics.m, we can assume brain control.
@@ -268,7 +276,7 @@ end
 [bdf.kin.path_length,bdf.kin.time_to_target,bdf.kin.hitRate,bdf.kin.hitRate2, ...
     bdf.kin.speedProfile,bdf.kin.pathReversals,bdf.kin.trialTS, ...
     bdf.kin.intertarget_distance,bdf.kin.slidingAccuracy, ...
-    bdf.kin.slidingTime]=kinematicsHandControl(bdf,opts);
+    bdf.kin.slidingTime]=kinematicsHandControl2(bdf,opts);
 bdf.words=original_words;
 
 [workspaceList,~]=dbstack;

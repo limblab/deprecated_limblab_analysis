@@ -1,5 +1,4 @@
 % assumes a BDF formatted structure called out_struct
-
 temp=cellfun(@min,out_struct.raw.analog.ts);
 if iscell(temp)
     allFPstartTS=cat(2,temp{:}); clear temp
