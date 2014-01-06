@@ -1,4 +1,4 @@
-function plotFigFileInAxes(plotInFigH,plotInAxH,toPlotPath)
+function plotFigFileInAxes(plotInFigH,plotInAxH,toPlotPath,specialExclude)
 
 % syntax plotFigFileInAxes(plotInFigH,plotInAxH,toPlotPath)
 %
@@ -23,10 +23,14 @@ RMax=Axs(1);
 % with certain exceptions.
 figProps=get(RMfig);
 figPropsNames=fieldnames(figProps);
-dontMessWith={'BeingDeleted','Children','CurrentAxes','CurrentCharacter','CurrentObject','CurrentPoint', ...
+dontMessWith={'BeingDeleted','Children','CurrentAxes', ...
+    'CurrentCharacter','CurrentObject','CurrentPoint', ...
     'DockControls','FileName','PaperOrientation','PaperPosition','PaperPositionMode',...
     'Parent','Position','Renderer','RendererMode','Resize','ResizeFcn','Type','WindowStyle'};
 figPropsNames(ismember(figPropsNames,dontMessWith))=[];
+if nargin > 3
+    figPropsNames(ismember(figPropsNames,specialExclude))=[];
+end
 for n=1:length(figPropsNames)
     set(plotInFigH,figPropsNames{n},get(RMfig,figPropsNames{n}))
 end, clear n
