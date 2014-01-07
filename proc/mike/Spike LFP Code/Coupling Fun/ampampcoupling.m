@@ -1,4 +1,4 @@
-function [AA_Coupling] = ampampcoupling(out_struct, LFPInds, SpikeInds, ControlType)
+function [AA_Coupling] = ampampcoupling(out_struct, LFPInds, SpikeInds, ControlType, H)
 % bdf - plain old bdf
 % LFPinds{1} - {[LFPchannel, freqind]} - x direction
 % LFPinds{2} - {[LFPchannel, freqind]} - y direction
