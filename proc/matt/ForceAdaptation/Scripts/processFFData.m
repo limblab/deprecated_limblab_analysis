@@ -11,6 +11,7 @@ clc;
 
 useUnsorted = false;
 sigCompMethod = 'diff';
+cerebusFileType = 'nevnsx'; % 'nev'
 
 % if false, will not copy over new parameter files if they already exist
 rewriteFiles  = 1;
@@ -24,7 +25,7 @@ doDataStruct        = 0;
 doAdaptation        = 0;
 doTracking          = 0;
 % tuning options1
-doTuning            = 1;
+doTuning            = 0;
 doClassification    = 1;
 doReport            = 0;
 % plotting options
@@ -33,24 +34,22 @@ doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramSetNames = {'middle1','middle2','end','targmiddle1','targmiddle2','targend'};
+paramSetNames = {'early','late','middle1','middle2'};
 
-monkey = 'MrT';
+monkey = 'Chewie';
 
 switch monkey
     case 'MrT'
         paramFileDir = 'Z:\MrT_9I4\Matt\';
-        goodDates = {'2013-09-10', ...
-            '2013-09-06', ...
-            '2013-09-04', ...
-            '2013-08-20', ... % S RT
-            '2013-08-22', ... % S RT
-            '2013-08-30'};
+        goodDates = {'2013-10-11'};
         
         dataFileDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
     case 'Chewie'
         paramFileDir = 'Z:\Chewie_8I2\Matt\';
-        goodDates = {'2013-10-11','2013-10-09'};
+        goodDates = {'2013-10-09';
+                     '2013-10-11';
+                     '2013-10-29';
+                     '2013-10-28'};
         dataFileDir = 'Z:\Chewie_8I2\Matt\ProcessedData\';
     otherwise
         error('Monkey not recognized');
@@ -108,7 +107,7 @@ for iDate = 1:length(goodDates)
         disp('%%% Making Data Struct %%%')
         disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
         % make my data file (will convert things to BDF if necessary
-        [~,useUnsorted] = makeDataStruct(expParamFile, 'nev', false, useUnsorted);
+        [~,useUnsorted] = makeDataStruct(expParamFile, cerebusFileType, false, useUnsorted);
     end
     
     if doAdaptation

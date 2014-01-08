@@ -128,6 +128,7 @@ end
 
 html = strcat(html,['<div id="header"><h1>Data Summary:&nbsp;' monkey '&nbsp; | &nbsp' cell2mat(arrays) '&nbsp; | &nbsp' useDate '&nbsp; | &nbsp;' taskType '&nbsp; | &nbsp;' adaptType '</h1><hr></div>']);
 
+
 %% Make table of contents links
 [html,uElecs,sg] = report_tableOfContents(html,d,tracking,p);
 

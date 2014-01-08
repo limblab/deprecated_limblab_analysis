@@ -21,16 +21,27 @@ function [cellClass,sg_bl] = classifyCells(blt,adt,wot,useArray,tuningPeriod,tun
 %
 % The classification is based on the number shown above (AAA=1,ABA=2,etc)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+skipTheCICheck = false;
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% paramFile = fullfile(blt.meta.out_directory, paramSetName, [blt.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% params = parseExpParams(paramFile);
+% ciSig = str2double(params.ci_significance{1});
+% confLevel = str2double(params.confidence_level{1});
+% numIters = str2double(params.number_iterations{1});
+% r2Min = str2double(params.r2_minimum{1});
+% clear params;
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+paramFile = fullfile(blt.meta.out_directory, [blt.meta.recording_date '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 ciSig = str2double(params.ci_significance{1});
 confLevel = str2double(params.confidence_level{1});
 numIters = str2double(params.number_iterations{1});
 r2Min = str2double(params.r2_minimum{1});
 clear params;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 % load the info to classify cells
 cell_classifications;
@@ -102,6 +113,7 @@ switch lower(tuningMethod)
         mds_ad = mds_ad(idx_ad,:);
         mds_wo = mds_wo(idx_wo,:);
         
+        
         bos_bl = blt.(useArray).(tuningMethod).(tuningPeriod).bos;
         bos_ad = adt.(useArray).(tuningMethod).(tuningPeriod).bos;
         bos_wo = wot.(useArray).(tuningMethod).(tuningPeriod).bos;
@@ -111,19 +123,25 @@ switch lower(tuningMethod)
         bos_wo = bos_wo(idx_wo,:);
         
         
-        
-        rs_bl = blt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
-        rs_ad = adt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
-        rs_wo = wot.(useArray).(tuningMethod).(tuningPeriod).r_squared;
-        
-        rs_bl = sort(rs_bl(idx_bl,:),2);
-        rs_ad = sort(rs_ad(idx_ad,:),2);
-        rs_wo = sort(rs_wo(idx_wo,:),2);
-        
-        % get 95% CI for each
-        rs_bl = [rs_bl(:,ceil(numIters - confLevel*numIters)), rs_bl(:,floor(confLevel*numIters))];
-        rs_ad = [rs_ad(:,ceil(numIters - confLevel*numIters)), rs_ad(:,floor(confLevel*numIters))];
-        rs_wo = [rs_wo(:,ceil(numIters - confLevel*numIters)), rs_wo(:,floor(confLevel*numIters))];
+        if isfield(blt.(useArray).(tuningMethod).(tuningPeriod),'r_squared')
+            rs_bl = blt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
+            rs_ad = adt.(useArray).(tuningMethod).(tuningPeriod).r_squared;
+            rs_wo = wot.(useArray).(tuningMethod).(tuningPeriod).r_squared;
+            
+            rs_bl = sort(rs_bl(idx_bl,:),2);
+            rs_ad = sort(rs_ad(idx_ad,:),2);
+            rs_wo = sort(rs_wo(idx_wo,:),2);
+            
+            % get 95% CI for each
+            rs_bl = [rs_bl(:,ceil(numIters - confLevel*numIters)), rs_bl(:,floor(confLevel*numIters))];
+            rs_ad = [rs_ad(:,ceil(numIters - confLevel*numIters)), rs_ad(:,floor(confLevel*numIters))];
+            rs_wo = [rs_wo(:,ceil(numIters - confLevel*numIters)), rs_wo(:,floor(confLevel*numIters))];
+        else
+            % glm etc won't have r-squared
+            rs_bl = ones(size(sg_bl,1),1);
+            rs_ad = ones(size(sg_bl,1),1);
+            rs_wo = ones(size(sg_bl,1),1);
+        end
         
         % check significance
         istuned = zeros(size(sg_bl,1),1);
@@ -140,7 +158,11 @@ switch lower(tuningMethod)
             t_r_wo = rs_wo(unit,1) > r2Min;
             
             % only consider cells that are tuned in all epochs
-            istuned(unit) = all([t_bl,t_ad,t_wo]) & all([t_r_bl,t_r_ad,t_r_wo]);
+            if ~skipTheCICheck
+                istuned(unit) = all([t_bl,t_ad,t_wo]) & all([t_r_bl,t_r_ad,t_r_wo]);
+            else
+                istuned(unit) = all([t_r_bl,t_r_ad,t_r_wo]);
+            end
         end
         
         switch lower(compMethod)

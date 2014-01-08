@@ -116,7 +116,7 @@ for iEpoch = 1:length(epochs)
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % get time to target and reaction time
-    timeToTargets = ( mt(:,end) - mt(:,4) ) - holdTime;
+    timeToTargets = ( mt(:,6) - mt(:,4) ) - holdTime;
     reactionTimes = mt(:,4) - mt(:,3);
     
     rtMeans = zeros(length(blockTimes)-1,1);
@@ -211,7 +211,7 @@ for iEpoch = 1:length(epochs)
             % find direction of movement at time of peak speed
             %   compare position and peak to position at start
             pos_start = pos(find(t <= t_start,1,'last'),:);
-            pos_peak = pos(find(t <= t_peak,1,'last'),:);
+            pos_peak = pos(find(t <= t_start+0.3,1,'last'),:);
             pos_end = pos(find(t <= t_end,1,'last'),:);
 
             % get takeoff angle

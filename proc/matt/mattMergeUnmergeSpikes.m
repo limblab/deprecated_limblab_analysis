@@ -6,14 +6,13 @@
 % more different tasks you can still concatenate the spikes but should make
 % sure that you create different bdfs for each task (unless you know
 % what you're doing.)
-
-file_path = 'Z:\Chewie_8I2\Matt\M1\CerebusData\2013-10-28\';
-out_path = 'Z:\Chewie_8I2\Matt\M1\BDFStructs\2013-10-28\';
+file_path = 'Z:\Chewie_8I2\Matt\M1\CerebusData\2013-12-19\';
+out_path = 'Z:\Chewie_8I2\Matt\M1\BDFStructs\2013-12-19\';
 umonk = 'Chewie';
 uarray = 'M1';
-utask = 'RT';
-upert = 'FF';
-udate = '10282013';
+utask = 'CO';
+upert = 'VR';
+udate = '12192013';
 
 file_prefix = [umonk '_' uarray '_' utask '_' upert '_'];
 
@@ -25,31 +24,32 @@ if doCombine
     mergingStatus = processSpikesForSorting(file_path,file_prefix);
 end
 
-if doSplit
-    % Run processSpiesForSorting again to separate sorted spikes into their
-    % original files.
-    disp('Splitting sorted file into NEVs...');
-    mergingStatus = processSpikesForSorting(file_path,file_prefix);
-end
 
-% this section will make each file into its own BDF
-if doBDF
-    
-    if ~exist(out_path, 'dir')
-        disp('Creating BDF directory...');
-        mkdir(out_path);
-    end
-    
-    disp('Creating BL BDF...');
-    out_struct = get_nev_mat_data([file_path file_prefix 'BL_'],3);
-    save([out_path file_prefix 'BL_' udate '.mat'],'out_struct');
-    
-    disp('Creating AD BDF...');
-    out_struct = get_nev_mat_data([file_path file_prefix 'AD_'],3);
-    save([out_path file_prefix 'AD_' udate '.mat'],'out_struct');
-    
-    disp('Creating WO BDF...');
-    out_struct = get_nev_mat_data([file_path file_prefix 'WO_'],3);
-    save([out_path file_prefix 'WO_' udate '.mat'],'out_struct');
-end
-
+% 
+% if doSplit
+%     % Run processSpiesForSorting again to separate sorted spikes into their
+%     % original files.
+%     disp('Splitting sorted file into NEVs...');
+%     mergingStatus = processSpikesForSorting(file_path,file_prefix);
+% end
+% 
+% % this section will make each file into its own BDF
+% if doBDF
+%     
+%     if ~exist(out_path, 'dir')
+%         disp('Creating BDF directory...');
+%         mkdir(out_path);
+%     end
+%     
+%     disp('Creating BL BDF...');
+%     out_struct = get_nev_mat_data([file_path file_prefix 'BL_'],3);
+%     save([out_path file_prefix 'BL_' udate '.mat'],'out_struct');
+%     
+%     disp('Creating AD BDF...');
+%     out_struct = get_nev_mat_data([file_path file_prefix 'AD_'],3);
+%     save([out_path file_prefix 'AD_' udate '.mat'],'out_struct');
+%     
+%     disp('Creating WO BDF...');
+%     out_struct = get_nev_mat_data([file_path file_prefix 'WO_'],3);
+%     save([out_path file_prefix 'WO_' udate '.mat'],'out_struct');
+% end

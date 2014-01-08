@@ -1,3 +1,20 @@
+
+
+baseDir = 'Z:\MrT_9I4\Matt\ProcessedData';
+
+paramSetName = 'late';
+
+ffColor = 'b';
+vrColor = 'r';
+
+outTargColor = [0.7 0 0];
+inTargColor = [0 0.7 0];
+
+xoffset = 5;
+yoffset = -35;
+
+
+
 %% Show example force trial
 useDate = '2013-08-23';
 
@@ -5,13 +22,13 @@ forceAng = -85.*pi/180;
 forceScale = 0.33;
 numArrows = 20;
 
-load(fullfile(baseDir, useDate,['CO_FF_AD_' useDate '.mat']));
-mt = filterMovementTable(data);
-t = data.cont.t;
-pos = data.cont.pos;
-vel = data.cont.vel;
-f = data.cont.force;
-clear data;
+% data = load(fullfile(baseDir, useDate,['CO_FF_AD_' useDate '.mat']));
+% mt = filterMovementTable(data,paramSetName,false);
+% t = data.cont.t;
+% pos = data.cont.pos;
+% vel = data.cont.vel;
+% f = data.cont.force;
+% clear data;
 
 targDist = 8;
 targAngle = pi/4;

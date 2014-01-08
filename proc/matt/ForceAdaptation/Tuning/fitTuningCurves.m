@@ -97,14 +97,14 @@ for iEpoch = 1:length(epochs)
                         if ~strcmpi(tuningPeriods{iTune},'file')
                             tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = nonparametricTuning(data,tuningPeriods{iTune},useArray,paramSetName,doPlots);
                         else
-                            disp('WARNING: cannot use whole file for this tuning method, so skipping this tuning period input');
+                            disp('WARNING: cannot use whole file for nonparametric tuning method, so skipping this tuning period input');
                         end
                         
                     otherwise % do regression of cosine model for period specified in tuneType
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                            tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},tuningMethods{iMethod},useArray,paramSetName,doPlots);
+                                tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},tuningMethods{iMethod},useArray,paramSetName,doPlots);
                         else
-                            disp('WARNING: cannot use whole file for this tuning method, so skipping this tuning period input');
+                            disp('WARNING: cannot use whole file for regression/vectorsum tuning method, so skipping this tuning period input');
                         end
                         
                 end

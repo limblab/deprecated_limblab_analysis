@@ -63,7 +63,7 @@ end
 
 if ~strcmpi(tuningPeriod,'file')
     % Get the movement table
-    mt = filterMovementTable(data);
+    mt = filterMovementTable(data,paramSetName,true);
     
     disp(['Using ' tuningPeriod ' movement period, ' num2str(movementTime) ' second window...']);
     
@@ -263,6 +263,9 @@ md_cis = [md_dist_sort(:,ang_ind_low) + mds, md_dist_sort(:,ang_ind_high) + mds]
 %% build output struct
 out.pds = [pds pd_cis];
 out.mds = [mds md_cis];
+
+out.boot_pds = [];
+out.boot_mds = [];
 
 out.unit_guide = sg;
 out.mt = mt;
