@@ -237,10 +237,10 @@ for c = 1:size(freqs,2)
         if cells(i,1) ~= 0
             ts = get_unit(bdf, cells(i, 1), cells(i, 2));
             b = train2bins(ts,fptimesadj);
-            if cells(i,1) < 33
-                x(:,cells(i,1)+64) = b;
+            if cells(i,1) < 65
+                x(:,cells(i,1)+32) = b;
             else
-                x(:,cells(i,1)-32) = b;
+                x(:,cells(i,1)-64) = b;
             end
         else
             x(:,i) = zeros(length(y),1);

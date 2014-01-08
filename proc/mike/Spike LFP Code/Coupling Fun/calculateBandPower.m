@@ -1,5 +1,6 @@
-function [PB] = calculateBandPower(wsz, numfp, numbins, samprate, fp, bs, y, t)
+function [PB t y] = calculateBandPower(wsz, numfp, numbins, samprate, fp, binsize, y, t)
 
+bs=binsize*samprate;
 %% Calculate LMP
 win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
 tfmat=zeros(wsz,numfp,numbins,'single');
@@ -30,7 +31,7 @@ tfmat(:,:,(ishift+1:end))=[];
 numbins=numbins-firstind+1;
 
 % t=t(1:numbins-firstind+1);
-t=t(1:length(t));
+t(ishift+1:end)= [];
 y(ishift+1:end,:)=[];
 clear fpf
 freqs=linspace(0,samprate/2,wsz/2+1);
@@ -39,8 +40,6 @@ tvect=(firstind:numbins)*(bs)-bs/2;
 
 
 disp('3rd part: calculate FFTs')
-toc
-tic
 %% Calculate bandpower
 % remove DC component of frequency vector
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;

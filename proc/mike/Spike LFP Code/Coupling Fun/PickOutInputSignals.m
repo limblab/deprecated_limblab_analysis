@@ -16,7 +16,9 @@ if ~isempty(SpikeInds)
             return
         end
     end
-elseif ~isempty(LFPInds)
+end
+
+if ~isempty(LFPInds)
     if length(LFPInds) == 1
         if ControlType{2}(1) == 1
             xOnline(:,1) = PB(LFPInds{1}(2),LFPInds{1}(1),:);

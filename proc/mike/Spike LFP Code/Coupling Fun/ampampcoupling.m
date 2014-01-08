@@ -1,5 +1,6 @@
-function [AA_Coupling] = ampampcoupling(out_struct, LFPInds, SpikeInds, ControlType, H)
+function [AA_Coupling] = ampampcoupling(out_struct, LFPInds, SpikeInds, ControlType, H, SigGain)
 % bdf - plain old bdf
+%% Inputs
 % LFPinds{1} - {[LFPchannel, freqind]} - x direction
 % LFPinds{2} - {[LFPchannel, freqind]} - y direction
 
@@ -11,22 +12,18 @@ function [AA_Coupling] = ampampcoupling(out_struct, LFPInds, SpikeInds, ControlT
 % ControlType{1} - {'Control Type'} - 'HC' or 'BC'
 % ControlType{2} - [ControlSignalX, ControlSignalY] - LFP ==1; Spike == 2
 % ex. [Spike, Spike] = [2, 2]; [LFP, Spike] = [1, 2]; [LFP, LFP] = [1, 1];
-% Consider making these variables inputs to the function
-binsize = 50;
+
+%% Consider making these variables inputs to the function
+binsize = .05;
 wsz = 256;
+samplerate = 1000;
 bdf = out_struct;
 clear out_struct
-%% Determine Control Type
-if strcmp(ControlType{1},'BC')
-    samplerate = .05;
-elseif strcmp(ControlType{1},'HC')
-    samplerate = 1000;
-end
 
 %% Condition and organize fps
 [sig, ~, words, fp,~,~,~,~,fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
 [y, fp, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
-[PB] = calculateBandPower(wsz, size(fp,1), numbins, samplerate, fp, binsize, y, t);
+[PB, t, y] = calculateBandPower(wsz, size(fp,1), numbins, samplerate, fp, binsize, y, t);
 
 %% Bin and organize spikes
 cells = unit_list(bdf);
@@ -34,10 +31,10 @@ for i = 1:length(cells)
     if cells(i,1) ~= 0
         ts = get_unit(bdf, cells(i, 1), cells(i, 2));
         b = train2bins(ts,t);
-        if cells(i,1) < 33
-            x(:,cells(i,1)+64) = b;
+        if cells(i,1) < 65
+            x(:,cells(i,1)+32) = b;
         else
-            x(:,cells(i,1)-32) = b;
+            x(:,cells(i,1)-64) = b;
         end
     else
         x(:,i) = zeros(length(y),1);
@@ -51,20 +48,35 @@ end
 dir =['X';'Y'];
 for i = 1:2
     figure(i) 
-    plot(y(:,i),'r')
+    plot(y((size(H,1)):end,i+1),'r')
     hold on
     %% Check reconstructed velocity, make sure it matches online predictions
     if ControlType{2}(i) == 2 % plot spike for x direction
-        xrecon(:,i) = xOnline(:,i);
-        plot(xrecon(:,i),'g')
-        plot(((xrecon(5:end,i)*H(5,i)+xrecon(4:end-1,i)*H(4,i)+xrecon(3:end-2,i)*H(3,i)+xrecon(2:end-3,i)*H(2,i)+xrecon(1:end-4,i)*H(1,i)))*SigGain(2),'b')   % this shortens spike input by 5
-        title('Spike Input (green) Spike Reconstructed(blue) Predicted velocity (red) in',dir(i))
+        xrecontmp = xOnline(:,i);
         
+        Yrecon(:,i) = (xrecontmp(10:end)*H(10,i)+xrecontmp(9:end-1)*H(9,i)+...
+            xrecontmp(8:end-2)*H(8,i)+xrecontmp(7:end-3)*H(7,i)+xrecontmp(6:end-4)*H(6,i)...
+            +xrecontmp(5:end-5)*H(5,i)+xrecontmp(4:end-6)*H(4,i)+xrecontmp(3:end-7)*H(3,i)...
+            +xrecontmp(2:end-8)*H(2,i)+xrecontmp(1:end-9)*H(1,i))*SigGain(i);
+        r = corrcoef(y((size(H,1)):end-4,i+1),Yrecon(5:end,i))
+        
+        plot(xOnline(:,i),'g')
+        plot(Yrecon,'b')   % this shortens spike input by 5
+        title('Spike Input (green) Spike Reconstructed(blue) Actual Predicted velocity (red)')
+        clear xrecontmp
     else % plot LFP for x direction
-        xrecon(:,i) = xOnline(:,i);
-        plot(xrecon(:,i),'g')
-        plot(xrecon(:,i)*max(abs(H(:,i)))*SigGain(1),'b')
-        title('LFP Input (green) LFP Reconstructed(blue) Predicted velocity (red) in',dir(i))
+        xrecontmp = xOnline(:,i);
+        
+        Yrecon(:,i) = (xrecontmp(10:end)*H(10,i)+xrecontmp(9:end-1)*H(9,i)+...
+            xrecontmp(8:end-2)*H(8,i)+xrecontmp(7:end-3)*H(7,i)+xrecontmp(6:end-4)*H(6,i)...
+            +xrecontmp(5:end-5)*H(5,i)+xrecontmp(4:end-6)*H(4,i)+xrecontmp(3:end-7)*H(3,i)...
+            +xrecontmp(2:end-8)*H(2,i)+xrecontmp(1:end-9)*H(1,i));%*SigGain(i);
+        r = corrcoef(y((size(H,1))+1:end,i+1),Yrecon(1:end-1,i))
+        
+        plot(xOnline(:,i),'g')
+        plot(Yrecon,'b')
+        title('LFP Input (green) LFP Reconstructed(blue) Actual Predicted velocity (red)')
+        clear xrecontmp
     end
 end
 

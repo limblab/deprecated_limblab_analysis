@@ -1,5 +1,5 @@
 function [sig samplerate words fp numberOfFps adfreq fp_start_time fp_stop_time...
-            fptimes analog_time_base] = SetPredictionsInputVar(bdf);
+            fptimes analog_time_base] = SetPredictionsInputVar(bdf)
         
         sig = bdf.vel;
         samplerate= 1000; %bdf.raw.analog.adfreq(1,1);

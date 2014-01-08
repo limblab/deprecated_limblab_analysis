@@ -1,6 +1,6 @@
 %runpredfp6 
 %Uses MRSpredictionsfromfp6allDecoderBuild
-input = 2;
+Datainput = 2;
 Usefeatmat = 0;
 %Use 1 if loading files from folder structure, use 2 if using list of
 %filenames and obtaining path from citadel
@@ -9,8 +9,8 @@ Usefeatmat = 0;
 
 %% Implement file i/o strategy
 
-if input == 1 % Remember to clear featind if building decoders on diff feat
-    % Need proper folder structure if using input = 1
+if Datainput == 1 % Remember to clear featind if building decoders on diff feat
+    % Need proper folder structure if using Datainput = 1
     
     direct = 'C:\Users\M.R.Scheid\Desktop\Chewie Data\11-11-2011';
     %Set directory to desired directory
@@ -20,8 +20,8 @@ if input == 1 % Remember to clear featind if building decoders on diff feat
     Days(1:2)=[];
     DaysNames={Days.name};
     
-elseif input == 2
-    % Need to start out with list of file names if using input =2
+elseif Datainput == 2
+    % Need to start out with list of file names if using Datainput =2
     %DaysNames = [{kinStructOut.name}' {kinStructOut.decoder_age}'];
     %DaysNames = [BDFlist_all mat2cell(DecoderAges(:),repmat(1,length(BDFlist_all),1),1)];
     DaysNames = FileList;
@@ -31,7 +31,7 @@ elseif input == 2
 end
 
 for i = 1%:length(DaysNames)]
-    if input == 1
+    if Datainput == 1
 %         DayName = [direct,'\',DaysNames{i},'\'];
 %         cd(DayName);
 % 
@@ -51,7 +51,7 @@ for i = 1%:length(DaysNames)]
         %DecoderAge = DaysNames{i,2};
     end
 
-%% ***Declare all input arguments that stay constant through all loop
+%% ***Declare all Datainput arguments that stay constant through all loop
  % iterations outside loop (vars to be declared inside loop are commented out below):
 
     %sig 
@@ -81,12 +81,12 @@ for i = 1%:length(DaysNames)]
     %% Begin iterating through files
     for l=1:length(MATfiles)
         
-        if input == 1
+        if Datainput == 1
             fnam = MATfiles{l}
             fname=[direct,'\',DaysNames{i},'\',fnam];
             load(fnam);
         
-        elseif input == 2
+        elseif Datainput == 2
             fnam =  findBDFonCitadel(DaysNames{i})
             try
                 load(fnam)
@@ -95,7 +95,7 @@ for i = 1%:length(DaysNames)]
             end
             
         end
-        %% Declare input variables within loop that vary in each loop iteration:
+        %% Declare Datainput variables within loop that vary in each loop iteration:
         
         if exist('out_struct','var')
             bdf = out_struct;
@@ -106,7 +106,7 @@ for i = 1%:length(DaysNames)]
         [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,...
             fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
         
-        % Began to write code to input featMat than decided it wouldn't be
+        % Began to write code to Datainput featMat than decided it wouldn't be
         % worth the effort (for now at least).
         elseif Usefeatmat == 1 
             if exist('featindBEST','var')
@@ -139,28 +139,28 @@ for i = 1%:length(DaysNames)]
          end
         
         %% Create directory for decoder outputs
-        if input == 1 && l == 1
+        if Datainput == 1 && l == 1
         mkdir('Decoders')
         sname=[direct,'\','Decoders','\',fnam];
         
-        elseif input == 1 && l ~= 1
+        elseif Datainput == 1 && l ~= 1
         sname=[direct,'\','Decoders','\',fnam];
         
-        elseif input == 2
+        elseif Datainput == 2
         sname=[direct,'\',DaysNames{i}];
         end
         
         %% Determine which type of decoding is being done
         
         if exist('Hbest','var') && exist('featindBEST','var')
-            % Use if inputting a decoder, also don't 'clear' H in loop
+            % Use if Datainputting a decoder, also don't 'clear' H in loop
             H = Hbest; 
             featind = featindBEST;
             P = Pbest;
-            disp('Warning: A decoder already exists and is being input for predictions')
+            disp('Warning: A decoder already exists and is being Datainput for predictions')
             
         elseif exist('featindBEST','var') && ~exist('Hbest','var')
-            % If not inputting H matrix but using the same features to
+            % If not Datainputting H matrix but using the same features to
             % build decoder (pseudo decoder case)
             H = []; 
             P = [];
@@ -169,7 +169,7 @@ for i = 1%:length(DaysNames)]
             disp('Warning: featureind already exists or was not cleared in loop')
             
         else
-            % If not inputting H matrix, and make sure featind not input to decoder fxn
+            % If not Datainputting H matrix, and make sure featind not Datainput to decoder fxn
             H = [];
             featind = [];
             P = [];
@@ -182,7 +182,7 @@ for i = 1%:length(DaysNames)]
          y,featMat,ytnew,xtnew,predtbase,P,featind] =... %,sr]...
          MRSpredictionsfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
          samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-         Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,[]); %< --- last input is featmat        
+         Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,[]); %< --- last Datainput is featmat        
         %% Save output
         %save([sname,'velpred Using LFP Decoder from first HC file.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
         if exist('DecoderAge','var')
@@ -215,7 +215,7 @@ for i = 1%:length(DaysNames)]
     
     direct = 'C:\Documents and Settings\Administrator\Desktop\Mike_Data\Spike LFP Decoding\Mini';
     %Set directory to desired directory
-if input == 1
+if Datainput == 1
     cd(direct);
 
     Days=dir(direct);
