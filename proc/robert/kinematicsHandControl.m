@@ -216,7 +216,7 @@ for n=1:length(start_reaches)
         pathReversals(n)=pathReversals(n)/interTargetDistance(n);
 	end
 end
-% exclude_trials corresponds to trials were length(included_points) < 2,
+% exclude_trials corresponds to trials where length(included_points) < 2,
 % therefore indicating that the target appeared on top of the cursor or was
 % hit by it as a matter of chance most likely.  Exclude these from
 % consideration for kinematics properties.
