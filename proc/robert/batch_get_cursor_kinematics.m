@@ -1,6 +1,8 @@
 % this script operates on a folder that contains 1 or more .mat
 % files containing FP and position data
 
+disp('WE ARE NO LONGER OVERWRITING THE BDFS (12/12/2013)')
+
 % folder/file info
 if exist('PathName','var')~=1
     PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
@@ -67,9 +69,9 @@ for batchIndex=1:length(MATfiles)
             (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 10) || ...
             (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 300)
         % we're in brain control country.  Savor the flavor.
-        get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
+%         get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
         out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation
-        % need a function (or other clever way) to determine whether brain
+        % need a function (or other clever way) to determine whether LFP
         % or spike control.  Most obvious is by looking at the decoder
         % line, which probably means putting it in get_cursor_kinematics
         if isfield(out_struct.meta,'decoder_age')
@@ -84,6 +86,7 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
             kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
             kinStruct(batchIndex).slidingAccuracy=out_struct.kin.slidingAccuracy;
+            kinStruct(batchIndex).slidingTime=out_struct.kin.slidingTime;
             % Fitts' Law calculations.  un-normalized time to target...
             unTT=kinStruct(batchIndex).TT./kinStruct(batchIndex).interTargetDistance;
             % and Index of Difficulty
@@ -108,7 +111,7 @@ for batchIndex=1:length(MATfiles)
                 % complete.  It doesn't account for CO brain control
                 % w/handle.  Right now that doesn't occur so it works, but
                 % it will need updated in a future release.
-                get_cursor_kinematics(out_struct);              % run once, to store in the remote directory
+%                 get_cursor_kinematics(out_struct);              % run once, to store in the remote directory
                 out_struct=get_cursor_kinematics(out_struct);   % run again, for the upcoming kinematics calculation
                 % make a stab at perfectly silent failure
                 try
@@ -130,6 +133,7 @@ for batchIndex=1:length(MATfiles)
                     kinStruct(batchIndex).interTargetDistance= ...
                         out_struct.kin.intertarget_distance;
                     kinStruct(batchIndex).slidingAccuracy=out_struct.kin.slidingAccuracy;
+                    kinStruct(batchIndex).slidingTime=out_struct.kin.slidingTime;
                 else
                     % this happens when get_cursor_kinematices was unable to modify
                     % the BDF, (e.g., there was no BR log file)
@@ -140,15 +144,17 @@ for batchIndex=1:length(MATfiles)
                 fprintf(1,'calculating handle kinematics instead...\n')
                 kinStruct(batchIndex).decoder_age=NaN; % because hand control!
                 kinStruct(batchIndex).control='hand';
-                opts=struct('version',2);
+                if ~exist('opts','var')
+                    opts=struct('version',2,'includeFails',0);                    
+                end
                 if floor(datenum(out_struct.meta.datetime)) <= datenum('09-12-2011')
                     opts.version=1; opts.hold_time=0.1;
-                end
+                end                
                 [kinStruct(batchIndex).PL,kinStruct(batchIndex).TT,kinStruct(batchIndex).hitRate, ...
                     kinStruct(batchIndex).hitRate2,kinStruct(batchIndex).speedProfile, ...
                     kinStruct(batchIndex).pathReversals,kinStruct(batchIndex).trialTS, ...
-                    kinStruct(batchIndex).interTargetDistance,kinStruct(batchIndex).slidingAccuracy]= ...
-                    kinematicsHandControl(out_struct,opts);
+                    kinStruct(batchIndex).interTargetDistance,kinStruct(batchIndex).slidingAccuracy, ...
+                    kinStruct(batchIndex).slidingTime]=kinematicsHandControl2(out_struct,opts);
                 % if we're running inside superBatch.m, then VAF_all should
                 % exist.  If not, create it.  This will override any stored
                 % .LFP_vaf or .Spike_vaf values that might have been
@@ -187,10 +193,11 @@ for batchIndex=1:length(MATfiles)
             kinStruct(batchIndex).trialTS=out_struct.kin.trialTS;
             kinStruct(batchIndex).interTargetDistance=out_struct.kin.intertarget_distance;
             kinStruct(batchIndex).slidingAccuracy=out_struct.kin.slidingAccuracy;
+            kinStruct(batchIndex).slidingTime=out_struct.kin.slidingTime;
         end
     end
     kinStruct(batchIndex).name=MATfiles{batchIndex};
-    clear out_struct decoder_age beginFirstTrial endLastTrial numTargets opts
+    clear out_struct decoder_age beginFirstTrial endLastTrial numTargets %opts
     clear rewarded_trials start_trial trial_index
 end
 
