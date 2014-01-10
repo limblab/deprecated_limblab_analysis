@@ -1,13 +1,13 @@
 function binnedData = convertBDF2binned(datastruct,varargin)
 % converts a BDF to the binned format, according to parameters specified in argstruct
 %
-% binnedData = convertBDF2binned(datastruct,[arg_struct])
+% binnedData = convertBDF2binned(datastruct,[params])
 %
 %         datastruct              : string of bdf.mat file path and name, or string of BDF in workspace, or BDF structure directly
 %
-%         arg_struct fields:        [default values]
+%         params fields:            [default values]
 %             binsize             : [0.05] desired bin size in second
-%             startTime, stopTime : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)
+%             starttime, stoptime : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)
 %             HP, Lp              : [50 10] high pass and low pass cut off frequencies for EMG filtering
 %             MFR                 : [0.0] minimum firing rate a units needs to be included in the data
 %             NormData            : [false] specify whether the output data is to be normalized to unity
@@ -15,16 +15,17 @@ function binnedData = convertBDF2binned(datastruct,varargin)
 %             Unsorted            : [false] Whether to use the unsorted units in the analysis
 %             TriKernel           : [false] Whether to use a triangular kernel to smooth the firing rate
 %             sig                 : [0.04] sigma value for creating triangular kernel
-%             ArtRemEnable        : [1] Whether to attempt detecting and deleting artifacts
+%             ArtRemEnable        : [1] Whether or not to attempt detecting and deleting artifacts
 %             NumChan             : [10] Number of channels from which the artifact removal needs to detect simultaneous spikes to consider it an artifact
 %             TimeWind            : [0.0005] time window, in seconds, over which the artifact remover will consider event to be "simultaneous"
 
-if nargin > 1
-    arg_struct = varargin{1};
-elseif nargin ==0 || nargin > 2
-    warning('Wrong number of arguments');
-    evalin('base','help convertBDF2binned');
-    return;
+
+%update missing params with default values
+params = get_default_binning_params(datastruct, varargin{:});
+
+if isempty(params)
+    disp('Invalid binning parameter(s)');
+    return
 end
 
 if ~isstruct(datastruct)
@@ -38,134 +39,31 @@ if isempty(datastruct)
    return
 end
 
-%Default Parameters (all units are in seconds):
-binsize = 0.05;
-starttime = 0.0;
-if isfield(datastruct, 'emg')
-    duration = double(datastruct.emg.data(end,1));
-elseif isfield(datastruct,'force')
-    duration = double(datastruct.force.data(end,1));
-elseif isfield(datastruct,'pos')
-    duration = double(datastruct.pos(end,1)-datastruct.pos(1,1));
-else
-    warning('BDF2BIN: no emg or force field present in input structure');
-    numUnits = size(datastruct.units,2);
-    duration = 0;
-    for i = 1:numUnits
-        duration = max(duration,datastruct.units(1,i).ts(end));
-    end
-end
-
-stoptime = floor(duration);
-EMG_hp = 50; % default high pass at 50 Hz
-EMG_lp = 10; % default low pass at 10 Hz
-minFiringRate = 0.5; %default min firing rate to include a unit in the data
-NormData = false;
-Find_States=false;
-Unsorted = false;
-TriKernel = false;
-sig = 0.04;
-
-%optional parameters overridding
-if isfield(arg_struct,'binsize');
-    binsize = arg_struct.binsize;
-end
-if isfield(arg_struct,'startTime');
-    starttime = arg_struct.startTime;
-end
-if isfield(arg_struct,'stopTime');
-    stoptime = arg_struct.stopTime;
-end
-if isfield(arg_struct,'HP');
-    EMG_hp = arg_struct.HP;
-end
-if isfield(arg_struct,'LP');
-    EMG_lp = arg_struct.LP;
-end
-if isfield(arg_struct,'MFR');
-    minFiringRate = arg_struct.MFR;
-end
-if isfield(arg_struct,'NormData');
-    NormData = arg_struct.NormData;
-end
-if isfield(arg_struct,'FindStates');
-    FindStates = arg_struct.FindStates;
-end
-if isfield(arg_struct,'Unsorted');
-    Unsorted = arg_struct.Unsorted;
-end
-if isfield(arg_struct,'TriKernel');
-    TriKernel = arg_struct.TriKernel;
-end
-if isfield(arg_struct,'sig');
-    sig = arg_struct.sig;
-end
-if isfield(arg_struct,'ArtRemEnable');
-    ArtRemEnable = arg_struct.ArtRemEnable;
-end
-if isfield(arg_struct,'NumChan');
-    NumChan = arg_struct.NumChan;
-end
-if isfield(arg_struct,'TimeWind');
-    TimeWind = arg_struct.TimeWind;
-end
-clear arg_struct;
-
 %-------------------------------------------------------------------------
-
 %Create triangular kernel for convolution with spikes  %(SHT and SNN, added 3/8/12)
      
 %1) Initialize an array that stores the times from -support to support
 %    at binWidth resolution
-binWidth = binsize/1000;      %Double check that your units make sense!
-support = sqrt(6) * sig;
+binWidth = params.binsize;      %Double check that your units make sense!
+support = sqrt(6) * params.sig;
 numBins = floor(support/binWidth);
 maxTime = binWidth * numBins;
 times = -maxTime:binWidth:(maxTime+(0.1*binWidth));
 % 2) Compute the two constants
-const1 = 1 / (6 * sig^2);
-const2 = sqrt(6) * sig;
+const1 = 1 / (6 * params.sig^2);
+const2 = sqrt(6) * params.sig;
 % 3) Compute the kernel
 kernel = const1 * (const2 - abs(times));
 %--------------------------------------------------------------------------
-
-%% Validation of time parameters
-    
-if (starttime <0.0 || starttime > duration-binsize) %making sure the start time is valid, must be at least 10 secs before eof    
-    disp(sprintf('Start time must be between %.1f and %.1f seconds',0.0,duration-binsize)); %
-    disp(sprintf('Start time set to beginning of data (0.0 seconds)'));
-    starttime =  0.0;
-else
-    disp(sprintf('Start time set to %.1f seconds',starttime));
-end
-if stoptime ==0
-    stoptime = floor(duration);
-    disp(sprintf('Stop time set to end of data (floored to %.1f seconds)', stoptime));
-elseif (stoptime <binsize || stoptime > duration)
-    disp(sprintf(['Stop time must be at least one bin after start time and cannot be higher than file duration (%.1f)\n' ...
-                 '"Stoptime" set to end of data (%.1f seconds).'],duration,floor(duration)));
-    stoptime = floor(duration);
-else
-    stoptime = floor(stoptime); 
-    disp(sprintf('Stop time set to %.1f seconds',stoptime));
-end
-
-if mod(1,binsize)
-    disp('Please choose a binsize that is a factor of 1');
-    disp('data conversion aborted');
-    binnedData = [];
-    return
-end
-
-%Other time and frequency parameters
-numberbins = (stoptime-starttime)/binsize;      
+%% Other time and frequency parameters
+numberbins = round((params.stoptime-params.starttime)/params.binsize);      
 timeframe = ones(numberbins,1,'single');
-timeframe = timeframe.*(starttime:binsize:stoptime-binsize)';      %Time vector of the binned data, mostly for plotting
+timeframe = timeframe.*(params.starttime:params.binsize:params.stoptime-params.binsize)';      %Time vector of the binned data, mostly for plotting
 
 %% Bin EMG Data
 
 if ~isfield(datastruct, 'emg')
-    disp(sprintf('No EMG data is found '));
+    fprintf('No EMG data is found\n');
     emgdatabin = [];
     emgguide = [];
 else
@@ -182,7 +80,8 @@ else
     EMGname = char(zeros(1,12));
     numEMGs = length(datastruct.emg.emgnames);
     emgguide = char(zeros(numEMGs,length(EMGname)));
-    emgtimebins = starttime*emgsamplerate+1:stoptime*emgsamplerate;
+    emgtimebins = find(datastruct.emg.data(:,1)>=params.starttime & datastruct.emg.data(:,1)<params.stoptime);
+%     emgtimebins = params.starttime*emgsamplerate+1:params.stoptime*emgsamplerate;
 
 
     for i=1:numEMGs
@@ -195,8 +94,8 @@ else
     emgdatabin = zeros(numberbins,numEMGs);
 
     % Filter EMG data
-    [bh,ah] = butter(4, EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
-    [bl,al] = butter(4, EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
+    [bh,ah] = butter(4, params.EMG_hp*2/emgsamplerate, 'high'); %highpass filter params
+    [bl,al] = butter(4, params.EMG_lp*2/emgsamplerate, 'low');  %lowpass filter params
 
     for E=1:numEMGs
         % Filter EMG data
@@ -211,7 +110,7 @@ else
     end
 
     %Normalize EMGs        
-    if NormData
+    if params.NormData
         for i=1:numEMGs
 %             emgdatabin(:,i) = emgdatabin(:,i)/max(emgdatabin(:,i));
             %dont use the max because of artefact, use 99% percentile
@@ -225,7 +124,7 @@ end
 
 %% Bin Force
 if ~isfield(datastruct, 'force')
-    disp(sprintf('No force data is found in structure " %s " ',datastructname));
+    fprintf('No force data is found in structure " %s " ',datastructname);
     forcedatabin = [];
     forcelabels = [];
 else
@@ -233,7 +132,8 @@ else
     forcename = char(zeros(1,12));
     numforcech = length(datastruct.force.labels);
     forcelabels = char(zeros(numforcech,length(forcename)));
-    forcetimebins = starttime*forcesamplerate+1:stoptime*forcesamplerate;
+    forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
+%     forcetimebins = params.starttime*forcesamplerate+1:params.stoptime*forcesamplerate;
 
     for i=numforcech:-1:1
         forcename = char(datastruct.force.labels(i));
@@ -244,7 +144,7 @@ else
 %         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
     forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
 
-    if NormData
+    if params.NormData
         %Normalize Force
         for i=1:numforcech
 %             forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
@@ -286,8 +186,8 @@ cursposlabels(2,1:5)= 'y_pos';
 if ~isfield(datastruct, 'vel')
     if isfield(datastruct,'pos') && ~isempty(cursorposbin)
         %derive freshly binned pos data
-        dx = [0; diff(cursorposbin(:,1))./ binsize];
-        dy = [0; diff(cursorposbin(:,2))./ binsize];
+        dx = [0; diff(cursorposbin(:,1))./ params.binsize];
+        dy = [0; diff(cursorposbin(:,2))./ params.binsize];
         magn = sqrt(dx.^2 + dy.^2);
         velocbin = [dx dy magn];
     else
@@ -304,18 +204,13 @@ veloclabels(1:3,1:12) = [char(zeros(1,12));char(zeros(1,12));char(zeros(1,12))];
 veloclabels(1,1:5)= 'x_vel';
 veloclabels(2,1:5)= 'y_vel';
 veloclabels(3,1:8)= 'vel_magn';
-% 
-% if NormData
-%     %Normalize velocity from 0 to 1
-%     velocbin = velocbin/max(velocbin);
-% end
 
 %% Bin Acceleration
 if ~isfield(datastruct, 'acc')
     if isfield(datastruct,'pos') && ~isempty(velocbin)
         %derive freshly binned vel data
-        ddx = [0; diff(velocbin(:,1))./ binsize];
-        ddy = [0; diff(velocbin(:,2))./ binsize];
+        ddx = [0; diff(velocbin(:,1))./ params.binsize];
+        ddy = [0; diff(velocbin(:,2))./ params.binsize];
         magn = sqrt(ddx.^2 + ddy.^2);
         accelbin = [ddx ddy magn];
     else
@@ -333,21 +228,16 @@ acclabels(1,1:5)= 'x_acc';
 acclabels(2,1:5)= 'y_acc';
 acclabels(3,1:8)= 'acc_magn';
 
-% if NormData
-%     %Normalize velocity from 0 to 1
-%     accelbin = accelbin/max(accelbin);
-% end
-
 %% Bin Spike Data
 
 if ~isfield(datastruct, 'units')
-    disp(sprintf('No spike data is found in structure " %s " ',datastructname));
+    fprintf('No spike data is found in structure " %s " ',datastructname);
     spikeratedata = [];
     neuronIDs = [];
 else
 
     %decide which signals to use: minimum of "minFiringRate spikes/sec on average:
-    minimumspikenumber = (stoptime-starttime)*minFiringRate;
+    minimumspikenumber = (params.stoptime-params.starttime)*params.minFiringRate;
     totalnumunits = length(datastruct.units);
     numusableunits = 0;
     units_to_use = zeros(1,totalnumunits);
@@ -361,14 +251,14 @@ else
         end
         % If Unsorted = false, skip unsorted units, which are mostly noise. skip units id 255,
         % in autosort, I don't know what this is...
-        if Unsorted == 0;
+        if params.Unsorted == 0;
             if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)
                 continue; 
             end
         end
         
         % If Unsorted = true, take into account the unsorted units
-        if Unsorted == 1;
+        if params.Unsorted == 1;
             if datastruct.units(i).id(2)==255
                 continue
             end
@@ -385,7 +275,7 @@ else
     units_to_use = nonzeros(units_to_use);
 
     if (numusableunits < 1)
-        disp(sprintf('The data does not contain any unit with a minimum of %g spike/sec',minFiringRate));
+        fprintf('The data does not contain any unit with a minimum of %g spike/sec',minFiringRate);
         spikeratedata = [];
         spikeguide = [];
         neuronIDs = [];
@@ -395,7 +285,6 @@ else
         spikeguide= char(zeros(numusableunits,length('ee000u0'))); %preallocate space for spikeguide
         neuronIDs = zeros(numusableunits,2);
         spikeratedata=zeros(numberbins,numusableunits);
-
         
         % Create the spikeguide with electrode names
         for i=1:numusableunits
@@ -403,13 +292,13 @@ else
             neuronIDs(i,:) = datastruct.units(units_to_use(i)).id;
         end
 
-       if TriKernel == 0; 
+       if params.TriKernel == 0; 
             % Create the spike data matrix, using the specified bin size and
             % identified units
             for unit = 1:numusableunits
 
              %get the binned data from the desired timeframe plus one bin before
-             binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,starttime:binsize:stoptime);
+             binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,params.starttime:params.binsize:params.stoptime);
 
              %and get rid of the extra bins at beginnning, it contains all the ts
              %from the beginning of file that are < starttime. Here I want
@@ -417,14 +306,14 @@ else
              binneddata = binneddata(2:end);
 
              %convert to firing rate and store in spike data matrix
-             spikeratedata(:,unit) = binneddata' /binsize;
+             spikeratedata(:,unit) = binneddata' /params.binsize;
              end
         end
         
-        if TriKernel == 1;
-        BinTimes = starttime:binsize:stoptime;
-        % spikeStartTime is the initial time in the spikeArray
-        spikeStartTime = BinTimes(1);
+        if params.TriKernel == 1;
+            BinTimes = params.starttime:params.binsize:params.stoptime;
+            % spikeStartTime is the initial time in the spikeArray
+            spikeStartTime = BinTimes(1);
             for unit = 1:numusableunits
 
                 spkTimes = datastruct.units(units_to_use(unit)).ts;

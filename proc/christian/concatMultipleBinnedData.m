@@ -1,6 +1,6 @@
-function binnedData = concatMultipleBinnedData(neuronIDs)
+function binnedData = concatMultipleBinnedData(varargin)
 
-dataPath = 'C:\Monkey\Keedoo\BinnedData\';
+dataPath = 'Z:\';
 
 [FileName_tmp, PathName] = uigetfile( [dataPath '*.mat'], 'Choose First BinnedData File');
 dataPath = PathName;
@@ -36,6 +36,19 @@ while strcmp(MoreFiles,'Yes')
     end
     
     MoreFiles = questdlg('Do you want to add another file?');
+end
+
+if nargin
+    neuronIDs = varargin{1};
+else
+    bd = {};
+    for i = 1:size(FileNames,2)
+        tmp = load([FileNames{2,i} FileNames{1,i}]);
+        structname = fieldnames(tmp);
+        tmp = tmp.(structname{1});
+        bd = [bd;tmp];
+    end
+    neuronIDs = getCommonUnits(bd);
 end
 
 if strcmp(MoreFiles,'Cancel')

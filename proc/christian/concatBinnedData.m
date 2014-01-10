@@ -25,7 +25,7 @@ end
 
 %% Concat EMGs
 if isfield(struct1, 'emgguide') && isfield(struct2, 'emgguide')
-    EMG_FLAG = 0;
+
     for i = 1:size(struct1.emgguide,1)
         if ~strcmp(deblank(struct1.emgguide(i,:)),deblank(struct2.emgguide(i,:)))
             disp('incompatible EMG labels - concatenation aborted');

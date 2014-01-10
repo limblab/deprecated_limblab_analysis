@@ -196,8 +196,8 @@ function BMIDataAnalyzer()
     end
         
     function BDF_BinButton_Callback(obj,event)
-%        Bin_UI = figure;
         [BDF2BinArgs] = convertBDF2binnedGUI;  %Added Unsorted TriKernel and sig 3/14/12 SNN
+        drawnow;
         if isempty(BDF2BinArgs)
             disp('Cancelled');
             return;
@@ -337,6 +337,7 @@ function BMIDataAnalyzer()
         end
         
         [DecoderOptions] = BuildModelGUI(binsize,statemethods);
+        drawnow;
         if isempty(DecoderOptions)
             %user hit cancel
             disp('Cancelled');

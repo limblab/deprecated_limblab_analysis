@@ -2,7 +2,7 @@ function convertBatch2BDF2Binned
 
 %% Globals
     
-    dataPath = 'D:\Monkey\';
+    dataPath = 'Z:\';
     
 %% Get Cerebus Data Files
 

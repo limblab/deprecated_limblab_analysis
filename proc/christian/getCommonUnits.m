@@ -17,18 +17,18 @@ function NeuronIDs = getCommonUnits(varargin)
             tmpstruct = LoadDataStruct([PathNames{i} FileNames{i}],'binned');
             all_unit_IDs(i) = {tmpstruct.spikeguide};
         end
-
-        matching_units = [];
     else
-        NumFiles = nargin;
+        allstructs = varargin{1};
+        NumFiles = size(allstructs,1);
         all_unit_IDs = cell(1,NumFiles);
         
         for i=1:NumFiles
-            tmpstruct = varargin{1};
+            tmpstruct = allstructs{i};
             all_unit_IDs(i) = {tmpstruct.spikeguide};
         end
     end
-        
+
+    matching_units = [];
     for u = 1:size(all_unit_IDs{1},1)
         COMMON_FLAG = 1;
         for f = 2:NumFiles
