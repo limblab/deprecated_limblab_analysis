@@ -2,7 +2,7 @@
 %Uses MRSpredictionsfromfp6allDecoderBuild
 input = 2;
 %file list name
-MATfiles = Chewie_COfilenames;
+MATfiles = Mini_COfilenames;
 
 Usefeatmat = 0;
 %Use 1 if loading files from folder structure, use 2 if using list of
@@ -84,5 +84,5 @@ toc
     TotalSpikes_AllUnits(:,:,l) = sum(TotalSpikes_PerUnit,3);
 
 %% Save output
-save(['ChewieSpikesByPhase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
+save(['MiniSpikesByPhase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
 end
