@@ -51,7 +51,7 @@ for i = 1:2
     plot(y((size(H,1)):end,i+1),'r')
     hold on
     %% Check reconstructed velocity, make sure it matches online predictions
-    if ControlType{2}(i) == 2 % plot spike for x direction
+    if ControlType{2}(i) == 2 % plot spike
         xrecontmp = xOnline(:,i);
         
         Yrecon(:,i) = (xrecontmp(10:end)*H(10,i)+xrecontmp(9:end-1)*H(9,i)+...
@@ -64,7 +64,7 @@ for i = 1:2
         plot(Yrecon,'b')   % this shortens spike input by 5
         title('Spike Input (green) Spike Reconstructed(blue) Actual Predicted velocity (red)')
         clear xrecontmp
-    else % plot LFP for x direction
+    else % plot LFP
         xrecontmp = xOnline(:,i);
         
         Yrecon(:,i) = (xrecontmp(10:end)*H(10,i)+xrecontmp(9:end-1)*H(9,i)+...
@@ -80,6 +80,9 @@ for i = 1:2
     end
 end
 
+%% Parse and Separate Trials
+
+[TrialPath TrialInput] = parseTrials(bdf,Yrecon)
 
 
 %% Set input params for multitaper spectrum
