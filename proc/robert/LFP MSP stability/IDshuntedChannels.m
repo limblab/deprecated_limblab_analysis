@@ -91,3 +91,13 @@ arrayImg(map_matrix==0)=0.5;
 
 figure, imagesc(arrayImg), colormap(gray)
 shuntedChannels=map_matrix(arrayImg>0.5);
+for n=1:10
+    for k=1:10
+        h=text(k,n,sprintf('%d',map_matrix(n,k)),'HorizontalAlignment','Center','VerticalAlignment','middle');
+        if arrayImg(n,k)==0
+            set(h,'Color','w')
+        end
+    end
+end
+set(gca,'XTick',[],'YTick',[])
+
