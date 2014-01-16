@@ -67,18 +67,9 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
     
     optifun=@(P) sigmoid_square_error(P,    dirs_stim*3.14159/180,proportion_stim);      %defined at end of this function
     g_stim = fminsearch(optifun,[0,1,.65,10,.75]);
+    optifun=@(P) inv_liklihood(P,[dirs_stim,num_left_reaches_stim,number_reaches_stim]);  %defined at end of this function
+    g_stim=fminsearch(optifun,g_stim);
     reach_fit_stim = sigmoid_periodic2(g_stim,dd*3.14159/180);
- 
-    %plot the stim rate data points and the psychometric fit for the stim
-    %trials
-    H_1=figure; %cartesian plot
-    %convert directions to cos(ang) space
-    %dirs_stim=cos(dirs_stim*3.14159/180);
-    plot(dirs_stim,proportion_stim,'rx')
-    hold on
-    %dd=cos(dd*3.14159/180);
-    plot(dd,reach_fit_stim,'r')
-
     
     
     %display number of reach stats so the user can estimate the quality of
@@ -105,7 +96,6 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
          is_left_reach_no_stim= abs(is_left_reach_no_stim-1);
     end
     
-
     
     %get_no_stim reaching rates
     proportion_no_stim = zeros(size(dirs_no_stim));
@@ -123,26 +113,42 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
 
     %get the parameters of the maximum likelyhood model of the psychometric
     %curve for no-stim reaches in the upper hemispace (0-180deg bumps)
-    optifun=@(P) sigmoid_square_error(P,dirs_no_stim*3.14159/180,proportion_no_stim); 
+    optifun=@(P) sigmoid_square_error(P,dirs_no_stim*3.14159/180,proportion_no_stim); %defined at end of this function
     g_no_stim = fminsearch(optifun,[0,1,.65,10,.75]);
+    optifun=@(P) inv_liklihood(P,[dirs_no_stim,num_left_reaches_no_stim,number_reaches_no_stim]);  %defined at end of this function
+    g_no_stim=fminsearch(optifun,g_no_stim);
     reach_fit_no_stim = sigmoid_periodic2(g_no_stim ,dd*3.14159/180);
     
-    %plot the stim rate data points and the psychometric fit for the stim
-    %trials
-    figure(H_1)
 
-    %plot the stim rate data points and the psychometric fit for the stim
-    %trials
-
-
-    figure(H_1); %cartesian plot
-    %convert directions to cos(ang) space
-    %dirs_no_stim=cos(dirs_no_stim*3.14159/180);
+    %test the stim data for significance:
+    L_null=get_sigmoid_liklihood2([dirs_no_stim,num_left_reaches_no_stim,number_reaches_no_stim],g_no_stim,@sigmoid_periodic);
+    L_stim=get_sigmoid_liklihood2([dirs_stim,num_left_reaches_stim,number_reaches_stim],g_stim,@sigmoid_periodic);
+    
+    D=2*(log(L_stim)-log(L_null));
+    P=1-chi2cdf(D,1); %(assumes 1DOF)
+    
+    if P<0.05
+        plotcolor='r';
+    else
+        plotcolor='g';
+    end
+    
+    %do the plotting
+    H_1=figure; %cartesian plot
+    %points:
+    %plot the data points for the stim trials
+    plot(dirs_stim,proportion_stim,strcat(plotcolor,'x'))
+    hold on
+    %plot the data points for the no stim trials
     plot(dirs_no_stim,proportion_no_stim,'bo')
-    hold on;
-    %dd=cos(dd*3.14159/180);
+
+    %fit curves:
+    %plot the data points for the stim trials
+    plot(dd,reach_fit_stim,plotcolor)
     plot(dd,reach_fit_no_stim,'b')
     
+    
+    legend(strcat('Stim level 0, P=',num2str(P)),'No Stim')
     %fix the axes so that the psychometric and the reach counts use the
     %same x axis
 
@@ -166,4 +172,8 @@ function out=sigmoid_square_error(params,x,y0)
     else
         out=mean(out.^2);
     end
+end
+function il=inv_liklihood(params,data)
+    L=get_sigmoid_liklihood2(data,params,@sigmoid_periodic2);
+    il=1/L;
 end

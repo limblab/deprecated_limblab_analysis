@@ -1,8 +1,5 @@
 function PD_array=get_all_PDS(folderpath,matchstring)
-    %returns an array with impedances from every file in the folder
-    %specified by folderpath where the filename contains the text in
-    %matchstring
-        
+    %returns an array with PDs from every every sub-folder
     foldercontents=dir(folderpath);
     fnames={foldercontents.name};%extracts just the names from the foldercontents
     PD_array=[];

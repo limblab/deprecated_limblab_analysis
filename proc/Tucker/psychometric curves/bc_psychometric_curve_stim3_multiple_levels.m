@@ -93,7 +93,7 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
 
         %get the parameters of the maximum likelyhood model of the psychometric
         %curve for stim reaches in the lower hemispace (180-360deg bumps)
-        [g_stim_lower] = lsqcurvefit(@sigmoid,[0,1,90,.2],down_dirs_stim,proportion_stim_lower);
+        g_stim_lower = lsqcurvefit(@sigmoid,[0,1,90,.2],down_dirs_stim,proportion_stim_lower);
         reach_fit_stim_lower = sigmoid(g_stim_lower,dd);
 
         %recombine the hemispaces

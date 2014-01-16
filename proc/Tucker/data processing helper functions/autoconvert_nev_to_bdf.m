@@ -1,6 +1,18 @@
-function file_list=autoconvert_nev_to_bdf(folderpath,matchstring)
+function file_list=autoconvert_nev_to_bdf(folderpath,matchstring,varargin)
 % check a directory and run the bdf converter if unconverted files are
 % there
+
+if ~isempty(varargin)
+    if isnumeric(varargin{1})
+        labnum=varargin{1};
+    else
+        labnum=3;
+    end
+else
+    labnum=3;
+end
+    
+
 disp(strcat('Converting files matching string: ',matchstring,' in folder: ',folderpath))
 %
 % %set the mount drive to scan and convert
@@ -20,7 +32,7 @@ for i=1:length(foldercontents)
 
                 disp(strcat('Working on: ',folderpath, fnames{i}))
                 try
-                    bdf=get_cerebus_data(strcat(folderpath, fnames{i}),3,'verbose','noeye');
+                    bdf=get_cerebus_data(strcat(folderpath, fnames{i}),labnum,'verbose','noeye');
                     disp(strcat('Saving: ',strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat')))
                     save( strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat'), 'bdf','-v7.3')
                     clear bdf

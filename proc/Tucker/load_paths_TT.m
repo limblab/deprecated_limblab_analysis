@@ -17,6 +17,7 @@ addpath([dir '/sigmoid fitting']);
 addpath([dir '/Spike_sorting']);
 addpath([dir '/Trial Table']);
 addpath([dir '/bar_with_error']);
+addpath([dir '/alternative periodics']);
 
 
 % re-work of load_paths.m

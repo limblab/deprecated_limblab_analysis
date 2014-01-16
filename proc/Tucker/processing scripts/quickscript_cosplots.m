@@ -3,7 +3,7 @@
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\pre_DARPA\210degstim\';
+folderpath_base='E:\processing\CO_bump\BD efficacy checking\147Deg\';
 matchstring='Kramer';
 % %matchstring2='BC';
 disp('converting nev files to bdf format')

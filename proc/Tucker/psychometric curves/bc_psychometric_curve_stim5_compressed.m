@@ -1,4 +1,4 @@
-function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_1,g_stim,g_no_stim] = bc_psychometric_curve_stim3_cosplot(tt,tt_hdr,stimcode,invert_dir)
+function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_2,H_1,g_stim,g_no_stim] = bc_psychometric_curve_stim5_compressed(tt,tt_hdr,stimcode,invert_dir,plot_error,invert_error)
     %receives a trial table and a header object for the trial table. The
     %header object must include the fields bump_angle, trial_result and
     %stim_trial
@@ -20,17 +20,24 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
 
     % exclude aborts
     tt = tt( ( tt(:,tt_hdr.trial_result) ~= 1 ) ,  :); 
-    %exclude the one random target at 0deg
-    tt = tt( ( tt(:,tt_hdr.tgt_angle) ~= 0 ) ,  :); 
+    %map the 180deg-360deg directions to the 0-180 hemispace
+    for i=1:length(tt(:,1))
+        if(tt(i,tt_hdr.bump_angle)>180)
+            tt(i,tt_hdr.bump_angle)=360-tt(i,tt_hdr.bump_angle);
+        end
+    end
 
     %get only stim trials
     tt_stim=tt( ( tt(:,tt_hdr.stim_trial) == 1 & tt(:,tt_hdr.stim_code) == stimcode) ,  :);
-
+    
     
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) == 1)),' stim trials'))
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_code) == stimcode)),' stim trials with code: ',num2str(stimcode)))
     %get a list of the bump directions durign stim
     dirs_stim = sort(unique(tt_stim(:,tt_hdr.bump_angle)));
+    
+
+    
     disp(strcat('Found ',num2str(length(dirs_stim)),' bump directions during stim'))
     
     %generate a vector containing a 1 if the reach was leftward along the
@@ -56,29 +63,53 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
         number_reaches_stim(i) = length(reaches_stim);                                %total count of reaches to the specified direction
     end
 
-   
     %set the angle interval on which the fit curves will be displayed
-    dd = 0:.01:360;
+    dd = 0:.01:180;
            
-    %sigmoid_fittype = fittype( @(p1,p2,p3,p4, x) p1+(p2-p1)./(1+exp(-p4*(x-p3))) );
+   g_stim = lsqcurvefit(@sigmoid,[0,1,90,.2],dirs_stim,proportion_stim);
+   reach_fit_stim = sigmoid(g_stim,dd);
+
     
-    %get the parameters of the maximum likelyhood model of the psychometric
-    %curve for stim reaches in the upper hemispace (0-180deg bumps)
     
-    optifun=@(P) sigmoid_square_error(P,    dirs_stim*3.14159/180,proportion_stim);      %defined at end of this function
-    g_stim = fminsearch(optifun,[0,1,.65,10,.75]);
-    reach_fit_stim = sigmoid_periodic2(g_stim,dd*3.14159/180);
- 
+    if(plot_error)
+        %invert the proportion of reaches in the 90-270deg space
+        for i=1:length(dirs_stim)
+            if (dirs_stim(i)>90 && dirs_stim(i)<270) %converts reaching proportion into error rate, reaching proportion is already error rate in the -90 to +90 hemispace
+                proportion_stim(i)=1-proportion_stim(i);
+            end
+
+        end
+        for i=1:length(dd)
+            if (dd(i) > 90 && dd(i) < 270)
+                reach_fit_stim(i)=1-reach_fit_stim(i);
+            end
+            
+        end
+        if invert_error %inverts all the errors
+            proportion_stim=1-proportion_stim;
+            reach_fit_stim=1-reach_fit_stim;
+        end
+    end
     %plot the stim rate data points and the psychometric fit for the stim
     %trials
-    H_1=figure; %cartesian plot
-    %convert directions to cos(ang) space
-    %dirs_stim=cos(dirs_stim*3.14159/180);
-    plot(dirs_stim,proportion_stim,'rx')
-    hold on
-    %dd=cos(dd*3.14159/180);
-    plot(dd,reach_fit_stim,'r')
+    H_1=figure; %polar plot
 
+    subplot(2,1,1),polar(dirs_stim*pi/180,proportion_stim,'ro')
+    hold on;
+
+    subplot(2,1,1),polar(dd*pi/180,reach_fit_stim,'r')
+
+    subplot(2,1,2),plot(dirs_stim,number_reaches_stim,'rx')
+    hold on
+    
+    H_2=figure; %cartesian plot
+    subplot(2,1,1),plot(dirs_stim,proportion_stim,'rx')
+    hold on
+
+    subplot(2,1,1),plot(dd,reach_fit_stim,'r')
+
+    subplot(2,1,2),plot(dirs_stim,number_reaches_stim,'rx')
+    hold on
     
     
     %display number of reach stats so the user can estimate the quality of
@@ -92,6 +123,8 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
     disp(strcat('Found ',num2str(sum(tt(:,tt_hdr.stim_trial) ~= 1)),' stim trials'))
     
     dirs_no_stim = sort(unique(tt_no_stim(:,tt_hdr.bump_angle)));
+        %map the 180deg-360deg directions to the 0-180 hemispace
+    
     disp(strcat('Found ',num2str(length(dirs_no_stim)),' bump directions during no stim'))
     %generate a vector containing a 1 if the reach was leftward along the
     %target axis, and zero if the reach was rightward
@@ -104,7 +137,6 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
     if(invert_dir)
          is_left_reach_no_stim= abs(is_left_reach_no_stim-1);
     end
-    
 
     
     %get_no_stim reaching rates
@@ -117,53 +149,69 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
         proportion_no_stim(i) = sum(is_left_reach_no_stim(reaches_no_stim)) / length(reaches_no_stim);      %ratio of left reaches to total reaches at a specific direction
         number_reaches_no_stim(i) = length(reaches_no_stim);                                %total count of reaches to the specified direction
     end    
-    
-   
+  
     %set the angle interval on which the fit curves will be displayed
-
+    dd = 0:.01:180;
     %get the parameters of the maximum likelyhood model of the psychometric
     %curve for no-stim reaches in the upper hemispace (0-180deg bumps)
-    optifun=@(P) sigmoid_square_error(P,dirs_no_stim*3.14159/180,proportion_no_stim); 
-    g_no_stim = fminsearch(optifun,[0,1,.65,10,.75]);
-    reach_fit_no_stim = sigmoid_periodic2(g_no_stim ,dd*3.14159/180);
+    
+    g_no_stim = lsqcurvefit(@sigmoid,[0,1,90,.2],dirs_no_stim,proportion_no_stim);
+    reach_fit_no_stim = sigmoid(g_no_stim ,dd);
+
     
     %plot the stim rate data points and the psychometric fit for the stim
     %trials
     figure(H_1)
 
+    if(plot_error)
+        %invert the proportion of reaches in the 90-270deg space
+        for i=1:length(dirs_no_stim)
+            if (dirs_no_stim(i)>90 && dirs_no_stim(i)<270) %converts reaching proportion into error rate, reaching proportion is already error rate in the -90 to +90 hemispace
+                proportion_no_stim(i)=1-proportion_no_stim(i);
+            end
+
+        end
+        for i=1:length(dd)
+            if (dd(i) > 90 && dd(i) < 270)
+                reach_fit_no_stim(i)=1-reach_fit_no_stim(i);
+            end
+            
+        end
+        if invert_error %inverts all the errors
+            proportion_no_stim=1-proportion_no_stim;
+            reach_fit_no_stim=1-reach_fit_no_stim;
+        end
+    end
     %plot the stim rate data points and the psychometric fit for the stim
     %trials
 
+   % subplot(2,1,1),plot(dirs,ps,'ko')
 
-    figure(H_1); %cartesian plot
-    %convert directions to cos(ang) space
-    %dirs_no_stim=cos(dirs_no_stim*3.14159/180);
-    plot(dirs_no_stim,proportion_no_stim,'bo')
+    figure(H_1) %polar plot
+
+    subplot(2,1,1),polar(dirs_no_stim*pi/180,proportion_no_stim,'bo')
     hold on;
-    %dd=cos(dd*3.14159/180);
-    plot(dd,reach_fit_no_stim,'b')
-    
+
+    subplot(2,1,1),polar(dd*pi/180,reach_fit_no_stim,'b')
+
+    subplot(2,1,2),plot(dirs_no_stim,number_reaches_no_stim,'bo')
     %fix the axes so that the psychometric and the reach counts use the
     %same x axis
+    max_reaches=max(max(number_reaches_no_stim),max(number_reaches_stim));
+    axis([-10,190,0,10*(floor(max_reaches/10)+1)])
+    
+    figure(H_2); %cartesian plot
+    subplot(2,1,1),plot(dirs_no_stim,proportion_no_stim,'bo')
+    hold on;
 
+    subplot(2,1,1),plot(dd,reach_fit_no_stim,'b')
+    axis([-10,190,-0.5,1.5])
+    subplot(2,1,2),plot(dirs_no_stim,number_reaches_no_stim,'bo')
+    %fix the axes so that the psychometric and the reach counts use the
+    %same x axis
+    axis([-10,190,0,10*(floor(max_reaches/10)+1)])
     disp(strcat('Mean reaches per direction without stim: ',num2str(mean(number_reaches_no_stim))))
     disp(strcat('Min reaches per direction without stim: ',num2str(min(number_reaches_no_stim))))
 
 
-end
-function out=sigmoid_square_error(params,x,y0)
-    %returns the square error of the periodic sigmoid for the input set of
-    %parameters
-
-    y=sigmoid_periodic2(params,x);
-    out=y-y0;
-    if max(y)>1  
-        out=mean(out.^2);
-        out=out+100*(max(y)-1);
-    elseif min(y)<0
-        out=mean(out.^2);
-        out=out+100*abs(min(y));
-    else
-        out=mean(out.^2);
-    end
 end
