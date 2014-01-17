@@ -55,6 +55,7 @@ for j=1:ntrials
         fpmat(:,j,k)=bdf.raw.analog.data{k}((alind-floor(preoffset/samp_fact)):(alind+ceil((avelength-preoffset)/samp_fact)));
         spikestr(j,k).times=bdf.units(k).ts(bdf.units(k).ts>(alignvect(j)-floor(preoffset/samprate)) &...
             (bdf.units(k).ts<(alignvect(j)+ceil((avelength-preoffset)/samprate))))-alignvect(j);
+        spikestr(j,k).times=spikestr(j,k).times+preoffset/samprate;      %add the offset for using chronux so that time vectors line up
     end
     
 end
