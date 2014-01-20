@@ -8,7 +8,7 @@ tfmat=zeros(wsz,numfp,numbins,'single');
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
 clear fp
-itemp=1:10;
+itemp=1:257;
 firstind=find(bs*itemp>wsz,1,'first');
 for i=1:numbins
     ishift=i-firstind+1;
