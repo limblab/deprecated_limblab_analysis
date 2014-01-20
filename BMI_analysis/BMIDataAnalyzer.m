@@ -65,7 +65,7 @@ function BMIDataAnalyzer()
     
 %% Globals
     
-    dataPath = 'Y:\';
+    dataPath = 'Z:\';
     dataPath = uigetdir(dataPath, 'Please choose the base data directory');
     Use_State =0;
     
