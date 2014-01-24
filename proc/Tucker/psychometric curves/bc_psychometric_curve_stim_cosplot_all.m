@@ -130,9 +130,9 @@ function [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_
         optifun=@(P) sigmoid_square_error(P, dirs_stim*pi/180,proportion_stim);      %defined at end of this function
         g_stim = fminsearch(optifun,[0,1,.65,10,.75]);
         optifun=@(P) inv_liklihood(P,[dirs_stim*pi/180,num_left_reaches_stim,number_reaches_stim]);
-%   Problem=createOptimProblem('fmincon','objective',optifun,'nonlcon',@constr);
-%     GS=Globalsearch;
-%     run(GS,Problem);  
+  Problem=createOptimProblem('fmincon','objective',optifun,'nonlcon',@constr);
+    GS=Globalsearch;
+    run(GS,Problem);  
 
         optifun=@(P) bounded_inv_liklihood(P,[dirs_stim*pi/180,num_left_reaches_stim,number_reaches_stim]);  %defined at end of this function
         %g_stim=fminsearch(optifun,g_stim);

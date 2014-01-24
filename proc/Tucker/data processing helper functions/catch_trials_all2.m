@@ -1,9 +1,14 @@
-function h=catch_trials_all(tt,tt_hdr,stimcodes,invert_amp)
+function [h,probs,e_lower,e_upper]=catch_trials_all2(tt,tt_hdr,stimcodes,invert_amp)
     %takes the trial table and trial table header and plots a simple bar
     %chart with the rate of reaching to the secondary target under the
     %catch trial conditions
     %
-
+    %
+    %
+%    this is a cludge that only works for sessions with 4 stim conditions
+%
+%
+%
     %exclude aborts
     tt = tt( ( tt(:,tt_hdr.trial_result) ~= 1 ) ,  :); 
     
@@ -19,11 +24,16 @@ function h=catch_trials_all(tt,tt_hdr,stimcodes,invert_amp)
     if(invert_amp)
         P_no_stim=1-P_no_stim;
     end
-    CI_no_stim=binoinv([0.05 0.95],length(is_left_reach_no_stim),P_no_stim)
+    CI_no_stim=binoinv([0.05 0.95],length(is_left_reach_no_stim),P_no_stim);
 
     h=figure;
     bar([P_no_stim, zeros(1,length(stimcodes))],'b');
     hold on;
+    
+    
+    %find the stim conditions used
+
+    
     
     for i=1:length(stimcodes)
         %get catch trials
@@ -58,6 +68,14 @@ function h=catch_trials_all(tt,tt_hdr,stimcodes,invert_amp)
         
     end
     
+%     
+%      bar([0, P_catch(1), 0, 0, 0],'r')
+%      bar([0, 0, P_catch(2), 0, 0],'r') 
+%      bar([0, 0, 0, P_catch(3), 0],'r')
+%      bar([0, 0, 0, 0, P_catch(4)],'r')
+    
+
+    %legend('No-stim',strcat('5uA: p=',num2str(P_dist(1))),strcat('10uA: p=',num2str(P_dist(2))),strcat('15uA: p=',num2str(P_dist(3))),strcat('20uA: p=',num2str(P_dist(4))))
     %lower errorbars
     e_lower(1)=P_no_stim-CI_no_stim(1)/length(is_left_reach_no_stim);
     %upper errorbars
