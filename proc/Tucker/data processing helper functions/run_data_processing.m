@@ -81,12 +81,12 @@ function run_data_processing(main_function_name,target_directory)
 
     %% save all the figures
     for i=1:length(figure_list)
-        fname=get(figure_list{i},'Name');
+        fname=get(figure_list(i),'Name');
         if isempty(fname)
             fname=strcat('Figure_',num2str(i));
         end
         fname(fname==' ')='_';%replace spaces in name for saving
-        print('-dpdf',figure_list{i},strcat(target_directory,'\RAW_Figures\PDF\',fname,'.pdf'))
+        print('-dpdf',figure_list(i),strcat(target_directory,'\RAW_Figures\PDF\',fname,'.pdf'))
         %savefig(figure_list{i},strcat(target_directory,'\RAW_Figures\',fname,'.pdf'))
         saveas(figure_list{i},strcat(target_directory,'\RAW_Figures\FIG\',fname,'.fig'),'fig')
     end

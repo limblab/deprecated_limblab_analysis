@@ -1,5 +1,5 @@
 function out_struct = get_nev_mat_data(varargin)
-% GET_CEREBUS_DATA Generates a BDF struct from NEVNSx structure or from
+% GET_NEV_MAT_DATA Generates a BDF struct from NEVNSx structure or from
 % .nev and .nsx files.
 %
 %   OUT_STRUCT = GET_NEV_MAT_DATA(NEVNSx) returns a BDF populated by the
@@ -64,7 +64,7 @@ function out_struct = get_nev_mat_data(varargin)
   
     progress = 0;
     if (opts.verbose == 1)
-        h = waitbar(0, sprintf('Opening: %s', filename));
+        h = waitbar(0, sprintf('Processing NEVNSx'));
     else
         h = 0;
     end

@@ -4,8 +4,8 @@ close all
     offset=-0.015; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
 
 %load data
-    folderpath='E:\processing\PDs\move PD\01192014\'
-    fname='Kramer_01192014_RW_tucker_005-01.nev';
+    folderpath='E:\processing\PDs\move PD\01292014\'
+    fname='01-29-2014_Kramer_Rt-S1_RW_tucker_001.nev';
     savename=strcat(fname(1:end-3),'mat');
     
     foldercontents=dir(folderpath);

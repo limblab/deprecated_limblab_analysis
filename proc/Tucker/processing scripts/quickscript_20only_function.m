@@ -19,16 +19,16 @@ bdf=make_tdf_function(bdf);
  H=catch_trials_all(bdf.tt,bdf.tt_hdr,[0,1,2,3],1);
   title('Catch trials: reaching rate to secondary target') 
   set(H,'Name','Catch Trials')
- figure_list{1}=H;
+ figure_list(1)=H;
 
  [H]=error_rate(bdf.tt,bdf.tt_hdr,[0,1,2,3,4]);
 title('error rate by stim condition') 
 set(H,'Name','error rate by stim condition')
- figure_list{length(figure_list)+1}=H;
+ figure_list(length(figure_list)+1)=H;
 
  [H]=error_rate_aggregate(bdf.tt,bdf.tt_hdr);
 title('error rate Stim vs No-stim') 
-figure_list{length(figure_list)+1}=H;
+figure_list(length(figure_list)+1)=H;
 
  %new fitting plus inverting the y axis of the sigmoid
  [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian, H_polar] =  bc_psychometric_curve_stim3(bdf.tt,bdf.tt_hdr,0,1,0,0);
@@ -38,7 +38,7 @@ data_struct.reach_data=temp;
 title('Psychometric cartesian 20uA inverted')
   figure(H_polar)
 title('Psychometric polar 20uA inverted')
-
+figure_list(length(figure_list)+1)=H_cartesian;
 
  
  %new fitting plus inverting the y axis of the sigmoid and folding into a
@@ -50,6 +50,7 @@ data_struct.reach_data_collapsed=temp;
 title('Psychometric cartesian 20uA inverted compressed')
   figure(H_polar)
 title('Psychometric polar 20uA inverted compressed')
+figure_list(length(figure_list)+1)=H_cartesian;
 end
 
 
