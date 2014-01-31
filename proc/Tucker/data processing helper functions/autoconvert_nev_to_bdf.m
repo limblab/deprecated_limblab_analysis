@@ -6,6 +6,7 @@ if ~isempty(varargin)
     if isnumeric(varargin{1})
         labnum=varargin{1};
     else
+        warning('AUTOCONVERT_NEV_TO_BDF:UnrecognizedInput', 'Expected a lab number, got a non-numeric input. Defaulting to Lab3')
         labnum=3;
     end
 else
@@ -23,21 +24,28 @@ fnames={foldercontents.name};%extracts just the names from the foldercontents
 file_list=' ';
 for i=1:length(foldercontents)
     if (length(fnames{i})>3)
-        if (strcmp(fnames{i}((length(fnames{i})-3):end),'.nev') & ~isempty(strfind(fnames{i},matchstring)))
+        
+        if exist(strcat(folderpath,fnames{i}),'file')~=2
+            continue
+        end
+        
+        temppath=follow_links(strcat(folderpath,fnames{i}));
+        [tempfolder,tempname,tempext]=fileparts(temppath);
+        if (strcmp(tempext,'.nev') & ~isempty(strfind(tempname,matchstring)))
             
-           file_list=strcat(file_list, ', ', fnames{i});
-            if isempty(strmatch( strcat( fnames{i}(1:(length(fnames{i})-3)), 'mat'),fnames))
+           file_list=strcat(file_list, ', ', temppath);
+            if isempty(strmatch( strcat( folderpath,tempname, '.mat'),fnames))
                 %if we haven't found a .mat file to match the .nev then make
                 %one
 
-                disp(strcat('Working on: ',folderpath, fnames{i}))
+                disp(strcat('Working on: ',temppath, tempname,tempext))
                 try
-                    bdf=get_cerebus_data(strcat(folderpath, fnames{i}),labnum,'verbose','noeye');
-                    disp(strcat('Saving: ',strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat')))
-                    save( strcat(folderpath, fnames{i}(1:(length(fnames{i})-3)), 'mat'), 'bdf','-v7.3')
+                    bdf=get_cerebus_data( temppath,labnum,'verbose','noeye');
+                    disp(strcat('Saving: ',strcat(folderpath, tempname, '.mat')))
+                    save( strcat(folderpath, tempname, '.mat'), 'bdf','-v7.3')
                     clear bdf
                 catch temperr
-                    disp(strcat('Failed to process: ', folderpath,fnames{i}))
+                    disp(strcat('Failed to process: ', folderpath,tempname))
                     disp(temperr.identifier)
                     disp(temperr.message)
                 end

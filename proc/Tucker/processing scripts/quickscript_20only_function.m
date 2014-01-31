@@ -1,10 +1,12 @@
-function [figure_list,data_struct]=quickscript_20only_function(fpath)
+function [figure_list,data_struct]=quickscript_20only_function(fpath,testdata)
 % %quickscript
 % 
 % %set the mount drive to scan and convert
 close all
 
-folderpath_base='E:\processing\CO_bump\BD efficacy checking\37degstim\';
+data_struct.testdata=testdata;
+
+folderpath_base=fpath;
 matchstring='Kramer';
 
 disp('converting nev files to bdf format')
