@@ -54,6 +54,10 @@ end
 if databurst_version >= 6
     tc.position_cursor = iCol; iCol=iCol+1;
 end
+if databurst_version >= 8
+    tc.stiff_trial = iCol; iCol=iCol+1;
+end
+
 
 start_trial_code = hex2dec('1F');
 end_code = hex2dec('20');
@@ -146,6 +150,9 @@ for iTrial = 1:num_trials
         end
         if databurst_version >= 6
             trial_table(iTrial,tc.position_cursor) = bdf.databursts{iTrial,2}(temp_idx(1)); temp_idx = temp_idx+1;
+        end
+        if databurst_version >= 8
+            trial_table(iTrial,tc.stiff_trial) = bdf.databursts{iTrial,2}(temp_idx(1)); temp_idx = temp_idx+1;
         end
     end        
 end

@@ -1,4 +1,4 @@
-function UF_factoran(UF_struct,interesting_idx,factor_offset,show_dots,save_figs)
+function UF_factoran(UF_struct,interesting_idx,factor_range,show_dots,save_figs)
 
 num_factors = 2;
 
@@ -13,9 +13,9 @@ firingrates = firingrates - baseline;
 
 lambda_mean = zeros(30,size(firingrates,3),num_factors);
 delete_idx = [];
-for i = 1:30
+for i = 1:diff(factor_range)*1000
     try
-        lambda = factoran(squeeze(firingrates(:,find(UF_struct.t_axis>(factor_offset+i*.001),1,'first'),:)),num_factors);
+        lambda = factoran(squeeze(firingrates(:,find(UF_struct.t_axis>((factor_range(1)+i*.001)),1,'first'),:)),num_factors);
     catch
         delete_idx(end+1) = i;
         lambda = zeros(size(firingrates,3),num_factors);

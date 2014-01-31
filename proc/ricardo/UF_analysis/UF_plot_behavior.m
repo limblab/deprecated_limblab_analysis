@@ -1,4 +1,4 @@
-function UF_plot_behavior(UF_struct,bdf,file_details,save_figs)
+function figHandles = UF_plot_behavior(UF_struct,bdf,file_details,save_figs)
 
 %%  Rotated with respect to bump, separated by bump direction: Position and force
 figHandles(1) = figure;

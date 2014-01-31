@@ -1,36 +1,51 @@
-% 
-% Mini_2013-11-26_UF_0
-factor_range = [.03 .06]; 
+% Separation by bump direction with dots
+% Mini_2013-11-25_UF_
+file_prefix = 'Mini_2013-11-25_UF_';
+if ~strcmp(UF_struct.UF_file_prefix,file_prefix)
+    load(['D:\Data\Mini_7H1\' file_prefix '-bdf'],'UF_struct')
+end
 show_dots = 1;
-interesting_idx = UF_struct.bump_indexes{1};
-% UF_struct.colors_field = [0 0 1; 1 0 0];
-% UF_factoran_field_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
-UF_factoran(UF_struct,interesting_idx,factor_range,show_dots,1)
+factor_range = [.03 .06]; 
+interesting_idx = UF_struct.field_indexes{1};
+UF_struct.colors_field = [0 0 1; 1 0 0];
+UF_factoran_bump(UF_struct,interesting_idx,factor_range,show_dots,0)
+
+
+% % Nice separation of factors
+% % Mini_2013-12-10_UF_
+% file_prefix = 'Mini_2013-12-10_UF_';
+% if ~strcmp(UF_struct.UF_file_prefix,file_prefix)
+%     load(['D:\Data\Mini_7H1\' file_prefix '-bdf'],'UF_struct')
+% end
+% factor_range = [.03 .06]; 
+% show_dots = 1;
+% interesting_idx = UF_struct.bump_indexes{2};
+% interesting_idx = intersect(interesting_idx,UF_struct.bias_indexes{2});
+% % UF_struct.colors_field = [0 0 1; 1 0 0];
+% % UF_factoran_field_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
+% UF_factoran(UF_struct,interesting_idx,factor_range,show_dots,1)
 
 % % Neurons and Tri correlation!
 % % Mini_2013-12-06_UF
+% file_prefix = 'Mini_2013-12-06_UF_';
+% if ~strcmp(UF_struct.UF_file_prefix,file_prefix)
+%     load(['D:\Data\Mini_7H1\' file_prefix '-bdf'],'UF_struct')
+% end
 % factor_range = [-.1 0]; 
 % show_dots = 0;
 % interesting_idx = UF_struct.bump_indexes{3};
 % UF_factoran(UF_struct,interesting_idx,factor_range,show_dots,0)
 
-% % Separation by bump direction with dots
-% % Mini_2013-11-25_UF_
-% UF_struct = UF_struct_25;
-% show_dots = 0;
-% factor_offset = .1; 
-% interesting_idx = UF_struct.field_indexes{1};
-% UF_struct.colors_field = [0 0 1; 1 0 0];
-% UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
-% 
+
+% % 
 % % Separation by bump direction, without dots
 % % Mini_2013-11-25_UF_
-% UF_struct = UF_struct_25;
-% show_dots = 1;
-% factor_offset = 0.03; 
-% interesting_idx = UF_struct.field_indexes{1};
-% UF_struct.colors_field = [0 0 1; 1 0 0];
-% UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
+% % UF_struct = UF_struct_25;
+% % show_dots = 0;
+% % factor_offset = 0.03; 
+% % interesting_idx = UF_struct.field_indexes{1};
+% % UF_struct.colors_field = [0 0 1; 1 0 0];
+% % UF_factoran_bump(UF_struct,interesting_idx,factor_offset,show_dots,0)
 % 
 % % Separation by bump direction, without dots
 % % Mini_2013-11-25_UF_

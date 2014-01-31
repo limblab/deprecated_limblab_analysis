@@ -23,6 +23,10 @@ if strcmp(file_details.UF_file_prefix,'Kevin_2013-08-08_UF_')
     UF_struct.trial_table = UF_struct.trial_table(~remove_idx,:);        
 end
 
+if strcmp(file_details.UF_file_prefix,'Mini_2013-12-12_UF_')
+    UF_struct.trial_table(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_dir)>1,:) = [];        
+end
+
 UF_struct.bump_duration = mode(UF_struct.trial_table(:,UF_struct.table_columns.bump_duration));
 UF_struct.bias_magnitude = mode(UF_struct.trial_table(:,UF_struct.table_columns.bias_force_mag));
 

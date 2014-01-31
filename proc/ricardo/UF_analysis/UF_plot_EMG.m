@@ -58,9 +58,12 @@ function UF_plot_EMG(UF_struct,save_figs)
                     max_emg = max(max_emg,max(mean(temp_emg(idx,UF_struct.t_axis>-.05 & UF_struct.t_axis<.15))));
                     temp_emg_short = temp_emg(idx,UF_struct.t_axis>mean_range(1) & UF_struct.t_axis<mean_range(2));
                     emg_mean(iBias,iField,iBump) = mean(temp_emg_short(:));
+                    emg_mean(isnan(emg_mean)) = 0;
     %                 emg_std(iBias,iField,iBump) = std(mean(temp_emg(idx,UF_struct.t_axis>mean_range(1) & UF_struct.t_axis<mean_range(2))));
                     emg_std(iBias,iField,iBump) = std(mean(temp_emg_short,2));
+                    emg_std(isnan(emg_std)) = 0;
                     emg_sem(iBias,iField,iBump) = 1.96*std(mean(temp_emg_short,2))/sqrt(size(temp_emg_short,1));
+                    emg_sem(isnan(emg_sem)) = 0;
 
                     min_n = min(min_n,length(idx));
                     max_n = max(max_n,length(idx));
@@ -158,12 +161,14 @@ function UF_plot_EMG(UF_struct,save_figs)
                     abs(temp_fields+temp_pi2+temp_pi-temp_bumps(iBump))<1E-10 | abs((temp_fields-temp_pi2+temp_pi)-temp_bumps(iBump))<1E-10);
     %             gain(iBias,iBump) = mean(squeeze(emg_mean(iBias,idxParallel,iBump))) ./ ...
     %                 mean(squeeze(emg_mean(iBias,idxPerpendicular,iBump)));
-                gain(iBias,iBump) = emg_mean(iBias,idxParallel,iBump) - ...
-                    emg_mean(iBias,idxPerpendicular,iBump);
-                sem_prop(iBias,iBump) = sqrt(emg_sem(iBias,idxParallel,iBump)^2 + ...
-                    emg_sem(iBias,idxPerpendicular,iBump)^2);
-                log_gain(iBias,iBump) = log(emg_mean(iBias,idxParallel,iBump)) - ...
-                    log(emg_mean(iBias,idxPerpendicular,iBump));            
+                if ~(isempty(idxParallel) || isempty(idxPerpendicular))                    
+                    gain(iBias,iBump) = emg_mean(iBias,idxParallel,iBump) - ...
+                        emg_mean(iBias,idxPerpendicular,iBump);
+                    sem_prop(iBias,iBump) = sqrt(emg_sem(iBias,idxParallel,iBump)^2 + ...
+                        emg_sem(iBias,idxPerpendicular,iBump)^2);
+                    log_gain(iBias,iBump) = log(emg_mean(iBias,idxParallel,iBump)) - ...
+                        log(emg_mean(iBias,idxPerpendicular,iBump));      
+                end
             end
             legend_str{iBias} = ['BF: ' num2str(round(UF_struct.bias_force_directions(iBias)*180/pi)) ' deg'];    
         end
@@ -198,8 +203,8 @@ function h = errorarea(x,ymean,yerror,c)
     x = reshape(x,1,[]);
     ymean = reshape(ymean,size(x,1),size(x,2));
     yerror = reshape(yerror,size(x,1),size(x,2));
-    h = area(x([1:end end:-1:1]),[ymean(1:end)+yerror(1:end) ymean(end:-1:1)-yerror(end:-1:1)],...
-        'FaceColor',c,'LineStyle','none');
+    h = fill(x([1:end end:-1:1]),[ymean(1:end)+yerror(1:end) ymean(end:-1:1)-yerror(end:-1:1)],c);
+    set(h,'LineStyle','none')
     hChildren = get(gca,'children');
     hType = get(hChildren,'Type');
     set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]))
