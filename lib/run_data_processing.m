@@ -1,8 +1,10 @@
 function run_data_processing(main_function_name,target_directory,varargin)
     %data processing wrapper
-    %1)the user must set the name of their main function: main_function_name
+    %1)the user must pass the name of their main function: main_function_name
     %2)the name of the directory to put all the results in: target_directory
-    %these must be passed as input variables
+    %3)optionally a struct of configuration parameters for their processing
+    %functions
+
     %the script then perorms the following operations:
     %a)generates the lab standard folder tree
     %b)calls the function specified in main_function_name, passing in the
@@ -12,6 +14,8 @@ function run_data_processing(main_function_name,target_directory,varargin)
     %will be the name of the figure (NOT the title). If the name is empty the
     %figure wil be saved as Figure_1, Figure_2 etc. 
     %use set(H,'Name','fig_name') to set the name of figures
+    %d)Saves the three input variables as separate files so that the data 
+    %processing is reproducable.
     %e)Saves each field in the output data struct as a separate field. saves 
     %pstrings in flat text files and all other data in individual m-files. 
     %The names of data files will be the names of the fields of the
@@ -113,6 +117,13 @@ function run_data_processing(main_function_name,target_directory,varargin)
         temp=varargin{1};
         save(strcat(target_directory,'\Input_Data\Input_structure.mat'),'temp','-mat')
     end
+    fid=fopen(strcat(target_directory,'\Input_Data\target_directory.txt'),'w+');
+            fprintf(fid,'%s',target_directory);
+            fclose(fid);
+    fid=fopen(strcat(target_directory,'\Input_Data\main_function_name.txt'),'w+');
+            fprintf(fid,'%s',main_function_name);
+            fclose(fid);
+    
     
     data_list=fieldnames(data_struct);
     for i=1:length(data_list)
