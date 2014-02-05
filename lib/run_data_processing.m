@@ -1,4 +1,4 @@
-function run_data_processing(main_function_name,target_directory,varargin)
+function data_struct = run_data_processing(main_function_name,target_directory,varargin)
     %data processing wrapper
     %1)the user must pass the name of their main function: main_function_name
     %2)the name of the directory to put all the results in: target_directory
@@ -38,7 +38,7 @@ function run_data_processing(main_function_name,target_directory,varargin)
     
     %% sanitize input:
     if ~strcmp(target_directory(end),'\')
-        disp('appending trailing \ character to foler name')
+        disp('appending trailing \ character to folder name')
         target_directory=[target_directory '\'];
     end
 
@@ -55,17 +55,17 @@ function run_data_processing(main_function_name,target_directory,varargin)
     if exist(strcat(target_directory,'\Code'),'file')~=7
         mkdir(strcat(target_directory,'\Code'))
     end
-    if exist(strcat(target_directory,'\RAW_Figures'),'file')~=7
-        mkdir(strcat(target_directory,'\RAW_Figures'))
+    if exist(strcat(target_directory,'\Raw_Figures'),'file')~=7
+        mkdir(strcat(target_directory,'\Raw_Figures'))
     end
-    if exist(strcat(target_directory,'\RAW_Figures\PDF'),'file')~=7
-        mkdir(strcat(target_directory,'\RAW_Figures\PDF'))
+    if exist(strcat(target_directory,'\Raw_Figures\PDF'),'file')~=7
+        mkdir(strcat(target_directory,'\Raw_Figures\PDF'))
     end
-    if exist(strcat(target_directory,'\RAW_Figures\FIG'),'file')~=7
-        mkdir(strcat(target_directory,'\RAW_Figures\FIG'))
+    if exist(strcat(target_directory,'\Raw_Figures\FIG'),'file')~=7
+        mkdir(strcat(target_directory,'\Raw_Figures\FIG'))
     end
-    if exist(strcat(target_directory,'\RAW_Figures\EPS'),'file')~=7
-        mkdir(strcat(target_directory,'\RAW_Figures\EPS'))
+    if exist(strcat(target_directory,'\Raw_Figures\EPS'),'file')~=7
+        mkdir(strcat(target_directory,'\Raw_Figures\EPS'))
     end
     if exist(strcat(target_directory,'\Edited_Figures'),'file')~=7
         mkdir(strcat(target_directory,'\Edited_Figures'))
@@ -84,7 +84,7 @@ function run_data_processing(main_function_name,target_directory,varargin)
     for i=1:length(command_list)
         [SUCCESS,MESSAGE,MESSAGEID] = copyfile(command_list{i},strcat(target_directory,'\Code'));
         if SUCCESS
-            disp(strcat('successfully copied ',command_list{i},'to the code folder'))
+            disp(strcat('successfully copied ',command_list{i},' to the code folder'))
         else
             disp('script copying failed with the following message')
             disp(MESSAGE)
@@ -105,12 +105,11 @@ function run_data_processing(main_function_name,target_directory,varargin)
             fname=strcat('Figure_',num2str(i));
         end
         fname(fname==' ')='_';%replace spaces in name for saving
-        print('-dpdf',figure_list(i),strcat(target_directory,'\RAW_Figures\PDF\',fname,'.pdf'))
-        print('-deps',figure_list(i),strcat(target_directory,'\RAW_Figures\EPS\',fname,'.eps'))
-        %savefig(figure_list{i},strcat(target_directory,'\RAW_Figures\',fname,'.pdf'))
-        saveas(figure_list(i),strcat(target_directory,'\RAW_Figures\FIG\',fname,'.fig'),'fig')
+        print('-dpdf',figure_list(i),strcat(target_directory,'\Raw_Figures\PDF\',fname,'.pdf'))
+        print('-deps',figure_list(i),strcat(target_directory,'\Raw_Figures\EPS\',fname,'.eps'))
+        %savefig(figure_list{i},strcat(target_directory,'\Raw_Figures\',fname,'.pdf'))
+        saveas(figure_list(i),strcat(target_directory,'\Raw_Figures\FIG\',fname,'.fig'),'fig')
     end
-    close all
 
     %% save the input and output data structures
     if ~isempty(varargin)
@@ -122,8 +121,7 @@ function run_data_processing(main_function_name,target_directory,varargin)
             fclose(fid);
     fid=fopen(strcat(target_directory,'\Input_Data\main_function_name.txt'),'w+');
             fprintf(fid,'%s',main_function_name);
-            fclose(fid);
-    
+            fclose(fid);    
     
     data_list=fieldnames(data_struct);
     for i=1:length(data_list)
