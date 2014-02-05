@@ -227,13 +227,13 @@ FirstTrialInds(end) = []; % remove last trial in case trial is cut off or short
 
 if plotIt
 figure(1)
-% h = fill([-2,-2,2,2],[12,8,8,12],'r');
-% set(h,'FaceAlpha',.3)
+h = fill([-2,-2,2,2],[12,8,8,12],'r');
+set(h,'FaceAlpha',.3)
 % hold on
-% p = fill([8,8,12,12],[2,-2,-2,2],'r');
-% set(p,'FaceAlpha',.3)
-% m = fill([2,2,-2,-2],[2,-2,-2,2],'r');
-% set(m,'FaceAlpha',.3)
+p = fill([8,8,12,12],[2,-2,-2,2],'r');
+set(p,'FaceAlpha',.3)
+m = fill([2,2,-2,-2],[2,-2,-2,2],'r');
+set(m,'FaceAlpha',.3)
 axis square
 % set(gca,'xlim',[-15,15])
 % set(gca,'ylim',[-12,12])

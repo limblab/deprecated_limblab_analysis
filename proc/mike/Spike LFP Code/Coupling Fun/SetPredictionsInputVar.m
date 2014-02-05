@@ -5,7 +5,7 @@ function [sig samplerate words fp numberOfFps adfreq fp_start_time fp_stop_time.
         samplerate= 1000; %bdf.raw.analog.adfreq(1,1);
         
         %Sample Rate for this file
-        %words = [];
+        %words = [      z];
         words=bdf.words;
 
         % If fp channels do not have same amount of elements, find the

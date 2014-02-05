@@ -95,7 +95,7 @@ else
     
 end
 
-r2_X_SingleUnitsFirstFile = cell2mat(r2_X_SingleUnits(:,:,end-5:end))
+r2_X_SingleUnitsFirstFile = cell2mat(r2_X_SingleUnits(:,:,end-5:end))       % last position of cursor
 
 r2_X_SingleUnitsFirstFile = cell2mat(r2_X_SingleUnits);
 r2_X_SingleUnitsFirstFile(isnan(r2_X_SingleUnitsFirstFile)==1) = 0;
@@ -148,7 +148,7 @@ caxis([0 .6])
 bandLabelsY=LFP_AllFreq_Online_Sorted_NoDelta(:,2);
 [uBands,uBandYticks,~]=unique(bandLabelsY);
 uBandYticks=[1; uBandYticks(1:end-1)+1];
-allBands={'LMP','Delta','Mu','70-100','130-200','200-300'};
+allBands={'0-4','4-8','8-12','12-20','20-30','70-80','120-130','170-180','220-230'};
 set(gca,'YTick',uBandYticks,'YTickLabel',allBands(uBands))
 
 %x-label - Chewie

@@ -23,16 +23,15 @@
 binsize = .05;
 wsz = 256;
 samplerate = 1000;
-colors = [1:.2:0; 0:.2:1; 1:.2:0];
 %% Find file path, load file and start iterating through files
-for q = 1% : length(FileList)
+for q = 1:length(FileList_HC_1D_2D)
     
-%     fnam =  findBDFonCitadel(FileList{1})
-%     try
-%         load(fnam)
-%     catch exception
-%         continue
-%     end
+    fnam =  findBDFonCitadel(FileList_HC_1D_2D{q})
+    try
+        load(fnam)
+    catch exception
+        continue
+    end
     
     %% Declare input variables within loop that vary in each loop iteration:
     
@@ -40,8 +39,6 @@ for q = 1% : length(FileList)
         bdf = out_struct;
         clear out_struct
     end
-    
-    %% Condition and organize fps
     [sig, ~, words, fp,~,~,~,~,fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
     [PB, t, y] = calculateBandPower(wsz, size(fp,1), numbins, samplerate, fp, binsize, y, t);
@@ -65,7 +62,7 @@ for q = 1% : length(FileList)
     end
     
     %% Pick out correct input signals and arrange into xOnline matrix
-%    [xOnline] = PickOutInputSignals(LFPInds,SpikeInds,ControlType,PB,x);
+        [xOnline] = PickOutInputSignals(LFPInds,SpikeInds,ControlType,PB,x);
     
     %% Plot actual and reconstructed velocity
 %     dir =['X';'Y'];
@@ -105,8 +102,7 @@ for q = 1% : length(FileList)
 %     
 %     %% Parse and Separate Trials
 %     
-%     [TrialPath, TrialInput, rtrialSig{q}, pSig, rtrialInput{q}, pInput, rtrialpathcat(q), pCatPath, rtrialinputcat(q), pCatInput] = parseTrials(bdf,y,xOnline);
-%     
+     %     
 %     rInputAvg(q) = cellfun(@mean,rtrialInput)
 %     rSignalAvg(q) = cellfun(@mean,rtrialSig)
     
@@ -118,18 +114,46 @@ for q = 1% : length(FileList)
     
     %% Calculate spike-field coherence
     data1 = fp(LFPInds{1}(1),:)';
-    data2 = ts{SpikeInds{1}(1)};
-    win = 50;
+    data2 = tsFPorder{SpikeInds{1}};
+    data2 = data2(data2>=1.0);
+    
+    [Trial_Success_FPbegin, Trial_Success_tsbegin, Trial_Success_Path_Whole...
+    Trial_Success_Path_Whole_Good] = parseTrials(bdf,y,xOnline,data1,data2);
+
+    Trial_Success_Path_Whole_File{q} = Trial_Success_Path_Whole;
+    Trial_Success_Path_Whole_Good_File{q} = Trial_Success_Path_Whole_Good;
+    
+    win = [.25 .05];                        % last position of cursor
     paramsFP.tapers = [3 5];
+    paramsFP.Fs = 1000;
     paramsFP.fpass = [0 300];
-    params.pad = 1;
+    paramsFP.pad = 1;
     % params.err
+    paramsFP.trialave = 1;
     segave = 0;
     fscorr = 0;
     
-    [C,phi,S12,S1,S2,f,zerosp]=coherencysegcpt(data1,data2,win,paramsFP,segave,fscorr);
     
-%    clear sig words fp fptimes analog_time_base y fp t ts numbins PB cells x ts b xOnline bdf Yrecon tsFPorder
+    Trial_Success_FPbeginMAT = cell2mat(Trial_Success_FPbegin);
+%    Trial_Success_FPendMAT = cell2mat(Trial_Success_FPend);
+    
+    Trial_Fail_FPbeginMAT = cell2mat(Trial_Success_FPbegin);
+%    Trial_Fail_FPendMAT = cell2mat(Trial_Success_FPend);
+    
+    [C_Success_begin,phi,S12,S1,S2,t,f,zerosp]=cohgramcpt(Trial_Success_FPbeginMAT,Trial_Success_tsbegin,win,paramsFP);
+%    [C_Success_end,phi,S12,S1,S2,t,f,zerosp]=cohgramcpt(Trial_Success_FPendMAT,Trial_Success_tsend,win,paramsFP); 
+
+%     [C_Fail_begin,phi,S12,S1,S2,f,zerosp]=cohgramcpt(Trial_Fail_FPbeginMAT,Trial_Fail_tsbegin,win,paramsFP);
+%     [C_Fail_end,phi,S12,S1,S2,f,zerosp]=cohgramcpt(Trial_Fail_FPendMAT,Trial_Fail_tsend,win,paramsFP);
+     
+    C_AllFiles(:,:,q) = nanmean(C_Success_end,3);
+    
+    
+    clear sig words fp fptimes analog_time_base y t ts numbins PB cells x ts b xOnline bdf Yrecon tsFPorder
+    clear Trial_Success_FPbegin Trial_Success_tsbegin Trial_Success_Path_Whole...
+        Trial_Success_Path_Whole_Good
+    %Trial_Success_FPend Trial_Success_tsend TrialPath TrialInput Trial_Fail_FPbegin ...
+    %Trial_Fail_tsbegin Trial_Fail_FPend Trial_Fail_tsend
 end
 %% Set input params for multitaper spectrum
 

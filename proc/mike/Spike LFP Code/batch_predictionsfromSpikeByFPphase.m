@@ -85,4 +85,16 @@ toc
 
 %% Save output
 save(['MiniSpikesByPhase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
+%%
+if 0
+    %bandLabelsY=LFP_AllFreq_Online_Sorted_NoDelta(:,2);
+    %[uBands,uBandYticks,~]=unique(bandLabelsY);
+    uBandYticks=[1,3,5,10,15,20,25,30];
+    allBands={'0-4','8-12','20-30','70-80','120-130','170-180','220-230','270-280'};
+    set(gca,'YTick',uBandYticks,'YTickLabel',allBands)
+    uBandXticks=[1:8];
+    allXBands={'0','pi/4','pi/2','3pi/4','pi','5pi/4','3pi/2','7pi/4'};
+    set(gca,'XTick',uBandXticks,'XTickLabel',allXBands)
+    xlabel('Phase')
+    ylabel('Frequency (Hz)')
 end

@@ -1,12 +1,16 @@
-function [TrialPath, TrialInput, rtrialSig, pSig, rtrialInput, pInput, rtrialpathcat, pCatPath, rtrialinputcat, pCatInput] = parseTrials(out_struct,y,xOnline)
+function [Trial_Success_FPbegin, Trial_Success_tsbegin, Trial_Success_Path_Whole...
+    Trial_Success_Path_Whole_Good] = parseTrials(out_struct,y,xOnline,fp,ts)
 
 % Find beginning of all trials
+FirstTrialInds=find(out_struct.words(:,2)==17);
 FirstTrialInds=find(out_struct.words(:,2)==17);
 % remove last trial in case trial is cut off or short
 FirstTrialInds(end) = [];
 
 plotIt = 0;
 j = 1;
+l = 1;
+t = 1;
 jX =1;
 jY =1;
 jnegX =1;
@@ -29,19 +33,69 @@ for i = 1:length(FirstTrialInds)-1
         
         % [out_struct.words(FirstTrialInds(i),2) out_struct.words(FirstTrialInds(i)+1,2) out_struct.words(FirstTrialInds(i)+2,2) out_struct.words(FirstTrialInds(i)+3,2) out_struct.words(FirstTrialInds(i)+4,2)]
 
-        TimeStart = vpa(out_struct.words(FirstTrialInds(i),1),3); %words 64-65 indicate outer target on
-        TimeEnd = vpa(out_struct.words(FirstTrialInds(i+1)-1,1),3);
+        if out_struct.words(FirstTrialInds(i+1)-1,2) == 33
+            continue
+        end
+            
+        TimeStart = vpa(out_struct.words(FirstTrialInds(i),1),6);
+        TimeEnd = vpa(out_struct.words(FirstTrialInds(i+1)-1,1),6);
+        
+        if round(out_struct.words(FirstTrialInds(i)+2,2)) == 64 || ...
+           round(out_struct.words(FirstTrialInds(i)+2,2)) == 65 ||...
+           round(out_struct.words(FirstTrialInds(i)+2,2)) == 66 || ...
+           round(out_struct.words(FirstTrialInds(i)+2,2)) == 67 %words 64-65 indicate outer target on
+       
+            TimeStart_OTargetOn = eval(vpa(out_struct.words(FirstTrialInds(i)+2,1),3));
+            TrialStart_OTOn_IndexFP(j) = round((TimeStart_OTargetOn - 1)/.001);
+            TrialStart_OTOn_IndexPath(j) = round((TimeStart_OTargetOn - 1)/.05);
+        end
+        
         
         TrialStartIndexPos(j) = round((TimeStart - 1)/.05);
         TrialEndIndexPos(j) = round((TimeEnd - 1)/.05);
         TrialStartIndexIn(j) = round((TimeStart - 1)/.05);
         TrialEndIndexIn(j) = round((TimeEnd - 1)/.05);
+        TrialStartIndexFP(j) = round((TimeStart - 1)/.001);
+        
+        TrialEndIndexFP(j) = round((TimeEnd - 1)/.001);
         
         if TrialEndIndexPos(j) > length(out_struct.pos);  %% can probably add in TrialEndIndexIn > length(Input) as another check.
             continue
         else
             TrialPath{j} = y(TrialStartIndexPos(j):TrialEndIndexPos(j),:); % Signal pos/vel
             TrialInput{j} = xOnline(TrialStartIndexIn(j):TrialEndIndexIn(j),:); % Input LFP power/spike rate
+            
+            if out_struct.words(FirstTrialInds(i+1)-1,2) == 32|| out_struct.words(FirstTrialInds(i+1)-1,2) == 35
+                
+                Trial_Success_Path_Whole{t} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:); 
+                if diff([TimeStart_OTargetOn,TimeEnd]) <= 3
+                    Trial_Success_Path_Whole_Good{t} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:); 
+                end
+                Trial_Success_Path_begin(:,(t-1)*3+1:t*3) = out_struct.pos(TrialStart_OTOn_IndexPath(j):TrialStart_OTOn_IndexPath(j)+20,:); % take first secof trial
+                Trial_Success_Path_end(:,(t-1)*3+1:t*3) = out_struct.pos(TrialEndIndexPos(j)-20:TrialEndIndexPos(j),:); % take last second of trial before reward/incomplete word
+                
+                Trial_Success_FPbegin{t} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
+                Trial_Success_FPend{t} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
+                
+                Trial_Success_tsbegin(t).times = eval(vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3)); % Input LFP power/spike rate
+                Trial_Success_tsend(t).times = eval(vpa(ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1),3));
+                
+                clear TimeStart_OTargetOn
+                t = t+1;
+            elseif out_struct.words(FirstTrialInds(i+1)-1,2) == 34
+                
+                Trial_Fail_Path_begin(:,(l-1)*3+1:l*3) = out_struct.pos(TrialStart_OTOn_IndexPath(j):TrialStart_OTOn_IndexPath(j)+20,:); % take first second of trial
+                Trial_Fail_Path_end(:,(l-1)*3+1:l*3) = out_struct.pos(TrialEndIndexPos(j)-20:TrialEndIndexPos(j),:); % take last sec of trial before fail word
+                
+                Trial_Fail_FPbegin{l} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
+                Trial_Fail_FPend{l} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
+                
+                Trial_Fail_tsbegin(l).times = eval(vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3)); % Input LFP power/spike rate 
+                Trial_Fail_tsend(l).times = eval(vpa(ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1),3));
+                
+                clear TimeStart_OTargetOn
+                l = l +1;
+            end
         end
         
         %         clear Time* TrialStartIndex TrialEndIndex
