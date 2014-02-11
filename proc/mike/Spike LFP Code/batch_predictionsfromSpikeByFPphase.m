@@ -37,8 +37,8 @@ lambda = 1;
 %smoothfeats
 
 %% Begin iterating through files
-for l=1:length(MATfiles)
-
+for l=1:5%length(MATfiles)
+    
     if input == 2
         fnam =  findBDFonCitadel(MATfiles{l})
         try
@@ -46,29 +46,29 @@ for l=1:length(MATfiles)
         catch exception
             continue
         end
-
+        
     end
-%% Declare input variables within loop that vary in each loop iteration:
-
-if exist('out_struct','var')
-    bdf = out_struct;
-    clear out_struct
-end
-
-cells = unit_list(bdf);
-
-if Usefeatmat == 0
-    [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
-end
-
-tic
-%% Run Prediction Code
-[vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2all,vaftr,TotalUnits,TotalSpikes_PerUnit,PhaseMat,H{l}] =... %,sr]...
-    predictionsfromSpikeByFPphase(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
-    samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-    Use_Thresh,[],words,emgsamplerate,lambda,0,[],[],[],bdf, cells); %< --- last input is featmat
-toc
-
+    %% Declare input variables within loop that vary in each loop iteration:
+    
+    if exist('out_struct','var')
+        bdf = out_struct;
+        clear out_struct
+    end
+    
+    cells = unit_list(bdf);
+    
+    if Usefeatmat == 0
+        [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
+    end
+    
+    tic
+    %% Run Prediction Code
+    [vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2all,vaftr,TotalUnits,TotalSpikes_PerUnit,PhaseMat,H{l}] =... %,sr]...
+        predictionsfromSpikeByFPphase(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
+        samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
+        Use_Thresh,[],words,emgsamplerate,lambda,0,[],[],[],bdf, cells); %< --- last input is featmat
+    toc
+    
     vafAll{l} = vaf;
     vmeanAllX(:,:,l) = vmean(:,:,1);
     vmeanAllY(:,:,l) = vmean(:,:,2);
@@ -82,9 +82,10 @@ toc
     TotalUnitsAll(:,:,l) = TotalUnits;
     TotalSpikes_PerUnitAll{l} = TotalSpikes_PerUnit;
     TotalSpikes_AllUnits(:,:,l) = sum(TotalSpikes_PerUnit,3);
-
-%% Save output
-save(['MiniSpikesByPhase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
+    
+    %% Save output
+    save(['MiniSpikesByPhase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
+end
 %%
 if 0
     %bandLabelsY=LFP_AllFreq_Online_Sorted_NoDelta(:,2);
@@ -92,9 +93,10 @@ if 0
     uBandYticks=[1,3,5,10,15,20,25,30];
     allBands={'0-4','8-12','20-30','70-80','120-130','170-180','220-230','270-280'};
     set(gca,'YTick',uBandYticks,'YTickLabel',allBands)
-    uBandXticks=[1:8];
-    allXBands={'0','pi/4','pi/2','3pi/4','pi','5pi/4','3pi/2','7pi/4'};
+    uBandXticks=[-3:(12/15):-.6 -.2 .2 .6:(12/15):3];
+    allXBands={'0','pi/4','pi/2','3pi/4','pi','pi','5pi/4','3pi/2','7pi/4'};
     set(gca,'XTick',uBandXticks,'XTickLabel',allXBands)
     xlabel('Phase')
     ylabel('Frequency (Hz)')
 end
+
