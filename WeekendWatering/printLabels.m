@@ -1,4 +1,4 @@
-GoogleDriveID = '0AtEH4EqHWe9JdGFRTTFZVE0tTUF0REx6RzRlOVRndEE';
+GoogleDriveID = '0AtEH4EqHWe9JdEdhV0RnWG1PSldHTWtibnR3X1RmYWc';
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
@@ -11,7 +11,7 @@ colors =    [1 1 0;...
             0 .75 1;...
             1 .27 0];
 
-% Avery labels 5160 (buy Avery 6460, they are the same size and easier to peal off)
+% Avery labels 5160 (buy Avery 6460, they are the same size and easier to peel off)
 y_offset = 0.5;
 x_offset = 3/8;
 label_width = 2 + 5/8;

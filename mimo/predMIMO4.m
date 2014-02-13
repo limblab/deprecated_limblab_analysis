@@ -1,4 +1,4 @@
-function [Y,Xnew,Yact]=predMIMO3(X,H,numsides,fs,Yact)
+function [Y,Xnew,Yact]=predMIMO4(X,H,numsides,fs,Yact)
 %function to compute the output of a MIMO system
 %
 %    USAGE:   Y=predMIMO(X,H,numsides,fs)
