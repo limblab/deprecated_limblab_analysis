@@ -1,7 +1,7 @@
 function [ d, t ] = train2bins( s, b )
 %TRAIN2BINS Converts spike train timestamps to bins of spike counts
-%   Give a time series of bins giving spike counts per bin for a given bin
-%   width w and spike train timesamps s.
+%   s  : spiking times (vector of timestamps)
+%   b  : scalar of bin width or time vector of bins (e.g. [0 0.1 0.2 ...]);
 %
 %   Returns d: The number of spikes in each bin
 %           t: The coresponding timestamps for the start of each bin

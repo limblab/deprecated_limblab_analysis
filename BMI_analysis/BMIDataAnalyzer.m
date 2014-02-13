@@ -377,7 +377,7 @@ function BMIDataAnalyzer()
             Filt_FullFileName = fullfile(PathName,Filt_FileName);
             if ~DecoderOptions.Use_SD
                 %Eventually the following line should not be necessary when we can read structures from NLMS or reach-rt...
-                save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
+%                 save(Filt_FullFileName, '-append','-struct','filt_struct');    %append "extracted" variables from structures
             else
                 %This assumes class methods={velthres,CompBayes,PeakBayes,CompLDA,PeakLDA};
                 ClassMethods = {'Vel Thresh','Complete Bayes','Peak Bayes','Complete LDA', 'Peak LDA'};

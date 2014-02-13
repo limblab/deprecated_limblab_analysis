@@ -1,4 +1,4 @@
-function [H,v,mcc]=filMIMO3(X,Y,numlags,numsides,fs)
+function [H,v,mcc]=filMIMO4(X,Y,numlags,numsides,fs)
 % Solves for the nonparametric filters of a MIMO linear
 % system using a correlation function based approach.
 %

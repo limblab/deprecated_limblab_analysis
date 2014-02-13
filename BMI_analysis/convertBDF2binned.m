@@ -9,16 +9,23 @@ function binnedData = convertBDF2binned(datastruct,varargin)
 %             binsize             : [0.05] desired bin size in second
 %             starttime, stoptime : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)
 %             HP, Lp              : [50 10] high pass and low pass cut off frequencies for EMG filtering
-%             MFR                 : [0.0] minimum firing rate a units needs to be included in the data
+%             minFiringRate       : [0.0] minimum firing rate a units needs to be included in the data
 %             NormData            : [false] specify whether the output data is to be normalized to unity
 %             FindStates          : [false] Whether the data in classified in discret states
-%             Unsorted            : [false] Whether to use the unsorted units in the analysis
+%             Unsorted            : [true] Whether to use the unsorted units in the analysis
 %             TriKernel           : [false] Whether to use a triangular kernel to smooth the firing rate
 %             sig                 : [0.04] sigma value for creating triangular kernel
-%             ArtRemEnable        : [1] Whether or not to attempt detecting and deleting artifacts
+%             ArtRemEnable        : [false] Whether or not to attempt detecting and deleting artifacts
 %             NumChan             : [10] Number of channels from which the artifact removal needs to detect simultaneous spikes to consider it an artifact
 %             TimeWind            : [0.0005] time window, in seconds, over which the artifact remover will consider event to be "simultaneous"
 
+if ~isstruct(datastruct)
+    %Load the file or structure
+    datastruct = LoadDataStruct(datastruct);
+    if isempty(datastruct)
+        error('can''t load file');
+    end
+end
 
 %update missing params with default values
 params = get_default_binning_params(datastruct, varargin{:});
@@ -28,10 +35,7 @@ if isempty(params)
     return
 end
 
-if ~isstruct(datastruct)
-    %Load the file or structure
-    datastruct = LoadDataStruct(datastruct);
-end
+
     
 if isempty(datastruct)
    disp('Could not load BDF');
@@ -57,13 +61,13 @@ kernel = const1 * (const2 - abs(times));
 %--------------------------------------------------------------------------
 %% Other time and frequency parameters
 numberbins = round((params.stoptime-params.starttime)/params.binsize);      
-timeframe = ones(numberbins,1,'single');
+timeframe = ones(numberbins,1);
 timeframe = timeframe.*(params.starttime:params.binsize:params.stoptime-params.binsize)';      %Time vector of the binned data, mostly for plotting
 
 %% Bin EMG Data
 
 if ~isfield(datastruct, 'emg')
-    fprintf('No EMG data is found\n');
+    fprintf('No EMG data was found\n');
     emgdatabin = [];
     emgguide = [];
 else
@@ -89,8 +93,7 @@ else
         emgguide(i,1:length(EMGname)) = EMGname;
     end
 
-    %Pre-allocate matrix for binned EMG -- single precision!
-    %Matlab doesnt like singles too much after all, back to doubles!
+    %Pre-allocate matrix for binned EMG 
     emgdatabin = zeros(numberbins,numEMGs);
 
     % Filter EMG data
@@ -124,7 +127,7 @@ end
 
 %% Bin Force
 if ~isfield(datastruct, 'force')
-    fprintf('No force data is found in structure " %s " ',datastructname);
+    fprintf('No force data was found\n');
     forcedatabin = [];
     forcelabels = [];
 else
@@ -195,7 +198,7 @@ if ~isfield(datastruct, 'vel')
         velocbin = [];
     end
 else
-    velocbin = interp1(datastruct.vel(:,1), datastruct.vel(:,2:3), timeframe,'linear',0);
+    velocbin = interp1(datastruct.vel(:,1), datastruct.vel(:,2:3), timeframe,'linear','extrap');
     vel_magn = sqrt(velocbin(:,1).^2+velocbin(:,2).^2);
     velocbin = [velocbin vel_magn];
 end
@@ -218,7 +221,7 @@ if ~isfield(datastruct, 'acc')
         accelbin = [];
     end
 else
-    accelbin = interp1(datastruct.acc(:,1), datastruct.acc(:,2:3), timeframe,'linear',0);
+    accelbin = interp1(datastruct.acc(:,1), datastruct.acc(:,2:3), timeframe,'linear','extrap');
     acc_magn = sqrt(accelbin(:,1).^2+accelbin(:,2).^2);
     accelbin = [accelbin acc_magn];
 end
@@ -275,7 +278,7 @@ else
     units_to_use = nonzeros(units_to_use);
 
     if (numusableunits < 1)
-        fprintf('The data does not contain any unit with a minimum of %g spike/sec',minFiringRate);
+        fprintf('The data does not contain any unit with a minimum of %g spike/sec',params.minFiringRate);
         spikeratedata = [];
         spikeguide = [];
         neuronIDs = [];
@@ -297,16 +300,11 @@ else
             % identified units
             for unit = 1:numusableunits
 
-             %get the binned data from the desired timeframe plus one bin before
-             binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,params.starttime:params.binsize:params.stoptime);
-
-             %and get rid of the extra bins at beginnning, it contains all the ts
-             %from the beginning of file that are < starttime. Here I want
-             %starttime to be the lower bound of the first bin.
-             binneddata = binneddata(2:end);
+             %get the binned data from the desired timeframe
+             binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,timeframe);
 
              %convert to firing rate and store in spike data matrix
-             spikeratedata(:,unit) = binneddata' /params.binsize;
+             spikeratedata(:,unit) = binneddata /params.binsize;
              end
         end
         

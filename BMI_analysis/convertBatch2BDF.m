@@ -1,6 +1,6 @@
 function BDF_FileNames = convertBatch2BDF(varargin)
 
-    dataPath = 'C:\Monkey\Jaco\Data\';
+    dataPath = 'Z:\';
     
     if nargin == 0
         [CB_FileNames, CB_PathName] = uigetfile( { [dataPath '\CerebusData\*.nev']},...

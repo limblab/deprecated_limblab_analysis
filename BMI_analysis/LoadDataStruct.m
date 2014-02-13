@@ -14,24 +14,25 @@ if (nargin==0)
     return
 end
 
-WS = 'base'; %workspace
+WS = 'base'; %use structure in workspace
 
 assignin(WS,'structname',filename);
 
 if (evalin(WS,'exist(structname,''var'')'))
-    disp(sprintf('Using structure ''%s'' which was already in workspace',filename));
+    fprintf('Using structure ''%s'' which was already in workspace\n',filename);
     datastruct = evalin(WS,filename);
     evalin(WS,'clear structname');
     return
 end
-
 evalin(WS,'clear structname');
 
-if ~(exist(filename,'file')) % hope it's a file
-    disp(sprintf('%s ain''t no file or structure I ever heard of',filename));
+% if not, check that it's a file
+if ~(exist(filename,'file')) 
+    fprintf('%s ain''t no file or structure I ever heard of\n',filename);
     return
-end % if file exists
+end
 
+% assign content of structure from file to output
 datastruct  = load(filename);
 field_names = fieldnames(datastruct);
 for i=1:size(field_names,1)
@@ -39,22 +40,6 @@ for i=1:size(field_names,1)
         datastruct  = getfield(datastruct, field_names{i,:});
         break;
     end
-end
-% 
-% switch type
-%     case 'bdf'
-%         datastruct = datastruct.out_struct;
-%         disp(datastruct.meta);
-%     case 'binned'
-%         datastruct = datastruct.binnedData;
-%     case 'filter'
-%         datastruct = datastruct.filter;
-%     case 'OLpred'
-%         datastruct = datastruct.OLPredData;
-%     case 'RTpred'
-%         datastruct = datastruct.RTPredData;
-%     otherwise
-%         disp(sprintf('unknown file type: %s', type));
 end
 
 
