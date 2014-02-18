@@ -188,7 +188,9 @@ tic
 
 %win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
 
-%% Notch filter for 60 Hz noise
+%% Notch filter for 60 Hz noise;
+% Replace fp with a white noise signal
+fp = randi([-2048 2048],96,length(fptimesadj));
 
 [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b0,a0,fp');
@@ -213,20 +215,25 @@ for c = 1:size(freqs,2)
         tfmat(1,:,:)=reshape(hilbert(filtfilt(b,a,fpf)),1,96,size(fpf,1));
         
     end
- 
+    
     %tfmat(:,:,(ishift+1:end))=[];
     PhaseMat = angle(tfmat);
     clear tfmat a b
-
+    if c==1||c==7||c==12||c== 17||c==22||c==27||c==32
+        PhaseMAT = reshape(squeeze(PhaseMat),size(PhaseMat,2)*size(PhaseMat,3),1);
+        hist(PhaseMAT)
+    end
+    %      mean(mean(real(tfmat(:,1:10,:)).^2))
+    
     tic
     [p_i] = findPhaseIndex(PhaseMat);
     toc
-
-%     if c >1
-%     save(['PhaseInfo_',num2str(freqs(c-1)),'-',num2str(freqs(c)),'_Chewie'],'p_i','PhaseMat')
-%     elseif c==1
-%     save(['PhaseInfo_','0-4','_Chewie'],'p_i','PhaseMat')
-%     end
+    
+    %     if c >1
+    %     save(['PhaseInfo_',num2str(freqs(c-1)),'-',num2str(freqs(c)),'_Chewie'],'p_i','PhaseMat')
+    %     elseif c==1
+    %     save(['PhaseInfo_','0-4','_Chewie'],'p_i','PhaseMat')
+    %     end
     
     clear PhaseMat
     %% Bin Spikes and match to FP matrix
@@ -254,241 +261,240 @@ for c = 1:size(freqs,2)
     %% Now cut off appropriate bins in signal and time vector used for
     %% predictions
     
-%     firstind=find(bs*itemp>wsz,1,'first');
-%     for i=1:numbins
-%         ishift=i-firstind+1;
-%         if ishift<=0
-%             continue
-%         end
-%     end
+    %     firstind=find(bs*itemp>wsz,1,'first');
+    %     for i=1:numbins
+    %         ishift=i-firstind+1;
+    %         if ishift<=0
+    %             continue
+    %         end
+    %     end
     % Don't think I need this since hilbert doesn't require any any points
     % to be cut off
     % t=t(1:length(t)-firstind+1);
     % y(ishift+1:end,:)=[];
     % q(:,ishift+1:end)=[];
     
-%% Now loop and do predictions for all phases
-% for c = 1:size(p_i,1)   
-%     for u = 1:size(p_i{1},2)
-%         
-%         xTemp = x;
-%         %% Zero spike bins that are out of phase
-%         % Take coherent phase indices for all bins of this freq (c) - phase (u)
-%         % pair and convert to matrix (InPhaseIndex) to apply to binned spike
-%         % matrix (x)
-%         InPhaseIndex = reshape(p_i{1}(:,u,1:end),96,size(fpf,1))'; % 96
-%         
-%         % Here is the step where incoherent spike bins are zeroed
-%         xTemp(InPhaseIndex==0) = 0;
-%         
-%         xTempBin = zeros(size(y,1),size(fpf,2));
-%         % Now bin spikes for predictions
-%         for bin = 1:size(y,1)%numbins
-%             
-%             xTempBin(bin,:) = sum(xTemp(bs*(bin-1)+1:bs*bin,:));
-%             
-%         end
-%         clear InPhaseIndex
-%         % Keep track of number of spikes of each unit for each phase/freq
-%         % pair
-%         TotalSpikes_PerUnit(c,u,:) = sum(xTempBin);
-%         
-%         % Remove units that have no coherent spikes
-%         if nnz(sum(xTempBin)) ~= size(xTempBin,2)
-%             
-%             xTempBin(:,(sum(xTempBin) == 0)==1) = [];
-%             
-%         end
-%         
-%         % Keep track of number of units with coherent spikes for each
-%         % phase/freq
-%         TotalUnits(c,u) = size(xTempBin,2);
-%         
-%         y = y; % (q==1,:); -- this is the step where In_Active_regions are removed
-%         % Not sure if I should consider replacing this with a more appropriate
-%         % trial selection paradigm
-%         
-%         % Now do predictions with all units with respective coherent spike
-%         % bins
-%         vaf = zeros(folds,size(y,2));
-%         r2 = zeros(folds,2);
-%         fold_length = floor(length(y) ./ folds);
-%         
-%         x_test=cell(folds,1);
-%         y_test=x_test;
-%         y_pred=y_test;
-%         
-%         if ~exist('lambda','var')
-%             lambda=1;
-%         end
-%         for i = 1:folds
-%             if folds > 1
-%                 fold_start = (i-1) * fold_length + 1;
-%                 fold_end = fold_start + fold_length-1;
-%                 
-%                 x_test{i} = xTempBin(fold_start:fold_end,:);
-%                 y_test{i} = y(fold_start:fold_end,:);
-%                 
-%                 x_train = [xTempBin(1:fold_start,:); xTempBin(fold_end:end,:)];
-%                 y_train = [y(1:fold_start,:); y(fold_end:end,:)];
-%                 
-%             else
-%                 
-%                 x_test{i} = xTempBin;
-%                 y_test{i} = y;
-%                 x_train = xTempBin;
-%                 y_train = y;
-%                 % Did this for testing
-%                 %                 x_test{i} = [1:size(xTempBin,1)]'; %xTempBin
-%                 %                 y_test{i} = repmat(1:size(y,1),2,1)'; % y
-%                 %                 x_train = [1:size(xTempBin,1)]'; % xTempBin
-%                 %                 y_train = repmat(1:size(y),2,1)'; % y
-%             end
-%             %%
-%             %%Try z-score instead of mean sub
-%             %     y_train = zscore(y_train);
-%             %     y_test{i} = zscore(y_test{i});
-%             %     x_train = zscore(x_train);
-%             %     x_test{i} = zscore(x_test{i});
-%             
-%             %If a decoder does not exist, create one
-%             if ~exist('H','var')
-%                 [H{i,c,u},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda, 1); %binsamprate = 1
-%                 i
-%             end
-%             
-%             %If inputting a decoder with only one fold, convert to cell array and
-%             %replicate to match number of folds
-%             if exist('H','var') && ~iscell(H)
-%                 H = num2cell(H, [1 2]);
-%                 H = repmat(H,folds,1);
-%             end
-%             
-%             %Continue filling H if creating a decoder
-%             if exist('H','var')
-%                 [H{i,c,u},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1); %binsamprate = 1
-%                 i
-%             end
-%             
-%             %binsamprate - Make sure H was built with the same binsamprate as used
-%             %for predictions
-%             
-%             if ~exist('featMat','var')
-%                 [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i,c,u},numsides,1,y_test{i}); %binsamprate = 1
-%             else
-%                 [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i,c,u},numsides,10,y_test{i});
-%             end
-%             
-%             %             if exist('P','var') && size(P,1) == 1
-%             %                 y_pred{i} = y_pred{i} + repmat(P,size(y_pred{i},1),1);
-%             %                 disp('Adding offset')
-%             %             end
-%             %ytnew and xtnew are shifted by the length of the filter since the
-%             %first fillen time period is garbage prediction & gets thrown out in
-%             %predMIMO3 (9-24-10)
-%             
-%             %             if exist('PolynomialOrder','var') && ~exist('P','var') && PolynomialOrder~=0
-%             %
-%             %                 P=[];
-%             %                 T=[];
-%             %                 patch = [];
-%             %
-%             %                 %%%Find a Wiener Cascade Nonlinearity
-%             %                 for z=1:size(y_pred{i},2)
-%             %                     if Use_Thresh
-%             %                         %Find Threshold
-%             %                         T_default = 1.25*std(y_pred{i}(:,z));
-%             %                         [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
-%             %                         IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
-%             %
-%             %                         %Apply Threshold to linear predictions and Actual Data
-%             %                         PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
-%             %                         ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
-%             %
-%             %                         %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial
-%             %                         Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
-%             %                             (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
-%             %                         Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
-%             %
-%             %                         %Find Polynomial to Thresholded Data
-%             %                         [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], ...
-%             %                             [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
-%             %
-%             %
-%             %                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%             %                         %%%%%% Use only one of the following 2 lines:
-%             %                         %
-%             %                         %   1-Use the threshold only to find polynomial, but not in the model data
-%             %                         T=[]; patch=[];
-%             %                         %
-%             %                         %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
-%             %                         %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
-%             %                         %
-%             %                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%             %                     else
-%             %                         %Find and apply polynomial
-%             %                         % MRS added 4/24/12 - Transpose P to match how brainreader
-%             %                         % accepts P
-%             %                         [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
-%             %                     end
-%             %                     y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
-%             %                         P(z,3)*y_pred{i}(:,z);
-%             %
-%             %                     y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
-%             %                     ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
-%             %                 end
-%             %
-%             %             end
-%             
-%             %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
-%             if exist('v','var')
-%                 vaftr(i,:)=v/100; %Divide by 100 because v is in percent
-%             end
-%             
-%             
-%             vaf(i,:) = RcoeffDet(y_pred{i},ytnew{i})
-%             %Old way to calculate vaf->1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
-%             
-%             for j=1:size(y,2)
-%                 r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
-%                 %
-%                 %     for j=1:size(y,2)
-%                 %         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
-%                 if size(r{i,j},2)>1
-%                     r2(i,j)=r{i,j}(1,2)^2;
-%                 else
-%                     r2(i,j)=r{i,j}^2;
-%                 end
-%             end
-%             %
-%             %     rx{i}=corrcoef(y_pred{i}(:,1),y_test{i}(:,1));
-%             %     if size(y,2)>1
-%             %         ry{i}=corrcoef(y_pred{i}(:,2),y_test{i}(:,2));
-%             %         r2y(i)=ry{i}(1,2)^2;
-%             %         r2x(i)=rx{i}(1,2)^2;
-%             %     else
-%             %         r2x(i)=rx{i}^2;
-%             %     end
-%             %
-%             
-%             
-%         end
-%         
-%         %% Extract appropriate metrics here
-%         beep
-%         
-%         vafall{c,u} = vaf;
-%         vmean(c,u,:)=mean(vaf);
-%         vsd{c,u}=std(vaf,0,1);
-%         r2all{c,u} = r2;
-%         r2mean(c,u,:)=mean(r2);
-%         r2sd{c,u}=std(r2);
-%         
-%         clear xTempBin
-%         
-%     end
+    %% Now loop and do predictions for all phases
+    %   for c = 1:size(p_i,1)
+    for u = 1:size(p_i{1},2)
+        
+        xTemp = x;
+        %% Zero spike bins that are out of phase
+        % Take coherent phase indices for all bins of this freq (c) - phase (u)
+        % pair and convert to matrix (InPhaseIndex) to apply to binned spike
+        % matrix (x)
+        InPhaseIndex = reshape(p_i{1}(:,u,1:end),96,size(fpf,1))'; % 96
+        
+        % Here is the step where incoherent spike bins are zeroed
+        xTemp(InPhaseIndex==0) = 0;
+        
+        xTempBin = zeros(size(y,1),size(fpf,2));
+        % Now bin spikes for predictions
+        for bin = 1:size(y,1)%numbins
+            
+            xTempBin(bin,:) = sum(xTemp(bs*(bin-1)+1:bs*bin,:));
+            
+        end
+        clear InPhaseIndex
+        % Keep track of number of spikes of each unit for each phase/freq
+        % pair
+        TotalSpikes_PerUnit(c,u,:) = sum(xTempBin);
+        
+        % Remove units that have no coherent spikes
+        if nnz(sum(xTempBin)) ~= size(xTempBin,2)
+            
+            xTempBin(:,(sum(xTempBin) == 0)==1) = [];
+            
+        end
+        
+        % Keep track of number of units with coherent spikes for each
+        % phase/freq
+        TotalUnits(c,u) = size(xTempBin,2);
+        
+        y = y; % (q==1,:); -- this is the step where In_Active_regions are removed
+        % Not sure if I should consider replacing this with a more appropriate
+        % trial selection paradigm
+        
+        % Now do predictions with all units with respective coherent spike
+        % bins
+        vaf = zeros(folds,size(y,2));
+        r2 = zeros(folds,2);
+        fold_length = floor(length(y) ./ folds);
+        
+        x_test=cell(folds,1);
+        y_test=x_test;
+        y_pred=y_test;
+        
+        if ~exist('lambda','var')
+            lambda=1;
+        end
+        for i = 1:folds
+            if folds > 1
+                fold_start = (i-1) * fold_length + 1;
+                fold_end = fold_start + fold_length-1;
+                
+                x_test{i} = xTempBin(fold_start:fold_end,:);
+                y_test{i} = y(fold_start:fold_end,:);
+                
+                x_train = [xTempBin(1:fold_start,:); xTempBin(fold_end:end,:)];
+                y_train = [y(1:fold_start,:); y(fold_end:end,:)];
+                
+            else
+                
+                x_test{i} = xTempBin;
+                y_test{i} = y;
+                x_train = xTempBin;
+                y_train = y;
+                % Did this for testing
+                %                 x_test{i} = [1:size(xTempBin,1)]'; %xTempBin
+                %                 y_test{i} = repmat(1:size(y,1),2,1)'; % y
+                %                 x_train = [1:size(xTempBin,1)]'; % xTempBin
+                %                 y_train = repmat(1:size(y),2,1)'; % y
+            end
+            %%
+            %%Try z-score instead of mean sub
+            %     y_train = zscore(y_train);
+            %     y_test{i} = zscore(y_test{i});
+            %     x_train = zscore(x_train);
+            %     x_test{i} = zscore(x_test{i});
+            
+            %If a decoder does not exist, create one
+            if ~exist('H','var')
+                [H{i,c,u},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda, 1); %binsamprate = 1
+                i
+            end
+            
+            %If inputting a decoder with only one fold, convert to cell array and
+            %replicate to match number of folds
+            if exist('H','var') && ~iscell(H)
+                H = num2cell(H, [1 2]);
+                H = repmat(H,folds,1);
+            end
+            
+            %Continue filling H if creating a decoder
+            if exist('H','var')
+                [H{i,c,u},v,mcc] = FILMIMO3_tik(x_train, y_train, numlags, numsides,lambda,1); %binsamprate = 1
+                i
+            end
+            
+            %binsamprate - Make sure H was built with the same binsamprate as used
+            %for predictions
+            
+            if ~exist('featMat','var')
+                [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i,c,u},numsides,1,y_test{i}); %binsamprate = 1
+            else
+                [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i,c,u},numsides,10,y_test{i});
+            end
+            
+            %             if exist('P','var') && size(P,1) == 1
+            %                 y_pred{i} = y_pred{i} + repmat(P,size(y_pred{i},1),1);
+            %                 disp('Adding offset')
+            %             end
+            %ytnew and xtnew are shifted by the length of the filter since the
+            %first fillen time period is garbage prediction & gets thrown out in
+            %predMIMO3 (9-24-10)
+            
+            %             if exist('PolynomialOrder','var') && ~exist('P','var') && PolynomialOrder~=0
+            %
+            %                 P=[];
+            %                 T=[];
+            %                 patch = [];
+            %
+            %                 %%%Find a Wiener Cascade Nonlinearity
+            %                 for z=1:size(y_pred{i},2)
+            %                     if Use_Thresh
+            %                         %Find Threshold
+            %                         T_default = 1.25*std(y_pred{i}(:,z));
+            %                         [T(z,1), T(z,2), patch(z)] = findThresh(ytnew{i}(:,z),y_pred{i}(:,z),T_default);
+            %                         IncludedDataPoints = or(y_pred{i}(:,z)>=T(z,2),y_pred{i}(:,z)<=T(z,1));
+            %
+            %                         %Apply Threshold to linear predictions and Actual Data
+            %                         PredictedData_Thresh = y_pred{i}(IncludedDataPoints,z);
+            %                         ActualData_Thresh = ytnew{i}(IncludedDataPoints,z);
+            %
+            %                         %Replace thresholded data with patches consisting of 1/3 of the data to find the polynomial
+            %                         Pred_patches = [ (patch(z)+(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ...
+            %                             (patch(z)-(T(z,2)-T(z,1))/4)*ones(1,round(length(nonzeros(IncludedDataPoints))*4)) ];
+            %                         Act_patches = mean(ytnew{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
+            %
+            %                         %Find Polynomial to Thresholded Data
+            %                         [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], ...
+            %                             [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+            %
+            %
+            %                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %                         %%%%%% Use only one of the following 2 lines:
+            %                         %
+            %                         %   1-Use the threshold only to find polynomial, but not in the model data
+            %                         T=[]; patch=[];
+            %                         %
+            %                         %   2-Use the threshold both for the polynomial and to replace low predictions by the predefined value
+            %                         %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
+            %                         %
+            %                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %                     else
+            %                         %Find and apply polynomial
+            %                         % MRS added 4/24/12 - Transpose P to match how brainreader
+            %                         % accepts P
+            %                         [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+            %                     end
+            %                     y_pred{i}(:,z) = P(z,1)*y_pred{i}(:,z).^3 + P(z,2)*y_pred{i}(:,z).^2 +...
+            %                         P(z,3)*y_pred{i}(:,z);
+            %
+            %                     y_pred{i}(:,z) = y_pred{i}(:,z) - mean(y_pred{i}(:,z));
+            %                     ytnew{i}(:,z) = ytnew{i}(:,z)- mean(ytnew{i}(:,z));
+            %                 end
+            %
+            %             end
+            
+            %     vaf(i,:) = 1 - var(y_pred{i} - y_test{i}) ./ var(y_test{i});
+            if exist('v','var')
+                vaftr(i,:)=v/100; %Divide by 100 because v is in percent
+            end
+            
+            
+            vaf(i,:) = RcoeffDet(y_pred{i},ytnew{i})
+            %Old way to calculate vaf->1 - var(y_pred{i} - ytnew{i}) ./ var(ytnew{i});
+            
+            for j=1:size(y,2)
+                r{i,j}=corrcoef(y_pred{i}(:,j),ytnew{i}(:,j));
+                %
+                %     for j=1:size(y,2)
+                %         r{i,j}=corrcoef(y_pred{i}(:,j),y_test{i}(:,j));
+                if size(r{i,j},2)>1
+                    r2(i,j)=r{i,j}(1,2)^2;
+                else
+                    r2(i,j)=r{i,j}^2;
+                end
+            end
+            %
+            %     rx{i}=corrcoef(y_pred{i}(:,1),y_test{i}(:,1));
+            %     if size(y,2)>1
+            %         ry{i}=corrcoef(y_pred{i}(:,2),y_test{i}(:,2));
+            %         r2y(i)=ry{i}(1,2)^2;
+            %         r2x(i)=rx{i}(1,2)^2;
+            %     else
+            %         r2x(i)=rx{i}^2;
+            %     end
+            %
+            
+            
+        end
+        
+        %% Extract appropriate metrics here
+        beep
+        
+        vafall{c,u} = vaf;
+        vmean(c,u,:)=mean(vaf);
+        vsd{c,u}=std(vaf,0,1);
+        r2all{c,u} = r2;
+        r2mean(c,u,:)=mean(r2);
+        r2sd{c,u}=std(r2);
+        
+        clear xTempBin
+        
+    end
     
-    clear p_i
     
 end
 

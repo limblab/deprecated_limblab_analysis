@@ -37,7 +37,7 @@ lambda = 1;
 %smoothfeats
 
 %% Begin iterating through files
-for l=1:5%length(MATfiles)
+for l=1:length(MATfiles)
     
     if input == 2
         fnam =  findBDFonCitadel(MATfiles{l})
@@ -84,7 +84,7 @@ for l=1:5%length(MATfiles)
     TotalSpikes_AllUnits(:,:,l) = sum(TotalSpikes_PerUnit,3);
     
     %% Save output
-    save(['MiniSpikesByPhase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
+    save(['MiniSpikesBySINE_WAVE_Phase_CO_10files tik6 velpred poly',num2str(PolynomialOrder),' ',num2str(numlags),'lags','causal','.mat'],'v*','r*','Total*','PhaseMat','H');
 end
 %%
 if 0
