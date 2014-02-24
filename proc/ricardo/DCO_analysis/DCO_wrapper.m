@@ -1,6 +1,6 @@
-params.DCO_file_prefix = 'Kevin_2014-02-13_DCO';
+params.DCO_file_prefix = 'Kevin_2014-02-18_DCO';
 target_folder = ['D:\Data\Kevin_12A2\Data\' params.DCO_file_prefix];
-params.reprocess_data = 1;
+params.reprocess_data = 0;
 params.plot_behavior = 1;
 params.plot_units = 1;
 params.decode_arm = 0;

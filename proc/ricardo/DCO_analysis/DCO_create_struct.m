@@ -80,7 +80,8 @@ function DCO = DCO_create_struct(bdf,params)
 
     for iUnit = 1:size(units,1)    
         unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));
-        fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc);  %#ok<FNDSB>
+%         fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc);  %#ok<FNDSB>
+        fr = spikes2FrMovAve( bdf.units(unit_idx).ts, bdf.pos(:,1), .05 );
         DCO.mov_firingrates(:,:,iUnit) = fr(DCO.mov_idx_table);
         DCO.hold_firingrates(:,:,iUnit) = fr(DCO.hold_idx_table);
         DCO.fr(iUnit,:) = fr;
