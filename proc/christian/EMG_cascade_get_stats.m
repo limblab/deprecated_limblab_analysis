@@ -17,7 +17,7 @@ if nargin > 0
 else
     conditions = {'Hand Control','EMG Cascade','Neurons-to-Force'}; 
     num_conditions = size(conditions,2);
-    dataPath = 'Z:\';
+    dataPath = '\\citadel\data\';
     num_days = 0;
 
     for i = 1:num_conditions

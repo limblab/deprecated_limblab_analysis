@@ -26,41 +26,41 @@ for tgt = 1:numtargets
     time2target   = nan(num_succ,1);
     normpath      = cell(num_succ,1);
     
-   
-    for trial = 1:num_succ
-        
-        %rewards per minute
-        duration = binnedData.timeframe(end)-binnedData.timeframe(1);
-        num_mins = floor(duration/60);
-        if mod(duration,60) > 30
-            %also consider last minute if more than 30 sec
-            last_min_dur = mod(duration,60);
-            succ_per_min  = nan(num_mins+1,1);
+    %rewards per minute
+    duration = binnedData.timeframe(end)-binnedData.timeframe(1);
+    num_mins = floor(duration/60);
+    if mod(duration,60) > 30
+        %also consider last minute if more than 30 sec
+        last_min_dur = mod(duration,60);
+        succ_per_min  = nan(num_mins+1,1);
+    else
+        last_min_dur = 0;
+        succ_per_min  = nan(num_mins,1);
+    end
+    for i = 1:num_mins
+        min_start = binnedData.timeframe(1)+(i-1)*60;
+        min_idx = find(binnedData.trialtable(:,8)>min_start & binnedData.trialtable(:,8)<=(min_start+60));
+        min_idx_tgt = intersect(min_idx,tgt_idx);
+        if ~isempty(min_idx_tgt)
+            succ_per_min(i) = sum(binnedData.trialtable(min_idx_tgt,9)==double('R'));
         else
-            last_min_dur = 0;
-            succ_per_min  = nan(num_mins,1);
+            succ_per_min(i) = 0;
         end
-        for i = 1:num_mins
-            min_start = binnedData.timeframe(1)+(i-1)*60;
-            min_idx = find(binnedData.trialtable(:,8)>min_start & binnedData.trialtable(:,8)<=(min_start+60));
-            min_idx_tgt = intersect(min_idx,tgt_idx);
-            if ~isempty(min_idx_tgt)
-                succ_per_min(i) = sum(binnedData.trialtable(min_idx_tgt,9)==double('R'));
-            else
-                succ_per_min(i) = 0;
-            end
+    end
+    %last min
+    if last_min_dur
+        min_idx = find(binnedData.trialtable(:,8)>num_mins*60);
+        min_idx_tgt = intersect(min_idx,tgt_idx);
+        if ~isempty(min_idx_tgt)
+            succ_per_min(end) = sum(binnedData.trialtable(min_idx_tgt,9)==double('R'))*60/last_min_dur;
+        else
+            succ_per_min(end) = 0;
         end
-        %last min
-        if last_min_dur
-            min_idx = find(binnedData.trialtable(:,8)>num_mins*60);
-            min_idx_tgt = intersect(min_idx,tgt_idx);
-            if ~isempty(min_idx_tgt)
-                succ_per_min(end) = sum(binnedData.trialtable(min_idx_tgt,9)==double('R'))*60/last_min_dur;
-            else
-                succ_per_min(end) = 0;
-            end
-        end
-        
+    end
+    
+    
+    for trial = 1:num_succ
+                
         %number of re-entries
         words_idx  =  binnedData.words(:,1) >= binnedData.trialtable(succ_idx(trial),1) & ...
                              binnedData.words(:,1) <= binnedData.trialtable(succ_idx(trial),8) ;
