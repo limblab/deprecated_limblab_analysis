@@ -110,7 +110,7 @@ for i = 1:length(ul)
         % grab test set indices
         idx = uint32(1+(length(glmx)-1)*rand(num_samp,1));
 
-        b = glmfit(glm_input(idx,:),s(idx),'poisson');
+        b = glmfit(glm_input(idx,:),s(idx),'normal');
         moddepth_boot(i,bootCt) = norm([b(4) b(5)]);
         pds_boot(i,bootCt) = atan2(b(5),b(4));
         
@@ -151,14 +151,14 @@ for i = 1:length(ul)
 end
 
 %% Find 95 percent confidence interval bounds
+% Throw out top and bottom 2.5 percent of samples for each channel
+% (according to PD)
 
-% Build vector of distances from mean for each channel (shift distribution
-%   to mean 0)
+% Build vector of distances from mean for each channel
 ang_dist = pds_boot-pds(:,ones(1,reps));
 ang_dist(ang_dist>pi) = ang_dist(ang_dist>pi)-2*pi;
 ang_dist(ang_dist<-pi) = ang_dist(ang_dist<-pi)+2*pi;
 
-%% Throw out top and bottom 2.5 percent of samples for each channel (according to PD)
 % sort vectors along angle distance for each unit
 ang_dist_sort = sort(ang_dist,2);
 
