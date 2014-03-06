@@ -5,6 +5,7 @@ function DCO = DCO_create_struct(bdf,params)
     DCO.trial_table = DCO.trial_table(DCO.trial_table(:,DCO.table_columns.result)==32,:);
     DCO.target_forces = unique(DCO.trial_table(:,DCO.table_columns.target_force)); 
     DCO.target_force_range = round(1000*unique(DCO.trial_table(:,DCO.table_columns.target_force_range)))/1000;
+    DCO.target_stiffnesses = unique(DCO.trial_table(:,DCO.table_columns.outer_target_stiffness)); 
     DCO.target_locations = unique(DCO.trial_table(:,DCO.table_columns.outer_target_direction)); 
     DCO.direction_colors = hsv(length(DCO.target_locations));
     DCO.force_colors = copper(length(DCO.target_forces));
@@ -14,6 +15,9 @@ function DCO = DCO_create_struct(bdf,params)
     end
     for iDir = 1:length(DCO.target_locations)
         DCO.target_locations_idx{iDir} = find(DCO.trial_table(:,DCO.table_columns.outer_target_direction)==DCO.target_locations(iDir));
+    end
+    for iStiffness = 1:length(DCO.target_stiffnesses)
+        DCO.target_stiffness_idx{iStiffness} = find(DCO.trial_table(:,DCO.table_columns.outer_target_stiffness)==DCO.target_stiffnesses(iStiffness));
     end
     
     DCO.reward_trials = find(DCO.trial_table(:,DCO.table_columns.result) == 32);
@@ -70,20 +74,27 @@ function DCO = DCO_create_struct(bdf,params)
     DCO.pos_hold_x = reshape(bdf.pos(DCO.hold_idx_table,2),[],hold_samples)+DCO.trial_table(1,DCO.table_columns.x_offset);
     DCO.pos_hold_y = reshape(bdf.pos(DCO.hold_idx_table,3),[],hold_samples)+DCO.trial_table(1,DCO.table_columns.y_offset);
     
-    units = unit_list(bdf,1);
-    DCO.mov_firingrates = zeros([size(DCO.mov_idx_table) length(units)]);
-    DCO.hold_firingrates = zeros([size(DCO.hold_idx_table) length(units)]);
-    all_chans = reshape([bdf.units.id],2,[])';
-    fr_tc = 0.02;
-    temp = spikes2fr(bdf.units(1).ts,bdf.pos(:,1),fr_tc);
-    DCO.fr = zeros(size(units,1),length(temp));
+    if isfield(bdf,'units')
+        units = unit_list(bdf,1);
+        DCO.mov_firingrates = zeros([size(DCO.mov_idx_table) length(units)]);
+        DCO.hold_firingrates = zeros([size(DCO.hold_idx_table) length(units)]);
+        all_chans = reshape([bdf.units.id],2,[])';
+        fr_tc = 0.02;
+        temp = spikes2fr(bdf.units(1).ts,bdf.pos(:,1),fr_tc);
+        DCO.fr = zeros(size(units,1),length(temp));
 
-    for iUnit = 1:size(units,1)    
-        unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));
-%         fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc);  %#ok<FNDSB>
-        fr = spikes2FrMovAve( bdf.units(unit_idx).ts, bdf.pos(:,1), .05 );
-        DCO.mov_firingrates(:,:,iUnit) = fr(DCO.mov_idx_table);
-        DCO.hold_firingrates(:,:,iUnit) = fr(DCO.hold_idx_table);
-        DCO.fr(iUnit,:) = fr;
-    end    
+        for iUnit = 1:size(units,1)    
+            unit_idx = find(all_chans(:,1)==units(iUnit,1) & all_chans(:,2)==units(iUnit,2));
+    %         fr = spikes2fr(bdf.units(unit_idx).ts,bdf.pos(:,1),fr_tc);  %#ok<FNDSB>
+            fr = spikes2FrMovAve( bdf.units(unit_idx).ts, bdf.pos(:,1), .05 );
+            DCO.mov_firingrates(:,:,iUnit) = fr(DCO.mov_idx_table);
+            DCO.hold_firingrates(:,:,iUnit) = fr(DCO.hold_idx_table);
+            DCO.fr(iUnit,:) = fr;
+        end    
+    else
+        DCO.mov_firing_rates = [];
+        DCO.hold_firing_rates = [];
+        DCO.fr = [];        
+    end
+    
 end 

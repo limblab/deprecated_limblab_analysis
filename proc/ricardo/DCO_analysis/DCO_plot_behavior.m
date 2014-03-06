@@ -25,10 +25,31 @@ for iTrial = 1:length(DCO.reward_trials)
         mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),3))^2),'.r')
 end
 plot(DCO.target_forces,DCO.target_forces*(1+DCO.target_force_range),'-b')
-plot(DCO.target_forces,DCO.target_forces*(1-DCO.target_force_range),'-b')    
+plot(DCO.target_forces,DCO.target_forces*(1-DCO.target_force_range),'-b')
 
 xlabel('Target force (N)')
 ylabel('Actual force (N)')
 title('Handle force')
 set(params.fig_handles(end),'Name','Handle force')
 axis equal
+
+%% End of trial force
+params.fig_handles(end+1) = figure;
+hold on
+for iTrial = 1:length(DCO.reward_trials)
+    plot3(DCO.trial_table(DCO.reward_trials(iTrial),DCO.table_columns.target_force),...
+        DCO.trial_table(DCO.reward_trials(iTrial),DCO.table_columns.outer_target_stiffness),...
+        sqrt(mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),2))^2+...
+        mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),3))^2),'.r')
+end
+plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(1),length(DCO.target_forces),1),DCO.target_forces*(1+DCO.target_force_range),'-b')
+plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(end),length(DCO.target_forces),1),DCO.target_forces*(1+DCO.target_force_range),'-b')
+plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(1),length(DCO.target_forces),1),DCO.target_forces*(1-DCO.target_force_range),'-b')
+plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(end),length(DCO.target_forces),1),DCO.target_forces*(1-DCO.target_force_range),'-b')
+
+xlabel('Target force (N)')
+ylabel('Target stiffness (N/cm)')
+zlabel('Actual force (N)')
+title('Handle force')
+set(params.fig_handles(end),'Name','Handle force(F,K)')
+% axis equal

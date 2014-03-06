@@ -234,7 +234,16 @@ function monkey_warning(animal,messageType,testing)
             message = {[animal.animalName ' (' animal.animalID ') has no water restriction record.'],...
                 'Sent from Matlab! This is a test.'};
         end
-        send_mail_message(recepients,subject,message)
+        message_sent = 0;
+        while (~message_sent)
+            try
+                send_mail_message(recepients,subject,message)                
+                message_sent = 1;  
+            catch
+                message_sent
+                pause(5)
+            end
+        end
     else
         recepients{1} = animal.contactEmail;
         if ~isempty(animal.secondInCharge)
@@ -254,7 +263,15 @@ function monkey_warning(animal,messageType,testing)
             message = {[animal.animalName ' (' animal.animalID ') has no water restriction record.'],...
                 'Sent from Matlab!'};
         end
-        send_mail_message(recepients,subject,message)
+        message_sent = 0;
+        while (~message_sent)
+            try
+                send_mail_message(recepients,subject,message)                
+                message_sent = 1;  
+            catch
+                pause(5)
+            end
+        end
     end           
 end
 
@@ -298,7 +315,15 @@ function monkey_last_warning(animal,peopleList,message,testing)
             ['Person in charge: ' peopleList(person_in_charge).Name '(' peopleList(person_in_charge).contactNumber ')'],...                
             'Sent from Matlab!'};
     end    
-    send_mail_message(recepients,subject,message)
+    message_sent = 0;
+    while (~message_sent)
+        try
+            send_mail_message(recepients,subject,message)
+            message_sent = 1;            
+        catch
+            pause(5)
+        end
+    end
 end
 
 % function monkey_emergency(animal,peopleList,testing)
@@ -347,6 +372,14 @@ function monkey_final_list(animalList,peopleList,testing)
             message = {message{:},animalList(iMonkey).animalName};
         end 
         message = {message{:},'Sent from Matlab!'};
-        send_mail_message(recepients,subject,message)        
+            message_sent = 0;
+        while (~message_sent)
+            try
+                send_mail_message(recepients,subject,message)
+                message_sent = 1;            
+            catch
+                pause(5)
+            end
+        end
     end    
 end
