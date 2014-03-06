@@ -1,0 +1,105 @@
+File: monkey_arm_7.in
+-----------------------------------------------------------------------------
+Replace this line with a message to appear on all output files.
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant:            ALPHA                UNITS           |  0.0349
+Constant:            GRAV                 UNITS           |  9.81
+Constant:            IA1                  UNITS           |  0.005845
+Constant:            IA2                  UNITS           |  0.000346
+Constant:            IA3                  UNITS           |  0.005845
+Constant:            IB1                  UNITS           |  0.001931
+Constant:            IB2                  UNITS           |  0.0000169
+Constant:            IB3                  UNITS           |  0.001931
+Constant:            IC1                  UNITS           |  0.001286
+Constant:            IC2                  UNITS           |  0.0001286
+Constant:            IC3                  UNITS           |  0.001286
+Constant:            ID1                  UNITS           |  0.000586
+Constant:            ID2                  UNITS           |  0.0000243
+Constant:            ID3                  UNITS           |  0.000586
+Constant:            LA1                  UNITS           |  0.0
+Constant:            LA2                  UNITS           |  -0.125
+Constant:            LA3                  UNITS           |  0.0
+Constant:            LB1                  UNITS           |  0.0
+Constant:            LB2                  UNITS           |  -0.008
+Constant:            LB3                  UNITS           |  0.005
+Constant:            LC1                  UNITS           |  0.007
+Constant:            LC2                  UNITS           |  -0.132
+Constant:            LC3                  UNITS           |  -0.0015
+Constant:            MASSA                UNITS           |  .184
+Constant:            MASSB                UNITS           |  .07
+Constant:            MASSC                UNITS           |  .047
+Constant:            MASSD                UNITS           |  .035
+Constant:            MUSA1                UNITS           |  0.0
+Constant:            MUSA2                UNITS           |  0.0
+Constant:            MUSA3                UNITS           |  0.0
+Constant:            MUSB1                UNITS           |  0.0
+Constant:            MUSB2                UNITS           |  0.0
+Constant:            MUSB3                UNITS           |  0.0
+Constant:            MUSC1                UNITS           |  0.0
+Constant:            MUSC2                UNITS           |  0.0
+Constant:            MUSC3                UNITS           |  0.0
+Constant:            MUSD1                UNITS           |  0.0
+Constant:            MUSD2                UNITS           |  0.0
+Constant:            MUSD3                UNITS           |  0.0
+Constant:            MUSN1                UNITS           |  0.0
+Constant:            MUSN2                UNITS           |  0.0
+Constant:            MUSN3                UNITS           |  0.0
+Constant:            PULL1                UNITS           |  0.0
+Constant:            PULL2                UNITS           |  -0.035
+Constant:            PULL3                UNITS           |  0.0
+Constant:            RHOA1                UNITS           |  0.0
+Constant:            RHOA2                UNITS           |  -0.0555
+Constant:            RHOA3                UNITS           |  0.0
+Constant:            RHOB1                UNITS           |  0.004
+Constant:            RHOB2                UNITS           |  -0.045
+Constant:            RHOB3                UNITS           |  0.004
+Constant:            RHOC1                UNITS           |  0.008
+Constant:            RHOC2                UNITS           |  -0.045
+Constant:            RHOC3                UNITS           |  0.008
+Constant:            RHOD1                UNITS           |  0.012
+Constant:            RHOD2                UNITS           |  -0.025
+Constant:            RHOD3                UNITS           |  0.007
+Constant:            SHO1                 UNITS           |  0.080
+Constant:            SHO2                 UNITS           |  -0.040
+Constant:            SHO3                 UNITS           |  -2.080
+Constant:            QROT1                UNITS           |  -0.0416
+Constant:            QROT2                UNITS           |  -0.1424
+Constant:            QROT3                UNITS           |  -0.0092
+Constant:            MONKMASS             UNITS           |  10.0
+
+Initial Value:       Q1                   UNITS           |  0.0
+Initial Value:       Q2                   UNITS           |  0.0
+Initial Value:       Q3                   UNITS           |  2.0
+Initial Value:       Q4                   UNITS           |  0.0
+Initial Value:       Q5                   UNITS           |  0.0
+Initial Value:       Q6                   UNITS           |  0.0
+Initial Value:       Q7                   UNITS           |  0.0
+Initial Value:       U1                   UNITS           |  0.0
+Initial Value:       U2                   UNITS           |  0.0
+Initial Value:       U3                   UNITS           |  0.0
+Initial Value:       U4                   UNITS           |  0.0
+Initial Value:       U5                   UNITS           |  0.0
+Initial Value:       U6                   UNITS           |  0.0
+Initial Value:       U7                   UNITS           |  0.0
+
+Initial Time:        TINITIAL             UNITS           |  0.0
+Final Time:          TFINAL               UNITS           |  .001
+Integration Step:    INTEGSTP             UNITS           |  0.001
+Print-Integer:       PRINTINT             Positive Integer|  1
+Absolute Error:      ABSERR                               |  1.0E-08
+Relative Error:      RELERR                               |  1.0E-07 
+----------------------------------------------------------+------------------
+
+DANGER: Do not insert TABS while editing this file.
+
+Note:
+
+  INTEGSTP*PRINTINT is the time-interval for writing of output.
+
+  ABSERR should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+         smallest maximum absolute value of the variables being integrated.
+
+  RELERR should be set equal to 10^(-d), where d is the desired number of
+         significant digits.

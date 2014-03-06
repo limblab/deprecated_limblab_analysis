@@ -1,0 +1,7 @@
+This folder will contain all the files that are shared by Sherwin's MATLAB programs.
+This folder should be included as a path in the MATLAB program.
+
+It will contain all the files with the prefix "db_get".
+It will contain all the MAT data files that are generated from the database.
+It will contain the files used to load up the database and the arm parameters.
+It will contain files such as low pass filter, splder.dll, gcvspl.dll.z[69]*z[266]+MUSD1*z[70]*z[260]-MUSD3*z[68]*z[261]-MUSD3*
