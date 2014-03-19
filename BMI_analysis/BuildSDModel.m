@@ -123,27 +123,27 @@ if options.PredVeloc
 end    
 
 %% 1- Calculate Fixed Linear Decoder:
-% disp('calculating general decoder');
-% [H,v,mcc]=filMIMO4(Inputs,Outputs,numlags,numsides,1);
-% 
-% % Add non-linearity if applicable    
-% [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,H,numsides,1,Outputs);
-% if options.PolynomialOrder
-%     numouts = size(PredictedData,2);
-%     P = zeros(options.PolynomialOrder+1,numouts);
-%     %%%Find a Wiener Cascade Nonlinearity
-%     for z=1:size(PredictedData,2)
-%         %Find and apply polynomial
-%         [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), options.PolynomialOrder);
-%         PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
-%     end
-% else
-%     P=[];
-% end
-% 
-% 
-% general_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
-% Models{1} = general_decoder;
+disp('calculating general decoder');
+[H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+
+% Add non-linearity if applicable    
+[PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,1,Outputs);
+if options.PolynomialOrder
+    numouts = size(PredictedData,2);
+    P = zeros(options.PolynomialOrder+1,numouts);
+    %%%Find a Wiener Cascade Nonlinearity
+    for z=1:size(PredictedData,2)
+        %Find and apply polynomial
+        [P(:,z)] = WienerNonlinearity(PredictedData(:,z), ActualDataNew(:,z), options.PolynomialOrder);
+        PredictedData(:,z) = polyval(P(:,z),PredictedData(:,z));
+    end
+else
+    P=[];
+end
+
+
+general_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+Models{1} = general_decoder;
 
 %% Now calculate a model for each State:
 if options.Use_SD
@@ -164,10 +164,10 @@ if options.Use_SD
         %     H = Ins\Outs;
         %     toc;
         fprintf('Calculating model for state %d\n',state-1);
-        [H,v,mcc]=filMIMO4(Ins,Outs,numlags,numsides,1);
+        [H,v,mcc]=filMIMO3(Ins,Outs,numlags,numsides,1);
 
         %% Add non-linearity if applicable    
-        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Ins,H,numsides,1,Outs);
+        [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Ins,H,numsides,1,Outs);
     %     PredictedData = Ins*H;
     %     ActualDataNew = Outs;
         if options.PolynomialOrder
@@ -183,6 +183,11 @@ if options.Use_SD
             P=[];
         end
         
-        Models{state} = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
-    end
+        if state == 1
+            posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+            Models{2} = posture_decoder;
+        elseif state == 2
+            movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+            Models{3} = movement_decoder;
+        end
 end
