@@ -60,12 +60,12 @@ end
 if params.stoptime ==0
     params.stoptime = duration - mod(duration,params.binsize);
     fprintf('Stop time set to end of data (%.2f seconds)\n', params.stoptime);
-elseif (params.stoptime <binsize || params.stoptime > duration)
+elseif (params.stoptime < params.binsize || params.stoptime > duration)
     fprintf(['Stop time must be at least one bin after start time and cannot be higher than file duration (%.1f)\n' ...
                  '"Stop time" set to last multiple of binsize (%.2f seconds).\n'],duration,duration-mod(duration,params.binsize));
     params.stoptime=duration-mod(duration,params.binsize);
 else 
-    fsprintf('Stop time set to %.2f seconds\n',params.stoptime);
+    fprintf('Stop time set to %.2f seconds\n',params.stoptime);
 end
 
 % if mod(1,binsize)

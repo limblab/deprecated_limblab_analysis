@@ -1,21 +1,30 @@
 function target_stats = get_WF_stats(binnedData,varargin)
 
-if nargin>1
-    plotflag = varargin{1};
+%totals, all targets:
+successes    = find(binnedData.trialtable(:,9)==double('R'));
+num_successes = length(successes);
+num_trials    = size(binnedData.trialtable,1);
+
+duration = binnedData.timeframe(end)-binnedData.timeframe(1);
+num_mins = floor(duration/60);
+if mod(duration,60) > 30
+    %also consider last minute if more than 30 sec
+    last_min_dur = mod(duration,60);
+    succ_per_min = nan(num_mins+1,1);
+    succ_per_min_tot = zeros(num_mins+1,1);
 else
-    plotflag=0;
+    last_min_dur = 0;
+    succ_per_min = nan(num_mins,1);
+    succ_per_min_tot = zeros(num_mins,1);
 end
 
-successes    = find(binnedData.trialtable(:,9)==double('R'));
-numsuccesses = length(successes);
-numtrials    = size(binnedData.trialtable,1);
 
 targets      = sort(unique(binnedData.trialtable(:,10)));
-numtargets   = length(targets);
-
+num_targets   = length(targets);
 target_stats = [];
-for tgt = 1:numtargets
-    
+
+% target specific stats
+for tgt = 1:num_targets
     tgt_idx       = find(binnedData.trialtable(:,10)==targets(tgt));
     N             = length(tgt_idx);
     succ_idx      = intersect(tgt_idx,successes);
@@ -27,16 +36,6 @@ for tgt = 1:numtargets
     normpath      = cell(num_succ,1);
     
     %rewards per minute
-    duration = binnedData.timeframe(end)-binnedData.timeframe(1);
-    num_mins = floor(duration/60);
-    if mod(duration,60) > 30
-        %also consider last minute if more than 30 sec
-        last_min_dur = mod(duration,60);
-        succ_per_min  = nan(num_mins+1,1);
-    else
-        last_min_dur = 0;
-        succ_per_min  = nan(num_mins,1);
-    end
     for i = 1:num_mins
         min_start = binnedData.timeframe(1)+(i-1)*60;
         min_idx = find(binnedData.trialtable(:,8)>min_start & binnedData.trialtable(:,8)<=(min_start+60));
@@ -47,7 +46,7 @@ for tgt = 1:numtargets
             succ_per_min(i) = 0;
         end
     end
-    %last min
+        %last min
     if last_min_dur
         min_idx = find(binnedData.trialtable(:,8)>num_mins*60);
         min_idx_tgt = intersect(min_idx,tgt_idx);
@@ -57,6 +56,7 @@ for tgt = 1:numtargets
             succ_per_min(end) = 0;
         end
     end
+    succ_per_min_tot = succ_per_min_tot + succ_per_min;
     
     
     for trial = 1:num_succ
@@ -94,6 +94,29 @@ for tgt = 1:numtargets
         )];%#ok<AGROW> 
 end
 
+
+% totals
+succ_rate = num_successes/num_trials;
+pl_tot    = [];
+t2t_tot   = [];
+num_reent = [];
+for i = 1:num_targets
+    pl_tot    = [pl_tot;   target_stats.path_length{i}];%#ok<AGROW>
+    t2t_tot   = [t2t_tot;  target_stats.time2target{i}];%#ok<AGROW>
+    num_reent = [num_reent;target_stats.num_reentries{i}];%#ok<AGROW>
+end
+norm_path = nan(size(pl_tot));
+
+target_stats = [target_stats; dataset(...
+    {   0                   ,'ID'           },...
+    {   num_trials          ,'N'            },...
+    {   succ_rate           ,'succ_rate'    },...
+    {   {succ_per_min_tot}  ,'succ_per_min' },...
+    {   {pl_tot}            ,'path_length'  },...
+    {   {t2t_tot}           ,'time2target'  },...
+    {   {num_reent}         ,'num_reentries'},...
+    {   {norm_path}         ,'normpath'     } ...
+    )];
 
 
 
