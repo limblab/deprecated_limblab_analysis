@@ -1,7 +1,17 @@
-function [fr, theta, mt] = getFR(data,useArray,tuningPeriod,paramSetName)
+function [fr, theta, mt] = getFR(data,useArray,tuningPeriod,paramSetName,useBlock)
 % finds firing rates for each movement based on the windows identified in
 % the data struct. returns firing rate matrix (each unit against trial
 % number) and direction of each movement
+%
+% useBlock is which block of trials to use. In parameter file, can do
+% excludeAD, let's say it's 0 0.25 0.5 0.75 1, then there are 4 potential
+% blocks. useBlock = 1 would be the first 25% of trials, useBlock = 4 would
+% be the last 25%.
+
+if nargin < 5
+    % no useBlock, assume only one block
+    useBlock = -1;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
@@ -9,18 +19,23 @@ paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(paramFile);
 angleBinSize = str2double(params.angle_bin_size{1});
-latency = str2double(params.([lower(useArray) '_latency']){1});
 movementTime = str2double(params.movement_time{1});
 tuneDir = params.tuning_direction{1};
 doBinAngles = str2double(params.bin_angles{1});
-clear params temp;
+clear params ;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+params = parseExpParams(paramFile);
+latency = str2double(params.([lower(useArray) '_latency']){1});
+clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Get data
-sg = data.(useArray).unit_guide;
+sg = data.(useArray).sg;
 
 % Get the movement table
-mt = filterMovementTable(data, paramSetName);
+mt = filterMovementTable(data, paramSetName, true, useBlock);
 
 if size(mt,1)==0
     keyboard
@@ -34,17 +49,16 @@ useWin = zeros(size(mt,1),2);
 % [ target angle, on_time, go cue, move_time, peak_time, end_time ]
 for trial = 1:size(mt,1)
     % Time window for which to look for neural activity
-    if strcmpi(tuningPeriod,'peak') % Use 0.5 sec period around peak speed
-        % offset by 100msec from being centered on peak so it precedes move
-        useWin(trial,:) = [mt(trial,5) - movementTime/2-0.1, mt(trial,5) + movementTime/2-0.1];
+    if strcmpi(tuningPeriod,'peak') % Use period around peak speed
+        useWin(trial,:) = [mt(trial,5) - movementTime/2, mt(trial,5) + movementTime/2];
     elseif strcmpi(tuningPeriod,'initial') %Use initial movement period
         useWin(trial,:) = [mt(trial,4), mt(trial,4)+movementTime];
     elseif strcmpi(tuningPeriod,'final') % Use the final movement period
-        useWin(trial,:) = [mt(trial,end)-movementTime, mt(trial,end)];
+        useWin(trial,:) = [mt(trial,6)-movementTime, mt(trial,6)];
     elseif strcmpi(tuningPeriod,'pre') % Use pre-movement period
-        useWin(trial,:) = [mt(trial,2), mt(trial,4)];
+        useWin(trial,:) = [mt(trial,2)+0.1, mt(trial,4)];
     elseif strcmpi(tuningPeriod,'full') % Use entire movement
-        useWin(trial,:) = [mt(trial,3), mt(trial,end)];
+        useWin(trial,:) = [mt(trial,3), mt(trial,6)];
     elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak
         useWin(trial,:) = [mt(trial,4), mt(trial,5)];
     elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
@@ -52,7 +66,7 @@ for trial = 1:size(mt,1)
     end
     
     for unit = 1:size(sg,1)
-        ts = data.(useArray).units.(['elec' num2str(sg(unit,1))]).(['unit' num2str(sg(unit,2))]).ts;
+        ts = data.(useArray).units(unit).ts;
         
         %  the latency to account for transmission delays
         ts = ts + latency;
@@ -62,7 +76,6 @@ for trial = 1:size(mt,1)
         fr(trial,unit) = spikeCounts./movementTime; % Compute a firing rate
     end
 end
-
 
 %% Now get direction for tuning
 if strcmpi(tuneDir,'target')

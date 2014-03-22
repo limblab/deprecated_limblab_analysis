@@ -1,4 +1,4 @@
-function out = fitTuningCurves_Reg(data,tuningPeriod,epoch,useArray,paramSetName,doPlots)
+function out = fitTuningCurves_VS(data,tuningPeriod,epoch,useArray,paramSetName,doPlots)
 % notes about inputs
 % notes about outputs
 % can pass tuning method in as cell array with multiple types
@@ -14,8 +14,7 @@ paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording
 params = parseExpParams(paramFile);
 movementTime = str2double(params.movement_time{1});
 binAngles = str2double(params.bin_angles{1});
-adBlocks = params.ad_exclude_fraction;
-woBlocks = params.wo_exclude_fraction;
+blocks = params.ad_exclude_fraction;
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
@@ -25,14 +24,14 @@ bootNumIters = str2double(params.number_iterations{1});
 clear params;
 
 
-disp(['Regression tuning, ' num2str(movementTime) ' second window...']);
+disp(['Vector sum tuning, ' tuningPeriod ' movement, ' num2str(movementTime) ' second window...']);
 
 %% Get data
 sg = data.(useArray).sg;
 
 % see if file is being divided into blocks
 if strcmpi(epoch,'AD')
-    numBlocks = length(adBlocks)-1;
+    numBlocks = length(blocks)-1;
 else
     numBlocks = 1;
 end
@@ -42,19 +41,24 @@ for iBlock = 1:numBlocks
     
     % Do bootstrapping with regression
     statTestParams = {'bootstrap',bootNumIters,confLevel};
-    
-    [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
-    pds = tcs(:,3);
-    pd_cis = cbs{3};
-    mds = tcs(:,2);
-    md_cis = cbs{2};
+
+    [pds, pd_cis, boot_pds] = vectorSumPDs(fr,theta,statTestParams,'doplots',doPlots);
+%     [mds, md_cis, boot_mds] = vectorSumMDs(fr,theta,statTestParams,'doplots',doPlots);
+%     [bos, bo_cis, boot_bos] = vectorSumPDs(fr,theta,statTestParams,'doplots',doPlots);
+    mds = [];
+    md_cis = [];
+    bos = [];
+    bo_cis = [];
+    boot_mds = [];
+    boot_bos = [];
     
     out(iBlock).pds = [pds pd_cis];
     out(iBlock).mds = [mds md_cis];
+    out(iBlock).bos = [bos bo_cis];
     
     out(iBlock).boot_pds = boot_pds;
     out(iBlock).boot_mds = boot_mds;
-    out(iBlock).r_squared = rs;
+    out(iBlock).boot_bos = boot_bos;
     
     out(iBlock).sg = sg;
     out(iBlock).fr = fr;
@@ -63,9 +67,5 @@ for iBlock = 1:numBlocks
     out(iBlock).params.stats = statTestParams;
     out(iBlock).params.bin_angles = binAngles;
     out(iBlock).params.movement_time = movementTime;
-    if strcmpi(epoch,'ad')
-        out(iBlock).params.block = adBlocks(iBlock:iBlock+1);
-    elseif strcmpi(epoch,'wo')
-        out(iBlock).params.block = woBlocks;
-    end
+    
 end

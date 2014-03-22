@@ -1,4 +1,4 @@
-function mt = filterMovementTable(data,paramSetName,excludeTrials)
+function mt = filterMovementTable(data,paramSetName,excludeTrials,useBlock)
 % filter movements out of one of my movement tables based on:
 %   1) reaction time
 %   2) time to target
@@ -22,6 +22,8 @@ minReactionTime = str2double(params.min_reaction_time{1});
 maxReactionTime = str2double(params.max_reaction_time{1});
 minTimeToTarget = str2double(params.min_time_to_target{1});
 maxTimeToTarget = str2double(params.max_time_to_target{1});
+minTimeToPeak = str2double(params.min_time_to_peak{1});
+maxTimeToPeak = str2double(params.max_time_to_peak{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -29,15 +31,27 @@ clear params;
 holdTime = data.params.hold_time;
 mt = data.movement_table;
 
-reactionTime = mt(:,4) - mt(:,3);
-timeToTarget = ( mt(:,end) - mt(:,4) ) - holdTime;
-
 if minReactionTime ~= -1 && maxReactionTime ~= -1
-    mt = mt(reactionTime >= minReactionTime & reactionTime <= maxReactionTime & timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget,:);
+    reactionTime = mt(:,4) - mt(:,3);
+    mt = mt(reactionTime >= minReactionTime & reactionTime <= maxReactionTime,:);
+end
+
+if minTimeToTarget ~= -1 && maxTimeToTarget ~= -1
+    timeToTarget = ( mt(:,6) - mt(:,4) ) - holdTime;
+    mt = mt(timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget,:);
+end
+
+if minTimeToPeak ~= -1 && maxTimeToPeak ~= -1
+    timeToPeak = mt(:,5) - mt(:,4);
+    mt = mt(timeToPeak >= minTimeToPeak & timeToPeak <= maxTimeToPeak,:);
 end
 
 % for adaptation, exclude some trials
-if excludeTrials && (length(ADexcludeFraction) > 0) && strcmp(data.meta.epoch,'AD')
+if excludeTrials && ~isempty(ADexcludeFraction) && strcmp(data.meta.epoch,'AD')
+    if useBlock ~= -1 % then pick the correct indices
+        ADexcludeFraction = ADexcludeFraction(useBlock:useBlock+1);
+    end
+    
     if length(ADexcludeFraction) == 1
         % remove the first however many trials
         mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
@@ -48,8 +62,11 @@ if excludeTrials && (length(ADexcludeFraction) > 0) && strcmp(data.meta.epoch,'A
         end
         mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
     end
+    
 end
 
+% Do the same for washout
+%   Note: only supports one block for washout
 if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'WO')
     if length(WOexcludeFraction) == 1
         % remove the first however many trials

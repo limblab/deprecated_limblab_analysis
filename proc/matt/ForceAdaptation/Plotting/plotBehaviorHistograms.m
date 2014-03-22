@@ -19,30 +19,45 @@ function plotBehaviorHistograms(adaptation,saveFilePath)
 % NOTES:
 %
 
+plotColors = {'b','r','g'};
+nBins = 20; %hard code for now
+doNorm = true; % normalize?
+numTargs = 8; % hard code for now
+
+if ~iscell(adaptation)
+    adaptation = {adaptation};
+end
+
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(adaptation.meta.out_directory, [adaptation.meta.recording_date '_plotting_parameters.dat']);
+paramFile = fullfile(adaptation{1}.meta.out_directory, [adaptation{1}.meta.recording_date '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
-numBins = str2double(params.num_hist_bins{1});
+% nBins = str2double(params.num_hist_bins{1});
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Plot histograms of some metrics
-epoch = adaptation.meta.epoch;
 
 fh = figure;
 
 %% plot histogram of reaction time
 set(0, 'CurrentFigure', fh);
 clf reset;
-hist(adaptation.reaction_time.*1000,numBins);
+hold all;
+for iFile = 1:length(adaptation)
+    [N,X] = hist(adaptation{iFile}.reaction_time.*1000,nBins);
+    if doNorm
+        N = N./max(N);
+    end
+    plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
+end
 xlabel('Reaction Time (ms)','FontSize',fontSize);
 axis('tight');
+V = axis;
+axis([V(1) V(2) 0 V(4)]);
 
 if ~isempty(saveFilePath)
-    fn = fullfile(saveFilePath,[epoch '_behavior_reaction_time.png']);
+    fn = fullfile(saveFilePath,'behavior_reaction_time.png');
     saveas(fh,fn,'png');
 else
     pause;
@@ -51,12 +66,21 @@ end
 %% plot histogram of time to target
 set(0, 'CurrentFigure', fh);
 clf reset;
-hist(adaptation.time_to_target.*1000,numBins);
+hold all;
+for iFile = 1:length(adaptation)
+    [N,X] = hist(adaptation{iFile}.time_to_target.*1000,nBins);
+    if doNorm
+        N = N./max(N);
+    end
+    plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
+end
 xlabel('Time To Target (ms)','FontSize',fontSize);
 axis('tight');
+V = axis;
+axis([V(1) V(2) 0 V(4)]);
 
 if ~isempty(saveFilePath)
-    fn = fullfile(saveFilePath,[epoch '_behavior_time_to_target.png']);
+    fn = fullfile(saveFilePath,'behavior_time_to_target.png');
     saveas(fh,fn,'png');
 else
     pause;
@@ -64,20 +88,24 @@ end
 
 
 %% plot histogram of target directions
-numTargs = length(unique(adaptation.movement_table(:,1)));
-% if we only have 8 targets don't need a ton of bins
-if numTargs < numBins
-    numBins = numTargs;
-end
 
 set(0, 'CurrentFigure', fh);
 clf reset;
-hist(adaptation.movement_table(:,1).*180/pi,numBins);
+hold all;
+for iFile = 1:length(adaptation)
+    [N,X] = hist(adaptation{iFile}.movement_table(:,1).*180/pi,numTargs);
+    if doNorm
+        N = N./max(N);
+    end
+    plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
+end
 xlabel('Target Directions (deg)','FontSize',fontSize);
 axis('tight');
+V = axis;
+axis([V(1) V(2) 0 V(4)]);
 
 if ~isempty(saveFilePath)
-    fn = fullfile(saveFilePath,[epoch '_behavior_target_direction.png']);
+    fn = fullfile(saveFilePath,'behavior_target_direction.png');
     saveas(fh,fn,'png');
 else
     pause;
@@ -87,12 +115,21 @@ end
 %% plot histogram of time between onset and peak
 set(0, 'CurrentFigure', fh);
 clf reset;
-hist(adaptation.move_to_peak.*1000,numBins);
+hold all;
+for iFile = 1:length(adaptation)
+    [N,X] = hist(adaptation{iFile}.move_to_peak.*1000,nBins);
+    if doNorm
+        N = N./max(N);
+    end
+    plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
+end
 xlabel('Reaction Time (ms)','FontSize',fontSize);
 axis('tight');
+V = axis;
+axis([V(1) V(2) 0 V(4)]);
 
 if ~isempty(saveFilePath)
-    fn = fullfile(saveFilePath,[epoch '_behavior_move_to_peak.png']);
+    fn = fullfile(saveFilePath,'behavior_move_to_peak.png');
     saveas(fh,fn,'png');
 else
     pause;
@@ -101,12 +138,21 @@ end
 %% plot histogram of time between presentation and peak
 set(0, 'CurrentFigure', fh);
 clf reset;
-hist(adaptation.targ_to_peak.*1000,numBins);
+hold all;
+for iFile = 1:length(adaptation)
+    [N,X] = hist(adaptation{iFile}.targ_to_peak.*1000,nBins);
+    if doNorm
+        N = N./max(N);
+    end
+    plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
+end
 xlabel('Reaction Time (ms)','FontSize',fontSize);
 axis('tight');
+V = axis;
+axis([V(1) V(2) 0 V(4)]);
 
 if ~isempty(saveFilePath)
-    fn = fullfile(saveFilePath,[epoch '_behavior_targ_to_peak.png']);
+    fn = fullfile(saveFilePath,'behavior_targ_to_peak.png');
     saveas(fh,fn,'png');
 else
     pause;

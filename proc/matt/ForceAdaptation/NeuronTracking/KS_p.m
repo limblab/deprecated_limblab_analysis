@@ -37,7 +37,7 @@ sort_inds = cell(length(data),1);
 
 prev_l = 0; % Do terrible i++ indexing...
 for i = 1:num_days   % Loop through each day
-    dayids = data{i}.unit_guide;
+    dayids = data{i}.sg;
     
     l = size(dayids,1);
     
@@ -48,8 +48,8 @@ for i = 1:num_days   % Loop through each day
     for j = 1:l % Loop through all of the units
         % Parse ID, timestamps, and wave shape
         UNITS(j+prev_l).id = dayids(j,:);
-        UNITS(j+prev_l).ts = data{i}.units.(['elec' num2str(dayids(j,1))]).(['unit' num2str(dayids(j,2))]).ts;
-        UNITS(j+prev_l).wave = mean(data{i}.units.(['elec' num2str(dayids(j,1))]).(['unit' num2str(dayids(j,2))]).wf,2);
+        UNITS(j+prev_l).ts = data{i}.units(j).ts;
+        UNITS(j+prev_l).wave = mean(data{i}.units(j).wf,2);
     end
     prev_l = prev_l + l; % increment counter
 end
@@ -128,30 +128,35 @@ for i = 1:num_days % Loop through days
     COMPS{i}.p_wave = zeros(length(sort_inds{i}.inds),num_days);
     
     for j = 1:length(sort_inds{i}.inds) % find ID of unit in day i
-        
         % Compile isi/wave information
         chan = sort_inds{i}.ch_un(j,1);
         unit = sort_inds{i}.ch_un(j,2);
-        ISI_1 = diff(data{i}.units.(['elec' num2str(chan)]).(['unit' num2str(unit)]).ts);
-        ISI_1 = ISI_1(ISI_1 < 1);
-        WAVE_1 = mean(data{i}.units.(['elec' num2str(chan)]).(['unit' num2str(unit)]).wf,2);
         
-        COMPS{i}.chan(j,i) = data{i}.units.(['elec' num2str(chan)]).(['unit' num2str(unit)]).id(1) + 0.1*data{i}.units.(['elec' num2str(chan)]).(['unit' num2str(unit)]).id(2);
+        % find units struct index for current unit
+        idx = find(cellfun(@(x) all(x==[chan unit]),{data{i}.units.id}));
+        
+        ISI_1 = diff(data{i}.units(idx).ts);
+        ISI_1 = ISI_1(ISI_1 < 1);
+        WAVE_1 = mean(data{i}.units(idx).wf,2);
+        
+        COMPS{i}.chan(j,i) = data{i}.units(idx).id(1) + 0.1*data{i}.units(idx).id(2);
         
         for k = find(1:num_days ~= i) % Look at other days
             % Find units on the same channel
             same_chan = find(sort_inds{k}.ch_un(:,1) == chan);
             for l = 1:length(same_chan) % For all units on the same electrode
-                
                 % Compile their isi/wave information
                 index2 = sort_inds{k}.inds(same_chan(l));
                 sorted_list_ind = find(sort_inds{k}.inds == index2);
                 chan2 = sort_inds{k}.ch_un(same_chan(l),1);
                 unit2 = sort_inds{k}.ch_un(same_chan(l),2);
                 
-                ISI_2 = diff(data{k}.units.(['elec' num2str(chan2)]).(['unit' num2str(unit2)]).ts);
+                % find units struct index for current unit
+                idx = find(cellfun(@(x) all(x==[chan2 unit2]),{data{k}.units.id}));
+                
+                ISI_2 = diff(data{k}.units(idx).ts);
                 ISI_2 = ISI_2(ISI_2 < 1);
-                WAVE_2 = mean(data{k}.units.(['elec' num2str(chan2)]).(['unit' num2str(unit2)]).wf,2);
+                WAVE_2 = mean(data{k}.units(idx).wf,2);
                 
                 % Perform KS goodness-of-fit on isi shapes
                 if ~isempty(ISI_1) && ~isempty(ISI_2)

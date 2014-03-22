@@ -1,4 +1,4 @@
-function tuning = fitTuningCurves(expParamFile, paramSetName)
+function tuning = fitTuningCurves(expParamFile, outDir, paramSetName)
 % FITTUNINGCURVES  Wrapper function to calculate tuning curves
 %
 %   This function will calculate tuning using a variety of methods for
@@ -6,6 +6,8 @@ function tuning = fitTuningCurves(expParamFile, paramSetName)
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
+%   outDir: (string) directory for output
+%   paramSetName: (string) Name of the parameter file
 %
 % OUTPUTS:
 %   tuning: (struct) has field for each array, each method, each period
@@ -41,7 +43,6 @@ function tuning = fitTuningCurves(expParamFile, paramSetName)
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(expParamFile);
-baseDir = params.out_dir{1};
 useDate = params.date{1};
 taskType = params.task{1};
 adaptType = params.adaptation_type{1};
@@ -49,7 +50,7 @@ epochs = params.epochs;
 clear params
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dataPath = fullfile(baseDir,useDate);
+dataPath = fullfile(outDir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the parameters
@@ -83,26 +84,35 @@ for iEpoch = 1:length(epochs)
     
     for iArray = 1:length(arrays)
         useArray = arrays{iArray};
-        
         for iMethod = 1:length(tuningMethods)
             for iTune = 1:length(tuningPeriods)
+                disp(['%% Running on ' epochs{iEpoch} ' file... (' num2str(iEpoch) ' of ' num2str(length(epochs)) ')']);
+                disp(['%% Running on ' useArray ' data... (' num2str(iArray) ' of ' num2str(length(arrays)) ')']);
+                disp(['%% Running for ' tuningMethods{iMethod} ' method... (' num2str(iMethod) ' of ' num2str(length(tuningMethods)) ')']);
+                disp(['%% Running for ' tuningPeriods{iTune} ' period... (' num2str(iTune) ' of ' num2str(length(tuningPeriods)) ')']);
                 
                 switch lower(tuningMethods{iMethod})
                     case 'glm' % fit a GLM model
-                        % NOT IMPLEMENTED
-                        tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},useArray,paramSetName);
+                        tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName);
                         
                     case 'nonparametric'
                         % NOT: for now, must do regression (or vectorsum) first
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                            tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = nonparametricTuning(data,tuningPeriods{iTune},useArray,paramSetName,doPlots);
+                            tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = nonparametricTuning(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
                         else
                             disp('WARNING: cannot use whole file for nonparametric tuning method, so skipping this tuning period input');
                         end
                         
+                    case 'vectorsum'
+                        if ~strcmpi(tuningPeriods{iTune},'file')
+                                tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_VS(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
+                        else
+                            disp('WARNING: cannot use whole file for vectorsum tuning method, so skipping this tuning period input');
+                        end
+                        
                     otherwise % do regression of cosine model for period specified in tuneType
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                                tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},tuningMethods{iMethod},useArray,paramSetName,doPlots);
+                                tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
                         else
                             disp('WARNING: cannot use whole file for regression/vectorsum tuning method, so skipping this tuning period input');
                         end

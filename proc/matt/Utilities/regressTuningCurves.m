@@ -1,6 +1,11 @@
-function [tunCurves,ci_sig,md_sig,bo_sig,boot_pds,boot_mds,boot_bos,rs] = regressTuningCurves(fr,theta,sigTest,varargin)
+function [tunCurves,confBounds,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves(fr,theta,sigTest,varargin)
 % Compute cosine tuning curves relating neural activity to output using a
-% linear regression method to get preferred directions
+% linear regression method to get preferred directions. Uses model:
+%   
+%       fr = b0 + b1*cos(theta + b2)
+%
+%   Where b0 is the baseline offset (BO), b1 is the modulation depth
+%   (MD) and b2 is the preferred direction (PD)
 %
 % INPUTS
 %   fr: Array of neural firing rate for each trial. Each row should be a
@@ -18,12 +23,16 @@ function [tunCurves,ci_sig,md_sig,bo_sig,boot_pds,boot_mds,boot_bos,rs] = regres
 %   varargin: specify more parameters as needed. Use a format
 %               ...,'parameter_name',parameter_value,...
 %       Options:
-%           'doplots': (boolean) plot each unit with tuning curve?
-%           'domeanfr': (boolean) find mean fr by direction for cosine fit
+%           'doplots': (boolean) plot each unit with tuning curve? (default:false)
+%           'domeanfr': (boolean) find mean fr by direction for cosine fit (default: true)
 % OUTPUTS
 %   tunCurves: tuning of each model using b0+b1*cos(theta+b2)
 %                   tunCurves = [b0,b1,b2]
-%   sig: vector saying whether tuning of each cell is significant
+%   confBounds: cell array of confidence intervals for each parameter (if applicable)
+%                   confBounds = {[ci_low_b0, ci_high_b1],[ci_low_b1, etc... }
+%   rs: matrix of r-squared for all fits (if bootstrapped, has one for each iteration)
+%   boot_(etc): access to bootstrapped values for each parameter. Right now
+%       it's a bit "hacky" and hard-coded, but I'll fix this someday
 %
 % EXAMPLES:
 %   Compute simple cosine tuning for some firing rate data
@@ -57,6 +66,10 @@ for i=1:2:length(varargin)
 end
 %%%%%
 
+boot_pds = [];
+boot_mds = [];
+boot_bos = [];
+
 switch lower(sigTest{1})
     case 'bootstrap'
         numIters = sigTest{2};
@@ -65,6 +78,7 @@ switch lower(sigTest{1})
         b0s = zeros(size(fr,2),numIters);
         b1s = zeros(size(fr,2),numIters);
         b2s = zeros(size(fr,2),numIters);
+        rs = zeros(size(fr,2),numIters);
         for iter = 1:numIters
             tempfr = zeros(size(fr));
             tempTheta = zeros(size(fr));
@@ -104,10 +118,28 @@ switch lower(sigTest{1})
         boot_pds = b2s;
         boot_mds = b1s;
         boot_bos = b0s;
+
+        pds = circ_mean(b2s')';
+        % Build vector of distances from mean for each channel
+        ang_dist = boot_pds-pds(:,ones(1,numIters));
+        ang_dist(ang_dist>pi) = ang_dist(ang_dist>pi)-2*pi;
+        ang_dist(ang_dist<-pi) = ang_dist(ang_dist<-pi)+2*pi;
         
-        % find confidence bounds and return as sig
-        b2s = sort(b2s,2);
-        ci_sig = [b2s(:,ceil(numIters - confLevel*numIters)), b2s(:,floor(confLevel*numIters))];
+        % sort vectors along angle distance for each unit
+        ang_dist_sort = sort(ang_dist,2);
+        
+        % calculate index range for 2.5 to 97.5 percent
+        ang_ind_low = ceil(numIters*(1-confLevel)/2);
+        ang_ind_high = floor(numIters*confLevel);
+        if ang_ind_low < 1
+            ang_ind_low = 1;
+        end
+        % Calculate confidence bounds (vector, each element corresponds to a
+        % channel)
+        pd_sig = [ang_dist_sort(:,ang_ind_low) + pds, ang_dist_sort(:,ang_ind_high) + pds];
+        pd_sig(pd_sig>pi) = pd_sig(pd_sig>pi)-2*pi;
+        pd_sig(pd_sig<-pi) = pd_sig(pd_sig<-pi)+2*pi;
+        
         
         b1s = sort(b1s,2);
         md_sig = [b1s(:,ceil(numIters - confLevel*numIters)), b1s(:,floor(confLevel*numIters))];
@@ -117,7 +149,7 @@ switch lower(sigTest{1})
 
         b0s = mean(b0s,2);
         b1s = mean(b1s,2);
-        b2s = mean(b2s,2);
+        b2s = circ_mean(b2s')';
         
         tunCurves = [b0s,b1s,b2s];
         
@@ -128,18 +160,20 @@ switch lower(sigTest{1})
         for i = 1:size(fr,2)
             ap(i) = anova1(fr(:,i),theta(:,i),'off');
         end
-        ci_sig = ap <= confLevel;
-        md_sig = [];
-        bo_sig = [];
-        tunCurves = regressTCs(fr,theta,doPlots);
+        pd_sig = ap <= confLevel;
+        md_sig = [NaN,NaN];
+        bo_sig = [NaN,NaN];
+        [tunCurves,rs] = regressTCs(fr,theta,doPlots);
 
     otherwise
         % Don't do any significance testing
-        tunCurves = regressTCs(fr,theta,doPlots);
-        ci_sig = [];
-        md_sig = [];
-        bo_sig = [];
+        [tunCurves,rs] = regressTCs(fr,theta,doPlots);
+        pd_sig = [NaN,NaN];
+        md_sig = [NaN,NaN];
+        bo_sig = [NaN,NaN];
 end
+
+confBounds = {bo_sig,md_sig,pd_sig};
 
 end %end main function
 

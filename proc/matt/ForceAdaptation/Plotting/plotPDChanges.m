@@ -6,9 +6,10 @@ epochs = {'BL','AD','WO'};
 
 baseDir = bl.meta.out_directory;
 useDate = bl.meta.recording_date;
-paramFile = fullfile(baseDir, [ useDate '_plotting_parameters.dat']);
+paramFile = fullfile(baseDir, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
+minFR = str2double(params.minimum_firing_rate{1});
 clear params;
 
 arrays = bl.meta.arrays;
@@ -17,7 +18,7 @@ arrays = bl.meta.arrays;
 fh = figure;
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
-
+    
     tuneMethods = fieldnames(classes.(currArray));
     tuningPeriods = fieldnames(classes.(currArray).(tuneMethods{1}));
     
@@ -27,16 +28,17 @@ for iArray = 1:length(arrays)
     for iPeriod = 1:length(tuningPeriods)
         
         tune_idx = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).tuned_cells;
-        tune_sg = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
+        tune_sg = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
         tuned_cells = tune_sg(tune_idx,:);
         
         % get unit guides and pd matrices
-        sg_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
-        sg_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
-        sg_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
+        sg_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
+        tempad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod});
+        sg_ad = tempad(end).sg;
+        sg_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
         
         pds_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;
-        pds_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;
+        pds_ad = tempad(end).pds;
         pds_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;
         
         % check to make sure the unit guides are okay
@@ -52,6 +54,7 @@ for iArray = 1:length(arrays)
         allPDs = [];
         allDiffPDs = [];
         for unit = 1:size(sg_master,1)
+            
             % if the cell meets the tuning criteria
             %   and also if the cell is tracked across epochs
             if ismember(sg_master(unit,:),tuned_cells,'rows')
@@ -72,7 +75,7 @@ for iArray = 1:length(arrays)
                     classInd = tune_sg(:,1)==sg_master(unit,1) & tune_sg(:,2)==sg_master(unit,2);
                     
                     % color the traces based on the classification
-                    useColor = classColors{cellClasses(classInd,3)};
+                    useColor = classColors{cellClasses(classInd,1)};
                     
                     plot([0 1 2],diffPDs.*180/pi,useColor,'LineWidth',2);
                     plot([0 1 2],diffPDs.*180/pi,[useColor 'd'],'LineWidth',3);

@@ -15,18 +15,24 @@ clc;
 %     'Chewie','2013-12-18','FF','RT'; ... % S
 %     'Chewie','2013-12-19','VR','CO'; ... % S
 %     'Chewie','2013-12-20','VR','CO'};   % S
-% 
+%
 % doFiles = {'MrT','2013-10-11','VR','RT'};
 
-doFiles = {'Mihili','2014-01-20','VR','CO'};
-fileRoot = 'Z:\Mihili_12A3\Matt\M1\CerebusData\';
-outRoot = 'Z:\Mihili_12A3\Matt\M1\BDFStructs\';
+doFiles = {'Mihili','2014-01-15','VR','RT'; ...
+           'Mihili','2014-02-03','FF','CO'; ...
+           'Mihili','2014-02-17','FF','CO'};
 
 uarray = 'M1';
-% 
+
+
+fileRoot = ['Z:\Mihili_12A3\Matt\' uarray '\CerebusData\'];
+outRoot = ['Z:\Mihili_12A3\Matt\' uarray '\BDFStructs\'];
+
+
+%
 % fileRoot = 'Z:\Chewie_8I2\Matt\M1\CerebusData\';
 % outRoot = 'Z:\Chewie_8I2\Matt\M1\BDFStructs\';
-% 
+%
 % fileRoot = 'Z:\MrT_9I4\Matt\PMd\CerebusData\';
 % outRoot = 'Z:\MrT_9I4\Matt\PMd\BDFStructs\';
 
@@ -40,7 +46,7 @@ for i = 1:size(doFiles,1)
     file_path = fullfile(fileRoot,useDate,filesep);
     out_path = fullfile(outRoot,useDate,filesep);
     umonk = doFiles{i,1};
-
+    
     utask = doFiles{i,4};
     upert = doFiles{i,3};
     udate = [m d y];
@@ -48,33 +54,35 @@ for i = 1:size(doFiles,1)
     file_prefix = [umonk '_' uarray '_' utask '_' upert '_'];
     
     % merge them
-    mergingStatus = processSpikesForSorting(file_path,file_prefix,false);
+    %     mergingStatus = processSpikesForSorting(file_path,file_prefix,false);
     
-%     % Run processSpiesForSorting again to separate sorted spikes into their
-%     % original files.
-%     disp('Splitting sorted file into NEVs...');
-%     mergingStatus = processSpikesForSorting(file_path,file_prefix,true);
+        % Run processSpiesForSorting again to separate sorted spikes into their
+        % original files.
+        disp('Splitting sorted file into NEVs...');
+        mergingStatus = processSpikesForSorting(file_path,file_prefix,true);
     
     
     
-%     % this section will make each file into its own BDF
-%     if ~exist(out_path, 'dir')
-%         disp('Creating BDF directory...');
-%         mkdir(out_path);
-%     end
-%     
-%     disp('Creating BL BDF...');
-%     out_struct = get_nev_mat_data([file_path file_prefix 'BL_'],3);
-%     save([out_path file_prefix 'BL_' udate '.mat'],'out_struct');
-%     
-%     disp('Creating AD BDF...');
-%     out_struct = get_nev_mat_data([file_path file_prefix 'AD_'],3);
-%     save([out_path file_prefix 'AD_' udate '.mat'],'out_struct');
-%     
-%     disp('Creating WO BDF...');
-%     out_struct = get_nev_mat_data([file_path file_prefix 'WO_'],3);
-%     save([out_path file_prefix 'WO_' udate '.mat'],'out_struct');
+    % this section will make each file into its own BDF
+    if ~exist(out_path, 'dir')
+        disp('Creating BDF directory...');
+        mkdir(out_path);
+    end
     
+    disp('Creating BL BDF...');
+    out_struct = get_nev_mat_data([file_path file_prefix 'BL_'],3);
+    save([out_path file_prefix 'BL_' udate '.mat'],'out_struct');
+    clear out_struct;
+    
+    disp('Creating AD BDF...');
+    out_struct = get_nev_mat_data([file_path file_prefix 'AD_'],3);
+    save([out_path file_prefix 'AD_' udate '.mat'],'out_struct');
+    clear out_struct;
+    
+    disp('Creating WO BDF...');
+    out_struct = get_nev_mat_data([file_path file_prefix 'WO_'],3);
+    save([out_path file_prefix 'WO_' udate '.mat'],'out_struct');
+    clear out_struct;
     
 end
 

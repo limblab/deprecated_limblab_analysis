@@ -80,9 +80,11 @@ switch lower(compMethod)
             for i = 1:length(vals)
                 val1 = vals{i};
                 ci1 = val1(unit,2:3);
+                ci1 = sort(ci1);
                 for j = i+1:length(vals)
                     val2 = vals{j};
                     ci2 = val2(unit,2:3);
+                    ci2 = sort(ci2);
                     
                     % do the confidence intervals overlap?
                     overlap = range_intersection(ci1,ci2);

@@ -1,4 +1,4 @@
-function [data, useUnsorted] = makeDataStruct(expParamFile, fileType, convertNEVFiles, useUnsorted)
+function [data, useUnsorted] = makeDataStruct(expParamFile,dataDir,outDir,fileType, convertNEVFiles, useUnsorted)
 % MAKEDATASTRUCT  Create general data struct from Cerebus data
 %
 %   Loads data recorded on a session and converts into my proprietary data
@@ -6,6 +6,10 @@ function [data, useUnsorted] = makeDataStruct(expParamFile, fileType, convertNEV
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
+%   dataDir: (string) root directory where data is kept
+%   outDir: (string) root directory for output
+%   fileType: (string) 'nev' or 'nevnsx'
+%   convertNEVFiles: (bool) whether to convert NEV files to BDF
 %   useUnsorted: (bool) whether to include unsorted units
 %
 % OUTPUTS:
@@ -27,11 +31,11 @@ function [data, useUnsorted] = makeDataStruct(expParamFile, fileType, convertNEV
 % highest channel to expect
 maxChannel = 128;
 
-if nargin < 4
+if nargin < 6
     useUnsorted = false; %by default, exclude unit IDs of 0
-    if nargin < 3
+    if nargin < 5
         convertNEVFiles = true;
-        if nargin < 2
+        if nargin < 4
             fileType = 'nev';
             if nargin < 1
                 error('No parameter file provided');
@@ -45,8 +49,6 @@ end
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(expParamFile);
-baseDir = params.base_dir{1};
-outDir = params.out_dir{1};
 useDate = params.date{1};
 monkey = params.monkey{1};
 useArray = params.arrays;
@@ -63,7 +65,7 @@ clear params
 
 % convert the file with continuous data into bdf if not done so
 if convertNEVFiles
-    convertDataToBDF(fullfile(baseDir,bdfArray),useDate);
+    convertDataToBDF(fullfile(dataDir,bdfArray),useDate);
 end
 
 %% start building the structs, new file for each epoch
@@ -88,9 +90,9 @@ for iEpoch = 1:length(epochs)
     d = useDate(9:10);
     
     bdfName = [monkey '_' bdfArray '_' task '_' adaptType '_' currEpoch '_' m d y '.mat'];
-    outName = [task '_' adaptType '_' currEpoch '_' y '-' m '-' d '.mat'];
+    outName = [task '_' adaptType '_' currEpoch '_' useDate '.mat'];
     
-    bdfPath = fullfile(baseDir,bdfArray,'BDFStructs',useDate);
+    bdfPath = fullfile(dataDir,bdfArray,'BDFStructs',useDate);
     outPath = fullfile(outDir,useDate);
     bdfFile = fullfile(bdfPath,bdfName);
     outFile = fullfile(outPath,outName);
@@ -126,7 +128,7 @@ for iEpoch = 1:length(epochs)
     %% Turn that into a movement table
     if strcmpi(tempTask,'RT')
         % rotate position to get target directions
-
+        
         if strcmpi(adaptType,'VR') || strcmpi(adaptType,'VRFF')
             R = [cos(rotationAngle) -sin(rotationAngle); sin(rotationAngle) cos(rotationAngle)];
             newPos = zeros(size(pos));
@@ -161,20 +163,21 @@ for iEpoch = 1:length(epochs)
         
         switch fileType
             case 'nev' % loading the data from nev files
-                cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.nev'];
-                cerPath = fullfile(baseDir,currArray,'CerebusData',useDate);
-                cerFile = fullfile(cerPath,cerName);
                 
-                
-                if ~exist(cerFile,'file') % probably not sorted, so do this
-                    disp('Could not find file, checking for unsorted version...');
-                    cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '.nev'];
-                    cerPath = fullfile(baseDir,currArray,'CerebusData',useDate);
+                try
+                    cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '-s.nev'];
+                    cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
                     cerFile = fullfile(cerPath,cerName);
-                    useUnsorted = true; % include unsorted units since none will be sorted
                     
-                    if ~exist(cerFile,'file') % now we're really in trouble
-                        error('ERROR: Could not find either a sorted or unsorted file with the specified name.');
+                    if ~exist(cerFile,'file') % probably not sorted, so do this
+                        error('ERROR: Could not find either a NEVNSx file with the specified name.');
+                    end
+                catch
+                    cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.nev'];
+                    cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                    cerFile = fullfile(cerPath,cerName);
+                    if ~exist(cerFile,'file') % probably not sorted, so do this
+                        error('ERROR: Could not find either a NEVNSx file with the specified name.');
                     end
                 end
                 
@@ -250,14 +253,14 @@ for iEpoch = 1:length(epochs)
                             id = [str2double(chanName(isstrprop(chanName,'digit'))), iu];
                             sg = [sg; id];
                             
-                            u.(chanName).(['unit' num2str(units(iu))]).id = id;
-                            u.(chanName).(['unit' num2str(units(iu))]).wf = wf;
-                            u.(chanName).(['unit' num2str(units(iu))]).ts = ts;
-                            u.(chanName).(['unit' num2str(units(iu))]).ns = ns;
-                            u.(chanName).(['unit' num2str(units(iu))]).p2p = p2p;
-                            u.(chanName).(['unit' num2str(units(iu))]).misi = misi;
-                            u.(chanName).(['unit' num2str(units(iu))]).mfr = mfr;
-                            u.(chanName).(['unit' num2str(units(iu))]).offline_sorter_channel = channel;
+                            u(unitCount).id = id;
+                            u(unitCount).wf = wf;
+                            u(unitCount).ts = ts;
+                            u(unitCount).ns = ns;
+                            u(unitCount).p2p = p2p;
+                            u(unitCount).misi = misi;
+                            u(unitCount).mfr = mfr;
+                            u(unitCount).offline_sorter_channel = channel;
                             
                             
                         end
@@ -271,18 +274,28 @@ for iEpoch = 1:length(epochs)
                 
                 % store unit data in the struct
                 data.(currArray).units = u;
-                data.(currArray).unit_guide = sg;
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                data.(currArray).sg = sg;
+                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             case 'nevnsx' % loading the data from nevnsx structs
                 nevnsxSampRate = 30000;
                 
-                cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.mat'];
-                cerPath = fullfile(baseDir,currArray,'CerebusData',useDate);
-                cerFile = fullfile(cerPath,cerName);
-                
-                if ~exist(cerFile,'file') % probably not sorted, so do this
-                    error('ERROR: Could not find either a NEVNSx file with the specified name.');
+                %                 cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.mat'];
+                try
+                    cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '_' filenum '-s.mat'];
+                    cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                    cerFile = fullfile(cerPath,cerName);
+                    
+                    if ~exist(cerFile,'file') % probably not sorted, so do this
+                        error('ERROR: Could not find either a NEVNSx file with the specified name.');
+                    end
+                catch
+                    cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '-s.mat'];
+                    cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
+                    cerFile = fullfile(cerPath,cerName);
+                    if ~exist(cerFile,'file') % probably not sorted, so do this
+                        error('ERROR: Could not find either a NEVNSx file with the specified name.');
+                    end
                 end
                 
                 load(cerFile,'NEV');
@@ -335,14 +348,14 @@ for iEpoch = 1:length(epochs)
                             id = [double(uelecs(channel)), iu];
                             sg = [sg; id];
                             
-                            u.(chanName).(['unit' num2str(units(iu))]).id = id;
-                            u.(chanName).(['unit' num2str(units(iu))]).wf = wf;
-                            u.(chanName).(['unit' num2str(units(iu))]).ts = ts;
-                            u.(chanName).(['unit' num2str(units(iu))]).ns = ns;
-                            u.(chanName).(['unit' num2str(units(iu))]).p2p = p2p;
-                            u.(chanName).(['unit' num2str(units(iu))]).misi = misi;
-                            u.(chanName).(['unit' num2str(units(iu))]).mfr = mfr;
-                            u.(chanName).(['unit' num2str(units(iu))]).offline_sorter_channel = channel;
+                            u(unitCount).id = id;
+                            u(unitCount).wf = wf;
+                            u(unitCount).ts = ts;
+                            u(unitCount).ns = ns;
+                            u(unitCount).p2p = p2p;
+                            u(unitCount).misi = misi;
+                            u(unitCount).mfr = mfr;
+                            u(unitCount).offline_sorter_channel = channel;
                             
                             
                         end
@@ -354,7 +367,7 @@ for iEpoch = 1:length(epochs)
                 
                 % store unit data in the struct
                 data.(currArray).units = u;
-                data.(currArray).unit_guide = sg;
+                data.(currArray).sg = sg;
                 
         end
         
@@ -367,7 +380,11 @@ for iEpoch = 1:length(epochs)
     disp('Writing data to struct...')
     % has continuously sampled data
     c.t = t;
-    c.force = out_struct.force(:,2:3);
+    if isfield(out_struct,'force')
+        c.force = out_struct.force(:,2:3);
+    else
+        c.force = [];
+    end
     c.pos = pos;
     c.vel = vel;
     c.acc = acc;

@@ -25,50 +25,63 @@ mrt_data = {'MrT','2013-08-19','FF','CO'; ...   % S x
             'MrT','2013-10-11','VR','RT'};      % S x - 45 degree visual rotation};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Chewie
-% Visual rotation days
-vr_goodDays = {'Chewie','2013-10-03','VR','CO' ... % S ?
-               'Chewie','2013-10-09','VR','RT' ... % S x
-               'Chewie','2013-10-10','VR','CO' ... % S ?
-               'Chewie','2013-10-11','VR','RT' ... % S x
-               'Chewie','2013-12-12','VR','RT' ... % S
-               'Chewie','2013-12-13','VR','RT' ... % S
-               'Chewie','2013-12-19','VR','CO' ... % 
-               'Chewie','2013-12-20','VR','CO'};   % 
-
-% Force field days
-ff_goodDays = {'Chewie','2013-10-22','FF','CO' ... % S ?
-               'Chewie','2013-10-23','FF','CO' ... % S ?
-               'Chewie','2013-10-28','FF','RT' ... % S x
-               'Chewie','2013-10-29','FF','RT' ... % S x
-               'Chewie','2013-10-31','FF','CO' ... % S ?
-               'Chewie','2013-11-01','FF','CO' ... % S ?
-               'Chewie','2013-12-03','FF','CO' ... % S
-               'Chewie','2013-12-04','FF','CO' ... % S
-               'Chewie','2013-12-09','FF','RT' ... % S
-               'Chewie','2013-12-10','FF','RT' ... % S
-               'Chewie','2013-12-17','FF','RT' ... % 
-               'Chewie','2013-12-18','FF','RT'};   % 
-               
-
-           
-           
-ff_iffyDays = {'2013-10-17', ... % S RT 0.13 force mag
-              '2013-10-18'};    % S RT 0.1 force mag
+%%% Chewie 
+chewie_data = {'Chewie','2013-10-03','VR','CO'; ... %1  S ?
+               'Chewie','2013-10-09','VR','RT'; ... %2  S x
+               'Chewie','2013-10-10','VR','RT'; ... %3  S ?
+               'Chewie','2013-10-11','VR','RT'; ... %4  S x
+               'Chewie','2013-10-22','FF','CO'; ... %5  S ?
+               'Chewie','2013-10-23','FF','CO'; ... %6  S ?
+               'Chewie','2013-10-28','FF','RT'; ... %7  S x
+               'Chewie','2013-10-29','FF','RT'; ... %8  S x
+               'Chewie','2013-10-31','FF','CO'; ... %9  S ?
+               'Chewie','2013-11-01','FF','CO'; ... %10 S ?
+               'Chewie','2013-12-03','FF','CO'; ... %11 S
+               'Chewie','2013-12-04','FF','CO'; ... %12 S
+               'Chewie','2013-12-09','FF','RT'; ... %13 S
+               'Chewie','2013-12-10','FF','RT'; ... %14 S
+               'Chewie','2013-12-12','VR','RT'; ... %15 S
+               'Chewie','2013-12-13','VR','RT'; ... %16 S
+               'Chewie','2013-12-17','FF','RT'; ... %17 S
+               'Chewie','2013-12-18','FF','RT'; ... %18 S
+               'Chewie','2013-12-19','VR','CO'; ... %19 S
+               'Chewie','2013-12-20','VR','CO'};    %20 S
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mihili
-% Force field days
-ff_goodDays = {};
-
-% Visual rotation days
-vr_goodDays = {};
-
+mihili_data = {'Mihili','2014-01-14','VR','RT'; ... %1  S(M-P)
+               'Mihili','2014-01-15','VR','RT'; ... %2  S(M-P)
+               'Mihili','2014-01-16','VR','RT'; ... %3  
+               'Mihili','2014-02-03','FF','CO'; ... %4  S(M-P)
+               'Mihili','2014-02-14','FF','RT'; ... %5  S(M-P)
+               'Mihili','2014-02-17','FF','CO'; ... %6  S(M-P)
+               'Mihili','2014-02-18','FF','CO'; ... %7  S(M-P) - Did both perturbations
+               'Mihili','2014-02-18','VR','CO'; ... %8  S(M-P) - Did both perturbations
+               'Mihili','2014-02-21','FF','RT'; ... %9  S(M-P)
+               'Mihili','2014-02-24','FF','RT'; ... %10 S(M-P) - Did both perturbations
+               'Mihili','2014-02-24','VR','RT'; ... %11 S(M-P) - Did both perturbations
+               'Mihili','2014-03-03','VR','CO'; ... %12 S(M-P)
+               'Mihili','2014-03-04','VR','CO'; ... %13 
+               'Mihili','2014-03-06','VR','CO'; ... %14 
+               'Mihili','2014-03-07','FF','CO'};    %15 S(M-P)
         
+mihili_iffyDays = {'Mihili','2014-01-17','VR','RT'; ... % Poor work ethic in washout, so it's really long... might be useable if needed
+                   'Mihili','2014-01-20','VR','CO'};    % Adaptation period is half as short as it should be. Maybe not a total waste though
+               %%% ALSO A FEW PARTIAL DAYS WITH NO WASHOUT
+mihili_partialDays = {'Mihili','2014-02-11','FF','CO'; ...
+                      'Mihili','2014-02-22','FF','RT'; ...
+                      'Mihili','2014-02-25','VR','CO'; ...
+                      'Mihili','2014-02-27','VR','CO'; ...
+                      'Mihili','2014-02-28','VR','CO'};
+                   
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bad data
-mrt_ff_iffyDays = {'2013-08-27', ... %   RT - poor work ethic, but might be good?
-               '2013-08-28'};    %   CO - poor work ethic, adaptation period is a bit short
-    
-mrt_ff_badDays = {'2013-08-13', ...  % S CO - force field at 90 degrees
-              '2013-08-14'};     % S RT - force field changed partway through
+% mrt_ff_iffyDays = {'2013-08-27', ... %   RT - poor work ethic, but might be good?
+%                    '2013-08-28'};    %   CO - poor work ethic, adaptation period is a bit short
+%     
+% mrt_ff_badDays = {'2013-08-13', ...  % S CO - force field at 90 degrees
+%                    '2013-08-14'};     % S RT - force field changed partway through
+% 
+% chewie_iffyDays = {'2013-10-17', ... % S RT 0.13 force mag
+%                    '2013-10-18'};    %   RT 0.1 force mag

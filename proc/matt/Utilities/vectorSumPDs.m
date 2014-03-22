@@ -1,4 +1,4 @@
-function [pds,sig] = vectorSumPDs(fr,theta,sigTest,varargin)
+function [pds,pd_cis,boot_pds] = vectorSumPDs(fr,theta,sigTest,varargin)
 % VECTORSUMPDS Finds preferred direction of neural activity based on firing
 % rate and direction data. Can perform different statistical tests.
 %
@@ -77,8 +77,9 @@ switch lower(sigTest{1})
         
         % find confidence bounds and return as sig
         pds = sort(pds,2);
-        sig = [pds(:,ceil(numIters - confLevel*numIters)), pds(:,floor(confLevel*numIters))];
+        pd_cis = [pds(:,ceil(numIters - confLevel*numIters)), pds(:,floor(confLevel*numIters))];
         
+        boot_pds = pds;
         pds = mean(pds,2);
         
     case 'anova'
@@ -88,14 +89,14 @@ switch lower(sigTest{1})
         for i = 1:size(fr,2)
             ap(i) = anova1(fr(:,i),theta(:,i),'off');
         end
-        sig = ap <= confLevel;
+        pd_cis = ap <= confLevel;
         
         pds = vectorTCs(fr,theta,doPlots);
 
     otherwise
         % Don't do any significance testing
         pds = vectorTCs(fr,theta,doPlots);
-        sig = [];
+        pd_cis = [];
 end
 
 end %end main function

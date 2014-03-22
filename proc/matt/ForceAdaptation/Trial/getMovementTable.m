@@ -1,10 +1,10 @@
-function mt = getMovementTable(tt,task,t,pos)
+function [mt,targcent] = getMovementTable(tt,task)
 
-if nargin < 4 && strcmp(task,'RT')
-    error('position data not provided')
-end
+% if nargin < 4 && strcmp(task,'RT')
+%     error('position data not provided')
+% end
 
-% [ target angle, on_time, go cue, move_time, peak_time, end_time]
+% [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
 
 switch task
     case 'CO'
@@ -19,6 +19,7 @@ switch task
         %    12: Movement end time
         %    13: Trial End time
         mt = -1*ones(size(tt,1),6);
+        targcent = -1*ones(size(tt,1),2);
         for iTrial = 1:size(tt,1)
             mt(iTrial,:) = [tt(iTrial,3),...
                 tt(iTrial,8),...
@@ -26,6 +27,12 @@ switch task
                 tt(iTrial,10),...
                 tt(iTrial,11),...
                 tt(iTrial,13)];
+            
+            % x and y centers
+            x = tt(iTrial,6)-tt(iTrial,4);
+            y = tt(iTrial,5)-tt(iTrial,7);
+            targcent(iTrial,1) = tt(iTrial,4)+abs(x)/2;
+            targcent(iTrial,2) = tt(iTrial,7)+abs(y)/2;
         end
         
     case 'RT'
@@ -38,6 +45,8 @@ switch task
         numMoves = numTargets - 1;
 
         mt = -1*ones(numMoves*size(tt,2),6);
+        targcent = -1*ones(numMoves*size(tt,2),2);
+        
         for iTrial = 1:size(tt,1)
             % we don't count movement to first target... think of it as
             % center target in center out paradigm
@@ -90,11 +99,15 @@ switch task
                     tt(iTrial,2+5*(iTarg-1)), ...  %on time
                     tt(iTrial, 2+5*(iTarg-1):2+5*(iTarg-1)+2), ... % go cue, move time, peak time
                     tt(iTrial,2+5*(iTarg-1)+5)]; % trial end time
+                
+                targcent(numMoves*(iTrial-1) + iTarg-1,1) = xc2;
+                targcent(numMoves*(iTrial-1) + iTarg-1,2) = yc2;
             end
         end
         
         % remove any bad trials. NaNs sometimes pop up here if there is no
         % peak or onset identified
+        targcent(any(isnan(mt),2),:) = [];
         mt(any(isnan(mt),2),:) = [];
         
     otherwise

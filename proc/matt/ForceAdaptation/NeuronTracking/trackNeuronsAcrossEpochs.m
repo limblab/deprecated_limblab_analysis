@@ -1,4 +1,4 @@
-function tracking = trackNeuronsAcrossEpochs(expParamFile,criteria)
+function tracking = trackNeuronsAcrossEpochs(expParamFile,outDir,criteria)
 % TRACKNEURONS  Run empirical KS test to check for stability of neurons
 %
 %   This function will allow you to track cells across a session for the
@@ -6,6 +6,7 @@ function tracking = trackNeuronsAcrossEpochs(expParamFile,criteria)
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
+%   outDir: (string) directory for output
 %   criteria: (cell array of strings) for significance, 'isi' and/or 'wf'
 %
 % OUTPUTS:
@@ -28,14 +29,13 @@ end
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(expParamFile);
-baseDir = params.out_dir{1};
 useDate = params.date{1};
 taskType = params.task{1};
 adaptType = params.adaptation_type{1};
 arrays = params.arrays;
 clear params
 
-dataPath = fullfile(baseDir,useDate);
+dataPath = fullfile(outDir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Loading data to track neurons...')

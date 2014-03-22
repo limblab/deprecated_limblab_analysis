@@ -1,4 +1,4 @@
-function html = makeSummaryReport(expParamFile,paramSetName,useUnsorted,html)
+function html = makeSummaryReport(expParamFile,outDir,paramSetName,useUnsorted,sigMethod,html)
 % NEURONREPORTS  Constructs html document to summarize a session's data
 %
 %   This function will load processed data and generate html for a summary
@@ -6,6 +6,7 @@ function html = makeSummaryReport(expParamFile,paramSetName,useUnsorted,html)
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
+%   outDir: (string) directory for output
 %   useUnsorted: (bool) will skip neuron stuff if file was not sorted
 %   html: (string) can be used to stack up files
 %
@@ -26,26 +27,27 @@ function html = makeSummaryReport(expParamFile,paramSetName,useUnsorted,html)
 
 % set some parameters
 tuningPeriods = '';
-tuningMethods = {'regression','nonparametric'};
-sigMethod = 'regression'; %what tuning method to look for for significance
-adaptationMetric = 'angle_error';
+% tuningMethods = {'regression','nonparametric'};
+adaptationMetrics = {'angle_error','curvature','time_to_target'};
 
 imgWidth = 300; %pixels
 cssLoc = 'Z:\MrT_9I4\Matt\mainstyle.css';
 tableColors = {'#ff55ff','#55ffff','#ffff55','#55aaaa','#eeee77','#cccccc'};
-classNames = {'non-adapting','adapting','memory I','memory II','other'};
+classNames = {'non-adapting','adapting','memory I','memory II','other','N/A'};
 
 newHTML = false;
-if nargin < 4
+if nargin < 6
     newHTML = true;
     html = [];
+    if nargin < 5
+        sigMethod = 'regression';
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(expParamFile);
-baseDir = params.out_dir{1};
 useDate = params.date{1};
 arrays = params.arrays;
 monkey = params.monkey{1};
@@ -58,14 +60,14 @@ clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Load some more parameters
-paramFile = fullfile(baseDir, useDate, paramSetName, [ useDate '_' paramSetName '_tuning_parameters.dat']);
+paramFile = fullfile(outDir, useDate, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
 ciSig = str2double(params.ci_significance{1});
 minFR = str2double(params.minimum_firing_rate{1});
 clear params;
 
-dataPath = fullfile(baseDir,useDate);
+dataPath = fullfile(outDir,useDate);
 genFigPath = fullfile(dataPath,'general_figs');
 figPath = fullfile(dataPath,paramSetName,'figs');
 
@@ -94,7 +96,7 @@ end
 disp('Done. Writing html...')
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if isempty(tuningMethods) || ~exist('tuningMethods','var')
+if  ~exist('tuningMethods','var') || isempty(tuningMethods)
     tuningMethods = fieldnames(classes.(arrays{1}));
 end
 if ~iscell(tuningMethods)
@@ -118,7 +120,7 @@ end
 
 %% Make parameter struct
 %   Before writing more html, compile this info into a handy struct
-p = struct('arrays',{arrays},'tuningPeriods',{tuningPeriods},'tuningMethods',{tuningMethods},'figPath',figPath,'genFigPath',genFigPath, 'sigMethod',sigMethod,'adaptationMetric',adaptationMetric, 'epochs', {epochs}, 'adaptType', adaptType, 'taskType', taskType, ...
+p = struct('arrays',{arrays},'tuningPeriods',{tuningPeriods},'tuningMethods',{tuningMethods},'figPath',figPath,'genFigPath',genFigPath, 'sigMethod',sigMethod,'adaptationMetrics',{adaptationMetrics}, 'epochs', {epochs}, 'adaptType', adaptType, 'taskType', taskType, ...
            'forceMag',forceMag,'forceAng',forceAng,'confLevel',confLevel,'ciSig',ciSig,'minFR',minFR,'imgWidth',imgWidth,'tableColors',{tableColors},'classNames',{classNames},'useUnsorted',useUnsorted);
        
 %% Write meta data
@@ -130,7 +132,7 @@ html = strcat(html,['<div id="header"><h1>Data Summary:&nbsp;' monkey '&nbsp; | 
 
 
 %% Make table of contents links
-[html,uElecs,sg] = report_tableOfContents(html,d,tracking,p);
+[html,sg] = report_tableOfContents(html,d,tracking,p);
 
 %% Make summary, maybe with memory cells and stuff? link to the cell then
 html = report_summary(html,d,p);
@@ -160,7 +162,7 @@ if ~useUnsorted
     html = report_pdChanges(html,p);
 
     % Print out data for units
-    html = report_units(html,d,t,classes,tracking,uElecs,sg,p);
+    html = report_units(html,d,t,classes,tracking,sg,p);
 end
 
 %% close up shop

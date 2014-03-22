@@ -1,4 +1,4 @@
-function adaptation = getAdaptationMetrics(expParamFile)
+function adaptation = getAdaptationMetrics(expParamFile,outDir)
 % GETADAPTATIONMETRICS  Gets metrics to show adaptation progression
 %
 %   Current returns mean curvature for each movement and a sliding window
@@ -6,6 +6,7 @@ function adaptation = getAdaptationMetrics(expParamFile)
 %
 % INPUTS:
 %   expParamFile: (string) path to file containing experimental parameters
+%   outDir: (string) directory for output
 %
 % OUTPUTS:
 %   adaptation: (struct) result struct with metrics on adaptation for each
@@ -25,7 +26,6 @@ function adaptation = getAdaptationMetrics(expParamFile)
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = parseExpParams(expParamFile);
-baseDir = params.out_dir{1};
 useDate = params.date{1};
 taskType = params.task{1};
 adaptType = params.adaptation_type{1};
@@ -33,7 +33,7 @@ epochs = params.epochs;
 rotationAngle = str2double(params.rotation_angle{1});
 clear params
 
-dataPath = fullfile(baseDir,useDate);
+dataPath = fullfile(outDir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
@@ -99,6 +99,8 @@ for iEpoch = 1:length(epochs)
     
     load(getFile,'movement_table');
     mt = movement_table;
+%     data = load(getFile);
+%     mt = filterMovementTable(data,'movement',false,[]);
     clear movement_table;
     holdTime = params.hold_time;
     
@@ -192,11 +194,12 @@ for iEpoch = 1:length(epochs)
             curvMeans(tMove,:) = [mean(tempMean) std(tempMean)];
         end
         
-        adaptation.(epochs{iEpoch}).curvature_means = allCurvMeans;
-        adaptation.(epochs{iEpoch}).sliding_curvature_mean = curvMeans;
+        adaptation.(epochs{iEpoch}).curvatures = allCurvMeans;
+        adaptation.(epochs{iEpoch}).curvature_mean = curvMeans;
     end
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if any(ismember(useMetrics,'angle_error'))
+        disp('Getting angle error data...')
         % look at error between angle at peak speed and target angle
         targAngs = mt(:,1);
                 
@@ -211,7 +214,7 @@ for iEpoch = 1:length(epochs)
             % find direction of movement at time of peak speed
             %   compare position and peak to position at start
             pos_start = pos(find(t <= t_start,1,'last'),:);
-            pos_peak = pos(find(t <= t_start+0.3,1,'last'),:);
+            pos_peak = pos(find(t <= t_peak,1,'last'),:);
             pos_end = pos(find(t <= t_end,1,'last'),:);
 
             % get takeoff angle
@@ -238,10 +241,28 @@ for iEpoch = 1:length(epochs)
         end
         
         adaptation.(epochs{iEpoch}).errors = errs;
-        adaptation.(epochs{iEpoch}).sliding_error_mean = errMeans;
+        adaptation.(epochs{iEpoch}).angle_error_mean = errMeans;
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+    if any(ismember(useMetrics,'time_to_target'))
+        disp('Getting time to target data...')
+        % get time to target from movement table
+        % end time minus go cue
+        ttts = mt(:,6)-mt(:,3);
+        
+        % now group error in blocks to track adaptation
+        tttMeans = zeros(length(blockTimes),2);
+        for tMove = 1:length(blockTimes)
+            relMoveInds = blockTimes(tMove):blockTimes(tMove)+behavWin;
+            relTTTs = ttts(relMoveInds,:);
+            
+            tttMeans(tMove,:) = [mean(relTTTs) std(relTTTs)];
+        end
+        
+        adaptation.(epochs{iEpoch}).time_to_target = ttts;
+        adaptation.(epochs{iEpoch}).time_to_target_mean = tttMeans;
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     adaptation.(epochs{iEpoch}).movement_table = mt;
     adaptation.(epochs{iEpoch}).vel = vel;
     adaptation.(epochs{iEpoch}).acc = acc;

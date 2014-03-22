@@ -45,7 +45,7 @@ for iArray = 1:length(arrays)
     
     sg = cell(length(data),1);
     for i = 1:length(data)
-        sg{i} = data{i}.unit_guide;
+        sg{i} = data{i}.sg;
     end
     
     % find units that are not common to all
@@ -53,7 +53,7 @@ for iArray = 1:length(arrays)
     
     % remove those indices
     for i = 1:length(sg)
-        data{i}.unit_guide = setdiff(data{i}.unit_guide, badUnits, 'rows');
+        data{i}.sg = setdiff(data{i}.sg, badUnits, 'rows');
     end
     
     disp(['Comparing cells for ' currArray '...'])

@@ -20,18 +20,6 @@ function plotAdaptationOverTime(varargin)
 
 %%
 % Make curvature plots to show adaptation over time
-% baseDir = 'Z:\MrT_9I4\Matt\ProcessedData\';
-% useDate = {'2013-09-04','RT','VR','9-04'; ...
-%     '2013-09-06','RT','VR','9-06'; ...
-%     '2013-09-10','RT','VR','9-10'; ...
-%     '2013-08-20','RT','FF','8-20'; ...
-%     '2013-08-22','RT','FF','8-22'; ...
-%     '2013-08-30','RT','FF','8-30'};
-baseDir = 'Z:\Chewie_8I2\Matt\ProcessedData\';
-useDate = {'2013-10-29','RT','FF','10-29'; ...
-           '2013-10-28','RT','FF','10-28'};
-%            '2013-10-09','RT','VR','10-09'; ...
-%            '2013-10-11','RT','VR','10-11'};
 
 traceWidth = 2;
 doFiltering = false;
@@ -73,15 +61,18 @@ end
 
 switch lower(useMetric)
     case 'curvature'
-        metricName = 'sliding_curvature_mean';
+        metricName = 'curvature_mean';
     case 'angle_error'
-        metricName = 'sliding_error_mean';
+        metricName = 'angle_error_mean';
+    case 'time_to_target'
+        metricName = 'time_to_target_mean';
     otherwise
         error('Metric not recognized...');
 end
 
 % load plotting parameters
 fontSize = 16;
+stepSize = 5;
 
 minMC = zeros(1,size(useDate,1));
 maxMC = zeros(1,size(useDate,1));
@@ -95,22 +86,11 @@ for iDate = 1:size(useDate,1)
     for iEpoch = 1:length(epochs)
         a = adaptation.(epochs{iEpoch});
         
-%         mC = a.(metricName)(:,1);
+        mC = a.(metricName)(:,1);
         
-        binSize = 60;
-        stepSize = 10;
-        a=adaptation.(epochs{iEpoch}).errors;
-        
-        mC=[];
-        binSize = 30;
-        for i=0:stepSize:length(a)-binSize
-            
-            mC = [mC; mean(a(i+1:i+binSize))];
-        end
-        
-        if strcmpi(epochs{iEpoch},'AD')
-            mC = abs(mC);
-        end
+%         if strcmpi(epochs{iEpoch},'AD')
+%             mC = abs(mC);
+%         end
         
         % low pass filter to smooth out traces
         if doFiltering
@@ -156,6 +136,8 @@ switch useMetric
         ylabel('Curvature (cm^-^1)','FontSize',fontSize);
     case 'angle_error'
         ylabel('Angular error (deg)','FontSize',fontSize);
+    case 'time_to_target'
+        ylabel('Time to target (???)','FontSize',fontSize);
 end
 
 % find max length of each epoch

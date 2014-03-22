@@ -39,11 +39,14 @@ numPlots = length(plotVars)+1;
 figure;
 subplot1(numPlots,1,'Min',[0.1 0.1],'Max',[0.95 0.95],'Gap',[0 0],'FontS',12);
 
+% ignore units that are id 255 or channel greater than 128
+useInds = find(cellfun(@(x) x(2)~=0 && x(2)~=255 && x(1)<=128,{bdf.units.id}));
+
 %Plot the neural rasters
 subplot1(1);
 hold all;
-for unit = 1:length(bdf.units)
-    ts = bdf.units(unit).ts;
+for unit = 1:length(useInds)
+    ts = bdf.units(useInds(unit)).ts;
     ts = ts(ts >= timeWin(1) & ts < timeWin(2));
     plot([ts ts]',[(unit-1).*ones(size(ts)) unit.*ones(size(ts))]','k');
 end

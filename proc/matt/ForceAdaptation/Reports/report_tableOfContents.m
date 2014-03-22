@@ -1,5 +1,5 @@
 % Make table of contents links
-function [html,uElecs,sg] = report_tableOfContents(html,d,tracking,p)
+function [html,allsg] = report_tableOfContents(html,d,tracking,p)
 arrays = p.arrays;
 epochs = p.epochs;
 adaptType = p.adaptType;
@@ -26,6 +26,14 @@ if ~useUnsorted
 end
 
 if ~useUnsorted
+    
+    % set up table for arrays
+    html = strcat(html,'<br><table><tr>');
+    for iArray = 1:length(arrays)
+        html = strcat(html,['<td>' arrays{iArray} '</td>']);
+    end
+    html = strcat(html,'</tr><tr>');
+    
     % if there is M1 and PMd, loop
     for iArray = 1:length(arrays)
         currArray = arrays{iArray};
@@ -35,17 +43,31 @@ if ~useUnsorted
         % check to ensure same units are in all epochs
         unit_guides = cell(size(epochs));
         for iEpoch = 1:length(epochs)
-            unit_guides{iEpoch} = d.(epochs{iEpoch}).(currArray).unit_guide;
+            unit_guides{iEpoch} = d.(epochs{iEpoch}).(currArray).sg;
         end
         badUnits = checkUnitGuides(unit_guides);
         % get the master unit guide
-        sg = d.(epochs{1}).(currArray).unit_guide;
+        sg = d.(epochs{1}).(currArray).sg;
         sg = setdiff(sg,badUnits,'rows');
         
-        % now we have the master list of units included in all epochs
+        allsg{iArray} = sg;
         uElecs = unique(sg(:,1));
         
-        html=strcat(html,[currArray '<br>']);
+%         % add links to all units for this array
+%         html = strcat(html,'<td>');
+%         for unit = 1:size(sg,1)
+%             html = strcat(html,['<a href="#' currArray 'elec' num2str(sg(unit,1)) 'unit' num2str(sg(unit,2)) '">elec-' num2str(sg(unit,1)) '_unit-' num2str(sg(unit,2)) '</a>']);
+%             
+%             relCompInd = useComp(:,1)==sg(unit,1)+.1*sg(unit,2);
+%             if any(diff(useComp(relCompInd,:)))
+%                 html = strcat(html,'<--');
+%             end
+%             html = strcat(html,'<br>');
+%         end
+%         html = strcat(html,'</td>');
+
+                
+        html=strcat(html,'<td>');
         for i = 1:length(uElecs)
             idx = sg(:,1)==uElecs(i);
             units = sg(idx,2);
@@ -64,7 +86,11 @@ if ~useUnsorted
             end
             html = strcat(html,'<br>');
         end
+        html = strcat(html,'</td>');
+        
+        
     end
+    html = strcat(html,'</tr></table>');
     html = strcat(html,['*unit tuned for direction in all epochs by bootstrapping regression of PD at ' num2str(confLevel.*100) '% CI']);
 end
 

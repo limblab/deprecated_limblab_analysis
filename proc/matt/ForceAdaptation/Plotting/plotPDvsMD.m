@@ -6,7 +6,7 @@ epochs = {'BL','AD','WO'};
 
 baseDir = bl.meta.out_directory;
 useDate = bl.meta.recording_date;
-paramFile = fullfile(baseDir, [ useDate '_plotting_parameters.dat']);
+paramFile = fullfile(baseDir, [ useDate '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
 clear params;
@@ -27,13 +27,13 @@ for iArray = 1:length(arrays)
     for iPeriod = 1:length(tuningPeriods)
         
         tune_idx = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).tuned_cells;
-        tune_sg = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
+        tune_sg = classes.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
         tuned_cells = tune_sg(tune_idx,:);
         
         % get unit guides and pd matrices
-        sg_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
-        sg_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
-        sg_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
+        sg_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
+        sg_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
+        sg_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
         
         pds_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;
         pds_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;
@@ -166,9 +166,9 @@ end
 %     for iPeriod = 1:length(tuningPeriods)
 %
 %         % get unit guides and pd matrices
-%         sg_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
-%         sg_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
-%         sg_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).unit_guide;
+%         sg_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
+%         sg_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
+%         sg_wo = wo.(currArray).(sigMethod).(tuningPeriods{iPeriod}).sg;
 %
 %         pds_bl = bl.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;
 %         pds_ad = ad.(currArray).(sigMethod).(tuningPeriods{iPeriod}).pds;

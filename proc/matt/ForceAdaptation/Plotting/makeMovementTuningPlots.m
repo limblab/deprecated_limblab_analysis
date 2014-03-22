@@ -6,7 +6,7 @@ if nargin < 3
 end
 
 % Load some parameters
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_plotting_parameters.dat']);
+paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 fontSize = str2double(params.font_size{1});
 clear params;
@@ -20,7 +20,7 @@ for iArray = 1:length(useArrays)
     currArray = useArrays{iArray};
     
     % get the spike guide showing electrodes and units
-    sg = data.(currArray).unit_guide;
+    sg = data.(currArray).sg;
     
     % find how many different types of tuning periods there are to plot
     tuningMethods = fieldnames(tuning.(currArray));
@@ -60,34 +60,39 @@ for iArray = 1:length(useArrays)
             
             
         else % in the absence of that...
+            %%% NOTE: THIS CURRENTLY HAS A BUG OF SOME SORT SO DON'T USE
             % doesn't matter which of these I pick as long as it exists
-            if ismember('regression',tuningMethods)
-                useMethod = 'regression';
-            elseif ismember('vectorsum',tuningMethods)
-                useMethod = 'vectorsum';
-            else
-                error('Could not find data')
-            end
-            
-            for unit = 1:size(sg,1)
-                
-                
-                
-                fr = tuning.(currArray).(useMethod).(tuneType).fr(:,unit);
-                theta = tuning.(currArray).(useMethod).(tuneType).theta;
-                utheta = unique(theta);
-                
-                % find the mean firing rate
-                mFR = zeros(size(fr,1),length(utheta));
-                sFR_l = zeros(size(fr,1),length(utheta));
-                sFR_h = zeros(size(fr,1),length(utheta));
-                for it = 1:length(utheta)
-                    relFR = fr(theta==utheta(it));
-                    mFR(unit,it) = mean(relFR);
-                    sFR_l(unit,it) = mFR(unit,it) - std(relFR);
-                    sFR_h(unit,it) = 2*std(relFR);
-                end
-            end
+            error('Nonparametric tuning not found');
+            %             if ismember('regression',tuningMethods)
+            %                 useMethod = 'regression';
+            %             elseif ismember('vectorsum',tuningMethods)
+            %                 useMethod = 'vectorsum';
+            %             else
+            %                 error('Could not find data')
+            %             end
+            %
+            %             for unit = 1:size(sg,1)
+            %
+            %
+            %                 try
+            %                 fr = tuning.(currArray).(useMethod).(tuneType).fr(:,unit);
+            %                 catch
+            %                     keyboard
+            %                 end
+            %                 theta = tuning.(currArray).(useMethod).(tuneType).theta;
+            %                 utheta = unique(theta);
+            %
+            %                 % find the mean firing rate
+            %                 mFR = zeros(size(fr,1),length(utheta));
+            %                 sFR_l = zeros(size(fr,1),length(utheta));
+            %                 sFR_h = zeros(size(fr,1),length(utheta));
+            %                 for it = 1:length(utheta)
+            %                     relFR = fr(theta==utheta(it));
+            %                     mFR(unit,it) = mean(relFR);
+            %                     sFR_l(unit,it) = mFR(unit,it) - std(relFR);
+            %                     sFR_h(unit,it) = 2*std(relFR);
+            %                 end
+            %             end
         end
         
         for unit = 1:size(sg,1)
@@ -98,8 +103,8 @@ for iArray = 1:length(useArrays)
             hold all;
             patch([utheta' fliplr(utheta')].*(180/pi),[sFR_l(unit,:) fliplr(sFR_h(unit,:))],[0.8 0.9 1],'EdgeColor',[0.8 0.9 1]);
             plot(utheta.*(180/pi),mFR(unit,:),'b','LineWidth',2);
-%             plot(utheta.*(180/pi),sFR_l(unit,:),'b--','LineWidth',2);
-%             plot(utheta.*(180/pi),sFR_h(unit,:),'b--','LineWidth',2);
+            %             plot(utheta.*(180/pi),sFR_l(unit,:),'b--','LineWidth',2);
+            %             plot(utheta.*(180/pi),sFR_h(unit,:),'b--','LineWidth',2);
             
             ylabel('Firing Rate (Hz)','FontSize',fontSize);
             xlabel('Movement Direction (deg)','FontSize',fontSize);
