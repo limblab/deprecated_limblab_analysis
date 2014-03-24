@@ -51,7 +51,7 @@ chewie_data = {'Chewie','2013-10-03','VR','CO'; ... %1  S ?
 % Mihili
 mihili_data = {'Mihili','2014-01-14','VR','RT'; ... %1  S(M-P)
                'Mihili','2014-01-15','VR','RT'; ... %2  S(M-P)
-               'Mihili','2014-01-16','VR','RT'; ... %3  
+               'Mihili','2014-01-16','VR','RT'; ... %3  S(M-P)
                'Mihili','2014-02-03','FF','CO'; ... %4  S(M-P)
                'Mihili','2014-02-14','FF','RT'; ... %5  S(M-P)
                'Mihili','2014-02-17','FF','CO'; ... %6  S(M-P)
@@ -62,7 +62,7 @@ mihili_data = {'Mihili','2014-01-14','VR','RT'; ... %1  S(M-P)
                'Mihili','2014-02-24','VR','RT'; ... %11 S(M-P) - Did both perturbations
                'Mihili','2014-03-03','VR','CO'; ... %12 S(M-P)
                'Mihili','2014-03-04','VR','CO'; ... %13 
-               'Mihili','2014-03-06','VR','CO'; ... %14 
+               'Mihili','2014-03-06','VR','CO'; ... %14 S(M)
                'Mihili','2014-03-07','FF','CO'};    %15 S(M-P)
         
 mihili_iffyDays = {'Mihili','2014-01-17','VR','RT'; ... % Poor work ethic in washout, so it's really long... might be useable if needed

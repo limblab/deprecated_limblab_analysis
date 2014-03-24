@@ -102,57 +102,6 @@ switch lower(tuningMethod)
             mds_wo = mds_wo(idx_wo,:);
         end
         
-%         if ~isempty(blt.bos)
-%             bos_bl = blt.bos;
-%             bos_ad = adt.bos;
-%             bos_wo = wot.bos;
-%             
-%             bos_bl = bos_bl(idx_bl,:);
-%             bos_ad = bos_ad(idx_ad,:);
-%             bos_wo = bos_wo(idx_wo,:);
-%         end
-        
-        
-        if isfield(blt,'r_squared') && ~isempty(blt.r_squared)
-            rs_bl = blt.r_squared;
-            rs_ad = adt.r_squared;
-            rs_wo = wot.r_squared;
-            
-            rs_bl = sort(rs_bl(idx_bl,:),2);
-            rs_ad = sort(rs_ad(idx_ad,:),2);
-            rs_wo = sort(rs_wo(idx_wo,:),2);
-            
-            % get 95% CI for each
-            rs_bl = [rs_bl(:,ceil(numIters - confLevel*numIters)), rs_bl(:,floor(confLevel*numIters))];
-            rs_ad = [rs_ad(:,ceil(numIters - confLevel*numIters)), rs_ad(:,floor(confLevel*numIters))];
-            rs_wo = [rs_wo(:,ceil(numIters - confLevel*numIters)), rs_wo(:,floor(confLevel*numIters))];
-            
-        else
-            % glm etc won't have r-squared
-            rs_bl = ones(size(sg_bl,1),1);
-            rs_ad = ones(size(sg_bl,1),1);
-            rs_wo = ones(size(sg_bl,1),1);
-        end
-        
-        % check significance
-        istuned = zeros(size(sg_bl,1),2);
-        for unit = 1:size(sg_bl,1)
-            % only consider cells that are tuned in all epochs
-            t_bl = checkTuningCISignificance(pds_bl(unit,:),ciSig,true);
-            t_ad = checkTuningCISignificance(pds_ad(unit,:),ciSig,true);
-            t_wo = checkTuningCISignificance(pds_wo(unit,:),ciSig,true);
-            
-            % also only consider cells that are described by cosines
-            %   have bootstrapped r2... see if 95% CI is > threshold?
-            t_r_bl = rs_bl(unit,1) > r2Min;
-            t_r_ad = rs_ad(unit,1) > r2Min;
-            t_r_wo = rs_wo(unit,1) > r2Min;
-            
-            % only consider cells that are tuned in all epochs
-            %   first column is CI bound, second is r-squared
-            istuned(unit,:) = [all([t_bl,t_ad,t_wo]), all([t_r_bl,t_r_ad,t_r_wo])];
-        end
-        
         switch lower(compMethod)
             case 'overlap'
                 usePDs = {pds_bl,pds_ad,pds_wo};
@@ -160,9 +109,6 @@ switch lower(tuningMethod)
                 if ~isempty(blt.mds)
                     useMDs = {mds_bl,mds_ad,mds_wo};
                 end
-%                 if ~isempty(blt.bos)
-%                     useBOs = {pds_bl,pds_ad,pds_wo};
-%                 end
             case 'diff'
                 boot_pds_bl = blt.boot_pds;
                 boot_pds_ad = adt.boot_pds;
@@ -183,17 +129,6 @@ switch lower(tuningMethod)
                     boot_mds_wo = boot_mds_wo(idx_wo,:);
                     useMDs = {boot_mds_bl,boot_mds_ad,boot_mds_wo};
                 end
-                
-%                 if ~isempty(blt.bos)
-%                     boot_bos_bl = blt.boot_bos;
-%                     boot_bos_ad = adt.boot_bos;
-%                     boot_bos_wo = wot.boot_bos;
-%                     
-%                     boot_bos_bl = boot_bos_bl(idx_bl,:);
-%                     boot_bos_ad = boot_bos_ad(idx_ad,:);
-%                     boot_bos_wo = boot_bos_wo(idx_wo,:);
-%                     useBOs = {boot_bos_bl,boot_bos_ad,boot_bos_wo};
-%                 end
         end
         
         pd = compareTuningParameter('pd',usePDs,sg_bl,{compMethod,confLevel,numIters});
@@ -203,12 +138,6 @@ switch lower(tuningMethod)
         else
             md = [];
         end
-        
-%         if ~isempty(blt.bos)
-%             bo = compareTuningParameter('bo',useBOs,sg_bl,{compMethod,confLevel,numIters});
-%         else
-%             bo = [];
-%         end
 end
 
 

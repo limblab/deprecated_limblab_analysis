@@ -28,8 +28,8 @@ rewriteFiles  = 1;
 %    date with the actual data
 % processing options
 doDataStruct        = 1;
-doAdaptation        = 1;
-doTracking          = 1;
+doAdaptation        = 0;
+doTracking          = 0;
 % tuning options
 doTuning            = 0;
 doClassification    = 0;
@@ -59,11 +59,10 @@ switch monkey
         dataDir = 'Z:\Chewie_8I2\Matt';
         goodDates = chewie_data(dateInds,2);
     case 'Mihili'
-        dateInds = 1;
+        dateInds = 1:15;
         dataDir = 'Z:\Mihili_12A3\Matt';
         goodDates = mihili_data(dateInds,2);
-        goodDates = {'2014-03-03','2014-02-03','2014-02-17','2014-01-15','2014-02-14','2014-01-14','2014-02-18','2014-02-18-VR','2014-02-24','2014-02-24-VR','2014-02-21'};
-        goodDates = {'2014-01-16'};
+        goodDates = {'2014-03-06'};
     otherwise
         error('Monkey not recognized');
 end

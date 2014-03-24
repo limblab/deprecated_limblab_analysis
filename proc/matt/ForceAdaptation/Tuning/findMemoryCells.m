@@ -57,9 +57,7 @@ saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' us
 
 disp('Loading data to classify cells...')
 tuningFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
-load(tuningFile,'BL');
-load(tuningFile,'AD');
-load(tuningFile,'WO');
+tuning = load(tuningFile);
 
 arrays = BL.meta.arrays;
 
@@ -75,11 +73,12 @@ for iArray = 1:length(arrays)
             elseif strcmpi(tuningMethods{iMethod},'nonparametric')
                 warning(['Classification not supported for ' tuningMethods{iMethod} ' method...']);
             else
-                for iBlock = 1:length(AD.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}))
-                    blt = BL.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod});
-                    adt = AD.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod});
-                    wot = WO.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod});
-                    [cellClass,sg] = classifyCells(blt,adt(iBlock),wot,BL.meta,tuningMethods{iMethod},compMethod,paramSetName);
+                blt = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).BL;
+                adt = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).AD;
+                wot = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).WO;
+                meta = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).meta;
+                for iBlock = 1:length(adt)
+                    [cellClass,sg] = classifyCells(blt,adt(iBlock),meta,tuningMethods{iMethod},compMethod,paramSetName);
                     
                     % get cells that are significantly tuned in all epochs
                     %   first column is PDs, second is MDs

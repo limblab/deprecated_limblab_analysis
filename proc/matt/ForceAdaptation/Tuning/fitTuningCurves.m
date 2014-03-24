@@ -93,35 +93,37 @@ for iEpoch = 1:length(epochs)
                 
                 switch lower(tuningMethods{iMethod})
                     case 'glm' % fit a GLM model
-                        tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName);
-                        
+                        tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).(epochs{iEpoch}) = fitTuningCurves_GLM(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName);
                     case 'nonparametric'
                         % NOT: for now, must do regression (or vectorsum) first
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                            tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = nonparametricTuning(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
+                            tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).(epochs{iEpoch}) = nonparametricTuning(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
                         else
                             disp('WARNING: cannot use whole file for nonparametric tuning method, so skipping this tuning period input');
                         end
                         
                     case 'vectorsum'
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                                tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_VS(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
+                            tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).(epochs{iEpoch}) = fitTuningCurves_VS(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots); 
                         else
                             disp('WARNING: cannot use whole file for vectorsum tuning method, so skipping this tuning period input');
                         end
                         
                     otherwise % do regression of cosine model for period specified in tuneType
                         if ~strcmpi(tuningPeriods{iTune},'file')
-                                tuning.(epochs{iEpoch}).(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
+                            tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).(epochs{iEpoch}) = fitTuningCurves_Reg(data,tuningPeriods{iTune},epochs{iEpoch},useArray,paramSetName,doPlots);
                         else
                             disp('WARNING: cannot use whole file for regression/vectorsum tuning method, so skipping this tuning period input');
                         end
                         
                 end
+                
+                tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iTune}).meta = rmfield(data.meta,'epoch');
+                
             end
         end
     end
-    tuning.(epochs{iEpoch}).meta = data.meta;
+    
 end
 
 % save the new file with tuning info

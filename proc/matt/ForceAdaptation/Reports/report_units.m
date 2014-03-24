@@ -100,7 +100,7 @@ for iArray = 1:length(arrays)
                     for iMethod = 1:length(tuningMethods)
                         if isfield(classes.(currArray).(tuningMethods{iMethod}),tuningPeriods{iPeriod})
                             classBlocks = classes.(currArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod});
-                            tuneBlocks = t.(epochs{iEpoch}).(currArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod});
+                            tuneBlocks = t.(currArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).(epochs{iEpoch});
                             
                             html = strcat(html,'<td><table>');
                             for iBlock = 1:length(tuneBlocks)
