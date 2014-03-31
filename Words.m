@@ -1,6 +1,6 @@
 function w = Words()
 
-w.Start = hex2dec('19');
+w.Start = hex2dec('17');
 
 w.End_Code = hex2dec('20');
 w.Reward = hex2dec('20');

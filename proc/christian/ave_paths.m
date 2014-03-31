@@ -1,4 +1,7 @@
 function [ave_path,ave_fr] = ave_paths(binnedData,time_before,time_after,plot_flag)
+% Calculate the average cursor path and average firing rate around outer target onset
+% for task Wrist Flexion
+
 
 targets      = sort(unique(binnedData.trialtable(:,10)));
 num_targets   = length(targets);

@@ -3,7 +3,7 @@ function [FileNames,PathNames] = getMultipleFiles(varargin)
     MoreFiles = 'Yes';
     FileNames = {};
     PathNames = {};
-    dataPath = 'Z:/';
+    dataPath = '//citadel/data/';
     
     if nargin
         query = varargin{1};

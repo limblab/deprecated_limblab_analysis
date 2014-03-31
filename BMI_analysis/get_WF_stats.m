@@ -74,10 +74,16 @@ for tgt = 1:num_targets
         binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),7),1,'last');
         binstop  = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),8),1,'last');
         rawpath  = binnedData.cursorposbin(binstart:binstop,:);
-
+      
         path_length(trial) = sum(sqrt(sum(diff(rawpath).^2,2)));
         
         numbins  = binstop-binstart;
+        
+        if numbins<2
+            %something is wrong, probably extra reward word in trialtable
+            pause;
+        end
+        
         binpct   = 0:100/numbins:100;
         normpath{trial} = interp1(binpct,rawpath,0:100);
     end
