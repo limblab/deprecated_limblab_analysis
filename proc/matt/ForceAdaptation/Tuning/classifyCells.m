@@ -1,4 +1,7 @@
-function [cellClass,sg_bl] = classifyCells(blt,adt,wot,meta,tuningMethod,compMethod,paramSetName)
+function [cellClass,master_sg] = classifyCells(t,tuningMethod,compMethod,classifierBlocks)
+% cellClass is matrix, rows are units, first column is PD, second column is
+% Modulation depth
+% 
 % first gets a matrix where ones show significant tuning between epochs
 %    BL  AD  WO
 % BL 0   -   -
@@ -20,137 +23,114 @@ function [cellClass,sg_bl] = classifyCells(blt,adt,wot,meta,tuningMethod,compMet
 % shown above is the number that each one will be reduced to.
 %
 % The classification is based on the number shown above (AAA=1,ABA=2,etc)
+%
+% useBlocks: input to specify which tuning blocks to use. For now, must be
+% three element array. For instance, if there is one baseline period, 3
+% adaptation periods, and one washout, and you want to do the
+% classification based on the end of adaptation, do useBlocks=[1 4 5]
+%
+% To compare if there is a significant difference across adaptation in the
+% above case, you might do useBlocks = [2 3 4];
+
+if strcmpi(tuningMethod,'glm')
+    compMethod = 'overlap';
+    disp('Diff comparison method not supported for GLM yet...');
+end
+
+meta = t(1).meta;
 
 paramFile = fullfile(meta.out_directory, [meta.recording_date '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
-ciSig = str2double(params.ci_significance{1});
 confLevel = str2double(params.confidence_level{1});
 numIters = str2double(params.number_iterations{1});
-r2Min = str2double(params.r2_minimum{1});
 clear params;
-
 
 % load the info to classify cells
 cell_classifications;
 
-sg_bl = blt.sg;
-sg_ad = adt.sg;
-sg_wo = wot.sg;
+% get all of the spike guides
+all_sg = {t.sg};
 
-badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
+badUnits = checkUnitGuides(all_sg);
+
+master_sg = setdiff(all_sg{1},badUnits,'rows');
 
 % remove that index from each
-[sg_bl, idx_bl] = setdiff(sg_bl,badUnits,'rows');
+idx = cell(size(all_sg));
+for iBlock = 1:length(all_sg)
+    [~, idx{iBlock}] = setdiff(all_sg{iBlock},badUnits,'rows');
+end
 
-[sg_ad, idx_ad] = setdiff(sg_ad,badUnits,'rows');
-
-[sg_wo, idx_wo] = setdiff(sg_wo,badUnits,'rows');
 
 % make the cell to pass in the checking function
 switch lower(tuningMethod)
     case 'nonparametric'
         disp('Skipping nonparametric tuning for now...');
-        mfr_bl = blt.mfr;
-        mfr_ad = adt.mfr;
-        mfr_wo = wot.mfr;
-        
-        cil_bl = blt.cil;
-        cil_ad = adt.cil;
-        cil_wo = wot.cil;
-        
-        cih_bl = blt.cih;
-        cih_ad = adt.cih;
-        cih_wo = wot.cih;
-        
-        mfr_bl = mfr_bl(idx_bl,:);
-        cil_bl = cil_bl(idx_bl,:);
-        cih_bl = cih_bl(idx_bl,:);
-        
-        mfr_ad = mfr_ad(idx_ad,:);
-        cil_ad = cil_ad(idx_ad,:);
-        cih_ad = cih_ad(idx_ad,:);
-        
-        mfr_wo = mfr_wo(idx_wo,:);
-        cil_wo = cil_wo(idx_wo,:);
-        cih_wo = cih_wo(idx_wo,:);
-        
-        istuned = zeros(size(sg_bl,1),1);
-        for unit = 1:size(sg_bl,1)
-            istuned(unit) = checkTuningNonparametricSignificance(mfr_bl(unit,:),cil_bl(unit,:),cih_bl(unit,:));
-        end
-        
-        % Call the cell tuned if the confidence bounds of any 2 or more
-        % points have confidence bounds that do no overlap
-        out = compareNonparametricTuning({mfr_bl,mfr_ad,mfr_wo},{cil_bl,cil_ad,cil_wo},{cih_bl,cih_ad,cih_wo},sg_bl);
         
     otherwise
-        pds_bl = blt.pds;
-        pds_ad = adt.pds;
-        pds_wo = wot.pds;
+        all_pds = {t.pds};
         
-        pds_bl = pds_bl(idx_bl,:);
-        pds_ad = pds_ad(idx_ad,:);
-        pds_wo = pds_wo(idx_wo,:);
+        for iBlock = 1:length(all_pds)
+            temp = all_pds{iBlock};
+            temp = temp(idx{iBlock},:);
+            all_pds{iBlock} = temp;
+        end
         
-        if ~isempty(blt.mds)
-            mds_bl = blt.mds;
-            mds_ad = adt.mds;
-            mds_wo = wot.mds;
-            
-            mds_bl = mds_bl(idx_bl,:);
-            mds_ad = mds_ad(idx_ad,:);
-            mds_wo = mds_wo(idx_wo,:);
+        all_mds = [];
+        % Do modulation depth if it exists
+        if ~isempty(t(1).mds)
+            all_mds = {t.pds};
+            for iBlock = 1:length(all_mds)
+                temp = all_mds{iBlock};
+                temp = temp(idx{iBlock},:);
+                all_mds{iBlock} = temp;
+            end
         end
         
         switch lower(compMethod)
             case 'overlap'
-                usePDs = {pds_bl,pds_ad,pds_wo};
+                usePDs = all_pds;
                 
-                if ~isempty(blt.mds)
-                    useMDs = {mds_bl,mds_ad,mds_wo};
+                if ~isempty(all_mds)
+                    useMDs = all_mds;
                 end
+                
             case 'diff'
-                boot_pds_bl = blt.boot_pds;
-                boot_pds_ad = adt.boot_pds;
-                boot_pds_wo = wot.boot_pds;
+                all_boot_pds = {t.boot_pds};
+                for iBlock = 1:length(all_mds)
+                    temp = all_boot_pds{iBlock};
+                    temp = temp(idx{iBlock},:);
+                    all_boot_pds{iBlock} = temp;
+                end
+                usePDs = all_boot_pds;
                 
-                boot_pds_bl = boot_pds_bl(idx_bl,:);
-                boot_pds_ad = boot_pds_ad(idx_ad,:);
-                boot_pds_wo = boot_pds_wo(idx_wo,:);
-                usePDs = {boot_pds_bl,boot_pds_ad,boot_pds_wo};
-                
-                if ~isempty(blt.mds)
-                    boot_mds_bl = blt.boot_mds;
-                    boot_mds_ad = adt.boot_mds;
-                    boot_mds_wo = wot.boot_mds;
-                    
-                    boot_mds_bl = boot_mds_bl(idx_bl,:);
-                    boot_mds_ad = boot_mds_ad(idx_ad,:);
-                    boot_mds_wo = boot_mds_wo(idx_wo,:);
-                    useMDs = {boot_mds_bl,boot_mds_ad,boot_mds_wo};
+                if ~isempty(all_mds)
+                    all_boot_mds = {t.boot_mds};
+                    for iBlock = 1:length(all_mds)
+                        temp = all_boot_mds{iBlock};
+                        temp = temp(idx{iBlock},:);
+                        all_boot_mds{iBlock} = temp;
+                    end
+                    useMDs = all_boot_mds;
                 end
         end
         
-        pd = compareTuningParameter('pd',usePDs,sg_bl,{compMethod,confLevel,numIters});
+        pd = compareTuningParameter('pd',usePDs,master_sg,{compMethod,confLevel,numIters});
         
-        if ~isempty(blt.mds)
-            md = compareTuningParameter('md',useMDs,sg_bl,{compMethod,confLevel,numIters});
+        if ~isempty(all_mds)
+            md = compareTuningParameter('md',useMDs,master_sg,{compMethod,confLevel,numIters});
         else
             md = [];
         end
 end
 
 
-
-
 % classify each cell based on output
-for unit = 1:size(sg_bl,1)
+for unit = 1:size(master_sg,1)
     % preferred direction
-    diffMat = pd.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
-    
-    if all(istuned(unit,:))
+    diffMat = pd.(['elec' num2str(master_sg(unit,1))]).(['unit' num2str(master_sg(unit,2))]);
         for k = 1:size(diffMat,3) % will be one if not nonparametric
-            useDiff = squeeze(diffMat(:,:,k));
+            useDiff = squeeze(diffMat(classifierBlocks,classifierBlocks,k));
             
             val = sum(sum(useDiff.*converterMatrix));
             idx = classMapping(:,1)==val;
@@ -161,21 +141,16 @@ for unit = 1:size(sg_bl,1)
                 cc(unit,k) = NaN;
             end
         end
-    else
-        cc(unit,:) = -1;
-    end
 end
-
 cellClass(:,1) = cc;
 
-if ~isempty(blt.mds)
-    for unit = 1:size(sg_bl,1)
+if ~isempty(all_mds)
+    for unit = 1:size(master_sg,1)
         % modulation depth
-        diffMat = md.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
+        diffMat = md.(['elec' num2str(master_sg(unit,1))]).(['unit' num2str(master_sg(unit,2))]);
         
-        if all(istuned(unit,:))
             for k = 1:size(diffMat,3) % will be one if not nonparametric
-                useDiff = squeeze(diffMat(:,:,k));
+                useDiff = squeeze(diffMat(classifierBlocks,classifierBlocks,k));
                 
                 val = sum(sum(useDiff.*converterMatrix));
                 idx = classMapping(:,1)==val;
@@ -186,41 +161,9 @@ if ~isempty(blt.mds)
                     cc(unit,k) = NaN;
                 end
             end
-        else
-            cc(unit,:) = -1;
-        end
     end
 else
     cc = -1*ones(size(sg_bl,1),1);
 end
-
 cellClass(:,2) = cc;
 
-% if ~isempty(blt.bos)
-%     for unit = 1:size(sg_bl,1)
-%         % baseline offset
-%         diffMat = bo.(['elec' num2str(sg_bl(unit,1))]).(['unit' num2str(sg_bl(unit,2))]);
-%         
-%         if istuned(unit)
-%             for k = 1:size(diffMat,3) % will be one if not nonparametric
-%                 useDiff = squeeze(diffMat(:,:,k));
-%                 
-%                 val = sum(sum(useDiff.*converterMatrix));
-%                 idx = classMapping(:,1)==val;
-%                 if sum(idx) ~= 0
-%                     cc(unit,k) = classMapping(idx,2);
-%                 else
-%                     warning('DANGER! Class not recognized. Something is probably fishy...');
-%                     cc(unit,k) = NaN;
-%                 end
-%             end
-%         else
-%             cc(unit,:) = -1;
-%         end
-%         
-%     end
-% else
-%     cc = -1*ones(size(sg_bl,1),1);
-% end
-% 
-% cellClass(:,1) = cc;

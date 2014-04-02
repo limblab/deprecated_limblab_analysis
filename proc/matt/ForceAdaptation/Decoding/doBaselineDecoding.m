@@ -19,7 +19,7 @@ for iFile = 1:size(doFiles,1)
     load(bin_file);
     binsize=binnedData.timeframe(2)-binnedData.timeframe(1);
     
-    DecoderOptions = struct('foldlength',foldLength,'PredEMGs',0,'PredForce',0,'PredCursPos',predFlags(1),'PredVeloc',predFlags(2),'PredTarg',predFlags(3),'fillen',numbins*binsize,'UseAllInputs',1,'PolynomialOrder',3,'numPCs',0,'Use_Thresh',0,'Use_EMGs',0,'Use_Ridge',0,'Use_SD',0);
+    DecoderOptions = struct('foldlength',foldLength,'PredEMGs',0,'PredCursPos',predFlags(1),'PredVeloc',predFlags(2),'PredTarg',predFlags(3),'PredForce',predFlags(4),'PredCompVeloc',predFlags(5),'PredMoveDir',predFlags(6),'fillen',numbins*binsize,'UseAllInputs',1,'PolynomialOrder',3,'numPCs',0,'Use_Thresh',0,'Use_EMGs',0,'Use_Ridge',0,'Use_SD',0);
     
     [filt_struct, ~] = BuildModel_Matt(binnedData, DecoderOptions);
     
@@ -33,7 +33,7 @@ for iFile = 1:size(doFiles,1)
     save(filt_file,'filt_struct');
     
     % Now, do mfxval for baseline and get VAFs
-    DecoderOptions = struct('PredEMGs',0,'PredForce',0,'PredCursPos',predFlags(1),'PredVeloc',predFlags(2),'PredTarg',predFlags(3),'fillen',numbins*binsize,'UseAllInputs',1,'PolynomialOrder',3,'Use_SD',0,'foldlength',foldLength);
+    DecoderOptions = struct('PredEMGs',0,'PredCursPos',predFlags(1),'PredVeloc',predFlags(2),'PredTarg',predFlags(3),'PredForce',predFlags(4),'PredCompVeloc',predFlags(5),'PredMoveDir',predFlags(6),'fillen',numbins*binsize,'UseAllInputs',1,'PolynomialOrder',3,'Use_SD',0,'foldlength',foldLength);
     disp(sprintf('Proceeding to multifold cross-validation using %g sec folds...', DecoderOptions.foldlength));
     
     [mfxval_R2, mfxval_vaf, mfxval_mse, ~] = mfxval_Matt(binnedData, DecoderOptions);

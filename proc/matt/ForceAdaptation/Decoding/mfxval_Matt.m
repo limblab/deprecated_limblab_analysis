@@ -89,12 +89,12 @@ for i=0:nfold-1
         PredData = predictSignals(E2Cmodel, PredEMGs);
         fillen = 2*options.fillen -binsize;
     else        
-        model = BuildModel(trainData, options);
+        model = BuildModel_Matt(trainData, options);
         PredData = predictSignals(model, testData);
         fillen = options.fillen;
     end
         
-    TestSigs = concatSigs_Matt(testData, options.PredEMGs, options.PredForce, options.PredCursPos, options.PredVeloc, options.PredTarg); 
+    TestSigs = concatSigs_Matt(testData, options.PredEMGs, options.PredForce, options.PredCursPos, options.PredVeloc, options.PredTarg, options.PredCompVeloc,options.PredMoveDir); 
 %     R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
     R2   = [R2; CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)'];
     vaf  = [vaf; 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
@@ -132,6 +132,15 @@ if options.PredCursPos
 end
 if options.PredVeloc
     binnedData.velocbin = binnedData.velocbin(idx,:);
+end
+if options.PredTarg
+    binnedData.targetanglebin = binnedData.targetanglebin(idx,:);
+end
+if options.PredCompVeloc
+    binnedData.compvelocbin = binnedData.compvelocbin(idx,:);
+end
+if options.PredMoveDir
+    binnedData.movedirbin = binnedData.movedirbin(idx,:);
 end
 
 binnedData.timeframe = binnedData.timeframe(idx);

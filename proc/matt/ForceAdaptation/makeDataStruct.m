@@ -29,7 +29,7 @@ function [data, useUnsorted] = makeDataStruct(expParamFile,dataDir,outDir,fileTy
 %% sort out inputs
 
 % highest channel to expect
-maxChannel = 128;
+maxChannel = 96;
 
 if nargin < 6
     useUnsorted = false; %by default, exclude unit IDs of 0
@@ -148,10 +148,10 @@ for iEpoch = 1:length(epochs)
             newPos = pos;
         end
         
-        mt = getMovementTable(tt,tempTask,t,newPos);
+        [mt,centers] = getMovementTable(tt,tempTask);
         clear newPos;
     else
-        mt = getMovementTable(tt,tempTask);
+        [mt,centers] = getMovementTable(tt,tempTask);
     end
     
     clear moveWins moveCurvs allInds useT idx mPeak mStart mEnd iMove tMove relMoves blockTimes moveCurves spd;
@@ -357,7 +357,6 @@ for iEpoch = 1:length(epochs)
                             u(unitCount).mfr = mfr;
                             u(unitCount).offline_sorter_channel = channel;
                             
-                            
                         end
                     end
                 end
@@ -417,6 +416,7 @@ for iEpoch = 1:length(epochs)
     data.params = p;
     data.trial_table = tt;
     data.movement_table = mt;
+    data.movement_centers = centers;
     
     clear m t u c;
     

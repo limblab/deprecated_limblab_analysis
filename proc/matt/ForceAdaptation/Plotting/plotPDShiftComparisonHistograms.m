@@ -25,7 +25,7 @@ figurePosition = [200, 200, 800, 600];
 tuneMethod = 'regression';
 savePath = [];
 histBins = [];
-useBlocks = 1:4;
+useBlocks = 1:3;
 for i = 1:2:length(varargin)
     switch lower(varargin{i})
         case 'dir'
@@ -74,38 +74,38 @@ for iFile = 1:size(useDate,1)
     
     % histograms of BL->AD and AD->WO
     
-    allClasses = classes.(useArray).(tuneMethod).(usePeriod);
+    useClasses = classes.(tuneMethod).(usePeriod).(useArray);
     
+    tuned_cells = useClasses.tuned_cells;
+    tune_sg = useClasses.sg;
+    
+    % get unit guides and pd matrices
+    temp = tuning.(tuneMethod).(usePeriod).(useArray).tuning;
+    allTuningBL = temp(1);
+    allTuningAD = temp(2:4);
+    allTuningWO = temp(5);
+    
+    sg_bl = allTuningBL.sg;
+    sg_wo = allTuningWO.sg;
+    pds_bl = allTuningBL.pds;
+    pds_wo = allTuningWO.pds;
     for iBlock = 1:length(useBlocks)
-        tune_idx = allClasses(useBlocks(iBlock)).tuned_cells;
-        tune_sg = allClasses(useBlocks(iBlock)).sg;
-        tuned_cells = tune_sg(tune_idx,:);
         
-        % get unit guides and pd matrices
-        allTuningBL = tuning.BL.(useArray).(tuneMethod).(usePeriod);
-        allTuningAD = tuning.AD.(useArray).(tuneMethod).(usePeriod);
-        allTuningWO = tuning.WO.(useArray).(tuneMethod).(usePeriod);
-        
-        sg_bl = allTuningBL.sg;
         sg_ad = allTuningAD(useBlocks(iBlock)).sg;
-        sg_wo = allTuningWO.sg;
-        
-        pds_bl = allTuningBL.pds;
         pds_ad = allTuningAD(useBlocks(iBlock)).pds;
-        pds_wo = allTuningWO.pds;
         
         % check to make sure the unit guides are okay
         badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
         sg_master = setdiff(sg_bl,badUnits,'rows');
         
         % second column is PD
-        cellClasses = allClasses(useBlocks(iBlock)).classes(:,2);
+        cellClasses = useClasses.classes(:,2);
         
         useComp = tracking.(useArray){1}.chan;
         
         allDiffPDs = [];
         allErrs = [];
-        useClasses = -1*ones(size(cellClasses));
+        goodClasses = -1*ones(size(cellClasses));
         for unit = 1:size(sg_master,1)
             % if the cell meets the tuning criteria
             %   and also if the cell is tracked across epochs
@@ -128,7 +128,7 @@ for iFile = 1:size(useDate,1)
                     err(3) = angleDiff(pds_wo(useInd,3),pds_wo(useInd,2),true,false)/2;
                     
                     classInd = tune_sg(:,1)==sg_master(unit,1) & tune_sg(:,2)==sg_master(unit,2);
-                    useClasses(unit) = cellClasses(classInd);
+                    goodClasses(unit) = cellClasses(classInd);
                     
                     % BL->AD, AD->WO, BL->WO
                     allDiffPDs = [allDiffPDs; angleDiff(pds(1),pds(2),true,true), angleDiff(pds(2),pds(3),true,true), angleDiff(pds(1),pds(3),true,true)];
@@ -138,11 +138,11 @@ for iFile = 1:size(useDate,1)
         end
         
         % now count how many adapting and non-adapting cells there are
-        useClasses = useClasses(useClasses~=-1);
+        goodClasses = goodClasses(goodClasses~=-1);
         
         % store these for plotting later
-        adaptingCount{iBlock,iFile} = sum(useClasses == 2 | useClasses == 3);
-        nonadaptingCount{iBlock,iFile} = sum(useClasses == 1 | useClasses == 4);
+        adaptingCount{iBlock,iFile} = sum(goodClasses == 2 | goodClasses == 3);
+        nonadaptingCount{iBlock,iFile} = sum(goodClasses == 1 | goodClasses == 4);
         fileDiffPDs{iBlock,iFile} = allDiffPDs;
         fileErrs{iBlock,iFile} = allErrs;
     end
@@ -178,8 +178,8 @@ end
 
 %%% DO THE ADAPTATION PERIOD
 for iBlock = 1:length(useBlocks)
-fh = figure('Position', figurePosition);
-hold all;
+    fh = figure('Position', figurePosition);
+    hold all;
     for iFile = 1:length(uTitles)
         % concatenate relevant data
         groupDiffPDs = [];
@@ -188,7 +188,7 @@ hold all;
         for j = 1:size(useDate,1)
             if strcmp(useDate{j,6},uTitles{iFile}) && ~isempty(fileDiffPDs{iBlock,j})
                 groupDiffPDs = [groupDiffPDs; fileDiffPDs{iBlock,j}(:,1)];
-%                 groupDiffErrs = [groupDiffErrs; fileErrs{iBlock,j}(:,1)+fileErrs{iBlock,j}(:,2)];
+                %                 groupDiffErrs = [groupDiffErrs; fileErrs{iBlock,j}(:,1)+fileErrs{iBlock,j}(:,2)];
                 groupDiffErrs = [groupDiffErrs; fileErrs{iBlock,j}(:,2)];
             end
         end
@@ -207,8 +207,8 @@ hold all;
         
         % get mean
         tempMeans_ad(1,iFile) = median(groupDiffPDs);
-%         tempMeans_ad(1,iFile) = circular_mean(groupDiffPDs);
-%         tempMeans_ad(2,iFile) = circular_std(groupDiffPDs)./sqrt(length(groupDiffPDs));
+        %         tempMeans_ad(1,iFile) = circular_mean(groupDiffPDs);
+        %         tempMeans_ad(2,iFile) = circular_std(groupDiffPDs)./sqrt(length(groupDiffPDs));
         tempMeans_ad(2,iFile) = mean(groupDiffErrs);
         
         if iFile == 1
@@ -229,8 +229,8 @@ hold all;
     end
     
     % show perturbation
-%     arrow('Start',[-30,7],'Stop',[-7 7],'Width',3);
-%     text(-30,7.5,'Perturbation Direction','FontSize',16);
+    %     arrow('Start',[-30,7],'Stop',[-7 7],'Width',3);
+    %     text(-30,7.5,'Perturbation Direction','FontSize',16);
     
     
     title('Baseline -> Adaptation','FontSize',18);
@@ -268,7 +268,7 @@ for iFile = 1:length(uTitles)
     for j = 1:size(useDate,1)
         if strcmp(useDate(j,6),uTitles{iFile}) && ~isempty(fileDiffPDs{iBlock,j})
             groupDiffPDs = [groupDiffPDs; fileDiffPDs{iBlock,j}(:,3)];
-%             groupDiffErrs = [groupDiffErrs; fileErrs{iBlock,j}(:,1)+fileErrs{iBlock,j}(:,3)];
+            %             groupDiffErrs = [groupDiffErrs; fileErrs{iBlock,j}(:,1)+fileErrs{iBlock,j}(:,3)];
             groupDiffErrs = [groupDiffErrs; fileErrs{iBlock,j}(:,3)];
         end
     end
@@ -278,8 +278,8 @@ for iFile = 1:length(uTitles)
         groupDiffPDs(groupDiffPDs < -pi/2) = groupDiffPDs(groupDiffPDs < -pi/2)+2*pi;
     end
     tempMeans_wo(1,iFile) = median(groupDiffPDs);
-%     tempMeans_wo(1,iFile) = circular_mean(groupDiffPDs);
-%     tempMeans_wo(2,iFile) = circular_std(groupDiffPDs)./sqrt(length(groupDiffPDs));
+    %     tempMeans_wo(1,iFile) = circular_mean(groupDiffPDs);
+    %     tempMeans_wo(2,iFile) = circular_std(groupDiffPDs)./sqrt(length(groupDiffPDs));
     tempMeans_wo(2,iFile) = mean(groupDiffErrs);
     
     % make any negative values positive
@@ -338,17 +338,17 @@ allMeans_wo{1} = tempMeans_wo;
 if 0
     xticks = [];
     xticklabels = repmat({'Non-Adapting','Adapting'},1,length(useDate));
-
+    
     % group together files with same title
     titles = useDate(:,6);
     uTitles = unique(titles);
-
+    
     fh = figure('Position', [200, 200, 800, 600]);
     hold all;
-
+    
     allAdapt = zeros(2,length(uTitles));
     for iFile = 1:length(uTitles)
-
+        
         % concatenate relevant data
         groupAdaptingCount = 0;
         groupNonadaptingCount = 0;
@@ -358,28 +358,28 @@ if 0
                 groupNonadaptingCount = groupNonadaptingCount + nonadaptingCount{j};
             end
         end
-
+        
         xPos = [1+3*(iFile-1), 2.3+3*(iFile-1)];
         % histograms of BL->WO for FF and VR
         bar(xPos,[groupNonadaptingCount, groupAdaptingCount]);
         h = findobj(gca,'Type','patch');
-
+        
         allAdapt(1,iFile) = groupAdaptingCount;
         allAdapt(2,iFile) = groupNonadaptingCount;
-
+        
         if iFile == 1
             set(h,'FaceColor',useColors{iFile},'EdgeColor','w');
         else
             set(h,'EdgeColor','w','facealpha',0.7,'edgealpha',0.7);
         end
-
+        
         xticks = [xticks xPos];
     end
-
+    
     V = axis;
     set(gca,'YTick',V(3):3:V(4),'XTick',xticks,'XTickLabel',xticklabels,'FontSize',fontSize);
     ylabel('Count','FontSize',16);
-
+    
     if ~isempty(savePath)
         fn = [savePath '_bar.png'];
         saveas(fh,fn,'png');

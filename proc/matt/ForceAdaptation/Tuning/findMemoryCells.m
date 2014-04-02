@@ -1,4 +1,4 @@
-function classes = findMemoryCells(expParamFile, outDir, paramSetName, compMethod)
+function classes = findMemoryCells(expParamFile, outDir, paramSetName, compMethod, classifierBlocks)
 % FINDMEMORYCELLS  Compares tuning of cells to classify their behavior
 %
 %   This function uses the tuning made by fitTuningCurves to classify them
@@ -59,37 +59,45 @@ disp('Loading data to classify cells...')
 tuningFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
 tuning = load(tuningFile);
 
-arrays = BL.meta.arrays;
+dataFile = fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']);
+data = load(dataFile);
 
-for iArray = 1:length(arrays)
-    useArray = arrays{iArray};
-    for iMethod = 1:length(tuningMethods)
-        % nonparametric tuning requires a different method for comparison
-        % for regression or GLM, loop along the periods
-        for iPeriod = 1:length(tuningPeriods)
+trackingFile = fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']);
+tracking = load(trackingFile);
+
+for iMethod = 1:length(tuningMethods)
+    % nonparametric tuning requires a different method for comparison
+    % for regression or GLM, loop along the periods
+    for iPeriod = 1:length(tuningPeriods)
+        
+        arrays = fieldnames(tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}));        
+        for iArray = 1:length(arrays)
+            
+            useArray = arrays{iArray};
+            disp(['Using ' useArray '...']);
+            
             % only glm can use the full file tuning
             if strcmpi(tuningPeriods{iPeriod},'file') && ~strcmpi(tuningMethods{iMethod},'glm')
                 warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
             elseif strcmpi(tuningMethods{iMethod},'nonparametric')
                 warning(['Classification not supported for ' tuningMethods{iMethod} ' method...']);
             else
-                blt = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).BL;
-                adt = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).AD;
-                wot = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).WO;
-                meta = tuning.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).meta;
-                for iBlock = 1:length(adt)
-                    [cellClass,sg] = classifyCells(blt,adt(iBlock),meta,tuningMethods{iMethod},compMethod,paramSetName);
-                    
-                    % get cells that are significantly tuned in all epochs
-                    %   first column is PDs, second is MDs
-                    tunedCells = find(cellClass(:,1)~=-1);
-                    disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
-                    
-                    s(iBlock).classes = cellClass;
-                    s(iBlock).sg = sg;
-                    s(iBlock).tuned_cells = tunedCells;
-                end
-                classes.(useArray).(tuningMethods{iMethod}).(tuningPeriods{iPeriod}) = s;
+                t = tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).(useArray).tuning;
+                
+                [cellClass,~] = classifyCells(t,tuningMethods{iMethod},compMethod,classifierBlocks);
+                
+                % get cells that are significantly tuned in all epochs
+                %   first column is PDs, second is MDs
+                [istuned, sg] = excludeCells(data,tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}),tracking,useArray);
+                tunedCells = sg(all(istuned,2),:);
+                disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
+                
+                s.classes = cellClass;
+                s.sg = sg;
+                s.istuned = istuned;
+                s.tuned_cells = tunedCells;
+                
+                classes.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).(useArray) = s;
             end
         end
     end

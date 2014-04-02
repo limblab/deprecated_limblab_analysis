@@ -126,39 +126,17 @@ else
 end
 
 %% Bin Force
-if ~isfield(datastruct, 'aforce')
-    fprintf('No force data was found\n');
+if ~isfield(datastruct, 'force')
+    %disp(sprintf('No cursor data is found in structure " %s " ',datastructname));
     forcedatabin = [];
-    forcelabels = [];
+elseif ~isempty(datastruct.force)
+    forcedatabin = interp1(datastruct.force(:,1), datastruct.force(:,2:3), timeframe,'linear','extrap');
 else
-    forcesamplerate = datastruct.force.forcefreq;   %Rate at which force data were actually acquired.
-    forcename = char(zeros(1,12));
-    numforcech = length(datastruct.force.labels);
-    forcelabels = char(zeros(numforcech,length(forcename)));
-    forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
-%     forcetimebins = params.starttime*forcesamplerate+1:params.stoptime*forcesamplerate;
-
-    for i=numforcech:-1:1
-        forcename = char(datastruct.force.labels(i));
-        forcelabels(i,1:length(forcename))= forcename;
-    end
-
-    %downsample force data to desired bin size
-%         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
-    forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
-
-    if params.NormData
-        %Normalize Force
-        for i=1:numforcech
-%             forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
-            %dont use the max because of possible outliars, use 99% percentile
-            forceNormRatio = prctile(abs(forcedatabin(:,i)),99);
-            forcedatabin(:,i) = forcedatabin(:,i)/forceNormRatio;
-        end        
-    end
-
-    clear forcesamplerate forcetimebins forcename numforcech forceNormRatio;
+    forcedatabin = [];
 end
+forcelabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
+forcelabels(1,1:7) = 'x_force';
+forcelabels(2,1:7) = 'y_force';
 
 %% Bin Cursor Position
 if ~isfield(datastruct, 'pos')
@@ -173,16 +151,6 @@ end
 cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
 cursposlabels(1,1:5)= 'x_pos';
 cursposlabels(2,1:5)= 'y_pos';
-
-% if NormData
-%     Normalize Cursor and Target position with same x and y ratios
-%     first, calculate the ratio for cursor and use it later also for
-%     target corners
-%     NormRatios = 1./max(abs(cursorposbin));
-% 
-%     Normalize cursor position
-%     cursorposbin = cursorposbin.*repmat(NormRatios,numberbins,1);
-% end
 
 
 %% Bin Velocity
@@ -362,22 +330,6 @@ else
          targets.rotation = datastruct.targets.rotation( datastruct.targets.rotation(:,1)>=timeframe(1) & ...
                                                         datastruct.targets.rotation(:,1)<=timeframe(end),: );
      end
-
-%     %Normalize Cursor and Target position with same x and y ratios     
-%     if NormData && isfield(datastruct.targets, 'corners')
-%         %target x corners
-%         targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
-%         %target y corners
-%         targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
-%     end
-%     
-%     if NormData && isfield(datastruct.targets, 'centers')
-%         numtgt = (size(targets.corners,2)-1)/2;
-%         %target x centers
-%         targets.centers(:,2:2:(2+2*(numtgt-1))) = targets.centers(:,2:2:(2+2*(numtgt-1)))*NormRatios(1);
-%         %target y centers
-%         targets.centers(:,3:2:(3+2*(numtgt-1))) = targets.centers(:,3:2:(3+2*(numtgt-1)))*NormRatios(1);
-%     end
 end
 
 %% Trial Table

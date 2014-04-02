@@ -16,8 +16,8 @@ dataRoot = 'C:\Users\Matt Perich\Desktop\lab\data\';
 
 useUnsorted = false;
 sigCompMethod = 'diff';
-% cerebusFileType = 'nevnsx'; % 'nev'
 sigMethod = 'regression';
+classifierBlocks = [1 4 5];
 
 % if false, will not copy over new parameter files if they already exist
 rewriteFiles  = 1;
@@ -27,12 +27,12 @@ rewriteFiles  = 1;
 %    these you re-run them so that the parameter file in the folder is up to
 %    date with the actual data
 % processing options
-doDataStruct        = 1;
+doDataStruct        = 0;
 doAdaptation        = 0;
 doTracking          = 0;
 % tuning options
 doTuning            = 0;
-doClassification    = 0;
+doClassification    = 1;
 doReport            = 0;
 % plotting options
 doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
@@ -40,7 +40,7 @@ doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramSetNames = {'movement','target'};
+paramSetNames = {'movement','target','glm'};
 monkey = 'Mihili';
 
 dataSummary;
@@ -62,7 +62,6 @@ switch monkey
         dateInds = 1:15;
         dataDir = 'Z:\Mihili_12A3\Matt';
         goodDates = mihili_data(dateInds,2);
-        goodDates = {'2014-03-06'};
     otherwise
         error('Monkey not recognized');
 end
@@ -163,7 +162,7 @@ for iDate = 1:length(goodDates)
                 disp('%%% Classifying Cells  %%%')
                 disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
                 % Look for memory cells
-                [~] = findMemoryCells(expParamFile, outDir, paramSetName,sigCompMethod);
+                [~] = findMemoryCells(expParamFile, outDir, paramSetName,sigCompMethod,classifierBlocks);
             end
         end
         

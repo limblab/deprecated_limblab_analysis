@@ -1,4 +1,4 @@
-function out = fitTuningCurves_Reg(data,tuningPeriod,epoch,useArray,paramSetName,doPlots)
+function out = fitTuningCurves_Reg(data,tuningPeriod,useArray,paramSetName,iBlock,doPlots)
 % notes about inputs
 % notes about outputs
 % can pass tuning method in as cell array with multiple types
@@ -30,42 +30,29 @@ disp(['Regression tuning, ' num2str(movementTime) ' second window...']);
 %% Get data
 sg = data.(useArray).sg;
 
-% see if file is being divided into blocks
-if strcmpi(epoch,'AD')
-    numBlocks = length(adBlocks)-1;
-else
-    numBlocks = 1;
-end
+[fr,theta,mt] = getFR(data,useArray,tuningPeriod,paramSetName,iBlock);
 
-for iBlock = 1:numBlocks
-    [fr,theta,mt] = getFR(data,useArray,tuningPeriod,paramSetName,iBlock);
-    
-    % Do bootstrapping with regression
-    statTestParams = {'bootstrap',bootNumIters,confLevel};
-    
-    [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
-    pds = tcs(:,3);
-    pd_cis = cbs{3};
-    mds = tcs(:,2);
-    md_cis = cbs{2};
-    
-    out(iBlock).pds = [pds pd_cis];
-    out(iBlock).mds = [mds md_cis];
-    
-    out(iBlock).boot_pds = boot_pds;
-    out(iBlock).boot_mds = boot_mds;
-    out(iBlock).r_squared = rs;
-    
-    out(iBlock).sg = sg;
-    out(iBlock).fr = fr;
-    out(iBlock).theta = theta;
-    out(iBlock).mt = mt;
-    out(iBlock).params.stats = statTestParams;
-    out(iBlock).params.bin_angles = binAngles;
-    out(iBlock).params.movement_time = movementTime;
-    if strcmpi(epoch,'ad')
-        out(iBlock).params.block = adBlocks(iBlock:iBlock+1);
-    elseif strcmpi(epoch,'wo')
-        out(iBlock).params.block = woBlocks;
-    end
-end
+% Do bootstrapping with regression
+statTestParams = {'bootstrap',bootNumIters,confLevel};
+
+[tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
+pds = tcs(:,3);
+pd_cis = cbs{3};
+mds = tcs(:,2);
+md_cis = cbs{2};
+
+out.pds = [pds pd_cis];
+out.mds = [mds md_cis];
+
+out.boot_pds = boot_pds;
+out.boot_mds = boot_mds;
+out.r_squared = rs;
+
+out.sg = sg;
+out.fr = fr;
+out.theta = theta;
+out.mt = mt;
+out.params.stats = statTestParams;
+out.params.bin_angles = binAngles;
+out.params.movement_time = movementTime;
+

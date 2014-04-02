@@ -1,4 +1,4 @@
-function [istuned, master_sg] = excludeCells(data,tuning,tracking_chan)
+function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray)
 % This function will check all of the cells against various exclusion
 % criteria. For each cell:
 %
@@ -15,39 +15,43 @@ function [istuned, master_sg] = excludeCells(data,tuning,tracking_chan)
 %   1) Is CI on each cell less than some level?
 %   2) Is there an agreeable R2 for cosine fits?
 %
-% 
+%
 % Data input is from baseline only. I assume that if it meets criteria
 % there then it will for the rest, or else it won't pass the "same neuron"
 % test.
 
-paramFile = fullfile(tuning.meta.out_directory, [tuning.meta.recording_date '_analysis_parameters.dat']);
+t = tuning.(useArray).tuning;
+tracking = tracking.(useArray);
+data = data.(useArray);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load some of the analysis parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+paramFile = fullfile(t(1).meta.out_directory, [t(1).meta.recording_date '_analysis_parameters.dat']);
 params = parseExpParams(paramFile);
 ciSig = str2double(params.ci_significance{1});
 confLevel = str2double(params.confidence_level{1});
 numIters = str2double(params.number_iterations{1});
-r2Min = str2double(params.r2_minimum{1});
-minFR = str2double(params.minimum_firing_rate{1});
 isiThresh = str2double(params.isi_threshold{1});
 isiPercent = str2double(params.isi_percent{1});
 waveSNR = str2double(params.waveform_snr{1});
+% a couple of parameters depend on the array
+r2Min = str2double(params.([lower(useArray) '_r2_minimum']){1});
+minFR = str2double(params.([lower(useArray) '_minimum_firing_rate']){1});
 clear params;
 
-blt = tuning.BL;
-adt = tuning.AD(end); % for now, only use last block
-wot = tuning.WO;
+all_sg = {t.sg};
 
-sg_bl = blt.sg;
-sg_ad = adt.sg;
-sg_wo = wot.sg;
+tracking_chan = tracking{1}.chan;
 
-badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
+badUnits = checkUnitGuides(all_sg);
 
 % remove that index from each
-[master_sg, idx_bl] = setdiff(sg_bl,badUnits,'rows');
+[master_sg, ~] = setdiff(all_sg{1},badUnits,'rows');
 
-[~, idx_ad] = setdiff(sg_ad,badUnits,'rows');
-
-[~, idx_wo] = setdiff(sg_wo,badUnits,'rows');
+for iBlock = 1:length(all_sg)
+    [~, all_idx{iBlock}] = setdiff(all_sg{iBlock},badUnits,'rows');
+end
 
 % one element for each criteria. must meet criteria in all three task epochs
 %   1) Waveform SNR
@@ -58,13 +62,17 @@ badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
 %   6) Cosine R2
 istuned = zeros(size(master_sg,1),6);
 
-units = data.units(idx_bl);
+units = data.units(all_idx{1});
 
 %% Check that SNR of waveforms is above some threshold
+% Compare peak to std of first bin, where presumably no cell is active
 for unit = 1:size(master_sg,1)
-    wf = diff(units(unit).wf);
-    istuned(unit,1) = max(rms(a')./std(double(a'))) >= waveSNR;
+    wf = units(unit).wf;
+    %istuned(unit,1) = max(rms(wf'))/mean(std(double(wf(1:5,:)'))) >= waveSNR;
+    sig = max(mean(wf'))-min(mean(wf'));
+    istuned(unit,1) = sig / (2*mean(std(double(wf')))) >= waveSNR;
 end
+
 
 %% Check that ISI of neuron is above some threshold
 for unit = 1:size(master_sg,1)
@@ -74,10 +82,14 @@ end
 
 
 %% Check that neuron meets firing rate criterion in each epoch
-for unit = 1:size(master_sg,1)
-    istuned(unit,3) = mean(mean(adt.mfr,1),2) >= minFR;
+if isfield(t(1),'fr')
+    temp = all_idx{1};
+    for unit = 1:size(master_sg,1)
+        istuned(unit,3) = mean(t(1).fr(:,temp(unit)),1) >= minFR;
+    end
+else
+    istuned(:,3) = ones(size(istuned(:,3)));
 end
-
 
 %% Check that same neuron is in each epoch
 for unit = 1:size(master_sg,1)
@@ -88,56 +100,50 @@ end
 
 
 %% Check confidence in PD estimates
-pds_bl = blt.pds;
-pds_ad = adt.pds;
-pds_wo = wot.pds;
-
-pds_bl = pds_bl(idx_bl,:);
-pds_ad = pds_ad(idx_ad,:);
-pds_wo = pds_wo(idx_wo,:);
-
-
+all_pds = {t.pds};
 for unit = 1:size(master_sg,1)
-    t_bl = checkTuningCISignificance(pds_bl(unit,:),ciSig,true);
-    t_ad = checkTuningCISignificance(pds_ad(unit,:),ciSig,true);
-    t_wo = checkTuningCISignificance(pds_wo(unit,:),ciSig,true);
+    sig = zeros(size(all_pds));
+    for iBlock = 1:length(all_pds)
+        temp = all_pds{iBlock};
+        temp = temp(all_idx{iBlock});
+        sig(iBlock) = checkTuningCISignificance(temp(unit,:),ciSig,true);
+    end
     
-    istuned(unit,5) = all([t_bl,t_ad,t_wo]);
+    istuned(unit,5) = all(sig);
 end
 
 
 %% Check that r-squared of fit is okay
-if isfield(blt,'r_squared') && ~isempty(blt.r_squared)
-    rs_bl = blt.r_squared;
-    rs_ad = adt.r_squared;
-    rs_wo = wot.r_squared;
+if isfield(t(1),'r_squared') && ~isempty(t(1).r_squared)
+    all_rs = {t.r_squared};
+    all_rs_ci = cell(size(all_rs));
     
-    rs_bl = sort(rs_bl(idx_bl,:),2);
-    rs_ad = sort(rs_ad(idx_ad,:),2);
-    rs_wo = sort(rs_wo(idx_wo,:),2);
+    for iBlock = 1:length(all_rs)
+        temp = all_rs{iBlock};
+        temp = sort(temp(all_idx{iBlock},:),2);
+        
+        all_rs{iBlock} = temp;
+        
+        % get 95% CI for each
+        all_rs_ci{iBlock} = [temp(:,ceil(numIters - confLevel*numIters)), temp(:,floor(confLevel*numIters))];
+    end
     
-    % get 95% CI for each
-    rs_bl = [rs_bl(:,ceil(numIters - confLevel*numIters)), rs_bl(:,floor(confLevel*numIters))];
-    rs_ad = [rs_ad(:,ceil(numIters - confLevel*numIters)), rs_ad(:,floor(confLevel*numIters))];
-    rs_wo = [rs_wo(:,ceil(numIters - confLevel*numIters)), rs_wo(:,floor(confLevel*numIters))];
+    for unit = 1:size(master_sg,1)
+        sig = zeros(size(all_rs));
+        for iBlock = 1:length(all_rs)
+            % also only consider cells that are described by cosines
+            %   have bootstrapped r2... see if 95% CI is > threshold?
+            temp = all_rs_ci{iBlock};
+            sig(iBlock) = temp(unit,1) > r2Min;
+        end
+        
+        % check significance
+        % only consider cells that are tuned in all epochs
+        %   first column is CI bound, second is r-squared
+        istuned(unit,6) = all(sig);
+    end
 else
-    % glm etc won't have r-squared
-    rs_bl = ones(size(master_sg,1),1);
-    rs_ad = ones(size(master_sg,1),1);
-    rs_wo = ones(size(master_sg,1),1);
+    istuned(:,6) = ones(size(istuned(:,6)));
 end
 
-% check significance
-istuned = zeros(size(master_sg,1),1);
-for unit = 1:size(master_sg,1)
-    % also only consider cells that are described by cosines
-    %   have bootstrapped r2... see if 95% CI is > threshold?
-    t_r_bl = rs_bl(unit,1) > r2Min;
-    t_r_ad = rs_ad(unit,1) > r2Min;
-    t_r_wo = rs_wo(unit,1) > r2Min;
-    
-    % only consider cells that are tuned in all epochs
-    %   first column is CI bound, second is r-squared
-    istuned(unit,6) = all([t_r_bl,t_r_ad,t_r_wo]);
-end
 

@@ -50,7 +50,7 @@ function [filter, varargout]=BuildModel_Matt(binnedData, options)
         end
     end
     
-    if ~(options.PredEMGs || options.PredForce || options.PredCursPos || options.PredVeloc || options.PredTarg)
+    if ~(options.PredEMGs || options.PredForce || options.PredCursPos || options.PredVeloc || options.PredTarg || options.PredCompVeloc || options.PredMoveDir)
         disp('No Outputs are Selected, Model Building Cancelled');
         filter = [];
         varargout = {};
@@ -145,7 +145,16 @@ function [filter, varargout]=BuildModel_Matt(binnedData, options)
         Outputs = [Outputs binnedData.targetanglebin];
         OutNames = [OutNames; binnedData.targetanglelabels];
     end
-        
+    if options.PredCompVeloc
+        % a kind of "compensated" velocity where force is accounted for
+        Outputs = [Outputs binnedData.compvelocbin];
+        OutNames = [OutNames; binnedData.compveloclabels];
+    end
+    if options.PredMoveDir
+        % a kind of "compensated" velocity where force is accounted for
+        Outputs = [Outputs binnedData.movedirbin];
+        OutNames = [OutNames; binnedData.movedirlabels];
+    end   
 %% Calculate Filter
 
     %The following calculates the linear filters (H) that relate the inputs and outputs

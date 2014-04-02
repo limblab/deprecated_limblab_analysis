@@ -28,7 +28,7 @@ for iFile = 1:size(doFiles,1)
             end
             
             disp('Converting BDF structure to binned data...');
-            binnedData = convertBDF2binned(BDF,BDF2BinArgs);
+            binnedData = convertBDF2binned_Matt(BDF,BDF2BinArgs);
             
             disp('Done.');
             

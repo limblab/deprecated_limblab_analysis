@@ -60,12 +60,10 @@ ids = vertcat(UNITS.id);
 sorted = find(ismember(ids(:,2),1:5));
 
 for i  = 1:length(sorted) % Loop through units from ALL days
-    
     % Find ISI, waveshape --> Store
     isi = diff(UNITS(sorted(i)).ts);
     ISI{i} = isi(isi < 1);
-    WAVE{i} = UNITS(sorted(i)).wave;
-    
+    WAVE{i} = UNITS(sorted(i)).wave;    
 end
 
 IDS = vertcat(UNITS(sorted).id);
@@ -177,18 +175,22 @@ for i = 1:num_days % Loop through days
                 
                 % Find p value for ISI using KS statistic
                 try
-                p_isi = interp1(sortrows(unique(ts_ISI)'),1:length(unique(ts_ISI)),kSTAT,'linear')./length(unique(ts_ISI));
+                    p_isi = interp1(sortrows(unique(ts_ISI)'),1:length(unique(ts_ISI)),kSTAT,'linear')./length(unique(ts_ISI));
                 catch
                     keyboard
-                    end
+                end
                 
                 if isnan(p_isi)
                     p_isi = interp1(sortrows(unique(ts_ISI)'),1:length(unique(ts_ISI)),kSTAT,'linear','extrap')./length(unique(ts_ISI));
                 end
                 
                 % Find p value for wave shape using linear projection
-                p_wave = interp1(sortrows(lda_proj),1:length(lda_proj),...
-                    lda_dist,'linear','extrap')./length(lda_proj);
+                try
+                    p_wave = interp1(sortrows(unique(lda_proj)),1:length(unique(lda_proj)),...
+                        lda_dist,'linear','extrap')./length(unique(lda_proj));
+                catch
+                    keyboard
+                end
                 
                 % If the combined p value is within specified confidence level
                 temp = 1;

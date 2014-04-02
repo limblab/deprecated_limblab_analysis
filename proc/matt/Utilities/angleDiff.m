@@ -29,15 +29,17 @@ end
 
 % Find the difference
 adiff = abs(angle2 - angle1);
+s = sign(angle2-angle1);
 
 % If greater than 180, subtract from 360 to get magnitude
 for i = 1:length(adiff)
     if adiff(i) > a
         adiff(i) = abs(2*a-adiff(i));
+        s(i) = -s(i);
     end
 end
 
 % preserve the sign... more counterclockwise is positive
 if preserveSign
-    adiff = sign(angle2-angle1).*adiff;
+    adiff = s.*adiff;
 end

@@ -48,13 +48,13 @@ for iArray = 1:length(arrays)
         sg{i} = data{i}.sg;
     end
     
-    % find units that are not common to all
-    badUnits = checkUnitGuides(sg);
-    
-    % remove those indices
-    for i = 1:length(sg)
-        data{i}.sg = setdiff(data{i}.sg, badUnits, 'rows');
-    end
+%     % find units that are not common to all
+%     badUnits = checkUnitGuides(sg);
+%     
+%     % remove those indices
+%     for i = 1:length(sg)
+%         data{i}.sg = setdiff(data{i}.sg, badUnits, 'rows');
+%     end
     
     disp(['Comparing cells for ' currArray '...'])
     

@@ -29,6 +29,7 @@ for iFile = 1:size(doFiles,1)
             t = binnedData.timeframe;
             pos = binnedData.cursorposbin;
             vel = binnedData.velocbin;
+            force = binnedData.forcedatabin;
             neural = binnedData.spikeratedata;
             
             % identify the beginning and end times of all movements
@@ -41,31 +42,60 @@ for iFile = 1:size(doFiles,1)
             % [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
             [mt,centers] = getMovementTable(trial_table,doFiles{iFile,4});
             
-            allAngs = zeros(size(t,1),1);
             allAngs = [];
             allNeural = [];
             allVelocity = [];
             allPosition = [];
+            allCompVelocity = [];
+            allMoveDir = [];
+            allForce = [];
             for iMove = 1:size(centers,1)
                 tstart = mt(iMove,mtInds(1));
                 tend = mt(iMove,mtInds(2));
                 
                 inds = t >= tstart & t < tend;
-                angs = atan2(centers(iMove,2)-pos(inds,2),centers(iMove,1)-pos(inds,1))+pi;
+                
+                % want to keep track of beginning/end of trials
+                
+                
+                % make target direction vector
+                angs = atan2(centers(iMove,2)-pos(inds,2),centers(iMove,1)-pos(inds,1));
+                
+                % make vector of movement direction
+                movedir = atan2(vel(inds,2),vel(inds,1));
+                
+                if ~isempty(force)
+                    % make weirdo force vector
+                    newvel = movedir - atan2(force(inds,2),force(inds,1));
+                    newforce = force(inds,:);
+                else
+                    newvel = movedir;
+                    newforce = [];
+                end
                 
                 allNeural = [allNeural; neural(inds,:)];
                 allAngs = [allAngs; angs];
                 allPosition = [allPosition; pos(inds,:)];
                 allVelocity = [allVelocity; vel(inds,:)];
-                
+                allForce = [allForce; newforce];
+                allMoveDir = [allMoveDir; movedir];
+                allCompVelocity = [allCompVelocity; newvel];
             end
             
             binnedData.spikeratedata = allNeural;
             binnedData.timeframe = binSize.*(1:length(allAngs))';
-            binnedData.targetanglebin = allAngs;
             binnedData.velocbin = allVelocity;
+            binnedData.forcedatabin = allForce;
             binnedData.cursorposbin = allPosition;
+            
+            binnedData.targetanglebin = allAngs;
             binnedData.targetanglelabels = 'targ_angle';
+            
+            binnedData.compvelocbin = allCompVelocity;
+            binnedData.compveloclabels = 'comp_veloc';
+            
+            binnedData.movedirbin = allMoveDir;
+            binnedData.movedirlabels = 'move_dir';
             
             save(out_file,'binnedData');
             clear binsize t pos tt_file binnedData mt centers angs allAngs inds tstart tend binsize bin_file out_file tt_file;

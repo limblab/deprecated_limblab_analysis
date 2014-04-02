@@ -62,37 +62,34 @@ for iFile = 1:size(useDate,1)
     tuning = load(fullfile(baseDir, useDate{iFile,1}, useDate{iFile,2}, useDate{iFile,5}, [useDate{iFile,4} '_' useDate{iFile,3} '_tuning_' useDate{iFile,2} '.mat']));
     
     % histograms of BL->AD and AD->WO
-    allClasses = classes.(useArray).(tuneMethod).(usePeriod);
+    useClasses = classes.(tuneMethod).(usePeriod).(useArray);
     
     % get unit guides and pd matrices
-    allTuningBL = tuning.BL.(useArray).(tuneMethod).(usePeriod);
-    allTuningAD = tuning.AD.(useArray).(tuneMethod).(usePeriod);
-    allTuningWO = tuning.WO.(useArray).(tuneMethod).(usePeriod);
+    temp = tuning.(tuneMethod).(usePeriod).(useArray).tuning;
+    allTuningBL = temp(1);
+    allTuningAD = temp(2:4);
+    allTuningWO = temp(5);
+    
+    tuned_cells = useClasses.tuned_cells;
+    tune_sg = useClasses.sg;
+    
+    % first column is PD
+    cellClasses = useClasses.classes(:,1);
+    
+    sg_bl = allTuningBL.sg;
+    sg_wo = allTuningWO.sg;
     
     for iBlock = 1:length(useBlocks)
-        
-        tune_idx = allClasses(useBlocks(iBlock)).tuned_cells;
-        tune_sg = allClasses(useBlocks(iBlock)).sg;
-        tuned_cells = tune_sg(tune_idx,:);
-        
-        sg_bl = allTuningBL.sg;
         sg_ad = allTuningAD(useBlocks(iBlock)).sg;
-        sg_wo = allTuningWO.sg;
-        
-        pds_bl = allTuningBL.pds;
-        pds_ad = allTuningAD(useBlocks(iBlock)).pds;
-        pds_wo = allTuningWO.pds;
         
         % check to make sure the unit guides are okay
         badUnits = checkUnitGuides(sg_bl,sg_ad,sg_wo);
         sg_master = setdiff(sg_bl,badUnits,'rows');
-        
-        % second column is PD
-        cellClasses = allClasses(useBlocks(iBlock)).classes(:,2);
+
         
         useComp = tracking.(useArray){1}.chan;
         
-        useClasses = -1*ones(size(cellClasses));
+        goodClasses = -1*ones(size(cellClasses));
         for unit = 1:size(sg_master,1)
             % if the cell meets the tuning criteria
             %   and also if the cell is tracked across epochs
@@ -102,17 +99,17 @@ for iFile = 1:size(useDate,1)
                 relCompInd = useComp(:,1)==sg_master(unit,1)+.1*sg_master(unit,2);
                 if ~any(diff(useComp(relCompInd,:)))
                     classInd = tune_sg(:,1)==sg_master(unit,1) & tune_sg(:,2)==sg_master(unit,2);
-                    useClasses(unit) = cellClasses(classInd);
+                    goodClasses(unit) = cellClasses(classInd);
                 end
             end
         end
         
         % now count how many adapting and non-adapting cells there are
-        useClasses = useClasses(useClasses~=-1);
+        goodClasses = goodClasses(goodClasses~=-1);
         
         % store these for plotting later
-        adaptingCount{iBlock,iFile} = sum(useClasses == 2 | useClasses == 3);
-        nonAdaptingCount{iBlock,iFile} = sum(useClasses == 1 | useClasses == 4);
+        adaptingCount{iBlock,iFile} = sum(goodClasses == 2 | goodClasses == 3);
+        nonAdaptingCount{iBlock,iFile} = sum(goodClasses == 1 | goodClasses == 4);
     end
 end
 
@@ -128,7 +125,7 @@ adaptPercent = zeros(length(useBlocks),length(uTitles));
 
 for iBlock = 1:length(useBlocks)
     xticks = [];
-%     xticklabels = repmat({[uTitles{iFile} ' Non-Adapting'],'Adapting'},1,length(useDate));
+    %     xticklabels = repmat({[uTitles{iFile} ' Non-Adapting'],'Adapting'},1,length(useDate));
     xticklabels = {};
     
     fh = figure('Position', figurePosition);
@@ -167,7 +164,7 @@ for iBlock = 1:length(useBlocks)
     V = axis;
     set(gca,'YTick',V(3):3:V(4),'XTick',xticks,'XTickLabel',xticklabels,'FontSize',fontSize);
     ylabel('Count','FontSize',16);
-
+    
     if ~isempty(savePath)
         fn = [savePath '_block' num2str(useBlocks(iBlock)) '_bar.png'];
         saveas(fh,fn,'png');

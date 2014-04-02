@@ -1,4 +1,4 @@
-function tracking = trackNeuronsAcrossDays(paramFiles,criteria,saveData)
+function tracking = trackNeuronsAcrossDays(paramFiles,baseDir,criteria,saveData)
 % TRACKNEURONS  Run empirical KS test to check for stability of neurons
 %
 %   This function will allow you to track cells across days. Just pass in a
@@ -32,7 +32,6 @@ for iFile = 1:length(paramFiles)
     % Load some of the experimental parameters
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params = parseExpParams(expParamFile);
-    baseDir = params.out_dir{1};
     useDate = params.date{1};
     taskType = params.task{1};
     adaptType = params.adaptation_type{1};
@@ -42,7 +41,7 @@ for iFile = 1:length(paramFiles)
     dataPath = fullfile(baseDir,useDate);
     
     disp(['Loading data for ' useDate  '...'])
-    data = load(fullfile(dataPath,[taskType '_' adaptType '_WO_' useDate '.mat']));
+    data = load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']));
     
     % compile data into cell array
     allData{iFile} = data;

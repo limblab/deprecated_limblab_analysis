@@ -1,4 +1,4 @@
-function mt = filterMovementTable(data,paramSetName,excludeTrials,useBlock)
+function [mt,centers] = filterMovementTable(data,paramSetName,excludeTrials,useBlock)
 % filter movements out of one of my movement tables based on:
 %   1) reaction time
 %   2) time to target
@@ -30,20 +30,30 @@ clear params;
 % don't count the hold time in the time to target
 holdTime = data.params.hold_time;
 mt = data.movement_table;
+centers = data.movement_centers;
 
 if minReactionTime ~= -1 && maxReactionTime ~= -1
     reactionTime = mt(:,4) - mt(:,3);
-    mt = mt(reactionTime >= minReactionTime & reactionTime <= maxReactionTime,:);
+    idx = reactionTime >= minReactionTime & reactionTime <= maxReactionTime;
+    
+    mt = mt(idx,:);
+    centers = centers(idx,:);
 end
 
 if minTimeToTarget ~= -1 && maxTimeToTarget ~= -1
     timeToTarget = ( mt(:,6) - mt(:,4) ) - holdTime;
-    mt = mt(timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget,:);
+    idx = timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget;
+    
+    mt = mt(idx,:);
+    centers = centers(idx,:);
 end
 
 if minTimeToPeak ~= -1 && maxTimeToPeak ~= -1
     timeToPeak = mt(:,5) - mt(:,4);
-    mt = mt(timeToPeak >= minTimeToPeak & timeToPeak <= maxTimeToPeak,:);
+    idx = timeToPeak >= minTimeToPeak & timeToPeak <= maxTimeToPeak;
+    
+    mt = mt(idx,:);
+    centers = centers(idx,:);
 end
 
 % for adaptation, exclude some trials
@@ -53,29 +63,65 @@ if excludeTrials && ~isempty(ADexcludeFraction) && strcmp(data.meta.epoch,'AD')
     end
     
     if length(ADexcludeFraction) == 1
-        % remove the first however many trials
-        mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
-    else
-        start = floor(ADexcludeFraction(1)*size(mt,1));
-        if start <= 0
-            start = 1;
+        if ADexcludeFraction > 1 %it's a number of trials, not a fraction
+            % use the first however many trials
+            ADexcludeFraction = min([ADexcludeFraction,size(mt,1)]);
+            
+            mt = mt(1:ADexcludeFraction,:);
+            centers = centers(1:ADexcludeFraction,:);
+        else
+            % remove the first fraction of trials trials
+            mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
+            centers = centers(floor(ADexcludeFraction*size(mt,1)):end,:);
         end
-        mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
+    else
+        if any(ADexcludeFraction > 1)
+            % then trial number must be specified
+            ADexcludeFraction(2) = min([ADexcludeFraction(2),size(mt,1)]);
+            mt = mt(ADexcludeFraction(1):ADexcludeFraction(2),:);
+            centers = centers(ADexcludeFraction(1):ADexcludeFraction(2),:);
+        else
+            start = floor(ADexcludeFraction(1)*size(mt,1));
+            if start <= 0
+                start = 1;
+            end
+            mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
+            centers = centers(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
+        end
     end
     
 end
 
 % Do the same for washout
-%   Note: only supports one block for washout
 if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'WO')
+    if useBlock ~= -1 % then pick the correct indices
+        WOexcludeFraction = WOexcludeFraction(useBlock:useBlock+1);
+    end
+    
     if length(WOexcludeFraction) == 1
-        % remove the first however many trials
-        mt = mt(floor(WOexcludeFraction*size(mt,1)):end,:);
-    else
-        start = floor(WOexcludeFraction(1)*size(mt,1));
-        if start <= 0
-            start = 1;
+        if WOexcludeFraction > 1 %it's a number of trials, not a fraction
+            % use the first however many trials
+            WOexcludeFraction = min([WOexcludeFraction,size(mt,1)]);
+            mt = mt(1:WOexcludeFraction,:);
+            centers = centers(1:WOexcludeFraction,:);
+        else
+            % remove the first fraction of trials trials
+            mt = mt(floor(WOexcludeFraction*size(mt,1)):end,:);
+            centers = centers(floor(WOexcludeFraction*size(mt,1)):end,:);
         end
-        mt = mt(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
+    else
+        if any(WOexcludeFraction > 1)
+            % then trial number must be specified
+            WOexcludeFraction(2) = min([WOexcludeFraction(2),size(mt,1)]);
+            mt = mt(WOexcludeFraction(1):WOexcludeFraction(2),:);
+            centers = centers(WOexcludeFraction(1):WOexcludeFraction(2),:);
+        else
+            start = floor(WOexcludeFraction(1)*size(mt,1));
+            if start <= 0
+                start = 1;
+            end
+            mt = mt(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
+            centers = centers(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
+        end
     end
 end

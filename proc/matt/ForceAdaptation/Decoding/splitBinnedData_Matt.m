@@ -91,6 +91,29 @@ if isfield(binnedData,'targetanglelabels')
     testData.targetanglelabels  = binnedData.targetanglelabels;
 end
 
+%% Compensated velocity
+if isfield(binnedData,'compvelocbin')
+    if ~isempty(binnedData.compvelocbin)
+        trainData.compvelocbin = binnedData.compvelocbin(trainBins,:);
+        testData.compvelocbin = binnedData.compvelocbin(testBins,:);
+    end
+end
+if isfield(binnedData,'compveloclabels')
+    trainData.compveloclabels = binnedData.compveloclabels;
+    testData.compveloclabels = binnedData.compveloclabels;
+end
+
+%% Movement direction
+if isfield(binnedData,'movedirbin')
+    if ~isempty(binnedData.movedirbin)
+        trainData.movedirbin = binnedData.movedirbin(trainBins,:);
+        testData.movedirbin = binnedData.movedirbin(testBins,:);
+    end
+end
+if isfield(binnedData,'movedirlabels')
+    trainData.movedirlabels = binnedData.movedirlabels;
+    testData.movedirlabels = binnedData.movedirlabels;
+end
 
 %% States
 

@@ -1,4 +1,4 @@
-function DataSigs = concatSigs_Matt(binnedData, EMGs, Force, CursPos, Veloc, Targ)
+function DataSigs = concatSigs_Matt(binnedData, EMGs, Force, CursPos, Veloc, Targ, CompVeloc, MoveDir)
 
     DataSigs = [];
 
@@ -17,6 +17,11 @@ function DataSigs = concatSigs_Matt(binnedData, EMGs, Force, CursPos, Veloc, Tar
     if Targ
         DataSigs = [DataSigs binnedData.targetanglebin];
     end
-
+    if CompVeloc
+        DataSigs = [DataSigs binnedData.compvelocbin];
+    end
+    if MoveDir
+        DataSigs = [DataSigs binnedData.movedirbin];
+    end
 end
 

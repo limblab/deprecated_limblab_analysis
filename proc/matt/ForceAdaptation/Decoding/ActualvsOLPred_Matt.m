@@ -65,6 +65,24 @@ function varargout = ActualvsOLPred_Matt(ActualData, PredData, varargin)
                 end
             end
         end
+        
+        if isfield(ActualData,'compvelocbin')
+            if ~isempty(ActualData.compvelocbin)
+                if all(strcmp(nonzeros(ActualData.compveloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
+                    ActSignalsTrunk(:,i:i+size(ActualData.compvelocbin,2)-1) = ActualData.compvelocbin(idx,:);
+                    ActSignalsFull (:,i:i+size(ActualData.compvelocbin,2)-1) = ActualData.compvelocbin;
+                end
+            end
+        end
+        
+        if isfield(ActualData,'movedirbin')
+            if ~isempty(ActualData.movedirbin)
+                if all(strcmp(nonzeros(ActualData.movedirbin(1,:)),nonzeros(PredData.outnames(i,:))))
+                    ActSignalsTrunk(:,i:i+size(ActualData.movedirbin,2)-1) = ActualData.movedirbin(idx,:);
+                    ActSignalsFull (:,i:i+size(ActualData.movedirbin,2)-1) = ActualData.movedirbin;
+                end
+            end
+        end
     end
   
     R2 = CalculateR2(ActSignalsTrunk,PredData.preddatabin)';

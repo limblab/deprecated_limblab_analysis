@@ -58,7 +58,7 @@ for trial = 1:size(mt,1)
     elseif strcmpi(tuningPeriod,'pre') % Use pre-movement period
         useWin(trial,:) = [mt(trial,2)+0.1, mt(trial,4)];
     elseif strcmpi(tuningPeriod,'full') % Use entire movement
-        useWin(trial,:) = [mt(trial,3), mt(trial,6)];
+        useWin(trial,:) = [mt(trial,2), mt(trial,6)];
     elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak
         useWin(trial,:) = [mt(trial,4), mt(trial,5)];
     elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
