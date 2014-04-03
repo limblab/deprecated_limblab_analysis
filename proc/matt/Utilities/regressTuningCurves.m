@@ -129,8 +129,8 @@ switch lower(sigTest{1})
         ang_dist_sort = sort(ang_dist,2);
         
         % calculate index range for 2.5 to 97.5 percent
-        ang_ind_low = ceil(numIters*(1-confLevel)/2);
-        ang_ind_high = floor(numIters*confLevel);
+        ang_ind_low = ceil(numIters*( (1-confLevel)/2 ));
+        ang_ind_high = floor(numIters*( confLevel + (1-confLevel)/2 ));
         if ang_ind_low < 1
             ang_ind_low = 1;
         end
@@ -142,10 +142,10 @@ switch lower(sigTest{1})
         
         
         b1s = sort(b1s,2);
-        md_sig = [b1s(:,ceil(numIters - confLevel*numIters)), b1s(:,floor(confLevel*numIters))];
+        md_sig = [b1s(:,ceil(numIters*( (1-confLevel)/2 ) )), b1s(:,floor(numIters*( confLevel + (1-confLevel)/2 )))];
         
         b0s = sort(b0s,2);
-        bo_sig = [b0s(:,ceil(numIters - confLevel*numIters)), b0s(:,floor(confLevel*numIters))];
+        bo_sig = [b0s(:,ceil(numIters*( (1-confLevel)/2 ) )), b0s(:,floor(numIters*( confLevel + (1-confLevel)/2 )))];
 
         b0s = mean(b0s,2);
         b1s = mean(b1s,2);
