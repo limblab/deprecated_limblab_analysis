@@ -58,7 +58,7 @@ switch lower(compMethod)
                     % get 95% confidence bounds
                     diffval = sort(diffval);
                     
-                    ci_sig = [diffval(ceil(numIters - confLevel*numIters)), diffval(floor(confLevel*numIters))];
+                    ci_sig = [diffval(ceil(numIters*( (1 - confLevel)/2 ))), diffval(floor(numIters*( confLevel + (1-confLevel)/2 )))];
                     
                     % is 0 in the confidence bound? if not, it is different
                     overlap = range_intersection([0 0],ci_sig);
