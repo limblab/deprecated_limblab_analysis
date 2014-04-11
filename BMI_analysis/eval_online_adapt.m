@@ -118,8 +118,9 @@ for file = 1:length(Adapt_idx)
     actual_force = [adapt_data.forcedatabin(:,1)/cursgain+offset_x ...
         adapt_data.forcedatabin(:,2)/cursgain+offset_y];
     
-    num_HC = sum(~adapt_data.trialtable(:,12));
+    num_HC    = sum(~adapt_data.trialtable(:,12));
     HC_idx    = find(~adapt_data.trialtable(:,12));
+    num_adapt = sum(adapt_data.trialtable(:,12));
     
     num_trials= size(adapt_data.trialtable,1);
     
