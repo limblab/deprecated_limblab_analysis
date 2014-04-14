@@ -161,6 +161,7 @@ fprintf(1,'\n')
 % close
 figure, set(gcf,'Position',[88 100 1324 420])
 col=1;
+if exist('folds','var')==0, folds=10; end
 for n=1:folds
     leftEdge=(n-1)*length(ytnew{1}(:,col))+1;
     rightEdge=n*length(ytnew{1}(:,col));
@@ -185,9 +186,13 @@ for n=1:length(dottedH)
     set(dottedH(n),'ydata',yData)
 end, clear n dottedH
 
-title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
-    PolynomialOrder,mean(vaf(:,col)),nfeat))
-
+if exist('PolynomialOrder','var')
+    title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
+        PolynomialOrder,mean(vaf(:,col)),nfeat))
+else
+    title(sprintf('real (blue) and predicted (green).  mean_{vaf}=%.4f, %d features', ...
+        mean(vaf(:,col)),nfeat))
+end
 %%  12.  build a decoder.
 % at this point, bestc & bestf are sorted by channel, while featind is
 % still sorted by feature correlation rank.
