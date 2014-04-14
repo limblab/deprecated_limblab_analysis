@@ -1,11 +1,9 @@
 % this script operates on a folder that contains 1 or more .mat
 % files containing FP and position data
 
-disp('WE ARE NO LONGER OVERWRITING THE BDFS (12/12/2013)')
-
 % folder/file info
 if exist('PathName','var')~=1
-    PathName = uigetdir('C:\Documents and Settings\Administrator\Desktop\RobertF\data\','select folder with data files');
+    PathName = uigetdir('E:\monkey data\','select folder with data files');
 end
 if sum(double(PathName)==0)~=0
     disp('cancelled')
@@ -52,6 +50,14 @@ for batchIndex=1:length(MATfiles)
         end
         clear S
     end
+    % for CO recordings, the logic to determind HC from BC is not reliable.  
+    
+    
+    
+    
+    
+    
+    
     % account for brain control files WITH handle.  A tiny minority,
     % but needs addressed.  Use number of targets.
     numTargets=getNumTargets(out_struct);
@@ -69,7 +75,7 @@ for batchIndex=1:length(MATfiles)
             (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) < 10) || ...
             (mean(max(out_struct.vel(:,2:3))-min(out_struct.vel(:,2:3))) > 300)
         % we're in brain control country.  Savor the flavor.
-%         get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
+        get_cursor_kinematics(out_struct);              % 1 to store in the remote directory
         out_struct=get_cursor_kinematics(out_struct);   % 1 for the upcoming kinematics calculation
         % need a function (or other clever way) to determine whether LFP
         % or spike control.  Most obvious is by looking at the decoder
@@ -111,7 +117,7 @@ for batchIndex=1:length(MATfiles)
                 % complete.  It doesn't account for CO brain control
                 % w/handle.  Right now that doesn't occur so it works, but
                 % it will need updated in a future release.
-%                 get_cursor_kinematics(out_struct);              % run once, to store in the remote directory
+                get_cursor_kinematics(out_struct);              % run once, to store in the remote directory
                 out_struct=get_cursor_kinematics(out_struct);   % run again, for the upcoming kinematics calculation
                 % make a stab at perfectly silent failure
                 try
