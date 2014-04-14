@@ -47,7 +47,7 @@ for batch_get_plx_ind=1:length(allFiles)
     end
     % save a cut-down version of the fp array for later inspection
     fprintf(1,'building fp array\n')
-    fpAssignScript
+    fpAssignScript2
     % puts fpchans, fp, samprate, and fptimes in the workspace 
     cutfp(batch_get_plx_ind).name=regexp(FileName,'.*(?=\.plx|\.mat)','match','once');
     cutfp(batch_get_plx_ind).data=fp(:,1:500:end);
