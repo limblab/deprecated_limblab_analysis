@@ -202,7 +202,7 @@ for fileInd=1:length(infoStruct)
         % if we're decoding CG or force from the EMGs, then EMGs are the
         % FPs.
         signalToDecode(1:3)='';
-        if ~isempty(signalToDecode) && strcmpi(signalToDecode,'CG')
+        if ~isempty(signalToDecode) %&& strcmpi(signalToDecode,'CG')
             fp=sig(:,2:end)';
         end
     end
@@ -410,7 +410,7 @@ for fileInd=1:length(infoStruct)
                                             warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
                                             warning('off','MATLAB:nearlySingularMatrix')
                                             [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~,~,~,ytnew,~,~,P, ...
-                                                ~,~,vaf_vald,ytnew_vald,y_pred_vald,P_vald,r2_vald] ...
+                                                ~,~,vaf_vald,ytnew_vald,y_pred_vald,P_vald,r2_vald,covMI] ...
                                                 = predictionsfromfp8v2(sig,'pos', ...
                                                 numfp,binsize,folds,numlags,numsides,samprate, ...
                                                 fp,fptimes,analog_times,'',wsz,nfeat,PolynomialOrder, ...
@@ -445,6 +445,7 @@ for fileInd=1:length(infoStruct)
                                             VAFstruct(fileInd,m).H=H;
                                             VAFstruct(fileInd,m).P=P;
                                             VAFstruct(fileInd,m).bands=paramStructIn.bands{bandGrps};
+                                            VAFstruct(fileInd,m).covMI=rowBoat(covMI);
                                             m=m+1;
                                             
                                             % export so we can look at raw data
@@ -509,8 +510,9 @@ for fileInd=1:length(infoStruct)
                                                     defaultElectrodeTypes)})
                                                 fpKeep=fp(fpSingleInd,:);
                                                 numfp=1;
-                                                [vaf,~,~,~,y_pred,~,~,~,~,bestf, ...
-                                                    bestc,H,~,~,~,~,ytnew,~,~,P] ...
+                                                [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~, ...
+                                                    ~,~,ytnew,~,~,P,~,~,vaf_vald,ytnew_vald, ...
+                                                    y_pred_vald,P_vald,r2_vald,covMI] ...
                                                     = predictionsfromfp8v2(sig,'pos', ...
                                                     numfp,binsize,folds,numlags,numsides,samprate, ...
                                                     fpKeep,fptimes,analog_times,'',wsz,nfeat, ...
@@ -545,6 +547,7 @@ for fileInd=1:length(infoStruct)
                                                 VAFstruct(fileInd,m).H=H;
                                                 VAFstruct(fileInd,m).P=P;
                                                 VAFstruct(fileInd,m).bands=paramStructIn.bands{bandGrps};
+                                                VAFstruct(fileInd,m).covMI=rowBoat(covMI);
                                                 m=m+1;
                                                 
                                                 % export so we can look at raw data
@@ -603,6 +606,7 @@ for fileInd=1:length(infoStruct)
                                                 fprintf(1,formatstr,signalToDecode,mean(vaf,1))
                                                 fprintf(1,'\noverall mean vaf %.4f\n',mean(vaf(:)))
                                                 fprintf(1,'single channel: %d \n',fpSingleInd)
+                                                disp('done')
                                             end % fpSingle for loop
                                         end % fpSingle if statement
                                         assignin('base','VAFstruct',VAFstruct)
