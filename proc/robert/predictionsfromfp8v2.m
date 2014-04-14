@@ -211,11 +211,18 @@ tfmat=zeros(wsz,numfp,numbins,'single');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 [b,a]=butter(4,[88 92]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
-[b,a]=butter(4,[178 182]/(samprate/2),'stop');
+[b,a]=butter(4,[170 190]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
+[b,a]=butter(4,[250 270]/(samprate/2),'stop');
+fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
+% [b,a]=butter(4,[306 320]/(samprate/2),'stop');
+% fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
+% [b,a]=butter(4,[325 350]/(samprate/2),'stop');
+% fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 clear fp
-itemp=1:numlags;
+itemp=1:100;
 firstind=find(bs*itemp>wsz,1,'first');
+
 for i=1:numbins
     ishift=i-firstind+1;
     if ishift <= 0, continue, end
@@ -249,7 +256,7 @@ tic
 Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
 % for testing, when freqs=freqs(2:end) is commented out, above.
 % Pmat=tfmat(1:length(freqs)+1,:,:).*conj(tfmat(1:length(freqs)+1,:,:))*0.75;   %0.75 factor comes from newtimef (correction for hanning window)
-assignin('base','Pmat',Pmat)
+% assignin('base','Pmat',Pmat)
 Pmean=mean(Pmat,3); %take mean over all times
 PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
 assignin('base','PA',PA)
@@ -427,6 +434,8 @@ end
 % the default operation of sortrows is to sort first on column 1, then do a
 % secondary sort on column 2, which is exactly what we want, so we're done.
 x=x(:,sortInd);
+assignin('base','x',x)
+assignin('base','y',y)
 
 % % use all the non-validation data for training.
 % x_test = x(validationFoldStart:end,:);
@@ -554,6 +563,7 @@ end
 
 disp('5th part: do predictions')
 
+assignin('base','H',H)
 
 vmean=mean(vaf);
 vsd=std(vaf,0,1);
