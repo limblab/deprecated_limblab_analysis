@@ -53,7 +53,10 @@ try
             batch_buildLFPpositionDecoderRDF    % only runs on hand-control files
             diary off
             batch_build1FeatureDecoders
-            save('singleFeatureDecoders.mat','vaf1feat_all','bestf1feat_all','bestc1feat_all','VAFstruct')
+            try
+                save('singleFeatureDecoders.mat','vaf1feat_all', ...
+                    'bestf1feat_all','bestc1feat_all','VAFstruct')
+            end
             diary(fullfile(PathName,'decoderOutput.txt'))
             batch_buildSpikePositionDecoderRDF  % only runs on hand-control files
         otherwise
