@@ -1,4 +1,4 @@
-function [vaf1feat,H,bestf1feat,bestc1feat]=buildLFP1featureDecoder(varargin)
+function [vaf1feat,H,bestf1feat,bestc1feat,featind]=buildLFP1featureDecoder(varargin)
 
 % syntax buildLFPpositionDecoderRDF(PathName,skipBadChannelsAssignment,nfeat,featShift)
 %
