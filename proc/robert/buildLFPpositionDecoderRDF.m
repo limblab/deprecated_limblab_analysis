@@ -172,6 +172,7 @@ neuronIDs='';
 freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300;30,50];
 % freq_bands = [70 300];
 % freq_bands(1:3,:)=[];
+% freq_bands = [30 50];
 featmat = [bestc', bestf']; 
 f_bands = cell(numfp,1);
 
