@@ -54,28 +54,31 @@ end
 % bdf.pos(:,3) = bdf.pos(:,3) - offsety;
 
 fprintf(1,'\n\nbuilding one-shot decoder using BuildModel.m\n\n')
+params=struct('binsize',[],'starttime',[],'stoptime',[],'EMG_hp',[], ...
+    'EMG_lp',[],'minFiringRate',[]);
 
 if interactive
-    [binsize,starttime,~,~,~,MinFiringRate,~]=convertBDF2binnedGUI;
+    [params.binsize,params.starttime,~,~,~,params.minFiringRate,~]=convertBDF2binnedGUI;
 else
-    binsize=0.05;
-    starttime=0;
-    MinFiringRate=0.5;
+    params.binsize=0.05;
+    params.starttime=0;
+    params.minFiringRate=0.5;
 end
-stoptime=bdf.meta.duration;
+params.stoptime=bdf.meta.duration;
 
 disp('Converting BDF structure to binned data, please wait...');
-binnedData = convertBDF2binned(varStr,binsize,starttime,stoptime,5,0,MinFiringRate);
+binnedData = convertBDF2binned(bdf,params);
 % assignin('base','binnedData',binnedData)
 
 if interactive
-    [fillen,~,PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc] = ...
-        BuildModelGUI(binsize,'');
+    [options.fillen,~,options.PolynomialOrder,options.PredEMGs, ...
+        options.PredForce,options.PredCursPos,options.PredVeloc] = ...
+        BuildModelGUI(params.binsize,'');
 else
-    fillen=0.05;
-    PolynomialOrder=3;
-    Pred_EMG=0; Pred_Force=0; Pred_CursPos=0; 
-    Pred_Veloc=1;
+    options.fillen=0.05;
+    options.PolynomialOrder=3;
+    options.PredEMGs=0; options.PredForce=0; options.PredCursPos=0; 
+    options.PredVeloc=1;
 end
 
 if nargin>2
@@ -84,10 +87,22 @@ if nargin>2
     binnedData.spikeguide=binnedData.spikeguide(unitIndexToUse,:);
     binnedData.spikeratedata=binnedData.spikeratedata(:,unitIndexToUse);
 end
-
-[filter,OLPredData] = BuildModel(binnedData, ...
-    'C:\Documents and Settings\Administrator\Desktop\s1_analysis',fillen,1, ...
-    PolynomialOrder,Pred_EMG,Pred_Force,Pred_CursPos,Pred_Veloc);
+%       options             : structure with fields:
+%           fillen              : filter length in seconds (tipically 0.5)
+%           UseAllInputs        : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
+%           PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
+%           PredEMG, PredForce, PredCursPos, PredVeloc, numPCs :
+%                               flags to include EMG, Force, Cursor Position
+%                               and Velocity in the prediction model
+%                               (0=no,1=yes), if numPCs is present, will
+%                               use numPCs components as inputs instead of
+%                               spikeratedata
+%           Use_Thresh,Use_EMGs,Use_Ridge:
+%                               options to fit only data above a certain
+%                               threshold, use EMGs as inputs instead of
+%                               spikes, or use a ridge regression to fit model
+%           plotflag            : plot predictions after xval
+[filter,OLPredData] = BuildModel(binnedData,options);
 % clear binnedData;
 disp('Done.');
 
@@ -112,7 +127,7 @@ datlen=length(OLPredData);
 fprintf(1,'\n')
 fprintf(1,'\n')
 fprintf(1,'\n')
-fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+fprintf(1,'PolynomialOrder=%d\n',options.PolynomialOrder)
 fprintf(1,'\n')
 fprintf(1,'binsize=%.2f\n',binsize)
 fprintf(1,'\n')
@@ -173,14 +188,14 @@ uList=unit_list(bdf);
 bdf.units(uList(:,2)==0)=[];
 % 2nd way to try
 bdf.units(size(cat(1,bdf.units.id),1)+1:end)=[];
-if MinFiringRate==0 && (length(bdf.units)~= size(binnedData.spikeratedata,2))
+if params.minFiringRate==0 && (length(bdf.units)~= size(binnedData.spikeratedata,2))
 	disp('size discrepancy in the one-shot vs. multi-fold methods of ')
 	disp('determing the number of included units from bdf.units')
 end
 cells=[];
 
 [vaf,~,~,~,~,~,~,~,~,~,~,~,~,~,~]=predictions_mwstikpolyMOD(bdf,signal, ...
-    cells,binsize,folds,numlags,numsides,lambda,PolynomialOrder,Use_Thresh);
+    cells,params.binsize,folds,numlags,numsides,lambda,options.PolynomialOrder,Use_Thresh);
 close
 
 if exist('FileName','var')==1
@@ -193,9 +208,9 @@ fprintf(1,'decoding %s\n',signal)
 fprintf(1,'numlags=%d\n',numlags)
 fprintf(1,'\n')
 fprintf(1,'\n')
-fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
+fprintf(1,'PolynomialOrder=%d\n',options.PolynomialOrder)
 fprintf(1,'\n')
-fprintf(1,'binsize=%.2f\n',binsize)
+fprintf(1,'binsize=%.2f\n',params.binsize)
 fprintf(1,'\n')
 
 vaf
