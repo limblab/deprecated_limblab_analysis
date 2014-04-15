@@ -28,9 +28,17 @@ else
 end
 r2Avg=r2Avg(featToKeep,:);
 figure, imagesc(r2Avg)
+set(gca,'FontSize',16,'FontWeight','bold')
 
-try                                                                         %#ok<TRYNC>
+try
     [~,~,~,~,~,~] = CorrCoeffMap(r2Avg,0);
+    set(gca,'FontSize',16,'FontWeight','bold')
+catch ME
+    if isequal(ME.identifier,'MATLAB:UndefinedFunction')
+        % we do need this function to exist for the line plot to make any
+        % sense.
+        rethrow(ME)
+    end
 end
 caxis([0 1])
 temp=nanmean(get(get(gca,'Children'),'CData'),2); 
@@ -39,3 +47,4 @@ plot(temp,'ok','LineWidth',2)
 set(gca,'Ylim',[0 1],'FontSize',16,'box','off', ...
     'XTick',[min(get(gca,'Xlim')) max(get(gca,'Xlim'))])
 set(gcf,'Color',[0 0 0]+1)
+set(gca,'FontSize',16,'FontWeight','bold')

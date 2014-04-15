@@ -66,7 +66,3 @@ for n=1:length(corrMat_Mini)
 end, clear n unitsIncluded
 figure, imagesc(mean(corrMatAll_Mini,3))
 
-%%
-
-
-for n=1:10, for k=1:10, text(k,n,sprintf('%d',map_matrix(n,k)),'HorizontalAlignment','Center','VerticalAlignment','middle'), end, end
