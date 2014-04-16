@@ -95,7 +95,7 @@ newIndexA = newIndexA+600;
 end
 
 
-hybridData.meta.filename = 'Z:\Jango_12a1\CerebusData\Generalizability\10-21-13\Jango_Hybrid.nev';
+hybridData.meta.filename = 'Z:\Jango_12a1\ContextDependence\03-10-14\Jango_Hybrid.nev';
 HybridFinal = File1;
 HybridFinal.meta = hybridData.meta;
 HybridFinal.timeframe = hybridData.timeframe;
@@ -107,7 +107,7 @@ HybridFinal.velocbin = hybridData.velocbin;
 HybridFinal.spikeratedata=hybridData.spikeratedata;
 
 
-alteredDataIso.meta.filename = 'Z:\Jango_12a1\CerebusData\Generalizability\10-21-13\Jango_Hybrid.nev';
+alteredDataIso.meta.filename =  'Z:\Jango_12a1\ContextDependence\03-10-14\Jango_Hybrid.nev';
 AlteredIsoFinal = File1;
 AlteredIsoFinal.meta = alteredDataIso.meta;
 AlteredIsoFinal.timeframe = alteredDataIso.timeframe;
@@ -119,14 +119,14 @@ AlteredIsoFinal.velocbin = alteredDataIso.velocbin;
 AlteredIsoFinal.spikeratedata=alteredDataIso.spikeratedata;
 
 
-alteredDataWM.meta.filename = 'Z:\Jango_12a1\CerebusData\Generalizability\10-21-13\Jango_Hybrid.nev';
+alteredDataWM.meta.filename =  'Z:\Jango_12a1\ContextDependence\03-10-14\Jango_Hybrid.nev';
 AlteredWMFinal = File1;
 AlteredWMFinal.meta = alteredDataWM.meta;
 AlteredWMFinal.timeframe = alteredDataWM.timeframe;
 AlteredWMFinal.emgdatabin = alteredDataWM.emgdatabin;
 AlteredWMFinal.forcedatabin = alteredDataWM.forcedatabin;
 AlteredWMFinal.cursorposbin = alteredDataWM.cursorposbin;
-%AlteredWMFinal.accelbin = alteredDataWM.accelbin;
+AlteredWMFinal.accelbin = alteredDataWM.accelbin;
 AlteredWMFinal.velocbin = alteredDataWM.velocbin;
 AlteredWMFinal.spikeratedata=alteredDataWM.spikeratedata;
 

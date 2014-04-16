@@ -1,7 +1,7 @@
 %mainGneralizability
 % Main Generalizability code
 
-Sulcus = 0; Gyrus = 0;
+Sulcus = 1; Gyrus = 1;
 
 % Load the three types of binnedData files
 %IsoBinned = load(['Z:' filesep 'Jaco_8I1' filesep 'BinnedData' filesep 'OldvNewCortex' filesep '08-13-13' filesep 'Jaco_Iso__horiz_EMGonly_08-13-13_001']);
@@ -87,8 +87,8 @@ HybModelAll = BuildModel(HybBinned, options);
 % 
 % [IsoWithin_All_mfxval_R2, IsoWithin_All_mfxval_vaf, IsoWithin_All_mfxval_mse, Iso_All_OLPredData] = mfxval(IsoBinned, dataPath, fold_length, fillen, 1, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
 % [WmWithin_All_mfxval_R2, WmWithin_All_mfxval_vaf, WmWithin_All_mfxval_mse, Wm_All_OLPredData] = mfxval(WmBinned, dataPath, fold_length, fillen, 1, PolynomialOrder, PredEMG, PredForce, PredCursPos, PredVeloc, Use_States,plotflag);
-[IsoWithin_All_mfxval_R2, IsoWithin_All_mfxval_vaf, IsoWithin_All_mfxval_mse, Iso_All_OLPredData] = mfxval(IsoBinned,options);
-[WmWithin_All_mfxval_R2, WmWithin_All_mfxval_vaf, WmWithin_All_mfxval_mse, Wm_All_OLPredData] = mfxval(WmBinned, options);
+%4/9/14 [IsoWithin_All_mfxval_R2, IsoWithin_All_mfxval_vaf, IsoWithin_All_mfxval_mse, Iso_All_OLPredData] = mfxval(IsoBinned,options);
+%4/9/14 [WmWithin_All_mfxval_R2, WmWithin_All_mfxval_vaf, WmWithin_All_mfxval_mse, Wm_All_OLPredData] = mfxval(WmBinned, options);
 
 
 numVals = length(IsoWithin_All_mfxval_R2);

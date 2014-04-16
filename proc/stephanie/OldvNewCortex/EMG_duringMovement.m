@@ -4,7 +4,7 @@ binnedData.trialtable(getrid,:)=[];
 
 x = binnedData.timeframe; %time in seconds
 
-figure
+figure    
 plot1 = subplot(2,1,1);
 % Plot a shaded area from Go Cue to End of Trial
 for i=1:length(binnedData.trialtable)
@@ -14,7 +14,7 @@ for i=1:length(binnedData.trialtable)
     start(i)= find(abs(binnedData.timeframe-Go_ts) <= 0.05,1,'first'); %to convert to sec
     stop(i) = find(abs(binnedData.timeframe-TrialEnd_ts) <= 0.05,1,'first'); %to convert to sec
     patch([start(i)*.05 stop(i)*.05 stop(i)*.05 start(i)*.05],[0.4 0.4 40 40],'k','FaceAlpha',0.1,'EdgeAlpha',0);
-    text(((start(i)*.05)+(stop(i)*.05))/2, 10,TgtNo,'FontSize',20);
+    %text(((start(i)*.05)+(stop(i)*.05))/2, 10,TgtNo,'FontSize',20);
     hold on
     
 %     for a=1:6
