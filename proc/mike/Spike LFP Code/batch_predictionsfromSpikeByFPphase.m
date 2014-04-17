@@ -2,7 +2,7 @@
 %Uses MRSpredictionsfromfp6allDecoderBuild
 input = 2;
 %file list name
-MATfiles = Mini_COfilenames;
+MATfiles = Mini_Learning;
 
 Usefeatmat = 0;
 %Use 1 if loading files from folder structure, use 2 if using list of

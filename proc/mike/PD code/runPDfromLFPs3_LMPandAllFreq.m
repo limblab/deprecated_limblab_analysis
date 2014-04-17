@@ -1,13 +1,14 @@
-%This script runs PDs_from_LFPs_MWS for multiple files
-%11/28/11
+% This script runs PDs_from_LFPs_MWSposlog2 and PDs_from_LFPs_MWSposlogLMP...
+% for multiple files
+% 4/17/14
 
 chinds=1:96;
 LMPbandstart=[];
 LMPbandend=[];
-bandstart=[0, 7, 70, 130, 200];
-bandend=[4, 20, 115, 200, 300];
+bandstart=  [0, 7, 70, 130, 200];
+bandend=    [4, 20, 115, 200, 300];
 
-filelist= ChewieSpikeBCFileNames;
+filelist= Chewie_filenames_Valid;
 
 if ~exist('chinds','var')
     disp('Please tell me which channels to run!')

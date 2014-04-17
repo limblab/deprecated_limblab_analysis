@@ -1,30 +1,142 @@
+%% New plot code
+HCi = [1 2];
+BC1Dsi = [5 6];
+BC1Dg3i = [3 4];
+BC2Di = [7 9];
+
+for t = 1:size(Coherency,1)
+    
+CoherencyCAT(t,1).AllFiles = cat(3,Coherency(t,HCi(1):HCi(2)).AllFiles);
+CoherencyCAT(t,1).Error = cat(3,Coherency(t,HCi(1):HCi(2)).Error);
+CoherencyCAT(t,2).AllFiles = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).AllFiles);
+CoherencyCAT(t,2).Error = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).Error);
+CoherencyCAT(t,3).AllFiles = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).AllFiles);
+CoherencyCAT(t,3).Error = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).Error);
+CoherencyCAT(t,4).AllFiles = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).AllFiles);
+CoherencyCAT(t,4).Error = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).Error);
+
+end
+colors = ['r';'b'; 'k'; 'g'];
+
+for y = 1 : size(CoherencyCAT,1)
+    
+    subplot(1,size(CoherencyCAT,1), y)
+    
+    for x = 1: size(CoherencyCAT,2)
+
+        CoherencyMAT = squeeze(mean(CoherencyCAT(y,x).AllFiles(f{y} > 200 & f{y} < 300,:,:),1));
+              
+%       plot(CoherencyMAT)
+        hold on
+        CoherencyAVG = nanmean(CoherencyMAT,2)
+        m(x) = plot(CoherencyAVG)
+        set(m(x),'LineWidth',4.0,'Color',sprintf('%s',colors(x)))
+%         ErrorMAT = nanmean(nanmean(CoherencyCAT(y,x).Error(:,f{y} > 200 & f{y} < 300,:),2),3)';
+        ErrorMAT = nanstd(CoherencyMAT,0,2)./sqrt(size(CoherencyMAT,2));
+        Upperbound = CoherencyAVG + ErrorMAT;
+        Lowerbound = CoherencyAVG - ErrorMAT;
+        e = plot([Upperbound Lowerbound],'--')
+        set(e,'LineWidth',2.0,'Color',sprintf('%c',colors(x)))
+        
+        clear CoherencyMAT ErrorMAT e
+        
+    end
+    
+end
+subplot(1,size(CoherencyCAT,1), 1)
+legend(m,[{'HC'},{'1D gamma'},{'1D spike'},{'2D BC'}])
+
+for t = 1:size(Cohgram,1)
+    
+CohgramCAT(t,1).AllFiles   = cat(3,Cohgram(t,HCi(1):HCi(2)).Success);
+CohgramCAT(t,1).Fail       = cat(3,Cohgram(t,HCi(1):HCi(2)).Fail);
+CohgramCAT(t,1).Incomplete = cat(3,Cohgram(t,HCi(1):HCi(2)).Incomplete);
+CohgramCAT(t,1).Error      = cat(3,Cohgram(t,HCi(1):HCi(2)).Error);
+
+CohgramCAT(t,2).Success    = cat(3,Cohgram(t,BC1Dsi(1):BC1Dsi(2)).Success);
+CohgramCAT(t,2).Fail       = cat(3,Cohgram(t,BC1Dsi(1):BC1Dsi(2)).Fail);
+CohgramCAT(t,2).Incomplete = cat(3,Cohgram(t,BC1Dsi(1):BC1Dsi(2)).Incomplete);
+CohgramCAT(t,2).Error      = cat(3,Cohgram(t,BC1Dsi(1):BC1Dsi(2)).Error);
+
+CohgramCAT(t,3).AllFiles   = cat(3,Cohgram(t,BC1Dg3i(1):BC1Dg3i(2)).Success);
+CohgramCAT(t,3).Fail       = cat(3,Cohgram(t,BC1Dg3i(1):BC1Dg3i(2)).Fail);
+CohgramCAT(t,3).Incomplete = cat(3,Cohgram(t,BC1Dg3i(1):BC1Dg3i(2)).Incomplete);
+CohgramCAT(t,3).Error      = cat(3,Cohgram(t,BC1Dg3i(1):BC1Dg3i(2)).Error);
+
+
+CohgramCAT(t,4).AllFiles   = cat(3,Cohgram(t,BC2Di(1):BC2Di(2)).Success);
+CohgramCAT(t,4).Fail       = cat(3,Cohgram(t,BC2Di(1):BC2Di(2)).Fail);
+CohgramCAT(t,4).Incomplete = cat(3,Cohgram(t,BC2Di(1):BC2Di(2)).Incomplete);
+CohgramCAT(t,4).Error      = cat(3,Cohgram(t,BC2Di(1):BC2Di(2)).Error);
+
+end
+
+figure
+for y = 1 : size(Cohgram,1)
+    for x = 1: size(Cohgram,2)
+
+        CohgramMAT = mean(cat(3,CohgramCAT(y,x).Success,CohgramCAT.Fail(y,x),CohgramCAT(y,x).Incomplete),3);
+
+        subplot(size(Cohgram,1), size(Cohgram,2), (y-1)*size(Cohgram,2)+x)
+        plot(CohgramMAT)
+        
+    end
+end
+
+figure
+for y = 1 : size(Cohgram,1)
+    for x = 1: size(Cohgram,2)
+
+        CohgramMAT = mean(Cohgram(y,x).Success,3);
+
+        subplot(size(Cohgram,1), size(Cohgram,2), (y-1)*size(Cohgram,2)+x)
+        plot(CohgramMAT)
+        
+    end
+end
+binsizes = [0.05 0.1 0.15 0.2 .25 0.5 1.0];
+
+for i= 1:size(C_AllFiles,2)
+ 
+    subplot(3,3,i)
+    
+    imagesc(C_AllFiles{1,i,4}')
+    title(sprintf('Bin size %d',binsizes(i)))
+    caxis([0 .1])
+    hold on
+    
+end
+
+
 %% For HC, 1D/2D BC comparison
 if 0
     HCi = [1 2];
     BC1Dsi = [5 6];
     BC1Dg3i = [3 4];
     BC2Di = [7 9];
-    C_all{1} = mean(C_AllFiles(:,:,HCi(1):HCi(2)),3);
-    C_all{2} = mean(C_AllFiles(:,:,BC1Dsi(1):BC1Dsi(2)),3);
-    C_all{3}= mean(C_AllFiles(:,:,BC1Dg3i(1):BC1Dg3i(2)),3);
-    C_all{4} = mean(C_AllFiles(:,:,BC2Di(1):BC2Di(2)),3);
+    C_AllFiles = reshape(C_AllFiles,1,1,9);
+
+    C_all{1} = nanmean(cell2mat(C_AllFiles(HCi(1):HCi(2))),3);
+    C_all{2} = nanmean(cell2mat(C_AllFiles(BC1Dsi(1):BC1Dsi(2))),3);
+    C_all{3}= nanmean(cell2mat(C_AllFiles(BC1Dg3i(1):BC1Dg3i(2))),3);
+    C_all{4} = nanmean(cell2mat(C_AllFiles(BC2Di(1):BC2Di(2))),3);
     
-    C{1} = C_AllFiles(13:16,103:end,HCi(1):HCi(2));
-    C{2} = C_AllFiles(13:16,103:end,BC1Dsi(1):BC1Dsi(2));
-    C{3}= C_AllFiles(13:16,103:end,BC1Dg3i(1):BC1Dg3i(2));
-    C{4} = C_AllFiles(13:16,103:end,BC2Di(1):BC2Di(2));   
+    C{1} = C_all{1}(17:20,27:39);
+    C{2} = C_all{2}(17:20,27:39);
+    C{3} = C_all{3}(17:20,27:39);
+    C{4} = C_all{4}(17:20,27:39);   
     
     for i = 1:size(C,2)
         C_mean{i} = mean(C{i},3);
-        C_mean_vector(:,i) = reshape(C_mean{i},208,1);
+        C_mean_vector(:,i) = reshape(C_mean{i},52,1);
     end
     
     subplot(3,4,1)
     hold on
     for j = HCi(1):HCi(2)
-        for i = 1:length(Trial_Success_Path_Whole_File{j})
-            if length(Trial_Success_Path_Whole_File{j}{i}) < 120
-                plot(Trial_Success_Path_Whole_File{j}{i}(:,2),Trial_Success_Path_Whole_File{j}{i}(:,3))
+        for i = 1:length(Trial_Path_Whole_File{j})
+            if length(Trial_Path_Whole_File{j}{i}) < 120
+                plot(Trial_Path_Whole_File{j}{i}(:,2),Trial_Path_Whole_File{j}{i}(:,3))
                 hold on
             end
         end
@@ -36,9 +148,9 @@ if 0
     subplot(3,4,2)
     hold on
     for j = BC1Dsi(1):BC1Dsi(2)
-        for i = 1:length(Trial_Success_Path_Whole_File{j})
-            if length(Trial_Success_Path_Whole_File{j}{i}) < 120
-                plot(Trial_Success_Path_Whole_File{j}{i}(:,2),Trial_Success_Path_Whole_File{j}{i}(:,3))
+        for i = 1:length(Trial_Path_Whole_File{j})
+            if length(Trial_Path_Whole_File{j}{i}) < 120
+                plot(Trial_Path_Whole_File{j}{i}(:,2),Trial_Path_Whole_File{j}{i}(:,3))
             end
         end
     end
@@ -47,9 +159,9 @@ if 0
     subplot(3,4,3)
     hold on
     for j = BC1Dg3i(1):BC1Dg3i(2)
-        for i = 1:length(Trial_Success_Path_Whole_File{j})
-            if length(Trial_Success_Path_Whole_File{j}{i}) < 120
-                plot(Trial_Success_Path_Whole_File{j}{i}(:,2),Trial_Success_Path_Whole_File{j}{i}(:,3))
+        for i = 1:length(Trial_Path_Whole_File{j})
+            if length(Trial_Path_Whole_File{j}{i}) < 120
+                plot(Trial_Path_Whole_File{j}{i}(:,2),Trial_Path_Whole_File{j}{i}(:,3))
             end
         end
     end
@@ -58,9 +170,9 @@ if 0
     subplot(3,4,4)
     hold on
     for j = BC2Di(1):BC2Di(2)
-        for i = 1:length(Trial_Success_Path_Whole_File{j})
-            if length(Trial_Success_Path_Whole_File{j}{i}) < 120
-                plot(Trial_Success_Path_Whole_File{j}{i}(:,2),Trial_Success_Path_Whole_File{j}{i}(:,3))
+        for i = 1:length(Trial_Path_Whole_File{j})
+            if length(Trial_Path_Whole_File{j}{i}) < 120
+                plot(Trial_Path_Whole_File{j}{i}(:,2),Trial_Path_Whole_File{j}{i}(:,3))
             end
         end
     end
@@ -78,12 +190,19 @@ if 0
     
     for j = 1:length(C)
         subplot(3,4,j+4)
-        imagesc(C_all{j})
-        caxis([0 .4])
+        imagesc(C_all{j}')
+        q = q+1;
+       % caxis([0 .25])
+        uBandYticks=[1:5:36];
+        allBands={'10','50','90','140','180','220','260','300'};
+        set(gca,'YTick',uBandYticks,'YTickLabel',allBands)
+        uBandXticks=[4:4:20];
+        allBands={'1.0','0.75','0.5','0.25','0.05'};
+        set(gca,'XTick',uBandXticks,'XTickLabel',allBands)
     end
     subplot(3,4,5)
-    xlabel('Time (50 ms bins)')
     ylabel('Freq (2 Hz bins)')
+    xlabel('Time before Reward (50 ms bins)')
 
     
     subplot(3,4,[9 10 11 12])
@@ -126,8 +245,10 @@ end
 %     set(gco,'FaceColor','none','EdgeColor','g','LineWidth',2.0)
 % end
 
+
 %% For learning comparison
- k = 1;
+
+k = 1;
 for j = [1, 2, 4]%length(Trial_Success_Path_Whole_File)
     subplot(3,3,k)
     h = fill([-2,-2,2,2],[12,8,8,12],'r');
@@ -149,22 +270,44 @@ for j = [1, 2, 4]%length(Trial_Success_Path_Whole_File)
     end
     k = k +1;
 end
+subplot(3,3,1)
+title('Early Learning')
+subplot(3,3,2)
+title('Middle Learning')
+subplot(3,3,3)
+title('Late Learning')
 
 q= 1;
 for j = [1,2,3]%:length(Trial_Success_Path_Whole_File)
     subplot(3,3,j+3)
-    imagesc(C_AllFiles(:,:,j))
+    imagesc(C_AllFiles(:,:,j)')
     q = q+1;
     caxis([0 .2])
+    uBandYticks=[9:40:150];
+    allBands={'20','100','180','260'};
+    set(gca,'YTick',uBandYticks,'YTickLabel',allBands)
+    uBandXticks=[4:4:16];
+    allBands={'0.65','0.45','0.25','0.05'};
+    set(gca,'XTick',uBandXticks,'XTickLabel',allBands)
 end
 
 subplot(3,3,4)
-xlabel('Time (50 ms bins)')
 ylabel('Freq (2 Hz bins)')
-
+xlabel('Time before Reward (50 ms bins)')
 
 subplot(3,3,[7 8 9])
-boxplot(C_mean_vector(:,[1,2,4]))
+figure; errorbar(mean(C_mean_vector(:,[1 2 4])),std(C_mean_vector(:,[1 2 4]))/sqrt(size(C_mean_vector,1)),'o');
+xticks = [1 2 3];
+xlabels = {'Session 1', 'Session 3', 'Session 7'};
+set(gca,'XTick',xticks,'XTickLabel',xlabels)
+
+hold on;
+[AX,H1,H2] = plotyy([1:3],mean(C_mean_vector(:,[1 2 4])),[1:3],PercentSuccess_File([1 2 4]));
+
+xlabel('Days Since Starting 2D-NF Task')
+
+set(get(AX(1),'Ylabel'),'String','Coherence') 
+set(get(AX(2),'Ylabel'),'String','Percent Success')
 
 xticks = [1 2 3];
 xlabels = {'Early', 'Middle ', 'Late'};

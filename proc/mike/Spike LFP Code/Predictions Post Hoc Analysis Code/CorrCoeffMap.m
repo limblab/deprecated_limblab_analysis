@@ -45,6 +45,7 @@ if PlotOn == 1
     p = polyfit(x,r_map_mean,1);
     f = polyval(p,x);
     plot(x,f,'k-')
+    ylim([0 1])
     
     [rho pval] = corr(x',r_map_mean')
     legend('Mean PD Map Correlation',['Linear Fit - ','R= ' num2str(rho,4) '  (P = ',num2str(pval),')'])
