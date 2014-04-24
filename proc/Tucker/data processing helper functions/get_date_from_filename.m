@@ -34,7 +34,8 @@ function date_vector=get_date_from_filename(keystring,filename)
     else
         if length(date_string)~=8  
             disp(strcat('Date string is: ',date_string))
-            error('get_date_from_filename:BadDateString','The numeric string that was recovered was not the correct length. Check your keystring')
+            warning('get_date_from_filename:BadDateString','The numeric string that was recovered was not the correct length. Check your keystring')
+            date_vector=date;
         end
         date_vector=[str2num(date_string(5:end)),str2num(date_string(1:2)),str2num(date_string(3:4)),0,0,0];
     end

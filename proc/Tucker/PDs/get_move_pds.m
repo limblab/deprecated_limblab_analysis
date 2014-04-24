@@ -30,13 +30,13 @@ close all
     array_map_path='C:\Users\limblab\Desktop\kramer_array_map\6251-0922.cmp';
     [outdata,H_upper,H_lower]=PD_plot(bdf,array_map_path,2,1);
     
-    %get the date the files were collected:
-    date_vector=get_date_from_filename('Kramer_',fname);
+%     %get the date the files were collected:
+%     date_vector=get_date_from_filename('Kramer_',fname);
     
-    
-    save(strcat(folderpath,'PD_moddepth_data_',datestr(date_vector),'.txt'),'outdata','-ascii')
-    print('-dpdf',H_upper,strcat(folderpath,'Upper_PD_plot_',datestr(date_vector),'.pdf'))
-    print('-dpdf',H_lower,strcat(folderpath,'Lower_PD_plot_',datestr(date_vector),'.pdf'))
+    %%
+    save(strcat(folderpath,'PD_moddepth_data_',date,'.txt'),'outdata','-ascii')
+    print('-dpdf',H_upper,strcat(folderpath,'Upper_PD_plot_',date,'.pdf'))
+    print('-dpdf',H_lower,strcat(folderpath,'Lower_PD_plot_',date,'.pdf'))
     
     
 fname=strcat(mfilename('fullpath'),'.m');
