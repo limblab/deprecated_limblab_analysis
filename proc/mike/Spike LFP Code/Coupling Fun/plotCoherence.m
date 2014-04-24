@@ -7,44 +7,52 @@ BC2Di = [7 9];
 for t = 1:size(Coherency,1)
     
 CoherencyCAT(t,1).AllFiles = cat(3,Coherency(t,HCi(1):HCi(2)).AllFiles);
-CoherencyCAT(t,1).Error = cat(3,Coherency(t,HCi(1):HCi(2)).Error);
+%CoherencyCAT(t,1).Error = cat(3,Coherency(t,HCi(1):HCi(2)).Error);
 CoherencyCAT(t,2).AllFiles = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).AllFiles);
-CoherencyCAT(t,2).Error = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).Error);
+%CoherencyCAT(t,2).Error = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).Error);
 CoherencyCAT(t,3).AllFiles = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).AllFiles);
-CoherencyCAT(t,3).Error = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).Error);
+%CoherencyCAT(t,3).Error = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).Error);
 CoherencyCAT(t,4).AllFiles = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).AllFiles);
-CoherencyCAT(t,4).Error = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).Error);
+%CoherencyCAT(t,4).Error = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).Error);
 
 end
 colors = ['r';'b'; 'k'; 'g'];
 
 for y = 1 : size(CoherencyCAT,1)
     
-    subplot(1,size(CoherencyCAT,1), y)
+    subplot(size(CoherencyCAT,1),1, y)
     
     for x = 1: size(CoherencyCAT,2)
 
-        CoherencyMAT = squeeze(mean(CoherencyCAT(y,x).AllFiles(f{y} > 200 & f{y} < 300,:,:),1));
+        CoherencyMAT = mean(CoherencyCAT(y,x).AllFiles,3);
               
-%       plot(CoherencyMAT)
+%        plot(CoherencyMAT)
+
+%         CoherencyAVG = nanmean(CoherencyMAT,2)
+        m(x) = plot(CoherencyMAT)
         hold on
-        CoherencyAVG = nanmean(CoherencyMAT,2)
-        m(x) = plot(CoherencyAVG)
-        set(m(x),'LineWidth',4.0,'Color',sprintf('%s',colors(x)))
+        set(m(x),'LineWidth',2.0,'Color',sprintf('%s',colors(x)))
 %         ErrorMAT = nanmean(nanmean(CoherencyCAT(y,x).Error(:,f{y} > 200 & f{y} < 300,:),2),3)';
         ErrorMAT = nanstd(CoherencyMAT,0,2)./sqrt(size(CoherencyMAT,2));
-        Upperbound = CoherencyAVG + ErrorMAT;
-        Lowerbound = CoherencyAVG - ErrorMAT;
-        e = plot([Upperbound Lowerbound],'--')
-        set(e,'LineWidth',2.0,'Color',sprintf('%c',colors(x)))
+%         Upperbound = CoherencyAVG + ErrorMAT;
+%         Lowerbound = CoherencyAVG - ErrorMAT;
+%         e = plot([Upperbound Lowerbound],'--')
+%         set(e,'LineWidth',2.0,'Color',sprintf('%c',colors(x)))
+        bandLabelsX= round(f{y});
+        uBandXticks=[1:floor(length(f{y})/10):length(f{y})];
+        set(gca,'XTick',uBandXticks,'XTickLabel',bandLabelsX(uBandXticks))
         
+        title(['Bin size = ',sprintf('%g',binsizes(y))])
+
         clear CoherencyMAT ErrorMAT e
         
     end
     
 end
-subplot(1,size(CoherencyCAT,1), 1)
-legend(m,[{'HC'},{'1D gamma'},{'1D spike'},{'2D BC'}])
+subplot(size(CoherencyCAT,1),1, 1)
+legend(m,[{'HC'},{'1D spike'},{'1D gamma'},{'2D BC'}])
+
+
 
 for t = 1:size(Cohgram,1)
     

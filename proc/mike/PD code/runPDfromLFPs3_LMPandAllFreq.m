@@ -8,7 +8,7 @@ LMPbandend=[];
 bandstart=  [0, 7, 70, 130, 200];
 bandend=    [4, 20, 115, 200, 300];
 
-filelist= Chewie_filenames_Valid;
+filelist= Chewie_LFP1filenames_Reduced_Valid;
 
 if ~exist('chinds','var')
     disp('Please tell me which channels to run!')
@@ -20,10 +20,10 @@ lag= -0.15;
 binlen= 0.15;
 pval=0.05;
 
-for i=1:length(filelist)
+for i=2:length(filelist)
     %     for i=1:length(numlist)
     
-    filewithpath=findBDFonCitadel(filelist{i},1);
+    filewithpath=findBDFonCitadel(filelist{i,1},1);
     postfix='_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos';   %LFP control file
     %         savename=[filelist{i}(1:27),postfix]; %For Mini; Chewie would be 28
     %        fnam=filewithpath(1:54); %for Mini; Chewie would be 57
@@ -48,12 +48,12 @@ for i=1:length(filelist)
         disp(['File ',filewithpath,'did not exist in this folder'])
         continue
     end   
-    
+
     [LFPfilesPDs,bootstrapPDS]=PDs_from_LFPs_MWSposlog2(fnam,chinds,bandstart,bandend,18,32,0,lag,binlen,pval);
     
     [LFPfilesLMP_PDs,bootstrapLMP_PDS,LMPcounts]=PDs_from_LFPs_MWSposlogLMP(fnam,chinds,LMPbandstart,LMPbandend,18,32,0,lag,binlen,pval);
 
-    save(savename,'LFPfiles*','bootst*','LMPcounts');
+    save(savename,'LFPfiles*','bootst*','LMPcounts','Chewie*');
     clear bdf *PD*
 end
 

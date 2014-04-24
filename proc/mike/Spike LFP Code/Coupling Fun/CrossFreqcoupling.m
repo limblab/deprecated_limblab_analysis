@@ -220,7 +220,7 @@ for q = 1:length(FileList_1D_2D_HC)
             paramsFP.fpass = [0 300];
             paramsFP.pad = 1;
             paramsFP.err = [1 0.05];
-            paramsFP.trialave = 0;
+            paramsFP.trialave = 1;
             segave = 0;
             fscorr = 0;
             t= [];
@@ -228,9 +228,8 @@ for q = 1:length(FileList_1D_2D_HC)
             %    [C_begin,phi,S12,S1,S2,t,f,zerosp]=cohgramcpt(Trial_FPbeginMAT,Trial_tsbegin,win,paramsFP);
             [C_end,~,~,~,~,~,fC{g},~,confC_cohgram,phistd]=cohgramcpt(Trial_FPendMAT,Trial_tsend,win,paramsFP);
 
-            for h = 1: size(Trial_FPendMAT,2)
-                [Coh_end(:,:,h),~,~,~,~,f{g},~,confC_Temp,phistd]=coherencysegcpt(Trial_FPendMAT(:,h),Trial_tsend(h),win,paramsFP,segave,fscorr);            
-            end
+            [Coh_end,~,~,~,~,f{g},~,confC_Temp,phistd]=coherencycpt(Trial_FPendMAT(end-1000*binsizes(g):end,:),Trial_tsend,paramsFP,fscorr,[1-binsizes(g):.001:1]);            
+
                 
             if isempty(Trial_Fail_FPendMAT) == 0
                 [C_Fail_end,~,~,~,~,~,~,~]=cohgramcpt(Trial_Fail_FPendMAT,Trial_Fail_tsend,win,paramsFP);
