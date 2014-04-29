@@ -7,7 +7,15 @@ function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
     %load data
     fname=follow_links([folderpath,input_data.filename]);
     disp(strcat('converting: ',fname))
-    bdf=get_cerebus_data(fname,3,'verbose','noeye');
+    foldercontents=dir(strcat(folderpath,'Output_Data\'));
+    fnames={foldercontents.name};%extracts just the names from the foldercontents
+    if ~isempty(strmatch( 'bdf.mat',fnames))
+        temp=load(strcat( folderpath,'Output_data\bdf.mat'));
+        bdf=temp.temp;
+        clear temp
+    else
+        bdf=get_cerebus_data(fname,3,'verbose','noeye');
+    end
     data_struct.bdf=bdf;
 
     %identify time vector for binning
