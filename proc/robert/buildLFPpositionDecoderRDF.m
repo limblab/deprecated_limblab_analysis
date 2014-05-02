@@ -9,7 +9,7 @@ function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 
 numlags=10;
 wsz=256;
-nfeat=50; featShift=100;
+nfeat=150; featShift=0;
 PolynomialOrder=3;
 smoothfeats=0;
 binsize=0.05;
