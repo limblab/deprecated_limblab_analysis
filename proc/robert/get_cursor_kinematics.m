@@ -190,8 +190,19 @@ if isfield(bdf.raw, 'analog') && ~isempty(bdf.raw.analog.data)
     % By taking the min here, we should be accounting for the situation
     % where Reach stops writing its file, well before SortClient, either
     % because it was stopped by the user or because it crashed.
-    last_analog_time = min(cellfun(@(x) x(1),bdf.raw.analog.ts) + ...
-        cellfun('length',bdf.raw.analog.data) / bdf.raw.analog.adfreq);
+    if isfield(bdf.raw.analog,'fn')
+        last_analog_time = min(cellfun(@(x) x(numel(x)),bdf.raw.analog.ts)+ ...
+            (cellfun(@(x) x(numel(x)),bdf.raw.analog.fn)./bdf.raw.analog.adfreq));
+    else        
+        if max(cellfun(@numel,bdf.raw.analog.ts)) > 1
+            warning('get_cursor_kinematics:fplength', ...
+                ['bdf.raw.analog.ts > 1, while no .fn field\n\t\t was detected', ...
+                'in bdf.raw.analog.\n\t\t Timing info may be inaccurate.'])
+        end
+        last_analog_time = min(cellfun(@(x) x(1),bdf.raw.analog.ts) + ...
+            cellfun('length',bdf.raw.analog.data) / bdf.raw.analog.adfreq);
+    end
+    
     last_BR_time=BRarray(end,7);
     if isfield(bdf.raw,'enc') && ~isempty(bdf.raw.enc)
         last_enc_time = bdf.raw.enc(end,1);
