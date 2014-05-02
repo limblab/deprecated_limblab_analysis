@@ -16,6 +16,8 @@ function kinStructOut=Mini_datenames(kinStructIn)
 % You can only know the date.
 
 if ispc
+    [status,result]=dos(['cd /d Z:\Mini_7H1\FilterFiles && dir ', ...
+                'kinStruct.mat /s /b']);
 else
     [status,result]=unix('find /Volumes/data/Mini_7H1/FilterFiles -name "kinStruct.mat" -print');
     if status~=0
@@ -28,6 +30,10 @@ else
     end
     clear res2
 end
+if status~=0
+    error(result)
+end
+
 returns=[1 regexp(result,sprintf('\n'))];
 p=1;
 for k=2:length(returns)
