@@ -165,10 +165,25 @@ for n=0:900
                 '[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]',decoderFile{1}),decoderFile{2});
             
             if exist(pathToDecoderMAT,'file')==2
-%                 load(pathToDecoderMAT,'H','bestf','bestc')
-%                 fprintf(1,'successfully loaded %s\n',pathToDecoderMAT)
                 decoderDate=decoderDateFromLogFile(nextFile,1);
                 break
+            else
+                % if it doesn't exist in the specified place, look for it
+                % in a subfolder
+                [startPath,dFnam,dFext]=fileparts(pathToDecoderMAT);
+                if ismac
+                    [status2,dFile]=unix(['find "',startPath,'" -name "', ...
+                        [dFnam,dFext],'" -print']);
+                else % PC case.  already know pathToBDF
+                    [status2,dFile]=dos(['cd /d ',startPath,' && dir ', ...
+                        [dFnam,dFext],' /s /b']);
+                end
+                if ~status2
+                    pathToDecoderMAT=dFile;
+                    pathToDecoderMAT(regexp(pathToDecoderMAT,sprintf('\n')))='';
+                    decoderDate=decoderDateFromLogFile(nextFile,1);
+                    break
+                end
             end
         end
     end
