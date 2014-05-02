@@ -13,7 +13,17 @@ START_TRIAL_WORD(START_TRIAL_WORD<17 | START_TRIAL_WORD>19)=[];
 % Weird glitch that happens occasionally in CO but never cropped up in
 % recorded history with RW, so it must be a CO if this happens...
 if length(START_TRIAL_WORD)>1 && all(START_TRIAL_WORD==17 | START_TRIAL_WORD==18)
-    START_TRIAL_WORD=17;
+    % edit 04-29-2014: this has now reared its head in an RW recording,
+    % from 07-04-2013 (file 003 on that day).  So, replace the former
+    % behavior:
+    % START_TRIAL_WORD=17;
+    % with a democratic approach:
+    if nnz(out_struct.words(:,2)==18) > 10*nnz(out_struct.words(:,2)==17)
+        START_TRIAL_WORD=18;
+    end
+    if nnz(out_struct.words(:,2)==17) > 10*nnz(out_struct.words(:,2)==18)
+        START_TRIAL_WORD=17;
+    end
 end
 
 % first, always must account for bad starts/ends.
