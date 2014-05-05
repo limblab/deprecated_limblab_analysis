@@ -1,7 +1,12 @@
-function plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder)
+function plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder,DateVec)
 
+% syntax plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder,DateVec)
+%
 % this function only works with 2D r2Array.  If there is a monkey dimension
 % in the input array, squeeze it out before passing it to this function.
+%
+% dateVec can be generated using something like 
+% datenum(regexp(HbankDays,'[0-9]{8}','match','once'),'mmddyyyy')-datenum('09-01-2011');
 
 r2Avg=nan(576,size(r2Array,1));
 for n=1:size(r2Array,1)
@@ -27,11 +32,22 @@ else
     featToKeep=sort(bandInd(:));
 end
 r2Avg=r2Avg(featToKeep,:);
-figure, imagesc(r2Avg)
+
+% average same days
+if nargin < 6
+    DateVec=1:size(r2Avg,2); % default to reporting each file
+end
+uDateVec=unique(DateVec,'stable');
+r2AvgDays=nan(size(r2Avg,1),length(uDateVec));
+for n=1:length(uDateVec)
+    r2AvgDays(:,n)=mean(r2Avg(:,DateVec==uDateVec(n)),2);
+end
+
+figure, imagesc(uDateVec,1:size(r2AvgDays,1),r2AvgDays)
 set(gca,'FontSize',16,'FontWeight','bold')
 
 try
-    [~,~,~,~,~,~] = CorrCoeffMap(r2Avg,0);
+    [~,~,~,~,~,~] = CorrCoeffMap(r2AvgDays,0);
     set(gca,'FontSize',16,'FontWeight','bold')
 catch ME
     if isequal(ME.identifier,'MATLAB:UndefinedFunction')
@@ -42,9 +58,8 @@ catch ME
 end
 caxis([0 1])
 temp=nanmean(get(get(gca,'Children'),'CData'),2); 
-figure
-plot(temp,'ok','LineWidth',2)
-set(gca,'Ylim',[0 1],'FontSize',16,'box','off', ...
-    'XTick',[min(get(gca,'Xlim')) max(get(gca,'Xlim'))])
+figure, set(gcf,'Position',[160    93   950   420])
+plot(uDateVec,temp,'ok','LineWidth',2)
+set(gca,'Ylim',[0 1],'FontSize',16,'box','off')         % 'XTick',[min(get(gca,'Xlim')) max(get(gca,'Xlim'))]
 set(gcf,'Color',[0 0 0]+1)
-set(gca,'FontSize',16,'FontWeight','bold')
+set(gca,'FontSize',16,'FontWeight','bold','Position',[0.0516 0.1100 0.8853 0.7995])
