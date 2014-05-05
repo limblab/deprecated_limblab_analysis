@@ -1,5 +1,8 @@
-function [r2_X_SingleUnits,r2_Y_SingleUnits,H_SingleUnits,bestc,bestf]=batch_SFDrunpredfp6_saveFeatMat(Monkeys,featind)
+function [r2_X_SingleUnits,r2_Y_SingleUnits,H_SingleUnits,bestc,bestf]=batch_SFDrunpredfp6_saveFeatMat(Monkeys,featind,resumeFromPartial)
 
+if nargin < 3
+    resumeFromPartial=0;
+end
 dbstop if error
 
 signalType = 'vel';
@@ -129,16 +132,36 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Test single feature decoders on test set %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fC = 1;
-    for k = length(MATfiles)-6:length(MATfiles)-1        
-        for q = 1:length(MATfiles)
+    numFilesToTest=6;
+    if exist('resumeFromPartial','var')==1 && resumeFromPartial==1
+        % only fully filled-out columns are of any use to us
+        load([mfilename,'_interstitial.mat'],'vaf_X_SingleUnits', ...
+            'vaf_Y_SingleUnits','r2_X_SingleUnits','r2_Y_SingleUnits');
+        fC=find(sum(squeeze(cellfun(@isempty,vaf_X_SingleUnits(m,:,:))==0),1) < ...
+            size(vaf_X_SingleUnits,2),1,'first');
+        vaf_X_SingleUnits=cat(3,vaf_X_SingleUnits(:,:,1:(fC-1)), ...
+            cell(size(vaf_X_SingleUnits,1),size(vaf_X_SingleUnits,2),numel(fC:numFilesToTest)));
+        vaf_Y_SingleUnits=cat(3,vaf_Y_SingleUnits(:,:,1:(fC-1)), ...
+            cell(size(vaf_Y_SingleUnits,1),size(vaf_Y_SingleUnits,2),numel(fC:numFilesToTest)));
+        r2_X_SingleUnits=cat(3,r2_X_SingleUnits(:,:,1:(fC-1)), ...
+            cell(size(r2_X_SingleUnits,1),size(r2_X_SingleUnits,2),numel(fC:numFilesToTest)));
+        r2_Y_SingleUnits=cat(3,r2_Y_SingleUnits(:,:,1:(fC-1)), ...
+            cell(size(r2_Y_SingleUnits,1),size(r2_Y_SingleUnits,2),numel(fC:numFilesToTest)));
+        kSpan=(length(MATfiles)-numFilesToTest+fC-1):(length(MATfiles)-1);
+        fprintf(1,'Resuming from file %d of %d\n',fC,numFilesToTest);
+    else
+        fC = 1;
+        kSpan=length(MATfiles)-numFilesToTest:length(MATfiles)-1;
+    end
+    for k=kSpan
+        for q=1:length(MATfiles);
             if q==1
                 try
                     varName=['featMat_',regexp(MATfiles{k},'.*(?=\.mat)','match','once')];
                     varName2=['sig_',regexp(MATfiles{k},'.*(?=\.mat)','match','once')];
                     load(fullfile('featMats',[varName,'.mat']),varName,varName2)
-                    featMat=eval(varName);
-                    sig{k}=eval(varName2);
+                    featMat=eval(varName); clear(varName)
+                    sig{k}=eval(varName2); clear(varName2)
                 catch exception
                     try
                         fnam=findBDFonCitadel(MATfiles{k});
