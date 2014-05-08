@@ -38,6 +38,9 @@ switch lower(machineName)
         destFolder=['E:\monkey data',filesep,animal];
     case 'apu-pc'
         destFolder=['E:\monkey data',filesep,animal];
+    case 'titan'
+        destFolder=['C:\Users\',Username,'\Desktop\',Username,' Data', ...
+            filesep,animal];
     otherwise
         error('I''ve never been on this computer before!! Help!!')
         % need to set a destFolder for the current computer name
