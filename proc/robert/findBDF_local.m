@@ -34,7 +34,11 @@ switch lower(machineName)
     case 'apu-pc'
         basePath=fullfile('E:\monkey data',animal);
     case 'gob'
-        basePath=fullfile('C:\Documents and Settings\Administrator\Desktop\RobertF\data',animal);
+        %MRS 5/6/14 Added to make dest folder selection smarter, maybe
+        [~, username] = system('whoami');
+        username = username(5:end-1);
+        basePath=fullfile(['C:\Users\',username,'\Desktop\',username,' Data', ...
+            filesep,animal]);
 end
 [status,result]=dos(['cd /d ',basePath,' && dir *',nameIn,'* /s /b']);
 

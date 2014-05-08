@@ -26,9 +26,13 @@ if isempty(remoteDriveLetter)
     remoteDriveLetter='Z';
 end
 
+%MRS 5/6/14 Added to make dest folder selection smarter, maybe
+[~, username] = system('whoami');
+Username = username(5:end-1);
+
 switch lower(machineName)
     case 'gob'
-        destFolder=['C:\Documents and Settings\Administrator\Desktop\RobertF\data', ...
+        destFolder=['C:\Users\',Username,'\Desktop\',Username,' Data', ...
             filesep,animal];
     case 'bumblebeeman'
         destFolder=['E:\monkey data',filesep,animal];

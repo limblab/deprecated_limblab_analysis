@@ -1,4 +1,4 @@
-Dates = {'11-20-2012'}
+%Dates = DatesNameUnique;
 
 for i = 1:length(Dates)
     
