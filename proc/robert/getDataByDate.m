@@ -28,10 +28,11 @@ end
 
 %MRS 5/6/14 Added to make dest folder selection smarter, maybe
 [~, username] = system('whoami');
-Username = username(5:end-1);
+
 
 switch lower(machineName)
     case 'gob'
+        Username = username(5:end-1);
         destFolder=['C:\Users\',Username,'\Desktop\',Username,' Data', ...
             filesep,animal];
     case 'bumblebeeman'
@@ -39,6 +40,7 @@ switch lower(machineName)
     case 'apu-pc'
         destFolder=['E:\monkey data',filesep,animal];
     case 'titan'
+        Username = username(7:end-1);
         destFolder=['C:\Users\',Username,'\Desktop\',Username,' Data', ...
             filesep,animal];
     otherwise
