@@ -29,7 +29,6 @@ end
 %MRS 5/6/14 Added to make dest folder selection smarter, maybe
 [~, username] = system('whoami');
 
-
 switch lower(machineName)
     case 'gob'
         Username = username(5:end-1);
