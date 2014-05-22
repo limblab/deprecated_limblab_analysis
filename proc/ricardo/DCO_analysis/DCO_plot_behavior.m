@@ -24,8 +24,10 @@ for iTrial = 1:length(DCO.reward_trials)
         sqrt(mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),2))^2+...
         mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),3))^2),'.r')
 end
-plot(DCO.target_forces,DCO.target_forces*(1+DCO.target_force_range),'-b')
-plot(DCO.target_forces,DCO.target_forces*(1-DCO.target_force_range),'-b')
+if numel(DCO.target_forces)==numel(DCO.target_force_range)
+    plot(DCO.target_forces,DCO.target_forces*(1+DCO.target_force_range),'-b')
+    plot(DCO.target_forces,DCO.target_forces*(1-DCO.target_force_range),'-b')
+end
 
 xlabel('Target force (N)')
 ylabel('Actual force (N)')
@@ -42,10 +44,13 @@ for iTrial = 1:length(DCO.reward_trials)
         sqrt(mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),2))^2+...
         mean(bdf.force(DCO.ot_last_hold_idx(iTrial):DCO.end_idx(iTrial),3))^2),'.r')
 end
-plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(1),length(DCO.target_forces),1),DCO.target_forces*(1+DCO.target_force_range),'-b')
-plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(end),length(DCO.target_forces),1),DCO.target_forces*(1+DCO.target_force_range),'-b')
-plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(1),length(DCO.target_forces),1),DCO.target_forces*(1-DCO.target_force_range),'-b')
-plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(end),length(DCO.target_forces),1),DCO.target_forces*(1-DCO.target_force_range),'-b')
+
+if numel(DCO.target_forces)==numel(DCO.target_force_range)
+    plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(1),length(DCO.target_forces),1),DCO.target_forces*(1+DCO.target_force_range),'-b')
+    plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(end),length(DCO.target_forces),1),DCO.target_forces*(1+DCO.target_force_range),'-b')
+    plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(1),length(DCO.target_forces),1),DCO.target_forces*(1-DCO.target_force_range),'-b')
+    plot3(DCO.target_forces,repmat(DCO.target_stiffnesses(end),length(DCO.target_forces),1),DCO.target_forces*(1-DCO.target_force_range),'-b')
+end
 
 xlabel('Target force (N)')
 ylabel('Target stiffness (N/cm)')

@@ -125,7 +125,8 @@ for r=1:NumofTrajectories,
     %1.compute the models
     if SearchEndPoint<N+M+1
         %probably very fast reaction time
-        error('early movement detected aborting....\n')
+%         error('early movement detected aborting....\n')
+        warning(['early movement detected in reach ' num2str(r) '....\n'])
     end
     %1a - compute index matrix for all Linear segments, this is a matrix which holds the
     %        indexes of all possible segments of the movement

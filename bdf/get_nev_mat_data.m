@@ -58,7 +58,10 @@ function out_struct = get_nev_mat_data(varargin)
         NEVNSx = fileOrStruct;        
     else
         [filepath,fileprefix,~] = fileparts(fileOrStruct);
-        NEVNSx = cerebus2NEVNSx([filepath '\'],fileprefix);
+%         if ~strcmp(filepath(end),filesep)
+%             filepath(end+1) = filesep;
+%         end
+        NEVNSx = cerebus2NEVNSx(filepath,fileprefix);
     end
     clear fileOrStruct
   

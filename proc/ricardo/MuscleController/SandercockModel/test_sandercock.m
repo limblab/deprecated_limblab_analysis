@@ -21,7 +21,14 @@ arm_params.musc_l0 = sqrt(2*arm_params.m_ins.^2)+...
                 (rand(1,length(arm_params.m_ins))-.5);
 arm_params.theta_ref = [3*pi/4 pi/2]; 
 arm_params.X_s = [0 0];
+run_time = nan(1,length(arm_params.t));
 for i=1:length(arm_params.t)-1
+    tic
+    if arm_params.t(i)>3 && arm_params.t(i)<4
+        arm_params.F_end = [1 0];
+    else
+        arm_params.F_end = [0 0];
+    end
     t_temp = [arm_params.t(i) arm_params.t(i+1)];
     [t,x] = ode45(@(t,x0) sandercock_model(t,x0,arm_params),t_temp,x0);
     arm_params.theta = x(end,1:2);
@@ -29,5 +36,7 @@ for i=1:length(arm_params.t)-1
     arm_params.X_h = arm_params.X_e + [arm_params.l(2)*cos(x(end,2)) arm_params.l(2)*sin(x(end,2))];   
     x0 = x(end,:);
     arm_params.t_now = arm_params.t(i);
-    update_arm_figure(hFig,arm_params)   
+    update_arm_figure(hFig,arm_params) 
+    run_time(i) = toc;
+    pause(arm_params.dt-run_time(i))
 end

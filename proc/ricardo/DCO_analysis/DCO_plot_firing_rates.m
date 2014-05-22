@@ -3,14 +3,17 @@ function params = DCO_plot_firing_rates(data_struct,params)
 DCO = data_struct.DCO;
 bdf = data_struct.bdf;
 
+if isempty(DCO.firingrates_mov)
+    return
+end
 %% Movement firing rates
-for iUnit = 1:size(DCO.mov_firingrates,3)
+for iUnit = 1:size(DCO.firingrates_mov,3)
     params.fig_handles(end+1) = figure;
     subplot(2,1,1)
     hold on    
     mean_fr = zeros(length(DCO.target_locations),length(DCO.t_mov));
     for iDirection = 1:length(DCO.target_locations)  
-        mean_fr(iDirection,:) = mean(DCO.mov_firingrates(DCO.target_locations_idx{iDirection},:,iUnit));
+        mean_fr(iDirection,:) = mean(DCO.firingrates_mov(DCO.target_locations_idx{iDirection},:,iUnit));
         plot(DCO.t_mov,mean_fr(iDirection,:),'Color',DCO.direction_colors(iDirection,:))
     end
     [~,max_var_idx] = max(std(mean_fr));
@@ -39,7 +42,7 @@ for iUnit = 1:size(DCO.mov_firingrates,3)
         for iDirection = 1:length(DCO.target_locations)
             idx = intersect(DCO.target_locations_idx{iDirection},DCO.target_forces_idx{iForce});
             idx = intersect(idx,DCO.reward_trials);
-            fr(iForce,iDirection) = mean(mean(DCO.hold_firingrates(idx,:,iUnit)));
+            fr(iForce,iDirection) = mean(mean(DCO.firingrates_hold(idx,:,iUnit)));
         end          
         plot(fr(iForce,[1:end 1]).*cos(DCO.target_locations([1:end 1]))',...
             fr(iForce,[1:end 1]).*sin(DCO.target_locations([1:end 1]))',...
@@ -47,7 +50,7 @@ for iUnit = 1:size(DCO.mov_firingrates,3)
     end
     mean_fr = mean(fr,2);
     max_fr = max(fr(:));
-    for iForce = 1:length(DCO.force_colors)
+    for iForce = 1:size(DCO.force_colors,1)
         plot(mean_fr(iForce)*cos([0:.1:2*pi 0]),...
             mean_fr(iForce)*sin([0:.1:2*pi 0]),...
             'Color',DCO.force_colors(iForce,:),'LineStyle','--')

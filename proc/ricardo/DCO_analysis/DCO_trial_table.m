@@ -19,6 +19,7 @@ iCol = 1;
 tc.t_trial_start = iCol; iCol=iCol+1;
 tc.t_ct_on = iCol; iCol=iCol+1;
 tc.t_ct_hold_on = iCol; iCol=iCol+1;
+tc.t_go_cue = iCol; iCol=iCol+1;
 tc.t_movement_start = iCol; iCol=iCol+1;
 tc.t_ot_first_hold = iCol; iCol=iCol+1;
 tc.t_ot_last_hold = iCol; iCol=iCol+1;
@@ -85,7 +86,7 @@ for iTrial = 1:num_trials
                 column = tc.t_ct_hold_on;
             case movement_code
                 if ~flag_mov
-                    column = tc.t_movement_start; 
+                    column = tc.t_go_cue; 
                 else
                     skip_this = 1;
                 end
@@ -142,13 +143,19 @@ for iTrial = 1:num_trials
 end
 
 trial_table(:,tc.outer_target_direction) = round(180/pi*trial_table(:,tc.outer_target_direction))*pi/180;
-trial_table(isnan(trial_table(:,tc.t_trial_end)),:) = [];
 
-remove_index = [];
-remove_index = find(isnan(trial_table(:,tc.x_offset)));
+remove_idx = find(isnan(trial_table(:,tc.t_trial_start)) |...
+    isnan(trial_table(:,tc.t_ct_on)) |...
+    isnan(trial_table(:,tc.t_ct_hold_on)) |...
+    isnan(trial_table(:,tc.t_trial_end)));
+
+remove_index = [remove_idx find(isnan(trial_table(:,tc.x_offset)))];
 for iCol = 7:length(fieldnames(tc))    
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
     remove_index = [remove_index temp'];
 end
 remove_index = unique(remove_index);
+
 trial_table(remove_index,:) = [];
+disp(['Removed ' num2str(length(remove_index)) ' trial(s) out of ' num2str(size(trial_table,1)+length(remove_index)) ' because one or more words were corrupted.'])
+

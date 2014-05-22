@@ -1,6 +1,6 @@
-function DVMax_checker()
+function DVMax_checker_water_and_food()
     MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
-    testing = 0;
+    testing = 1;
     water_codes = {'EP8500','EP9000'};
     free_water_codes = {'EP9200 '};
     water_restriction_start_code = 'EP9100';
@@ -111,7 +111,7 @@ function DVMax_checker()
         else            
             last_free_food_entry = [];
             for iFreeFoodCodes = 1:length(free_food_codes)
-                temp = find(strcmp(free_food_codes{iFreeFoodCodes},{data{:,3}}),1,'first');
+                temp = find(strcmp(free_water_codes{iFreeFoodCodes},{data{:,3}}),1,'first');
                 if ~isempty(temp)
                     last_free_food_entry(end+1) = temp; %#ok<AGROW>
                 end
@@ -225,25 +225,12 @@ function monkey_warning(animal,messageType,testing)
         subject = '(this is a test) Your monkey has not received water';
         message = {[animal.animalName ' (' animal.animalID ') has not received water as of ' datestr(now) '.'],...
             'Sent from Matlab! This is a test.'};
-        elseif strcmp(messageType,'NoFood')
-            subject = '(this is a test) Your monkey has not received food';
-            message = {[animal.animalName ' (' animal.animalID ') has not received food as of ' datestr(now) '.'],...
-                'Sent from Matlab! This is a test.'};
         elseif strcmp(messageType,'NoRecord')
             subject = '(this is a test) Your monkey has no water restriction record';
             message = {[animal.animalName ' (' animal.animalID ') has no water restriction record.'],...
                 'Sent from Matlab! This is a test.'};
         end
-        message_sent = 0;
-        while (~message_sent)
-            try
-                send_mail_message(recepients,subject,message)                
-                message_sent = 1;  
-            catch
-                message_sent
-                pause(5)
-            end
-        end
+        send_mail_message(recepients,subject,message)
     else
         recepients{1} = animal.contactEmail;
         if ~isempty(animal.secondInCharge)
@@ -253,25 +240,12 @@ function monkey_warning(animal,messageType,testing)
             subject = 'Your monkey has not received water';
             message = {[animal.animalName ' (' animal.animalID ') has not received water as of ' datestr(now) '.'],...
                 'Sent from Matlab!'};
-        elseif strcmp(messageType,'NoFood')
-            subject = 'Your monkey has not received food';
-            message = {[animal.animalName ' (' animal.animalID ') has not received food as of ' datestr(now) '.'],...
-                'Sent from Matlab!'};
-        
         elseif strcmp(messageType,'NoRecord')
             subject = 'Your monkey has no water restriction record';
             message = {[animal.animalName ' (' animal.animalID ') has no water restriction record.'],...
                 'Sent from Matlab!'};
         end
-        message_sent = 0;
-        while (~message_sent)
-            try
-                send_mail_message(recepients,subject,message)                
-                message_sent = 1;  
-            catch
-                pause(5)
-            end
-        end
+        send_mail_message(recepients,subject,message)
     end           
 end
 
@@ -295,7 +269,6 @@ function monkey_last_warning(animal,peopleList,message,testing)
         end
     end
     recepients = {};
-    
     if testing
         recepients = 'ricardort@gmail.com';
         subject = ['(this is a test) Last warning: ' animal.animalName ' has not received ' message '!'];
@@ -316,15 +289,7 @@ function monkey_last_warning(animal,peopleList,message,testing)
             ['Person in charge: ' peopleList(person_in_charge).Name '(' peopleList(person_in_charge).contactNumber ')'],...                
             'Sent from Matlab!'};
     end    
-    message_sent = 0;
-    while (~message_sent)
-        try
-            send_mail_message(recepients,subject,message)
-            message_sent = 1;            
-        catch
-            pause(5)
-        end
-    end
+    send_mail_message(recepients,subject,message)
 end
 
 % function monkey_emergency(animal,peopleList,testing)
@@ -356,8 +321,8 @@ function monkey_final_list(animalList,peopleList,testing)
     recepients = {};
     if testing
         recepients = 'ricardort@gmail.com';
-        subject = ['(this is a test) All monkeys received water and food'];
-        message = {'The following monkeys received water and food today:'};
+        subject = ['(this is a test) All monkeys received water'];
+        message = {'The following monkeys received water today:'};
         for iMonkey = 1:length(animalList)
             message = {message{:},animalList(iMonkey).animalName};
         end 
@@ -367,20 +332,12 @@ function monkey_final_list(animalList,peopleList,testing)
         for iP = 1:length(peopleList)
             recepients = {recepients{:} peopleList(iP).contactEmail};
         end
-        subject = ['All monkeys received water and food'];
-        message = {'The following monkeys received water and food today:'};
+        subject = ['All monkeys received water'];
+        message = {'The following monkeys received water today:'};
         for iMonkey = 1:length(animalList)
             message = {message{:},animalList(iMonkey).animalName};
         end 
         message = {message{:},'Sent from Matlab!'};
-            message_sent = 0;
-        while (~message_sent)
-            try
-                send_mail_message(recepients,subject,message)
-                message_sent = 1;            
-            catch
-                pause(5)
-            end
-        end
+        send_mail_message(recepients,subject,message)        
     end    
 end

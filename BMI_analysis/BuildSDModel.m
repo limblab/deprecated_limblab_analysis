@@ -184,10 +184,11 @@ if options.Use_SD
         end
         
         if state == 1
-            posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+            posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
             Models{2} = posture_decoder;
         elseif state == 2
-            movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',fillen, 'binsize', binsize,'PC',PCoeffs);
+            movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
             Models{3} = movement_decoder;
         end
+    end
 end

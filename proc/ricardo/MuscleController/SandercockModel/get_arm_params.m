@@ -21,8 +21,8 @@ arm_params.null_angles = [3*pi/4 pi/2];
 arm_params.k_gain = 23;
 
 arm_params.T = 0*[2;-.2];
-arm_params.t = 0:.01:50;
-arm_params.dt = diff(arm_params.t(1:2));
+arm_params.dt = .05;
+arm_params.t = 0:arm_params.dt:50;
 arm_params.F_max = [1000 1000 1000 1000];
 arm_params.left_handed = 1;
 arm_params.monkey_offset = [(-2*arm_params.left_handed+1)*.08 -sqrt(sum(arm_params.l.^2))]; 

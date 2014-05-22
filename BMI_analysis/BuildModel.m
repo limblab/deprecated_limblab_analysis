@@ -154,6 +154,7 @@ function [filter, varargout]=BuildModel(binnedData, options)
         H = train_ridge(Inputs',Outputs',condition_desired);
     else
         [H,v,mcc]=filMIMO4(Inputs,Outputs,numlags,numsides,1);
+%         [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
 %     H = MIMOCE1(Inputs,Outputs,numlags);
 %     H = Inputs\Outputs;
 %     Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
@@ -166,6 +167,7 @@ function [filter, varargout]=BuildModel(binnedData, options)
     patch = [];
 
     [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,H,numsides,fs,Outputs);
+%     [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
         
     if options.PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity

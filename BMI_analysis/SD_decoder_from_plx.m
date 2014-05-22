@@ -15,14 +15,21 @@ function SD_decoder_from_plx(plx_file,use_distance,threshold,unsorted)
 % UNSORTED is a flag to indicate whether to include unsorted waveforms
 
 disp('Converting .plx file to BDF structure...');
-out_struct = get_plexon_data(plx_file,'verbose');
-
-bdf_file = strrep(plx_file,'.plx','.mat');
-disp(['Saving BDF file as ' bdf_file '...']);
-save(bdf_file,'out_struct');
+[~,~,plx_file_extension] = fileparts(plx_file);
+if strcmp(plx_file_extension,'.mat')
+    load(plx_file);
+    bdf_file = plx_file;
+else
+    out_struct = get_plexon_data(plx_file,'verbose');
+    bdf_file = strrep(plx_file,'.plx','.mat');
+    disp(['Saving BDF file as ' bdf_file '...']);
+    save(bdf_file,'out_struct');
+end
 
 disp('Converting BDF to binnedData file...');
-binnedData = convertBDF2binned(bdf_file,0.05,1,0,50,10,0,0,0,unsorted);
+% binnedData = convertBDF2binned(bdf_file,0.05,1,0,50,10,0,0,0,unsorted);
+options = struct('binsize',0.05,'starttime',1,'stoptime',0,'FindStates',false,'Unsorted',unsorted);
+binnedData = convertBDF2binned(bdf_file,options);
 
 disp('Finding states...')
 if use_distance
@@ -45,15 +52,23 @@ if use_distance
                     target_index = 0;
                 end
                 if trial > 0 && word == 49
-                    if target_index == 0 || (binnedData.words(word_index,1) - binnedData.words(word_index-1,1) >= hold_time && target_index < 3)
+                    if target_index == 0 || (binnedData.words(word_index,1) - binnedData.words(word_index-1,1) >= (hold_time+.01) && target_index < 3)
                         target_index = target_index + 1;
                         target_flag = 1;
                     end
                 elseif word == 32
                        target_flag = 0;
                 end    
+%             else
+%                 target_index = 0;
+%                 target_flag = 0;
             end
         end
+        
+        % HACK!
+        
+        target_index = min(target_index,1);
+        
         if target_flag
             target(x,1) = binnedData.targets.centers(trial, target_index*2 + 1);
             target(x,2) = binnedData.targets.centers(trial, target_index*2 + 2);
@@ -63,7 +78,7 @@ if use_distance
             target_distance(x) = 0;
         end
     end
-    binnedData.states(:,1) = target_distance >= threshold;
+    binnedData.states(:,1) = (target_distance >= threshold);
     binnedData.statemethods(1,1:8) = 'Distance';
     binnedData.classifiers{1} = threshold;
     binsize = round(1000*(binnedData.timeframe(2)-binnedData.timeframe(1)))/1000;
@@ -83,7 +98,9 @@ disp(['Saving binnedData file as ' binned_file '...']);
 save(binned_file,'binnedData');
 
 disp('Building decoder...');
-filt_struct = BuildSDModel(binnedData,'',0.5,1,1,0,0,0,1,2); % change last to 1 to use GT as training set for H
+options = struct('fillen',0.5,'UseAllInputs',1,'PolynomialOrder',1,'PredVeloc',1,'Use_SD',1);
+filt_struct = BuildSDModel(binnedData,options);
+% filt_struct = BuildSDModel(binnedData,'',0.5,1,1,0,0,0,1,2); % change last to 1 to use GT as training set for H
 decoder.general_decoder = filt_struct{1};
 decoder.posture_decoder = filt_struct{2};
 decoder.movement_decoder= filt_struct{3};

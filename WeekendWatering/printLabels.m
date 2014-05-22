@@ -1,4 +1,4 @@
-GoogleDriveID = '0AtEH4EqHWe9JdEdhV0RnWG1PSldHTWtibnR3X1RmYWc';
+GoogleDriveID = '0AtEH4EqHWe9JdEF2Y3VLVEdhTkFxY1pZQUVMSFVKYXc';
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
@@ -111,7 +111,7 @@ num_pages = ceil(length(labelData)/30);
 for iPage = 1:num_pages
     page_data = labelData((iPage-1)*30+1:min((iPage)*30,length(labelData)));
     page_colors = color_order((iPage-1)*30+1:min((iPage)*30,length(labelData)));
-    h = figure;
+    h = figure;    
     set(gca,'YDir','reverse','units','inches','Position',[0 0 8.5 11])
     xlim([0 8.5])
     ylim([0 11])    
@@ -120,7 +120,7 @@ for iPage = 1:num_pages
     set(h,'Units','inches')
     set(h,'PaperType','usletter')
     set(h,'PaperPosition',[0 0 8.5 11])
-    set(h,'Position',[0 0 8.5 11])
+    set(h,'Position',[0 -5 8.5 11])
     hold on
     
     iLabel = 0;
@@ -129,16 +129,21 @@ for iPage = 1:num_pages
             iLabel = iLabel+1;
             x = x_offset + (iCol-1)*label_width + 0.5 * label_width;
             y = y_offset + (iRow)*label_height + 0.5 * label_height;
-            if iLabel <= length(page_data)
+            if iLabel <= length(page_data) 
                 fill([x-0.5*label_width x+0.5*label_width x+0.5*label_width x-0.5*label_width],...
                    [y+0.5*label_height y+0.5*label_height y-0.5*label_height y-0.5*label_height],...
-                   colors(page_colors(iLabel),:))        
+                   [1 1 1],'LineStyle','none')
+                fill([x-0.35*label_width x+0.5*label_width x+0.5*label_width x-0.35*label_width],...
+                   [y+0.5*label_height y+0.5*label_height y-0.5*label_height y-0.5*label_height],...
+                   colors(page_colors(iLabel),:),'LineStyle','none')        
                 text(x,y,page_data{iLabel},'VerticalAlignment','middle',...
                     'HorizontalAlignment','center','FontSize',18)
+                text(x-0.425*label_width,y,{'Fold here'},'Rotation',90,'VerticalAlignment','middle',...
+                    'HorizontalAlignment','center','FontSize',9)
             else
-                fill([x-0.5*label_width x+0.5*label_width x+0.5*label_width x-0.5*label_width],...
+               fill([x-0.5*label_width x+0.5*label_width x+0.5*label_width x-0.5*label_width],...
                    [y+0.5*label_height y+0.5*label_height y-0.5*label_height y-0.5*label_height],...
-                   [1 1 1]) 
+                   [1 1 1],'LineStyle','none')
             end
         end
     end

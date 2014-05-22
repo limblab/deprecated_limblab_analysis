@@ -271,12 +271,14 @@ function out_struct = calc_from_raw(raw_struct, opts)
             [max_v,max_v_ind] = max(v);
             no_mov_idx = v1(max_v_ind):v2(max_v_ind);
             force_offsets_temp = zeros(1,6);
+            zero_force = [];
             
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
-                a_data = double(get_analog_signal(out_struct, channame));   
-                a_data(:,2) = filtfilt(b, a, a_data(:,2));
-                a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);                
+                a_data = double(get_analog_signal(out_struct, channame));
+                zero_force = [zero_force;round(a_data(find(a_data(:,2)==0),1)*1000)/1000];
+                a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);                    
+                a_data = filtfilt(b, a, a_data);
                 raw_force(:,c) = a_data';
                 force_offsets_temp(c) = mean(a_data(no_mov_idx));
             end
@@ -284,6 +286,22 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if max_v > 1000  % Only use if there are more than 
                              % 1000 contiguous movement free samples                
                 force_offsets = force_offsets_temp;
+            else
+                force_offsets = mean(raw_force);
+            end
+            
+            [n,bin] = histc(zero_force,unique(zero_force));
+            multiple = find(n==6);
+            zero_force = unique(zero_force(ismember(bin,multiple)));
+            
+            temp = [1;find(diff(zero_force)>1)+1];
+            if ~isempty(zero_force)
+                for i = 1:length(temp)
+                    zero_force = [zero_force;((zero_force(temp(i))-.2):.001:(zero_force(temp(i))+1.2))']; 
+                end
+                [~,~,ia] = intersect(round(zero_force*1000)/1000,round(analog_time_base*1000)/1000);
+            else
+                ia = [];
             end
             
             force_offsets = repmat(force_offsets, length(raw_force), 1);
@@ -307,6 +325,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
+            out_struct.force(ia,2:3) = 0;
 
             analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) &...
                 ~isempty(out_struct.raw.analog.channels)); %#ok<EFIND>
