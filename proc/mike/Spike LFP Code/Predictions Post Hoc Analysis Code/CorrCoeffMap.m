@@ -4,8 +4,9 @@ r_map = zeros(size(Data,2), size(Data,2));
 
 for i = 1:size(Data,2)
     for j = 1:size(Data,2)
-    r_r = circ_nancorrcc(Data(:,i),Data(:,j));
-    r_map(i,j) = r_r;
+%     r_r = circ_nancorrcc(Data(:,i),Data(:,j));
+    r_r = corrcoef(Data(:,i),Data(:,j));
+    r_map(i,j) = r_r(1,2);
 %     r_r = corrcoef(r2_Y_SingleUnitsSorted_DayAvg(:,i),r2_Y_SingleUnitsSorted_DayAvg(:,j));
 %     r_r_Y_SingleUnitsDayAvg(i,j) = r_r(1,2);
     end
@@ -13,13 +14,13 @@ end
 
 figure
 imagesc(r_map)
-title('Correlation Coefficient Map of Cosine tuning model of spikes')
+title('Correlation Coefficient Map of PDs')
 xlabel('LFP Decoder Age')
 ylabel('LFP Decoder Age')
 
 for i=1:size(Data,2)
     inds=setdiff(1:(size(Data,2)),i);
-    r_map_mean(i)=mean(r_map(inds,i));
+    r_map_mean(i)=nanmean(r_map(inds,i));
 end
 
 if PlotOn == 1   
@@ -42,6 +43,9 @@ if PlotOn == 1
     set(gca,'XTick',Xticks,'XTickLabel',Xticks)
     
     hold on 
+    x(isnan(r_map_mean)==1) = [];
+    r_map_mean(isnan(r_map_mean)==1) = [];
+    
     p = polyfit(x,r_map_mean,1);
     f = polyval(p,x);
     plot(x,f,'k-')

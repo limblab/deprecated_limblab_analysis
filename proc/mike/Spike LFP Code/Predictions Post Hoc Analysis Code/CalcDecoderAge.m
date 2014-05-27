@@ -1,4 +1,4 @@
-function [FileList] = CalcDecoderAge(FileList, DecoderStartDate)
+function [FileList, DateNames] = CalcDecoderAge(FileList, DecoderStartDate)
 
 % Input
 
@@ -31,8 +31,7 @@ for i = 1: size(FileList,1)
 %     end
     
     FileList{i,2} = datenum(DateNames{i}) - datenum(DecoderStartDate);
-    %Mini_LFP1filenames{i,2} = datenum(Mini_DateNames{i}) - datenum('09-01-2011');
-    
+   
     clear s
 end
 

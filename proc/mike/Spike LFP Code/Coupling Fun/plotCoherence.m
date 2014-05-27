@@ -1,31 +1,34 @@
 %% New plot code
 HCi = [1 2];
-BC1Dsi = [5 6];
-BC1Dg3i = [3 4];
-BC2Di = [7 9];
+BC1Dsi = [3 4];
+BC1Dg3i = [9 11];
+BC2Di = [23 25];
 
 for t = 1:size(Coherency,1)
     
 CoherencyCAT(t,1).AllFiles = cat(3,Coherency(t,HCi(1):HCi(2)).AllFiles);
-%CoherencyCAT(t,1).Error = cat(3,Coherency(t,HCi(1):HCi(2)).Error);
+CoherencyCAT(t,1).Error = cat(3,Coherency(t,HCi(1):HCi(2)).Error);
 CoherencyCAT(t,2).AllFiles = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).AllFiles);
-%CoherencyCAT(t,2).Error = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).Error);
+CoherencyCAT(t,2).Error = cat(3,Coherency(t,BC1Dsi(1):BC1Dsi(2)).Error);
 CoherencyCAT(t,3).AllFiles = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).AllFiles);
-%CoherencyCAT(t,3).Error = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).Error);
+CoherencyCAT(t,3).Error = cat(3,Coherency(t,BC1Dg3i(1):BC1Dg3i(2)).Error);
 CoherencyCAT(t,4).AllFiles = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).AllFiles);
-%CoherencyCAT(t,4).Error = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).Error);
+CoherencyCAT(t,4).Error = cat(3,Coherency(t,BC2Di(1):BC2Di(2)).Error);
 
 end
 colors = ['r';'b'; 'k'; 'g'];
 
-for y = 1 : size(CoherencyCAT,1)
-    
-    subplot(size(CoherencyCAT,1),1, y)
+y = 1;
+% for y = 1 : size(CoherencyCAT,1)
+%     
+%     subplot(size(CoherencyCAT,1),1, y)
     
     for x = 1: size(CoherencyCAT,2)
 
-        CoherencyMAT = mean(CoherencyCAT(y,x).AllFiles,3);
-              
+        CoherencyMAT = nanmean(CoherencyCAT(y,x).AllFiles,3);
+        
+        freq = cell2mat(f);     
+        CoherencyMATGamma(:,x) = CoherencyMAT(freq>200 & freq<300)    
 %        plot(CoherencyMAT)
 
 %         CoherencyAVG = nanmean(CoherencyMAT,2)
@@ -34,6 +37,8 @@ for y = 1 : size(CoherencyCAT,1)
         set(m(x),'LineWidth',2.0,'Color',sprintf('%s',colors(x)))
 %         ErrorMAT = nanmean(nanmean(CoherencyCAT(y,x).Error(:,f{y} > 200 & f{y} < 300,:),2),3)';
         ErrorMAT = nanstd(CoherencyMAT,0,2)./sqrt(size(CoherencyMAT,2));
+        
+      
 %         Upperbound = CoherencyAVG + ErrorMAT;
 %         Lowerbound = CoherencyAVG - ErrorMAT;
 %         e = plot([Upperbound Lowerbound],'--')
@@ -47,14 +52,14 @@ for y = 1 : size(CoherencyCAT,1)
         clear CoherencyMAT ErrorMAT e
         
     end
-    
-end
-subplot(size(CoherencyCAT,1),1, 1)
-legend(m,[{'HC'},{'1D spike'},{'1D gamma'},{'2D BC'}])
+%     
+% end
+% subplot(size(CoherencyCAT,1),1, 1)
+legend(m,[{'HC'},{'1D Spike'},{'1D gamma'},{'2D BC'}])
 
+[p,table,stats] = anova1(CoherencyMATGamma)
 
-
-for t = 1:size(Cohgram,1)
+    for t = 1:size(Cohgram,1)
     
 CohgramCAT(t,1).AllFiles   = cat(3,Cohgram(t,HCi(1):HCi(2)).Success);
 CohgramCAT(t,1).Fail       = cat(3,Cohgram(t,HCi(1):HCi(2)).Fail);
@@ -134,9 +139,16 @@ if 0
     C{3} = C_all{3}(17:20,27:39);
     C{4} = C_all{4}(17:20,27:39);   
     
-    for i = 1:size(C,2)
-        C_mean{i} = mean(C{i},3);
-        C_mean_vector(:,i) = reshape(C_mean{i},52,1);
+    freq = cell2mat(f);  
+     C_mean_vector_overfreq = NaN([8 4])
+    for i = 1:size(CoherencyCAT,2)
+%         C_mean_overfreq{i} = mean(C{i},1);
+        C_mean_overfreq{i} = mean(CoherencyCAT(i).AllFiles(freq>200 & freq<300),2);
+%         if i < 4
+        C_mean_vector_overfreq(1:8,i) = reshape(C_mean_overfreq{i},8,1);
+%         else
+%             C_mean_vector_overfreq(1:12,i) = reshape(C_mean_overfreq{i},12,1);
+%         end
     end
     
     subplot(3,4,1)

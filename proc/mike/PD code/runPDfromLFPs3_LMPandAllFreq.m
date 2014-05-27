@@ -8,7 +8,9 @@ LMPbandend=[];
 bandstart=  [0, 7, 70, 130, 200];
 bandend=    [4, 20, 115, 200, 300];
 
-filelist= Chewie_LFP1filenames_Reduced_Valid;
+
+filelist= Mini_LFP1_DaysNames;
+varname = 'Mini_LFP1_DaysNames';
 
 if ~exist('chinds','var')
     disp('Please tell me which channels to run!')
@@ -20,11 +22,11 @@ lag= -0.15;
 binlen= 0.15;
 pval=0.05;
 
-for i=2:length(filelist)
+for i=83:length(filelist)
     %     for i=1:length(numlist)
     
-    filewithpath=findBDFonCitadel(filelist{i,1},1);
-    postfix='_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos';   %LFP control file
+    filewithpath=findBDFonCitadel(filelist{i});
+    postfix='_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts';   %LFP control file
     %         savename=[filelist{i}(1:27),postfix]; %For Mini; Chewie would be 28
     %        fnam=filewithpath(1:54); %for Mini; Chewie would be 57
     %         if ~exist(filewithpath,'file')
@@ -48,12 +50,18 @@ for i=2:length(filelist)
         disp(['File ',filewithpath,'did not exist in this folder'])
         continue
     end   
-
-    [LFPfilesPDs,bootstrapPDS]=PDs_from_LFPs_MWSposlog2(fnam,chinds,bandstart,bandend,18,32,0,lag,binlen,pval);
     
-    [LFPfilesLMP_PDs,bootstrapLMP_PDS,LMPcounts]=PDs_from_LFPs_MWSposlogLMP(fnam,chinds,LMPbandstart,LMPbandend,18,32,0,lag,binlen,pval);
+try
+    [LFPcounts]=PDs_from_LFPs_MWSposlog2(fnam,chinds,bandstart,bandend,18,32,0,lag,binlen,pval);
+catch exception
+    filesThatDidNotRun{i,2} = exception;
+    filesThatDidNotRun{i,1} = fnam
+    continue
+end
 
-    save(savename,'LFPfiles*','bootst*','LMPcounts','Chewie*');
+[LMPcounts]=PDs_from_LFPs_MWSposlogLMP(fnam,chinds,LMPbandstart,LMPbandend,18,32,0,lag,binlen,pval);
+
+save(savename,'LFPcounts','LMPcounts',sprintf(varname));
     clear bdf *PD*
 end
 

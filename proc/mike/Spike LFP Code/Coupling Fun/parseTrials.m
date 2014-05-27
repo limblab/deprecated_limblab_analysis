@@ -1,23 +1,31 @@
-function [Trial_FPend, Trial_tsend, Trial_Path_Whole, TargetID, varargout] = parseTrials(out_struct,y,xOnline,fp,ts)
+function [Trial, TargetID] = parseTrials(out_struct,fp,ts)
 
 % Find beginning of all trials
 FirstTrialInds=find(out_struct.words(:,2)==17);
+
 SuccessTrialInds=find(out_struct.words(:,2)==32);
 FailTrialInds=find(out_struct.words(:,2)==34);
 IncompleteTrialInds=find(out_struct.words(:,2)==35);
 
-Trial_FPend = cell(1,length(SuccessTrialInds));
-Trial_Fail_FPend = cell(1,length(FailTrialInds));
-Trial_Incomplete_FPend = cell(1,length(IncompleteTrialInds));
-
-Trial_Path_Whole = cell(length(SuccessTrialInds),1);
-Trial_Fail_Path_Whole = cell(length(FailTrialInds),1);
-Trial_Incomplete_Path_Whole = cell(length(IncompleteTrialInds),1);
+% Trial.FPend = cell(1,length(SuccessTrialInds));
+% Trial.Fail_FPend = cell(1,length(FailTrialInds));
+% Trial.Incomplete_FPend = cell(1,length(IncompleteTrialInds));
+% 
+% Trial.Path_Whole = cell(length(SuccessTrialInds),1);
+% Trial.Fail_Path_Whole = cell(length(FailTrialInds),1);
+% Trial.Incomplete_Path_Whole = cell(length(IncompleteTrialInds),1);
  
 NumTrials = length(FirstTrialInds);
 % remove last trial in case trial is cut off or short
-FirstTrialInds(end) = [];
-TargetID = zeros(NumTrials,3);
+if isempty(FirstTrialInds) == 1
+    FirstTrialInds = find(out_struct.words(:,2)==18);
+    if  isempty(FirstTrialInds) ==0
+        disp('This is a random walk file')
+    end
+    return
+else
+    FirstTrialInds(end) = [];
+end
 
 % plotIt = 0;
 j = 1;
@@ -88,28 +96,20 @@ for i = 1:length(FirstTrialInds)-1
         
         if out_struct.words(FirstTrialInds(i+1)-1,2) == 32
             
-            Trial_Path_Whole{t} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:); 
-            TargetID(t,1) = out_struct.words(FirstTrialInds(i)+2,2);
+            Trial.Path_Whole{t} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:); 
+            TargetID((t+n+l)-2,1) = out_struct.words(FirstTrialInds(i)+2,2);
             
             if length(TrialStart_OTOn_IndexFP) == j % Ran into a weird
                 % 2/5/14 bug where there was a reward without any outer target ON
                 % word (49) or the target word itself (64-67)
-                Trial_FPend{t} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
-%                Trial_FPbegin{t} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
-                
-                
-%                 % In case there's no spikes in the beginning of this
-%                 % trial MRS 2/7/14
-%                 SpikeTimes = vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3);
-%                 if isempty(SpikeTimes) == 0
-%                     Trial_tsbegin(t).times = eval(SpikeTimes); % Input LFP power/spike rate
-%                 end
+                Trial.FPend{t} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
+%                Trial.FPbegin{t} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
                 
                 % In case there's no spikes at the end of this trial
                 % MRS 2/7/14
                 EndTrial_SpikeTimes = ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1);
                 if isempty(EndTrial_SpikeTimes) == 0
-                    Trial_tsend(t).times = EndTrial_SpikeTimes;  % Comes out as a symbolic number so it needs to be converted to a double using eval 
+                    Trial.tsend(t).times = EndTrial_SpikeTimes;  % Comes out as a symbolic number so it needs to be converted to a double using eval 
                 end
                 
             else
@@ -121,22 +121,19 @@ for i = 1:length(FirstTrialInds)-1
             
         elseif out_struct.words(FirstTrialInds(i+1)-1,2) == 35
             
-            Trial_Incomplete_Path_Whole{n} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
-            TargetID(n,2) = out_struct.words(FirstTrialInds(i)+2,2);
+            Trial.Incomplete_Path_Whole{n} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
+            TargetID((t+n+l)-2,2) = out_struct.words(FirstTrialInds(i)+2,2);
             
             if length(TrialStart_OTOn_IndexFP) == j % Copied from above
-%                Trial_Incomplete_FPbegin{n} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
-                Trial_Incomplete_FPend{n} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
-                
-                % Copied from above
-%                 if isempty(vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3)) == 0
-%                     Trial_Incomplete_tsbegin(n).times = eval(vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3)); % Input LFP power/spike rate
-%                 end
+%                Trial.Incomplete_FPbegin{n} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
+                Trial.Incomplete_FPend{n} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
 
                 % Copied from above
                 Incomplete_SpikeTimes = ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1);
                 if isempty(Incomplete_SpikeTimes) == 0
-                    Trial_Incomplete_tsend(n).times = Incomplete_SpikeTimes;
+                    Trial.Incomplete_tsend(n).times = Incomplete_SpikeTimes;
+                else
+                    Trial.Incomplete_tsend(n).times = [];
                 end
                 
             else
@@ -148,12 +145,12 @@ for i = 1:length(FirstTrialInds)-1
             
         elseif out_struct.words(FirstTrialInds(i+1)-1,2) == 34
             
-            Trial_Fail_Path_Whole{l} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
-            TargetID(l,3) = out_struct.words(FirstTrialInds(i)+2,2);
+            Trial.Fail_Path_Whole{l} = out_struct.pos(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
+            TargetID((t+n+l)-2,3) = out_struct.words(FirstTrialInds(i)+2,2);
             
             if length(TrialStart_OTOn_IndexFP) == j % Copied from above
-%                Trial_Fail_FPbegin{l} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
-                Trial_Fail_FPend{l} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
+%                Trial.Fail_FPbegin{l} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
+                Trial.Fail_FPend{l} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
                 
                 % Copied from above
 %                 if isempty(vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3)) == 0
@@ -163,7 +160,9 @@ for i = 1:length(FirstTrialInds)-1
                 % Copied from above
                 Fail_SpikeTimes = ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1); 
                 if isempty(Fail_SpikeTimes) == 0
-                    Trial_Fail_tsend(l).times = Fail_SpikeTimes;
+                    Trial.Fail_tsend(l).times = Fail_SpikeTimes;
+                else
+                    Trial.Fail_tsend(l).times = [];
                 end
                 
             else
@@ -241,27 +240,6 @@ for i = 1:length(FirstTrialInds)-1
     %end
 end
 
-
-if isempty(Trial_Incomplete_Path_Whole) == 0
-    varargout{1} = Trial_Incomplete_FPend;
-    varargout{2} = Trial_Incomplete_tsend;
-    varargout{3} = Trial_Incomplete_Path_Whole;
-else
-    varargout{1} = [];
-    varargout{2} = [];
-    varargout{3} = [];
-end
-
-if isempty(Trial_Fail_Path_Whole) == 0
-    varargout{4} = Trial_Fail_FPend;
-    varargout{5} = Trial_Fail_tsend;
-    varargout{6} = Trial_Fail_Path_Whole;
-else
-    
-    varargout{4} = [];
-    varargout{5} = [];
-    varargout{6} = [];
-end
 % fprintf('Number of Trials = %3.0f \n', j-1)
 % fprintf('Number of Trials = %3.0f \n', jX-1)
 % fprintf('Number of Trials = %3.0f \n', jY-1)

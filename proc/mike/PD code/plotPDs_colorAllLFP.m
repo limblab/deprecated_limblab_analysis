@@ -1,11 +1,31 @@
 %Need filelist, bestc and bestf for monkey
-filelist= Mini_LFP1filenames_Reduced_Valid(:,1);
-
+filelist= Chewie_LFP1filenames_MasterConservative;
 plotOn = 1;
 
+if strcmpi(filelist{1}(1:4),'Mini')
+    
+    if exist('bestf_bychan','var') == 0        
+        bestf_bychan = sortrows([bestf_Mini' bestc_Mini'],2);
+        bestc_bychan = bestf_bychan(:,2);
+        bestf_bychan(:,2) = [];
+    end
+    
+    DecoderStartDate = '08-24-2011';
+    
+elseif strcmpi(filelist{1}(1:4),'Chew')
+    
+    if exist('bestf_bychan','var') == 0        
+        bestf_bychan = sortrows([bestf_Chewie' bestc_Chewie'],2);
+        bestc_bychan = bestf_bychan(:,2);
+        bestf_bychan(:,2) = [];
+    end
+    
+    DecoderStartDate = '09-01-2011';
+end
 
 for i=1:length(filelist)
-    fnam=[filelist{i}]
+    
+    fnam = [filelist{i,1}]
     
     try
         load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos.mat'],...
@@ -21,77 +41,111 @@ for i=1:length(filelist)
     LMP_PDs = LFPfilesLMP_PDs{1};
     LFP_PDs = LFPfilesPDs{1};
     
-    k =1;
+    k = 1;
+    j = 1;
+    n = 1;
     
     for l = 1:length(bestc_bychan)
         
         if bestf_bychan(l) == 1
-            LFP_OnlinePDs(k,i+2) = LMP_PDs{bestf_bychan(l)-1}(bestc_bychan(l),2);
+            LFP_OnlinePDs(k,i+2) = [LMP_PDs(bestc_bychan(l),2)];
             
             LFP_OnlinePDs(k,1) = bestc_bychan(l);
             LFP_OnlinePDs(k,2) = bestf_bychan(l);
-            k=k+1;
+            OnlineLMPInd(n,:) = [bestf_bychan(l) bestc_bychan(l)];
+            k = k + 1;
+            n = n + 1;
         else
             LFP_OnlinePDs(k,i+2) = LFP_PDs{bestf_bychan(l)-1}(bestc_bychan(l),2);
             
             %LFP_OnlinePDs(k,i+2) = LFP_PDs(bestc_bychan(l),2);
-            NonLMPInd(k,:) = [bestf_bychan(l) bestc_bychan(l)];
             LFP_OnlinePDs(k,1) = bestc_bychan(l);
             LFP_OnlinePDs(k,2) = bestf_bychan(l);
-            k=k+1;
+            OnlineNonLMPInd(j,:) = [bestf_bychan(l) bestc_bychan(l)];
+            
+            k = k + 1;
+            j = j + 1;
         end
         
     end
+    clear k j n l
     
-    NonLMPIndSorted = sortrows(NonLMPInd,-2);
+    OnlineNonLMPIndSorted = sortrows(OnlineNonLMPInd,-2);
+    OnlineLMPIndSorted = sortrows(OnlineLMPInd,-2);
     
-    for n = 1 : size(NonLMPInd,1)
-        LFP_PDs{NonLMPIndSorted(n,1)-1}(NonLMPIndSorted(n,2),:) = [];
-        %LFP_PDs(NonLMPIndSorted(n,2),:) = [];
+    % Clear out PDs of online features, leaving only offline features in
+    % these matrices
+    for n = 1 : size(OnlineNonLMPInd,1)
+        LFP_PDs{OnlineNonLMPIndSorted(n,1)-1}(OnlineNonLMPIndSorted(n,2),:) = [];       
     end
+    for m = 1: size(OnlineLMPInd,1)
+        LMP_PDs(OnlineLMPIndSorted(m,2),:) = [];
+    end
+    clear m n
     
     if ~exist('LFPOfflinePDs','var')
-        LMP_PDs{1}(:,8)=ones(size(LMP_PDs{1},1),1);
+        LMP_PDs(:,8)=ones(size(LMP_PDs,1),1);
         LFP_PDs{1}(:,8)=repmat(2,size(LFP_PDs{1},1),1);
         LFP_PDs{2}(:,8)=repmat(3,size(LFP_PDs{2},1),1);
         LFP_PDs{3}(:,8)=repmat(4,size(LFP_PDs{3},1),1);
         LFP_PDs{4}(:,8)=repmat(5,size(LFP_PDs{4},1),1);
         LFP_PDs{5}(:,8)=repmat(6,size(LFP_PDs{5},1),1);
         LFPOfflinePDinfo = cell2mat([LMP_PDs; LFP_PDs']);
-        %LFPOfflinePDinfo = LFP_PDs;
         LFPOfflinePDs(:,1) = LFPOfflinePDinfo(:,5);
         LFPOfflinePDs(:,2) = LFPOfflinePDinfo(:,8);
         LFPOfflinePDs(:,i+2) = LFPOfflinePDinfo(:,2);
     else
-        LMP_PDs{1}(:,8)=ones(size(LMP_PDs{1},1),1);
+        LMP_PDs(:,8)=ones(size(LMP_PDs,1),1);
         LFP_PDs{1}(:,8)=repmat(2,size(LFP_PDs{1},1),1);
         LFP_PDs{2}(:,8)=repmat(3,size(LFP_PDs{2},1),1);
         LFP_PDs{3}(:,8)=repmat(4,size(LFP_PDs{3},1),1);
         LFP_PDs{4}(:,8)=repmat(5,size(LFP_PDs{4},1),1);
         LFP_PDs{5}(:,8)=repmat(6,size(LFP_PDs{5},1),1);
         LFPOfflinePDinfo = cell2mat([LMP_PDs; LFP_PDs']);
-        %LFPOfflinePDinfo = LFP_PDs;
         LFPOfflinePDs(:,i+2) = LFPOfflinePDinfo(:,2);
     end
     
 end
+clear LFPfilesLMP_PDs LFPfilesPDs LFP_PDs LMP_PDs LFPOfflinePDinfo
 
-
+%% Plot code
 if plotOn ==1
     figure
     
     LFP_OnlinePDs_Sorted = sortrows(LFP_OnlinePDs,[2 -3]);
-    imagesc(LFP_OnlinePDs_Sorted(:,3:end));figure(gcf);
-    
-    [C ia] = unique(LFP_OnlinePDs_Sorted(:,2));
-    set(gca,'YTick',ia,'YTickLabel',{'LMP','Delta','Mu','70-115','130-200','200-300'})
-    
-    figure
     LFP_OfflinePDs_Sorted = sortrows(LFPOfflinePDs,[2 -3]);
-    imagesc(LFPOfflinePDsSorted(:,3:end));figure(gcf);
+    
+    if strcmpi(filelist{1}(1:4),'Mini')
+        [FileList_WdecoderAge] = CalcDecoderAge(filelist(:,2), DecoderStartDate);
+    else 
+        [FileList_WdecoderAge] = CalcDecoderAge(filelist, DecoderStartDate);
+    end
+    
+    [LFP_OnlinePDs_Sorted_DayAvg, LFP_OfflinePDs_Sorted_DayAvg, DayNames] = ...
+        DayAverage(LFP_OnlinePDs_Sorted(:,3:end), LFP_OfflinePDs_Sorted(:,3:end), FileList_WdecoderAge(:,1), FileList_WdecoderAge(:,2))
 
-    [C ia] = unique(LFP_OfflinePDs_Sorted(:,2));
-    set(gca,'YTick',ia,'YTickLabel',{'LMP','Delta','Mu','70-115','130-200','200-300'})
+    StartPlot = 9;
+    
+    LFP_OnlinePDs_Sorted_DayAvg(isnan(LFP_OnlinePDs_Sorted_DayAvg(:,1)),:) = [];
+    LFP_OfflinePDs_Sorted_DayAvg(isnan(LFP_OfflinePDs_Sorted_DayAvg(:,1)),:) = [];
+   
+    imagesc(LFP_OnlinePDs_Sorted_DayAvg(:,StartPlot:end));figure(gcf);
+    [C ia] = unique(LFP_OnlinePDs_Sorted(:,2),'first');
+    allLabels = {'LMP','Delta','Mu','70-115','130-200','200-300'};
+    Yticklabels = allLabels(C);
+    set(gca,'YTick',ia,'YTickLabel',Yticklabels)
+        
+    [rOnline.map,rOnline.map_mean, rOnline.rho, rOnline.pval, rOnline.f, rOnline.x] = ...
+        CorrCoeffMap(LFP_OnlinePDs_Sorted_DayAvg(:,StartPlot:end),1,DayNames(StartPlot:end,2))
+    
+    figure    
+    imagesc(LFP_OfflinePDs_Sorted_DayAvg(:,StartPlot:end));figure(gcf);
+    [C ia] = unique(LFP_OfflinePDs_Sorted(:,2),'first');
+    Yticklabels = allLabels(C);
+    set(gca,'YTick',ia,'YTickLabel',Yticklabels)
+    
+    [rOffline.map,rOffline.map_mean, rOffline.rho, rOffline.pval, rOffline.f, rOffline.x] =...
+        CorrCoeffMap(LFP_OfflinePDs_Sorted_DayAvg(:,StartPlot:end),1,DayNames(StartPlot:end,2))
 
 end
 

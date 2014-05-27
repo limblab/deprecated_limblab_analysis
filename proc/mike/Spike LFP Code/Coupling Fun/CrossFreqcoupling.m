@@ -25,46 +25,56 @@ wsz = 256;
 samplerate = 1000;
 pri = 1;
 fi =1;
+ind = 1;
+
+FileList = Chewie_U63_SpikeX_Gam3Y_Ch95;
+
 %% Find file path, load file and start iterating through files
-for q = 1:length(FileList_1D_2D_HC)
+for q = 1:length(FileList)
     
-    fnam =  findBDFonCitadel(FileList_1D_2D_HC{q})
+    fnam{q} =  findBDFonCitadel(FileList{q,1})
     try
-        load(fnam)
+        load(fnam{q})
     catch exception
+        FilesNotRun{q,2} = exception;
+        FilesNotRun{q,1} = fnam
         continue
     end
-    
+    continue
     %% Declare input variables within loop that vary in each loop iteration:
+    [sig, ~, ~, ~,~,~,~,~,~, analog_time_base] = SetPredictionsInputVar(out_struct);
+ 
+    fpAssignScript2
+    bdf = out_struct;
+    clear out_struct fpchans
     
-    if exist('out_struct','var')
-        bdf = out_struct;
-        clear out_struct
-    end
-    [sig, ~, words, fp,~,~,~,~,fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
-    [PB, t, y] = calculateBandPower(wsz, size(fp,1), numbins, samplerate, fp, binsize, y, t);
+    [~, t, ~] = calculateBandPower(wsz, size(fp,1), numbins, samplerate, fp, binsize, y, t);
+    clear y numbins sig analog_time_base
     
     %% Bin and organize spikes
-    cells = unit_list(bdf);
-    for i = 1:length(cells)
-        if cells(i,1) ~= 0
-            ts{i} = get_unit(bdf, cells(i, 1), cells(i, 2));
-            b = train2bins(ts{i},t);
-            if cells(i,1) < 65
-                x(:,cells(i,1)+32) = b;
-                tsFPorder{cells(i,1)+32} = ts{i};
+    if 1
+        cells = unit_list(bdf);
+        x = zeros(size(t,2),size(cells,1));
+        for i = 1:length(cells)
+            if cells(i,1) ~= 0
+                ts{i} = get_unit(bdf, cells(i, 1), cells(i, 2));
+                %             b = train2bins(ts{i},t);
+                if cells(i,1) < 65
+                    %                 x(:,cells(i,1)+32) = b;
+                    tsFPorder{q,cells(i,1)+32} = ts{i};
+                else
+                    %                 x(:,cells(i,1)-64) = b;
+                    tsFPorder{q,cells(i,1)-64} = ts{i};
+                end
             else
-                x(:,cells(i,1)-64) = b;
-                tsFPorder{cells(i,1)-64} = ts{i};
+                %             x(:,i) = zeros(length(y),1);
             end
-        else
-            x(:,i) = zeros(length(y),1);
         end
+        clear b cells i ts t
     end
-    
     %% Pick out correct input signals and arrange into xOnline matrix
-    [xOnline] = PickOutInputSignals(LFPInds,SpikeInds,ControlType,PB,x);
+%    [xOnline] = PickOutInputSignals(LFPInds,SpikeInds,ControlType,PB,x);
     
     %% Plot actual and reconstructed velocity
     %     dir =['X';'Y'];
@@ -116,40 +126,56 @@ for q = 1:length(FileList_1D_2D_HC)
     
     %% Calculate trial stats
     FirstTrialInds=find(bdf.words(:,2)==17);
-    NumTrials_File(q) = length(FirstTrialInds);
-    
+    Num.Trials_File(q) = length(FirstTrialInds);
+
     AbortTrialInds=find(bdf.words(:,2)==33);
-    NumAbort_File(q) = length(AbortTrialInds);
+    Num.Abort_File(q) = length(AbortTrialInds);
     
     SuccessTrialInds=find(bdf.words(:,2)==32);
-    NumSuccess_File(q) = length(SuccessTrialInds);
+    Num.Success_File(q) = length(SuccessTrialInds);
     
-    PercentSuccess_File(q) = (NumSuccess_File(q)/NumTrials_File(q))*100;
+    Num.PercentSuccess_File(q) = (Num.Success_File(q)/Num.Trials_File(q))*100;
+    clear FirstTrialInds AbortTrialInds SuccessTrialInds
     
+        data(q).fptimes = fptimes;
+        data(q).FPs = fp;
+        data(q).SpikeTimes = tsFPorder;
+        
+        for k = 1:size(fp,1)      
+            FPdataToParse = fp(k,:)';
+            SpikedataToParse = tsFPorder{q,k};
+            tic
+            [Trials{k,q}, ~] = parseTrials(bdf,FPdataToParse,SpikedataToParse);
+            toc
+            clear FPdataToParse SpikedataToParse
+        end    
+        clear k  
+        
+        clear fp fptimes bdf tsFPorder 
+        continue
     
     data1 = fp(LFPInds{1}(1),:)';
     data2 = tsFPorder{SpikeInds{1}};
-    data2 = data2(data2>=1.0);
     
     numfolds = 20;
     
     if 0
         %% Calculate theta-gamma PAC
+        
+        numfp = size(data1,2);
+        filelength = size(data1,1);
+        
+        foldlength = floor(filelength/numfolds);     
+        samprate = 1000;
+        
+        [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
+        tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
+        
         for fold = 1:numfolds
             
-            numfp = size(data1,2);
-            filelength = size(data1,1);
-            
-            foldlength = floor(filelength/numfolds);
             data1Fold = data1((fold-1)*foldlength+1:(fold)*foldlength);
-            
-            samprate = 1000;
-            
-            [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
             fpf=filtfilt(b0,a0,data1Fold);
-            
-            tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
-            
+       
             %Band Pass Filter Theta and hilbert transform
             [b_theta,a_theta]=butter(2,[4 8]/(samprate/2));
             tfmat_theta(1,:,:)=reshape(hilbert(filtfilt(b_theta,a_theta,fpf)),1,numfp,size(fpf,1));
@@ -181,91 +207,77 @@ for q = 1:length(FileList_1D_2D_HC)
             [p_i_ThetaGamma2_RandPhase(pri,:)] = binAmpByPhase(PhaseMat_theta_RandPhase,AmpMat_gamma2);
             pri = pri+1;
             
-            clear fpf data1Fold
+            % To-Do add other variables to be cleared 
+            clear a0 b0 fpf data1Fold PhaseMat_theta tfmat_theta tfmat_gamma AmpMat_gamma...
+                tfmat_gamma2 AmpMat_gamma2 u1 tfmat_theta_RandPhase PhaseMat_theta_RandPhase...
+                
             
         end
     end
     
     if 1
-       
+        
         %% Calculate spike-field coherence
-        data1_randphase=pharand(data1);
-        
-        [Trial_FPend{q}, Trial_tsend, Trial_Path_Whole,...
-         TargetID{q}, Trial_Incomplete_FPend{q}, Trial_Incomplete_tsend, Trial_Incomplete_Path_Whole...
-         Trial_Fail_FPend{q}, Trial_Fail_tsend, Trial_Fail_Path_Whole] = parseTrials(bdf,y,xOnline,data1,data2);
-     
-        [Trial_FPend_rand{q},~,~,~,~,~,~,~,~,~] = parseTrials(bdf,y,xOnline,data1_randphase,data2);
-        
-        Trial_Path_Whole_File{q} = Trial_Path_Whole;
-        Trial_Fail_Path_Whole_File{q} = Trial_Fail_Path_Whole;
-        Trial_Incomplete_Path_Whole_File{q} = Trial_Incomplete_Path_Whole;
-         
-        Trial_FPendMAT = cell2mat(Trial_FPend{q});
-        Trial_Fail_FPendMAT = cell2mat(Trial_Fail_FPend{q});
-        Trial_Incomplete_FPendMAT = cell2mat(Trial_Incomplete_FPend{q});
-        
-        Trial_FPend_randMAT = cell2mat(Trial_FPend_rand{q});
-        
-        Trial_tsendCELL{q} = Trial_tsend;
-        Trial_Fail_tsendCELL{q} = Trial_Fail_tsend;
-        Trial_Incomplete_tsendCELL{q} = Trial_Incomplete_tsend;
 
-        binsizes = [0.05 0.1 0.15 0.2 .25 0.5];
-        for g = 1:length(binsizes)
-        
-            win = [binsizes(g) .05];
-            paramsFP.tapers = [5 9];
-            paramsFP.Fs = 1000;
-            paramsFP.fpass = [0 300];
-            paramsFP.pad = 1;
-            paramsFP.err = [1 0.05];
-            paramsFP.trialave = 1;
-            segave = 0;
-            fscorr = 0;
-            t= [];
-            
-            %    [C_begin,phi,S12,S1,S2,t,f,zerosp]=cohgramcpt(Trial_FPbeginMAT,Trial_tsbegin,win,paramsFP);
-            [C_end,~,~,~,~,~,fC{g},~,confC_cohgram,phistd]=cohgramcpt(Trial_FPendMAT,Trial_tsend,win,paramsFP);
-
-            [Coh_end,~,~,~,~,f{g},~,confC_Temp,phistd]=coherencycpt(Trial_FPendMAT(end-1000*binsizes(g):end,:),Trial_tsend,paramsFP,fscorr,[1-binsizes(g):.001:1]);            
-
-                
-            if isempty(Trial_Fail_FPendMAT) == 0
-                [C_Fail_end,~,~,~,~,~,~,~]=cohgramcpt(Trial_Fail_FPendMAT,Trial_Fail_tsend,win,paramsFP);
-            else
-                C_Fail_end = [];
-            end
-            
-            if isempty(Trial_Incomplete_FPendMAT) == 0
-                [C_Incomplete_end,~,~,~,~,~,~,~]=cohgramcpt(Trial_Incomplete_FPendMAT,Trial_Incomplete_tsend,win,paramsFP);
-            else
-                C_Incomplete_end = [];
-            end
-            
-            [C_end_rand,~,~,~,~,~,~,~]= cohgramcpt(Trial_FPend_randMAT,Trial_tsend,win,paramsFP);
-            
-            %     [C_Fail_begin,phi,S12,S1,S2,f,zerosp]=cohgramcpt(Trial_Fail_FPbeginMAT,Trial_Fail_tsbegin,win,paramsFP);
-            %     [C_Fail_end,phi,S12,S1,S2,f,zerosp]=cohgramcpt(Trial_Fail_FPendMAT,Trial_Fail_tsend,win,paramsFP);
-            
-            Cohgram(g,q).Success = C_end;
-            Cohgram(g,q).Error = confC_cohgram;
-            
-            Coherency(g,q).AllFiles = Coh_end;
-%             Coherency(g,q).Error = confCavg;
-            
-            Cohgram(g,q).Fail = C_Fail_end;
-            Cohgram(g,q).Incomplete = C_Incomplete_end;
-            
-            Cohgram(g,q).rand = C_end_rand;
-            
-            clear Coh_end confC_Temp
-
+        try
+            [Trials{q}, TargetID{q}] = parseTrials(bdf,data1,data2);
+        catch
+            FilesThatDidNotRun{q} =   FileList{q,:};
+            continue
         end
         
-        clear Coh_end Trial_FPendMAT Trial_tsend Trial_Path_Whole...
-        Trial_Fail_FPendMAT Trial_Fail_tsend Trial_Fail_Path_Whole...
-        Trial_Incomplete_FPendMAT Trial_Incomplete_tsend Trial_Incomplete_Path_Whole    
+        data1_randphase=pharand(data1);        
+        [Trials_rand{q},~] = parseTrials(bdf,data1_randphase,data2);
+        
+        Trial_FPendMAT = cell2mat(Trials{q}.FPend);
+        
+        if isfield(Trials{q},'Fail_FPend') == 1
+        Trial_Fail_FPendMAT = cell2mat(Trials{q}.Fail_FPend);
+        elseif isfield(Trials{q},'Incomplete_FPend') == 1
+        Trial_Incomplete_FPendMAT = cell2mat(Trials{q}.Incomplete_FPend);
+        end
+        
+        Trial_FPend_randMAT = cell2mat(Trials_rand{q}.FPend);
+        
+        binsizes = 0.10;
+        %         for g = 1:length(binsizes)
+        
+        win = [binsizes .05];
+        paramsFP.tapers = [5 9];
+        paramsFP.Fs = 1000;
+        paramsFP.fpass = [0 300];
+        paramsFP.pad = 1;
+        paramsFP.err = [1 0.05];
+        paramsFP.trialave = 1;
+        segave = 0;
+        fscorr = 1;
+        t = 1-binsizes:.001:1 ;
+
+        [Trials{q}.Cohgram,~,~,~,~,~,Trials{q}.fC,~,Trials{q}.confC_cohgram,~]=cohgramcpt(Trial_FPendMAT,Trials{q}.tsend,win,paramsFP);
+               
+        [Trials{q}.Coherency,~,~,~,~,Trials{q}.f,~,Trials{q}.confC_coherency,~]=coherencycpt(Trial_FPendMAT(end-1000*binsizes:end,:),Trials{q}.tsend,paramsFP,fscorr,t);
+        clear Trial_FPendMAT
+
+        if exist('Trial_Fail_FPendMAT','var') == 1
+%             [Trials{q}.C_Fail_end,~,~,~,~,~,~,~]=cohgramcpt(Trial_Fail_FPendMAT,Trial_Fail_tsend,win,paramsFP);
+            [Trials{q}.Fail_Coherency,~,~,~,~,~,~,Trials{q}.confC_Fail,~]=...
+                coherencycpt(Trial_Fail_FPendMAT(end-1000*binsizes:end,:),Trials{q}.Fail_tsend,paramsFP,fscorr,t);
+            clear Trial_Fail_FPendMAT
+        end
+        
+        if exist('Trial_Incomplete_FPendMAT','var') == 1
+%             [Trials{q}.C_Incomplete_end,~,~,~,~,~,~,~]=cohgramcpt(Trial_Incomplete_FPendMAT,Trial_Incomplete_tsend,win,paramsFP);
+             [Trials{q}.Incomplete_Coherency,~,~,~,~,~,~,Trials{q}.confC_Incomplete,~]=...
+                coherencycpt(Trial_Incomplete_FPendMAT(end-1000*binsizes:end,:),Trials{q}.Incomplete_tsend,paramsFP,fscorr,t);
+            clear Trial_Incomplete_FPendMAT
+        end
+        
+        [Trials{q}.Rand_Cohgram,~,~,~,~,~,~,~]= cohgramcpt(Trial_FPend_randMAT,Trials_rand{q}.tsend,win,paramsFP);
+        
+        [Trials{q}.Rand_Coherency,~,~,~,~,~,~,Trials{q}.Rand_confC_coherency,~]=...
+                coherencycpt(Trial_FPend_randMAT(end-1000*binsizes:end,:),Trials_rand{q}.tsend,paramsFP,fscorr,t);
+        clear Trial_FPend_randMAT paramsFP fscorr segave t        
+        
     end
     
     clear sig words fp fptimes analog_time_base y t ts numbins PB cells x...
