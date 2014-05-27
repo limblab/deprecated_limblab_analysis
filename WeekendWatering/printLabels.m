@@ -1,4 +1,4 @@
-GoogleDriveID = '0AtEH4EqHWe9JdEF2Y3VLVEdhTkFxY1pZQUVMSFVKYXc';
+GoogleDriveID = '0AtEH4EqHWe9JdF9qcDRySnQ4bTlXTFYzcnUtNGZhY2c';
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
@@ -68,7 +68,7 @@ for iRoom = 1:num_rooms
         if ~strcmpi(day_of_week,daystemp{iDate})
             error([datestemp{iDate} ' is not a ' daystemp{iDate} '. Fix dates on spreadsheet'])
         end
-        for iAnimal = 1:length(datatemp)
+        for iAnimal = 1:size(datatemp,1)
             if ~isempty(datatemp{iAnimal,2*iDate})
                 if sum(isstrprop(datatemp{iAnimal,2*iDate}, 'digit'))
                     labelData{end+1} = {daystemp{iDate};datatemp{iAnimal,1};datatemp{iAnimal,2*iDate}};
@@ -87,7 +87,7 @@ for iRoom = 1:num_rooms
                 end            
             end
         end
-        for iAnimal = 1:length(datatemp)
+        for iAnimal = 1:size(datatemp,1)
             if ~isempty(datatemp{iAnimal,2*iDate+1})
                 if sum(isstrprop(datatemp{iAnimal,2*iDate+1}, 'digit'))                    
                     excel_food_row = (strfind({WeekendFeeding{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
