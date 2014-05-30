@@ -74,7 +74,7 @@ for i = 1:length(FirstTrialInds)-1
         % appear either 2 or 3 places after the begin trial word (17)
         % because of the appearance of a (96) word.
         
-        TimeStart_OTargetOn = eval(vpa(out_struct.words(FirstTrialInds(i)+2,1),3));
+        TimeStart_OTargetOn = eval(vpa(out_struct.words(FirstTrialInds(i)+2,1),3));  % Comes out as a symbolic number so it needs to be converted to a double using eval 
         TrialStart_OTOn_IndexFP(j) = round((TimeStart_OTargetOn - 1)/.001);
         TrialStart_OTOn_IndexPath(j) = round((TimeStart_OTargetOn - 1)/.05);
     end
@@ -102,14 +102,21 @@ for i = 1:length(FirstTrialInds)-1
             if length(TrialStart_OTOn_IndexFP) == j % Ran into a weird
                 % 2/5/14 bug where there was a reward without any outer target ON
                 % word (49) or the target word itself (64-67)
-                Trial.FPend{t} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
-%                Trial.FPbegin{t} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
+                
+                % MRS 5/29/14 Added this logic because the TrialEndIndex
+                % exceeded the length of the fp matrix
+                if TrialEndIndexFP(j) < length(fp)
+                Trial.FPend{t} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j));
+                else
+                    continue
+                end
+%                Trial.FPbegin{t} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000);
                 
                 % In case there's no spikes at the end of this trial
                 % MRS 2/7/14
                 EndTrial_SpikeTimes = ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1);
                 if isempty(EndTrial_SpikeTimes) == 0
-                    Trial.tsend(t).times = EndTrial_SpikeTimes;  % Comes out as a symbolic number so it needs to be converted to a double using eval 
+                    Trial.tsend(t).times = EndTrial_SpikeTimes; 
                 end
                 
             else
@@ -126,8 +133,11 @@ for i = 1:length(FirstTrialInds)-1
             
             if length(TrialStart_OTOn_IndexFP) == j % Copied from above
 %                Trial.Incomplete_FPbegin{n} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
-                Trial.Incomplete_FPend{n} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
-
+                if TrialEndIndexFP(j) < length(fp)
+                    Trial.Incomplete_FPend{n} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel 
+                else
+                    continue
+                end
                 % Copied from above
                 Incomplete_SpikeTimes = ts((ts >= TimeEnd-1 & ts<=TimeEnd)) - (TimeEnd-1);
                 if isempty(Incomplete_SpikeTimes) == 0
@@ -150,7 +160,13 @@ for i = 1:length(FirstTrialInds)-1
             
             if length(TrialStart_OTOn_IndexFP) == j % Copied from above
 %                Trial.Fail_FPbegin{l} = fp(TrialStart_OTOn_IndexFP(j):TrialStart_OTOn_IndexFP(j)+1000); % Signal pos/vel
-                Trial.Fail_FPend{l} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j)); % Signal pos/vel
+                
+                if TrialEndIndexFP(j) < length(fp)
+                    Trial.Fail_FPend{l} = fp(TrialEndIndexFP(j)-1000:TrialEndIndexFP(j));
+                else
+                    continue
+                end
+                
                 
                 % Copied from above
 %                 if isempty(vpa(ts((ts >= TimeStart_OTargetOn & ts<=TimeStart_OTargetOn+1))- TimeStart_OTargetOn,3)) == 0
