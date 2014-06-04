@@ -1,4 +1,4 @@
-function [outdata,h_up,h_low]=PD_plot(varargin)
+function [outdata,h_up,h_low,h_PD_mags,h_PD_ang_hist,h_PD_CI_hist]=PD_plot(varargin)
 
 % PD_PLOT = PD_plot(BDF,ARRAY_MAP_FILEPATH,INCLUDE_UNSORTED,INCLUDE_HISTOGRAMS,DESELECTED_CHANNELS)
 %       generates PD plots. BDF is data in the bdf structure. 
@@ -65,7 +65,9 @@ model='posvel';
 
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
-
+if isempty(u1)
+    error('S1_ANALYSIS:PROC:TUCKER:PDS:PD_PLOT:NoUnits','no units were found to compute PDs on')
+end
 if (include_unsorted && length(u1)~=length(moddepth))
     disp('discarding clusters')
     u1=u1(~u1(:,2),:);
@@ -74,11 +76,14 @@ end
 outdata=[double(u1(:,1)),pds,moddepth,errs];
 
 %% identify channels with excessive modulation depth
-%% identify channels with excessive modulation depth
 for iChan = 1:length(u1)
     if (moddepth(iChan) > 10)
         warning('PD_force_plot:AbnormalModulationDepth',strcat('An unusually large modulation depth was detected on channel: ',num2str(iChan)))
         disp(strcat('Channel: ',num2str(iChan), ' has been marked as bad, and will not be used to compute the mean modulation depth'))
+        deselected_chan = [u1(iChan), deselected_chan];
+        skipchans=[iChan,skipchans];
+    end
+    if u1(iChan)>96
         deselected_chan = [u1(iChan), deselected_chan];
         skipchans=[iChan,skipchans];
     end
@@ -124,7 +129,11 @@ h_low = figure('name','PDs lower half of array');
 iPD =2 ; 
 maxmod=max(moddepth(setxor([1:length(moddepth)],skipchans)));
 for iPD = 1:length(u1(:,1))
-    r = 0.0001:0.0001:moddepth(iPD)/maxmod; % the length of the radial line is normalized by the modulation depth
+    if moddepth(iPD)==0;
+        r=0;
+    else
+        r = [0.0001,moddepth(iPD)]/maxmod; % the length of the radial line is normalized by the modulation depth
+    end
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
     err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
     err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
@@ -208,7 +217,8 @@ end
 
 if plot_histogram
     % plot confidence interval histograms
-    figure('name','95% CI'); 
+    h_PD_CI_hist=figure('name','95% CI'); 
+    
     hist(abs(errs(~isnan(errs))*180/pi)*1.96*2,[5:10:360]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
     xlim([0,360])
     xlabel('degrees')
@@ -216,7 +226,7 @@ if plot_histogram
     title('Histogram of 95% confidence interval on PDs')
     
     % plot PD histograms
-    figure('name','PDs')
+    h_PD_ang_hist=figure('name','PDs')
     hist(pds(~isnan(pds))*180/pi,[-175:20:180]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
 %     xlim([0,360])
     xlabel('degrees')
@@ -224,7 +234,7 @@ if plot_histogram
     title('Histogram of PDs')
     
     % plot modulation depth histogram
-    figure('name','modulation depth')
+    h_PD_mags=figure('name','modulation depth')
     hist(moddepth(~isnan(moddepth)),30) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
     xlabel('sqrt(a^2+b^2) where a and b are the GLM weights on x and y velocity')
     ylabel('PD counts')
