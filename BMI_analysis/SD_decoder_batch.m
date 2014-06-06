@@ -6,10 +6,16 @@ clear
 % BC_file = '\\165.124.111.182\data\Chewie_8I2\Nick Datafiles\onlineSD\6-10-2013\Chewie_Spikes_06102013002';
 % log_file = '\\165.124.111.182\data\Chewie_8I2\Nick Datafiles\onlineSD\6-10-2013\Chewie_Spikes_06102013001-binned_perfLDA_velDecoder_1stOrder_log';
 
-HC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-21\Chewie_Spike_RW_05212014001';
+% HC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-27\Chewie_Spike_RW_05272014001';
+% % HC_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\Chewie_Spikess_06102013001';
+% BC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-27\Chewie_Spike_RW_05272014002';
+% log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-27\Chewie_Spike_RW_05272014002-binned_perfLDA_velDecoder_1stOrder_log';
+% % log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-04-17\Chewie_Spike_RW_04172014002_correctPos-binned_perfLDA_velDecoder_1stOrder_log';
+
+HC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-06\Chewie_Spike_RW_06032014001';
 % HC_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\Chewie_Spikess_06102013001';
-BC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-21\Chewie_Spike_RW_05212014002';
-log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-21\Chewie_Spike_RW_05212014002-binned_perfLDA_velDecoder_1stOrder_log';
+BC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-06\Chewie_Spike_RW_06062014001';
+log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-06\Chewie_Spike_RW_06062014001_correctPos-binned_perfLDA_velDecoder_1stOrder_log';
 % log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-04-17\Chewie_Spike_RW_04172014002_correctPos-binned_perfLDA_velDecoder_1stOrder_log';
 
 if ~exist([BC_file '.plx'],'file')

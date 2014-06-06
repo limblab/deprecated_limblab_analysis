@@ -1,5 +1,5 @@
-data_location = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-04-09\';
-BC_file = 'Chewie_Spike_RW_04092014004';
+data_location = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-05\';
+BC_file = 'Chewie_Spike_RW_06052014004';
 log_file = dir([data_location BC_file '*.txt']);
 log_file = log_file(1).name;
 [~,log_file,~] = fileparts(log_file);

@@ -35,6 +35,13 @@ disp('Finding states...')
 if use_distance
     x_offset = bytes2float(out_struct.databursts{1,2}(7:10));
     y_offset = bytes2float(out_struct.databursts{1,2}(11:14));
+    
+    % No offset for brain control
+    if abs(mean(binnedData.cursorposbin(:,2))) < 10
+        x_offset = 0;
+        y_offset = 0;
+    end
+    
     target = ones(length(binnedData.timeframe),2)*1000;
     target_distance = zeros(length(target),1);
     target_flag = 0;

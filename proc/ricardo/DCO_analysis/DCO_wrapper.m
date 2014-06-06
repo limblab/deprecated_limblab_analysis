@@ -1,7 +1,7 @@
-params.DCO_file_prefix = 'Mini_2014-05-21_DCO_HC';
+params.DCO_file_prefix = 'Mini_2014-05-27_DCO_HC';
 target_folder = ['D:\Data\Mini_7H1\' params.DCO_file_prefix];
 % target_folder = ['D:\Data\Kevin_12A2\Data\' params.DCO_file_prefix];
-params.reprocess_data = 0;
+params.reprocess_data = 1;
 params.plot_behavior = 0;
 params.plot_units = 0;
 params.plot_emg = 0;

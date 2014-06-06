@@ -1,10 +1,10 @@
 function [PredData, varargout] = predictSignals(varargin)
 % [PredData, varargout] = predictSignals(varargin)
 %   
-%    varargin = {decoder, binnedData, FiltPred, Adapt, numPCs};   
+%    varargin = {decoder, binnedData, FiltPredVar, Adapt, numPCs};   
 %       decoder     : decoder structure
 %       binnedData  : binned data structure
-%       FiltPred    : boolean, 0=no filter, 1= 4pole butter 2Hz LP
+%       FiltPredVar    : boolean, 0=no filter, 1= 4pole butter 2Hz LP
 %       Adapt       : Adaptation structure (contains adapt params)
 %       numPCs      : number of principal components to use (decoder.inputtype has to be 'princomp'
 %
@@ -19,11 +19,11 @@ BinnedData   = varargin{2};
 
 % default values
 numPCs = 0;
-FiltPred = false;
+FiltPredVar = false;
 Adapt.Enable = false;
 
 if nargin    >= 3
-    FiltPred = varargin{3};
+    FiltPredVar = varargin{3};
     if nargin > 3
         Adapt = varargin{4};
         if nargin > 4
@@ -105,7 +105,7 @@ if ~isempty(filter.P)
 end
 
 %% Smooth EMG Predictions, with a low-pass of 1.5 Hz
-if FiltPred
+if FiltPredVar
    [PredictedData] = FiltPred(PredictedData,binsize,2);
 end
 
