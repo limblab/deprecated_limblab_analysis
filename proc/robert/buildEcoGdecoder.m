@@ -16,7 +16,7 @@ end
 clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* fp* freqs 
 clear h junk lambda num* parameters save* sig signal states total_samples
 clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
-clear N_KsectionInterp
+clear N_KsectionInterp R badChanF bandsToUse existingFigTags files rangeThresh
 %% define constants.
 
 SIGNALTOUSE='force';
@@ -28,8 +28,8 @@ SIGNALTOUSE='force';
 FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
                 % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
-FPSTOUSE=[2 3 6 7 8 11 12 16 17 18 19 22 23 26 27 28 29 31 ...
-    32 35 36 39 40 42 43 46 47 49 50 53 54 57 58 60 62 64];
+% FPSTOUSE=[2 3 6 7 8 11 12 16 17 18 19 22 23 26 27 28 29 31 ...
+%     32 35 36 39 40 42 43 46 47 49 50 53 54 57 58 60 62 64];
 % FPSTOUSE=[4 5 6 9 10 13 14 15 16 20 21 24 25 26 29 33 34 37 38 41 42 44 45 46 47 51 52 55 56 59 61 63];
                 % build the decoder.  We can change our minds about this
                 % one in a later cell, if we so desire.
@@ -55,7 +55,7 @@ if isnumeric(PathName) && PathName==0
     return
 end
 cd(PathName)
-%%  4.  load into memory
+%  4.  load into memory
 fprintf(1,'loading %s...\n',files.name)
 [signal,states,parameters,N]=load_bcidat(files.name);
 fprintf(1,'load complete\n')
@@ -64,6 +64,25 @@ clear N
 %%  5a.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
+signalRange=max(signal(:,FPIND),[],1)-min(signal(:,FPIND),[],1);
+badChanF=figure; set(badChanF,'Position',[121 468 560 420])
+plot(signalRange,'.','MarkerSize',36)
+signalRangeBadLogical=signalRange<1;
+rangeThresh=median(signalRange(~signalRangeBadLogical))+ ...
+    2*iqr(signalRange(~signalRangeBadLogical));
+signalRangeBadLogical=signalRangeBadLogical | (signalRange > rangeThresh);
+hold on
+plot(find(signalRangeBadLogical),signalRange(signalRangeBadLogical),'r.','MarkerSize',36)
+plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
+try
+    title(sprintf('%s\nRange of raw signals.\nBad channel estimate=red. %d good channels.', ...
+        FileName,nnz(~signalRangeBadLogical)),'Interpreter','none','FontSize',16)
+end
+set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
+% if you don't agree with this estimation, then change the below line to
+% ignore the auto-bad estimate.  BEWARE OF DOING THIS TWICE IN A ROW.
+FPSTOUSE=FPIND;
+    FPSTOUSE(signalRangeBadLogical)=[];
 fp=(signal(:,FPIND)').* ...
     repmat(cellfun(@str2num,parameters.SourceChGain.Value(FPIND)),1,size(signal,1));
 fptimes=(1:size(fp,2))/samprate;
@@ -73,11 +92,14 @@ clear sig CG
 disp('done')
 
 %%  5b. optional: look at smoothed force signal
-if ~exist('smForceFigure','var') || ~ishandle(smForceFigure) % ~strcmp(get(gcf,'Tag'),'smForceFigure')
+existingFigTags=get(get(0,'Children'),'Tag');
+if ~iscell(existingFigTags), existingFigTags={existingFigTags}; end
+if ~isstr(existingFigTags{1}), existingFigTags{1}=''; end
+if ~any(cellfun(@isempty,regexp(existingFigTags,'smForceFigure'))==0)
     smForceFigure=figure; set(smForceFigure,'Tag','smForceFigure')
     plot(sig(:,1),sig(:,2)), hold on
 else
-    figure(smForceFigure)
+    figure(findobj(0,'Tag','smForceFigure'))
     % comment out delete line, and optionally change color below, to 
     % add new views of different smoothing factors, instead of replacing
     % the current one.
@@ -85,8 +107,9 @@ else
 end
 smForce=smooth(sig(:,2),51);
 plot(sig(:,1),smForce,'g','LineWidth',1.5)
+set(smForceFigure,'Position',[121 468 560 420])
 %%  5b(i).  optional add-on to 5b, to actually use the smoothed force
-sig(:,2)=smForce;
+sig=[fptimes', smForce];
 %%  6.  new school: pick channels to include/exclude based on cap map
 % FPSTOUSE=1:64; % just in case it comes in handy
 FPuseList=selectEEGelectrodes2(parameters.ChannelNames.Value(FPIND),parameters.ChannelNames.Value(setdiff(FPIND,FPSTOUSE)));
@@ -122,13 +145,12 @@ end, clear n
 %%  9.  assign parameters.
 Use_Thresh=0; lambda=6; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; smoothfeats=0; featShift=0;
-nfeat=floor(0.9*size(featMat,2));
-% nfeat=95;
+nfeat=floor(0.9*size(x,2));
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
-if nfeat>(size(featMat,1)*size(featMat,2))
-    fprintf(1,'setting nfeat to %d\n',size(featMat,1)*size(featMat,2))
-    nfeat=size(featMat,1)*size(featMat,2);
+if nfeat>(size(x,1)*size(x,2))
+    fprintf(1,'setting nfeat to %d\n',size(x,1)*size(x,2))
+    nfeat=size(x,1)*size(x,2);
 end
 fprintf('\nusing %d features...\n\n',nfeat)
 % have to clear bestc,bestf if going from more features to fewer!
@@ -157,6 +179,8 @@ vaf                                                                             
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
+set(gcf,'Position',[121 468 560 420])
+
 %%  11.  plot cross-validated predictions, with some informative text.
 % close
 figure, set(gcf,'Position',[88 100 1324 420])
@@ -187,8 +211,8 @@ for n=1:length(dottedH)
 end, clear n dottedH
 
 if exist('PolynomialOrder','var')
-    title(sprintf('real (blue) and predicted (green).  P^{%d}, mean_{vaf}=%.4f, %d features', ...
-        PolynomialOrder,mean(vaf(:,col)),nfeat))
+    title(sprintf('%s: real (blue) and predicted (green).  P^%d, mean_{vaf}=%.4f \\pm %.4f, %d features', ...
+        regexprep(FileName,'_','-'),PolynomialOrder,mean(vaf(:,col)),std(vaf(:,col)),nfeat))
 else
     title(sprintf('real (blue) and predicted (green).  mean_{vaf}=%.4f, %d features', ...
         mean(vaf(:,col)),nfeat))
