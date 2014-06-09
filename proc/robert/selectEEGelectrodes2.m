@@ -58,7 +58,21 @@ function selectEEGelectrodes2_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = '';
 
 set(gcf,'Color',[1 1 1])
-capPic=imread('E:\s1_analysis\proc\robert\TMSi_CA-106_electrodeMap.png','png');
+try
+    capPic=imread('E:\s1_analysis\proc\robert\TMSi_CA-106_electrodeMap.png','png');
+catch ME
+    if ~isempty(regexp(ME.identifier,'fileDoesNotExist','once'))
+        % try my laptop
+        try
+            capPic=imread(['/Users/rdflint/work/Northwestern/MATLAB code/', ...
+                's1_analysis/proc/robert/TMSi_CA-106_electrodeMap.png'],'png');
+        catch ME % if it's not my laptop, then I don't know where we are.
+            if ~isempty(regexp(ME.identifier,'fileDoesNotExist','once'))
+                rethrow(ME)
+            end
+        end
+    end
+end
 image(capPic,'Parent',handles.axes3)
 set(handles.axes3,'Visible','off')
 
