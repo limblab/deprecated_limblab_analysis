@@ -1,4 +1,4 @@
-function [pds, CI_low, CI_high, moddepth] = glm_bootstrap(varargin)
+function [pds, CI, moddepth] = glm_bootstrap(varargin)
 % GLM_BOOTSTRAP returns PDS calculated using a bootstrapped velocity GLM
 %   PDS = GLM_BOOTSTRAP(BDF) returns the velocity PDs, in radians, from each
 %       unit in the supplied BDF object 
@@ -8,8 +8,11 @@ function [pds, CI_low, CI_high, moddepth] = glm_bootstrap(varargin)
 %       sets the model.
 %   PDS = GLM_BOOTSTRAP(BDF, include_unsorted, model, reps, num_samp) - Same as
 %       above, but specifies bootrstrap repetitions and number of data
-%       samples used per repetition (Defaults are 100 and 1000
-%       respectively)
+%       samples used per repetition (Defaults are 1000 and the number of
+%       original data points respectively)
+%   [PDS, CI, MODDEPTH] = GLM_BOOTSTRAP(...) - Returns CI, the 95% confidence
+%       bounds to be added to either side of the PDs, and MODDEPTH, the
+%       modulation depth of the PDs
 
 % $Id: glm_pds.m 1028 2012-12-05 18:26:49Z tucker $
 
@@ -17,8 +20,7 @@ function [pds, CI_low, CI_high, moddepth] = glm_bootstrap(varargin)
 bdf = varargin{1};
 include_unsorted = 0;
 model='posvel';
-reps = 100;
-num_samp = 1000;
+reps = 1000;
 if length(varargin)>1;
     include_unsorted = varargin{2};
 end
@@ -37,6 +39,8 @@ end
 
 if length(varargin)>4
     num_samp = varargin{5};
+else
+    num_samp = size(bdf.vel,1);
 end
 
 ul = unit_list(bdf,include_unsorted);
@@ -55,9 +59,10 @@ for i = 1:length(ul)
     
     %% Set up model inputs
     if isfield(bdf.units,'fr')
-        %if the firing rate is already a field in bdf.units
+        % if the firing rate is already a field in bdf.units
         [s,t]=get_fr(bdf,ul(i,1),ul(i,2));
     else
+        % count spikes in 50 ms bins
         %ts = 200; % time step (ms)
         ts = 50;
 
@@ -67,14 +72,16 @@ for i = 1:length(ul)
         spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
         s = train2bins(spike_times, t);
     end
+    
     glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
     glmv = interp1(bdf.vel(:,1), bdf.vel(:,2:3), t);
-    % glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
+    %glmf = interp1(bdf.force(:,1), bdf.force(:,2:3), t);
     %glmp = sum(glmf .* glmv,2);
     %glmpp = [sum( glmf .* glmv , 2)./sqrt(sum(glmv.^2,2)) ...
-    %    sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
+    %sum( glmf .* [-glmv(:,2), glmv(:,1)] , 2)./sqrt(sum(glmv.^2,2))];
     glmpp(1,:) = [0 0];
 
+    % set inputs for different models
     if strcmp(model, 'pos')
         glm_input = glmx;
     elseif strcmp(model, 'vel')
@@ -110,12 +117,16 @@ for i = 1:length(ul)
         % grab test set indices
         idx = uint32(1+(length(glmx)-1)*rand(num_samp,1));
 
+        % run glmfit on bootstrap iteration
         b = glmfit(glm_input(idx,:),s(idx),'poisson');
+        
+        % calculate PDs for each iteration
         moddepth_boot(i,bootCt) = norm([b(4) b(5)]);
         pds_boot(i,bootCt) = atan2(b(5),b(4));
         
         b_mat(:,bootCt) = b;
     end
+    % find average regression coefficients
     avg_b = mean(b_mat,2);
     
     %% Get model outputs
@@ -170,3 +181,5 @@ ang_ind_high = floor(reps*0.975);
 % channel)
 CI_low = ang_dist_sort(:,ang_ind_low) + pds;
 CI_high = ang_dist_sort(:,ang_ind_high) + pds;
+
+CI = (abs(CI_low-pds)+abs(CI_high-pds))/2;
