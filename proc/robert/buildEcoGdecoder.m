@@ -65,12 +65,14 @@ clear N
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
 signalRange=max(signal(:,FPIND),[],1)-min(signal(:,FPIND),[],1);
-badChanF=figure; set(badChanF,'Position',[121 468 560 420])
+badChanF=figureCenter; % set(badChanF,'Position',[121 468 560 420])
 plot(signalRange,'.','MarkerSize',36)
-signalRangeBadLogical=signalRange<1;
-rangeThresh=median(signalRange(~signalRangeBadLogical))+ ...
-    2*iqr(signalRange(~signalRangeBadLogical));
-signalRangeBadLogical=signalRangeBadLogical | (signalRange > rangeThresh);
+signalRangeLowLogical=signalRange<1;
+% for median range calculation, include everything except the zeros.
+rangeThresh=median(signalRange(~signalRangeLowLogical))+ ...
+    2*iqr(signalRange(~signalRangeLowLogical));
+signalRangeHighLogical=signalRange > rangeThresh;
+signalRangeBadLogical=signalRangeLowLogical | signalRangeHighLogical;
 hold on
 plot(find(signalRangeBadLogical),signalRange(signalRangeBadLogical),'r.','MarkerSize',36)
 plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
@@ -79,14 +81,61 @@ try
         FileName,nnz(~signalRangeBadLogical)),'Interpreter','none','FontSize',16)
 end
 set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
-% if you don't agree with this estimation, then change the below line to
-% ignore the auto-bad estimate.  BEWARE OF DOING THIS TWICE IN A ROW.
+% also, plot a cut-down version of the raw fp signals.
+fpCut=(signal(1:100:end,FPIND)')./mean(signalRange);
+fpCutFig=figure; set(fpCutFig,'Position',get(0,'ScreenSize'))
+fpCutAx=axes('Position',[0.0319    0.0297    0.9556    0.9636], ...
+    'XLim',[0 size(fpCut,2)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
+hold on
+maxStrLen=max(cellfun(@numel,parameters.ChannelNames.Value(FPIND)));
+for n=1:size(fpCut,1)
+    if ~isempty(intersect(n,find(signalRangeBadLogical)))
+        plot(n+fpCut(n,:),'r')
+    else
+        plot(n+fpCut(n,:))
+    end
+    YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
+        n,parameters.ChannelNames.Value{n});
+end, clear n
+set(fpCutAx,'YTickLabel',YaxLabelStr)
+figure(badChanF)
+
+%% Use signalRangeBadLogical to eliminate channels from FPSTOUSE.
+% If you don't agree with the auto-estimation, then change 
+% signalRangeBadLogical to be something that you think is better. 
 FPSTOUSE=FPIND;
-    FPSTOUSE(signalRangeBadLogical)=[];
+FPSTOUSE(signalRangeBadLogical)=[];
 fp=(signal(:,FPIND)').* ...
     repmat(cellfun(@str2num,parameters.SourceChGain.Value(FPIND)),1,size(signal,1));
 fptimes=(1:size(fp,2))/samprate;
-% this is where we'll get the CG info & do the PCA
+%% CAR.  Include only good signals into the CAR, but apply to all signals
+%  (except channels zeroed out by the REFA)
+fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
+    mean(fp(FPSTOUSE,:),1));
+signalRange=max(fp(~signalRangeLowLogical,:),[],2)- ...
+    min(fp(~signalRangeLowLogical,:),[],2);
+fpCut=(fp(FPIND,1:100:end))./mean(signalRange);
+if ishandle(fpCutFig)
+    figure(fpCutFig)
+    cla
+else
+    fpCutFig=figure;
+    fpCutAx=axes('Position',[0.0319    0.0297    0.9556    0.9636], ...
+        'XLim',[0 size(fpCut,2)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
+end
+hold on
+for n=1:size(fpCut,1)
+    if ~isempty(intersect(n,find(signalRangeBadLogical)))
+        plot(n+fpCut(n,:),'r')
+    else
+        plot(n+fpCut(n,:))
+    end
+    YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
+        n,parameters.ChannelNames.Value{n});
+end, clear n
+set(fpCutAx,'YTickLabel',YaxLabelStr)
+
+%% CG info & PCA, or force info.
 clear sig CG
 [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
@@ -96,10 +145,10 @@ existingFigTags=get(get(0,'Children'),'Tag');
 if ~iscell(existingFigTags), existingFigTags={existingFigTags}; end
 if ~isstr(existingFigTags{1}), existingFigTags{1}=''; end
 if ~any(cellfun(@isempty,regexp(existingFigTags,'smForceFigure'))==0)
-    smForceFigure=figure; set(smForceFigure,'Tag','smForceFigure')
+    smForceFigure=figureCenter; set(smForceFigure,'Tag','smForceFigure')
     plot(sig(:,1),sig(:,2)), hold on
 else
-    figure(findobj(0,'Tag','smForceFigure'))
+    figureCenter(findobj(0,'Tag','smForceFigure'))
     % comment out delete line, and optionally change color below, to 
     % add new views of different smoothing factors, instead of replacing
     % the current one.
@@ -107,7 +156,6 @@ else
 end
 smForce=smooth(sig(:,2),51);
 plot(sig(:,1),smForce,'g','LineWidth',1.5)
-set(smForceFigure,'Position',[121 468 560 420])
 %%  5b(i).  optional add-on to 5b, to actually use the smoothed force
 sig=[fptimes', smForce];
 %%  6.  new school: pick channels to include/exclude based on cap map
@@ -217,6 +265,14 @@ else
     title(sprintf('real (blue) and predicted (green).  mean_{vaf}=%.4f, %d features', ...
         mean(vaf(:,col)),nfeat))
 end
+
+%% ranked bestc,bestf
+[bestfRanked,bestcRanked]=ind2sub([length(featind)/length(FPSTOUSE) length(FPSTOUSE)], ...
+    featind((1:nfeat)+featShift));
+[parameters.ChannelNames.Value(FPSTOUSE(bestcRanked)), num2cell(bestfRanked')]; 
+openvar('ans')
+% center of mass for bestfRanked
+
 %%  12.  build a decoder.
 % at this point, bestc & bestf are sorted by channel, while featind is
 % still sorted by feature correlation rank.
