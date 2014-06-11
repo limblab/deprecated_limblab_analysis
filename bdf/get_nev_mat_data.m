@@ -219,13 +219,13 @@ function out_struct = get_nev_mat_data(varargin)
 
         for i = length(force_list):-1:1
             if NSx_info.NSx_sampling(force_list(i))==1000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(force_list(i)),:));
+                out_struct.force.data(:,i+1) = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(force_list(i)),:));
             elseif NSx_info.NSx_sampling(force_list(i))==2000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(force_list(i)),:));
+                out_struct.force.data(:,i+1) = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(force_list(i)),:));
             elseif NSx_info.NSx_sampling(force_list(i))==10000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS4.Data(NSx_info.NSx_idx(force_list(i)),:));
+                out_struct.force.data(:,i+1) = single(NEVNSx.NS4.Data(NSx_info.NSx_idx(force_list(i)),:));
             elseif NSx_info.NSx_sampling(force_list(i))==30000
-                out_struct.emg.data(:,i+1) = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(force_list(i)),:));
+                out_struct.force.data(:,i+1) = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(force_list(i)),:));
             end
         end        
        
