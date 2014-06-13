@@ -58,9 +58,9 @@ function out_struct = get_nev_mat_data(varargin)
         NEVNSx = fileOrStruct;        
     else
         [filepath,fileprefix,~] = fileparts(fileOrStruct);
-%         if ~strcmp(filepath(end),filesep)
-%             filepath(end+1) = filesep;
-%         end
+        if ~strcmp(filepath(end),filesep)
+            filepath(end+1) = filesep;
+        end
         NEVNSx = cerebus2NEVNSx(filepath,fileprefix);
     end
     clear fileOrStruct
@@ -114,8 +114,8 @@ function out_struct = get_nev_mat_data(varargin)
     NSx_info.NSx_labels = deblank(NSx_info.NSx_labels);
         
     stim_marker  = find(strcmp({NEVNSx.NEV.ElectrodesInfo.ElectrodeLabel}','Stim_'));
-    emg_list = find(~cellfun('isempty',strfind(NSx_info.NSx_labels,'EMG_')));
-    force_list = find(~cellfun('isempty',strfind(NSx_info.NSx_labels,'force_')));
+    emg_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'emg_')));
+    force_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'force_')));
     analog_list = setxor(1:length(NSx_info.NSx_labels),emg_list);
     analog_list = setxor(analog_list,force_list);    
 
