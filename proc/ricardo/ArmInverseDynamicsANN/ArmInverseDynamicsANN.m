@@ -1,13 +1,24 @@
 % Inverse dynamic model ANN fitting
 
 load('\\citadel\data\TestData\Ricardo_DCO\Ricardo_2014-06-12_DCO\Output_Data\bdf')
-load('\\citadel\data\TestData\Ricardo_DCO\Ricardo_2014-06-12_DCO\Output_Data\DCO')
+% load('\\citadel\data\TestData\Ricardo_DCO\Ricardo_2014-06-12_DCO\Output_Data\DCO')
 
 % Subsample
 idx = 1:50:size(bdf.pos,1);
 
+emg_data = zeros(length(bdf.pos(:,1)),length(bdf.emg.emgnames));
+[b_lp,a_lp] = butter(4,10/(bdf.emg.emgfreq/2));        
+[b_hp,a_hp] = butter(4,70/(bdf.emg.emgfreq/2),'high'); 
+for iEMG = 1:length(bdf.emg.emgnames)
+    emg = double(bdf.emg.data(:,1+iEMG));          
+    emg = filtfilt(b_hp,a_hp,emg);
+    emg = abs(emg);
+    emg = filtfilt(b_lp,a_lp,emg);
+%             DCO.emg(iEMG,:) = emg;
+    emg_data(:,iEMG) = emg;            
+end
+        
 % Reorder emg_data
-emg_data = DCO.emg';
 emg_data = emg_data(idx,[3 4 1 2]);
 
 % Normalize EMG
