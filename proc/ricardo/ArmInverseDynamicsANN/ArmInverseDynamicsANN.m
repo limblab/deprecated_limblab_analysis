@@ -1,8 +1,20 @@
 % Inverse dynamic model ANN fitting
 
-load('\\citadel\data\TestData\Ricardo_DCO\Ricardo_2014-06-12_DCO\Output_Data\bdf')
+% load('\\citadel\data\TestData\David_EMG\Ricardo_2014-06-12_DCO\Output_Data\bdf')
 % load('\\citadel\data\TestData\Ricardo_DCO\Ricardo_2014-06-12_DCO\Output_Data\DCO')
+data_folder = '\\citadel\data\TestData\David_EMG';
+file_name = 'David_2014-06-18_RW_EMG_001';
 
+% Arm lengths (David)
+l = [12 16.5]*.0254;  % [upper_arm lower_arm]
+x_sh = [6 -19]*.0254; 
+
+if ~exist([data_folder filesep file_name '.mat'],'file')
+    bdf = get_cerebus_data([data_folder filesep file_name '.nev'],'rothandle',1,3);
+    save([data_folder filesep file_name],'bdf')
+else
+    load([data_folder filesep file_name],'bdf')
+end
 % Subsample
 idx = 1:50:size(bdf.pos,1);
 
@@ -28,15 +40,11 @@ emg_norm = emg_data;
 emg_norm = zscore(emg_norm);
 emg_norm = emg_norm - repmat(min(emg_norm),size(emg_norm,1),1);
 
-% Arm lengths
-l = [.4 .35];
-
 % Joint angles from endpoint position.
-x_off = DCO.trial_table(1,DCO.table_columns.x_offset);
-y_off = DCO.trial_table(1,DCO.table_columns.y_offset);
+x_off = bytes2float(bdf.databursts{1,2}(7:10));  % ONLY WORKS FOR RW AND CO TASKS
+y_off = bytes2float(bdf.databursts{1,2}(11:14));
 x = [bdf.pos(idx,2)+repmat(x_off,length(idx),1) bdf.pos(idx,3)+repmat(y_off,length(idx),1)];
 x = .01*x;
-x_sh = [0 -.40];
 x_temp = x - repmat(x_sh,length(idx),1);
 c2 = (x_temp(:,1).^2 + x_temp(:,2).^2 - l(1)^2 -l(2)^2)/(2*l(1)*l(2));
 s2 = sqrt(1-c2.^2);
