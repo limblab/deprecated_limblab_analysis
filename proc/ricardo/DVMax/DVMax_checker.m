@@ -1,7 +1,7 @@
 function DVMax_checker()
     MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
     testing = 0;
-    water_codes = {'EP8500','EP9000'};
+    water_codes = {'EP8500','EP9000','EP2000'};
     free_water_codes = {'EP9200 '};
     water_restriction_start_code = 'EP9100';
     food_codes = {'EP8600','EP8700'};
