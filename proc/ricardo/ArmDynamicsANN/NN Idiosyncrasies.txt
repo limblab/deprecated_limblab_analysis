@@ -1,0 +1,16 @@
+6.23.14
+
+**Layer Recurrent Neural Network**
+
+Data format
+-----------
+-I have yet to figure out how to set multiple outputs for the 'layrecnet.' Current hack: train a network for each output.
+-Inputs can be correctly formatted by running 'num2cell' on the R-by-N input matrix of R inputs across N time steps. This will output an R-by-N cell array with one number in each cell.
+-To format data for a specific network's architecture, run 'preparets' before training the network. This will shift the vectors according to the defined network delay taps.
+		[Xs,Xi,Ai,Ts] = preparets(net,X,T);
+
+Network Parameters
+------------------
+-net.divideFcn = 'divideblock'; % Default is 'dividerand'
+-net.divideMode = 'time'; 	% This must be changed to work with the 'divideblock' setting.
+
