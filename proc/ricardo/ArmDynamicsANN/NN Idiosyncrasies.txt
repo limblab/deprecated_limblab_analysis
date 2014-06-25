@@ -13,4 +13,9 @@ Network Parameters
 ------------------
 -net.divideFcn = 'divideblock'; % Default is 'dividerand'
 -net.divideMode = 'time'; 	% This must be changed to work with the 'divideblock' setting.
+For determining network delays, Greg Heath (Mathworks newsgroup) suggests determining input and layer delays based on signals' crosscorrelation and autocorrelation, respectively
+
+Training
+--------
+net = train(net,Xs,Ts,Xi,Ai);
 

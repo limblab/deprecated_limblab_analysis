@@ -43,7 +43,7 @@ numInputs = size(X,1);
 % numTargets = size(T,1);
 net.numInputs = numInputs;
 net.inputConnect = [ones(1,numInputs); zeros(1,numInputs)];
-net.dividefcn = 'divideblock';
+% net.dividefcn = 'divideblock';
 
 % Configure network
 if LRN % net is of type 'layrecnet'
