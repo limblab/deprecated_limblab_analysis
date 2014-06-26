@@ -1,4 +1,5 @@
-GoogleDriveID = '0AtEH4EqHWe9JdGN0NEtPM1pfX0ZQcUg5SzFQTDNQZ1E';
+GoogleDriveURL = 'https://docs.google.com/spreadsheet/ccc?key=0AtEH4EqHWe9JdHVMcVlaQ1A0Vk9HdUM2a0ZpVjRIenc&usp=drive_web#gid=0';
+GoogleDriveID = GoogleDriveURL(strfind(GoogleDriveURL,'key=')+4:strfind(GoogleDriveURL,'&usp')-1);
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
@@ -106,7 +107,7 @@ for iRoom = 1:num_rooms
         end
     end
 end
-    
+%%  
 num_pages = ceil(length(labelData)/30);
 for iPage = 1:num_pages
     page_data = labelData((iPage-1)*30+1:min((iPage)*30,length(labelData)));
@@ -120,7 +121,7 @@ for iPage = 1:num_pages
     set(h,'Units','inches')
     set(h,'PaperType','usletter')
     set(h,'PaperPosition',[0 0 8.5 11])
-    set(h,'Position',[0 -5 8.5 11])
+    set(h,'Position',[0 -1 8.5 11])
     hold on
     
     iLabel = 0;
