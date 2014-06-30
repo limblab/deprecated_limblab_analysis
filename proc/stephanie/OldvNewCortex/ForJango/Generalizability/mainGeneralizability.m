@@ -1,7 +1,7 @@
 %mainGneralizability
 % Main Generalizability code
 
-Sulcus = 1; Gyrus = 1;
+Sulcus = 0; Gyrus = 0;
 
 % Load the three types of binnedData files
 %IsoBinned = load(['Z:' filesep 'Jaco_8I1' filesep 'BinnedData' filesep 'OldvNewCortex' filesep '08-13-13' filesep 'Jaco_Iso__horiz_EMGonly_08-13-13_001']);
@@ -9,8 +9,8 @@ Sulcus = 1; Gyrus = 1;
 %SprBinned = load(['Z:' filesep 'Jaco_8I1' filesep 'BinnedData' filesep 'OldvNewCortex' filesep '08-13-13' filesep 'Jaco_WMspring_EMGonly_08-13-13_001']);
 
 %Truncate files [840.05 --> 14 minutes]
-[crap IsoBinned] = splitBinnedDataNew(IsoBinned,0, 840);
-[crap WmBinned] = splitBinnedDataNew(WmBinned,0,840);
+% [crap IsoBinned] = splitBinnedDataNew(IsoBinned,0, 840);
+% [crap WmBinned] = splitBinnedDataNew(WmBinned,0,840);
 %SprBinned = splitBinnedData(binnedData,840,0);
 
 %Make sure the spikeguide and spike data are the same
