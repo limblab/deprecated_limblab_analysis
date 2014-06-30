@@ -112,13 +112,13 @@ cosvec = cos(angles);
 vxvec = velvec(:,1);
 vyvec = velvec(:,2);
 
-
-X = [cosvec, sinvec, speedvec, vxvec, vyvec, anycloudvec, Highvarvec, Lowvarvec, ...
-    posxvec, posyvec, surprisevec];
-
 ids = zeros(length(trains),1);
 for i = 1:length(trains)
     ids(i) = trains{i}(1);
 end
+
+X = [cosvec, sinvec, speedvec, vxvec, vyvec, anycloudvec, Highvarvec, Lowvarvec, ...
+    posxvec, posyvec, surprisevec];
+
 
 

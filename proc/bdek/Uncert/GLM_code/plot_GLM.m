@@ -10,6 +10,10 @@ else
 end
 
 for unit = 1:size(y,2)
+    
+    if isempty(MODEL_1{unit})
+        fprintf('No plot: Unit %d\n',unit);
+    else
     chun = MODEL_1{unit}.id;
     
     if X2_p{unit} < 0.05
@@ -91,16 +95,25 @@ for unit = 1:size(y,2)
 
     av_H1M = nanmean(High_lam1_mat,1);
     av_L1M = nanmean(Low_lam1_mat,1);
+    
+    d_1M = av_H1M - av_L1M;
 
     av_H2M = nanmean(High_lam2_mat,1);
     av_L2M = nanmean(Low_lam2_mat,1);
+    
+    d_2M = av_H2M - av_L2M;
 
     av_HSM = nanmean(bin_HSM,1);
     av_LSM = nanmean(bin_LSM,1);
+    
+    d_SM = av_HSM - av_LSM;
 
     av_Hspeed = nanmean(High_speed_mat,1);
     av_Lspeed = nanmean(Low_speed_mat,1);
+    
+    d_speed = av_Hspeed - av_Lspeed;
 
+    % PLOT absolute firing rate
     figure; subplot(2,1,1);hold on;
     plot(-200:600,1000*av_H1M,'r--','LineWidth',1.5); 
     plot(-200:600,1000*av_L1M,'r','LineWidth',1.5);
@@ -141,6 +154,41 @@ for unit = 1:size(y,2)
     ylabel('Hand Speed (cm/s)','FontSize',14);
     %legend('High Uncertainty','Low Uncertainty');
 
+    % PLOT difference in FR
+    figure; subplot(2,1,1);hold on;
+    plot(-200:600,1000*d_1M,'r--','LineWidth',1.5); 
+    plot(-200:600,1000*d_2M,'b--','LineWidth',1.5);
+    plot(bincent - 200,1000*d_SM,'k--');
+
+    box off;
+    %axis([0 500 15 45]);
+
+    if aligntype == 1
+        xlabel('Time from Feedback (ms)','FontSize',16);
+    else
+        xlabel('Time from Min Speed (ms)','FontSize',16);
+    end
+    ylabel('Change in Firing Rate (spikes/sec)','FontSize',16);
+
+    legend('Model 1','Model 2','Raw Data');
+    title(sprintf('ID %d (Channel: %d  Unit: %d)',...
+        unit,floor(chun),round((chun-floor(chun))*10)),'FontSize',16);
+
+    subplot(2,1,2); hold on;
+    hold on; plot(-200:600, d_speed, 'k--','LineWidth',2); 
+    box off;
+    axis([0 500 min(d_speed)-10 max(d_speed)+10]);
+    title('Change in Speeds','FontSize',16);
+
+    if aligntype == 1
+        xlabel('Time from Feedback (ms)','FontSize',14);
+    else
+        xlabel('Time from Min Speed (ms)','FontSize',14);
+    end
+
+    ylabel('Change in Hand Speed (cm/s): [High Unc - Low Unc]','FontSize',14);
+    
+    end
     end
 end
 % 

@@ -14,9 +14,9 @@ else
 % preds defines which predictors are included in the first and second
 % models:
 %   0: Do not include parameter in either model
-%   1: Include parameter in both models
-%   2: Include parameter only in first model (SEE NOTE BELOW BEFORE USING)
-%   3: Include parameter only in second model
+%   12: Include parameter in both models
+%   1: Include parameter only in first model (SEE NOTE BELOW BEFORE USING)
+%   2: Include parameter only in second model
 % *NOTE* In order to compare two models using a X^2 test, one model must be
 % a subset of the other. Therefore, parameters should only be removed from
 % the second model if including it would create a matrix without full rank.
@@ -26,33 +26,33 @@ else
 % model_2 if it is a linear combination of J and K. 
     
 preds = [...
-1 ... % Cosine of movement angle
-1 ... % Sine of movement angle
-1 ... % Hand Speed
-0 ... % Vx
-0 ... % Vy
-2 ... % Any Feedback
-3 ... % High variance feedback
-3 ... % Low variance feedback
-0 ... % X position
-0 ... % Y position
-0 ... % Trial by Trial cursor offset
+12 ... % Cosine of movement angle
+12 ... % Sine of movement angle
+12 ... % Hand Speed
+0  ... % Vx
+0  ... % Vy
+1  ... % Any Feedback
+2  ... % High variance feedback
+2  ... % Low variance feedback
+0  ... % X position
+0  ... % Y position
+0  ... % Trial by Trial cursor offset
 ];
 
 end
 
-MODEL1_preds = find(preds==1|preds==2);
-MODEL2_preds = find(preds==1|preds==3);
+MODEL1_preds = find(preds==12|preds==1);
+MODEL2_preds = find(preds==12|preds==2);
 
 X2_p = cell(size(y,2),1);
 MODEL_1 = cell(size(y,2),1);
 MODEL_2 = cell(size(y,2),1);
 
 % Include all neurons in default case
-NEURONS_OF_INTEREST = 1:size(y,2);
+%NEURONS_OF_INTEREST = 1:size(y,2);
 
 % Include only a small number of neurons
-%NEURONS_OF_INTEREST = 14;
+NEURONS_OF_INTEREST = [3 6 9 11 13 14 29 30];
 clc;
 for n=NEURONS_OF_INTEREST
     fprintf('Running GLM... Unit %d (%d/%d)\n',n,...
