@@ -61,8 +61,8 @@ end
 
 %% get pds, standard errors and modulation depth and unit list
 model='posvel';
-[pds, errs, moddepth] = glm_pds(bdf,include_unsorted,model);
-
+%[pds, errs, moddepth] = glm_pds(bdf,include_unsorted,model);
+[pds, errs, moddepth,CI,LL, LLN]=glm_pds_TT(bdf,2,'posvel',1000,10000)
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
 if isempty(u1)
@@ -73,7 +73,7 @@ if (include_unsorted && length(u1)~=length(moddepth))
     u1=u1(~u1(:,2),:);
 end
 %set_outputs
-outdata=[double(u1(:,1)),pds,moddepth,errs];
+outdata=[double(u1(:,1)),pds,moddepth,CI];
 
 %% identify channels with excessive modulation depth
 for iChan = 1:length(u1)
@@ -119,9 +119,6 @@ chan_list_low = chan_list((floor(r/2)+1):end,:);
 [subplot_dim_up_r,subplot_dim_up_c]=size(chan_list_up); % subplot dimensions
 [subplot_dim_low_r,subplot_dim_low_c]=size(chan_list_low); % subplot dimensions
 
-CI = errs*1.96; % confidence bounds
-
-
 
 h_up = figure('name','PDs upper half of array');
 h_low = figure('name','PDs lower half of array');
@@ -135,8 +132,8 @@ for iPD = 1:length(u1(:,1))
         r = [0.0001,moddepth(iPD)]/maxmod; % the length of the radial line is normalized by the modulation depth
     end
     angle = repmat(pds(iPD),1,length(r)); % vector size (1,length(r)) of elements equal to each preferred direction
-    err_up = angle+repmat(CI(iPD),1,length(r)); % upper error bound
-    err_down = angle-repmat(CI(iPD),1,length(r)); % lower error bound
+    err_up = repmat(CI(iPD,2),1,length(r)); % upper error bound
+    err_down = repmat(CI(iPD,1),1,length(r)); % lower error bound
     if max(max(chan_list_low' == u1(iPD,1)))
         figure(h_low);
         subplot(subplot_dim_low_r,subplot_dim_low_c,find(chan_list_low' == u1(iPD,1),1,'first')) % put the plot in the correct location relative to position in array ( [ 1 2 3;..
@@ -218,8 +215,8 @@ end
 if plot_histogram
     % plot confidence interval histograms
     h_PD_CI_hist=figure('name','95% CI'); 
-    
-    hist(abs(errs(~isnan(errs))*180/pi)*1.96*2,[5:10:360]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
+    temp=~isnan(CI(:,1));
+    hist(abs((CI(temp,2)-CI(temp,1))*180/pi),[5:10:360]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
     xlim([0,360])
     xlabel('degrees')
     ylabel('PD counts')

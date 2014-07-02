@@ -37,7 +37,7 @@ function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
 
     %compute PDs for single units
     disp('computing single unit PDs and plotting results')
-    array_map_path='C:\Users\limblab\Desktop\kramer_array_map\6251-0922.cmp';
+    array_map_path=input_data.array_map_path;
     [outdata,H_upper,H_lower,H_PD_mag,H_PD_hist,H_PD_CI_hist]=PD_plot(bdf,array_map_path,1,1);
     data_struct.Single_unit_PD_data=outdata;
     
