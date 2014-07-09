@@ -8,7 +8,7 @@ function [H timerun] = hybridTrain(binnedData, numlags, emgInd)
 Y = binnedData.emgdatabin;
 X = binnedData.spikeratedata;
 
-%scale= HybridFinal.scale(emgInd);
+scale= HybridFinal.scale(emgInd);
 
 [rX,cX]= size(X); [rY,cY]= size(Y);
 %x0 = .001*ones(numlags*cX,1);
