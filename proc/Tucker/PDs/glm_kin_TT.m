@@ -37,11 +37,7 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
     else
         reps = 100;
     end
-    if length(varargin)>3
-        num_samp=varargin{4};
-    else
-        num_samp = size(bdf.vel,1);
-    end
+
     %% calculate firing rate
     if isfield(bdf.units,'fr')
         %if the firing rate is already a field in bdf.units
@@ -49,13 +45,20 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
     else
         %ts = 200; % time step (ms)
         ts = 50;
-
-        vt = bdf.vel(:,1);
-        t = vt(1):ts/1000:vt(end);
-        spike_times = get_unit(bdf,chan,unit)-offset;
-        spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
-        s = train2bins(spike_times, t);
     end
+    
+    if length(varargin)>3
+        num_samp=varargin{4};
+    else
+        num_samp = floor(1000*(bdf.vel(end,1)-bdf.vel(1,1))/ts);
+    end
+    
+     vt = bdf.vel(:,1);
+    t = vt(1):ts/1000:vt(end);
+    spike_times = get_unit(bdf,chan,unit)-offset;
+    spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
+    s = train2bins(spike_times, t);   
+    
     %% interpolate kinematics and kinetics to firing rate
     glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
     glmv = interp1(bdf.vel(:,1), bdf.vel(:,2:3), t);
@@ -106,6 +109,7 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
     % bootstrap
     b_mat = zeros(size(glm_input,2)+1,reps);
     dev_mat=zeros(size(glm_input,2)+1,reps);
+
     for bootCt=1:reps
         % grab test set indices
         idx = uint32(1+(length(glmx)-1)*rand(num_samp,1));

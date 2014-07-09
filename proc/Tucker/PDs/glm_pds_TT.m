@@ -55,7 +55,7 @@ function [pds, varargout] = glm_pds_TT(varargin)
             error('S1_ANALYSIS:LIB:GLM:GLM_PDS:type_error','value for bootstrap number of samples must be an integer value')
         end
     else
-        num_samp = size(bdf.vel,1);
+        num_samp = floor(1000*(bdf.vel(end,1)-bdf.vel(1,1))/50);
     end
 
     ul = unit_list(bdf,include_unsorted);
