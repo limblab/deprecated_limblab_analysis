@@ -1,4 +1,4 @@
-function H=make_PEH(bdf, event_times, window, unit, varargin)
+function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
     %make_PEH(bdf, event_times, window, unit, bin_size)
     %takes in a bdf, list of event times to build histogram around, a time
     %window, and the unit to build the histogram for. 
@@ -68,5 +68,5 @@ function H=make_PEH(bdf, event_times, window, unit, varargin)
     bar(timepoints,bin_data,1);
     %H is a handle to the bar-series object, not the plot, we need to get
     %the parent object handle
-  
+    bin_data=[bin_data;timepoints];
 end
