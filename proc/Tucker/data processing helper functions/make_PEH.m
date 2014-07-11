@@ -4,14 +4,14 @@ function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
     %window, and the unit to build the histogram for. 
     %
     %the time window should be specified as a 2 element vector containing
-    %the time in ms pre- event and the time post-event to include in the
-    %histogram. for instance [500, 1500] would build histograms starting
+    %the time in s pre- event and the time post-event to include in the
+    %histogram. for instance [0.5, 1.5] would build histograms starting
     %500ms prior to event onset, through 1500ms post event onset.
     %
     %the unit should be a 2 element vector containing the channel number
     %and the unit on that channel. 
     %
-    %can as a variable input take the bin size (in ms) of the histogram and
+    %can as a variable input take the bin size (in s) of the histogram and
     %a flag to make the function print information to the command window
     %during execution. If the bin size does not produce a whole number of
     %bins across the window range, the bin size will be adjusted to the
@@ -29,7 +29,7 @@ function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
             verbose=0;
         end
     else
-        bin_size=50;%ms
+        bin_size=.050;%s
     end
     num_bins=round((window(1)+window(2))/bin_size);
     bin_size=(window(1)+window(2))/num_bins;
