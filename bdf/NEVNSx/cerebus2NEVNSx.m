@@ -7,12 +7,12 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
 %   spike data has been sorted (indicated by '*-s.mat' suffix), sorted files
 %   will be loaded.   
 
-    NEVlist_sorted = dir([filepath file_prefix '*-s.mat']);
-    NEVlist = dir([filepath file_prefix '*.nev']);
-    NS2list = dir([filepath file_prefix '*.ns2']);
-    NS3list = dir([filepath file_prefix '*.ns3']);
-    NS4list = dir([filepath file_prefix '*.ns4']);
-    NS5list = dir([filepath file_prefix '*.ns5']);
+    NEVlist_sorted = dir([filepath filesep file_prefix '*-s.mat']);
+    NEVlist = dir([filepath filesep file_prefix '*.nev']);
+    NS2list = dir([filepath filesep file_prefix '*.ns2']);
+    NS3list = dir([filepath filesep file_prefix '*.ns3']);
+    NS4list = dir([filepath filesep file_prefix '*.ns4']);
+    NS5list = dir([filepath filesep file_prefix '*.ns5']);
 
     NEVlist_sorted = NEVlist_sorted(cellfun('isempty',(regexp({NEVlist_sorted(:).name},'-spikes'))));
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-spikes'))));
@@ -26,23 +26,23 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
     if length(NEVlist_sorted)==length(NEVlist)
         for iNEV = 1:length(NEVlist)
             clear NEV
-            load([filepath NEVlist_sorted(iNEV).name]);
+            load([filepath filesep NEVlist_sorted(iNEV).name]);
             NEVNSxstruct(iNEV).NEV = NEV;
         end
     else
         for iNEV = 1:length(NEVlist)
-            NEVNSxstruct(iNEV).NEV = openNEVLimblab('read', [filepath NEVlist(iNEV).name],'nosave');
+            NEVNSxstruct(iNEV).NEV = openNEVLimblab('read', [filepath filesep NEVlist(iNEV).name],'nosave');
         end
     end
     
     fs = [0,1000,2000,10000,30000];
     for iNS = 2:5        
         for iFile = 1:length(eval(['NS' num2str(iNS) 'list']))
-            NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSx('read', [filepath eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSx('read', [filepath filesep eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
             num_zeros = fix((NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)/fs(iNS))*1000);
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data = [zeros(size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,1),num_zeros) NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data];
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints + num_zeros;
-            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec + num_zeros/1000;
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints/fs(iNS) + num_zeros/1000;
         end
     end    
 

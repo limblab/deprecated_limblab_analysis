@@ -53,6 +53,13 @@ function out_struct = get_nev_mat_data(varargin)
             end
         end
     end
+
+    progress = 0;
+    if (opts.verbose == 1)
+        h = waitbar(progress, 'Opening NEVNSx');
+    else
+        h = 0;
+    end
     
     if isstruct(fileOrStruct)
         NEVNSx = fileOrStruct;        
@@ -64,24 +71,21 @@ function out_struct = get_nev_mat_data(varargin)
         NEVNSx = cerebus2NEVNSx(filepath,fileprefix);
     end
     clear fileOrStruct
-  
-    progress = 0;
-    if (opts.verbose == 1)
-        h = waitbar(0, sprintf('Processing NEVNSx'));
-    else
-        h = 0;
+
+   
+%% Data Information
+    progress = 1/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting Meta Information');
     end
 
-
-    % Get general file info (EntityCount, TimeStampResolution and TimeSpan) 
+ % Get general file info (EntityCount, TimeStampResolution and TimeSpan) 
     DateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
         ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
 
-    out_struct.meta = struct('filename', '', 'datetime', ...
+    out_struct.meta = struct('filename', NEVNSx.NEV.MetaTags.Filename, 'datetime', ...
         DateTime,'duration', NEVNSx.NEV.MetaTags.DataDurationSec, 'lab', opts.labnum, ...
-        'bdf_info', '$Id: get_cerebus_mat_data.m 1102 2013-03-21 23:52:56Z chris $');
-
-%% Data Information
+        'bdf_info', ['converted with get_nev_mat_data on ' date]);
 
     % Build catalogue of entities
     unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
@@ -120,6 +124,11 @@ function out_struct = get_nev_mat_data(varargin)
     analog_list = setxor(analog_list,force_list);    
 
 %% The Units
+    progress = 2/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting Units');
+    end
+    
     if ~isempty(unit_list)        
        
         for i = size(unit_list,1):-1:1
@@ -146,6 +155,11 @@ function out_struct = get_nev_mat_data(varargin)
     end
 
 %% The raw data analog data (other than emgs)
+    progress = 3/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting Raw Analog Data');
+    end
+    
     if ~isempty(analog_list)
         
         out_struct.raw.analog.channels = NSx_info.NSx_labels(analog_list);
@@ -181,6 +195,11 @@ function out_struct = get_nev_mat_data(varargin)
     end
 
 %% The Emgs
+    progress = 4/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting EMG Data');
+    end
+    
     if ~isempty(emg_list)
         out_struct.emg.emgnames = NSx_info.NSx_labels(emg_list);
         out_struct.emg.emgfreq = NSx_info.NSx_sampling(emg_list);
@@ -207,7 +226,12 @@ function out_struct = get_nev_mat_data(varargin)
     end
 
 %% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
-    if ~isempty(force_list)
+    progress = 5/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting Force Data');
+    end
+    
+    if ~isempty(force_list)    
         out_struct.force.labels = NSx_info.NSx_labels(force_list);
         out_struct.force.forcefreq = NSx_info.NSx_sampling(force_list);        
                
@@ -233,6 +257,11 @@ function out_struct = get_nev_mat_data(varargin)
     end
     
 %% Analog trig
+    progress = 6/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting Analog Trigger');
+    end
+
     if ~isempty(stim_marker)       
         %populate stim marker ts
         stim_data = double(NEVNSx.NEV.Data.Spikes.TimeStamp(NEVNSx.NEV.Data.Spikes.Electrode==stim_marker))/30000;        
@@ -252,7 +281,12 @@ function out_struct = get_nev_mat_data(varargin)
 
     end   
         
-%% Events        
+%% Events
+    progress = 7/8;
+    if opts.verbose
+        waitbar(progress,h,'Extracting Events');
+    end
+    
     if ~isempty(NEVNSx.NEV.Data.SerialDigitalIO.TimeStamp)        
         event_data = double(NEVNSx.NEV.Data.SerialDigitalIO.UnparsedData);
         event_ts = NEVNSx.NEV.Data.SerialDigitalIO.TimeStampSec';       
@@ -313,7 +347,13 @@ function out_struct = get_nev_mat_data(varargin)
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);        
     
 %% Extract data from the raw struct
-  
+    progress = 8/8;
+    if opts.verbose
+        waitbar(progress,h,'Processing Raw Data');
+    end
     out_struct = calc_from_raw(out_struct,opts);
+    if opts.verbose
+        close(h);
+    end
 
 end

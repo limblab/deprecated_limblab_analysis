@@ -1,6 +1,6 @@
 function varargout = concat_online_adapt_data(varargin)
 %  varargin = {use_default_binning_params}
-use_default_binning_params= 1;
+use_default_binning_params= true;
 
 if nargin
     use_default_binning_params = varargin{1};
@@ -41,11 +41,11 @@ for i = 1:num_files
     params       = load([filepath filesep file_prefix '_params.mat']);
     
     %% Manually Align Cerebus and ascii recordings
-    % spikes = spikes(2:end, :);
-    % new_tf = [ cursor_preds(2:end,1); cursor_preds(end,1)+0.05];
-    % cursor_preds(:,1) = new_tf;
-    % emg_preds(:,1) = new_tf;
-    % cursor_pos(:,1)= new_tf;
+%      spikes = spikes(2:end, :);
+    new_tf = [ cursor_preds(2:end,1); cursor_preds(end,1)+0.05];
+    cursor_preds(:,1) = new_tf;
+    emg_preds(:,1) = new_tf;
+    cursor_pos(:,1)= new_tf;
     
     %% reshape to match data
     start_bin = find(emg_preds(:,1)>=bd{i}.timeframe(1),1,'first');
@@ -63,8 +63,8 @@ for i = 1:num_files
     bd{i}.adapt_params = params;
     
     % verify that cursor position is aligned
-%     figure; plot(bd{i}.timeframe,bd{i}.cursor_pos(:,1));
-%     hold on;plot(bd{i}.timeframe,bd{i}.cursorposbin(:,1),'--r');
+    figure; plot(bd{i}.timeframe,bd{i}.cursor_pos(:,1));
+    hold on;plot(bd{i}.timeframe,bd{i}.cursorposbin(:,1),'--r');
     %%
     
     struct_name = [file_prefix '_adapt_data'];

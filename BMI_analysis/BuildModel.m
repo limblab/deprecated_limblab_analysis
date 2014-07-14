@@ -80,7 +80,7 @@ function [filter, varargout]=BuildModel(binnedData, options)
         desiredInputs=1:size(neuronIDs,1);
     else
         if ~exist('NeuronIDsFile','var')
-            [FileName, PathName] =uigetfile([dataPath '\NeuronIDfiles\' '*.mat'],'Filename of desired inputs? ');
+            [FileName, PathName] =uigetfile('*.mat','Filename of desired inputs? ');
             NeuronIDsFile = [PathName FileName];
         end
         neuronIDs = load(NeuronIDsFile);

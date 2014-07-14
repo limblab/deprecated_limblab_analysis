@@ -131,7 +131,9 @@ function BMIDataAnalyzer()
     function CB_ConvertButton_Callback(obj,event)
         if strcmp(CB_FileName(end-3:end),'.nev')
             disp('Converting .nev file to BDF structure, please wait...');
-            out_struct = get_cerebus_data(CB_FullFileName,'verbose');
+%             out_struct = get_cerebus_data(CB_FullFileName,'verbose');
+%           Now uses get_nev_mat_data()--7/7/2014--CE
+            out_struct = get_nev_mat_data(CB_FullFileName,'verbose');
             disp('Done.');
             BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
         elseif strcmp(CB_FileName(end-3:end),'.plx')

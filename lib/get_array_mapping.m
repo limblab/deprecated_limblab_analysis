@@ -22,9 +22,12 @@ cer_map = zeros(size(arr_map));
 
 while ~feof(fileID) % while feof does not return 1 (it does when the end of the file is reached)
     tline = fgets(fileID); % move down the file, ignore headers
-        if (length(tline)>14) && (strcmp(tline(1:15),'Cerebus mapping')) % after this line the real array info starts
+    if (length(tline)>14) && (strcmp(tline(1:15),'Cerebus mapping')) % after this line the real array info starts
         while ~feof(fileID)
             tline = fgets(fileID) ;
+            if strcmp(tline(1:2),'//')
+                continue;
+            end
             temp = textscan(tline,'%s');
             temp = temp{1};
             column_ID = str2num(char(temp(1)))+1; % blackrock assigns the column left to right, zero based.
@@ -42,7 +45,7 @@ while ~feof(fileID) % while feof does not return 1 (it does when the end of the 
                 chan_ID = pin_ID+64;
             end
             if bank_ID == 'D'
-                chan_ID = pin_ID+92;
+                chan_ID = pin_ID+96;
             end
             arr_map(row_ID,column_ID) = chan_ID;
             cer_map(row_ID,column_ID) = elec_ID;

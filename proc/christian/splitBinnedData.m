@@ -35,6 +35,10 @@ if isfield(binnedData,'spikeguide')
     trainData.spikeguide = binnedData.spikeguide;
     testData.spikeguide  = binnedData.spikeguide;
 end
+if isfield(binnedData,'neuronIDs')
+    trainData.neuronIDs = binnedData.neuronIDs;
+    testData.neuronIDs  = binnedData.neuronIDs;
+end
 %% Force
 if isfield(binnedData,'forcedatabin')
     if ~isempty(binnedData.forcedatabin)
