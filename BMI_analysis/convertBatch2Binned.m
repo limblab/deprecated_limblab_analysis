@@ -53,7 +53,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         BDF_FileNames = {BDF_FileNames};
     end        
 
-    Bin_FileNames = BDF_FileNames;    
+    Bin_FileNames = strrep(BDF_FileNames,'_bdf','_bin');    
     
     
     

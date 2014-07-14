@@ -38,9 +38,9 @@ function BDF_FileNames = convertBatch2BDF(varargin)
     
     for i=1:numFiles
         if strcmp(CB_FileNames{i}(end-3:end),'.nev')
-            BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.nev', '.mat');
+            BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.nev', '_bdf.mat');
         else
-            BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.plx', '.mat');
+            BDF_FileNames(:,i) = strrep(CB_FileNames(:,i), '.plx', '_bdf.mat');
         end
     end  
 
@@ -48,7 +48,7 @@ function BDF_FileNames = convertBatch2BDF(varargin)
         disp(sprintf('Converting %s to BDF structure...', CB_FileNames{:,i} ));
         out_struct = get_cerebus_data([CB_PathName CB_FileNames{:,i}],'verbose');
         disp(sprintf('Saving BDF structure %s...',BDF_FileNames{:,i}));
-        save([savePath '\' BDF_FileNames{:,i} ], 'out_struct');
+        save([savePath '\' BDF_FileNames{:,i}], 'out_struct');
         disp('Done.');
     end
          
