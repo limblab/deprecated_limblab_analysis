@@ -1,12 +1,15 @@
-GoogleDriveURL = 'https://docs.google.com/spreadsheet/ccc?key=0AtEH4EqHWe9JdHVMcVlaQ1A0Vk9HdUM2a0ZpVjRIenc&usp=drive_web#gid=0';
-GoogleDriveID = GoogleDriveURL(strfind(GoogleDriveURL,'key=')+4:strfind(GoogleDriveURL,'&usp')-1);
+% GoogleDriveURL = 'https://docs.google.com/spreadsheet/ccc?key=0AtEH4EqHWe9JdG5sMnJmZ0piWExMY2pSTFMteUFadXc#gid=0';
+% GoogleDriveID = GoogleDriveURL(strfind(GoogleDriveURL,'key=')+4:strfind(GoogleDriveURL,'&usp')-1);
+WaterSheetFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\Weekend water and food Miller-Slutzky 2014-07-19.xlsx';
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
 [~,WeekendFeeding] = xlsread(WeekendWateringFile,4);
 existing_feeding_weekends = datenum(WeekendFeeding(2,3:end));
+[WaterSheetNum,WaterSheetText,WaterSheetRaw] = xlsread(WaterSheetFile,1);
+result = WaterSheetRaw;
 
-result = GetGoogleSpreadsheet(GoogleDriveID);
+% result = GetGoogleSpreadsheet(GoogleDriveID);
 colors =    [1 1 0;...
             .6 1 0;...
             0 .75 1;...
@@ -37,72 +40,80 @@ color_order = [];
 for iRoom = 1:num_rooms
     daystemp = result(AnimalY(iRoom)-1,AnimalX(iRoom)+1:end); 
     daystemp = daystemp(~cellfun(@isempty,daystemp));
+    daystemp = {daystemp{find(~cellfun(@sum,cellfun(@isnan,daystemp,'UniformOutput',false)))}};
     datestemp = result(AnimalY(iRoom),AnimalX(iRoom)+1:end);    
     datestemp = datestemp(~cellfun(@isempty,datestemp));
+    datestemp = {datestemp{find(~cellfun(@sum,cellfun(@isnan,datestemp,'UniformOutput',false)))}};
     datatemp = result(AnimalY(iRoom)+1:SupervisorY(iRoom)-1,AnimalX(iRoom):end);
     for iDate = 1:length(daystemp)
-        if datenum(datestemp{iDate}) < datenum(date)
-            error('Date on spreadsheet is in the past, check spreadsheet ID or date')
-        end
-        if ~sum(existing_watering_weekends==datenum(datestemp{iDate}))
-            water_col = xlsColNum2Str(2+length(existing_watering_weekends)+iDate);
-            range = strcat(water_col{1},'1');
-            [~,day] = weekday(datestemp{iDate},'long');
-            xlswrite(WeekendWateringFile,{day},3,range);
-            range = strcat(water_col{1},'2');
-            xlswrite(WeekendWateringFile,{datestemp{iDate}},3,range);            
-        else
-            water_col = xlsColNum2Str(2+find(existing_watering_weekends==datenum(datestemp{iDate})));
-        end
-        if ~sum(existing_feeding_weekends==datenum(datestemp{iDate}))
-            food_col = xlsColNum2Str(2+length(existing_feeding_weekends)+iDate);
-            range = strcat(food_col{1},'1');
-            [~,day] = weekday(datestemp{iDate},'long');
-            xlswrite(WeekendWateringFile,{day},4,range);
-            range = strcat(food_col{1},'2');
-            xlswrite(WeekendWateringFile,{datestemp{iDate}},4,range);            
-        else
-            food_col = xlsColNum2Str(2+find(existing_feeding_weekends==datenum(datestemp{iDate})));
-        end
-            
-        [~,day_of_week] = weekday(datestemp{iDate});
-        if ~strcmpi(day_of_week,daystemp{iDate})
-            error([datestemp{iDate} ' is not a ' daystemp{iDate} '. Fix dates on spreadsheet'])
-        end
-        for iAnimal = 1:size(datatemp,1)
-            if ~isempty(datatemp{iAnimal,2*iDate})
-                if sum(isstrprop(datatemp{iAnimal,2*iDate}, 'digit'))
-                    labelData{end+1} = {daystemp{iDate};datatemp{iAnimal,1};datatemp{iAnimal,2*iDate}};
-                    color_order(end+1) = iDate;
-                    excel_water_row = (strfind({WeekendWatering{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
-                    excel_water_row = find(~cellfun(@isempty,excel_water_row));
-                    range = strcat(water_col{1},num2str(excel_water_row));
-                    xlswrite(WeekendWateringFile,{'CCM'},3,range); 
-                else
-                    excel_water_row = (strfind({WeekendWatering{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
-                    excel_water_row = find(~cellfun(@isempty,excel_water_row));
-                    if ~isempty(excel_water_row)
-                        range = strcat(water_col{1},num2str(excel_water_row));
-                        xlswrite(WeekendWateringFile,{''},3,range); 
-                    end
-                end            
+        if ~isnan(daystemp{iDate})
+            if datenum(datestemp{iDate}) < datenum(date)
+                error('Date on spreadsheet is in the past, check spreadsheet ID or date')
             end
-        end
-        for iAnimal = 1:size(datatemp,1)
-            if ~isempty(datatemp{iAnimal,2*iDate+1})
-                if sum(isstrprop(datatemp{iAnimal,2*iDate+1}, 'digit'))                    
-                    excel_food_row = (strfind({WeekendFeeding{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
-                    excel_food_row = find(~cellfun(@isempty,excel_food_row));
-                    range = strcat(food_col{1},num2str(excel_food_row));
-                    xlswrite(WeekendWateringFile,{'CCM'},4,range); 
-                else
-                    excel_food_row = (strfind({WeekendFeeding{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
-                    excel_food_row = find(~cellfun(@isempty,excel_food_row));
-                    if ~isempty(excel_food_row)
+            if ~sum(existing_watering_weekends==datenum(datestemp{iDate}))
+                water_col = xlsColNum2Str(2+length(existing_watering_weekends)+iDate);
+                range = strcat(water_col{1},'1');
+                [~,day] = weekday(datestemp{iDate},'long');
+                xlswrite(WeekendWateringFile,{day},3,range);
+                range = strcat(water_col{1},'2');
+                xlswrite(WeekendWateringFile,{datestemp{iDate}},3,range);            
+            else
+                water_col = xlsColNum2Str(2+find(existing_watering_weekends==datenum(datestemp{iDate})));
+            end
+            if ~sum(existing_feeding_weekends==datenum(datestemp{iDate}))
+                food_col = xlsColNum2Str(2+length(existing_feeding_weekends)+iDate);
+                range = strcat(food_col{1},'1');
+                [~,day] = weekday(datestemp{iDate},'long');
+                xlswrite(WeekendWateringFile,{day},4,range);
+                range = strcat(food_col{1},'2');
+                xlswrite(WeekendWateringFile,{datestemp{iDate}},4,range);            
+            else
+                food_col = xlsColNum2Str(2+find(existing_feeding_weekends==datenum(datestemp{iDate})));
+            end
+
+            [~,day_of_week] = weekday(datestemp{iDate});
+            if ~strcmpi(day_of_week,daystemp{iDate})
+                error([datestemp{iDate} ' is not a ' daystemp{iDate} '. Fix dates on spreadsheet'])
+            end
+            for iAnimal = 1:size(datatemp,1)
+                if ~isempty(datatemp{iAnimal,2*iDate})
+    %                 if sum(isstrprop(datatemp{iAnimal,2*iDate}, 'digit'))
+                    if isnumeric(datatemp{iAnimal,2*iDate})
+                        labelData{end+1} = {daystemp{iDate};datatemp{iAnimal,1};datatemp{iAnimal,2*iDate}};
+                        color_order(end+1) = iDate;
+                        excel_water_row = (strfind({WeekendWatering{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
+                        excel_water_row = find(~cellfun(@isempty,excel_water_row));
+                        range = strcat(water_col{1},num2str(excel_water_row));
+                        xlswrite(WeekendWateringFile,{'CCM'},3,range); 
+                    elseif ~isnan(datatemp{iAnimal,1})
+    %                     excel_water_row = (strfind({WeekendWatering{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
+    %                     excel_water_row = find(~cellfun(@isempty,excel_water_row));                    
+                        excel_water_row = (strfind({WeekendWatering{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
+                        excel_water_row = find(~cellfun(@isempty,excel_water_row));
+                        if ~isempty(excel_water_row)
+                            range = strcat(water_col{1},num2str(excel_water_row));
+                            xlswrite(WeekendWateringFile,{''},3,range); 
+                        end
+                    end            
+                end
+            end
+            for iAnimal = 1:size(datatemp,1)
+                if ~isempty(datatemp{iAnimal,2*iDate+1})
+    %                 if sum(isstrprop(datatemp{iAnimal,2*iDate+1}, 'digit'))   
+                    if isnumeric(datatemp{iAnimal,2*iDate+1})
+                        excel_food_row = (strfind({WeekendFeeding{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
+                        excel_food_row = find(~cellfun(@isempty,excel_food_row));
                         range = strcat(food_col{1},num2str(excel_food_row));
-                        xlswrite(WeekendWateringFile,{''},4,range); 
-                    end
-                end            
+                        xlswrite(WeekendWateringFile,{'CCM'},4,range); 
+                    elseif ~isnan(datatemp{iAnimal,1})
+                        excel_food_row = (strfind({WeekendFeeding{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
+                        excel_food_row = find(~cellfun(@isempty,excel_food_row));
+                        if ~isempty(excel_food_row)
+                            range = strcat(food_col{1},num2str(excel_food_row));
+                            xlswrite(WeekendWateringFile,{''},4,range); 
+                        end
+                    end            
+                end
             end
         end
     end
