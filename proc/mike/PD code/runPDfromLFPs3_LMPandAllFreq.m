@@ -9,8 +9,8 @@ bandstart=  [0, 7, 70, 130, 200];
 bandend=    [4, 20, 115, 200, 300];
 
 
-filelist= Mini_LFP1_DaysNames;
-varname = 'Mini_LFP1_DaysNames';
+filelist= Chewie_LFP2_tsNum;
+varname = 'Chewie_LFP2_tsNum';
 
 if ~exist('chinds','var')
     disp('Please tell me which channels to run!')
@@ -22,7 +22,7 @@ lag= -0.15;
 binlen= 0.15;
 pval=0.05;
 
-for i=83:length(filelist)
+for i=2:length(filelist)
     %     for i=1:length(numlist)
     
     filewithpath=findBDFonCitadel(filelist{i});
@@ -52,14 +52,18 @@ for i=83:length(filelist)
     end   
     
 try
+    tic
     [LFPcounts]=PDs_from_LFPs_MWSposlog2(fnam,chinds,bandstart,bandend,18,32,0,lag,binlen,pval);
+    toc
 catch exception
     filesThatDidNotRun{i,2} = exception;
     filesThatDidNotRun{i,1} = fnam
     continue
 end
 
+tic
 [LMPcounts]=PDs_from_LFPs_MWSposlogLMP(fnam,chinds,LMPbandstart,LMPbandend,18,32,0,lag,binlen,pval);
+toc
 
 save(savename,'LFPcounts','LMPcounts',sprintf(varname));
     clear bdf *PD*

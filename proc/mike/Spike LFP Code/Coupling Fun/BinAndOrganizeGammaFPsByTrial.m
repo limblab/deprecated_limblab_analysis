@@ -5,8 +5,8 @@ BinsizeCorr = .05;
 FP_Trial_time = [0:.001:1];
 t = [0.5:BinsizeCorr:1];
 samprate = 1000;
-HC_I = [1 10];
-BC_I = [17 26];
+HC_I = [3 5];
+BC_I = [13 17];
 
 [b_lowgamma,a_lowgamma]=butter(2,[30 50]/(samprate/2));
 [b_gamma,a_gamma]=butter(2,[130 200]/(samprate/2));
@@ -72,8 +72,11 @@ HC_correlations = reshape(AvgCorr_SpikeRate_FPPower_ByFile(:,HC_I(1):HC_I(2)),96
 ControlCh_BC_correlations = reshape(AvgCorr_SpikeRate_FPPower_ByFile(LFPInds{1}(1),BC_I(1):BC_I(end)),(BC_I(end)-BC_I(1)+1),1)
 ControlCh_HC_correlations = reshape(AvgCorr_SpikeRate_FPPower_ByFile(LFPInds{1}(1),HC_I(1):HC_I(end)),(HC_I(end)-HC_I(1)+1),1)
 
+ControlCh_BC_P = reshape(AvgP_SpikeRate_FPPower_ByFile(LFPInds{1}(1),BC_I(1):BC_I(end)),(BC_I(end)-BC_I(1)+1),1)
+ControlCh_HC_P = reshape(AvgP_SpikeRate_FPPower_ByFile(LFPInds{1}(1),HC_I(1):HC_I(end)),(HC_I(end)-HC_I(1)+1),1)
+
 [h p] = ttest2(ControlCh_BC_correlations,ControlCh_HC_correlations)
 % MeanR_trial = hist(AvgCorr_SpikeRate_FPPower_ByFile)
 % title('Distribution of Spike Rate and Gamma Power Correlations when Averaged over Trials')
 
-clear Binsize FP_Trial_time t Pval RhoVal
+clear Binsize FP_Trial_time t Pval RhoVal h HC_I BC_I exception

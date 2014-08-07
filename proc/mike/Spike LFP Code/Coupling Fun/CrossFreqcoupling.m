@@ -27,10 +27,13 @@ pri = 1;
 fi =1;
 ind = 1;
 
-FileList = Chewie_U63_SpikeX_Gam3Y_Ch95;
+FileList = Mini_Ch40_LowGamx_Gam2Y;
+bandstarts = [30, 130, 200];
+bandends   = [50, 200, 300];
 
+ControlCh = 40;
 %% Find file path, load file and start iterating through files
-for q = 1:length(FileList)
+for q = [16:20]
     
     fnam{q} =  findBDFonCitadel(FileList{q,1})
     try
@@ -40,7 +43,7 @@ for q = 1:length(FileList)
         FilesNotRun{q,1} = fnam
         continue
     end
-    continue
+
     %% Declare input variables within loop that vary in each loop iteration:
     [sig, ~, ~, ~,~,~,~,~,~, analog_time_base] = SetPredictionsInputVar(out_struct);
  
@@ -49,7 +52,7 @@ for q = 1:length(FileList)
     clear out_struct fpchans
     
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
-    [~, t, ~] = calculateBandPower(wsz, size(fp,1), numbins, samplerate, fp, binsize, y, t);
+
     clear y numbins sig analog_time_base
     
     %% Bin and organize spikes
@@ -137,22 +140,40 @@ for q = 1:length(FileList)
     Num.PercentSuccess_File(q) = (Num.Success_File(q)/Num.Trials_File(q))*100;
     clear FirstTrialInds AbortTrialInds SuccessTrialInds
     
-        data(q).fptimes = fptimes;
-        data(q).FPs = fp;
-        data(q).SpikeTimes = tsFPorder;
-        
-        for k = 1:size(fp,1)      
-            FPdataToParse = fp(k,:)';
-            SpikedataToParse = tsFPorder{q,k};
-            tic
-            [Trials{k,q}, ~] = parseTrials(bdf,FPdataToParse,SpikedataToParse);
-            toc
-            clear FPdataToParse SpikedataToParse
-        end    
-        clear k  
-        
-        clear fp fptimes bdf tsFPorder 
-        continue
+    data(q).fptimes = fptimes;
+    data(q).FPs = fp;
+    data(q).SpikeTimes = tsFPorder;
+    
+    % Robert's fpassign puts NaNs in the matrix and this throws everything
+    % off, remove them here.
+    fp(isnan(fp)==1)= 0;
+    
+    for i = 1:length(bandstarts)
+        [b,a]=butter(2,[bandstarts(i) bandends(i)]/(samprate/2));
+        TrialBP= filtfilt(b,a,fp');
+        BP_Vec = smooth(abs(hilbert(TrialBP)).^2,21,'moving');
+        try
+            BP(:,:,i) = reshape(BP_Vec,size(TrialBP,1),size(TrialBP,2));
+        catch
+            clear BP
+            BP(:,:,i) = reshape(BP_Vec,size(TrialBP,1),size(TrialBP,2));
+        end
+    end
+    
+    clear a b BP_Vec TrialBP
+    
+    for k = ControlCh%1:size(fp,1)
+        FPstartTime = fptimes(1);
+        SpikedataToParse = tsFPorder{q,k};
+        tic
+        [Trials{k,q}] = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikedataToParse);
+        toc
+        clear FPdataToParse SpikedataToParse
+    end
+    clear k
+    
+    clear fp fptimes bdf tsFPorder BP i samprate smplerate
+    continue
     
     data1 = fp(LFPInds{1}(1),:)';
     data2 = tsFPorder{SpikeInds{1}};
