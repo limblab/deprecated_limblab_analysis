@@ -138,32 +138,37 @@ for r=1:NumofTrajectories,
     %1c - create data segments by cutting the  trajectory  Traj(:,r) into
     %several segments each having size of (Segment) points. The total
     %number of segments is - SearchEndPoint 
+    if SearchEndPoint-N+1 > 1
+        LinearSegments=reshape(Traj(IndMatLin,r),N,SearchEndPoint-N+1);%the linear segments with all possible shifts (column number indicate the lag in samples)
+        MACCSegments=reshape(Traj(IndMatMACC,r),M,SearchEndPoint-N+1);%the MACC segments with all possible shifts (column number indicate the lag in samples)
 
-    LinearSegments=reshape(Traj(IndMatLin,r),N,SearchEndPoint-N+1);%the linear segments with all possible shifts (column number indicate the lag in samples)
-    MACCSegments=reshape(Traj(IndMatMACC,r),M,SearchEndPoint-N+1);%the MACC segments with all possible shifts (column number indicate the lag in samples)
+        LinMeanVal=mean(LinearSegments);%this is the constant error value of the stationary model
+        LimModel=ones(N,1)*LinMeanVal;%this is the linear model itself
 
-    LinMeanVal=mean(LinearSegments);%this is the constant error value of the stationary model
-    LimModel=ones(N,1)*LinMeanVal;%this is the linear model itself
+        MACCSegmentsB=MACCSegments-ones(M,1)*LinMeanVal;%1st remove the estimated bias
 
-    MACCSegmentsB=MACCSegments-ones(M,1)*LinMeanVal;%1st remove the estimated bias
+        MeanJerk=(t(1:M).^3)\ MACCSegmentsB;% compute regression to estimate the best mean jerk - MeanJerk
+        MeanJerk=max([MeanJerk' , ones(SearchEndPoint-N+1,1)*MinJerk],[],2)';%solution must be larger then MinJerk
+        Yest=((t(1:M).^3)*ones(1,length(MeanJerk))).*(ones(M,1)*MeanJerk)+ones(M,1)*LinMeanVal;%This is the movement model (MACC based) with the bias
 
-    MeanJerk=(t(1:M).^3)\ MACCSegmentsB;% compute regression to estimate the best mean jerk - MeanJerk
-    MeanJerk=max([MeanJerk' , ones(SearchEndPoint-N+1,1)*MinJerk],[],2)';%solution must be larger then MinJerk
-    Yest=((t(1:M).^3)*ones(1,length(MeanJerk))).*(ones(M,1)*MeanJerk)+ones(M,1)*LinMeanVal;%This is the movement model (MACC based) with the bias
+        %hence my full estimation is the linear model and the MACC model
+        est=[LimModel(1:end-1,:) ; Yest]; %omit the last point since it the same time point in both models
+        %while the data is simply
+        Data=[LinearSegments(1:end-1,:) ; MACCSegments];%omit the last point since it the same time point in both models
 
-    %hence my full estimation is the linear model and the MACC model
-    est=[LimModel(1:end-1,:) ; Yest]; %omit the last point since it the same time point in both models
-    %while the data is simply
-    Data=[LinearSegments(1:end-1,:) ; MACCSegments];%omit the last point since it the same time point in both models
 
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-    %compute the total RMS error using the sum of the Linear and the MACC
-    %model
-    ModelEr=mean((Data-est).^2).^0.5;
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+        %compute the total RMS error using the sum of the Linear and the MACC
+        %model
+        ModelEr=mean((Data-est).^2,2).^0.5;
+    else
+        ModelEr = [];
+    end
 
  
-    if ~isempty(ModelEr)    
+%     if ~isempty(ModelEr) 
+
+    if ~isempty(SearchEndPoint) && (any(~isnan(ModelEr)) && (SearchEndPoint-N+1)>1)
         k = local_max(-ModelEr);%detect the local minima in the signal
         %select the last minima as the onset,shift it respectively 
         CurrentOnsetInd=k(end)+N-1;
