@@ -17,7 +17,7 @@ function convertCerebusToBDF(dataPath,convertFolders,rewriteFiles)
 % Hard code some defaults for my own development use...
 if nargin < 2
     dataPath = 'Z:\Jaco_8I1\'; % Set a base directory
-    convertFolders = {'04-13-14'}; % Define what dates to convert data for
+    convertFolders = {'04-12-14'}; % Define what dates to convert data for
 end
 %%%%%
 
