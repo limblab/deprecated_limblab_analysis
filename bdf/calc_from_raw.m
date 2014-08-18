@@ -261,18 +261,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             
             [b,a] = butter(4, 200/adfreq);
             raw_force = zeros(length(analog_time_base), 6);
-            
-            % Calculate force offsets for this particular file
-            % Find longest time range of no movement
-            temp_d = diff(out_struct.pos(:,2))<.004 & diff(out_struct.pos(:,3))<.004;
-            q = diff([0 temp_d(:)' 0]);
-            v1 = find(q == 1); v2 = find(q == -1); 
-            v = v2-v1;
-            [max_v,max_v_ind] = max(v);
-            no_mov_idx = v1(max_v_ind):v2(max_v_ind);
-            force_offsets_temp = zeros(1,6);
             zero_force = [];
-            
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
                 a_data = double(get_analog_signal(out_struct, channame));
@@ -280,8 +269,21 @@ function out_struct = calc_from_raw(raw_struct, opts)
                 a_data = interp1( a_data(:,1), a_data(:,2), analog_time_base);                    
                 a_data = filtfilt(b, a, a_data);
                 raw_force(:,c) = a_data';
-                force_offsets_temp(c) = mean(a_data(no_mov_idx));
+                
             end
+            
+            % Calculate force offsets for this particular file
+            % Find longest time range of no movement
+            temp_d = diff(out_struct.pos(:,2))<.004 & diff(out_struct.pos(:,3))<.004;   
+            temp_d = abs(diff(raw_force(:,1)))<1 & abs(diff(raw_force(:,2)))<1 &...
+                abs(diff(raw_force(:,3)))<1 & abs(diff(raw_force(:,4)))<1 &...
+                abs(diff(raw_force(:,5)))<1 & abs(diff(raw_force(:,6)))<1;
+            q = diff([0 temp_d(:)' 0]);
+            v1 = find(q == 1); v2 = find(q == -1); 
+            v = v2-v1;
+            [max_v,max_v_ind] = max(v);
+            no_mov_idx = v1(max_v_ind):v2(max_v_ind);
+            force_offsets_temp = mean(raw_force(no_mov_idx,:));
             
             if max_v > 1000  % Only use if there are more than 
                              % 1000 contiguous movement free samples                
