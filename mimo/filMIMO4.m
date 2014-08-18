@@ -94,6 +94,7 @@ end
    end	
 
    H=fs*(PX\PXY);
+   H(isnan(H)) = 0;
    %H=fs*(PX)^-1*PXY;
    
    
