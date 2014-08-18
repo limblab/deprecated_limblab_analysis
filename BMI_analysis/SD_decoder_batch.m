@@ -12,15 +12,15 @@ clear
 % log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-05-27\Chewie_Spike_RW_05272014002-binned_perfLDA_velDecoder_1stOrder_log';
 % % log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-04-17\Chewie_Spike_RW_04172014002_correctPos-binned_perfLDA_velDecoder_1stOrder_log';
 
-HC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-06\Chewie_Spike_RW_06032014001';
+HC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-23\Chewie_Spike_RW_06202014001';
 % HC_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\Chewie_Spikess_06102013001';
-BC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-06\Chewie_Spike_RW_06062014001';
-log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-06\Chewie_Spike_RW_06062014001_correctPos-binned_perfLDA_velDecoder_1stOrder_log';
+BC_file  = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-23\Chewie_Spike_RW_06202014002';
+log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-23\Chewie_Spike_RW_06202014002-binned_perfLDA_velDecoder_1stOrder_log';
 % log_file = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-04-17\Chewie_Spike_RW_04172014002_correctPos-binned_perfLDA_velDecoder_1stOrder_log';
 
 if ~exist([BC_file '.plx'],'file')
     disp('Building first decoder')
-    SD_decoder_from_plx([HC_file '.plx'],0,5,0); 
+    SD_decoder_from_plx([HC_file '.plx'],0,7,0); 
 else
     disp('Building LDA classifier')
     out_struct = get_plexon_data([BC_file '.plx'],'verbose');
@@ -46,18 +46,23 @@ else
         find(trial_log(:,10)<=out_struct.pos(end,1),1,'last'),:);
     dt = diff(out_struct.pos(1:2,1));
     out_struct.pos(1:100,2:3) = repmat(trial_log(1,5:6),100,1);
+    out_struct.vel(1:100,2:3) = repmat(trial_log(1,7:8),100,1);
     for i = 1:size(trial_log,1)-1
         idx = round(1+1/dt*[trial_log(i,10) trial_log(i+1,10)])-1000;
         idx = idx(1):idx(2)-1;
         out_struct.pos(idx,2:3) = repmat(trial_log(i,5:6),length(idx),1);
+        out_struct.vel(idx,2:3) = repmat(trial_log(i,7:8),length(idx),1);
     end
     out_struct.pos(idx(end):end,2:3) = repmat(trial_log(i,5:6),size(out_struct.pos(idx(end):end,2:3),1),1);
+    out_struct.vel(idx(end):end,2:3) = repmat(trial_log(i,7:8),size(out_struct.vel(idx(end):end,2:3),1),1);
 
     % for x = 1:length(out_struct.pos)
     %     out_struct.pos(x,2:3) = trial_log(find((trial_log(:,10)-trial_log(1,10))/10^9 > out_struct.pos(x,1),1,'first'),(5:6));
     % end
     save([BC_file '_correctPos'],'out_struct');
-    SD_decoder_from_plx([BC_file '_correctPos.mat'],1,magnet_radius,0); 
+    SD_decoder_from_plx([BC_file '_correctPos.mat'],0,7,0); 
+
+%     SD_decoder_from_plx([BC_file '_correctPos.mat'],1,magnet_radius,0); 
     load([HC_file '-binned_perfLDA_velDecoder_1stOrder.mat']);
     general_decoder2 = general_decoder;
     posture_decoder2 = posture_decoder;
