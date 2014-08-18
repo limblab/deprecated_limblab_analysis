@@ -103,10 +103,11 @@ else
     for E=1:numEMGs
         % Filter EMG data
         tempEMG = double(datastruct.emg.data(emgtimebins,E+1));
-        tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
-        tempEMG = abs(tempEMG); %rectify
-        tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
-
+        if ~isfield(datastruct.emg,'rectified')            
+            tempEMG = filtfilt(bh,ah,tempEMG); %highpass filter
+            tempEMG = abs(tempEMG); %rectify
+            tempEMG = filtfilt(bl,al,tempEMG); %lowpass filter
+        end
         %downsample EMG data to desired bin size
 %             emgdatabin(:,E) = resample(tempEMG, 1/binsize, emgsamplerate);
         emgdatabin(:,E) = interp1(datastruct.emg.data(emgtimebins,1), tempEMG, timeframe,'linear','extrap');
@@ -125,40 +126,40 @@ else
     clear tempEMG bh ah bl al emgtimebins EMGname numEMGs EMGNormRatio;
 end
 
-% %% Bin Force
-% if ~isfield(datastruct, 'force')
-%     fprintf('No force data was found\n');
-%     forcedatabin = [];
-%     forcelabels = [];
-% else
-% %     forcesamplerate = datastruct.force.forcefreq;   %Rate at which force data were actually acquired.
-%     forcename = char(zeros(1,12));
-%     numforcech = length(datastruct.force.labels);
-%     forcelabels = char(zeros(numforcech,length(forcename)));
-%     forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
-% %     forcetimebins = params.starttime*forcesamplerate+1:params.stoptime*forcesamplerate;
-% 
-%     for i=numforcech:-1:1
-%         forcename = char(datastruct.force.labels(i));
-%         forcelabels(i,1:length(forcename))= forcename;
-%     end
-% 
-%     %downsample force data to desired bin size
-% %         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
-%     forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
-% 
-%     if params.NormData
-%         %Normalize Force
-%         for i=1:numforcech
-% %             forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
-%             %dont use the max because of possible outliars, use 99% percentile
-%             forceNormRatio = prctile(abs(forcedatabin(:,i)),99);
-%             forcedatabin(:,i) = forcedatabin(:,i)/forceNormRatio;
-%         end        
-%     end
-% 
-%     clear forcesamplerate forcetimebins forcename numforcech forceNormRatio;
-% end
+%% Bin Force - Not implemented for handle force yet, only WF and other lab 1 stuff.
+if (~isfield(datastruct, 'force') || ~isfield(datastruct.force, 'labels'))
+    fprintf('No force data was found\n');
+    forcedatabin = [];
+    forcelabels = [];
+else
+%     forcesamplerate = datastruct.force.forcefreq;   %Rate at which force data were actually acquired.
+    forcename = char(zeros(1,12));
+    numforcech = length(datastruct.force.labels);
+    forcelabels = char(zeros(numforcech,length(forcename)));
+    forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
+%     forcetimebins = params.starttime*forcesamplerate+1:params.stoptime*forcesamplerate;
+
+    for i=numforcech:-1:1
+        forcename = char(datastruct.force.labels(i));
+        forcelabels(i,1:length(forcename))= forcename;
+    end
+
+    %downsample force data to desired bin size
+%         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
+    forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
+
+    if params.NormData
+        %Normalize Force
+        for i=1:numforcech
+%             forcedatabin(:,i) = forcedatabin(:,i)/max(abs(forcedatabin(:,i)));
+            %dont use the max because of possible outliars, use 99% percentile
+            forceNormRatio = prctile(abs(forcedatabin(:,i)),99);
+            forcedatabin(:,i) = forcedatabin(:,i)/forceNormRatio;
+        end        
+    end
+
+    clear forcesamplerate forcetimebins forcename numforcech forceNormRatio;
+end
 
 %% Bin Cursor Position
 if ~isfield(datastruct, 'pos')
@@ -199,6 +200,7 @@ if ~isfield(datastruct, 'vel')
     end
 else
     velocbin = interp1(datastruct.vel(:,1), datastruct.vel(:,2:3), timeframe,'linear','extrap');
+    velocbin(timeframe<datastruct.vel(1,1),:) = 0;
     vel_magn = sqrt(velocbin(:,1).^2+velocbin(:,2).^2);
     velocbin = [velocbin vel_magn];
 end
@@ -302,6 +304,10 @@ else
 
              %get the binned data from the desired timeframe
              binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,timeframe);
+%              rand_idx = round(rand(round(.001*length(binneddata)),1)*length(binneddata));
+%              rand_idx = rand_idx(rand_idx>0 & rand_idx<length(binneddata));
+%              binneddata(rand_idx) = ...
+%                  binneddata(rand_idx)+1;
 
              %convert to firing rate and store in spike data matrix
              spikeratedata(:,unit) = binneddata /params.binsize;
