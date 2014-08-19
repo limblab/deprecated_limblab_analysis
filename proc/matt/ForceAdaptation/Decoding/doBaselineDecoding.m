@@ -1,6 +1,20 @@
-function [fileVAFs, fileR2] = doBaselineDecoding(root_dirs,use_array,doFiles,predFlags,foldLength,numbins)
+function [fileVAFs, fileR2] = doBaselineDecoding(root_dirs,use_array,doFiles,decoder,foldLength,numbins)
 % predFlags: (bool} [predpos, predvel, predtarg]
 
+switch lower(decoder)
+    case 'position'
+        predFlags = [1 0 0 0 0 0];
+    case 'velocity'
+        predFlags = [0 1 0 0 0 0];
+    case 'target'
+        predFlags = [0 0 1 0 0 0];
+    case 'force'
+        predFlags = [0 0 0 1 0 0];
+    case 'compvelocity'
+        predFlags = [0 0 0 0 1 0];
+    case 'movedir'
+        predFlags = [0 0 0 0 0 1];
+end
 
 fileVAFs = cell(size(doFiles,1),1);
 fileR2 = cell(size(doFiles,1),1);
@@ -14,7 +28,7 @@ for iFile = 1:size(doFiles,1)
     d = doFiles{iFile,2}(9:10);
     
     bin_file = fullfile(root_dir,use_array,'BinnedData',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_trim.mat']);
-    filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder.mat']);
+    filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder_' decoder '.mat']);
     
     load(bin_file);
     binsize=binnedData.timeframe(2)-binnedData.timeframe(1);

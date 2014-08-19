@@ -21,14 +21,14 @@ mrt_data = {'MrT','2013-08-19','FF','CO'; ...   % S x
             'MrT','2013-09-10','VR','RT'; ...   % S x
             'MrT','2013-09-24','VRFF','RT'; ... % S x
             'MrT','2013-09-25','VRFF','RT'; ... % S x
-            'MrT','2013-09-27','VRFF','RT'; ... % S x
-            'MrT','2013-10-11','VR','RT'};      % S x - 45 degree visual rotation};
+            'MrT','2013-09-27','VRFF','RT'}; ... % S x
+            %'MrT','2013-10-11','VR','RT'};      % S x - 45 degree visual rotation};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Chewie 
 chewie_data = {'Chewie','2013-10-03','VR','CO'; ... %1  S ?
                'Chewie','2013-10-09','VR','RT'; ... %2  S x
-               'Chewie','2013-10-10','VR','RT'; ... %3  S ?
+               'Chewie','2013-10-10','VR','RT'; ... %3  S ? 
                'Chewie','2013-10-11','VR','RT'; ... %4  S x
                'Chewie','2013-10-22','FF','CO'; ... %5  S ?
                'Chewie','2013-10-23','FF','CO'; ... %6  S ?
@@ -73,6 +73,9 @@ mihili_partialDays = {'Mihili','2014-02-11','FF','CO'; ...
                       'Mihili','2014-02-25','VR','CO'; ...
                       'Mihili','2014-02-27','VR','CO'; ...
                       'Mihili','2014-02-28','VR','CO'};
+                  % note: 12/12 and 12/13 were the first two FF days for
+                  % Mihili... might be worth looking at, even though they
+                  % don't have complete data
                    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

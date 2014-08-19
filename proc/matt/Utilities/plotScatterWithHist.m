@@ -2,7 +2,8 @@ function H = plotScatterWithHist(x,y,varargin)
 % PLOTSCATTERWITHHIST Makes scatter plot with histograms on side
 %
 %   Plots a scatter plot with histograms to show how the horizontal and/or
-% vertical axes of the data is distributed.
+% vertical axes of the data is distributed. For instance, PD changes under
+% two different conditions.
 %
 % INPUTS:
 %   x: data for horizontal axis

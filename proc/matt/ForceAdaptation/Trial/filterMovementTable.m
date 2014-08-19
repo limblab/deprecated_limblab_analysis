@@ -1,4 +1,4 @@
-function [mt,centers] = filterMovementTable(data,paramSetName,excludeTrials,useBlock)
+function [mt,centers] = filterMovementTable(data,paramSetName,excludeTrials,useBlock,verbose)
 % filter movements out of one of my movement tables based on:
 %   1) reaction time
 %   2) time to target
@@ -7,8 +7,14 @@ function [mt,centers] = filterMovementTable(data,paramSetName,excludeTrials,useB
 %
 %   The values to use are specified in the analysis_parameters file
 
-if nargin < 3
-    excludeTrials = true;
+if nargin < 5
+    verbose = true;
+    if nargin < 4
+        useBlock = [];
+        if nargin < 3
+            excludeTrials = true;
+        end
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,28 +38,51 @@ holdTime = data.params.hold_time;
 mt = data.movement_table;
 centers = data.movement_centers;
 
+t = data.cont.t;
+vel = data.cont.vel;
+
+total_trials = length(centers);
+num_removed = 0;
+
 if minReactionTime ~= -1 && maxReactionTime ~= -1
     reactionTime = mt(:,4) - mt(:,3);
     idx = reactionTime >= minReactionTime & reactionTime <= maxReactionTime;
     
+    % keep track of how many are removed
+    nr = length(centers)-sum(idx);
+    
     mt = mt(idx,:);
     centers = centers(idx,:);
+    
+    num_removed = num_removed + nr;
 end
 
 if minTimeToTarget ~= -1 && maxTimeToTarget ~= -1
     timeToTarget = ( mt(:,6) - mt(:,4) ) - holdTime;
     idx = timeToTarget >= minTimeToTarget & timeToTarget <= maxTimeToTarget;
     
+    nr = length(centers)-sum(idx);
+    
     mt = mt(idx,:);
     centers = centers(idx,:);
+    
+    num_removed = num_removed + nr;
 end
 
 if minTimeToPeak ~= -1 && maxTimeToPeak ~= -1
     timeToPeak = mt(:,5) - mt(:,4);
     idx = timeToPeak >= minTimeToPeak & timeToPeak <= maxTimeToPeak;
     
+    nr = length(centers)-sum(idx);
+    
     mt = mt(idx,:);
     centers = centers(idx,:);
+    
+    num_removed = num_removed + nr;
+end
+
+if verbose
+    disp(['Removed ' num2str(num_removed) ' trials (' num2str(100*num_removed/total_trials) '%)...']);
 end
 
 % for adaptation, exclude some trials
@@ -124,4 +153,30 @@ if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'W
             centers = centers(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
         end
     end
+end
+
+
+% Now, filter based on speed (slow or fast?)
+if strcmpi(paramSetName,'speed_slow') || strcmpi(paramSetName,'speed_fast')
+    meanVels = zeros(size(mt,1),1);
+    for iMove = 1:size(mt,1)
+        % get time indices for this movement
+        idx = t > mt(iMove,4) & t < (mt(iMove,5));
+        v = sqrt(vel(idx,1).^2 + vel(idx,2).^2);
+        meanVels(iMove) = mean(v);
+    end
+    
+    % find the mean time
+    m = mean(meanVels);
+    
+    switch lower(paramSetName)
+        case 'speed_slow'
+            idx = meanVels < m;
+        case 'speed_fast'
+            idx = meanVels > m;
+    end
+    
+    mt = mt(idx,:);
+    centers = centers(idx,:);
+
 end

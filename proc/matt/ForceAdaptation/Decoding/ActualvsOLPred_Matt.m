@@ -90,7 +90,7 @@ function varargout = ActualvsOLPred_Matt(ActualData, PredData, varargin)
 %     vaf= 1- (var(PredData.preddatabin - ActSignalsTrunk) ./ var(ActSignalsTrunk) );
     vaf = 1 - sum( (PredData.preddatabin-ActSignalsTrunk).^2 ) ./ sum( (ActSignalsTrunk - repmat(mean(ActSignalsTrunk),size(ActSignalsTrunk,1),1)).^2 );
     mse= mean((PredData.preddatabin-ActSignalsTrunk) .^2);
-    varargout = {R2, vaf, mse};
+    varargout = {R2, vaf, mse,ActSignalsTrunk};
 
     assignin('base','R2',R2);
     assignin('base','vaf',vaf);

@@ -88,7 +88,7 @@ for iMethod = 1:length(tuningMethods)
                 
                 % get cells that are significantly tuned in all epochs
                 %   first column is PDs, second is MDs
-                [istuned, sg] = excludeCells(data,tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}),tracking,useArray);
+                [istuned, sg] = excludeCells(data,tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}),tracking,useArray,classifierBlocks);
                 tunedCells = sg(all(istuned,2),:);
                 disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
                 

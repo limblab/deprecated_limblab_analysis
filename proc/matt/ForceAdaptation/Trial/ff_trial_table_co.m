@@ -26,8 +26,8 @@ words = bdf.words;
 result_codes = 'RAFI------------';
 
 % hard-code the angle of movement for each target direciotn
-%   this is based on the numbering scheme used in get_tgt_id.m
-targ_angs = [0, pi/4, pi/2, 3*pi/4, pi, -3*pi/4, -pi/2, -pi/4];
+%   from code: pi/2 - target * angle_range/#_targets + 1st_shift
+targ_angs = [pi/2, pi/4, 0, -pi/4, -pi/2, -3*pi/4, pi, 3*pi/4];
 
 word_start = hex2dec('11');
 start_words = words(words(:,2) == word_start, 1);
@@ -167,6 +167,7 @@ end
 % Remove trials that have no go cue?
 remInds = tt(:,9) == -1;
 tt(remInds,:) = [];
+
 remInds = isnan(tt(:,10));
 tt(remInds,:) = [];
 

@@ -28,7 +28,7 @@ if ~isstruct(datastruct)
 end
 
 %update missing params with default values
-params = get_default_binning_params(datastruct, varargin{:});
+params = get_default_binning_params_Matt(datastruct, varargin{:});
 
 if isempty(params)
     disp('Invalid binning parameter(s)');

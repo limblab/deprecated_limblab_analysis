@@ -27,15 +27,14 @@ function [cellClass,master_sg] = classifyCells(t,tuningMethod,compMethod,classif
 % useBlocks: input to specify which tuning blocks to use. For now, must be
 % three element array. For instance, if there is one baseline period, 3
 % adaptation periods, and one washout, and you want to do the
-% classification based on the end of adaptation, do useBlocks=[1 4 5]
+% classification based on the end of adaptation, do useBlocks=[1 4 6]
 %
 % To compare if there is a significant difference across adaptation in the
 % above case, you might do useBlocks = [2 3 4];
 
-if strcmpi(tuningMethod,'glm')
-    compMethod = 'overlap';
-    disp('Diff comparison method not supported for GLM yet...');
-end
+% if this is true, divide alpha by 2 since we are making two comparisons
+doBonferroni = true;
+numComparisons = 3;
 
 meta = t(1).meta;
 
@@ -44,6 +43,11 @@ params = parseExpParams(paramFile);
 confLevel = str2double(params.confidence_level{1});
 numIters = str2double(params.number_iterations{1});
 clear params;
+
+if doBonferroni
+    alpha = 1-confLevel;
+    confLevel = 1 - (alpha/numComparisons);
+end
 
 % load the info to classify cells
 cell_classifications;
@@ -65,9 +69,25 @@ end
 % make the cell to pass in the checking function
 switch lower(tuningMethod)
     case 'nonparametric'
-        disp('Skipping nonparametric tuning for now...');
+        % Not supported yet
+    case 'glm'
+        % doing GLM stuff
+        
+        % this is for the t-test of empirical distributions
+        all_pds = {t.pds};
+        
+        for iBlock = 1:length(all_pds)
+            temp = all_pds{iBlock};
+            temp = temp(idx{iBlock},:);
+            all_pds{iBlock} = temp;
+        end
+        
+        pd = compareTuningParameter('pd',all_pds,master_sg,{'ttest',confLevel});
+        md = [];
+        
         
     otherwise
+        % doing regression stuff
         all_pds = {t.pds};
         
         for iBlock = 1:length(all_pds)
@@ -144,7 +164,7 @@ for unit = 1:size(master_sg,1)
 end
 cellClass(:,1) = cc;
 
-if ~isempty(all_mds)
+if ~isempty(md)
     for unit = 1:size(master_sg,1)
         % modulation depth
         diffMat = md.(['elec' num2str(master_sg(unit,1))]).(['unit' num2str(master_sg(unit,2))]);
@@ -163,7 +183,7 @@ if ~isempty(all_mds)
             end
     end
 else
-    cc = -1*ones(size(sg_bl,1),1);
+    cc = -1*ones(size(master_sg,1),1);
 end
 cellClass(:,2) = cc;
 

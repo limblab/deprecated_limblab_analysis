@@ -14,8 +14,6 @@ paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording
 params = parseExpParams(paramFile);
 movementTime = str2double(params.movement_time{1});
 binAngles = str2double(params.bin_angles{1});
-adBlocks = params.ad_exclude_fraction;
-woBlocks = params.wo_exclude_fraction;
 clear params;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
@@ -30,7 +28,7 @@ disp(['Regression tuning, ' num2str(movementTime) ' second window...']);
 %% Get data
 sg = data.(useArray).sg;
 
-[fr,theta,mt] = getFR(data,useArray,tuningPeriod,paramSetName,iBlock);
+[fr,theta,mt,force,vel] = getFR(data,useArray,tuningPeriod,paramSetName,iBlock);
 
 % Do bootstrapping with regression
 statTestParams = {'bootstrap',bootNumIters,confLevel};
@@ -52,6 +50,8 @@ out.sg = sg;
 out.fr = fr;
 out.theta = theta;
 out.mt = mt;
+out.forces = force;
+out.vels = vel;
 out.params.stats = statTestParams;
 out.params.bin_angles = binAngles;
 out.params.movement_time = movementTime;

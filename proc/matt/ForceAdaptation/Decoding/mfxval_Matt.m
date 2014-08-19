@@ -63,7 +63,6 @@ mse = [];
 % R2 = zeros(nfold,numSig);
 % vaf= zeros(nfold,numSig);
 % mse= zeros(nfold,numSig);
-
 for i=0:nfold-1
     
     %% split the appropriate data into training and testing segments
@@ -114,12 +113,15 @@ for i=0:nfold-1
 
 end %for i=1:nfold
 
-
+try
 % Plot Actual and Predicted Data
 idx = false(size(binnedData.timeframe));
 for i = 1:length(AllPredData.timeframe)
     idx = idx | binnedData.timeframe == AllPredData.timeframe(i);
-end    
+end   
+catch
+    keyboard
+end
 
 if options.PredEMGs
     binnedData.emgdatabin = binnedData.emgdatabin(idx,:);

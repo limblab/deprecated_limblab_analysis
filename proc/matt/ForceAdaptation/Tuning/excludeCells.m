@@ -1,4 +1,4 @@
-function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray)
+function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray,classifierBlocks)
 % This function will check all of the cells against various exclusion
 % criteria. For each cell:
 %
@@ -19,6 +19,9 @@ function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray)
 % Data input is from baseline only. I assume that if it meets criteria
 % there then it will for the rest, or else it won't pass the "same neuron"
 % test.
+
+% sometimes we only want to consider BL and AD
+% classifierBlocks = classifierBlocks(1:2);
 
 t = tuning.(useArray).tuning;
 tracking = tracking.(useArray);
@@ -105,11 +108,10 @@ for unit = 1:size(master_sg,1)
     sig = zeros(size(all_pds));
     for iBlock = 1:length(all_pds)
         temp = all_pds{iBlock};
-        temp = temp(all_idx{iBlock});
+        temp = temp(all_idx{iBlock},:);
         sig(iBlock) = checkTuningCISignificance(temp(unit,:),ciSig,true);
     end
-    
-    istuned(unit,5) = all(sig);
+    istuned(unit,5) = all(sig(classifierBlocks));
 end
 
 
@@ -140,7 +142,7 @@ if isfield(t(1),'r_squared') && ~isempty(t(1).r_squared)
         % check significance
         % only consider cells that are tuned in all epochs
         %   first column is CI bound, second is r-squared
-        istuned(unit,6) = all(sig);
+        istuned(unit,6) = all(sig(classifierBlocks));
     end
 else
     istuned(:,6) = ones(size(istuned(:,6)));

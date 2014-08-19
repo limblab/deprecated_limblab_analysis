@@ -43,7 +43,7 @@ switch task
         
         numTargets = (size(tt,2) - 3)/5; % subtract one because I skip the first
         numMoves = numTargets - 1;
-
+        
         mt = -1*ones(numMoves*size(tt,2),6);
         targcent = -1*ones(numMoves*size(tt,2),2);
         
@@ -66,15 +66,15 @@ switch task
                 
                 % for rt task, find vector from position at movement onset
                 % to target and make that target angle
-%                 t_start = tt(iTrial, 3+5*(iTarg-1));
-%                 
-%                 pos_end = [tt(iTrial, 5+5*(iTarg-1)), tt(iTrial, 6+5*(iTarg-1))];
-%                 pos_start = pos(find(t <= t_start,1,'last'),:);
-%                 try
-%                     moveAngle = atan2(pos_end(2)-pos_start(2),pos_end(1)-pos_start(1));
-%                 catch
-%                     moveAngle = NaN;
-%                 end
+                %                 t_start = tt(iTrial, 3+5*(iTarg-1));
+                %
+                %                 pos_end = [tt(iTrial, 5+5*(iTarg-1)), tt(iTrial, 6+5*(iTarg-1))];
+                %                 pos_start = pos(find(t <= t_start,1,'last'),:);
+                %                 try
+                %                     moveAngle = atan2(pos_end(2)-pos_start(2),pos_end(1)-pos_start(1));
+                %                 catch
+                %                     moveAngle = NaN;
+                %                 end
                 
                 
                 %                 t_end = tt(iTrial,2+5*(iTarg-1)+5);

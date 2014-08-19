@@ -8,17 +8,21 @@ rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
 saveData = true;
 rewriteFiles = false;
 
-classifierBlocks = [1 4 5];
-
 monkey = 'Mihili';
 useArray = 'M1';
+
 paramSetName = 'movement';
 tuneMethod = 'regression';
-tunePeriod = 'initial';
+tunePeriod = 'onpeak';
+classifierBlocks = [1 4 7];
 
 % paramSetName = 'glm';
 % tuneMethod = 'glm';
-% tunePeriod = 'full';
+% tunePeriod = 'file';
+% classifierBlocks = [1 4 6];
+
+ff_color = [0.2 0.25 0.95];
+vr_color = [0.95 0.25 0.2];
 
 dataSummary;
 
@@ -203,8 +207,8 @@ title('Percent of cells with same PD behavior day to day','FontSize',14);
 %   First, for same perturbation
 temp = allDPDs(inds_same,:);
 
-ymin = -90;
-ymax = 90;
+ymin = -180;
+ymax = 180;
 
 % want to color based on perturbation
 inds_ff = strcmpi(allAdapts,'ff');
@@ -213,19 +217,34 @@ inds_vr = strcmpi(allAdapts,'vr');
 inds_ff = inds_ff(inds_same,1);
 inds_vr = inds_vr(inds_same,1);
 
+inds_adapt = allClasses(inds_same,:)==2 | allClasses(inds_same,:)==3 | allClasses(inds_same,:)==5;
+inds_nonadapt = allClasses(inds_same,:)==1 | allClasses(inds_same,:)==4;
+
+
+ff = temp(inds_ff,:);
+vr = temp(inds_vr,:);
+
 figure;
 subplot1(1,2,'Gap',[0.05,0],'YTickL','Margin');
 subplot1(1);
 hold all;
-plot(temp(inds_ff,1).*(180/pi),temp(inds_ff,2).*(180/pi),'b+','LineWidth',2);
-plot(temp(inds_vr,1).*(180/pi),temp(inds_vr,2).*(180/pi),'r+','LineWidth',2);
+plot(temp(inds_ff & all(inds_adapt,2),1).*(180/pi),temp(inds_ff & all(inds_adapt,2),2).*(180/pi),'+','LineWidth',2,'Color',ff_color);
+plot(temp(inds_vr & all(inds_adapt,2),1).*(180/pi),temp(inds_vr & all(inds_adapt,2),2).*(180/pi),'+','LineWidth',2,'Color',vr_color);
+plot(temp(inds_vr & all(inds_nonadapt,2),1).*(180/pi),temp(inds_vr & all(inds_nonadapt,2),2).*(180/pi),'.','LineWidth',2,'Color',vr_color);
+legend({'Curl Field','Visual Rotation'},'FontSize',14);
+
+plot(temp(inds_ff & sum(inds_adapt,2)==1,1).*(180/pi),temp(inds_ff & sum(inds_adapt,2)==1,2).*(180/pi),'d','LineWidth',2,'Color',ff_color);
+plot(temp(inds_ff & all(inds_nonadapt,2),1).*(180/pi),temp(inds_ff & all(inds_nonadapt,2),2).*(180/pi),'.','LineWidth',2,'Color',ff_color);
+plot(temp(inds_vr & sum(inds_adapt,2)==1,1).*(180/pi),temp(inds_vr & sum(inds_adapt,2)==1,2).*(180/pi),'d','LineWidth',2,'Color',vr_color);
+
+
 plot([ymin ymax],[0 0],'k--','LineWidth',1);
 plot([0 0],[ymin ymax],'k--','LineWidth',1);
 set(gca,'XLim',[ymin,ymax],'YLim',[ymin,ymax],'FontSize',14);
 xlabel('dPD on Day 1','FontSize',14);
 ylabel('dPD on Day 2','FontSize',14);
 title('Same Perturbation','FontSize',14);
-legend({'Curl Field','Visual Rotation'},'FontSize',14);
+
 axis('square');
 
 % now for different perturbations

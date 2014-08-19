@@ -1,4 +1,4 @@
-function [fileVAFs, fileR2] = doEpochDecoding(root_dirs,use_array,doFiles,epoch,useData)
+function [fileVAFs, fileR2] = doEpochDecoding(root_dirs,use_array,doFiles,epoch,useData,decoder)
 % predFlags: (bool} [predpos, predvel, predtarg]
 % useData: [start end] ie [0 0.33]
 
@@ -15,7 +15,7 @@ for iFile = 1:size(doFiles,1)
     
     disp('Predicting, please wait...');
     
-    filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder.mat']);
+    filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder_' decoder '.mat']);
     
     bin_file = fullfile(root_dir,use_array,'BinnedData',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_' epoch '_' m d y '_trim.mat']);
     load(bin_file);
@@ -32,8 +32,7 @@ for iFile = 1:size(doFiles,1)
     fileR2{iFile,1} = r2;
     
     disp('Done.');
-    clear filt_struct decoder Use_State;
-    clear ActualData PredData field_names decoder Use_State;
+    clear filt_struct ActualData PredData field_names Use_State;
     
 end
 disp('Done.');

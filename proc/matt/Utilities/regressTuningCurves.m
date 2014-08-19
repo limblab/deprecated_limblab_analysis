@@ -57,11 +57,13 @@ end
 %%%%% Define parameters
 % set defaults
 doPlots = false; % By default, don't plot
-doMeanFR = true; % by default find mean for fit
+doMeanFR = true; % by default find mean for fit at each unique fr (if binned)
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'doplots'
             doPlots = varargin{i+1};
+        case 'domean'
+            doMeanFR = varargin{i+1};
     end
 end
 %%%%%
@@ -158,7 +160,7 @@ switch lower(sigTest{1})
         
         ap = zeros(size(fr,2));
         for i = 1:size(fr,2)
-            ap(i) = anova1(fr(:,i),theta(:,i),'off');
+            ap(i) = anova1(fr(:,i),theta,'off');
         end
         pd_sig = ap <= confLevel;
         md_sig = [NaN,NaN];

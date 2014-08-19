@@ -1,11 +1,10 @@
-clear
-clc
+function investigateMemoryCells()
 close all;
 
 % load each file and get cell classifications
 root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
 
-doFiles = {'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
+allFiles = {'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
     'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
     'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
@@ -19,16 +18,94 @@ doFiles = {'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Mihili','2014-03-03','VR','CO'; ...    %12 S(M-P)
     'Mihili','2014-03-04','VR','CO'; ...    %13 S(M-P)
     'Mihili','2014-03-06','VR','CO'; ...    %14 S(M-P)
-    'Mihili','2014-03-07','FF','CO'};       %15 S(M-P)
+    'Mihili','2014-03-07','FF','CO'; ...    % 15
+    'Chewie','2013-10-03','VR','CO'; ... %16  S ?
+    'Chewie','2013-10-09','VR','RT'; ... %17  S x
+    'Chewie','2013-10-10','VR','RT'; ... %18  S ?
+    'Chewie','2013-10-11','VR','RT'; ... %19  S x
+    'Chewie','2013-10-22','FF','CO'; ... %20  S ?
+    'Chewie','2013-10-23','FF','CO'; ... %21  S ?
+    'Chewie','2013-10-28','FF','RT'; ... %22  S x
+    'Chewie','2013-10-29','FF','RT'; ... %23  S x
+    'Chewie','2013-10-31','FF','CO'; ... %24  S ?
+    'Chewie','2013-11-01','FF','CO'; ... %25 S ?
+    'Chewie','2013-12-03','FF','CO'; ... %26 S
+    'Chewie','2013-12-04','FF','CO'; ... %27 S
+    'Chewie','2013-12-09','FF','RT'; ... %28 S
+    'Chewie','2013-12-10','FF','RT'; ... %29 S
+    'Chewie','2013-12-12','VR','RT'; ... %30 S
+    'Chewie','2013-12-13','VR','RT'; ... %31 S
+    'Chewie','2013-12-17','FF','RT'; ... %32 S
+    'Chewie','2013-12-18','FF','RT'; ... %33 S
+    'Chewie','2013-12-19','VR','CO'; ... %34 S
+    'Chewie','2013-12-20','VR','CO'};    %35 S
 
 useArray = 'M1';
+
+reassignOthers = true;
+
+classifierBlocks = [1 4 7];
+numClasses = 5;
+ymin = 0;
+ymax = 100;
+classLabels = {'Non-Adapt','Adapt','Mem I','Mem II','Other'};
+
+groupLabels = {'Movement','Target'};
+
+% Do movement tuning
+doFiles = allFiles(strcmpi(allFiles(:,3),'FF'),:);
 paramSetName = 'movement';
 tuningMethod = 'regression';
-tuningPeriod = 'initial';
+tuningPeriod = 'onpeak';
 
-classifierBlocks = [1 4 5];
+% Get the classification and PDs for each day for tuned cells
+[cellClasses,cellPDs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningPeriod);
 
-%% Get the classification for each day for tuned cells
+if reassignOthers
+    cellClasses = assignOthers(cellClasses,cellPDs);
+    classLabels = classLabels(1:end-1);
+    numClasses = numClasses-1;
+end
+
+% Get the counts for plotting
+counts1 = getCounts(doFiles,cellClasses,'none',numClasses);
+
+% why are some NaN?
+
+paramSetName = 'target';
+tuningMethod = 'regression';
+tuningPeriod = 'onpeak';
+[cellClasses,cellPDs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningPeriod);
+counts2 = getCounts(doFiles,cellClasses,'none',numClasses);
+
+% Now plot things!
+figure;
+hold all;
+h = barwitherr([(nanstd(counts1,1)/sqrt(size(counts1,1)))' (nanstd(counts2,1)/sqrt(size(counts2,1)))'],[nanmean(counts1,1)' nanmean(counts2,1)'],'BarWidth',1);
+set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
+ylabel('Percent','FontSize',14);
+legend(groupLabels,'FontSize',14);
+
+% plot a pie for the first one
+figure;
+% subplot1(1,2);
+% subplot1(1);
+pie(nanmean(counts1,1),classLabels)
+colormap jet;
+set(gca,'XLim',[-1.5,1.5],'YLim',[-1.5,1.5],'FontSize',14);
+% title(groupLabels{1},'FontSize',16);
+% subplot1(2);
+% pie(nanmean(counts2,1),classLabels);
+% colormap jet;
+% set(gca,'XLim',[-1.5,1.5],'YLim',[-1.5,1.5],'FontSize',14);
+% title(groupLabels{2},'FontSize',16);
+
+
+end
+
+%% Get the classification and PDs for each day for tuned cells
+function [cellClasses,cellPDs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningPeriod)
+
 cellClasses = cell(size(doFiles,1),1);
 cellPDs = cell(size(doFiles,1),1);
 for iFile = 1:size(doFiles,1)
@@ -60,374 +137,70 @@ for iFile = 1:size(doFiles,1)
     cellPDs{iFile} = {pds_bl, pds_ad, pds_wo};
 end
 
-%% now that I have the classes, plot it!
-
-numClasses = 5;
-ymin = 0;
-ymax = 100;
-classLabels = {'Non-Adapt','Adapt','Mem I','Mem II','Other'};
-
-% % plot the percent of each cell type for the two perturbations
-% vr_counts = zeros(sum(strcmpi(doFiles(:,3),'vr')),numClasses);
-% ff_counts = zeros(sum(strcmpi(doFiles(:,3),'ff')),numClasses);
-% for j = 1:numClasses % loop along the classes
-%     vr_counts(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,3),'vr'),:));
-%     ff_counts(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,3),'ff'),:));
-% end
-%
-% figure;
-% hold all;
-% h = barwitherr([(std(ff_counts,1)/size(ff_counts,1))' (std(vr_counts,1)/size(vr_counts,1))'],[mean(ff_counts,1)' mean(vr_counts,1)'],'BarWidth',1);
-% set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-% ylabel('Percent','FontSize',14);
-% legend({'Curl Field','Visual Rotation'},'FontSize',14);
-
-
-% same as before but break down by file type
-vr_counts_co = zeros(sum(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co')),numClasses);
-ff_counts_co = zeros(sum(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co')),numClasses);
-vr_counts_rt = zeros(sum(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt')),numClasses);
-ff_counts_rt = zeros(sum(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt')),numClasses);
-
-for j = 1:numClasses % loop along the classes
-    vr_counts_co(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:));
-    ff_counts_co(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:));
-    vr_counts_rt(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:));
-    ff_counts_rt(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:));
 end
 
-figure;
-subplot1(1,2,'Gap',[0,0],'YTickL','Margin');
-subplot1(1);
-hold all;
-h = barwitherr([(std(ff_counts_co,1)/sqrt(size(ff_counts_co,1)))' (std(vr_counts_co,1)/sqrt(size(vr_counts_co,1)))'],[mean(ff_counts_co,1)' mean(vr_counts_co,1)'],'BarWidth',1);
-set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-ylabel('Percent','FontSize',14);
-title('Center Out','FontSize',14);
-legend({'Curl Field','Visual Rotation'},'FontSize',14);
+%% Make the plots
+function [counts1,counts2] = getCounts(doFiles,cellClasses,doType,numClasses)
 
-subplot1(2);
-hold all;
-h = barwitherr([(std(ff_counts_rt,1)/sqrt(size(ff_counts_rt,1)))' (std(vr_counts_rt,1)/sqrt(size(vr_counts_rt,1)))'],[mean(ff_counts_rt,1)' mean(vr_counts_rt,1)'],'BarWidth',1);
-set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-legend({'Curl Field','Visual Rotation'},'FontSize',14);
-title('Random Target','FontSize',14);
-
-
-
-%% Plot magnitude of PD change for each cell type
-ymin = -45;
-ymax = 45;
-
-epoch1 = 1;
-epoch2 = 2;
-
-% % get the size of PD change based on file type
-% vr_classes = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr'),:),'UniformOutput',false));
-% ff_classes = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff'),:),'UniformOutput',false));
-%
-% all_vr_pds = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr'),:),'UniformOutput',false));
-% all_ff_pds = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff'),:),'UniformOutput',false));
-%
-% vr_pds = zeros(1,numClasses);
-% ff_pds = zeros(1,numClasses);
-% vr_pds_se = zeros(1,numClasses);
-% ff_pds_se = zeros(1,numClasses);
-% for j = 1:numClasses
-%     vr_pds(j) = mean(all_vr_pds(vr_classes==j)).*180/pi;
-%     vr_pds_se(j) = std(all_vr_pds(vr_classes==j))/sqrt(sum(vr_classes==j)).*180/pi;
-%
-%     ff_pds(j) = mean(all_ff_pds(ff_classes==j)).*180/pi;
-%     ff_pds_se(j) = std(all_ff_pds(ff_classes==j))/sqrt(sum(ff_classes==j)).*180/pi;
-% end
-%
-% figure;
-% hold all;
-% h = barwitherr([ff_pds_se' vr_pds_se'],[ff_pds' vr_pds'],'BarWidth',1);
-% set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-% ylabel('PD Change','FontSize',14);
-% legend({'Curl Field','Visual Rotation'},'FontSize',14);
-
-
-
-% Now make same plot but broken down by task
-vr_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-ff_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-all_vr_pds_co = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-all_ff_pds_co = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-
-vr_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-ff_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-all_vr_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-all_ff_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-
-vr_pds_co = zeros(1,numClasses);
-ff_pds_co = zeros(1,numClasses);
-vr_pds_se_co = zeros(1,numClasses);
-ff_pds_se_co = zeros(1,numClasses);
-
-vr_pds_rt = zeros(1,numClasses);
-ff_pds_rt = zeros(1,numClasses);
-vr_pds_se_rt = zeros(1,numClasses);
-ff_pds_se_rt = zeros(1,numClasses);
-for j = 1:numClasses
-    vr_pds_co(j) = mean(all_vr_pds_co(vr_classes_co==j)).*180/pi;
-    vr_pds_se_co(j) = std(all_vr_pds_co(vr_classes_co==j))/sqrt(sum(vr_classes_co==j)).*180/pi;
-    
-    ff_pds_co(j) = mean(all_ff_pds_co(ff_classes_co==j)).*180/pi;
-    ff_pds_se_co(j) = std(all_ff_pds_co(ff_classes_co==j))/sqrt(sum(ff_classes_co==j)).*180/pi;
-    
-    vr_pds_rt(j) = mean(all_vr_pds_rt(vr_classes_rt==j)).*180/pi;
-    vr_pds_se_rt(j) = std(all_vr_pds_rt(vr_classes_rt==j))/sqrt(sum(vr_classes_rt==j)).*180/pi;
-    
-    ff_pds_rt(j) = mean(all_ff_pds_rt(ff_classes_rt==j)).*180/pi;
-    ff_pds_se_rt(j) = std(all_ff_pds_rt(ff_classes_rt==j))/sqrt(sum(ff_classes_rt==j)).*180/pi;
+switch lower(doType)
+    case 'task'
+        % break down by file type
+        counts1 = zeros(sum(strcmpi(doFiles(:,4),'co')),numClasses);
+        counts2 = zeros(sum(strcmpi(doFiles(:,4),'rt')),numClasses);
+        for j = 1:numClasses % loop along the classes
+            counts1(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,4),'co'),:));
+            counts2(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,4),'rt'),:));
+        end
+        
+    case 'perturbation'
+        % break down by perturbation
+        counts1 = zeros(sum(strcmpi(doFiles(:,3),'ff')),numClasses);
+        counts2 = zeros(sum(strcmpi(doFiles(:,3),'vr')),numClasses);
+        for j = 1:numClasses % loop along the classes
+            counts1(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,4),'ff'),:));
+            counts2(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses(strcmpi(doFiles(:,4),'vr'),:));
+        end
+        
+    case 'none'
+        % just give all percentages
+        counts1 = zeros(size(doFiles),numClasses);
+        for j = 1:numClasses % loop along the classes
+            counts1(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses);
+        end
 end
 
-figure;
-subplot1(1,2,'Gap',[0,0],'YTickL','Margin');
-subplot1(1);
-hold all;
-h = barwitherr([ff_pds_se_co' vr_pds_se_co'],[ff_pds_co' vr_pds_co'],'BarWidth',1);
-set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-ylabel('PD Change','FontSize',14);
-legend({'Curl Field','Visual Rotation'},'FontSize',14);
-title('Center Out','FontSize',14);
-
-subplot1(2);
-hold all;
-h = barwitherr([ff_pds_se_rt' vr_pds_se_rt'],[ff_pds_rt' vr_pds_rt'],'BarWidth',1);
-set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-legend({'Curl Field','Visual Rotation'},'FontSize',14);
-title('Random Target','FontSize',14);
-
-
-%% Plot magnitude of PD change for each cell type
-ymin = -45;
-ymax = 45;
-
-epoch1 = 1;
-epoch2 = 3;
-
-% % get the size of PD change based on file type
-% vr_classes = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr'),:),'UniformOutput',false));
-% ff_classes = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff'),:),'UniformOutput',false));
-%
-% all_vr_pds = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr'),:),'UniformOutput',false));
-% all_ff_pds = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff'),:),'UniformOutput',false));
-%
-% vr_pds = zeros(1,numClasses);
-% ff_pds = zeros(1,numClasses);
-% vr_pds_se = zeros(1,numClasses);
-% ff_pds_se = zeros(1,numClasses);
-% for j = 1:numClasses
-%     vr_pds(j) = mean(all_vr_pds(vr_classes==j)).*180/pi;
-%     vr_pds_se(j) = std(all_vr_pds(vr_classes==j))/sum(vr_classes==j).*180/pi;
-%
-%     ff_pds(j) = mean(all_ff_pds(ff_classes==j)).*180/pi;
-%     ff_pds_se(j) = std(all_ff_pds(ff_classes==j))/sum(ff_classes==j).*180/pi;
-% end
-%
-% figure;
-% hold all;
-% h = barwitherr([ff_pds_se' vr_pds_se'],[ff_pds' vr_pds'],'BarWidth',1);
-% set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-% ylabel('PD Change','FontSize',14);
-% legend({'Curl Field','Visual Rotation'},'FontSize',14);
-
-% Now make same plot but broken down by task
-vr_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-ff_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-all_vr_pds_co = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-all_ff_pds_co = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-
-vr_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-ff_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-all_vr_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-all_ff_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-
-vr_pds_co = zeros(1,numClasses);
-ff_pds_co = zeros(1,numClasses);
-vr_pds_se_co = zeros(1,numClasses);
-ff_pds_se_co = zeros(1,numClasses);
-
-vr_pds_rt = zeros(1,numClasses);
-ff_pds_rt = zeros(1,numClasses);
-vr_pds_se_rt = zeros(1,numClasses);
-ff_pds_se_rt = zeros(1,numClasses);
-for j = 1:numClasses
-    vr_pds_co(j) = mean(all_vr_pds_co(vr_classes_co==j)).*180/pi;
-    vr_pds_se_co(j) = std(all_vr_pds_co(vr_classes_co==j))/sqrt(sum(vr_classes_co==j)).*180/pi;
-    
-    ff_pds_co(j) = mean(all_ff_pds_co(ff_classes_co==j)).*180/pi;
-    ff_pds_se_co(j) = std(all_ff_pds_co(ff_classes_co==j))/sqrt(sum(ff_classes_co==j)).*180/pi;
-    
-    vr_pds_rt(j) = mean(all_vr_pds_rt(vr_classes_rt==j)).*180/pi;
-    vr_pds_se_rt(j) = std(all_vr_pds_rt(vr_classes_rt==j))/sqrt(sum(vr_classes_rt==j)).*180/pi;
-    
-    ff_pds_rt(j) = mean(all_ff_pds_rt(ff_classes_rt==j)).*180/pi;
-    ff_pds_se_rt(j) = std(all_ff_pds_rt(ff_classes_rt==j))/sqrt(sum(ff_classes_rt==j)).*180/pi;
 end
 
-figure;
-subplot1(1,2,'Gap',[0,0],'YTickL','Margin');
-subplot1(1);
-hold all;
-h = barwitherr([ff_pds_se_co' vr_pds_se_co'],[ff_pds_co' vr_pds_co'],'BarWidth',1);
-set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-ylabel('PD Change','FontSize',14);
-legend({'Curl Field','Visual Rotation'},'FontSize',14);
-title('Center Out','FontSize',14);
+function cellClasses = assignOthers(cellClasses,cellPDs)
+% compute an index for "other" type cells to assign them to memory cells or
+% adapting cells
 
-subplot1(2);
-hold all;
-h = barwitherr([ff_pds_se_rt' vr_pds_se_rt'],[ff_pds_rt' vr_pds_rt'],'BarWidth',1);
-set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-title('Random Target','FontSize',14);
+for iFile = 1:length(cellClasses)
+    pds = cellPDs{iFile};
+    c = cellClasses{iFile};
+    
+    pds_bl = pds{1};
+    pds_ad = pds{2};
+    pds_wo = pds{3};
+    
+    % find "other" type cells
+    idx = find(c==5);
+    
+    for i = 1:length(idx)
+        % calculate the memory cell index
+        mem_ind = angleDiff( pds_wo(idx(i),1),pds_bl(idx(i),1),true,false ) / min( angleDiff( pds_bl(idx(i),1), pds_ad(idx(i),1),true,false ) , angleDiff(pds_wo(idx(i),1),pds_ad(idx(i),1),true,false) );
+        if mem_ind < 1
+            c(idx(i)) = 2;
+        elseif mem_ind > 1
+            c(idx(i)) = 3;
+        else
+            disp('Hey! This one is exactly one.');
+        end
+    end
+    
+    cellClasses{iFile} = c;
+end
 
-
-
-%% Compare % of "other" cells in each task and perturbation along with size of change
-%
-% for j = 1:numClasses
-%     epoch1 = 1;
-%     epoch2 = 3;
-%     vr_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-%     ff_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-%     all_vr_pds_co = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-%     all_ff_pds_co = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-%     
-%     vr_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     ff_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     all_vr_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     all_ff_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     
-%     % get indices of "other" class
-%     vr_idx_co = vr_classes_co==j;
-%     ff_idx_co = ff_classes_co==j;
-%     vr_idx_rt = vr_classes_rt==j;
-%     ff_idx_rt = ff_classes_rt==j;
-%     
-%     % get percent of cells
-%     vr_counts_co = 100*sum(vr_idx_co)/length(vr_idx_co);
-%     ff_counts_co = 100*sum(ff_idx_co)/length(ff_idx_co);
-%     vr_counts_rt = 100*sum(vr_idx_rt)/length(vr_idx_rt);
-%     ff_counts_rt = 100*sum(ff_idx_rt)/length(ff_idx_rt);
-%     
-%     % get PD change
-%     vr_pds_co = mean(all_vr_pds_co(vr_idx_co));
-%     ff_pds_co = mean(all_ff_pds_co(ff_idx_co));
-%     vr_pds_rt = mean(all_vr_pds_rt(vr_idx_rt));
-%     ff_pds_rt = mean(all_ff_pds_rt(ff_idx_rt));
-%     
-%     vr_pds_se_co = std(all_vr_pds_co(vr_idx_co))/sqrt(sum(vr_idx_co));
-%     ff_pds_se_co = std(all_ff_pds_co(ff_idx_co))/sqrt(sum(ff_idx_co));
-%     vr_pds_se_rt = std(all_vr_pds_rt(vr_idx_rt))/sqrt(sum(vr_idx_rt));
-%     ff_pds_se_rt = std(all_ff_pds_rt(ff_idx_rt))/sqrt(sum(ff_idx_rt));
-%     
-%     figure;
-%     subplot1(1,3,'Gap',[0.1,0],'YTickL','All');
-%     subplot1(1);
-%     hold all;
-%     bar([ff_counts_co vr_counts_co; ff_counts_rt vr_counts_rt],'BarWidth',1);
-%     set(gca,'YLim',[0 50],'XTick',1:2,'XTickLabel',{'Center Out','Random Target'},'FontSize',14);
-%     legend({'Curl Field','Visual Rotation'},'FontSize',14);
-%     ylabel('Percent of Cells','FontSize',14);
-%     title(['Classified as ' classLabels{j}],'FontSize',14);
-%     
-%     subplot1(2);
-%     hold all;
-%     h = barwitherr([ff_pds_se_co vr_pds_se_co; ff_pds_se_rt vr_pds_se_rt].*(180/pi),[ff_pds_co vr_pds_co; ff_pds_rt vr_pds_rt].*(180/pi),'BarWidth',1);
-%     set(gca,'YLim',[-45 45],'XTick',1:2,'XTickLabel',{'Center Out','Random Target'},'FontSize',14);
-%     ylabel('Change in PD (deg)','FontSize',14);
-%     title('Washout - Baseline','FontSize',14);
-%     
-%     
-%     
-%     % get PD change
-%     epoch1 = 2;
-%     epoch2 = 3;
-%     vr_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     ff_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     all_vr_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     all_ff_pds_rt = cell2mat(cellfun(@(x) angleDiff(x{epoch1}(:,1),x{epoch2}(:,1),true,true),cellPDs(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%     
-%     vr_pds_co = mean(all_vr_pds_co(vr_idx_co));
-%     ff_pds_co = mean(all_ff_pds_co(ff_idx_co));
-%     vr_pds_rt = mean(all_vr_pds_rt(vr_idx_rt));
-%     ff_pds_rt = mean(all_ff_pds_rt(ff_idx_rt));
-%     
-%     vr_pds_se_co = std(all_vr_pds_co(vr_idx_co))/sqrt(sum(vr_idx_co));
-%     ff_pds_se_co = std(all_ff_pds_co(ff_idx_co))/sqrt(sum(ff_idx_co));
-%     vr_pds_se_rt = std(all_vr_pds_rt(vr_idx_rt))/sqrt(sum(vr_idx_rt));
-%     ff_pds_se_rt = std(all_ff_pds_rt(ff_idx_rt))/sqrt(sum(ff_idx_rt));
-%     
-%     
-%     subplot1(3);
-%     hold all;
-%     h = barwitherr([ff_pds_se_co vr_pds_se_co; ff_pds_se_rt vr_pds_se_rt].*(180/pi),[ff_pds_co vr_pds_co; ff_pds_rt vr_pds_rt].*(180/pi),'BarWidth',1);
-%     set(gca,'YLim',[-45 45],'XTick',1:2,'XTickLabel',{'Center Out','Random Target'},'FontSize',14);
-%     ylabel('Change in PD (deg)','FontSize',14);
-%     title('Washout - Adaptation','FontSize',14);
-%     
-% end
+end
 
 
-%% Plot total percentage (not average across days)
-%
-% numClasses = 5;
-% ymin = 0;
-% ymax = 100;
-% classLabels = {'Non-Adapt','Adapt','Mem I','Mem II','Other'};
-%
-% % plot the percent of each cell type for the two perturbations
-% vr_classes = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr'),:),'UniformOutput',false));
-% ff_classes = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff'),:),'UniformOutput',false));
-%
-% vr_counts = zeros(1,numClasses);
-% ff_counts = zeros(1,numClasses);
-% for j = 1:numClasses % loop along the classes
-%     vr_counts(j) = 100*sum(vr_classes==j)/length(vr_classes);
-%     ff_counts(j) = 100*sum(ff_classes==j)/length(ff_classes);
-% end
-%
-% figure;
-% hold all;
-% h = bar([ff_counts' vr_counts'],'BarWidth',1);
-% set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-% ylabel('Percent','FontSize',14);
-% legend({'Curl Field','Visual Rotation'},'FontSize',14);
-%
-%
-%
-%
-% % plot the percent of each cell type for the two perturbations
-% vr_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-% ff_classes_co = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'co'),:),'UniformOutput',false));
-% vr_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'vr') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-% ff_classes_rt = cell2mat(cellfun(@(x) x,cellClasses(strcmpi(doFiles(:,3),'ff') & strcmpi(doFiles(:,4),'rt'),:),'UniformOutput',false));
-%
-% vr_counts_co = zeros(1,numClasses);
-% ff_counts_co = zeros(1,numClasses);
-% vr_counts_rt = zeros(1,numClasses);
-% ff_counts_rt = zeros(1,numClasses);
-% for j = 1:numClasses % loop along the classes
-%     vr_counts_co(j) = 100*sum(vr_classes_co==j)/length(vr_classes_co);
-%     ff_counts_co(j) = 100*sum(ff_classes_co==j)/length(ff_classes_co);
-%     vr_counts_rt(j) = 100*sum(vr_classes_rt==j)/length(vr_classes_rt);
-%     ff_counts_rt(j) = 100*sum(ff_classes_rt==j)/length(ff_classes_rt);
-% end
-%
-% figure;
-% subplot1(1,2,'Gap',[0,0],'YTickL','Margin');
-% subplot1(1);
-% hold all;
-% h = bar([ff_counts_co' vr_counts_co'],'BarWidth',1);
-% set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);
-% ylabel('Percent','FontSize',14);
-% legend({'Curl Field','Visual Rotation'},'FontSize',14);
-%
-% subplot1(2);
-% hold all;
-% h = bar([ff_counts_rt' vr_counts_rt'],'BarWidth',1);
-% set(gca,'YLim',[ymin ymax],'XTick',1:numClasses,'XTickLabel',classLabels,'FontSize',14);

@@ -8,7 +8,7 @@ rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
 saveData = true;
 rewriteFiles = false;
 
-classifierBlocks = [1 4 5];
+classifierBlocks = [1 4 6];
 
 monkey = 'Mihili';
 useArray = 'M1';
@@ -213,3 +213,26 @@ title('Same Perturbation','FontSize',14);
 legend({'Curl Field','Visual Rotation'},'FontSize',14);
 axis('square');
 
+
+% now, plot number of adapting cells by perturbation for target vs movement
+figure;
+hold all;
+movetemp = moveClasses == 2 | moveClasses == 3 | moveClasses == 5;
+targtemp = targClasses == 2 | targClasses == 3 | targClasses == 5;
+bar([100*sum(movetemp(inds_ff))/sum(inds_ff), 100*sum(movetemp(inds_vr))/sum(inds_vr); 100*sum(targtemp(inds_ff))/sum(inds_ff), 100*sum(targtemp(inds_vr))/sum(inds_vr); ],'BarWidth',1);
+axis('tight');
+set(gca,'YLim',[0 100],'XTick',[1 2],'XTickLabel',{'Move','Targ'},'FontSize',14);
+ylabel('Percent','FontSize',14);
+title('Percent of adapting cells','FontSize',14);
+legend({'Curl Field','Visual Rotation'},'FontSize',14);
+
+figure;
+hold all;
+movetemp = moveClasses == 2 | moveClasses == 3 | moveClasses == 5 | targClasses == 2 | targClasses == 3 | targClasses == 5;
+targtemp = ~movetemp;
+bar([100*sum(movetemp(inds_ff))/sum(inds_ff), 100*sum(movetemp(inds_vr))/sum(inds_vr); 100*sum(targtemp(inds_ff))/sum(inds_ff), 100*sum(targtemp(inds_vr))/sum(inds_vr); ],'BarWidth',1);
+axis('tight');
+set(gca,'YLim',[0 100],'XTick',[1 2],'XTickLabel',{'Move','Targ'},'FontSize',14);
+ylabel('Percent','FontSize',14);
+title('Percent of adapting cells','FontSize',14);
+legend({'Curl Field','Visual Rotation'},'FontSize',14);

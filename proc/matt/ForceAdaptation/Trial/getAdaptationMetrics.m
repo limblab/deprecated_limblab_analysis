@@ -1,4 +1,4 @@
-function adaptation = getAdaptationMetrics(expParamFile,outDir)
+function adaptation = getAdaptationMetrics(expParamFile,outDir,paramSetName)
 % GETADAPTATIONMETRICS  Gets metrics to show adaptation progression
 %
 %   Current returns mean curvature for each movement and a sliding window
@@ -97,10 +97,11 @@ for iEpoch = 1:length(epochs)
     vel = svel(filtWidth/2:end-filtWidth/2,:);
     acc = sacc(filtWidth/2:end-filtWidth/2,:);
     
-    load(getFile,'movement_table');
-    mt = movement_table;
-%     data = load(getFile);
-%     mt = filterMovementTable(data,'movement',false,[]);
+%     load(getFile,'movement_table');
+%     mt = movement_table;
+
+    data = load(getFile);
+    [mt,centers] = filterMovementTable(data,paramSetName,false,[],false);
     clear movement_table;
     holdTime = params.hold_time;
     
@@ -110,7 +111,7 @@ for iEpoch = 1:length(epochs)
     for iMove = 1:size(mt,1)
         % movement table: [ target angle, on_time, go cue, move_time, peak_time, end_time ]
         % has the start of movement window, end of movement window
-        moveWins(iMove,:) = [mt(iMove,4), mt(iMove,6)];
+        moveWins(iMove,:) = [mt(iMove,4), mt(iMove,6)-holdTime];
     end
     
     blockTimes = 1:stepSize:size(mt,1)-behavWin;
@@ -149,6 +150,11 @@ for iEpoch = 1:length(epochs)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Now get peak speed, etc?
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Get movement information
     if any(ismember(useMetrics,'curvature'))
         % find times when velocity goes above that threshold
@@ -156,7 +162,7 @@ for iEpoch = 1:length(epochs)
         allCurvMeans = zeros(size(mt,1),1);
         for iMove = 1:size(mt,1)
             % get curvature in that window
-            idx = find(t >= moveWins(1) & t < moveWins(2));
+            idx = find(t >= moveWins(iMove,1) & t < moveWins(iMove,2));
             
             tempAcc = acc(idx,:);
             tempVel = vel(idx,:);
@@ -167,7 +173,7 @@ for iEpoch = 1:length(epochs)
             tempAcc(badInds,:) = [];
             
             tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
-            allCurvMeans(iMove) = mean(tempCurv);
+            allCurvMeans(iMove) = rms(tempCurv);
         end
         
         % now group curvatures in blocks to track adaptation
@@ -188,7 +194,7 @@ for iEpoch = 1:length(epochs)
                 tempAcc(badInds,:) = [];
                 
                 tempCurv = ( tempVel(:,1).*tempAcc(:,2) - tempVel(:,2).*tempAcc(:,1) )./( (tempVel(:,1).^2 + tempVel(:,2).^2).^(3/2) );
-                tempMean(iMove) = mean(tempCurv);
+                tempMean(iMove) = rms(tempCurv);
             end
             
             curvMeans(tMove,:) = [mean(tempMean) std(tempMean)];
@@ -248,7 +254,7 @@ for iEpoch = 1:length(epochs)
         disp('Getting time to target data...')
         % get time to target from movement table
         % end time minus go cue
-        ttts = mt(:,6)-mt(:,3);
+        ttts = mt(:,6)-mt(:,3)-holdTime;
         
         % now group error in blocks to track adaptation
         tttMeans = zeros(length(blockTimes),2);

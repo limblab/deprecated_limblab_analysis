@@ -123,7 +123,7 @@ for iFile = 1:length(adaptation)
     end
     plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
 end
-xlabel('Reaction Time (ms)','FontSize',fontSize);
+xlabel('Onset to Peak (ms)','FontSize',fontSize);
 axis('tight');
 V = axis;
 axis([V(1) V(2) 0 V(4)]);
@@ -146,7 +146,7 @@ for iFile = 1:length(adaptation)
     end
     plot(X,N,[plotColors{iFile} '-'],'LineWidth',3);
 end
-xlabel('Reaction Time (ms)','FontSize',fontSize);
+xlabel('Presentation to Peak (ms)','FontSize',fontSize);
 axis('tight');
 V = axis;
 axis([V(1) V(2) 0 V(4)]);

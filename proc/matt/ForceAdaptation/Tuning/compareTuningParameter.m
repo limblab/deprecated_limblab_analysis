@@ -5,9 +5,9 @@ function out = compareTuningParameter(doType,vals,sg,compMethod)
 %   sg is spike guide
 %   compMethod says how to do it... can be a cell with params for diff or just a string saying to do CI overlap
 %       {'diff', confLevel, numIters}: bootstrap the difference and see if zero overlaps
-%           
+%
 %       'overlap: see if CI of each PD estimate overlaps
-% 
+%
 % With diff, pds should be matrices of all of the bootstrapped pd values
 % With overlap, pds should just be matrix of PD+-CI for each neuron
 %
@@ -27,19 +27,45 @@ if ~iscell(vals) || length(vals) < 2
 end
 
 % expect a cell with parameters if doing bootstrapping of differences
-if iscell(compMethod)
-    confLevel = compMethod{2};
-    numIters = compMethod{3};
-    compMethod = compMethod{1};
-else
-    confLevel = 0.95;
-    numIters = 1000;
+switch lower(compMethod{1})
+    case 'diff'
+        confLevel = compMethod{2};
+        numIters = compMethod{3};
+        compMethod = compMethod{1};
+    case 'overlap'
+        confLevel = compMethod{2};
+        compMethod = compMethod{1};
+    case 'ttest'
+        confLevel = compMethod{2};
+        compMethod = compMethod{1};
 end
 
 % for each unit, compare pds and cis across three epochs
 switch lower(compMethod)
-    case 'diff'
+    case 'ttest'
+        % do a t test on two different populations of samples
+        %   mostly for GLM use
         
+        % get pd samples for each unit
+        for unit = 1:size(vals{1},1)
+            diffMat = zeros(length(vals));
+            for i = 1:length(vals)
+                val1 = vals{i};
+                samp1 = val1(unit,:);
+                
+                for j = i+1:length(vals)
+                    val2 = vals{j};
+                    samp2 = val2(unit,:);
+                    
+                    % now test if samples are from same population
+                    diffMat(i,j) = ttest2(samp1,samp2,'alpha',1-confLevel,'tail','both','vartype','unequal');
+                end
+            end
+            out.(['elec' num2str(sg(unit,1))]).(['unit' num2str(sg(unit,2))]) = diffMat;
+        end
+        
+    case 'diff'
+        % compare difference of bootstrapped PDs to see if 0 is in CI
         for unit = 1:size(vals{1},1)
             diffMat = zeros(length(vals));
             for i = 1:length(vals)
@@ -50,7 +76,7 @@ switch lower(compMethod)
                     
                     % find bootstrapped difference
                     if strcmpi(doType,'pd') % difference of angular value is a bit trickier
-                        diffval = angleDiff(val2(unit,:),val1(unit,:),true,true);
+                        diffval = angleDiff(val1(unit,:),val2(unit,:),true,true);
                     else
                         diffval = val2(unit,:) - val1(unit,:);
                     end
@@ -72,9 +98,9 @@ switch lower(compMethod)
             out.(['elec' num2str(sg(unit,1))]).(['unit' num2str(sg(unit,2))]) = diffMat;
         end
         
-    %%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%
     case 'overlap'
-        
+        % see if CIs overlap... not ideal
         for unit = 1:size(vals{1},1)
             diffMat = zeros(length(vals));
             for i = 1:length(vals)

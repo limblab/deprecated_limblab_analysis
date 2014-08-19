@@ -1,4 +1,4 @@
-function tuning = fitTuningCurves(expParamFile, outDir, paramSetName)
+function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays)
 % FITTUNINGCURVES  Wrapper function to calculate tuning curves
 %
 %   This function will calculate tuning using a variety of methods for
@@ -38,6 +38,10 @@ function tuning = fitTuningCurves(expParamFile, outDir, paramSetName)
 %   - This function will automatically write the struct to a file, too
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
+
+if nargin < 4
+    arrays = [];
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
@@ -84,7 +88,9 @@ for iEpoch = 1:length(epochs)
         tuning = struct();
     end
     
-    arrays = data.meta.arrays;
+    if isempty(arrays)
+        arrays = data.meta.arrays;
+    end
     
     for iArray = 1:length(arrays)
         useArray = arrays{iArray};
