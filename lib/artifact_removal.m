@@ -61,9 +61,12 @@ if ~isempty(timestamps)
         bins_to_reject = find(spike_count_in_bin>=rejection_num_chans);
 
         actual_spikes = find(ismember(in_bin,bins_to_keep));
+        actual_spikes = reshape(actual_spikes,[],1);
         artifacts = unique([artifacts; find(ismember(in_bin,bins_to_reject))]);
-
-        actual_spikes = unique([actual_spikes intersect(actual_spikes,1:length(timestamps))]);
+        
+        new_spikes = intersect(actual_spikes,1:length(timestamps));
+        new_spikes = reshape(new_spikes,[],1);
+        actual_spikes = unique([actual_spikes;new_spikes]);
         actual_spikes = actual_spikes(~ismember(actual_spikes,artifacts));
     end
     disp(['Removed ' num2str(length(artifacts)) ' artifacts, found ' num2str(length(actual_spikes))...
