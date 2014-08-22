@@ -1,15 +1,12 @@
 function convertBatch2BDF2Binned
 
-%% Globals
-    
-    dataPath = 'Z:\';
     
 %% Get Cerebus Data Files
 
 %     CB_PathName = uigetdir( [dataPath 'CerebusData\'],...
 %                                            'Select Cerebus Data Folder' );
 
-    [CB_FileNames, CB_PathName] = uigetfile( { [dataPath '\*.nev']},...
+    [CB_FileNames, CB_PathName] = uigetfile( { '*.nev'},...
                                                'Open Cerebus Data File', 'MultiSelect','on' );
                                                                                    
     if isequal(CB_PathName,0)
@@ -20,13 +17,13 @@ function convertBatch2BDF2Binned
 
 %% Get Paths
 
-        BDFsavePath = uigetdir([CB_PathName '\..\..'],'Select a Destination Directory for BDF Files');
+        BDFsavePath = uigetdir([CB_PathName filesep '..' filesep '..'],'Select a Destination Directory for BDF Files');
         if ~BDFsavePath
             disp('User Action Cancelled');
             return;
         end
     
-        BINsavePath = uigetdir([CB_PathName '\..\..'],'Select a Destination Directory for Binned Files');
+        BINsavePath = uigetdir([CB_PathName filesep '..' filesep '..'],'Select a Destination Directory for Binned Files');
         if ~BINsavePath
             disp('User Action Cancelled');
             return;

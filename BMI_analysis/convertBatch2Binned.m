@@ -3,10 +3,8 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         %varargin = BDF_FileNames, dataPath, binsize, starttime, stoptime, hpfreq,
         %lpfreq, MinFiringRate
         
-    dataPath = 'Z:\';
-        
     if nargin == 0
-        [BDF_FileNames, PathName] = uigetfile( { [dataPath '\*.mat']},...
+        [BDF_FileNames, PathName] = uigetfile( { '*.mat'},...
                                                 'Open BDF Data File(s)', 'MultiSelect','on' );
         if ~PathName
             disp('User Action Cancelled');
@@ -16,7 +14,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
             dataPath = PathName;
         end
         %Save directory:
-        savePath = uigetdir([dataPath '\..\..'],'Select a Destination Directory for Binned Files');
+        savePath = uigetdir([dataPath filesep '..' filesep '..'],'Select a Destination Directory for Binned Files');
         if ~savePath
             disp('User Action Cancelled');
             Bin_FileNames = {};
@@ -29,7 +27,7 @@ function Bin_FileNames = convertBatch2Binned(varargin)
         dataPath = varargin{2};
         BDF2BinArgs = convertBDF2binnedGUI;
         %Save directory:
-        savePath = uigetdir([dataPath '\..\..'],'Select a Destination Directory for Binned Files');
+        savePath = uigetdir([dataPath filesep '..' filesep '..'],'Select a Destination Directory for Binned Files');
         if ~savePath
             disp('User Action Cancelled');
             Bin_FileNames = {};
@@ -57,19 +55,19 @@ function Bin_FileNames = convertBatch2Binned(varargin)
     
     
     
-    for i=1:size(BDF_FileNames,2)
+    for i=1:numFiles
         
-        BDF = LoadDataStruct([dataPath '\' BDF_FileNames{:,i}]);
+        BDF = LoadDataStruct([dataPath filesep BDF_FileNames{:,i}]);
         
         if BDF2BinArgs.ArtRemEnable
             disp('Looking for Artifacts...');
             BDF = artifact_removal(BDF,BDF2BinArgs.NumChan,BDF2BinArgs.TimeWind, 1);
         end
-        disp(sprintf('Binning %s structure...', BDF_FileNames{:,i} ));
+        fprintf('Binning %s structure...', BDF_FileNames{:,i});
 %         binnedData = convertBDF2binned([dataPath '\' BDF_FileNames{:,i}],BDF2BinArgs);
         binnedData = convertBDF2binned(BDF,BDF2BinArgs);
-        disp(sprintf('Saving binned data file %s...',Bin_FileNames{:,i}));
-        save([savePath '\' Bin_FileNames{:,i} ], 'binnedData');
+        fprintf('Saving binned data file %s...',Bin_FileNames{:,i});
+        save([savePath filesep Bin_FileNames{:,i} ], 'binnedData');
         disp('Done.');
     end
     

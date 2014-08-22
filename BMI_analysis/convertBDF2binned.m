@@ -236,9 +236,10 @@ acclabels(3,1:8)= 'acc_magn';
 %% Bin Spike Data
 
 if ~isfield(datastruct, 'units')
-    fprintf('No spike data is found in structure " %s " ',datastructname);
+    warning('No spikes in data file!');
     spikeratedata = [];
     neuronIDs = [];
+    spikeguide = [];
 else
 
     %decide which signals to use: minimum of "minFiringRate spikes/sec on average:

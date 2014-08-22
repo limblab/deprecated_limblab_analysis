@@ -2,24 +2,28 @@ function [FileName,FilePath] = saveDataStruct(struct, DataPath, FileName, type)
     
     switch type
         case 'bdf'
-            FilePath = [DataPath '\BDFStructs\'];
+            FilePath = [DataPath filesep 'BDFStructs' filesep];
             out_struct = struct;
         case 'binned'
-            FilePath = [DataPath '\BinnedData\'];
+            FilePath = [DataPath filesep 'BinnedData' filesep];
             binnedData = struct;
         case 'filter'
-            FilePath = [DataPath '\SavedFilters\'];
+            FilePath = [DataPath filesep 'SavedFilters' filesep];
             filter = struct;
         case 'RTpred'
-            FilePath = [DataPath '\RTPreds\'];
+            FilePath = [DataPath filesep 'RTPreds' filesep];
             RTPredData = struct;
         case 'OLpred'
-            FilePath = [DataPath '\OLPreds\'];
+            FilePath = [DataPath filesep 'OLPreds' filesep];
             OLPredData = struct;
         otherwise
             disp('Unknown file type');
     end
     clear struct;
+    
+    if ~isdir(FilePath)
+        FilePath = DataPath;
+    end
     
     %FileName = fullfile(DataPath, FileName);
      [FileName,FilePath] = uiputfile( fullfile(FilePath,FileName), 'Save file');

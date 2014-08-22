@@ -1,9 +1,7 @@
 function BDF_FileNames = convertBatch2BDF(varargin)
-
-    dataPath = 'Z:\';
     
     if nargin == 0
-        [CB_FileNames, CB_PathName] = uigetfile( { [dataPath '\CerebusData\*.nev']},...
+        [CB_FileNames, CB_PathName] = uigetfile( {'*.nev'},...
                                                'Open Cerebus Data File(s)', 'MultiSelect','on' );
         if ~CB_PathName
             disp('User Action Cancelled');
@@ -12,7 +10,7 @@ function BDF_FileNames = convertBatch2BDF(varargin)
         end
         
         %Save directory:
-        savePath = uigetdir([CB_PathName '\..\..'],'Select a Destination Directory for BDF Files');
+        savePath = uigetdir([CB_PathName filesep '..' filesep '..'],'Select a Destination Directory for BDF Files');
         if ~savePath
             disp('User Action Cancelled');
             BDF_FileNames = {};
@@ -46,9 +44,9 @@ function BDF_FileNames = convertBatch2BDF(varargin)
 
     for i=1:numFiles
         disp(sprintf('Converting %s to BDF structure...', CB_FileNames{:,i} ));
-        out_struct = get_cerebus_data([CB_PathName CB_FileNames{:,i}],'verbose');
+        out_struct = get_nev_mat_data([CB_PathName CB_FileNames{:,i}],'verbose');
         disp(sprintf('Saving BDF structure %s...',BDF_FileNames{:,i}));
-        save([savePath '\' BDF_FileNames{:,i}], 'out_struct');
+        save([savePath filesep BDF_FileNames{:,i}], 'out_struct');
         disp('Done.');
     end
          
