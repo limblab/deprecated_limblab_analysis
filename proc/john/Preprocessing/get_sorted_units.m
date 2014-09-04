@@ -5,7 +5,7 @@ function [trains, channels] = get_sorted_units(bdf)
 % Input: a bdf struct
 % Output:
 %   'trains': [n_sorted_units x n_spikes], [iUnit timestamps]
-%   'n_sorted_units': Number of sorted units contained within 'bdf'
+%   'channels': [n_sorted_units x 2], [iChan iUnit]
 %
 
 min_spikes = 5000;
@@ -36,4 +36,12 @@ for n_unit = 1:n_sorted
     iCell = iUnit.id(2);
     channels(n_unit,:) = [iChan iCell];
     trains{n_unit} = iUnit.ts;  
+end
+
+% Plot n_unit vs. channel
+if 0
+    figure
+    plot(channels(:,1),channels(:,2),'o')
+    ylim([0 max(channels(:,2))+1])
+    xlim([0 100])
 end
