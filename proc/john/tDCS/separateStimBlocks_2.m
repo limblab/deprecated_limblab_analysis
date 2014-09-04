@@ -34,7 +34,6 @@ prevPeriodEnd = 0;
 %% Separate event times
 for ii = 1:2:length(stimCycle)
     
-    
     % Find the indices of times within 'eventTimes' falling within current block
     botEnd = find(eventTimes/60 >= stimCycle(ii),1,'first');
     topEnd = find(stimCycle(ii+1) >= eventTimes/60,1,'last');

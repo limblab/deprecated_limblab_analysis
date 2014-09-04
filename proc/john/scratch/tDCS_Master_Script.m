@@ -41,17 +41,16 @@ for n_neuron = 7;
 
     end
 
-
     plotTuningCurve(movFRs,movStdErs,dirDegrees)
 
 
 
 
-    errorBars = spontFRs_stdEr*ones(size(n_blocks));
-    figure
-    errorbar([45 135 270],spontFRs,errorBars,'-')
-    yl = ylim;ymax=yl(2);
-    ylim([0 ymax])
+%     errorBars = spontFRs_stdEr*ones(size(n_blocks));
+%     figure
+%     errorbar([45 135 270],spontFRs,errorBars,'-')
+%     yl = ylim;ymax=yl(2);
+%     ylim([0 ymax])
 
 
     

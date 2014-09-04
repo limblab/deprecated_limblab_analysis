@@ -4,13 +4,12 @@ function [trains, channels] = get_sorted_units(bdf)
 %
 % Input: a bdf struct
 % Output:
-%   'trains': [n_sorted_units x n_spikes], [iUnit timestamps]
+%   'trains':   [n_sorted_units x n_spikes], [iUnit timestamps]
 %   'channels': [n_sorted_units x 2], [iChan iUnit]
 %
 
 min_spikes = 5000;
 n_units  = length(bdf.units);
-
 
 neur_ind = [];
 
