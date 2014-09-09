@@ -209,8 +209,10 @@ end, clear n
 
 %%  9.  assign parameters.
 Use_Thresh=0; lambda=6; 
-PolynomialOrder=3; numlags=10; numsides=1; folds=10; smoothfeats=0; featShift=0;
-nfeat=floor(0.9*size(x,2));
+PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
+smoothfeats=0; featShift=30;
+nfeat=floor(1*size(x,2));                       %#ok<NASGU>
+nfeat=40;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat>(size(x,1)*size(x,2))
@@ -230,7 +232,7 @@ clear bestc bestf
 % in 2D with the number of features in a fast parameter exploration.
 disp('evaluating feature matrix using selected ECoG channels')
 [vaf,ytnew,y_pred,bestc,bestf,featind,H,P]=predonlyxy_ECoG(x,FPSTOUSE,sig, ...
-    PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<*NASGU,*ASGLU>
+    PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<NASGU,*NASGU,*ASGLU>
 fprintf(1,'file %s\n',FileName)
 fprintf(1,'decoding %s\n',SIGNALTOUSE)
 fprintf(1,'numlags=%d\n',numlags)
@@ -386,7 +388,6 @@ end
 %%
 % get parameter file to overwrite
 % write out new parameter file; tag filename with today's date
-[ParamFileName,ParamPathName,~]=uigetfile('E:\ECoG_Data\*.prm','Select parameter file to update.');
 if ~ischar(ParamPathName(1)) && ParamPathName==0
     disp('cancelled.')
     return
