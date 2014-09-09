@@ -102,7 +102,8 @@ figure(badChanF)
 
 %% Use signalRangeBadLogical to eliminate channels from FPSTOUSE.
 % If you don't agree with the auto-estimation, then change 
-% signalRangeBadLogical to be something that you think is better. 
+% signalRangeBadLogical to be something that you think is better.
+% this code also resets the flag FPSTOUSE_been_reset
 FPSTOUSE=FPIND;
 FPSTOUSE(signalRangeBadLogical)=[];
 fp=(signal(:,FPIND)').* ...
@@ -156,12 +157,28 @@ else
 end
 smForce=smooth(sig(:,2),51);
 plot(sig(:,1),smForce,'g','LineWidth',1.5)
+% to add: targets from the run, so we can see which ones were hit
+% successfully and which were not.  Also, tags that show eventCodes?  Was
+% going to be useful for EEGLAB but maybe we don't care if we're not going
+% to use EEGLAB.
 %%  5b(i).  optional add-on to 5b, to actually use the smoothed force
 sig=[fptimes', smForce];
 %%  6.  new school: pick channels to include/exclude based on cap map
 % FPSTOUSE=1:64; % just in case it comes in handy
-FPuseList=selectEEGelectrodes2(parameters.ChannelNames.Value(FPIND),parameters.ChannelNames.Value(setdiff(FPIND,FPSTOUSE)));
+elNames=parameters.ChannelNames.Value(FPIND); % change FPIND to FPSTOUSE, to keep selections.
+elNames(signalRangeBadLogical)= ...
+    regexp(sprintf('%s - bad signal,', ...
+    elNames{signalRangeBadLogical}),'[A-Z].*?signal(?=,)','match');
+% since adding 'bad signal' to the pre-selected bad channels, that string
+% will be included in FPuseList IF one of the pre-selected bad channels
+% ends up getting selected.  Then, that channel won't be included in
+% FPSTOUSE anyway, since it won't match anything in
+% parameters.ChannelNames.Value
+if ~exist('FPSREMOVED','var'), FPSREMOVED=false(size(FPIND)); end
+FPuseList=selectEEGelectrodes4(elNames,elNames(signalRangeBadLogical | FPSREMOVED));
 FPSTOUSE=find(ismember(parameters.ChannelNames.Value,FPuseList));
+% channels that were selected out by hand, using the GUI
+FPSREMOVED=(~ismember(FPIND,FPSTOUSE) & ~signalRangeBadLogical);
 %%  7.  set parameters, and build the feature matrix.
 wsz=256;
 samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
