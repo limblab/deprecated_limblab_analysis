@@ -24,7 +24,7 @@ function varargout = selectEEGelectrodes4(varargin)
 
 % Edit the above text to modify the response to help selectEEGelectrodes4
 
-% Last Modified by GUIDE v2.5 18-Jun-2014 20:05:35
+% Last Modified by GUIDE v2.5 09-Sep-2014 22:58:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -87,7 +87,7 @@ refs(cellfun(@isempty,refs))=[];
 numbers=regexp(included,'(?<=[A-Za-z]*)[0-9]+','match','once');
 numbers(cellfun(@isempty,numbers))=[];
 numbers=cellfun(@str2num,numbers);
-inclGrpLabStr=unique([numbered, refs]);
+inclGrpLabStr=unique([rowBoat(numbered)', rowBoat(refs)']);
 if any(mod(numbers,2));
     inclGrpLabStr=[inclGrpLabStr, 'odd'];
 end
@@ -114,6 +114,10 @@ if any(mod(numbers,2)==0);
     exclGrpLabStr=[exclGrpLabStr; 'even'];
 end
 set(handles.excludedGroups_listBox,'String',exclGrpLabStr)
+
+% populate the numberIncluded counter
+set(handles.numberIncluded,'String', ...
+    num2str(numel(get(handles.eventsIncluded,'String'))))
 
 % handles.includedGroups_listBox
 guidata(hObject, handles);
@@ -171,6 +175,9 @@ for n=1:length(grpToInclude)
 end
 set(handles.excludedGroups_listBox,'String',excludedGroups,'Value',[])
 
+% update the numberIncluded counter
+set(handles.numberIncluded,'String', ...
+    num2str(numel(get(handles.eventsIncluded,'String'))))
 handles.output=get(handles.eventsIncluded,'String');
 guidata(hObject,handles)
 
@@ -206,6 +213,9 @@ for n=1:length(grpToExclude)
 end
 set(handles.includedGroups_listBox,'String',includedGroups,'Value',[])
 
+% update the numberIncluded counter
+set(handles.numberIncluded,'String', ...
+    num2str(numel(get(handles.eventsIncluded,'String'))))
 handles.output=get(handles.eventsIncluded,'String');
 guidata(hObject,handles)
 
@@ -395,3 +405,23 @@ disp('done')
 
 
 
+function numberIncluded_Callback(hObject, eventdata, handles)
+% hObject    handle to numberIncluded (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of numberIncluded as text
+%        str2double(get(hObject,'String')) returns contents of numberIncluded as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function numberIncluded_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to numberIncluded (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
