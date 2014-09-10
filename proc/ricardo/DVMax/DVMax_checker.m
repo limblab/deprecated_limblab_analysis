@@ -3,7 +3,7 @@ function DVMax_checker()
     testing = 0;
     water_codes = {'EP8500','EP9000','EP2000'};
     free_water_codes = {'EP9200 '};
-    water_restriction_start_code = 'EP9100';
+    water_restriction_start_codes = {'EP9100','AC1092'};
     food_codes = {'EP8600','EP8700'};
     free_food_codes = {'EP9400'};
     food_restriction_start_code = 'EP9300';
@@ -45,7 +45,8 @@ function DVMax_checker()
         
         if ccm_in_charge_water 
             animals_who_got_water{end+1} = animalList(iMonkey).animalName;
-            disp([animalList(iMonkey).animalName ' was bottled by CCM.'])                        
+            disp([animalList(iMonkey).animalName ' was bottled by CCM.'])
+            animalList(iMonkey).bottled_by = 'CCM';
         else            
             last_free_water_entry = [];
             for iFreeWaterCodes = 1:length(free_water_codes)
@@ -73,7 +74,14 @@ function DVMax_checker()
                 last_water_entry = 1000000;
             end              
             
-            last_water_restriction_start = find(strcmp(water_restriction_start_code,{data{:,3}}),1,'first');
+            last_water_restriction_start = inf;
+            for iCode = 1:length(water_restriction_start_codes)
+                temp = find(strcmp(water_restriction_start_codes{iCode},{data{:,3}}),1,'first');
+                if isempty(temp)
+                    temp = inf;
+                end
+                last_water_restriction_start = min(last_water_restriction_start,temp);
+            end
             if isempty(last_water_restriction_start)
                 last_water_restriction_start = 1000000;
             end
@@ -94,20 +102,24 @@ function DVMax_checker()
                 else
                     animals_who_got_water{end+1} = animalList(iMonkey).animalName;
                     disp([animalList(iMonkey).animalName ' received water today.'])
+                    animalList(iMonkey).bottled_by = 'lab';
                 end
             elseif last_water_restriction_start > last_free_water_entry       %% free water monkey
                 animals_who_got_water{end+1} = animalList(iMonkey).animalName;
                 disp([animalList(iMonkey).animalName ' is on free water.'])
+                animalList(iMonkey).bottled_by = 'free water';
             else
                 animals_who_got_water{end+1} = animalList(iMonkey).animalName;
                 disp([animalList(iMonkey).animalName ' has no water restriction record.'])
+                animalList(iMonkey).bottled_by = 'no water restriction record';
     %             monkey_warning(animalList(iMonkey),'NoRecord')
             end       
         end
         
         if ccm_in_charge_food
             animals_who_got_food{end+1} = animalList(iMonkey).animalName;
-            disp([animalList(iMonkey).animalName ' was fed by CCM.'])                        
+            disp([animalList(iMonkey).animalName ' was fed by CCM.'])       
+            animalList(iMonkey).fed_by = 'CCM';
         else            
             last_free_food_entry = [];
             for iFreeFoodCodes = 1:length(free_food_codes)
@@ -156,14 +168,17 @@ function DVMax_checker()
                 else
                     animals_who_got_food{end+1} = animalList(iMonkey).animalName;
                     disp([animalList(iMonkey).animalName ' received food today.'])
+                    animalList(iMonkey).fed_by = 'lab';
                 end
             elseif last_food_restriction_start > last_free_food_entry       %% free water monkey
                 animals_who_got_food{end+1} = animalList(iMonkey).animalName;
                 disp([animalList(iMonkey).animalName ' is not food restricted.'])
+                animalList(iMonkey).fed_by = 'CCM';
             else
                 animals_who_got_food{end+1} = animalList(iMonkey).animalName;
                 disp([animalList(iMonkey).animalName ' has no food restriction record.'])
     %             monkey_warning(animalList(iMonkey),'NoRecord')
+                animalList(iMonkey).fed_by = 'CCM';
             end       
         end        
     end
@@ -359,7 +374,7 @@ function monkey_final_list(animalList,peopleList,testing)
         subject = ['(this is a test) All monkeys received water and food'];
         message = {'The following monkeys received water and food today:'};
         for iMonkey = 1:length(animalList)
-            message = {message{:},animalList(iMonkey).animalName};
+            message = {message{:},[animalList(iMonkey).animalName ' -    water: ' animalList(iMonkey).bottled_by '    wood: ' animalList(iMonkey).fed_by]};
         end 
         message = {message{:},'Sent from Matlab! This is a test.'};
         send_mail_message(recepients,subject,message)
@@ -370,7 +385,7 @@ function monkey_final_list(animalList,peopleList,testing)
         subject = ['All monkeys received water and food'];
         message = {'The following monkeys received water and food today:'};
         for iMonkey = 1:length(animalList)
-            message = {message{:},animalList(iMonkey).animalName};
+            message = {message{:},[animalList(iMonkey).animalName ' -    water: ' animalList(iMonkey).bottled_by '    wood: ' animalList(iMonkey).fed_by]};
         end 
         message = {message{:},'Sent from Matlab!'};
             message_sent = 0;
