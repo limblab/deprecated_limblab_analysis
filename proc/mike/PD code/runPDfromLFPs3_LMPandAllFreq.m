@@ -9,8 +9,8 @@ bandstart=  [0, 7, 70, 130, 200];
 bandend=    [4, 20, 115, 200, 300];
 
 
-filelist= Chewie_LFP2_tsNum;
-varname = 'Chewie_LFP2_tsNum';
+filelist= Chewie_MSP_tsNum;
+varname = 'Chewie_MSP_tsNum';
 
 if ~exist('chinds','var')
     disp('Please tell me which channels to run!')
@@ -22,7 +22,7 @@ lag= -0.15;
 binlen= 0.15;
 pval=0.05;
 
-for i=2:length(filelist)
+for i=1:length(filelist)
     %     for i=1:length(numlist)
     
     filewithpath=findBDFonCitadel(filelist{i});

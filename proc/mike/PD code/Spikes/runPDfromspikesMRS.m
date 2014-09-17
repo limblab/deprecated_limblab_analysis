@@ -9,7 +9,7 @@
 % postfix='_spikepds_allunits-bs200';
 
 % filelist=BDFlistshort;
-filelist= Mini_MSP_DaysNames;
+filelist= Chewie_MSP_tsNum;
 % Dir='Y:\Chew
 lag=-0.1;
 binlen=0.1;
@@ -45,7 +45,7 @@ for i=1:length(filelist)
     %         end
     [spikePDs,bootstrapPDS,spike_counts]=PDs_from_spikes(fnam,18,32,0,lag,binlen,pval);
     
-    save(savename,'spikePDs','bootst*','spike_counts');
+    save(savename,'spikePDs','bootst*','spike_counts','Chewie*');
     clear bdf *PD*
     %         %%% Now do spike control file
     %         postfix='spikePDs_SCont';
