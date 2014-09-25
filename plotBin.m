@@ -70,6 +70,7 @@ if ~isempty(datastruct.emgdatabin)
 end
            
 %% Force Panel
+if isfield(datastruct,'forcedatabin')
 if ~isempty(datastruct.forcedatabin)
 
     ForceNames = datastruct.forcelabels;
@@ -81,7 +82,7 @@ if ~isempty(datastruct.forcedatabin)
         Force_y_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(2,:),...
                                      'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Force_chbx_Callback,2});
     end
-                                 
+end
 end
 %% Words Panel
 if isfield(datastruct,'words')
@@ -116,6 +117,7 @@ if isfield(datastruct,'words')
 end
 
 %% Position Panel
+if isfield(datastruct,'cursorposbin')
 if ~isempty(datastruct.cursorposbin)
 
     PosNames = datastruct.cursorposlabels;
@@ -125,6 +127,7 @@ if ~isempty(datastruct.cursorposbin)
     Pos_y_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames(2,:),...
                                  'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Pos_chbx_Callback,2});
     
+end
 end
 %% Keyboard Panel
 % if isfield(datastruct,'keyboard_events')

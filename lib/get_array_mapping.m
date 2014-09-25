@@ -17,8 +17,8 @@ function [arr_map, cer_map] = get_array_mapping(filepath)
 
 
 fileID = fopen(filepath,'r');
-arr_map = zeros(10,10); % I assume blackrock arrays are all 10x10
-cer_map = zeros(size(arr_map));
+% arr_map = zeros(100,100); % I assume blackrock arrays are all 10x10
+% cer_map = zeros(size(arr_map));
 
 while ~feof(fileID) % while feof does not return 1 (it does when the end of the file is reached)
     tline = fgets(fileID); % move down the file, ignore headers
@@ -35,6 +35,9 @@ while ~feof(fileID) % while feof does not return 1 (it does when the end of the 
             bank_ID = char(temp(3)); % bank ID is A, B, C or D. each bank has 32 pins.
             pin_ID = str2num(char(temp(4))); % pin number of current electrode
             elec_ID = sscanf(char(temp(5)),'%*[elec]%f'); % elec ID that is shown in Central's 'Spike Panel'. only the number part
+            if isempty(elec_ID)
+                elec_ID = sscanf(char(temp(5)),'%*[fma]%f'); % fma ID that is shown in Central's 'Spike Panel'. only the number part
+            end
             if bank_ID == 'A'
                 chan_ID = pin_ID; % channel ID is what we get from the unit_list.m file
             end

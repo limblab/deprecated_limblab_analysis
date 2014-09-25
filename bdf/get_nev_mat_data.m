@@ -117,7 +117,7 @@ function out_struct = get_nev_mat_data(varargin)
     NSx_info.NSx_labels = NSx_info.NSx_labels(~cellfun('isempty',NSx_info.NSx_labels));
     NSx_info.NSx_labels = deblank(NSx_info.NSx_labels);
         
-    stim_marker  = find(strcmp({NEVNSx.NEV.ElectrodesInfo.ElectrodeLabel}','Stim_'));
+    stim_marker  = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'stim')));
     emg_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'emg_')));
     force_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'force_')));
     analog_list = setxor(1:length(NSx_info.NSx_labels),emg_list);

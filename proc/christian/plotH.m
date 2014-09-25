@@ -1,7 +1,7 @@
 function NormW = plotH(H,numlags,subplot_flag)
 %this function plots the weights in H using imagesc for each
-% column of H in different figures, or subplot if the flag is set
-% the weigths are all normalized between -1 and 1, and returned
+% column of H in different figures, or subplot if the flag is set.
+% The weigths are all normalized between -1 and 1, and returned
 % as array
 
 H= H(2:end,:);

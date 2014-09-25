@@ -32,6 +32,7 @@ signals     = binnedData.cursorposbin;
 sig_labels  = binnedData.cursorposlabels;
 array_map_Jaco   = '/Volumes/data/Jaco_8I1/Array_Maps/SN_6250-001275_LH2.cmp';
 array_map_Jango  = '/Volumes/data/Jango_12a1/Array_Maps/Jango_RightM1_utahArrayMap.cmp';
+array_map_JangoFMA = '/Volumes/data/Jango_12a1/Array_Maps/Jango_RightM1_UtahAndFMA_arrayMap.cmp';
 plot_flag   = false;
 
 if nargin > 1
@@ -47,10 +48,13 @@ end
 if nargin > 3
     plot_flag = true;
     array_map = varargin{3};
-    if strcmpi(array_map,'Jango')
-        array_map = array_map_Jango;
-    elseif strcmpi(array_map,'Jaco')
-        array_map = array_map_Jaco;
+    switch array_map
+        case 'Jango'
+            array_map = array_map_Jango;
+        case 'JangoFMA'
+            array_map = array_map_JangoFMA;
+        case 'Jaco'
+            array_map = array_map_Jaco;
     end
 end
 
@@ -70,23 +74,25 @@ if plot_flag
         lgd{s} = sig_labels(s,:);
     end
     
-    ymax = max(max(max(c)));
+    ymax = max(max_c_s);
+    
     figure;
     [array_map, ~] = get_array_mapping(array_map);
+    [numrows,numcol] = size(array_map);
     array_ch_rows = array_map';
-    for n = 1:100
+    for n = 1:numel(array_map)
         ch_id = array_ch_rows(n);
         if ~ch_id
             continue;
         end
-        subplot(10,10,n);
+        subplot(numrows,numcol,n);
         plot(c(:,:,ch_id));
         hold on; axis off;
         plot([num_lags+1 num_lags+1],[0 ymax],'k--');
         ylim([0 ymax]); xlim([1 2*num_lags+1]);
         title(sprintf('ch %d',ch_id));
     end
-
+ 
     legend(lgd{:},'location','BestOutside');
 end
     
