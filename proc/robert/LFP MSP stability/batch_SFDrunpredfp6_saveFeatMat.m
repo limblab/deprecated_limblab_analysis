@@ -44,6 +44,9 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
             continue
         end
         
+        if exist('bdf','var')
+            out_struct=bdf; clear bdf
+        end
         try
             fpAssignScript2
         catch exception
@@ -62,44 +65,6 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
         % those sections, we want to remove them entirely.
         [bdf.vel,badStartInds,badEndInds]=removeVelocityArtifacts(bdf.vel);
         sig=bdf.vel;
-        
-        
-
-%         if strcmp(MATfiles{l},'Chewie_Spike_LFP_05032012007.mat')
-%             fp(:,fptimes>100)=[];
-%             fptimes(fptimes>100)=[];
-%             sig(sig(:,1)>100,:)=[];
-%         end
-        
-%         removeFPind=[]; removeSIGind=[];
-%         for n=1:length(badStartInds)
-%             for k=1:length(badStartInds{n})
-%                 badStartTimesInd=find(fptimes>=sig(badStartInds{n}(k),1),1,'first');
-%                 badEndTimesInd=find(fptimes<=sig(badEndInds{n}(k),1),1,'last');
-%                 if badStartTimesInd==1, badStartTimesInd=2; end
-%                 if badEndTimesInd==size(fp,2), badEndTimesInd=size(fp,2)-1; end
-%                 removeFPind=[removeFPind, (badStartTimesInd-1):(badEndTimesInd+1)];
-%                 
-% %                 if badStartInds{n}(k)==1, badStartInds{n}(k)=2; end
-% %                 if badEndInds{n}(k)==size(sig,1), badEndInds{n}(k)=size(sig,1)-1; end
-%                 removeSIGind=[removeSIGind, ...
-%                     (badStartInds{n}(k)):(badEndInds{n}(k))];
-%             end, clear k
-%         end, clear n
-%         fp(:,unique(removeFPind))=[];
-%         temp=cellfun(@min,bdf.raw.analog.ts);
-%         if iscell(temp)
-%             allFPstartTS=cat(2,temp{:});
-%         else
-%             allFPstartTS=temp;
-%         end, clear temp
-%         fptimes=max(allFPstartTS):1/samprate: ...
-%             (size(fp,2)/samprate + max(allFPstartTS));
-%         if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
-%         clear allFPstartTS
-%         sig(unique(removeSIGind),:)=[];
-%         temp=sig(1,1):binsize:(binsize*(size(sig,1)+floor(sig(1,1)/binsize)));
-%         sig(:,1)=temp(1:end-1); clear temp
         
         H = [];
         P = [];
@@ -121,11 +86,15 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
         save('H_SingleUnits.mat','H_SingleUnits','HbankDays','bestf','bestc','featind')
         varName=['featMat_',regexp(DaysNames{l},'.*(?=\.mat)','match','once')];
         varName2=['sig_',regexp(DaysNames{l},'.*(?=\.mat)','match','once')];
+        % probably only useful in the 'divide_' version of the function,
+        % not this version
+        % varName3=['binnedSig_',regexp(DaysNames{l},'.*(?=\.mat)','match','once')];
         eval([varName,'=featMat;'])
         eval([varName2,'=sig;'])
+        % eval([varName3,'=y;'])
         save(fullfile('featMats',[varName,'.mat']),varName,varName2)
         clear v* y* x* r* bdf out_struct sig numfp samprate fp ...
-            fptimes analog_times fnam words featMat*
+            fptimes analog_times fnam words featMat* sig_* binnedSig_*
 %         close all
     end
     
@@ -217,7 +186,7 @@ for m = 1:length(Monkeys) % 1 == Chewie, 2 == Mini
 
             H = [];
             P = [];
-            numfp=96; fp=[]; fptimes=[]; samprate=1000; fnam='';
+            numfp=96; fp=[]; fptimes=[]; fnam=''; samprate=1000;
             
             [vaf,vmean,vsd,y_test,y_pred,r2m,r2sd,r2,vaftr,~,~,H,bestfeat,x,...
                 y,featMat,ytnew,xtnew,predtbase,P,~] =... %,sr]...
@@ -245,7 +214,7 @@ end
 return
 % Plot code
 
-for q = 1%:size(Onlinefeatind,2)
+for q = 1%#ok<*UNRCH> %:size(Onlinefeatind,2)
     
     [C,sortInd]=sortrows(Onlinefeatind(:,q));
     featind_bychan = C;

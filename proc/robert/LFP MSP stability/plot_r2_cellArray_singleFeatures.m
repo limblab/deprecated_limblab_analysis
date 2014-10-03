@@ -1,12 +1,18 @@
-function plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder,DateVec)
+function plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder,DateMat)
 
-% syntax plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder,DateVec)
+% syntax plot_r2_cellArray_singleFeatures(r2Array,bestc,bestf,bandsToUse,featIndFromDecoder,DateMat)
 %
 % this function only works with 2D r2Array.  If there is a monkey dimension
 % in the input array, squeeze it out before passing it to this function.
 %
-% dateVec can be generated using something like 
+% DateMat can be generated using something like 
 % datenum(regexp(HbankDays,'[0-9]{8}','match','once'),'mmddyyyy')-datenum('09-01-2011');
+% if no mask is provided, all dates will be included.  If you want to
+% exclude some dates, give DateMat a 2nd column with a mask of 1s for days
+% to include and zeros for days to exclude, such as (following after the
+% previous example):
+% DateMat(:,2)=ones(numel(DateMat),1);
+% DateMat(DateMat(:,1)<90,2)=0;
 
 r2Avg=nan(576,size(r2Array,1));
 for n=1:size(r2Array,1)
@@ -35,12 +41,15 @@ r2Avg=r2Avg(featToKeep,:);
 
 % average same days
 if nargin < 6
-    DateVec=1:size(r2Avg,2); % default to reporting each file
+    DateMat=rowBoat(1:size(r2Avg,2)); % default to reporting each file
+    DateMat(:,2)=ones(numel(DateMat),1);
 end
-uDateVec=unique(DateVec,'stable');
+r2Avg(:,DateMat(:,2)==0)=[];
+DateMat(DateMat(:,2)==0,:)=[];
+uDateVec=unique(DateMat(:,1),'stable');
 r2AvgDays=nan(size(r2Avg,1),length(uDateVec));
 for n=1:length(uDateVec)
-    r2AvgDays(:,n)=mean(r2Avg(:,DateVec==uDateVec(n)),2);
+    r2AvgDays(:,n)=mean(r2Avg(:,DateMat(:,1)==uDateVec(n)),2);
 end
 
 figure, imagesc(uDateVec,1:size(r2AvgDays,1),r2AvgDays)
