@@ -24,7 +24,7 @@ for i = 1:num_figs
     vaf(i) = calc_vaf(preds(:,i),plot_data(:,i));
     title(plot_labels(i,:));
     legend('act',sprintf('pred (vaf = %.2f)',vaf(i)));
-    xlim([2260 2290]);
+    xlim([1300 1320]);
 end
  
 % for i = 1:3
