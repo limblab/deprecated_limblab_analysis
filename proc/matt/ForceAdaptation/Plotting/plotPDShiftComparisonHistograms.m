@@ -13,7 +13,6 @@ function [allMeans,allDiffPDs] = plotPDShiftComparisonHistograms(varargin)
 % *these ones should be cells of same length to allow for multiple files
 
 closethem = false;
-makePositive = false;
 
 useColors = {[0.7 0 0],[0 0 0.7],[0 0 1],[0 0.7 0],[1 1 1]};
 
@@ -21,13 +20,14 @@ useColors = {[0.7 0 0],[0 0 0.7],[0 0 1],[0 0.7 0],[1 1 1]};
 binSize = 5; %degrees
 maxAngle = 150; %degrees
 useArray = 'PMd';
-figurePosition = [200, 200, 800, 600];
+figurePosition = [200, 200, 800, 500];
 tuneMethod = 'regression';
 savePath = [];
 histBins = [];
 useBlocks = [1,4,6];
 coordinates = 'movement';
 titleIndex = 3;
+doMD = false;
 for i = 1:2:length(varargin)
     switch lower(varargin{i})
         case 'dir'
@@ -58,9 +58,16 @@ for i = 1:2:length(varargin)
             titleIndex = varargin{i+1};
         case 'numblocksepoch'
             numBlocksEpoch = varargin{i+1};
+        case 'domd'
+            doMD = varargin{i+1};
     end
 end
 
+if ~doMD
+    plotMult = 180/pi;
+else
+    plotMult = 1;
+end
 
 % load plotting parameters
 fontSize = 16;
@@ -88,20 +95,31 @@ for iFile = 1:size(doFiles,1)
     
     useClasses = classes.(tuneMethod).(usePeriod).(useArray);
     
-    tuned_cells = useClasses.tuned_cells;
-    tune_sg = useClasses.sg;
+    tuned_cells = useClasses.sg(all(useClasses.istuned,2),:);
+    c = useClasses.classes(all(useClasses.istuned,2));
+    
+    % check for dynamic cells only
+    tuned_cells = tuned_cells(c==2 | c==5,:);
     
     % get unit guides and pd matrices
     t = tuning.(tuneMethod).(usePeriod).(useArray).tuning;
     
     % first one is baseline, let's assume
     sg_bl = t(1).sg;
-    pds_bl = t(1).pds;
+    if ~doMD
+        pds_bl = t(1).pds;
+    else
+        pds_bl = t(1).mds;
+    end
     
     for iBlock = 1:length(t)
         
         sg_t = t(iBlock).sg;
-        pds_t = t(iBlock).pds;
+        if ~doMD
+            pds_t = t(iBlock).pds;
+        else
+            pds_t = t(iBlock).mds;
+        end
         
         % check to make sure the unit guides are okay
         badUnits = checkUnitGuides(sg_bl,sg_t);
@@ -127,7 +145,11 @@ for iFile = 1:size(doFiles,1)
                     blInd = sg_bl(:,1)==sg_master(unit,1) & sg_bl(:,2)==sg_master(unit,2);
                     
                     % find confidence bounds and difference from BL
-                    allDiffPDs = [allDiffPDs; angleDiff(pds_bl(blInd,1),pds,true,true)];
+                    if ~doMD
+                        allDiffPDs = [allDiffPDs; angleDiff(pds_bl(blInd,1),pds,true,true)];
+                    else
+                        allDiffPDs = [allDiffPDs; pds - pds_bl(blInd,1)];
+                    end
                     allErrs = [allErrs; err];
                 end
             end
@@ -164,14 +186,15 @@ for iBlock = 1:length(t)
                 groupErrs = [groupErrs; fileErrs{iBlock,iFile}(1)];
             end
         end
-        
-        % if anything is less than -90 degrees, make positive
-        if makePositive
-            groupDiffPDs(groupDiffPDs < -pi/2) = groupDiffPDs(groupDiffPDs < -pi/2)+2*pi;
+
+        tempMeans(1,iTitle) = mean(groupDiffPDs);
+        if iBlock==1
+            tempMeans(2,iTitle) = mean(groupErrs); %
+            bl_errs(iTitle) = mean(groupErrs);
+        else
+            %tempMeans(2,iTitle) = 2*std(groupDiffPDs)/sqrt(length(groupDiffPDs));
+            tempMeans(2,iTitle) = bl_errs(iTitle) + std(groupDiffPDs)/sqrt(length(groupDiffPDs)); %
         end
-        
-        tempMeans(1,iTitle) = median(groupDiffPDs);
-        tempMeans(2,iTitle) = mean(groupErrs);
         
         allMeans{iBlock} = tempMeans;
         allDiffPDs{iBlock,iTitle} = groupDiffPDs;
@@ -188,7 +211,9 @@ for iFig = 2%:length(useBlocks)
         groupDiffPDs = allDiffPDs{useBlocks(iFig),iTitle};
         
         % histograms of BL->AD for FF and VR
-        hist(groupDiffPDs.*180/pi,histBins);
+        [f,x]=hist(groupDiffPDs.*plotMult,histBins);
+%         bar(x,f);
+        bar(x,f/sum(f));
         h = findobj(gca,'Type','patch');
         if iTitle == 1
             set(h,'FaceColor',useColors{iTitle},'EdgeColor','w');
@@ -204,21 +229,20 @@ for iFig = 2%:length(useBlocks)
     % add legend
     for iTitle = 1:length(uTitles)
         rectangle('Position',[16 7-0.7*(iTitle-1) 5 0.5],'FaceColor',useColors{iTitle});
-        text(22,7.25-0.7*(iTitle-1),uTitles{iTitle},'FontSize',16);
+        text(22,7.25-0.7*(iTitle-1),uTitles{iTitle},'FontSize',24);
     end
     
     % show perturbation
     % arrow('Start',[-30,7],'Stop',[-7 7],'Width',3);
     % text(-30,7.5,'Perturbation Direction','FontSize',16);
     
-    
 %     title('Baseline -> Adaptation','FontSize',18);
-    xlabel('Change in PD (Deg)','FontSize',16);
-    ylabel('Count','FontSize',16);
+    xlabel('Change in PD (Deg)','FontSize',24);
+    ylabel('Density','FontSize',24);
     axis('tight');
     V=axis;
     axis([V(1) V(2) 0 V(4)]);
-    set(gca,'FontSize',14,'TickDir','out');
+    set(gca,'FontSize',24,'TickDir','out','XTick',[-50,-25,0,25,50]);
     
     if ~isempty(savePath)
         fn = [savePath '_ad.png'];

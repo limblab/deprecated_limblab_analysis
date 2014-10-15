@@ -33,7 +33,8 @@ function [cellClass,master_sg] = classifyCells(t,tuningMethod,compMethod,classif
 % above case, you might do useBlocks = [2 3 4];
 
 % if this is true, divide alpha by 2 since we are making two comparisons
-doBonferroni = true;
+doNoise = false;
+doBonferroni = false;
 numComparisons = 3;
 
 meta = t(1).meta;
@@ -133,6 +134,14 @@ switch lower(tuningMethod)
                     end
                     useMDs = all_boot_mds;
                 end
+        end
+
+        % weird thing to add noise
+        if doNoise
+                disp('MAKE THAT SHIT NOISY');
+                val = 0.12;
+                r = -0 + ( val ).*rand(size(usePDs{classifierBlocks(end)}));
+                usePDs{classifierBlocks(end)} = usePDs{classifierBlocks(end)} + r;
         end
         
         pd = compareTuningParameter('pd',usePDs,master_sg,{compMethod,confLevel,numIters});

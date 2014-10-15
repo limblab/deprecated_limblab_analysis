@@ -20,9 +20,6 @@ function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray,class
 % there then it will for the rest, or else it won't pass the "same neuron"
 % test.
 
-% sometimes we only want to consider BL and AD
-% classifierBlocks = classifierBlocks(1:2);
-
 t = tuning.(useArray).tuning;
 tracking = tracking.(useArray);
 data = data.(useArray);
@@ -101,51 +98,52 @@ for unit = 1:size(master_sg,1)
     istuned(unit,4) = ~any(diff(tracking_chan(idx,:)));
 end
 
-
-%% Check confidence in PD estimates
-all_pds = {t.pds};
-for unit = 1:size(master_sg,1)
-    sig = zeros(size(all_pds));
-    for iBlock = 1:length(all_pds)
-        temp = all_pds{iBlock};
-        temp = temp(all_idx{iBlock},:);
-        sig(iBlock) = checkTuningCISignificance(temp(unit,:),ciSig,true);
-    end
-    istuned(unit,5) = all(sig(classifierBlocks));
-end
-
-
-%% Check that r-squared of fit is okay
-if isfield(t(1),'r_squared') && ~isempty(t(1).r_squared)
-    all_rs = {t.r_squared};
-    all_rs_ci = cell(size(all_rs));
-    
-    for iBlock = 1:length(all_rs)
-        temp = all_rs{iBlock};
-        temp = sort(temp(all_idx{iBlock},:),2);
-        
-        all_rs{iBlock} = temp;
-        
-        % get 95% CI for each
-        all_rs_ci{iBlock} = [temp(:,ceil(numIters - confLevel*numIters)), temp(:,floor(confLevel*numIters))];
-    end
-    
+% don't do this if the classifierBlocks input is empty
+if ~isempty(classifierBlocks)
+    %% Check confidence in PD estimates
+    all_pds = {t.pds};
     for unit = 1:size(master_sg,1)
-        sig = zeros(size(all_rs));
+        sig = zeros(size(all_pds));
+        for iBlock = 1:length(all_pds)
+            temp = all_pds{iBlock};
+            temp = temp(all_idx{iBlock},:);
+            sig(iBlock) = checkTuningCISignificance(temp(unit,:),ciSig,true);
+        end
+        istuned(unit,5) = all(sig(classifierBlocks));
+    end
+    
+    
+    %% Check that r-squared of fit is okay
+    if isfield(t(1),'r_squared') && ~isempty(t(1).r_squared)
+        all_rs = {t.r_squared};
+        all_rs_ci = cell(size(all_rs));
+        
         for iBlock = 1:length(all_rs)
-            % also only consider cells that are described by cosines
-            %   have bootstrapped r2... see if 95% CI is > threshold?
-            temp = all_rs_ci{iBlock};
-            sig(iBlock) = temp(unit,1) > r2Min;
+            temp = all_rs{iBlock};
+            temp = sort(temp(all_idx{iBlock},:),2);
+            
+            all_rs{iBlock} = temp;
+            
+            % get 95% CI for each
+            all_rs_ci{iBlock} = [temp(:,ceil(numIters - confLevel*numIters)), temp(:,floor(confLevel*numIters))];
         end
         
-        % check significance
-        % only consider cells that are tuned in all epochs
-        %   first column is CI bound, second is r-squared
-        istuned(unit,6) = all(sig(classifierBlocks));
+        for unit = 1:size(master_sg,1)
+            sig = zeros(size(all_rs));
+            for iBlock = 1:length(all_rs)
+                % also only consider cells that are described by cosines
+                %   have bootstrapped r2... see if 95% CI is > threshold?
+                temp = all_rs_ci{iBlock};
+                sig(iBlock) = temp(unit,1) > r2Min;
+            end
+            
+            % check significance
+            % only consider cells that are tuned in all epochs
+            %   first column is CI bound, second is r-squared
+            istuned(unit,6) = all(sig(classifierBlocks));
+        end
+    else
+        istuned(:,6) = ones(size(istuned(:,6)));
     end
-else
-    istuned(:,6) = ones(size(istuned(:,6)));
 end
-
 

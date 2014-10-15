@@ -113,11 +113,17 @@ function [filter, varargout]=BuildModel_Matt(binnedData, options)
         Inputs = Inputs(:,1:options.numPCs);
         input_type = 'princomp';
     else
+        try
         Inputs = binnedData.spikeratedata(:,desiredInputs);
         input_type = 'spike';
+        catch
+            keyboard
+        end
     end
 
-%     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
+%%
+% DUPLICATE AND SHIFT FOR DISCONTINUITIES
+%    Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
     
 %% Outputs
     

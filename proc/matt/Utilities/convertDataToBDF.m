@@ -57,8 +57,8 @@ end
 % set defaults
 rewriteFiles = 0; % By default, don't rewrite files
 hasKin = 1; % by default, assume there is encoder data
-bdfFolderName = 'BDFStructs'; %name of folder to put BDFs in
-dataFolderName = 'CerebusData';
+bdfFolderName = ''; %name of folder to put BDFs in
+dataFolderName = '';
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'rewrite'

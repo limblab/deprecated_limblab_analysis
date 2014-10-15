@@ -18,7 +18,10 @@ function fh = plotAdaptationOverTime(varargin)
 %   figure out vertical ticks
 %   figure out lengend and stuff
 
+doBLDiff = false;
+
 averageAcrossDays = false;
+fillColors = {'b',[0.8 0.9 1];'r',[1 0.9 0.8];'g',[0.9 1 0.8]};
 
 %%
 % Make curvature plots to show adaptation over time
@@ -67,16 +70,27 @@ end
 switch lower(useMetric)
     case 'curvature'
         metricName = 'curvatures';
+        if doBLDiff
+            ymin = -0.2;
+            ymax = 1;
+        else
+            ymin = 0.2;
+            ymax = 1.5;
+        end
     case 'angle_error'
         metricName = 'errors';
+        ymin = -15;
+        ymax = 5;
     case 'time_to_target'
         metricName = 'time_to_target';
+        ymin = 0;
+        ymax = 0.2;
     otherwise
         error('Metric not recognized...');
 end
 
 % load plotting parameters
-fontSize = 16;
+fontSize = 24;
 stepSize = 1;
 
 minMC = zeros(1,size(useDate,1));
@@ -96,7 +110,7 @@ for iDate = 1:size(useDate,1)
             %mC = abs(mC);
             mC = mC.*(180/pi);
         end
-               
+        
         % low pass filter to smooth out traces
         if doFiltering
             f = ones(1, filtWidth)/filtWidth; % w is filter width in samples
@@ -129,19 +143,89 @@ for iDate = 1:size(useDate,1)
     end
 end
 
+%%
+% what if, instead, I averaged in non-overlapping bins of, say, 10% of
+% movements and THEN averaged across days?
+% numMoves = ceil(.35*length(mean(cell2mat(aMC(:,1)),1)));
+numMoves(1) = ceil(0.99*length(mean(cell2mat(aMC(:,1)),1)));
+numMoves(2) = ceil(.32*length(mean(cell2mat(aMC(:,2)),1)));
+numMoves(3) = ceil(.32*length(mean(cell2mat(aMC(:,3)),1)));
 
-% now do the plotting
+meanVals = cell(1,length(epochs));
+seVals = cell(1,length(epochs));
+count = 0;
+for iEpoch = 1:length(epochs)
+    vals = cell2mat(aMC(:,iEpoch));
+    
+    inds = 1:numMoves(iEpoch):size(vals,2);
+    
+    %newVals = zeros(size(vals,1),length(inds)-1);
+    newVals = cell(1,length(inds)-1);
+    for j = 1:length(inds)-1
+        temp = vals(:,inds(j):inds(j+1));
+        %newVals(:,j) = mean(temp,2);
+        
+        newVals{j} = reshape(temp,size(temp,1)*size(temp,2),1);
+        
+        % compile a list of all of the data for significance testing
+    count = count + 1;
+    allData{count} = reshape(temp,size(temp,1)*size(temp,2),1);
+    end
+    
+    meanVals{iEpoch} = cellfun(@(x) nanmean(x),newVals);
+    seVals{iEpoch} = cellfun(@(x) nanstd(x)./sqrt(size(x,1)),newVals);
+    
+    %meanVals{iEpoch} = mean(newVals,1);
+    %seVals{iEpoch} = std(newVals,1)./sqrt(size(newVals,1));
+end
+
+allTests(1) = 1;
+for i = 1:length(allData)
+    for j = 1:length(allData)
+        if i==j
+            allTests(i,j) = 1;
+        else
+            [~,p] = ttest2(allData{i},allData{j});
+            allTests(i,j) = p < 0.05; 
+        end
+    end
+end
+
+
+%% now do the plotting
 if isempty(fh)
     fh = figure('Position', figurePosition);
+else
+    figure(fh);
 end
-% subplot1(1,3);
-
-% now plot data, each on its own axis
-% subplot1(1);
 hold all;
-set(gca,'TickLength',[0 0],'FontSize',fontSize);
-%         axis([0 1 minMC maxMC]);
-xlabel('Movements','FontSize',16);
+data = [meanVals{1},meanVals{2},meanVals{3}];
+sedata = [seVals{1},seVals{2},seVals{3}];
+
+if doBLDiff
+    data = data - data(1);
+end
+% plot baseline across screen
+% patch([-1,length(data),length(data),-1],[data(1)-sedata(1),data(1)-sedata(1),data(1)+sedata(1),data(1)+sedata(1)],fillColors{strcmpi(fillColors(:,1),plotColors{1}),2},'EdgeColor',fillColors{strcmpi(fillColors(:,1),plotColors{1}),2});
+
+% h = findobj(gca,'Type','patch');
+% set(h,'facealpha',0.8,'edgealpha',0.8);
+% plot([-1,length(data)],[data(1),data(1)],'LineWidth',2,'Color',plotColors{1})
+
+% plot the data
+%plot((0:length(data)-1),data,'o','LineWidth',3,'Color',plotColors{1});
+for j = 1:length(data)
+    if ~allTests(1,j)
+        plot(j-1,data(j),'o','LineWidth',3,'Color',plotColors{1});
+    else
+        plot(j-1,data(j),'o','LineWidth',3,'Color',plotColors{1});
+    end
+    plot([j-1,j-1],[data(j)-sedata(j),data(j)+sedata(j)],'-','LineWidth',2,'Color',plotColors{1});
+end
+
+axis('tight');
+set(gca,'TickDir','out','FontSize',fontSize,'XLim',[-1 length(data)],'YLim',[ymin ymax],'XTick',[0 2 5],'XTickLabel',{'Baseline','Adaptation','Washout'});
+box off;
 switch useMetric
     case 'curvature'
         ylabel('Curvature (cm^-^1)','FontSize',fontSize);
@@ -151,126 +235,39 @@ switch useMetric
         ylabel('Time to target (???)','FontSize',fontSize);
 end
 
-% find max length of each epoch
-allMaxes = cellfun(@(x) length(x),aMC);
-
-maxBL = max(allMaxes(1,:));
-maxAD = maxBL + max(allMaxes(2,:));
-
-for iDate = 1:size(useDate,1)
-    data = [aMC{iDate,1}, aMC{iDate,2}, aMC{iDate,3}];
-    plot(data,'.','Color',plotColors{iDate},'LineWidth',traceWidth);
-end
-legend(useDate(:,2)');
-axis('tight');
-
-% if ~isempty(saveFilePath)
-%     fn = fullfile(saveFilePath,['adaptation_' useMetric '.png']);
-%     saveas(fh,fn,'png');
-% else
-%     %     pause;
-% end
-
-% now, plot the mean
-
-meanVals = cell(1,length(epochs));
-for iEpoch = 1:length(epochs)
-    meanVals{iEpoch} = mean(cell2mat(aMC(:,iEpoch)),1);
+if ~isempty(saveFilePath)
+    fn = fullfile(saveFilePath,['adaptation_' useMetric '.png']);
+    saveas(fh,fn,'png');
+    fn = fullfile(saveFilePath,['adaptation_' useMetric '.fig']);
+    saveas(fh,fn,'fig');
 end
 
-% now ask the question if the final 33% of AD trials are different from BL
-ad_vals = meanVals{2};
-ad_vals = ad_vals(ceil(0.66*length(ad_vals)):end);
-[~,p] = ttest2(meanVals{1},ad_vals,'tail','both')
-% now ask the question if the final 33% of WO trials are different from BL
-wo_vals = meanVals{3};
-wo_vals = wo_vals(ceil(0.66*length(wo_vals)):end);
-[~,p] = ttest2(meanVals{1},wo_vals,'tail','both')
-
-% figure;
-% hold all;
-% data = [meanVals{1},meanVals{2},meanVals{3}];
-% plot(data,'.','LineWidth',3);
-% 
-% % fit lines and plot them
-% [b_bl,~,~,~,s_bl] = regress(meanVals{1}',[ones(length(meanVals{1}),1) (1:length(meanVals{1}))']);
-% [b_ad,~,~,~,s_ad] = regress(meanVals{2}',[ones(length(meanVals{2}),1) (1:length(meanVals{2}))']);
-% [b_wo,~,~,~,s_wo] = regress(meanVals{3}',[ones(length(meanVals{3}),1) (1:length(meanVals{3}))']);
-% 
-% data = [b_bl(1)+b_bl(2)*(1:length(meanVals{1})), b_ad(1)+b_ad(2)*(1:length(meanVals{2})), b_wo(1)+b_wo(2)*(1:length(meanVals{3}))];
-% 
-% plot(data,'r-','LineWidth',2)
-
-
-% what if, instead, I averaged in non-overlapping bins of, say, 10% of movements?
-numMoves = ceil(.1*length(meanVals{1}));
-
-meanVals = cell(1,length(epochs));
-seVals = cell(1,length(epochs));
-for iEpoch = 1:length(epochs)
-    vals = cell2mat(aMC(:,iEpoch));
-    
-    inds = 1:numMoves:size(vals,2);
-    
-    newVals = zeros(size(vals,1),length(inds)-1);
-    for j = 1:length(inds)-1
-        newVals(:,j) = mean(vals(:,inds(j):inds(j+1)),2);
-    end
-    
-    meanVals{iEpoch} = newVals;
+% now add lines showing significance
+% compare 1 to 2
+if allTests(1,2)
+    plot([0,1],[data(1),data(2)]);
+end
+% compare 2 to 4
+if allTests(2,4)
+    plot([1,3],[data(2),data(4)]);
+end
+% compare 1 to 4
+if allTests(1,4)
+    plot([0,3],[data(1),data(4)]);
+end
+% compare 1 to 5
+if allTests(1,5)
+    plot([0,4],[data(1),data(5)]);
+end
+% compare 5 to 7
+if allTests(5,7)
+    plot([4,6],[data(5),data(7)]);
+end
+% compare 1 to 7
+if allTests(1,7)
+    plot([0,6],[data(1),data(7)]);
 end
 
-data = [meanVals{1},meanVals{2},meanVals{3}];
-
-figure;
-plot(numMoves*(0:length(data)-1),data','LineWidth',2);
-legend(useDate(:,2)');
-set(gca,'TickDir','out','FontSize',14);
-xlabel('Movements','FontSize',16);
-ylabel(useMetric,'FontSize',16);
-
-
-
-% what if, instead, I averaged in non-overlapping bins of, say, 10% of
-% movements and THEN averaged across days?
-numMoves = ceil(.1*length(meanVals{1}));
-
-meanVals = cell(1,length(epochs));
-seVals = cell(1,length(epochs));
-for iEpoch = 1:length(epochs)
-    vals = cell2mat(aMC(:,iEpoch));
-    
-    inds = 1:numMoves:size(vals,2);
-    
-    newVals = zeros(size(vals,1),length(inds)-1);
-    for j = 1:length(inds)-1
-        newVals(:,j) = mean(vals(:,inds(j):inds(j+1)),2);
-    end
-    
-    meanVals{iEpoch} = mean(newVals,1);
-    seVals{iEpoch} = std(newVals,1)./sqrt(size(newVals,1));
-end
-
-figure;
-hold all;
-data = [meanVals{1},meanVals{2},meanVals{3}];
-sedata = [seVals{1},seVals{2},seVals{3}];
-plot(numMoves*(0:length(data)-1),data,'bo','LineWidth',3);
-for j = 0:length(data)-1
-    plot(numMoves.*[j,j],[data(j+1)-sedata(j+1),data(j+1)+sedata(j+1)],'b-','LineWidth',1);
-end
-
-% fit lines and plot them
-[b_bl,~,~,~,s_bl] = regress(meanVals{1}',[ones(length(meanVals{1}),1) (1:length(meanVals{1}))']);
-[b_ad,~,~,~,s_ad] = regress(meanVals{2}',[ones(length(meanVals{2}),1) (1:length(meanVals{2}))']);
-[b_wo,~,~,~,s_wo] = regress(meanVals{3}',[ones(length(meanVals{3}),1) (1:length(meanVals{3}))']);
-
-data = [b_bl(1)+b_bl(2)*(1:length(meanVals{1})), b_ad(1)+b_ad(2)*(1:length(meanVals{2})), b_wo(1)+b_wo(2)*(1:length(meanVals{3}))];
-
-plot(numMoves*(0:length(data)-1),data,'r-','LineWidth',2)
-set(gca,'TickDir','out','FontSize',14);
-xlabel('Movements','FontSize',16);
-ylabel(useMetric,'FontSize',16);
 
 
 

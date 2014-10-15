@@ -12,10 +12,12 @@ epoch = 'BL';
 decoders = {'Position','Velocity','Target'};
 arrays = {'M1','PMd'};
 iFile = 13;
-t = [100 300];
+t = [115 137];
 
 %%
 % Data
+save_dir = 'C:\Users\Matt Perich\Dropbox\lab\embc\Poster\figures';
+
 root_dirs = {'Mihili','Z:\Mihili_12A3\Matt\';
     'Chewie','Z:\Chewie_8I2\Matt\';
     'MrT','Z:\MrT_9I4\Matt\'};
@@ -67,6 +69,10 @@ d = doFiles{iFile,2}(9:10);
 % which indices for each decoder (ie y velocity is 2)
 decIdx = 1;
 
+% for now, hard code vertical axis limits
+ylims = [-13,13;-30,30;-1,1];
+collims = [0,75,150;0,50,100];
+
 for iArray = 1:length(arrays)
     use_array = arrays{iArray};
     bin_file = fullfile(root_dir,use_array,'BinnedData',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_' epoch '_' m d y '_trim.mat']);
@@ -89,15 +95,15 @@ for iArray = 1:length(arrays)
     end
     
     % now, plot raster and predictions
-    figure;
-    subplot1(length(decoders)+1,1,'FontS',14,'Gap',[0 0]);
+    figure('Position',[100,0,800,1000]);
+    subplot1(length(decoders)+1,1,'FontS',24,'Gap',[0 0]);
     subplot1(1);
     hold all;
-    imagesc(preds.timeframe,1:size(preds.spikes,2),preds.spikes'); colorbar('East');
+    imagesc(preds.timeframe,1:size(preds.spikes,2),preds.spikes'); colorbar('East','YTick',collims(iArray,:));
     axis('tight');
-    set(gca,'FontSize',14,'TickDir','out');
+    set(gca,'FontSize',24,'TickDir','out');
     box off;
-    title(arrays{iArray},'FontSize',16);
+    title(arrays{iArray},'FontSize',24);
     ax(1) = gca;
     
     for iDec = 1:length(decoders)
@@ -105,10 +111,132 @@ for iArray = 1:length(arrays)
         plot(preds.timeframe,preds.(decoders{iDec}).orig(:,decIdx),'LineWidth',2,'Color','k');
         plot(preds.timeframe,preds.(decoders{iDec}).pred(:,decIdx),'LineWidth',2,'Color','m');
         axis('tight');
-        set(gca,'FontSize',14,'TickDir','out');
+        set(gca,'FontSize',24,'TickDir','out','YLim',ylims(iDec,:));
         box off;
-        xlabel('Time (sec)','FontSize',14);
+        xlabel('Time (sec)','FontSize',24);
+%         ylabel(decoders{iDec},'FontSize',24);
         ax(iDec+1) = gca;
     end
     linkaxes(ax,'x');
+    
+    saveas(gcf,[save_dir '\' 'sample_' use_array '.png'],'png');
+    saveas(gcf,[save_dir '\' 'sample_' use_array '.fig'],'fig');
 end
+
+
+%% compare M1 and PMd
+if 0
+use_array = 'M1';
+bin_file = fullfile(root_dir,use_array,'BinnedData',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_' epoch '_' m d y '_trim.mat']);
+
+for iDec = 1
+    filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder_' decoders{iDec} '.mat']);
+    load(bin_file);
+    [~,testData] = splitBinnedData_Matt(binnedData,t(1),t(2));
+    [pred, ~] = predictSignals(filt_file,testData);
+    [r2,vaf,mse,orig] = ActualvsOLPred_Matt(testData,pred,0,0);
+    
+    preds.timeframe = pred.timeframe;
+    preds.spikes = pred.spikeratedata;
+    preds.sg = pred.spikeguide;
+    preds.(decoders{iDec}).r2 = r2;
+    preds.(decoders{iDec}).vaf = vaf;
+    preds.(decoders{iDec}).mse = mse;
+    preds.(decoders{iDec}).pred = pred.preddatabin;
+    preds.(decoders{iDec}).orig = orig;
+end
+
+% now, plot raster and predictions
+figure('Position',[200 200 800 600]);
+iDec = 1;
+colors = {'r','b'};
+subplot1(2,2,'FontS',14,'Gap',[0 0]);
+subplot1(1);
+
+hold all;
+imagesc(preds.timeframe,1:size(preds.spikes,2),preds.spikes'); colorbar('East');
+axis('tight');
+set(gca,'FontSize',14,'TickDir','out');
+box off;
+ax(1) = gca;
+subplot1(3);
+plot(preds.timeframe,preds.(decoders{iDec}).orig(:,decIdx),'LineWidth',2,'Color','k');
+plot(preds.timeframe,preds.(decoders{iDec}).pred(:,decIdx),'LineWidth',2,'Color','r');
+axis('tight');
+set(gca,'FontSize',14,'TickDir','out');
+box off;
+xlabel('Time (sec)','FontSize',14);
+
+
+use_array = 'PMd';
+bin_file = fullfile(root_dir,use_array,'BinnedData',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_' epoch '_' m d y '_trim.mat']);
+
+for iDec = 1
+    filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder_' decoders{iDec} '.mat']);
+    load(bin_file);
+    [~,testData] = splitBinnedData_Matt(binnedData,t(1),t(2));
+    [pred, ~] = predictSignals(filt_file,testData);
+    [r2,vaf,mse,orig] = ActualvsOLPred_Matt(testData,pred,0,0);
+    
+    preds.timeframe = pred.timeframe;
+    preds.spikes = pred.spikeratedata;
+    preds.sg = pred.spikeguide;
+    preds.(decoders{iDec}).r2 = r2;
+    preds.(decoders{iDec}).vaf = vaf;
+    preds.(decoders{iDec}).mse = mse;
+    preds.(decoders{iDec}).pred = pred.preddatabin;
+    preds.(decoders{iDec}).orig = orig;
+end
+
+% now, plot raster and predictions
+subplot1(2);
+hold all;
+imagesc(preds.timeframe,1:size(preds.spikes,2),preds.spikes'); colorbar('East');
+axis('tight');
+set(gca,'FontSize',14,'TickDir','out');
+box off;
+ax(1) = gca;
+subplot1(4);
+plot(preds.timeframe,preds.(decoders{iDec}).orig(:,decIdx),'LineWidth',2,'Color','k');
+plot(preds.timeframe,preds.(decoders{iDec}).pred(:,decIdx),'LineWidth',2,'Color','b');
+axis('tight');
+set(gca,'FontSize',14,'TickDir','out');
+box off;
+xlabel('Time (sec)','FontSize',14);
+end
+% 
+% iDec = 1;
+% colors = {'r','b'};
+% subplot1(2);
+% plot(preds.timeframe,preds.(decoders{iDec}).orig(:,decIdx),'LineWidth',2,'Color','k');
+% for iArray = 1:length(arrays)
+%     use_array = arrays{iArray};
+%     
+%     bin_file = fullfile(root_dir,use_array,'BinnedData',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_' epoch '_' m d y '_trim.mat']);
+%     
+%     filt_file = fullfile(root_dir,use_array,'Decoders',doFiles{iFile,2},[doFiles{iFile,1} '_' use_array '_' doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' m d y '_Decoder_' decoders{iDec} '.mat']);
+%     load(bin_file);
+%     [~,testData] = splitBinnedData_Matt(binnedData,t(1),t(2));
+%     [pred, ~] = predictSignals(filt_file,testData);
+%     [r2,vaf,mse,orig] = ActualvsOLPred_Matt(testData,pred,0,0);
+%     
+%     preds.timeframe = pred.timeframe;
+%     preds.spikes = pred.spikeratedata;
+%     preds.sg = pred.spikeguide;
+%     preds.(decoders{iDec}).r2 = r2;
+%     preds.(decoders{iDec}).vaf = vaf;
+%     preds.(decoders{iDec}).mse = mse;
+%     preds.(decoders{iDec}).pred = pred.preddatabin;
+%     preds.(decoders{iDec}).orig = orig;
+%     
+%     plot(preds.timeframe,preds.(decoders{iDec}).pred(:,decIdx),'LineWidth',2,'Color',colors{iArray});
+%     axis('tight');
+%     set(gca,'FontSize',14,'TickDir','out');
+%     box off;
+%     xlabel('Time (sec)','FontSize',14);
+%     
+%     
+% end
+% ax(2) = gca;
+% linkaxes(ax,'x');
+% 

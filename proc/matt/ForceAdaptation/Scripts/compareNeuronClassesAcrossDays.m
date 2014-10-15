@@ -8,11 +8,7 @@ rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
 saveData = true;
 rewriteFiles = true;
 
-monkey = 'Chewie';
-useArray = 'M1';
-paramSetName = 'movement';
-tunePeriod = 'onpeak';
-tuneMethod = 'regression';
+monkey = 'Mihili';
 
 dataSummary;
 

@@ -50,7 +50,7 @@ end
 
 saveFile = fullfile(baseDir,'multiday_tracking.mat');
 
-tracking = trackNeurons(criteria,arrays,allData);
+tracking = trackNeurons(criteria,{'M1'},allData);
 
 if saveData
     % save the new file with classification info

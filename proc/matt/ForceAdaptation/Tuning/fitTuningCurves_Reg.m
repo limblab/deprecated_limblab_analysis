@@ -38,9 +38,12 @@ pds = tcs(:,3);
 pd_cis = cbs{3};
 mds = tcs(:,2);
 md_cis = cbs{2};
+bos = tcs(:,1);
+bo_cis = cbs{1};
 
 out.pds = [pds pd_cis];
 out.mds = [mds md_cis];
+out.bos = [bos bo_cis];
 
 out.boot_pds = boot_pds;
 out.boot_mds = boot_mds;

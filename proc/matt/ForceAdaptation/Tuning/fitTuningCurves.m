@@ -1,4 +1,4 @@
-function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays)
+function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRandSubset)
 % FITTUNINGCURVES  Wrapper function to calculate tuning curves
 %
 %   This function will calculate tuning using a variety of methods for
@@ -39,8 +39,15 @@ function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-if nargin < 4
-    arrays = [];
+% for doing the random subset
+numSamples = 32;
+numResamples = 100;
+
+if nargin < 5
+    doRandSubset = false;
+    if nargin < 4
+        arrays = [];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -97,20 +104,34 @@ for iEpoch = 1:length(epochs)
         for iMethod = 1:length(tuningMethods)
             for iTune = 1:length(tuningPeriods)
                 
-                switch lower(epochs{iEpoch})
-                    case 'bl'
+                if doRandSubset
+                    switch lower(epochs{iEpoch})
+                        case 'bl'
+                            numBlocks = numResamples;
+                            idx = 0;
+                        case 'ad'
+                            numBlocks = numResamples;
+                            idx = numResamples;
+                        case 'wo'
+                            numBlocks = numResamples;
+                            idx = 2*numResamples;
+                    end
+                else
+                    switch lower(epochs{iEpoch})
+                        case 'bl'
+                            numBlocks = 1;
+                            idx = 0;
+                        case 'ad'
+                            numBlocks = length(adBlocks)-1;
+                            idx = 1;
+                        case 'wo'
+                            numBlocks = length(woBlocks)-1;
+                            idx = 1+length(adBlocks)-1;
+                    end
+                    
+                    if numBlocks < 1
                         numBlocks = 1;
-                        idx = 0;
-                    case 'ad'
-                        numBlocks = length(adBlocks)-1;
-                        idx = 1;
-                    case 'wo'
-                        numBlocks = length(woBlocks)-1;
-                        idx = 1+length(adBlocks)-1;
-                end
-                
-                if numBlocks < 1
-                    numBlocks = 1;
+                    end
                 end
                 
                 for iBlock = 1:numBlocks
@@ -140,8 +161,17 @@ for iEpoch = 1:length(epochs)
                             
                         otherwise % do regression of cosine model for period specified in tuneType
                             if ~strcmpi(tuningPeriods{iTune},'file')
-                                t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,doPlots);
-                                
+                                % here's a weird case. this allows for randomly resampling
+                                % the same subset of trials. If the second and third
+                                % numbers are the same, this is triggered
+                                if doRandSubset
+                                    % keep passing in first block so we use those trials.
+                                    % ad_exclude_trials might look like 0 0.33 0.33 0.33 0.33, to do 4 resamples
+                                    %   weird format: pass in number of samples as negative
+                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,-numSamples,doPlots);
+                                else % do normal stuff
+                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,doPlots);
+                                end
                             else
                                 disp('WARNING: cannot use whole file for regression/vectorsum tuning method, so skipping this tuning period input');
                             end

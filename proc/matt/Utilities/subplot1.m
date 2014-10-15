@@ -1,4 +1,4 @@
-function subplot1(M,N,varargin);
+function h_out = subplot1(M,N,varargin);
 %-------------------------------------------------------------------------
 % subplot1 function         An mproved subplot function
 % Input  : - If more than one input argumenst are given,
@@ -58,6 +58,7 @@ FontS  = FontSDef;
 XScale = XScaleDef;
 YScale = YScaleDef;
 
+h_out = [];
 
 MoveFoc = 0;
 if (nargin==1),
@@ -136,6 +137,8 @@ switch MoveFoc
     end
 
     set(gcf,'CurrentAxes',H(M));
+    
+    h_out = H(M);
 
  case 0
     %--- open subplots ---

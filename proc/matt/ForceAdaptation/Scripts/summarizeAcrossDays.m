@@ -188,7 +188,7 @@ for iDay = 1:size(goodDates,1)
                         allDPDs = [allDPDs; dpds(idx)];
                         allTasks = [allTasks; {taskType}];
                         allAdapts = [allAdapts; {adaptType}];
-                        allPDs = [allPDs; pds(idx)];
+                        allPDs = [allPDs; pds(idx,:)];
                     end
                 end
             end
@@ -209,13 +209,13 @@ end
 %% now repeat Richardson/Bizzi plot
 allPDs = nan(length(fuck),15);
 for unit = 1:length(fuck)
-    pds = fuck(unit).pds;
+    pds = fuck(unit).dpd;
     a = fuck(unit).adapt;
     t = fuck(unit).task;
     ff_inds = find(strcmpi(a,'ff'));
     
-    if size(pds,1) > 1 % if there is more than one day
-        allPDs(unit,ff_inds) = pds(ff_inds);
+    if size(ff_inds,1) > 1 % if there is more than one day
+        allPDs(unit,ff_inds) = pds(ff_inds,1);
     end
 end
 
@@ -223,19 +223,24 @@ allPDs(all(isnan(allPDs),2),:) = [];
 allPDs(:,all(isnan(allPDs),1)) = [];
 
 % now, for each day take average difference from day before
-ymin = -90;
-ymax = 90;
+ymin = -100;
+ymax = 100;
 figure;
 hold all;
     
 for i = 2:size(allPDs,2)
-    dpds = angleDiff(allPDs(:,i-1),allPDs(:,i),true,true).*(180/pi);
+    dpds = angleDiff(allPDs(:,1),allPDs(:,i),true,true).*(180/pi);
     s = nanstd(dpds)/sqrt(sum(~isnan(dpds)));
-    plot(i-1,nanmean(dpds),'bd','LineWidth',2);
-    plot([i-1,i-1],[nanmean(dpds)+s,nanmean(dpds)-s],'b-','LineWidth',2);
+%     plot(i-1,nanmean(dpds),'bd','LineWidth',2);
+%     plot([i-1,i-1],[nanmean(dpds)+s,nanmean(dpds)-s],'b-','LineWidth',2);
+    plot(repmat(i-1,1,length(dpds)),dpds,'bo','LineWidth',2);
 end
 
-set(gca,'XLim',[0,size(allPDs,2)+1],'YLim',[ymin ymax]);
+plot(0,0,'bo','LineWidth',2);
+set(gca,'XLim',[-0.5,size(allPDs,2)+1],'YLim',[ymin ymax],'TickDir','out');
+box off;
+ylabel('Change in PD from previous day (deg)','FontSize',14);
+xlabel('Number of Days From Neuron Appearance','FontSize',14);
 
 % % for each cell, plot average change in PD for VR days against average
 % % change for FF days

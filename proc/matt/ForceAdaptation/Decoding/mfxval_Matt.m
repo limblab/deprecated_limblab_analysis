@@ -89,12 +89,18 @@ for i=0:nfold-1
         fillen = 2*options.fillen -binsize;
     else        
         model = BuildModel_Matt(trainData, options);
-        PredData = predictSignals(model, testData);
+        PredData = predictSignals_Matt(model, testData);
         fillen = options.fillen;
     end
-        
+    
     TestSigs = concatSigs_Matt(testData, options.PredEMGs, options.PredForce, options.PredCursPos, options.PredVeloc, options.PredTarg, options.PredCompVeloc,options.PredMoveDir); 
-%     R2(i+1,:,1) = CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)';
+%     R2   = [R2; CalculateR2(TestSigs,PredData.preddatabin)'];
+%     vaf  = [vaf; 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ ...
+%                         sum( (TestSigs - ...
+%                         repmat(mean(TestSigs),...
+%                         size(TestSigs,1),1)).^2 )];  
+%     mse  = [mse; mean((PredData.preddatabin-TestSigs).^2)];
+    
     R2   = [R2; CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)'];
     vaf  = [vaf; 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
                         sum( (TestSigs(round(fillen/binsize):end,:) - ...

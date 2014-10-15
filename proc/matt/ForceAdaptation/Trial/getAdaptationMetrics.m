@@ -67,8 +67,8 @@ for iEpoch = 1:length(epochs)
     
     % put hand coordinates into cursor coordinates
     if ( strcmp(adaptType,'VR') || strcmp(adaptType,'VRFF') ) && strcmp(epochs{iEpoch},'AD')
-        xoffset = 5;
-        yoffset = -35;
+        xoffset = 3;
+        yoffset = -33;
         pos(:,1) = pos(:,1)-xoffset;
         pos(:,2) = pos(:,2)-yoffset;
         
@@ -111,7 +111,8 @@ for iEpoch = 1:length(epochs)
     for iMove = 1:size(mt,1)
         % movement table: [ target angle, on_time, go cue, move_time, peak_time, end_time ]
         % has the start of movement window, end of movement window
-        moveWins(iMove,:) = [mt(iMove,4), mt(iMove,6)-holdTime];
+        moveWins(iMove,:) = [mt(iMove,4)+0.1, mt(iMove,5)+0.1];
+        % moveWins(iMove,:) = [mt(iMove,4), mt(iMove,6)-holdTime];
     end
     
     blockTimes = 1:stepSize:size(mt,1)-behavWin;
@@ -254,7 +255,19 @@ for iEpoch = 1:length(epochs)
         disp('Getting time to target data...')
         % get time to target from movement table
         % end time minus go cue
-        ttts = mt(:,6)-mt(:,3)-holdTime;
+        ttts = zeros(size(mt,1),1);        
+        for iMove = 1:size(mt,1)
+            tt = mt(iMove,6)-mt(iMove,4)-holdTime;
+        % normalize time to target by distance
+        t_start = mt(iMove,4);
+        t_end = mt(iMove,6);
+        pos_start = pos(find(t <= t_start,1,'last'),:);
+        pos_end = pos(find(t <= t_end,1,'last'),:);
+        
+        d = sqrt( (pos_end(1) - pos_start(1)).^2 + (pos_end(2) - pos_start(2)).^2 );
+        
+        ttts(iMove) = tt/d;
+        end
         
         % now group error in blocks to track adaptation
         tttMeans = zeros(length(blockTimes),2);

@@ -1,4 +1,4 @@
-function classes = findMemoryCells(expParamFile, outDir, paramSetName, compMethod, classifierBlocks)
+function classes = findMemoryCells(expParamFile, outDir, paramSetName, compMethod, classifierBlocks,doRandSubset)
 % FINDMEMORYCELLS  Compares tuning of cells to classify their behavior
 %
 %   This function uses the tuning made by fitTuningCurves to classify them
@@ -84,7 +84,12 @@ for iMethod = 1:length(tuningMethods)
             else
                 t = tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).(useArray).tuning;
                 
-                [cellClass,~] = classifyCells(t,tuningMethods{iMethod},compMethod,classifierBlocks);
+                if doRandSubset
+                    t = t(classifierBlocks);
+                    [cellClass,~] = classifyCells(t,tuningMethods{iMethod},compMethod,[1,2,3]);
+                else
+                    [cellClass,~] = classifyCells(t,tuningMethods{iMethod},compMethod,classifierBlocks);
+                end
                 
                 % get cells that are significantly tuned in all epochs
                 %   first column is PDs, second is MDs

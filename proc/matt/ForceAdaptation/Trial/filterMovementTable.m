@@ -7,6 +7,13 @@ function [mt,centers] = filterMovementTable(data,paramSetName,excludeTrials,useB
 %
 %   The values to use are specified in the analysis_parameters file
 
+% Stuff to do a random subset
+% currently hardcoded. Change this eventually
+
+% I pass in -1 if I'm doing the random subset thing
+
+doRandSubset = false;
+
 if nargin < 5
     verbose = true;
     if nargin < 4
@@ -16,6 +23,12 @@ if nargin < 5
         end
     end
 end
+
+if useBlock < 0
+    doRandSubset = true;
+    numSamples = -useBlock;
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
@@ -87,8 +100,10 @@ end
 
 % for adaptation, exclude some trials
 if excludeTrials && ~isempty(ADexcludeFraction) && strcmp(data.meta.epoch,'AD')
-    if useBlock ~= -1 % then pick the correct indices
+    if useBlock > 0 % then pick the correct indices
         ADexcludeFraction = ADexcludeFraction(useBlock:useBlock+1);
+    elseif useBlock < 0
+        ADexcludeFraction = ADexcludeFraction(1:2);
     end
     
     if length(ADexcludeFraction) == 1
@@ -100,8 +115,8 @@ if excludeTrials && ~isempty(ADexcludeFraction) && strcmp(data.meta.epoch,'AD')
             centers = centers(1:ADexcludeFraction,:);
         else
             % remove the first fraction of trials trials
-            mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
             centers = centers(floor(ADexcludeFraction*size(mt,1)):end,:);
+            mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
         end
     else
         if any(ADexcludeFraction > 1)
@@ -114,8 +129,8 @@ if excludeTrials && ~isempty(ADexcludeFraction) && strcmp(data.meta.epoch,'AD')
             if start <= 0
                 start = 1;
             end
-            mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
             centers = centers(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
+            mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
         end
     end
     
@@ -123,8 +138,10 @@ end
 
 % Do the same for washout
 if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'WO')
-    if useBlock ~= -1 % then pick the correct indices
+    if useBlock > 0 % then pick the correct indices
         WOexcludeFraction = WOexcludeFraction(useBlock:useBlock+1);
+    elseif useBlock < 0
+        WOexcludeFraction = WOexcludeFraction(1:2);
     end
     
     if length(WOexcludeFraction) == 1
@@ -135,8 +152,8 @@ if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'W
             centers = centers(1:WOexcludeFraction,:);
         else
             % remove the first fraction of trials trials
-            mt = mt(floor(WOexcludeFraction*size(mt,1)):end,:);
             centers = centers(floor(WOexcludeFraction*size(mt,1)):end,:);
+            mt = mt(floor(WOexcludeFraction*size(mt,1)):end,:);
         end
     else
         if any(WOexcludeFraction > 1)
@@ -149,14 +166,23 @@ if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'W
             if start <= 0
                 start = 1;
             end
-            mt = mt(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
             centers = centers(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
+            mt = mt(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
         end
     end
 end
 
+% Now, select random subset of trials if it's that protocol
+if doRandSubset
+    disp('DOING THE RANDOM SUBSET THING! WATCH OUT!');
+    idx = randi(size(mt,1),1,numSamples);
+    idx = sort(idx);
+    mt = mt(idx,:);
+    centers = centers(idx,:);
+end
 
-% Now, filter based on speed (slow or fast?)
+% Now, filter based on speed (slow or fast?) if needed
+% [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
 if strcmpi(paramSetName,'speed_slow') || strcmpi(paramSetName,'speed_fast')
     meanVels = zeros(size(mt,1),1);
     for iMove = 1:size(mt,1)

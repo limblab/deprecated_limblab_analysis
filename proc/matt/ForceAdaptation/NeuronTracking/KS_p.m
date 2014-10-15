@@ -122,8 +122,8 @@ for i = 1:num_days % Loop through days
     % Initialize
     COMPS{i}.chan = zeros(length(sort_inds{i}.inds),num_days);
     COMPS{i}.inds = zeros(length(sort_inds{i}.inds),num_days);
-    COMPS{i}.p_isi = zeros(length(sort_inds{i}.inds),num_days);
-    COMPS{i}.p_wave = zeros(length(sort_inds{i}.inds),num_days);
+    COMPS{i}.p_isi = cell(length(sort_inds{i}.inds),num_days);
+    COMPS{i}.p_wave = cell(length(sort_inds{i}.inds),num_days);
     
     for j = 1:length(sort_inds{i}.inds) % find ID of unit in day i
         % Compile isi/wave information
@@ -142,6 +142,8 @@ for i = 1:num_days % Loop through days
         for k = find(1:num_days ~= i) % Look at other days
             % Find units on the same channel
             same_chan = find(sort_inds{k}.ch_un(:,1) == chan);
+            all_p_isi = zeros(length(same_chan),2);
+            all_p_wave = zeros(length(same_chan),2);
             for l = 1:length(same_chan) % For all units on the same electrode
                 % Compile their isi/wave information
                 index2 = sort_inds{k}.inds(same_chan(l));
@@ -201,22 +203,22 @@ for i = 1:num_days % Loop through days
                     temp = temp*p_wave;
                 end
                 
+                all_p_isi(l,:) = [chan2 + 0.1*unit2,p_isi];
+                    all_p_wave(l,:) = [chan2 + 0.1*unit2,p_wave];
+                    
                 if temp < conf^(length(criteria))
                     % Link the two as matched neurons
                     COMPS{i}.chan(j,k) = chan2 + 0.1*unit2;
-                    COMPS{i}.inds(j,k) = sorted_list_ind;
-                    COMPS{i}.p_isi(j,k) = p_isi;
-                    COMPS{i}.p_wave(j,k) = p_wave;
-                elseif chan==chan2 && unit==unit2
-                    COMPS{i}.p_isi(j,k) = p_isi;
-                    COMPS{i}.p_wave(j,k) = p_wave;
+%                     COMPS{i}.inds(j,k) = sorted_list_ind;
                 end
                 
             end
+            COMPS{i}.p_isi{j,k} = all_p_isi;
+            COMPS{i}.p_wave{j,k} = all_p_wave;
         end
         
     end
-    COMPS{i}.sg = dayids;
+%     COMPS{i}.sg = dayids;
 end
 
 end
