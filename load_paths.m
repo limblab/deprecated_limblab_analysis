@@ -29,7 +29,6 @@ addpath([dir '/BMI_analysis']);
 % script in your proc directory if you need to.  This is to avoid filename
 % conflicts between proc directories.
 
-clear dir;
 currpath = textscan(path,'%s','delimiter',pathsep);
 currpath = currpath{1};
 svnpath = currpath(~cellfun(@isempty,strfind(currpath,'.svn')));
@@ -38,3 +37,5 @@ for iPath = 2:size(svnpath,1)
     svnpathstr = [svnpathstr ';' svnpath{iPath}]; %#ok<AGROW>
 end
 rmpath(svnpathstr)
+
+clear dir svnpathstr svnpath matpath iPath currpath;
