@@ -21,3 +21,6 @@ if strcmp(mergingStatus,'processed')
 		bdf_cell{i} = get_nev_mat_data([file_path file_names{i}],3);
 	end
 end
+
+% Save bdf_cell
+save([file_path file_prefix '_bdf_cell.mat'],'bdf_cell');
