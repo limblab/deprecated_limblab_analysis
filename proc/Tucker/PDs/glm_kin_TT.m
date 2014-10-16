@@ -37,7 +37,8 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
     else
         reps = 100;
     end
-
+    
+    vt = bdf.vel(:,1);
     %% calculate firing rate
     if isfield(bdf.units,'fr')
         %if the firing rate is already a field in bdf.units
@@ -45,6 +46,10 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
     else
         %ts = 200; % time step (ms)
         ts = 50;
+        t = vt(1):ts/1000:vt(end);
+        spike_times = get_unit(bdf,chan,unit)-offset;
+        spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
+        s = train2bins(spike_times, t);
     end
     
     if length(varargin)>3
@@ -53,11 +58,8 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
         num_samp = floor(1000*(bdf.vel(end,1)-bdf.vel(1,1))/ts);
     end
     
-     vt = bdf.vel(:,1);
-    t = vt(1):ts/1000:vt(end);
-    spike_times = get_unit(bdf,chan,unit)-offset;
-    spike_times = spike_times(spike_times>t(1) & spike_times<t(end));
-    s = train2bins(spike_times, t);   
+ 
+       
     
     %% interpolate kinematics and kinetics to firing rate
     glmx = interp1(bdf.pos(:,1), bdf.pos(:,2:3), t);
@@ -115,16 +117,14 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
         idx = uint32(1+(length(glmx)-1)*rand(num_samp,1));
 
         % run glmfit on bootstrap iteration
-        [b,dev,stats] = glmfit(glm_input(idx,:),s(idx),'poisson');
-        b_mat(:,bootCt) = b;
-        stats_mat{:,bootCt}=stats;
-        dev_mat(:,bootCt)=dev; 
+        [b_mat(:,bootCt),dev_mat(:,bootCt),stats_mat{bootCt}] = glmfit(glm_input(idx,:),s(idx),'poisson');
     end
     % find average regression coefficients, dev and stats for main function
     % output
     avg_b = mean(b_mat,2);
     avg_dev = mean(dev_mat,2);
     %set up a mean stats 
+    avg_stats=[];
     avg_stats.beta = 0;
     avg_stats.dfe = 0;
     avg_stats.sfit = 0;
@@ -160,7 +160,7 @@ function [avg_b, avg_dev, avg_stats, varargout] = glm_kin_TT(bdf, chan, unit,var
     %% compute optional outputs
     if nargout > 3
         %compute log likelihood of data given poisson model
-        lambda = glmval(b, glm_input, 'log');
+        lambda = glmval(avg_b, glm_input, 'log')
         varargout{1} = sum(log(lambda.^(s')) - lambda - log(factorial(s')));
     end
 

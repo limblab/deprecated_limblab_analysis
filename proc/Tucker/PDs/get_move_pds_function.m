@@ -19,6 +19,7 @@ function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
     
     %make single and multi unit data sets
     bdf_multiunit=remove_sorting(bdf);
+    bdf_multiunit=testAllTuning(bdf_multiunit);
     data_struct.Multi_unit_bdf=bdf_multiunit;
     temp=[];
     for i=1:length(bdf.units)
@@ -30,6 +31,9 @@ function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
         end
     end
     bdf.units=temp;
+    
+    bdf=testAllTuning(bdf);
+    
     data_struct.bdf=bdf;
     %identify time vector for binning
     vt = bdf.vel(:,1);

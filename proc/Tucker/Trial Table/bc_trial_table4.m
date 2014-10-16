@@ -1,4 +1,4 @@
-function [tt, hdr]= bc_trial_table3(bdf)
+function [tt, hdr]= bc_trial_table4(bdf)
 % BC_TRIAL_TABLE - returns a table containing the key timestamps for all of
 %                  the bump choice trials in BDF. In addition to the trial
 %                  table, this function returns a header struct that maps
@@ -103,8 +103,43 @@ for trial = 1:num_trials-1
         else
             stim_code = -1;
         end
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+%paste from mastercon code to ensure matching when extracting data from
+%databurst:
+% 2         db->addByte(DATABURST_VERSION);
+% 3         db->addByte('2');
+% 4         db->addByte('B');
+% 5         db->addByte('C');
+% 6         db->addByte(BEHAVIOR_VERSION_MAJOR);
+% 7         db->addByte(BEHAVIOR_VERSION_MINOR);
+% 8         db->addByte((BEHAVIOR_VERSION_MICRO & 0xFF00) >> 8);
+% 9         db->addByte(BEHAVIOR_VERSION_MICRO & 0x00FF);
+% 10:13 	db->addFloat((float)this->tgt_angle);
+% 14:17 	db->addFloat((float)this->bump_dir);
+% 18        db->addByte((byte)this->params->use_random_targets);
+% 19:22 	db->addFloat((float)this->params->target_floor);
+% 23:26 	db->addFloat((float)this->params->target_ceiling);
+% 27:30 	db->addFloat((float)this->bumpmag_local);
+% 31:34 	db->addFloat((float)this->params->bump_duration);
+% 35:38 	db->addFloat((float)this->params->bump_ramp);
+% 39:42 	db->addFloat((float)this->params->bump_floor);
+% 43:46 	db->addFloat((float)this->params->bump_ceiling);
+% 47        db->addByte((byte)this->stim_trial);
+% 48        db->addByte((byte)this->training_trial);
+% 49:52 	db->addFloat((float)this->params->training_frequency);
+% 53:56 	db->addFloat((float)this->params->stim_prob);
+% 57        db->addByte((byte)this->params->recenter_cursor);
+% 58:61 	db->addFloat((float)this->params->target_radius);
+% 62:65 	db->addFloat((float)this->params->target_size);
+% 66:69 	db->addFloat((float)this->params->intertrial_time);
+% 70:73 	db->addFloat((float)this->params->penalty_time);
+% 74:77 	db->addFloat((float)this->params->bump_hold_time);
+% 78:81 	db->addFloat((float)this->params->ct_hold_time);
+% 82:85 	db->addFloat((float)this->params->bump_delay_time);
+% 86        db->addByte((byte)this->params->show_target_during_bump);
+% 87:90 	db->addFloat((float)this->params->bump_incr);
+% 91        db->addByte((byte)this->is_primary_target);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
 
         numbytes=db(1);
         db_version=db(2);

@@ -62,7 +62,7 @@ end
 %% get pds, standard errors and modulation depth and unit list
 model='posvel';
 %[pds, errs, moddepth] = glm_pds(bdf,include_unsorted,model);
-[pds, errs, moddepth,CI,LL, LLN]=glm_pds_TT(bdf,2,'posvel',1000,10000)
+[pds, errs, moddepth,CI]=glm_pds_TT2(bdf,2,'posvel',1000,10000);
 u1 = unit_list(bdf,1); % gets two columns back, first with channel
 % numbers, second with unit sort code on that channel
 if isempty(u1)
