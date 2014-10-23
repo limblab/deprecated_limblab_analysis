@@ -1,5 +1,5 @@
 function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
-
+close all
 %%set params
     ts = 50;%binning size
     offset=-0.015; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
@@ -16,6 +16,8 @@ function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
         disp(strcat('converting: ',fname))
         bdf=get_cerebus_data(fname,3,'verbose','noeye');
     end
+
+
     
     %make single and multi unit data sets
     bdf_multiunit=remove_sorting(bdf);
@@ -35,9 +37,6 @@ function [figure_list,data_struct]=get_move_pds_function(folderpath,input_data)
     bdf=testAllTuning(bdf);
     
     data_struct.bdf=bdf;
-    %identify time vector for binning
-    vt = bdf.vel(:,1);
-    t = vt(1):ts/1000:vt(end);
 
     %compute PDs for single units
     disp('computing single unit PDs and plotting results')
