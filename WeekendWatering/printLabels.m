@@ -1,6 +1,5 @@
-% GoogleDriveURL = 'https://docs.google.com/spreadsheet/ccc?key=0AtEH4EqHWe9JdG5sMnJmZ0piWExMY2pSTFMteUFadXc#gid=0';
-% GoogleDriveID = GoogleDriveURL(strfind(GoogleDriveURL,'key=')+4:strfind(GoogleDriveURL,'&usp')-1);
-WaterSheetFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\Weekend water and food Miller-Slutzky 2014-07-19.xlsx';
+WaterSheetFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\';
+WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2014-10-18.xlsx'];
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
@@ -78,7 +77,7 @@ for iRoom = 1:num_rooms
             for iAnimal = 1:size(datatemp,1)
                 if ~isempty(datatemp{iAnimal,2*iDate})
     %                 if sum(isstrprop(datatemp{iAnimal,2*iDate}, 'digit'))
-                    if isnumeric(datatemp{iAnimal,2*iDate})
+                    if isnumeric(datatemp{iAnimal,2*iDate}) && ~isnan(datatemp{iAnimal,2*iDate})
                         labelData{end+1} = {daystemp{iDate};datatemp{iAnimal,1};datatemp{iAnimal,2*iDate}};
                         color_order(end+1) = iDate;
                         excel_water_row = (strfind({WeekendWatering{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
@@ -100,7 +99,7 @@ for iRoom = 1:num_rooms
             for iAnimal = 1:size(datatemp,1)
                 if ~isempty(datatemp{iAnimal,2*iDate+1})
     %                 if sum(isstrprop(datatemp{iAnimal,2*iDate+1}, 'digit'))   
-                    if isnumeric(datatemp{iAnimal,2*iDate+1})
+                    if isnumeric(datatemp{iAnimal,2*iDate+1})  && ~isnan(datatemp{iAnimal,2*iDate+1})
                         excel_food_row = (strfind({WeekendFeeding{:,1}},datatemp{iAnimal,1}(find(datatemp{iAnimal,1}==' ',1,'last')+1:end)));
                         excel_food_row = find(~cellfun(@isempty,excel_food_row));
                         range = strcat(food_col{1},num2str(excel_food_row));
