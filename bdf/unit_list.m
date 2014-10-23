@@ -26,14 +26,18 @@ for i = 1:L
     end
 end
 
-list = list(list(:,2)~=255,:);
+if ~isempty(list)
+    list = list(list(:,2)~=255,:);
 
-if ~include_unsorted
-    list = list(list(:,2)~=0,:);
-elseif include_unsorted==2
-    list = list(list(:,2)==0,:);
-elseif include_unsorted==1
-    %do nothing.
+    if ~include_unsorted
+        list = list(list(:,2)~=0,:);
+    elseif include_unsorted==2
+        list = list(list(:,2)==0,:);
+    elseif include_unsorted==1
+        %use whole list
+    else
+        disp('unrecognized code for including unsorted spikes')
+    end
 else
-    disp('unrecognized code for including unsorted spikes')
+    warning('S1_ANALYSIS:BDF:UNIT_LIST:NoUnitsFound','No units found in the bdf')
 end
