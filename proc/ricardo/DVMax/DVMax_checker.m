@@ -1,8 +1,8 @@
 function DVMax_checker()
     MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
     testing = 0;
-    water_codes = {'EP8500','EP9000','EP2000'};
-    free_water_codes = {'EP9200 '};
+    water_codes = {'EP8500','EP9000','EP2000','AC1091'};
+    free_water_codes = {'EP9200 ','AC1093'};
     water_restriction_start_codes = {'EP9100','AC1092'};
     food_codes = {'EP8600','EP8700'};
     free_food_codes = {'EP9400'};
@@ -374,7 +374,7 @@ function monkey_final_list(animalList,peopleList,testing)
         subject = ['(this is a test) All monkeys received water and food'];
         message = {'The following monkeys received water and food today:'};
         for iMonkey = 1:length(animalList)
-            message = {message{:},[animalList(iMonkey).animalName ' -    water: ' animalList(iMonkey).bottled_by '    wood: ' animalList(iMonkey).fed_by]};
+            message = {message{:},[animalList(iMonkey).animalName ' -      water: ' animalList(iMonkey).bottled_by '    food: ' animalList(iMonkey).fed_by]};
         end 
         message = {message{:},'Sent from Matlab! This is a test.'};
         send_mail_message(recepients,subject,message)
@@ -385,7 +385,7 @@ function monkey_final_list(animalList,peopleList,testing)
         subject = ['All monkeys received water and food'];
         message = {'The following monkeys received water and food today:'};
         for iMonkey = 1:length(animalList)
-            message = {message{:},[animalList(iMonkey).animalName ' -    water: ' animalList(iMonkey).bottled_by '    wood: ' animalList(iMonkey).fed_by]};
+            message = {message{:},[animalList(iMonkey).animalName ' -       water: ' animalList(iMonkey).bottled_by '    food: ' animalList(iMonkey).fed_by]};
         end 
         message = {message{:},'Sent from Matlab!'};
             message_sent = 0;
