@@ -1,6 +1,14 @@
-function binnedData = convert2BDF2Binned(cerebus_filename,varargin)
+function binnedData = convert2BDF2Binned(varargin)
+% convert2BDF2Binned([cerebus_filename],[binning_parameters])
 
-[datapath,filename,ext] = fileparts(cerebus_filename);
+if nargin
+    cerebus_filename = varargin{1};
+    [datapath,filename] = fileparts(cerebus_filename);
+else
+    [filename, datapath] = uigetfile( { '*.nev'}, 'Open Cerebus Data File' );
+    cerebus_filename = fullfile(datapath,filename);
+end
+
 BDF_filename = [filename '_BDF.mat'];
 bin_filename = [filename '_bin.mat'];
 

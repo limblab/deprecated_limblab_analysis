@@ -4,8 +4,12 @@ function plotBin(datastructname)
 
 %% Loading the Data Structure
 
-    datastruct = LoadDataStruct(datastructname,'binned');
-
+    if isstruct(datastructname)
+        datastruct = datastructname;
+    else
+        datastruct = LoadDataStruct(datastructname);
+    end
+    
     if isempty(datastruct)
        disp(sprintf('Could not load structure %s',datastructname));
        return
@@ -255,8 +259,15 @@ end
         
         if (usr_plotEMGs && (usr_plotForce || usr_plotPos)) %plot EMG and Force on two different Y axis
             hold off; axis auto;
+            force_pos = [];
+            if usr_plotForce
+                force_pos = datastruct.forcedatabin(:,Force_to_plot);
+            end
+            if usr_plotPos
+                force_pos = [force_pos datastruct.cursorposbin(:,Pos_to_plot)];
+            end
             [AX,H1,H2]=plotyy(datastruct.timeframe, datastruct.emgdatabin(:,EMGs_to_plot),...
-                              datastruct.timeframe, [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)] );
+                              datastruct.timeframe, force_pos );
             [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot,:),'Location','NorthWest');
             [leghf,objhf,outhf,outmf]=legend(AX(2),[ForceNames(Force_to_plot,:); PosNames(Pos_to_plot,:)],'Location','NorthEast');
             legh = [leghe; leghf];

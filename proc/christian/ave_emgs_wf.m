@@ -74,28 +74,5 @@ end
 
 %polar plot of EMGs
 if plotflag
-    %EMG pattern for Go_Cues:
-    figure;
-    theta = 0:2*pi()/(numEMGs):2*pi();
-    
-    %This is just a way to plot radial axis from 0 to 1:
-    P = polar(theta, ones(size(theta)));
-    set(P, 'Visible', 'off'); hold on;
-    
-    %now plot EMG pattern:
-    rho = [EMGpatterns(1,:) EMGpatterns(1,1)];
-    P = polar(theta,rho);
-    title('Center Hold');
-    
-    %EMG patterns for tgts
-    for t=1:numTgts
-        figure;
-        theta = 0:2*pi()/(numEMGs):2*pi();
-        %same trick here:
-        P = polar(theta, ones(size(theta)));
-        set(P, 'Visible', 'off'); hold on;
-        rho = [EMGpatterns(t+1,:) EMGpatterns(t+1,1)];
-        polar(theta,rho);
-        title(sprintf('Target %g',t));
-    end
+    plot_emg_patterns(EMGpatterns)
 end
