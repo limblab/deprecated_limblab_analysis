@@ -1,8 +1,8 @@
-function [Array_Activity_Map] = map_array_activity(monkey_name, Data, Data_Type, varargin) 
+function [Array_Activity_Map, map_matrix] = map_array_activity(monkey_name, Data, Data_Type, varargin) 
 % Author: Michael Scheid
 % Email: mr.scheid@u.northwestern.edu
 % February 2013, Slutzky Lab, Northwestern University
-%5/10/13 edited by MWS
+% 5/10/13 edited by MWS
 
 % This function plots any data you give it by its corresponding
 % position on the monkey's electrode array
@@ -11,6 +11,8 @@ function [Array_Activity_Map] = map_array_activity(monkey_name, Data, Data_Type,
     
     % Data - data to be plotted by array configuration, THIS FUNCTION
     % ASSUMES THE DATA IS SORTED BY CHANNEL (96xn matrix, rows - ordered chs 1-96,  columns - n data points ie. time)
+    
+    % Data_Type - Spike or LFP
     
     % Spike_list - is the output from the function unit_list, which gives the
     % order and identity of the spike channels wrto the data (Not needed

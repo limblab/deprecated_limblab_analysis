@@ -1,42 +1,50 @@
 plotLGHG = 0;
 plotSpHG = 0;
 
-ControlCh =  75;
-HC_I = [1 4];
-BC_I = [13 17];
+ControlCh =  66;
+HC_I = [1:6];
+BC_I = [17:26];
 
-Gam200_300 = 1;
 %% Find Sig and Insig correlations around MOVEMENT ONSET %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Find all significant correlations for spike-high gamma
-Sig   = AvgP.MovementOnset(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) <= .05;
-Insig = AvgP.MovementOnset(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) >= .05;
-Onset_Corr = AvgCorr.MovementOnset(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]);
+Sig   = AvgP.MovementOnset(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) <= .05;
+Insig = AvgP.MovementOnset(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) >= .05;
+Onset_Corr = AvgCorr.MovementOnset(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]);
 Onset_Corr_Sig = Onset_Corr(Sig);
 Onset_Corr_Insig = Onset_Corr(Insig);
 clear Onset_Corr Sig Insig
 
 % Same for low-gamma and high-gamma
-Sig   = AvgP.LG_HG_MovementOnset(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) <= .05;
-Insig = AvgP.LG_HG_MovementOnset(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) >= .05;
-LGHG_Onset_Corr   = AvgCorr.LG_HG_MovementOnset(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]);
+Sig   = AvgP.LG_HG_MovementOnset(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) <= .05;
+Insig = AvgP.LG_HG_MovementOnset(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) >= .05;
+LGHG_Onset_Corr   = AvgCorr.LG_HG_MovementOnset(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]);
 LGHG_Onset_Corr_Sig = LGHG_Onset_Corr(Sig);
 LGHG_Onset_Corr_Insig = LGHG_Onset_Corr(Insig);
 clear LGHG_Onset_Corr Sig Insig
 
 %% Now Find all Spike and High-Gamma FP traces of significant correlations
 if length(ControlCh) == 1
-    Sig = zeros(ControlCh,BC_I(2));
+    Sig = zeros(ControlCh,BC_I(end));
 end
 
 fi = 1;
-for j = [HC_I(1):HC_I(2) BC_I(1):BC_I(2)]
+for j = [HC_I(1):HC_I(end) BC_I(1):BC_I(end)]
     Sig(ControlCh,j) = AvgP.MovementOnset(ControlCh,j) <= .05;
     if length(ControlCh) == 1
-        if Sig(ControlCh,j) == 1
+%         if Sig(ControlCh,j) == 1
+        if j == BC_I(1)
+            BC_Ind = fi;
+        end
+        if isempty(AvgCorr.FPTraceStart{j}) == 0
+            % If just looking at control ch you're looking at all traces
+            % not just sig ones
             Onset_Gam3Trace_Sig(:,fi) = AvgCorr.FPTraceStart{j}(:,ControlCh,3);
             Onset_SpTrace_Sig(:,fi)   = AvgCorr.SpTraceStart{j}(:,ControlCh);
+            
+            Onset_Gam3Trace_STE_Sig(:,fi) = AvgCorr.FPTraceStartSTE{j}(:,ControlCh,3);
+            Onset_SpTrace_STE_Sig(:,fi)   = AvgCorr.SpTraceStartSTE{j}(:,ControlCh);
             fi = fi+1;
         else
             continue
@@ -44,16 +52,20 @@ for j = [HC_I(1):HC_I(2) BC_I(1):BC_I(2)]
     else
         Onset_Gam3Trace_Sig(:,:,fi) = AvgCorr.FPTraceStart{j}(:,Sig(:,j)'==1,3);
         Onset_SpTrace_Sig(:,:,fi) = AvgCorr.SpTraceStart{j}(:,Sig(:,j)==1);
+        
+        Onset_Gam3Trace_STE_Sig(:,:,fi) = AvgCorr.FPTraceStartSTE{j}(:,Sig(:,j)'==1,3);
+        Onset_SpTrace_STE_Sig(:,:,fi) = AvgCorr.SpTraceStartSTE{j}(:,Sig(:,j)==1);
         fi = fi+1;
     end
 end
 clear Sig fi
 
 fi = 1;
-for j = [HC_I(1):HC_I(2) BC_I(1):BC_I(2)]
+for j = [HC_I(1):HC_I(end) BC_I(1):BC_I(end)]
     Sig(ControlCh,j) = AvgP.LG_HG_MovementOnset(ControlCh,j) <= .05;
     if length(ControlCh) == 1
-        if Sig(ControlCh,j) == 1
+%         if Sig(ControlCh,j) == 1
+        if isempty(AvgCorr.FPTraceStart{j}) == 0
             Onset_LowGamTrace_Sig(:,fi) = AvgCorr.FPTraceStart{j}(:,ControlCh,1);
             Onset_Gam2Trace_Sig(:,fi)   = AvgCorr.FPTraceStart{j}(:,ControlCh,2);
             fi = fi+1;
@@ -80,31 +92,32 @@ Onset_Gam2Trace_Sig_Neg = Onset_Gam2Trace_Sig(:,LGHG_Onset_Corr_Sig < 0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Repeat for window before reward
-Sig   = AvgP.PriorToReward(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) <= .05;
-Insig = AvgP.PriorToReward(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) >= .05;
-Reward_Corr = AvgCorr.PriorToReward(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]);
+Sig   = AvgP.PriorToReward(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) <= .05;
+Insig = AvgP.PriorToReward(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) >= .05;
+Reward_Corr = AvgCorr.PriorToReward(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]);
 Reward_Corr_Sig = Reward_Corr(Sig);
 Reward_Corr_Insig = Reward_Corr(Insig);
 clear Reward_Corr Sig Insig
 
 % Same for low-gamma and high-gamma
-Sig   = AvgP.LG_HG_PriorToReward(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) <= .05;
-Insig = AvgP.LG_HG_PriorToReward(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]) >= .05;
-LGHG_Reward_Corr   = AvgCorr.LG_HG_PriorToReward(ControlCh,[HC_I(1):HC_I(2) BC_I(1):BC_I(2)]);
+Sig   = AvgP.LG_HG_PriorToReward(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) <= .05;
+Insig = AvgP.LG_HG_PriorToReward(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]) >= .05;
+LGHG_Reward_Corr   = AvgCorr.LG_HG_PriorToReward(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)]);
 LGHG_Reward_Corr_Sig = LGHG_Reward_Corr(Sig);
 LGHG_Reward_Corr_Insig = LGHG_Reward_Corr(Insig);
 clear LGHG_Reward_Corr Sig Insig
 
 %% Now Find all Spike and High-Gamma FP traces of significant correlations
 if length(ControlCh) == 1
-    Sig = zeros(ControlCh,BC_I(2));
+    Sig = zeros(ControlCh,BC_I(end));
 end
 
 fi = 1;
-for j = [HC_I(1):HC_I(2) BC_I(1):BC_I(2)]
+for j = [HC_I(1):HC_I(end) BC_I(1):BC_I(end)]
     Sig(ControlCh,j) = AvgP.PriorToReward(ControlCh,j) <= .05;
     if length(ControlCh) == 1
-        if Sig(ControlCh,j) == 1
+%         if Sig(ControlCh,j) == 1
+        if isempty(AvgCorr.FPTraceEnd{j}) == 0
             Reward_Gam3Trace_Sig(:,fi) = AvgCorr.FPTraceEnd{j}(:,ControlCh,3);
             Reward_SpTrace_Sig(:,fi)   = AvgCorr.SpTraceEnd{j}(:,ControlCh);
             fi = fi+1;
@@ -120,10 +133,11 @@ end
 clear Sig fi
 
 fi = 1;
-for j = [HC_I(1):HC_I(2) BC_I(1):BC_I(2)]
+for j = [HC_I(1):HC_I(end) BC_I(1):BC_I(end)]
     Sig(ControlCh,j) = AvgP.LG_HG_PriorToReward(ControlCh,j) <= .05;
     if length(ControlCh) == 1
-        if Sig(ControlCh,j) == 1
+%         if Sig(ControlCh,j) == 1
+        if isempty(AvgCorr.FPTraceEnd{j}) == 0
             Reward_LowGamTrace_Sig(:,fi) = AvgCorr.FPTraceEnd{j}(:,ControlCh,1);
             Reward_Gam2Trace_Sig(:,fi)   = AvgCorr.FPTraceEnd{j}(:,ControlCh,2);
             fi = fi+1;
@@ -226,7 +240,7 @@ if plotSpHG == 1
     xlim([-1 1])
     clear h*
 end
-if plotLGHG == 1;
+if plotLGHG == 1
     
     figure
     subplot(2,2,1)
@@ -293,35 +307,80 @@ end
 
 
 
+% figure
+% for i = 1 : size(Reward_Gam2Trace_Sig,2)
+%     
+%     Rows = ceil(size(Reward_Gam2Trace_Sig,2)/4);
+%     subplot(Rows,4,i)
+%     [AX,H1,H2] = plotyy([0:150],Reward_Gam2Trace_Sig(:,i),[0:150],Reward_LowGamTrace_Sig(:,i))
+%     set(AX(1),'Xlim',[0 150])
+%     set(AX(1),'XTick',[0,50,100,150],'XTickLabel',{'-150','-100','-50','0'})
+%     set(H1,'Color','b')
+%     set(AX(2),'Xlim',[0 150])
+%     set(AX(2),'XTick',[0,50,100,150],'XTickLabel',{'-150','-100','-50','0'})
+%     set(H2,'LineWidth',3.0)
+%     if i == BC_Ind
+%         title('Brain Control')
+%     end
+% end
+% legend('Gamma 130-200 Hz','Low Gamma')
+% figure
+% for i = 1 : size(Onset_Gam2Trace_Sig,2)
+%     
+%     Rows = ceil(size(Onset_Gam2Trace_Sig,2)/4);
+%     subplot(Rows,4,i)
+%     [AX,H1,H2] = plotyy([0:500],Onset_Gam2Trace_Sig(:,i),[0:500],Onset_LowGamTrace_Sig(:,i))
+%     set(AX(1),'Xlim',[0 500])
+%     set(AX(1),'XTick',[0,250,500],'XTickLabel',{'-0.25','0','.25'})
+%     set(H1,'Color','b')
+%     set(AX(2),'Xlim',[0 500])
+%     set(AX(2),'XTick',[0,250,500],'XTickLabel',{'-0.25','0','.25'})
+%     set(H2,'LineWidth',3.0)
+%     if i == BC_Ind
+%         title('Brain Control')
+%     end
+% end
+% legend('Gamma 130-200 Hz','Low Gamma')
+
 figure
-for i = 1 : size(Reward_Gam2Trace_Sig_Neg,2)
+for i = 1 : size(Onset_Gam3Trace_Sig,2)
     
-    Rows = ceil(size(Reward_Gam2Trace_Sig_Neg,2)/4);
+    Rows = ceil(size(Onset_Gam3Trace_Sig,2)/4);
     subplot(Rows,4,i)
-    [AX,H1,H2] = plotyy([0:150],Reward_Gam2Trace_Sig_Neg(:,i),[0:150],Reward_LowGamTrace_Sig_Neg(:,i))
+%     [AX,H1,H2] = plotyy([0:500],Onset_Gam3Trace_Sig(:,i),[0:500],Onset_SpTrace_Sig(:,i))
+    [ax H]= shadedErrorBaryy([0:500],Onset_Gam3Trace_Sig(:,i),Onset_Gam3Trace_STE_Sig(:,i),'g',[0:500],Onset_SpTrace_Sig(:,i),Onset_SpTrace_STE_Sig(:,i),'r')
+    set(ax(1),'Xlim',[0 500])
+    set(ax(1),'XTick',[0,250,500],'XTickLabel',{'-0.25','0','.25'})
+%     set(H(1),'Color','b')
+    set(ax(2),'Xlim',[0 500])
+    set(ax(2),'XTick',[0,250,500],'XTickLabel',{'-0.25','0','.25'})
+%     set(H(2),'LineWidth',3.0)
+    if i == BC_Ind
+        title('Brain Control')
+    end
+    ah = findobj(gca,'TickDirMode','auto')
+    set(ah,'Box','off')
+    set(ah,'TickLength',[0,0])
+end
+legend('High Gamma 200-300 Hz','Spikes')
+
+figure
+for i = 1 : size(Reward_Gam3Trace_Sig,2)
+    
+    Rows = ceil(size(Reward_Gam3Trace_Sig,2)/4);
+    subplot(Rows,4,i)
+    [AX,H1,H2] = plotyy([0:150],Reward_Gam3Trace_Sig(:,i),[0:150],Reward_SpTrace_Sig(:,i))
     set(AX(1),'Xlim',[0 150])
     set(AX(1),'XTick',[0,50,100,150],'XTickLabel',{'-150','-100','-50','0'})
     set(H1,'Color','b')
     set(AX(2),'Xlim',[0 150])
     set(AX(2),'XTick',[0,50,100,150],'XTickLabel',{'-150','-100','-50','0'})
     set(H2,'LineWidth',3.0)
-    
+    if i == BC_Ind
+        title('Brain Control')
+    end
 end
-legend('High Gamma 200-300 Hz','Spike Rate')
-figure
-for i = 1 : size(Onset_FPTrace_Sig_Neg,2)
-    
-    Rows = ceil(size(Onset_FPTrace_Sig_Neg,2)/4);
-    subplot(Rows,4,i)
-    [AX,H1,H2] = plotyy([0:500],Onset_FPTrace_Sig_Neg(:,i),[0:500],Onset_SpTrace_Sig_Neg(:,i))
-    set(AX(1),'Xlim',[0 500])
-    set(AX(1),'XTick',[0,250,500],'XTickLabel',{'-0.25','0','.25'})
-    set(H1,'Color','b')
-    set(AX(2),'Xlim',[0 500])
-    set(AX(2),'XTick',[0,250,500],'XTickLabel',{'-0.25','0','.25'})
-    set(H2,'LineWidth',3.0)
-    
-end
-legend('High Gamma 200-300 Hz','Spike Rate')
+
+legend('High Gamma 200-300 Hz','Spikes')
 
 % [h p ] = ttest2(HC_Correlations_Sig,BC_Correlations_Sig)

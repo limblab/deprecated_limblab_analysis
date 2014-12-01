@@ -31,12 +31,14 @@ if PlotOn == 1
         x = DecoderAge;
     end
     
+    
     plot(x, r_map_mean,'ko')
     xlabel('Decoder Age')
     ylabel('Mean Correlation Coefficient')
     title('Mean Corr Coeff of PD Map')
     
-    Xticks = x(1:4:end); % size(Xlabels,1)];
+    Xticks = min(x):floor(range(x)/4):max(x)
+% size(Xlabels,1)];
 %     Xticks = [Xticks' get(gca,'Xtick')]';
 %     Xticks = sort(Xticks)
 %     Xticks = unique(Xticks);

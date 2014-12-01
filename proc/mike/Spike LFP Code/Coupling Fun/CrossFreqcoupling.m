@@ -27,15 +27,29 @@ pri = 1;
 fi =1;
 ind = 1;
 
-FileList = Mini_Ch40_LowGamx_Gam2Y;
+FileList = Mini_U34_SpikeX_Ch66_Gamma3Y;
 bandstarts = [30, 130, 200];
 bandends   = [50, 200, 300];
 
-ControlCh = 40;
+HC_I = [1:6];
+BC_1DG = [7:9];
+BC_1DSp = [10:11];
+BC_I = [17:26];
+
+ControlCh = 66;
 %% Find file path, load file and start iterating through files
-for q = [16:20]
+for q = [BC_I(1):BC_I(end)] % [HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]
     
-    fnam{q} =  findBDFonCitadel(FileList{q,1})
+    if exist('fnam','var') == 0         
+            fnam{q} =  findBDFonCitadel(FileList{q,1})
+    elseif length(fnam) >= q
+        if isempty(fnam{q}) == 1
+            fnam{q} =  findBDFonCitadel(FileList{q,1})    
+        end
+    else
+        fnam{q} =  findBDFonCitadel(FileList{q,1}) 
+    end
+    
     try
         load(fnam{q})
     catch exception
@@ -43,7 +57,9 @@ for q = [16:20]
         FilesNotRun{q,1} = fnam
         continue
     end
-
+    if exist('out_struct','var') == 0
+        continue
+    end
     %% Declare input variables within loop that vary in each loop iteration:
     [sig, ~, ~, ~,~,~,~,~,~, analog_time_base] = SetPredictionsInputVar(out_struct);
  
@@ -54,7 +70,7 @@ for q = [16:20]
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
 
     clear y numbins sig analog_time_base
-    
+    tsFPorder = cell([q 96]);
     %% Bin and organize spikes
     if 1
         cells = unit_list(bdf);
@@ -161,12 +177,24 @@ for q = [16:20]
     end
     
     clear a b BP_Vec TrialBP
-    
-    for k = ControlCh%1:size(fp,1)
+ %%   
+    for k = ControlCh% 1:size(fp,1)
         FPstartTime = fptimes(1);
         SpikedataToParse = tsFPorder{q,k};
         tic
+        
+%         try
         [Trials{k,q}] = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikedataToParse);
+%         catch exception
+%             FilesNotRun{q,2} = exception;
+%             FilesNotRun{q,1} = fnam
+%             continue
+%         end
+        if length(Trials{k,q}.FPstart) < 30           
+            FilesToCheck(ind) = q;
+            ind = ind+1;
+        end
+        
         toc
         clear FPdataToParse SpikedataToParse
     end

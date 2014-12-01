@@ -42,7 +42,7 @@ function [filePDs,bootstrapPDS,spike_counts]=PDs_from_spikes(root,startword,rewa
 %change it also in vector_sum_PDs
 
 
-degres=30;%if you change degres here change it also in vector_sum_PDs
+degres=20;%if you change degres here change it also in vector_sum_PDs
 
 filePDs=cell(3,1);
    

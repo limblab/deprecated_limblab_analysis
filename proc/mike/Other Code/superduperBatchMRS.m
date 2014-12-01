@@ -1,7 +1,7 @@
-Dates = DatesMini;
+Dates = {'05-28-2013'};
 
 for i = 1:length(Dates)
     
-    superBatch('Mini',Dates{i})
+    superBatch('Chewie',Dates{i})
     
 end

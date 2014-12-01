@@ -31,24 +31,34 @@ end
 gotimes = out_struct.words(GoSuccessInds,1);
 Successtimes = out_struct.words(SuccessTrialInds,1);
 words = out_struct.words;
-windowStart = 2;
+windowStart = 3;
 windowEnd = 2;
-[SuccessMovetimes,SuccessTrialInds,Successtimes]= moveonsetfromBDF(out_struct.vel,gotimes,Successtimes,SuccessTrialInds,words,windowStart,windowEnd);
+
+[SuccessMovetimes,SuccessTrialInds,Successtimes,MaxVelT]= moveonsetfromBDF_MRS(out_struct.vel,gotimes,Successtimes,SuccessTrialInds,words,windowStart,windowEnd);
+
 SuccessTrialInds(SuccessMovetimes < windowStart) = [];
-SuccessTrialInds(SuccessTrialInds < 3) = [];
+SuccessTrialInds(SuccessTrialInds <= 3) = [];
 % Successtimes(SuccessMovetimes < windowStart) = [];
-SuccessMovetimes(SuccessMovetimes < windowStart) = [];
+SuccessMovetimes(SuccessMovetimes <= windowStart) = [];
+MaxVelT(MaxVelT < windowStart) = [];
+
+GoSuccessInds(gotimes < windowStart) = [];
+gotimes(gotimes <= windowStart+2) = [];
+GoSuccessInds(GoSuccessInds <= 3) = [];
+GoSuccessInds(gotimes > out_struct.vel(end,1)-3) = [];
+
 
 %% Calc move times for failed trials
 if isempty(GoFailInds) == 0 & length(GoFailInds) > 1
     gotimes = out_struct.words(GoFailInds,1);
     Failtimes = out_struct.words(FailTrialInds,1);
     try
-    [FailMovetimes,FailTrialInds,Failtimes]=moveonsetfromBDF(out_struct.vel,gotimes,Failtimes,FailTrialInds,words,windowStart,windowEnd);
+    [FailMovetimes,FailTrialInds,Failtimes,MaxVelFailT]=moveonsetfromBDF_MRS(out_struct.vel,gotimes,Failtimes,FailTrialInds,words,windowStart,windowEnd);
     FailTrialInds(FailMovetimes < windowStart) = [];
-    FailTrialInds(FailTrialInds < 3) = [];
+    FailTrialInds(FailTrialInds <= 3) = [];
     %     Failtimes(FailMovetimes < windowStart) = [];
     FailMovetimes(FailMovetimes < windowStart) = [];
+    MaxVelFailT(MaxVelFailT < windowStart) = [];
     end
 end
 
@@ -57,11 +67,12 @@ if isempty(GoIncompleteInds) == 0 & length(GoIncompleteInds) > 1
     gotimes = out_struct.words(GoIncompleteInds,1);
     Incompletetimes = out_struct.words(IncompleteTrialInds,1);
     try
-    [IncompleteMovetimes, IncompleteTrialInds,Incompletetimes]=moveonsetfromBDF(out_struct.vel,gotimes,Incompletetimes,IncompleteTrialInds,words,windowStart,windowEnd);
+    [IncompleteMovetimes, IncompleteTrialInds,Incompletetimes,MaxVelIncmpT]=moveonsetfromBDF_MRS(out_struct.vel,gotimes,Incompletetimes,IncompleteTrialInds,words,windowStart,windowEnd);
     IncompleteTrialInds(IncompleteMovetimes < windowStart) = [];
-    IncompleteTrialInds(IncompleteTrialInds < 3) = [];
+    IncompleteTrialInds(IncompleteTrialInds <= 3) = [];
     %     Incompletetimes(IncompleteMovetimes < windowStart) = [];
     IncompleteMovetimes(IncompleteMovetimes < windowStart) = [];
+    MaxVelIncmpT(MaxVelIncmpT < windowStart) = [];
     end
 end
 % plotIt = 0;
@@ -69,6 +80,7 @@ j = 1;
 n = 1;
 l = 1;
 t = 1;
+Alloffsets = 0;
 
 TrialWTargetWord = zeros(length(SuccessTrialInds)+length(FailTrialInds)+length(IncompleteTrialInds),1);
 TempTargetID = zeros(length(SuccessTrialInds)+length(FailTrialInds)+length(IncompleteTrialInds),1);
@@ -79,9 +91,6 @@ TrialEndIndexFP = zeros(length(SuccessTrialInds)+length(FailTrialInds)+length(In
 
 %% Parse successful trials
 for i = 1:length(SuccessTrialInds)
-    
-    TimeEnd = eval(vpa(out_struct.words(SuccessTrialInds(i),1),6));
-    TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
     
     if  round(out_struct.words(SuccessTrialInds(i)-2,2)) == 64 || ...
             round(out_struct.words(SuccessTrialInds(i)-2,2)) == 65 ||...
@@ -100,33 +109,45 @@ for i = 1:length(SuccessTrialInds)
         TrialWTargetWord(j) = 1;
     end
     
-    if t <= length(SuccessMovetimes)
-        TrialStartIndexFP(j) = round((SuccessMovetimes(t)-fpstarttime)/.001);
+    if t <= length(SuccessMovetimes) && TrialWTargetWord(i) == 1
+       
         
         % Check if HC or BC by looking at increment in kinematic variable (1 ms --HC, 50 ms --BC)
         if round((out_struct.pos(2,1)-out_struct.pos(1,1))*1000) == 1
             TrialStartIndexKin(j) = round((SuccessMovetimes(t)-1)/.001);
-            if TrialStartIndexKin(j)+2000 > length(out_struct.pos) | TrialStartIndexKin(j)-2000 < 0 % If HC trial index goes past end of file, skip it
+            TrialMVIndexKin(j) = round((MaxVelT(t)-fpstarttime)/.001);
+            
+            if TrialStartIndexKin(j)+2000 > length(out_struct.pos) | TrialStartIndexKin(j)-2000 < 0 |...
+                    TrialMVIndexKin(j)+2000 > length(out_struct.pos) | TrialMVIndexKin(j)-2000 < 0 
+                % If HC trial index goes past end of file, skip it
                 j = j+1;
                 t = t+1;
                 continue
             else
                 % 2000 is size of window around movement onset, should
                 % make this a variable instead of hard coding it
-                Trial.Path_Whole{t} = out_struct.pos(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
-                Trial.Vel_Whole{t} = out_struct.vel(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                Trial.Path_MO{t} = out_struct.pos(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                Trial.Vel_MO{t} = out_struct.vel(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                
+                Trial.Path_MV{t} = out_struct.pos(TrialMVIndexKin(j)-2000:TrialMVIndexKin(j)+2000,:);
+                Trial.Vel_MV{t} = out_struct.vel(TrialMVIndexKin(j)-2000:TrialMVIndexKin(j)+2000,:);
             end
         else
             TrialStartIndexKin(j) = round((SuccessMovetimes(t)-1)/.05);
+            TrialMVIndexKin(j) = round((MaxVelT(t)-fpstarttime)/.05);
             
             % If BC trial index goes past end of file, or before beginning skip it
-            if TrialStartIndexKin(j)+40 > length(out_struct.pos) | TrialStartIndexKin(j)-40 < 0  
+            if TrialStartIndexKin(j)+40 > length(out_struct.pos) | TrialStartIndexKin(j)-40 < 0|...
+                    TrialMVIndexKin(j)+40 > length(out_struct.pos) | TrialMVIndexKin(j)-40 < 0    
                 j = j+1;
                 t = t+1;
                 continue
             else
-                Trial.Path_Whole{t} = out_struct.pos(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
-                Trial.Vel_Whole{t} = out_struct.vel(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                Trial.Path_MO{t} = out_struct.pos(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                Trial.Vel_MO{t} = out_struct.vel(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                
+                Trial.Path_MV{t} = out_struct.pos(TrialMVIndexKin(j)-40:TrialMVIndexKin(j)+40,:);
+                Trial.Vel_MV{t} = out_struct.vel(TrialMVIndexKin(j)-40:TrialMVIndexKin(j)+40,:);
             end
         end
         Trial.TargetID(t) = TempTargetID(j);
@@ -137,16 +158,32 @@ for i = 1:length(SuccessTrialInds)
         continue
     end
     
-    if nnz(TrialWTargetWord) == j % Ran into a weird
+    if TrialWTargetWord(i) == 1 % Ran into a weird
         % 2/5/14 bug where there was a reward without any Go cue
         % word (49) or the outer target ON word itself (64-67)
         
-        % MRS 5/29/14 Added this logic because the TrialEndIndex
-        % exceeded the length of the fp matrix
         
+        % MRS 5/29/14 Added this logic because the TrialEndIndex
+        % exceeded the length of the fp matrix    
+        
+        % Determine start index of FP trial segment to extract centered on
+        % movement onset
+        TrialStartIndexFP(j) = round((SuccessMovetimes(t)-fpstarttime)/.001);
+        
+        % Determine start index of FP trial segment to extract centered on
+        % maximum velocity
+        TrialMVIndexFP(j) = round((MaxVelT(t)-fpstarttime)/.001);
+        
+        % Determine start index of FP trial segment to extract aligned to
+        % reward time.
+        TimeEnd = eval(vpa(out_struct.words(SuccessTrialInds(i),1),6));
+        TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
+
+        % Now extract those segments
         if TrialEndIndexFP(j) < length(fp)
             for B = 1:size(fp,3)
                 Trial.FPstart{t,B} = fp(TrialStartIndexFP(j)-2000:TrialStartIndexFP(j)+2000,1,B);
+                Trial.FPMaxV{t,B} = fp(TrialMVIndexFP(j)-2000:TrialMVIndexFP(j)+2000,1,B);
                 Trial.FPend{t,B} = fp(TrialEndIndexFP(j)-2000:TrialEndIndexFP(j),1,B);
             end
         else
@@ -155,15 +192,90 @@ for i = 1:length(SuccessTrialInds)
             continue
         end
         
+        % Calculate time to target (TTT) by subtracting go time from reward
+        % time
+        if i <= length(GoSuccessInds)
+            TimeGo = eval(vpa(out_struct.words(GoSuccessInds(i),1),6));
+            if TimeGo < TimeEnd
+                if TimeEnd - TimeGo < 10
+                    Trial.TTT(t) = TimeEnd - TimeGo;
+                    if round((out_struct.pos(2,1)-out_struct.pos(1,1))*1000) == 1
+                        TrialEndIndexKin(j) = round((TimeEnd-fpstarttime)/.001);
+                        TrialGoIndexKin(j) = round((TimeGo-fpstarttime)/.001);
+                    else
+                        TrialEndIndexKin(j) = round((TimeEnd-fpstarttime)/.05);
+                        TrialGoIndexKin(j) = round((TimeGo-fpstarttime)/.05);
+                    end
+                    Trial.Path_Whole{t} = out_struct.pos(TrialGoIndexKin(j):TrialEndIndexKin(j),:);
+                    Trial.Vel_Whole{t} = out_struct.vel(TrialGoIndexKin(j):TrialEndIndexKin(j),:);
+                
+                else
+                    % If the go cue is way too early look to see if a later go
+                    % cue matches up better
+                    goOffset = 1;
+                    while TimeEnd - TimeGo > 10
+                        if i - goOffset < 1
+                            break
+                        end
+                        TimeGo = eval(vpa(out_struct.words(GoSuccessInds(i+goOffset),1),6));
+                        goOffset = goOffset + 1;
+                        
+                    end
+                    
+                    if TimeEnd - TimeGo < 10 && TimeEnd - TimeGo > 0 
+                        Trial.TTT(t) = TimeEnd - TimeGo;
+                        if round((out_struct.pos(2,1)-out_struct.pos(1,1))*1000) == 1
+                            TrialEndIndexKin(j) = round((TimeEnd-fpstarttime)/.001);
+                            TrialGoIndexKin(j) = round((TimeGo-fpstarttime)/.001);
+                        else
+                            TrialEndIndexKin(j) = round((TimeEnd-fpstarttime)/.05);
+                            TrialGoIndexKin(j) = round((TimeGo-fpstarttime)/.05);
+                        end
+                        Trial.Path_Whole{t} = out_struct.pos(TrialGoIndexKin(j):TrialEndIndexKin(j),:);
+                        Trial.Vel_Whole{t} = out_struct.vel(TrialGoIndexKin(j):TrialEndIndexKin(j),:);
+                    end
+                end
+            else
+                % If a go time is missing or misaligned, skip forward in reward
+                % time until you find one that matches up
+                offset = 0;
+                while TimeGo > TimeEnd
+                    TimeEnd = eval(vpa(out_struct.words(SuccessTrialInds(i+offset),1),6));
+                    offset = offset + 1;
+                    
+                    if i+offset > length(SuccessTrialInds)
+                        break
+                    end
+                end
+                
+                if TimeEnd - TimeGo < 10 && TimeEnd - TimeGo > 0 % Make sure go cue matches up to
+                    % proper reward and not next trials' reward
+                    Trial.TTT(t) = TimeEnd - TimeGo;
+                    
+                    if round((out_struct.pos(2,1)-out_struct.pos(1,1))*1000) == 1
+                        TrialEndIndexKin(j) = round((TimeEnd-fpstarttime)/.001);
+                        TrialGoIndexKin(j) = round((TimeGo-fpstarttime)/.001);
+                    else
+                        TrialEndIndexKin(j) = round((TimeEnd-fpstarttime)/.05);
+                        TrialGoIndexKin(j) = round((TimeGo-fpstarttime)/.05);
+                    end
+                    Trial.Path_Whole{t} = out_struct.pos(TrialGoIndexKin(j):TrialEndIndexKin(j),:);
+                    Trial.Vel_Whole{t} = out_struct.vel(TrialGoIndexKin(j):TrialEndIndexKin(j),:);
+                end
+            end
+        end
         % In case there's no spikes at the end of this trial
         % MRS 2/7/14
         StartTrial_SpikeTimes = ts((ts >= SuccessMovetimes(t)-2 & ts<=SuccessMovetimes(t)+2)) - (SuccessMovetimes(t));
+        MaxVTrial_SpikeTimes = ts((ts >= MaxVelT(t)-2 & ts<=MaxVelT(t)+2)) - (MaxVelT(t));
         EndTrial_SpikeTimes = ts((ts >= TimeEnd-2 & ts<=TimeEnd)) - (TimeEnd-2);
         if isempty(EndTrial_SpikeTimes) == 0
             Trial.tsstart(t).times = StartTrial_SpikeTimes;
+            Trial.tsMaxV(t).times = MaxVTrial_SpikeTimes;
             Trial.tsend(t).times = EndTrial_SpikeTimes;
         else
             Trial.tsstart(t).times = [];
+            Trial.tsMaxV(t).times = [];
             Trial.tsend(t).times = [];
         end
         
@@ -182,10 +294,7 @@ end
 %% Now parse Incomplete Trials
 if exist('IncompleteMovetimes','var')
     for i = 1:length(IncompleteTrialInds)
-        
-        TimeEnd = eval(vpa(out_struct.words(IncompleteTrialInds(i),1),6));
-        TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
-        
+            
         if  round(out_struct.words(IncompleteTrialInds(i)-2,2)) == 64 || ...
                 round(out_struct.words(IncompleteTrialInds(i)-2,2)) == 65 ||...
                 round(out_struct.words(IncompleteTrialInds(i)-2,2)) == 66 || ...
@@ -204,29 +313,39 @@ if exist('IncompleteMovetimes','var')
         end
         
         % If trial is too close to end of file, skip it
-        if n <= length(IncompleteMovetimes)
-            TrialStartIndexFP(j) = round((IncompleteMovetimes(n)-fpstarttime)/.001);
+        if n <= length(IncompleteMovetimes) && TrialWTargetWord(i) == 1
+            
             if round((out_struct.pos(2,1)-out_struct.pos(1,1))*1000) == 1
                 TrialStartIndexKin(j) = round((IncompleteMovetimes(n)-1)/.001);
+                TrialMVIndexKin(j) =round((MaxVelIncmpT(n)-fpstarttime)/.001);            
                 
-                if TrialStartIndexKin(j)+2000 > length(out_struct.pos) | TrialStartIndexKin(j)-2000 < 0 
+                if TrialStartIndexKin(j)+2000 > length(out_struct.pos) | TrialStartIndexKin(j)-2000 < 0 |...
+                    TrialMVIndexKin(j)+2000 > length(out_struct.pos) | TrialMVIndexKin(j)-2000 < 0 
                     j = j+1;
                     n = n+1;
                     continue
                 else
-                    Trial.Incomplete_Path_Whole{n} = out_struct.pos(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
-                    Trial.Incomplete_Vel_Whole{n} = out_struct.vel(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                    Trial.Incomplete_Path_MO{n} = out_struct.pos(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                    Trial.Incomplete_Vel_MO{n} = out_struct.vel(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                    
+                    Trial.Incomplete_Path_MV{n} = out_struct.pos(TrialMVIndexKin(j)-2000:TrialMVIndexKin(j)+2000,:);
+                    Trial.Incomplete_Vel_MV{n} = out_struct.vel(TrialMVIndexKin(j)-2000:TrialMVIndexKin(j)+2000,:);                                
                 end
             else
                 TrialStartIndexKin(j) = round((IncompleteMovetimes(n)-1)/.05);
+                TrialMVIndexKin(j) =round((MaxVelIncmpT(n)-fpstarttime)/.05);
                 
-                if TrialStartIndexKin(j)+40 > length(out_struct.pos) | TrialStartIndexKin(j)-40 < 0 
+                if TrialStartIndexKin(j)+40 > length(out_struct.pos) | TrialStartIndexKin(j)-40 < 0 |...
+                    TrialMVIndexKin(j)+40 > length(out_struct.pos) | TrialMVIndexKin(j)-40 < 0 
                     j = j+1;
                     n = n+1;
                     continue
                 else
-                    Trial.Incomplete_Path_Whole{n} = out_struct.pos(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
-                    Trial.Incomplete_Vel_Whole{n} = out_struct.vel(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                    Trial.Incomplete_Path_MO{n} = out_struct.pos(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                    Trial.Incomplete_Vel_MO{n} = out_struct.vel(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                    
+                    Trial.Incomplete_Path_MV{n} = out_struct.pos(TrialMVIndexKin(j)-40:TrialMVIndexKin(j)+40,:);
+                    Trial.Incomplete_Vel_MV{n} = out_struct.vel(TrialMVIndexKin(j)-40:TrialMVIndexKin(j)+40,:);
                 end
             end
             Trial.IncompleteTargetID(n) = TempTargetID(j);
@@ -234,10 +353,20 @@ if exist('IncompleteMovetimes','var')
             continue
         end
         
-        if nnz(TrialWTargetWord) == j % Copied from above
+        if TrialWTargetWord(i) == 1 % Copied from above
+            
+            TimeEnd = eval(vpa(out_struct.words(IncompleteTrialInds(i),1),6));
+            TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
+            
             if TrialEndIndexFP(j) < length(fp)
+                
+                TrialStartIndexFP(j) = round((IncompleteMovetimes(n)-fpstarttime)/.001);
+                
+                TrialMVIndexFP(j) = round((MaxVelIncmpT(n)-fpstarttime)/.001);
+                
                 for B = 1:size(fp,3)
                     Trial.Incomplete_FPstart{n,B} = fp(TrialStartIndexFP(j)-2000:TrialStartIndexFP(j)+2000,1,B);
+                    Trial.Incomplete_FPMaxV{t,B} = fp(TrialMVIndexFP(j)-2000:TrialMVIndexFP(j)+2000,1,B);
                     Trial.Incomplete_FPend{n,B} = fp(TrialEndIndexFP(j)-2000:TrialEndIndexFP(j),1,B); % Signal pos/vel
                 end
             else
@@ -247,12 +376,15 @@ if exist('IncompleteMovetimes','var')
             end
             % Copied from above
             StartTrial_SpikeTimes = ts((ts >= IncompleteMovetimes(n)-2 & ts<=IncompleteMovetimes(n)+2)) - (IncompleteMovetimes(n));
+            MaxVIncmpTrial_SpikeTimes = ts((ts >= MaxVelIncmpT(n)-2 & ts<=MaxVelIncmpT(n)+2)) - (MaxVelIncmpT(n));
             Incomplete_SpikeTimes = ts((ts >= TimeEnd-2 & ts<=TimeEnd)) - (TimeEnd-2);
             if isempty(Incomplete_SpikeTimes) == 0
                 Trial.Incomplete_tsstart(n).times = StartTrial_SpikeTimes;
+                Trial.Incomplete_tsMaxV(n).times = MaxVIncmpTrial_SpikeTimes;
                 Trial.Incomplete_tsend(n).times = Incomplete_SpikeTimes;
             else
                 Trial.Incomplete_tsstart(n).times = [];
+                Trial.Incomplete_tsMaxV(n).times = [];
                 Trial.Incomplete_tsend(n).times = [];
             end
             
@@ -271,9 +403,6 @@ end
 if exist('FailMovetimes','var')
     for i = 1:length(FailTrialInds)-1
         
-        TimeEnd = eval(vpa(out_struct.words(FailTrialInds(i),1),6));
-        TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
-        
         if  round(out_struct.words(FailTrialInds(i)-2,2)) == 64 || ...
                 round(out_struct.words(FailTrialInds(i)-2,2)) == 65 ||...
                 round(out_struct.words(FailTrialInds(i)-2,2)) == 66 || ...
@@ -291,28 +420,39 @@ if exist('FailMovetimes','var')
             TrialWTargetWord(j) = 1;
         end
         
-        if n <= length(IncompleteMovetimes)
-            TrialStartIndexFP(j) = round((FailMovetimes(l)-fpstarttime)/.001);
+        if n <= length(FailMovetimes) && TrialWTargetWord(i) == 1
             
             if round((out_struct.pos(2,1)-out_struct.pos(1,1))*1000) == 1
                 TrialStartIndexKin(j) = round((FailMovetimes(l)-1)/.001);
-                if TrialStartIndexKin(j)+2000 > length(out_struct.pos) | TrialStartIndexKin(j)-2000 < 0 
+                TrialMVIndexKin(j) = round((MaxVelFailT(l)-fpstarttime)/.001);
+                
+                if TrialStartIndexKin(j)+2000 > length(out_struct.pos) | TrialStartIndexKin(j)-2000 < 0 |...
+                    TrialMVIndexKin(j)+2000 > length(out_struct.pos) | TrialMVIndexKin(j)-2000 < 0 
                     j = j+1;
                     l = l+1;
                     continue
                 else
-                    Trial.Fail_Path_Whole{l} = out_struct.pos(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
-                    Trial.Fail_Vel_Whole{l} = out_struct.vel(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                    Trial.Fail_Path_MO{l} = out_struct.pos(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                    Trial.Fail_Vel_MO{l} = out_struct.vel(TrialStartIndexKin(j)-2000:TrialStartIndexKin(j)+2000,:);
+                    
+                    Trial.Fail_Path_MV{l} = out_struct.pos(TrialMVIndexKin(j)-2000:TrialMVIndexKin(j)+2000,:);
+                    Trial.Fail_Vel_MV{l} = out_struct.vel(TrialMVIndexKin(j)-2000:TrialMVIndexKin(j)+2000,:);
                 end
             else
                 TrialStartIndexKin(j) = round((FailMovetimes(l)-1)/.05);
-                if TrialStartIndexKin(j)+40 > length(out_struct.pos) | TrialStartIndexKin(j)-40 < 0 
+                TrialMVIndexKin(j) = round((MaxVelFailT(l)-fpstarttime)/.05);
+                
+                if TrialStartIndexKin(j)+40 > length(out_struct.pos) | TrialStartIndexKin(j)-40 < 0 |...
+                    TrialMVIndexKin(j)+40 > length(out_struct.pos) | TrialMVIndexKin(j)-40 < 0 
                     j = j+1;
                     l = l+1;
                     continue
                 else
-                    Trial.Fail_Path_Whole{l} = out_struct.pos(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
-                    Trial.Fail_Vel_Whole{l} = out_struct.vel(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                    Trial.Fail_Path_MO{l} = out_struct.pos(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                    Trial.Fail_Vel_MO{l} = out_struct.vel(TrialStartIndexKin(j)-40:TrialStartIndexKin(j)+40,:);
+                    
+                    Trial.Fail_Path_MV{l} = out_struct.pos(TrialMVIndexKin(j)-40:TrialMVIndexKin(j)+40,:);
+                    Trial.Fail_Vel_MV{l} = out_struct.vel(TrialMVIndexKin(j)-40:TrialMVIndexKin(j)+40,:);
                 end
             end
             Trial.FailTargetID(l) = TempTargetID(j);
@@ -322,11 +462,20 @@ if exist('FailMovetimes','var')
             continue
         end
         
-        if nnz(TrialWTargetWord) == j % Copied from above
+        if TrialWTargetWord(i) == 1 % Copied from above
             
+            TrialStartIndexFP(j) = round((FailMovetimes(l)-fpstarttime)/.001);
+            TrialMVIndexFP(j) = round((MaxVelFailT(l)-fpstarttime)/.001);
+            
+            
+            TimeEnd = eval(vpa(out_struct.words(FailTrialInds(i),1),6));
+            TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
+        
             if TrialEndIndexFP(j) < length(fp)
+                
                 for B = 1:size(fp,3)
                     Trial.Fail_FPstart{l,B} = fp(TrialStartIndexFP(j)-2000:TrialStartIndexFP(j)+2000,1,B);
+                    Trial.Fail_FPMaxV{t,B} = fp(TrialMVIndexFP(j)-2000:TrialMVIndexFP(j)+2000,1,B);
                     Trial.Fail_FPend{l,B} = fp(TrialEndIndexFP(j)-2000:TrialEndIndexFP(j),1,B);
                 end
             else
@@ -337,12 +486,15 @@ if exist('FailMovetimes','var')
             
             % Copied from above
             StartTrial_SpikeTimes = ts((ts >= FailMovetimes(l)-2 & ts<=FailMovetimes(l)+2)) - (FailMovetimes(l));
+            MaxVFailTrial_SpikeTimes = ts((ts >= MaxVelFailT(l)-2 & ts<=MaxVelFailT(l)+2)) - (MaxVelFailT(l));
             Fail_SpikeTimes = ts((ts >= TimeEnd-2 & ts<=TimeEnd)) - (TimeEnd-2);
             if isempty(Fail_SpikeTimes) == 0
                 Trial.Fail_tsstart(l).times = StartTrial_SpikeTimes;
+                Trial.Fail_tsMaxV(l).times  = MaxVFailTrial_SpikeTimes; 
                 Trial.Fail_tsend(l).times = Fail_SpikeTimes;
             else
                 Trial.Fail_tsstart(l).times = [];
+                Trial.Fail_tsMaxV(l).times = [];
                 Trial.Fail_tsend(l).times = [];
             end
             
@@ -358,83 +510,5 @@ if exist('FailMovetimes','var')
         
     end
 end
-%         clear Time* TrialStartIndex TrialEndIndex
 
-%         if round(out_struct.targets.corners(i,2)) == 8
-%         if round(out_struct.words(FirstTrialInds(i)+2,2)) == 64 || round(out_struct.words(FirstTrialInds(i)+2,2)) == 66 %down == 66 % words 64 = target position UP
-%             %if 1D in Y change this to 64 and 65 and
-%             %put dummy values in x
-%             if plotIt
-%                 figure(1)
-%                 plot(TrialPath{j}(:,2),TrialPath{j}(:,3),'b') % use to plot all trials
-%             end
-%             TrialPathY{jY} = y(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
-%             TrialInputY{jY} = xOnline(TrialStartIndexIn(j):TrialEndIndexIn(j),:);
-%             jY = jY+1;
-%             %           set(ppos,'Xdata',TrialPath{j}(:,2),'Ydata',TrialPath{j}(:,3),'Color','b') %use to scan though trials
-%         elseif round(out_struct.words(FirstTrialInds(i)+2,2)) == 65 || round(out_struct.words(FirstTrialInds(i)+2,2)) == 67 % words 65 = target position RIGHT or = 67 to the LEFT
-%             %if 1D in X change this to 64 and 65
-%             %put dummy values in y
-%             if plotIt
-%                 figure(2)
-%                 plot(TrialPath{j}(:,2),TrialPath{j}(:,3),'r') % use to plot all trials
-%             end
-%
-%             TrialPathX{jX} = y(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
-%             TrialInputX{jX} = xOnline(TrialStartIndexIn(j):TrialEndIndexIn(j),:);
-%             jX = jX+1;
-%             %           set(ppos,'Xdata',TrialPath{j}(:,2),'Ydata',TrialPath{j}(:,3),'Color','k') %use to scan though trials
-%
-%         elseif round(out_struct.words(FirstTrialInds(i)+2,2)) == 66 % words 65 = target position RIGHT or = 67 presumably to the LEFT
-%
-%             if plotIt
-%                 figure(3)
-%                 plot(TrialPath{j}(:,2),TrialPath{j}(:,3),'c') % use to plot all trials
-%             end
-%
-%             TrialPathnegY{jnegY} = y(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
-%             TrialInputnegY{jnegY} = xOnline(TrialStartIndexIn(j):TrialEndIndexIn(j),:);
-%             jnegY = jnegY+1;
-%             %           set(ppos,'Xdata',TrialPath{j}(:,2),'Ydata',TrialPath{j}(:,3),'Color','k') %use to scan though trials
-%         elseif round(out_struct.words(FirstTrialInds(i)+2,2)) == 67 % words 65 = target position RIGHT or = 67 presumably to the LEFT
-%             if plotIt
-%                 figure(4)
-%                 plot(TrialPath{j}(:,2),TrialPath{j}(:,3),'m') % use to plot all trials
-%             end
-%
-%             TrialPathnegX{jnegX} = y(TrialStartIndexPos(j):TrialEndIndexPos(j),:);
-%             TrialInputnegX{jnegX} = xOnline(TrialStartIndexIn(j):TrialEndIndexIn(j),:);
-%             jnegX = jnegX+1;
-%             %           set(ppos,'Xdata',TrialPath{j}(:,2),'Ydata',TrialPath{j}(:,3),'Color','k') %use to scan though trials
-%         end
-
-
-
-%         figure(2)
-%             plot(TrialInput{j}(:,1),TrialInput{j}(:,2),'k.') % use to plot all trials
-%         hold on
-%         pause(2) % use to plot all trials
-
-%else
-%fprintf('Trial Excluded\n')
-
-%end
 end
-
-% fprintf('Number of Trials = %3.0f \n', j-1)
-% fprintf('Number of Trials = %3.0f \n', jX-1)
-% fprintf('Number of Trials = %3.0f \n', jY-1)
-% %% Average correlation coefficient across all trials
-% for j = 1:length(TrialPath)
-%     [rtrialSig(j),pSig(j)] = corr(TrialPath{j}(:,2),TrialPath{j}(:,3));
-%     [rtrialInput(j),pInput(j)] = corr(TrialInput{j}(:,1),TrialInput{j}(:,2));
-% end
-% fprintf('Average R across trials - Predicted Position = %6.4f +- %4.2f \n',mean(rtrialSig) ,std(rtrialSig))
-% fprintf('Average R across trials - Input Signals = %6.4f +- %4.2f \n',mean(rtrialInput) ,std(rtrialInput))
-% %% Correlation across all trials concatenated
-% TrialPathCat=cat(1,TrialPath{:});
-% [rtrialpathcat,pCatPath] = corr(TrialPathCat(:,2),TrialPathCat(:,3));
-% fprintf('Average R across trials - Predicted Position Concatenated = %6.4f \n',rtrialpathcat)
-% TrialInputCat=cat(1,TrialInput{:});
-% [rtrialinputcat,pCatInput] = corr(TrialInputCat(:,1),TrialInputCat(:,2));
-% fprintf('Average R across trials - Input Signals Concatenated = %6.4f \n',rtrialinputcat)
