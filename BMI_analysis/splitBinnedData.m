@@ -113,7 +113,7 @@ if isfield(binnedData,'words')
 end
 
 %% Targets
-if isfield(binnedData,'targets')
+if isfield(binnedData,'targets') && ~isempty(binnedData.targets.corners)
     if ~isempty(binnedData.targets)
        trainData.targets.corners = binnedData.targets.corners(binnedData.targets.corners(:,1)<testStartTime ...
                                                            | binnedData.targets.corners(:,1)>testEndTime,:);   

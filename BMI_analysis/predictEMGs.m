@@ -34,7 +34,11 @@ end
 
 %% Use the neural filter to predict the EMGs
 numsides=1; fs=1;
-[PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualEMGs);
+try
+    [PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO3(usableSpikeData,filter.H,numsides,fs,ActualEMGs);
+catch
+    [PredictedEMGs,spikeDataNew,ActualEMGsNew]=predMIMO4(usableSpikeData,filter.H,numsides,fs,ActualEMGs);
+end
 %% remove firts bin of Predicted EMGs since it appears to be garbage...
 %PredictedEMGs = PredictedEMGs(2:end, :);
 
@@ -44,7 +48,7 @@ clear ActualEMGs spikeData;
 if size(filter.P)>1
     Ynonlinear=zeros(size(PredictedEMGs));
     for z=1:size(PredictedEMGs,2);
-        Ynonlinear(:,z) = polyval(filter.P(z,:),PredictedEMGs(:,z));
+        Ynonlinear(:,z) = polyval(filter.P(:,z),PredictedEMGs(:,z));
     end
     PredictedEMGs=Ynonlinear;
 end
