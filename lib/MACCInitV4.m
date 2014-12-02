@@ -160,7 +160,8 @@ for r=1:NumofTrajectories,
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
         %compute the total RMS error using the sum of the Linear and the MACC
         %model
-        ModelEr=mean((Data-est).^2,2).^0.5;
+%         ModelEr=mean((Data-est).^2,2).^0.5;
+        ModelEr=mean((Data-est).^2,1).^0.5;
     else
         ModelEr = [];
     end
@@ -225,7 +226,7 @@ for r=1:NumofTrajectories,
         hf=ylabel('m');set(hf,'fontsize',14,'fontweight','bold')
         xlim([0 maxVpos(r)]*Ts);
         dy=max(Xmcj)-min(Xmcj);
-        ylim([max(Xmcj)-dy*1.3 min(Xmcj)+dy*1.3]); 
+        ylim([max(Xmcj-1E-1)-dy*1.3 min(Xmcj+1E-1)+dy*1.3]); 
         hOnset=line(ones(1,2)*OnsetDetected(r),ylim);set(hOnset,'color',[0.8 0.8 0.8],'linestyle',':','linewidth',3);uistack(hOnset,'bottom')
         legend([hData,hMod1,hMod2],{'Raw data','Stationary Fit','MACC fit'},'location','NorthWest');
         %%%
@@ -239,7 +240,7 @@ for r=1:NumofTrajectories,
         hf=ylabel('Velocity (m/s)');set(hf,'fontsize',14,'fontweight','bold')
         xlim([0 maxVpos(r)]*Ts);
         dy=max(Vmcj)-min(Vmcj);
-        ylim([max(Vmcj)-dy*1.3 min(Vmcj)+dy*1.3]); 
+        ylim([max(Vmcj-1E-1)-dy*1.3 min(Vmcj+1E-1)+dy*1.3]); 
         hOnset=line(ones(1,2)*OnsetDetected(r),ylim);set(hOnset,'color',[0.8 0.8 0.8],'linestyle',':','linewidth',3);uistack(hOnset,'bottom')
         %%%
         subplot(313)
@@ -253,7 +254,7 @@ for r=1:NumofTrajectories,
         xlabel('Time')
         xlim([0 maxVpos(r)]*Ts);
         dy=max(Amcj)-min(Amcj);
-        ylim([max(Amcj)-dy*1.3 min(Amcj)+dy*1.3]); 
+        ylim([max(Amcj-1E-1)-dy*1.3 min(Amcj+1E-1)+dy*1.3]); 
         hOnset=line(ones(1,2)*OnsetDetected(r),ylim);set(hOnset,'color',[0.8 0.8 0.8],'linestyle',':','linewidth',3);uistack(hOnset,'bottom')
         
 
