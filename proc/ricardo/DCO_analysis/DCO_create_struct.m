@@ -2,6 +2,37 @@ function DCO = DCO_create_struct(bdf,params)
     DCO = params; 
     DCO.dt = diff(bdf.pos(1:2,1));
     [DCO.trial_table,DCO.table_columns,bdf] = DCO_trial_table(bdf);
+    BMI_data_files = dir([DCO.target_folder '*data.txt']);
+    BMI_param_files = dir([DCO.target_folder '*params.mat']);
+    if ~isempty(BMI_data_files)
+        BMI_data = [];
+        DCO.BMI.dt = 0.05;
+        for iBMI = 1:length(BMI_data_files)
+            temp = load([DCO.target_folder BMI_data_files(iBMI).name]);
+            if ~isempty(find(diff(temp(:,1))<0,1,'last'))
+                temp = temp(find(diff(temp(:,1))<0,1,'last')+1:end,:);
+            end
+            temp(:,1) = temp(:,1)+iBMI-1; % Add one second in between files
+            BMI_data = [BMI_data ; temp];
+            clear temp
+        end
+        
+        BMI_data(find(diff(BMI_data(:,1))==0)+1,:) = [];
+        new_time_vector = 1:DCO.BMI.dt:bdf.pos(end,1);
+        new_BMI_data = zeros(length(new_time_vector),size(BMI_data,2));
+        new_BMI_data(:,1) = new_time_vector;
+        for iCol = 2:size(BMI_data,2)
+            new_BMI_data(:,iCol) = interp1(BMI_data(:,1),BMI_data(:,iCol),new_time_vector);
+        end
+        BMI_data = new_BMI_data;
+        clear new_BMI_data        
+        RP.BMI.data = BMI_data;
+        
+        DCO.BMI.data = BMI_data;
+        DCO.BMI.params = load([DCO.target_folder BMI_param_files(1).name]);
+    else
+        DCO.BMI = [];
+    end
     
     for i = 1:2
         DCO.trial_table = DCO.trial_table(DCO.trial_table(:,DCO.table_columns.result)==32,:);
@@ -23,8 +54,10 @@ function DCO = DCO_create_struct(bdf,params)
         end
 
         % Remove spurious target locations
-        remove_idx = cell2mat(DCO.target_locations_idx(cellfun(@length,DCO.target_locations_idx) < mean(cellfun(@length,DCO.target_locations_idx))-2*std(cellfun(@length,DCO.target_locations_idx))));
-        DCO.trial_table(remove_idx,:) = [];
+        if isfield(DCO,'target_locations_idx')
+            remove_idx = cell2mat(DCO.target_locations_idx(cellfun(@length,DCO.target_locations_idx) < mean(cellfun(@length,DCO.target_locations_idx))-2*std(cellfun(@length,DCO.target_locations_idx))));
+            DCO.trial_table(remove_idx,:) = [];
+        end
     end  
     
     DCO.reward_trials = find(DCO.trial_table(:,DCO.table_columns.result) == 32);
@@ -50,11 +83,16 @@ function DCO = DCO_create_struct(bdf,params)
     pos_x_smooth = smooth(bdf.pos(:,2)+DCO.trial_table(2,DCO.table_columns.x_offset),30);
     pos_y_smooth = smooth(bdf.pos(:,3)+DCO.trial_table(2,DCO.table_columns.y_offset),30);
     DCO.mov_onset_idx_table = repmat(DCO.go_cue_idx,1,1000) + repmat(-499:500,size(DCO.go_cue_idx,1),1);
+    DCO.mov_onset_idx_table(DCO.mov_onset_idx_table<1) = 1;
     pos_x_smooth_mat = reshape(pos_x_smooth(DCO.mov_onset_idx_table),[],size(DCO.mov_onset_idx_table,2));
     pos_y_smooth_mat = reshape(pos_y_smooth(DCO.mov_onset_idx_table),[],size(DCO.mov_onset_idx_table,2));    
     pos_smooth_mat = sqrt(pos_x_smooth_mat.^2 + pos_y_smooth_mat.^2);
 %     movement_onset = zeros(size(DCO.trial_table,1));
-    [movement_onset,~,~]=MACCInitV4(pos_smooth_mat',.001,[15,15],[],0);
+    if ~strfind(lower(params.DCO_file_prefix),'iso')
+        [movement_onset,~,~]=MACCInitV4(pos_smooth_mat',.001,[15,15],[],0);
+    else
+        movement_onset = zeros(1,size(DCO.mov_onset_idx_table,1));
+    end
     DCO.mov_onset_idx = DCO.go_cue_idx + round(movement_onset*size(DCO.mov_onset_idx_table,2))' - 499;
     DCO.mov_onset_idx(isnan(DCO.mov_onset_idx)) = DCO.go_cue_idx(isnan(DCO.mov_onset_idx));
 %     for iTrial = 1:size(DCO.trial_table,1)
@@ -73,6 +111,8 @@ function DCO = DCO_create_struct(bdf,params)
     DCO.t_hold = 0:DCO.dt:DCO.dt*hold_samples-DCO.dt;
     DCO.mov_idx_table = repmat(DCO.mov_onset_idx,1,mov_samples) + repmat(1:mov_samples,size(DCO.go_cue_idx,1),1) - 50;
     DCO.hold_idx_table = repmat(DCO.ot_last_hold_idx,1,hold_samples) + repmat(1:hold_samples,size(DCO.ot_last_hold_idx,1),1);
+    DCO.mov_idx_table(DCO.mov_idx_table<1) = 1;
+    DCO.hold_idx_table(DCO.hold_idx_table<1) = 1;
     
     DCO.force_mov_x = reshape(bdf.force(DCO.mov_idx_table,2),[],mov_samples);
     DCO.force_mov_y = reshape(bdf.force(DCO.mov_idx_table,3),[],mov_samples);
