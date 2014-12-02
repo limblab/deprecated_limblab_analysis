@@ -9,6 +9,8 @@ function [fig_handles,data_struct] = UR_analysis(target_folder,params)
     if params.reprocess_data        
         data_struct.bdf = get_nev_mat_data([target_folder '\' params.UR_file_prefix],'rothandle',params.rot_handle,3);       
         data_struct.bdf = artifact_removal(data_struct.bdf,10,0.001,1);
+        data_struct.bdf.analog = [];
+        data_struct.bdf.raw = [];
         data_struct.UR = UR_create_struct(data_struct.bdf,params);        
     else        
         disp('Data already processed, loading from disk.');
@@ -30,10 +32,7 @@ function [fig_handles,data_struct] = UR_analysis(target_folder,params)
     end
     if params.plot_raw_emg
         params = UR_plot_raw_emg(data_struct,params);
-    end
-    if params.decode_arm
-        [params,data_struct] = UR_decode_arm(data_struct,params);
-    end
+    end   
     if params.make_movie
         params = UR_make_movie(data_struct,params);
     end

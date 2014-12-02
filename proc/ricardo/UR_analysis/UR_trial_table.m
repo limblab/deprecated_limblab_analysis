@@ -21,7 +21,8 @@ tc.t_ct_on = iCol; iCol=iCol+1;
 tc.t_ct_hold_on = iCol; iCol=iCol+1;
 tc.t_ot_on = iCol; iCol=iCol+1;
 tc.t_go_cue = iCol; iCol=iCol+1;
-tc.t_movement_start = iCol; iCol=iCol+1;
+tc.t_leave_target = iCol; iCol=iCol+1;
+tc.t_bump = iCol; iCol=iCol+1;
 tc.t_ot_hold = iCol; iCol=iCol+1;
 tc.t_trial_end = iCol; iCol=iCol+1;
 tc.result = iCol; iCol=iCol+1;
@@ -32,6 +33,12 @@ tc.target_radius = iCol; iCol=iCol+1;
 tc.trial_stiffness = iCol; iCol=iCol+1;
 tc.movement_distance = iCol; iCol=iCol+1;
 tc.brain_control = iCol; iCol=iCol+1;
+tc.curve_displacement = iCol; iCol=iCol+1;
+tc.curve_direction = iCol; iCol=iCol+1;
+tc.bump_trial = iCol; iCol=iCol+1;
+tc.bump_magnitude = iCol; iCol=iCol+1;
+tc.bump_direction = iCol; iCol=iCol+1;
+tc.bump_duration = iCol; iCol=iCol+1;
 
 start_trial_code = hex2dec('1F');
 end_code = hex2dec('20');
@@ -39,6 +46,7 @@ reward_code = hex2dec('20');
 abort_code = hex2dec('21');
 fail_code = hex2dec('22');
 incomplete_code = hex2dec('23');
+bump_code = hex2dec('50');
 
 ct_on_code = hex2dec('30');
 ct_hold_code = hex2dec('A0');
@@ -84,8 +92,10 @@ for iTrial = 1:num_trials
                 column = tc.t_ot_on;
             case go_cue_code
                 column = tc.t_go_cue;
-            case movement_code                
-                column = tc.t_movement_start;                 
+            case movement_code
+                column = tc.t_leave_target;
+            case bump_code
+                column = tc.t_bump;
             case ot_hold_code
                 column = tc.t_ot_hold;
             case reward_code
@@ -125,10 +135,28 @@ for iTrial = 1:num_trials
         trial_table(iTrial,tc.target_radius) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
         trial_table(iTrial,tc.movement_distance) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
         trial_table(iTrial,tc.brain_control) = bdf.databursts{iTrial,2}(temp_idx(1)); temp_idx = temp_idx+1;
+        if (databurst_version > 0)
+            trial_table(iTrial,tc.curve_displacement) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            trial_table(iTrial,tc.curve_direction) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            trial_table(iTrial,tc.bump_trial) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            if trial_table(iTrial,tc.bump_trial)
+                trial_table(iTrial,tc.bump_magnitude) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+                trial_table(iTrial,tc.bump_direction) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+                trial_table(iTrial,tc.bump_duration) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            else
+                trial_table(iTrial,tc.bump_magnitude) = nan; temp_idx = temp_idx+4;
+                trial_table(iTrial,tc.bump_direction) = nan; temp_idx = temp_idx+4;
+                trial_table(iTrial,tc.bump_duration) = nan; temp_idx = temp_idx+4;
+            end
+                
+        end
     end        
 end
 
 trial_table(:,tc.movement_direction) = round(180/pi*trial_table(:,tc.movement_direction))*pi/180;
+trial_table(trial_table(:,tc.movement_direction)==2*pi,tc.movement_direction) = 0;
+trial_table(:,tc.bump_direction) = round(180/pi*trial_table(:,tc.bump_direction))*pi/180;
+trial_table(trial_table(:,tc.bump_direction)==2*pi,tc.bump_direction) = 0;
 
 remove_idx = find(isnan(trial_table(:,tc.t_trial_start)) |...
     isnan(trial_table(:,tc.t_ct_on)) |...
@@ -138,7 +166,7 @@ remove_idx = find(isnan(trial_table(:,tc.t_trial_start)) |...
 remove_index = [remove_idx find(isnan(trial_table(:,tc.x_offset)))];
 for iCol = 7:length(fieldnames(tc))
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
-    remove_index = [remove_index temp'];
+    remove_index = [remove_index; temp(:)];
 end
 remove_index = unique(remove_index);
 
