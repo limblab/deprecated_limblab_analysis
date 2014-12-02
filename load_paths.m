@@ -29,13 +29,14 @@ addpath([dir '/BMI_analysis']);
 % script in your proc directory if you need to.  This is to avoid filename
 % conflicts between proc directories.
 
-currpath = textscan(path,'%s','delimiter',pathsep);
-currpath = currpath{1};
-svnpath = currpath(~cellfun(@isempty,strfind(currpath,'.svn')));
-svnpathstr = svnpath{1};
-for iPath = 2:size(svnpath,1)
-    svnpathstr = [svnpathstr ';' svnpath{iPath}]; %#ok<AGROW>
-end
-rmpath(svnpathstr)
+% The following code is not necessary after version 1.8 of Tortoise SVN
+% currpath = textscan(path,'%s','delimiter',pathsep);
+% currpath = currpath{1};
+% svnpath = currpath(~cellfun(@isempty,strfind(currpath,'.svn')));
+% svnpathstr = svnpath{1};
+% for iPath = 2:size(svnpath,1)
+%     svnpathstr = [svnpathstr ';' svnpath{iPath}]; %#ok<AGROW>
+% end
+% rmpath(svnpathstr)
 
 clear dir svnpathstr svnpath matpath iPath currpath;
