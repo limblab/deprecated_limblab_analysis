@@ -34,9 +34,9 @@ function DVMax_checker()
         data = fetch(conn,exestring);
         data = data(end:-1:1,:);
         if today_is_a_holiday
-            ccm_in_charge_water = weekendWaterList{find(strcmp(weekendWaterList(:,1),['CC' cagecardID])),today_is_a_holiday};
+            ccm_in_charge_water = weekendWaterList{find(strcmpi(weekendWaterList(:,1),['CC' cagecardID])),today_is_a_holiday};
             ccm_in_charge_water = strcmpi(ccm_in_charge_water,'ccm');
-            ccm_in_charge_food = weekendFoodList{find(strcmp(weekendFoodList(:,1),['CC' cagecardID])),today_is_a_holiday};
+            ccm_in_charge_food = weekendFoodList{find(strcmpi(weekendFoodList(:,1),['CC' cagecardID])),today_is_a_holiday};
             ccm_in_charge_food = strcmpi(ccm_in_charge_food,'ccm');
         else
             ccm_in_charge_water = 0;
@@ -50,7 +50,7 @@ function DVMax_checker()
         else            
             last_free_water_entry = [];
             for iFreeWaterCodes = 1:length(free_water_codes)
-                temp = find(strcmp(free_water_codes{iFreeWaterCodes},{data{:,3}}),1,'first');
+                temp = find(strcmpi(free_water_codes{iFreeWaterCodes},{data{:,3}}),1,'first');
                 if ~isempty(temp)
                     last_free_water_entry(end+1) = temp; %#ok<AGROW>
                 end
@@ -63,7 +63,7 @@ function DVMax_checker()
 
             last_water_entry = [];
             for iWaterCodes = 1:length(water_codes)
-                temp = find(strcmp(water_codes{iWaterCodes},{data{:,3}}),1,'first');
+                temp = find(strcmpi(water_codes{iWaterCodes},{data{:,3}}),1,'first');
                 if ~isempty(temp)
                     last_water_entry(end+1) = temp; %#ok<AGROW>
                 end      
@@ -76,7 +76,7 @@ function DVMax_checker()
             
             last_water_restriction_start = inf;
             for iCode = 1:length(water_restriction_start_codes)
-                temp = find(strcmp(water_restriction_start_codes{iCode},{data{:,3}}),1,'first');
+                temp = find(strcmpi(water_restriction_start_codes{iCode},{data{:,3}}),1,'first');
                 if isempty(temp)
                     temp = inf;
                 end
@@ -123,7 +123,7 @@ function DVMax_checker()
         else            
             last_free_food_entry = [];
             for iFreeFoodCodes = 1:length(free_food_codes)
-                temp = find(strcmp(free_food_codes{iFreeFoodCodes},{data{:,3}}),1,'first');
+                temp = find(strcmpi(free_food_codes{iFreeFoodCodes},{data{:,3}}),1,'first');
                 if ~isempty(temp)
                     last_free_food_entry(end+1) = temp; %#ok<AGROW>
                 end
@@ -136,7 +136,7 @@ function DVMax_checker()
 
             last_food_entry = [];
             for iFoodCodes = 1:length(food_codes)
-                temp = find(strcmp(food_codes{iFoodCodes},{data{:,3}}),1,'first');
+                temp = find(strcmpi(food_codes{iFoodCodes},{data{:,3}}),1,'first');
                 if ~isempty(temp)
                     last_food_entry(end+1) = temp; %#ok<AGROW>
                 end      
@@ -147,7 +147,7 @@ function DVMax_checker()
                 last_food_entry = 1000000;
             end              
             
-            last_food_restriction_start = find(strcmp(food_restriction_start_code,{data{:,3}}),1,'first');
+            last_food_restriction_start = find(strcmpi(food_restriction_start_code,{data{:,3}}),1,'first');
             if isempty(last_food_restriction_start)
                 last_food_restriction_start = 1000000;
             end
@@ -201,7 +201,7 @@ function animalList = load_animal_list(MonkeyWaterLocation)
             eval(['animalList(iMonkey-1).' animal_xls{1,iCol} ' = ''' animal_xls{iMonkey,iCol} ''';'])
         end
         for iPerson = 2:size(people_xls,1)
-            if strcmp(people_xls{iPerson,1},animalList(iMonkey-1).personInCharge)
+            if strcmpi(people_xls{iPerson,1},animalList(iMonkey-1).personInCharge)
                 for iCol = 2:size(people_xls,2)
                     eval(['animalList(iMonkey-1).' people_xls{1,iCol} ' = ''' people_xls{iPerson,iCol} ''';'])
                 end                
@@ -209,7 +209,7 @@ function animalList = load_animal_list(MonkeyWaterLocation)
             end  
         end
         for iPerson = 2:size(people_xls,1)
-            if strcmp(people_xls{iPerson,1},animalList(iMonkey-1).secondInCharge)
+            if strcmpi(people_xls{iPerson,1},animalList(iMonkey-1).secondInCharge)
                 for iCol = 2:size(people_xls,2)
                     eval(['animalList(iMonkey-1).secondary' people_xls{1,iCol} ' = ''' people_xls{iPerson,iCol} ''';'])
                 end                
@@ -236,15 +236,15 @@ end
 function monkey_warning(animal,messageType,testing)
     if testing
         recepients = 'ricardort@gmail.com';
-        if strcmp(messageType,'NoWater')
+        if strcmpi(messageType,'NoWater')
         subject = '(this is a test) Your monkey has not received water';
         message = {[animal.animalName ' (' animal.animalID ') has not received water as of ' datestr(now) '.'],...
             'Sent from Matlab! This is a test.'};
-        elseif strcmp(messageType,'NoFood')
+        elseif strcmpi(messageType,'NoFood')
             subject = '(this is a test) Your monkey has not received food';
             message = {[animal.animalName ' (' animal.animalID ') has not received food as of ' datestr(now) '.'],...
                 'Sent from Matlab! This is a test.'};
-        elseif strcmp(messageType,'NoRecord')
+        elseif strcmpi(messageType,'NoRecord')
             subject = '(this is a test) Your monkey has no water restriction record';
             message = {[animal.animalName ' (' animal.animalID ') has no water restriction record.'],...
                 'Sent from Matlab! This is a test.'};
@@ -264,16 +264,16 @@ function monkey_warning(animal,messageType,testing)
         if ~isempty(animal.secondInCharge)
             recepients = {recepients{:},animal.secondarycontactEmail};
         end
-        if strcmp(messageType,'NoWater')
+        if strcmpi(messageType,'NoWater')
             subject = 'Your monkey has not received water';
             message = {[animal.animalName ' (' animal.animalID ') has not received water as of ' datestr(now) '.'],...
                 'Sent from Matlab!'};
-        elseif strcmp(messageType,'NoFood')
+        elseif strcmpi(messageType,'NoFood')
             subject = 'Your monkey has not received food';
             message = {[animal.animalName ' (' animal.animalID ') has not received food as of ' datestr(now) '.'],...
                 'Sent from Matlab!'};
         
-        elseif strcmp(messageType,'NoRecord')
+        elseif strcmpi(messageType,'NoRecord')
             subject = 'Your monkey has no water restriction record';
             message = {[animal.animalName ' (' animal.animalID ') has no water restriction record.'],...
                 'Sent from Matlab!'};
@@ -291,20 +291,20 @@ function monkey_warning(animal,messageType,testing)
 end
 
 function monkey_last_warning(animal,peopleList,message,testing)
-    if strcmp(message,'NoWater')
+    if strcmpi(message,'NoWater')
         message = 'water';
     else
         message = 'food';
     end
     for iP = 1:length(peopleList)
-        if strcmp(animal.personInCharge,peopleList(iP).Name)
+        if strcmpi(animal.personInCharge,peopleList(iP).Name)
             person_in_charge = iP;
             break;
         end
     end
     second_in_charge = [];
     for iP = 1:length(peopleList)
-        if strcmp(animal.secondInCharge,peopleList(iP).Name)
+        if strcmpi(animal.secondInCharge,peopleList(iP).Name)
             second_in_charge = iP;
             break;
         end
@@ -344,7 +344,7 @@ end
 
 % function monkey_emergency(animal,peopleList,testing)
 %     for iP = 1:length(peopleList)
-%         if strcmp(animal.personInCharge,peopleList(iP).Name)
+%         if strcmpi(animal.personInCharge,peopleList(iP).Name)
 %             person_in_charge = iP;
 %             break;
 %         end
