@@ -132,8 +132,11 @@ for fileInd=1:length(infoStruct)
         % N_KsectionInterp can have extra columns, or it can come up
         % short.  As long as infoStruct(fileInd).montage{FPsToUse} indexes
         % it correctly, it doesn't matter.
-        if exist('N_KsectionInterp','var')==1
-            signal=[BCI2000signal(:,1:32), N_KsectionInterp];
+        allVars=whos;
+        NKvarMatch=regexp({allVars.name}','[BN]_[SK]sectionInterp','match','once');
+        if nnz(cellfun(@isempty,NKvarMatch)==0) > 0
+            NKvar=allVars(cellfun(@isempty,NKvarMatch)==0).name;
+            signal=[BCI2000signal(:,1:32), eval(NKvar)];
         else
             signal=BCI2000signal;
         end
@@ -351,10 +354,10 @@ for fileInd=1:length(infoStruct)
         % want the code to execute.
         paramStructIn.bands={paramStructIn.bands};
     end
-    for PolynomialOrder=paramStructIn.PolynomialOrder
-        for folds=paramStructIn.folds
-            for numlags=paramStructIn.numlags
-                for wsz=paramStructIn.wsz
+    for PolynomialOrder=rowBoat(paramStructIn.PolynomialOrder)'
+        for folds=rowBoat(paramStructIn.folds)'
+            for numlags=rowBoat(paramStructIn.numlags)'
+                for wsz=rowBoat(paramStructIn.wsz)'
                     if isempty(infoStruct(fileInd).montage{strcmp(FPsToUse, ...
                             defaultElectrodeTypes)})
                         error('%s electrodes not found in\n %s.',FPsToUse, ...
@@ -366,7 +369,7 @@ for fileInd=1:length(infoStruct)
                     else
                         numFeats=paramStructIn.nfeat;
                     end
-                    for nfeat=numFeats
+                    for nfeat=rowBoat(numFeats)'
                         if samprate >= 600
                             nbands=6;
                         else
@@ -389,7 +392,7 @@ for fileInd=1:length(infoStruct)
                         else
                             nfeatBreakSignal=0;
                         end
-                        for smoothfeats=paramStructIn.smoothfeats
+                        for smoothfeats=rowBoat(paramStructIn.smoothfeats)'
                             if strcmpi(signalToDecode,'force')
                                 % smooth forceSignal?  if so, keep the
                                 % actual forceSignal virgin, so there are
@@ -402,8 +405,8 @@ for fileInd=1:length(infoStruct)
                                 %       1,forceSignal))];
                                 sig=[rowBoat(analog_times), rowBoat(forceSignal)];
                             end
-                            for binsize=paramStructIn.binsize
-                                for lambda=paramStructIn.lambda;
+                            for binsize=rowBoat(paramStructIn.binsize)'
+                                for lambda=rowBoat(paramStructIn.lambda)'
                                     for bandGrps=1:length(paramStructIn.bands)
                                         if paramStructIn.fpSingle==0
                                             numfp=size(fp,1);
@@ -415,7 +418,7 @@ for fileInd=1:length(infoStruct)
                                                 numfp,binsize,folds,numlags,numsides,samprate, ...
                                                 fp,fptimes,analog_times,'',wsz,nfeat,PolynomialOrder, ...
                                                 Use_Thresh,words,emgsamplerate,lambda,smoothfeats, ...
-                                                paramStructIn.bands{bandGrps},0); %#ok<NASGU,ASGLU>
+                                                paramStructIn.bands{bandGrps},0); %#ok<ASGLU>
                                             % close                                                        % featShift
                                             warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
                                             warning('on','MATLAB:nearlySingularMatrix')
@@ -513,7 +516,7 @@ for fileInd=1:length(infoStruct)
                                                 [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~, ...
                                                     ~,~,ytnew,~,~,P,~,~,vaf_vald,ytnew_vald, ...
                                                     y_pred_vald,P_vald,r2_vald,covMI] ...
-                                                    = predictionsfromfp8v2(sig,'pos', ...
+                                                    = predictionsfromfp9(sig,'pos', ...
                                                     numfp,binsize,folds,numlags,numsides,samprate, ...
                                                     fpKeep,fptimes,analog_times,'',wsz,nfeat, ...
                                                     PolynomialOrder,Use_Thresh,words, ...
@@ -548,6 +551,7 @@ for fileInd=1:length(infoStruct)
                                                 VAFstruct(fileInd,m).P=P;
                                                 VAFstruct(fileInd,m).bands=paramStructIn.bands{bandGrps};
                                                 VAFstruct(fileInd,m).covMI=rowBoat(covMI);
+                                                VAFstruct(fileInd,m).vaf_vald=vaf_vald;
                                                 m=m+1;
                                                 
                                                 % export so we can look at raw data
