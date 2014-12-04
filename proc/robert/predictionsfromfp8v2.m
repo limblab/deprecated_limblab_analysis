@@ -213,8 +213,8 @@ fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 [b,a]=butter(4,[170 190]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
-[b,a]=butter(4,[250 270]/(samprate/2),'stop');
-fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
+% [b,a]=butter(4,[250 270]/(samprate/2),'stop');
+% fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 % [b,a]=butter(4,[306 320]/(samprate/2),'stop');
 % fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 % [b,a]=butter(4,[325 350]/(samprate/2),'stop');
@@ -222,12 +222,13 @@ fpf=filtfilt(b,a,double(fpf)')';  %fpf is channels X samples
 clear fp
 itemp=1:100;
 firstind=find(bs*itemp>wsz,1,'first');
-
+bigRmat=zeros(size(fpf,1),size(fpf,1),numbins);
 for i=1:numbins
     ishift=i-firstind+1;
     if ishift <= 0, continue, end
     %     LMP(:,i)=mean(fpf(:,bs*(i-1)+1:bs*i),2);
     tmp=fpf(:,(bs*i-wsz+1:bs*i))';    %Make tmp samples X channels
+    bigRmat(:,:,ishift)=corr(tmp);
     LMP(:,ishift)=mean(tmp',2);
 %     tmp=tmp-repmat(mean(tmp,1),wsz,1);
 %     tmp=detrend(tmp);
@@ -239,6 +240,14 @@ end
 % clean up tfmat to account for cutting off the firstind bins
 tfmat(:,:,(ishift+1:end))=[];
 numbins=numbins-firstind+1;
+
+for n=1:size(bigRmat,3)
+    bigRmat(:,:,n)=triu(bigRmat(:,:,n),1); 
+end, clear n
+flattenedRmat=reshape(bigRmat,size(bigRmat,1)*size(bigRmat,2),size(bigRmat,3))';
+flattenedRmat((ishift+1):end,:)=[];
+flattenedRmat(:,all(flattenedRmat==0,1))=[];
+flattenedRmat=zscore(flattenedRmat);
 
 t=t(1:numbins);
 q=q(1:numbins);
@@ -306,7 +315,7 @@ for n=startind:length(bndGroups)
 end, clear n startind
 PB=PBtemp; clear PBtemp
 
-% assignin('base','PB',PB)
+assignin('base','PB',PB)
 % isolate powerbands for individual-band analysis.  Most times this will
 % remain commented.
 % PB([2:6],:,:)=[];
@@ -618,8 +627,13 @@ if nargout>5
                                         varargout{18}=vaf_vald;
                                         varargout{19}=ytnew_vald;
                                         varargout{20}=y_pred_vald;
-                                        varargout{21}=P_vald;
+                                        if exist('P_vald','var')
+                                            varargout{21}=P_vald;
+                                        else
+                                            varargout{21}=[];
+                                        end
                                         varargout{22}=r2_vald;
+                                        varargout{23}=[];
                                     end
                                 end
                             end
