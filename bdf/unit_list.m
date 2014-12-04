@@ -13,10 +13,11 @@ include_unsorted = 0;
 if length(varargin)>1
     include_unsorted = varargin{2};
 end
-if regexp(data.meta.filename, 'FAKE SPIKES')
+if isfield(data,'meta')
+    if regexp(data.meta.filename, 'FAKE SPIKES')
     warning('BDF:fakeData', 'Using BDF with fake spike data');
 end
-
+end
 L = size(data.units, 2);
 list = [];
 
