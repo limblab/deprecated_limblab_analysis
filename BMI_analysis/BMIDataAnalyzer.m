@@ -82,6 +82,7 @@ function BMIDataAnalyzer()
     OLPred_FullFileName = 0;
     RTPred_FileName = 0;
     RTPred_FullFileName = 0;
+    BDF_opts = struct('LabNum',3,'RotHandle',true);
        
      
 %% Creating UI
@@ -108,8 +109,13 @@ function BMIDataAnalyzer()
     CB_LoadButton = uicontrol('Parent', CB_DataPanel, 'String', 'LOAD','Units','normalized',...
                             'Position', [.1 .2 .2 .3],'Callback',@CB_LoadButton_Callback,'Enable','on');
 
+    CB_BDFOptionsButton = uicontrol('Parent', CB_DataPanel, 'String', 'BDF Options','Units','normalized',...
+                            'Position', [.4 .2 .2 .3],'Callback',@CB_BDFOptionsButton_Callback,'Enable','on');
+    
     CB_ConvertButton = uicontrol('Parent', CB_DataPanel, 'String', 'Convert to BDF','Units','normalized',...
-                            'Position', [.4 .2 .2 .3],'Callback',@CB_ConvertButton_Callback,'Enable','off');
+                            'Position', [.7 .2 .2 .3],'Callback',@CB_ConvertButton_Callback,'Enable','off');
+                        
+                    
                         
     %Callbacks
     function CB_LoadButton_Callback(obj,event)
@@ -128,12 +134,16 @@ function BMIDataAnalyzer()
                               
     end
 
+    function CB_BDFOptionsButton_Callback(obj,event)
+        BDF_opts = BDFOptionsGUI;        
+    end
+
     function CB_ConvertButton_Callback(obj,event)
         if strcmp(CB_FileName(end-3:end),'.nev')
             disp('Converting .nev file to BDF structure, please wait...');
 %             out_struct = get_cerebus_data(CB_FullFileName,'verbose');
 %           Now uses get_nev_mat_data()--7/7/2014--CE
-            out_struct = get_nev_mat_data(CB_FullFileName,'verbose');
+            out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum);
             disp('Done.');
             BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
         elseif strcmp(CB_FileName(end-3:end),'.plx')
@@ -160,7 +170,6 @@ function BMIDataAnalyzer()
         
         clear out_struct;
     end
-    
     
     
 %% BDF Panel
