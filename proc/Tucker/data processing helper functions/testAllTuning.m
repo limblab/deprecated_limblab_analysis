@@ -27,15 +27,20 @@ function [bdf]=testAllTuning(bdf)
 
     %% find times of peak speed
         %get speed:
-        spd=sqrt(bdf.pos(:,2).^2+bdf.pos(:,3).^2);
+        spd=sqrt(bdf.vel(:,2).^2+bdf.vel(:,3).^2);
         [B,A]=butter(3,.1,'low');
         sspd=filtfilt(B,A,spd);
 
-        T=zeros(size(targetOn,1),1);
+        T=zeros(size(targetOn,1)-1,1);%excludes the last point, which will be dealt with outside the loop
         for i=1:length(targetOn)-1
             %just find first peak in speed after target appearance
             inds=find(bdf.pos(:,1)>targetOn(i) & bdf.pos(:,1)<targetOn(i+1));
             [maxVal,maxInd]=extrema(sspd(inds));
+            if isempty(maxInd)
+                warning('testAllTuning:NoMaxVel',strcat('Could not find a velocity maxima for target onset# ',num2str(i)))
+                disp('skipping target')
+                continue
+            end
             if maxInd(1)==1 & length(maxInd)>1
                 T(i)=inds(1)+maxInd(2);
             else
@@ -44,20 +49,25 @@ function [bdf]=testAllTuning(bdf)
 
         end
         %deal with last point:
-        i=i+1;
+        i=i+1;%adds a single index to the array for the last point
         endTime=bdf.TT(bdf.TT(:,7+2*numTarg(end)-1)==targetOn(i),7+2*numTarg(end));%;locate the correct row
-        inds=find(bdf.pos(:,1)>targetOn(i) & bdf.pos(:,1)<endTime);
-        [maxVal,maxInd]=extrema(sspd(inds));
-        if maxInd(1)==1 & length(maxInd)>1
-            T(i)=inds(1)+maxInd(2);
-        else
-            T(i)=inds(1)+maxInd(1);
+        if ~isempty(endTime)
+            inds=find(bdf.pos(:,1)>targetOn(i) & bdf.pos(:,1)<endTime);
+            [maxVal,maxInd]=extrema(sspd(inds));
+            if isempty(maxInd)
+                warning('testAllTuning:NoMaxVel',strcat('Could not find a velocity maxima for target onset# ',num2str(i)))
+                T=T(1:end-1);
+                disp('skipping target')
+            elseif maxInd(1)==1 & length(maxInd)>1
+                T(i)=inds(1)+maxInd(2);
+            else
+                T(i)=inds(1)+maxInd(1);
+            end
         end
-
     %% get angle of individual reaches
         %get positions at target onset
-        pos=zeros(size(targetOn,1),2);
-        for i=1:size(targetOn,1)
+        pos=zeros(size(T,1),2);
+        for i=1:size(T,1)
             pos(i,:)=bdf.pos(find(bdf.pos(:,1)>targetOn(i),1),2:3);
         end
         %get positions at vmax
@@ -70,8 +80,8 @@ function [bdf]=testAllTuning(bdf)
     %% get tuning info for each unit
         for unit=1:length(bdf.units)
             % find FR at target appearance
-                FRA=zeros(size(targetOn,1),1);
-                for i=1:length(targetOn)
+                FRA=zeros(size(T,1),1);
+                for i=1:length(T)%uses T, to avoid the last point if that was not a complete trial
                     FRA(i)=length(find(bdf.units(unit).ts>(targetOn(i)-window/2) & bdf.units(unit).ts<(targetOn(i)+window/2)));
                 end    
             % find the FR at peak speed
