@@ -18,9 +18,7 @@ clc;
 %
 % doFiles = {'MrT','2013-10-11','VR','RT'};
 
-doFiles = {'Mihili','2014-01-15','VR','RT'; ...
-           'Mihili','2014-02-03','FF','CO'; ...
-           'Mihili','2014-02-17','FF','CO'};
+doFiles = {'Mihili','2014-12-11','FF','CO'};
 
 uarray = 'M1';
 
@@ -54,14 +52,12 @@ for i = 1:size(doFiles,1)
     file_prefix = [umonk '_' uarray '_' utask '_' upert '_'];
     
     % merge them
-    %     mergingStatus = processSpikesForSorting(file_path,file_prefix,false);
+    %         mergingStatus = processSpikesForSorting(file_path,file_prefix,false);
     
-        % Run processSpiesForSorting again to separate sorted spikes into their
-        % original files.
-        disp('Splitting sorted file into NEVs...');
-        mergingStatus = processSpikesForSorting(file_path,file_prefix,true);
-    
-    
+    % Run processSpiesForSorting again to separate sorted spikes into their
+    % original files.
+    disp('Splitting sorted file into NEVs...');
+    mergingStatus = processSpikesForSorting(file_path,file_prefix,true);
     
     % this section will make each file into its own BDF
     if ~exist(out_path, 'dir')
@@ -71,17 +67,17 @@ for i = 1:size(doFiles,1)
     
     disp('Creating BL BDF...');
     out_struct = get_nev_mat_data([file_path file_prefix 'BL_'],3);
-    save([out_path file_prefix 'BL_' udate '.mat'],'out_struct');
+    save([out_path file_prefix 'BL_' udate '.mat'],'out_struct','-v7.3');
     clear out_struct;
     
     disp('Creating AD BDF...');
     out_struct = get_nev_mat_data([file_path file_prefix 'AD_'],3);
-    save([out_path file_prefix 'AD_' udate '.mat'],'out_struct');
+    save([out_path file_prefix 'AD_' udate '.mat'],'out_struct','-v7.3');
     clear out_struct;
     
     disp('Creating WO BDF...');
     out_struct = get_nev_mat_data([file_path file_prefix 'WO_'],3);
-    save([out_path file_prefix 'WO_' udate '.mat'],'out_struct');
+    save([out_path file_prefix 'WO_' udate '.mat'],'out_struct','-v7.3');
     clear out_struct;
     
 end

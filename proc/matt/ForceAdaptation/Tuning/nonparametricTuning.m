@@ -58,6 +58,7 @@ for unit = 1:size(fr,2)
         mfr(unit,ith) = mean(useFR);
         cil(unit,ith) = mFRs(ceil(length(useFR) - confLevel*length(useFR)));
         cih(unit,ith) = mFRs(floor(confLevel*length(useFR)));
+        boot_fr{unit} = squeeze(bFR(:,unit,:));
     end
 end
 
@@ -80,7 +81,8 @@ end
 out.mfr = mfr;
 out.cil = cil;
 out.cih = cih;
+out.boot_fr = boot_fr;
 out.utheta = utheta;
-out.unit_guide = sg;
+out.sg = sg;
 out.params.boot_num_iter = bootNumIters;
 out.params.conf_level = confLevel;

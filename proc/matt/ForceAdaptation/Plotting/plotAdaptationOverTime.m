@@ -1,4 +1,4 @@
-function fh = plotAdaptationOverTime(varargin)
+function [fh,outData] = plotAdaptationOverTime(varargin)
 % necessary variables
 %   baseDir
 %   useDate (date, task, perturbation, title)
@@ -148,7 +148,7 @@ end
 % movements and THEN averaged across days?
 % numMoves = ceil(.35*length(mean(cell2mat(aMC(:,1)),1)));
 numMoves(1) = ceil(0.99*length(mean(cell2mat(aMC(:,1)),1)));
-numMoves(2) = ceil(.32*length(mean(cell2mat(aMC(:,2)),1)));
+numMoves(2) = ceil(.19*length(mean(cell2mat(aMC(:,2)),1)));
 numMoves(3) = ceil(.32*length(mean(cell2mat(aMC(:,3)),1)));
 
 meanVals = cell(1,length(epochs));
@@ -168,8 +168,15 @@ for iEpoch = 1:length(epochs)
         newVals{j} = reshape(temp,size(temp,1)*size(temp,2),1);
         
         % compile a list of all of the data for significance testing
-    count = count + 1;
-    allData{count} = reshape(temp,size(temp,1)*size(temp,2),1);
+        count = count + 1;
+        allData{count} = reshape(temp,size(temp,1)*size(temp,2),1);
+        
+        for iDate = 1:size(useDate,1)
+            % now get data for output
+            vals = aMC{iDate,iEpoch};
+            temp = vals(:,inds(j):inds(j+1));
+            outData{iDate,count} = reshape(temp,size(temp,1)*size(temp,2),1);
+        end
     end
     
     meanVals{iEpoch} = cellfun(@(x) nanmean(x),newVals);
@@ -177,6 +184,8 @@ for iEpoch = 1:length(epochs)
     
     %meanVals{iEpoch} = mean(newVals,1);
     %seVals{iEpoch} = std(newVals,1)./sqrt(size(newVals,1));
+    
+    
 end
 
 allTests(1) = 1;
@@ -242,32 +251,32 @@ if ~isempty(saveFilePath)
     saveas(fh,fn,'fig');
 end
 
-% now add lines showing significance
-% compare 1 to 2
-if allTests(1,2)
-    plot([0,1],[data(1),data(2)]);
-end
-% compare 2 to 4
-if allTests(2,4)
-    plot([1,3],[data(2),data(4)]);
-end
-% compare 1 to 4
-if allTests(1,4)
-    plot([0,3],[data(1),data(4)]);
-end
-% compare 1 to 5
-if allTests(1,5)
-    plot([0,4],[data(1),data(5)]);
-end
-% compare 5 to 7
-if allTests(5,7)
-    plot([4,6],[data(5),data(7)]);
-end
-% compare 1 to 7
-if allTests(1,7)
-    plot([0,6],[data(1),data(7)]);
-end
-
+% % now add lines showing significance
+% % compare 1 to 2
+% if allTests(1,2)
+%     plot([0,1],[data(1),data(2)]);
+% end
+% % compare 2 to 4
+% if allTests(2,4)
+%     plot([1,3],[data(2),data(4)]);
+% end
+% % compare 1 to 4
+% if allTests(1,4)
+%     plot([0,3],[data(1),data(4)]);
+% end
+% % compare 1 to 5
+% if allTests(1,5)
+%     plot([0,4],[data(1),data(5)]);
+% end
+% % compare 5 to 7
+% if allTests(5,7)
+%     plot([4,6],[data(5),data(7)]);
+% end
+% % compare 1 to 7
+% if allTests(1,7)
+%     plot([0,6],[data(1),data(7)]);
+% end
+% 
 
 
 

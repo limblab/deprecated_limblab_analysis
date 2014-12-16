@@ -56,34 +56,61 @@ allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
 useArray = 'M1';
 useBlocks = [1,4,7];
 
-switch lower(useArray)
-    case 'm1'
-        allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'Chewie'),:);
-    case 'pmd'
-        allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT'),:);
-end
+% switch lower(useArray)
+%     case 'm1'
+%         allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'Chewie'),:);
+%     case 'pmd'
+%         allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT'),:);
+% end
 
 doMD = false;
-
 if ~doMD
     binSize = 5;
     plotMax = 90;
     plotMult = 180/pi;
 else
     binSize = 1;
-    plotMax = 10;
+    plotMax = 20;
     plotMult = 1;
 end
 
+usePeriod = 'onpeak';
+tuneMethod = 'regression';
+coordinates = 'movement';
+
+% separate by waveform width
+%   0: don't do
+%   1: use cells below median
+%   2: use cells above median
+doWidthSeparation = 0;
+
 %%
+% build parameter struct
+params.blocks = useBlocks;
+params.coordinates = coordinates;
+params.period = usePeriod;
+params.tunemethod = tuneMethod;
+params.array = useArray;
+params.binsize = binSize;
+params.domd = doMD;
+params.dows = doWidthSeparation;
+
+
+%%
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % useArray = 'M1';
-% plotPDShiftComparisonHistograms('dir',baseDir,'dates',useDates,'period',usePeriod,'tunemethod',tuneMethod,'array',useArray,'binsize',binSize,'useblocks',1,'plotmax',plotMax);
-%
+% dateInds = strcmpi(allFiles(:,3),'FF') & (strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'Chewie')); % & strcmpi(allFiles(:,4),'CO');
+% plotPDShiftComparisonHistograms('dir',baseDir,'dates',allFiles(dateInds,:),'period',usePeriod,'tunemethod',tuneMethod,'array',useArray,'binsize',binSize,'useblocks',4,'plotmax',plotMax);
+% 
+% set(gca,'YLim',[0 0.3]);
+% %
 % useArray = 'PMd';
-% plotPDShiftComparisonHistograms('dir',baseDir,'dates',useDates,'period',usePeriod,'tunemethod',tuneMethod,'array',useArray,'binsize',binSize,'useblocks',3,'plotmax',plotMax);
+% dateInds = strcmpi(allFiles(:,3),'FF') & (strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT')); % & strcmpi(allFiles(:,4),'CO');
+% plotPDShiftComparisonHistograms('dir',baseDir,'dates',allFiles(dateInds,:),'period',usePeriod,'tunemethod',tuneMethod,'array',useArray,'binsize',binSize,'useblocks',4,'plotmax',plotMax);
+% set(gca,'YLim',[0 0.3]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,19 +120,22 @@ end
 
 %% Now get the data
 % what are we comparing
-plotLabels = {'Center Out','Random Target'};
+plotLabels = {'CO','RT'};
 
-usePeriod = 'onpeak';
-tuneMethod = 'regression';
-targdir = 'movement';
+useArray = 'M1';
 
-dateInds = strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO');
-doFiles = allFiles(dateInds,:);
-[targ_means, targ_diff_pds] = plotPDShiftComparisonHistograms('dir',baseDir,'dates',doFiles,'useblocks',useBlocks,'coordinates',targdir,'period',usePeriod,'tunemethod',tuneMethod,'array',useArray,'binsize',binSize,'useblocks',useBlocks,'doMD',doMD);
+switch lower(useArray)
+    case 'm1'
+        doFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'Chewie'),:);
+    case 'pmd'
+        doFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT'),:);
+end
 
-dateInds = strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'RT');
-doFiles = allFiles(dateInds,:);
-[move_means, move_diff_pds] = plotPDShiftComparisonHistograms('dir',baseDir,'dates',doFiles,'useblocks',useBlocks,'coordinates',targdir,'period',usePeriod,'tunemethod',tuneMethod,'array',useArray,'binsize',binSize,'useblocks',useBlocks,'doMD',doMD);
+dateInds = strcmpi(doFiles(:,3),'FF') & strcmpi(doFiles(:,4),'CO');
+[means1, diff_pds1] = plotPDShiftComparisonHistograms(baseDir,doFiles(dateInds,:),params);
+
+dateInds = strcmpi(doFiles(:,3),'FF') & strcmpi(doFiles(:,4),'RT');
+[means2, diff_pds2] = plotPDShiftComparisonHistograms(baseDir,doFiles(dateInds,:),params);
 
 
 %% Now plot!
@@ -115,27 +145,30 @@ plot(1,0,'bo','LineWidth',2);
 plot(1.1,0,'ro','LineWidth',2);
 legend(plotLabels);
 
-for iBlock = 1:length(move_means)
-    tempMove = move_means{iBlock}.*plotMult;
-    tempTarg = targ_means{iBlock}.*plotMult;
+for iBlock = 1:length(means2)
+    temp2 = means2{iBlock}.*plotMult;
+    temp1 = means1{iBlock}.*plotMult;
     
-    plot(iBlock,tempTarg(1,:),'bo','LineWidth',2);
-    plot(iBlock+0.1,tempMove(1,:),'ro','LineWidth',3);
-    plot([iBlock;iBlock],[tempTarg(1,:)+tempTarg(2,:);tempTarg(1,:)-tempTarg(2,:)],'b','LineWidth',2);
-    plot([iBlock+0.1;iBlock+0.1],[tempMove(1,:)+tempMove(2,:);tempMove(1,:)-tempMove(2,:)],'r','LineWidth',2);
+    plot(iBlock,temp1(1,:),'bo','LineWidth',2);
+    plot(iBlock+0.1,temp2(1,:),'ro','LineWidth',3);
+    plot([iBlock;iBlock],[temp1(1,:)+temp1(2,:);temp1(1,:)-temp1(2,:)],'b','LineWidth',2);
+    plot([iBlock+0.1;iBlock+0.1],[temp2(1,:)+temp2(2,:);temp2(1,:)-temp2(2,:)],'r','LineWidth',2);
 end
 
 
-plot([0 length(move_means)+1],[0 0],'LineWidth',1,'Color',[0.6 0.6 0.6]);
+plot([0 length(means2)+1],[0 0],'LineWidth',1,'Color',[0.6 0.6 0.6]);
 plot([1.5 1.5],[-plotMax plotMax],'k--','LineWidth',1);
 plot([4.5 4.5],[-plotMax plotMax],'k--','LineWidth',1);
 
 
-axis([0.3 length(move_means)+0.3 -plotMax plotMax]);
+axis([0.3 length(means2)+0.3 -plotMax plotMax]);
 
 
-set(gca,'XTick',1:length(move_means),'XTickLabel',{'Base','Early AD','Mid AD','Late AD','Early WO','Mid WO','Late WO'},'FontSize',14);
+set(gca,'XTick',1:length(means2),'XTickLabel',{'Base','Early AD','Mid AD','Late AD','Early WO','Mid WO','Late WO'},'FontSize',14);
+if ~doMD
 ylabel('Change in PD (deg)','FontSize',16);
-
+else
+    ylabel('Change in DOT (deg)','FontSize',16);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -43,7 +43,7 @@ holdTime = 0.5;
 % Get the movement table
 mt = filterMovementTable(data, paramSetName, true, useBlock);
 
-% 
+%
 
 if size(mt,1)==0
     keyboard
@@ -74,9 +74,9 @@ for trial = 1:size(mt,1)
         useWin(trial,:) = [mt(trial,4), mt(trial,5)];
     elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
         useWin(trial,:) = [mt(trial,5)-movementTime, mt(trial,5)];
-    
-    % this is an odd case. It's for looking at progression over the
-    % duration of the movement.
+        
+        % this is an odd case. It's for looking at progression over the
+        % duration of the movement.
     elseif strcmpi(tuningPeriod,'time1')
         % this is an odd case. It's for looking at progression over the
         % duration of the movement.
@@ -118,7 +118,7 @@ for trial = 1:size(mt,1)
         tstart = mt(trial,4)-timeDelay;
         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
         useWin(trial,:) = [tstart+0.4*tdur, tstart+0.7*tdur];
-            elseif strcmpi(tuningPeriod,'time10')
+    elseif strcmpi(tuningPeriod,'time10')
         tstart = mt(trial,4)-timeDelay;
         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
         useWin(trial,:) = [tstart+0.45*tdur, tstart+0.75*tdur];
@@ -143,48 +143,45 @@ for trial = 1:size(mt,1)
         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
         useWin(trial,:) = [tstart+0.7*tdur, tstart+1.0*tdur];
     end
-%      elseif strcmpi(tuningPeriod,'time1')
-%         % this is an odd case. It's for looking at progression over the
-%         % duration of the movement.
-%         
-%         % find duration of movement (add a bit to end of target
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         
-%         useWin(trial,:) = [tstart+0*tdur, tstart+0.25*tdur];
-%     elseif strcmpi(tuningPeriod,'time2')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.1*tdur, tstart+0.35*tdur];
-%     elseif strcmpi(tuningPeriod,'time3')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.2*tdur, tstart+0.45*tdur];
-%     elseif strcmpi(tuningPeriod,'time4')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.3*tdur, tstart+0.55*tdur];
-%     elseif strcmpi(tuningPeriod,'time5')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.4*tdur, tstart+0.65*tdur];
-%     elseif strcmpi(tuningPeriod,'time6')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.5*tdur, tstart+0.75*tdur];
-%     elseif strcmpi(tuningPeriod,'time7')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.6*tdur, tstart+0.85*tdur];
-%     elseif strcmpi(tuningPeriod,'time8')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.7*tdur, tstart+0.95*tdur];
-%         elseif strcmpi(tuningPeriod,'time9')
-%         tstart = mt(trial,4)-timeDelay;
-%         tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-%         useWin(trial,:) = [tstart+0.75*tdur, tstart+1.0*tdur];
-%     end   
+    
+% % % %          elseif strcmpi(tuningPeriod,'time1')
+% % % %             % this is an odd case. It's for looking at progression over the
+% % % %             % duration of the movement.
+% % % %     
+% % % %             % find duration of movement (add a bit to end of target
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %     
+% % % %             useWin(trial,:) = [tstart+0*tdur, tstart+0.3*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time2')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.1*tdur, tstart+0.4*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time3')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.2*tdur, tstart+0.5*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time4')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.3*tdur, tstart+0.6*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time5')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.4*tdur, tstart+0.7*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time6')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.5*tdur, tstart+0.8*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time7')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.6*tdur, tstart+0.9*tdur];
+% % % %         elseif strcmpi(tuningPeriod,'time8')
+% % % %             tstart = mt(trial,4)-timeDelay;
+% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
+% % % %             useWin(trial,:) = [tstart+0.7*tdur, tstart+tdur];
+% % % %         end
     
     for unit = 1:size(sg,1)
         ts = data.(useArray).units(unit).ts;
@@ -208,13 +205,39 @@ elseif strcmpi(tuneDir,'movement')
     if strcmpi(tuningPeriod,'pre') || strcmpi(tuningPeriod,'time0') % in this case, use target direction
         theta = mt(:,1);
     else % find the net direction in the window
-        theta = zeros(size(mt,1),1);
+        % compute force vector of hand
+        % - have net force and net velocity
+        % - use velocity from ~10 msec in past to compute present force vector
+        % - use these to find hand force vector
+        % - find angle and regress to that
         
+        % calculate perturbation force
+        if strcmpi(data.meta.epoch,'ad') && strcmpi(data.meta.perturbation,'ff')
+            f_p = zeros(length(data.cont.t),2);
+            f_h = zeros(length(data.cont.t),2);
+            for i = 13:length(data.cont.t)
+                v = data.cont.vel(i-11,:);
+                t = atan2(data.cont.vel(i-11,2)-data.cont.vel(i-12,2),data.cont.vel(i-11,1)-data.cont.vel(i-12,1));
+                f_p(i,1) = 0.15.*sqrt(v(1).^2 + v(2).^2)*cos(t+(85*pi/180));
+                f_p(i,2) = 0.15.*sqrt(v(1).^2 + v(2).^2)*sin(t+(85*pi/180));
+                f_h(i,1) = data.cont.force(i,1)-f_p(i,1);
+                f_h(i,2) = data.cont.force(i,2)-f_p(i,2);
+            end
+        else
+            f_h = data.cont.force;
+        end
+        
+        theta = zeros(size(mt,1),1);
+        theta_hand = zeros(size(mt,1),1);
         for trial = 1:size(mt,1)
             idx = data.cont.t > useWin(trial,1) & data.cont.t <= useWin(trial,2);
             usePos = data.cont.pos(idx,:);
             theta(trial) = atan2(usePos(end,2)-usePos(1,2),usePos(end,1)-usePos(1,1));
+
+            useHand = f_h(idx,:);
+            theta_hand(trial) = atan2(mean(useHand(:,2)),mean(useHand(:,1)));
         end
+        
         
         % get mean force and velocity in that window
         if isfield(data.cont,'force') && ~isempty(data.cont.force)
@@ -226,14 +249,15 @@ elseif strcmpi(tuneDir,'movement')
                 force(trial,:) = rms(useForce,1);
                 
                 % THIS IS A SHIFT
-                disp(' ');
-                disp('%%%%%%%%%%%%%');
-                disp(' HEY BITCHES! IN getFR! THERES A SHIFT! ');
-                disp(' %%%%%%%%%%%%');
-                disp(' ');
-                idx = find(idx) - 20;
+                %                 disp(' ');
+                %                 disp('%%%%%%%%%%%%%');
+                %                 disp(' HEY BITCHES! IN getFR! THERES A SHIFT! ');
+                %                 disp(' %%%%%%%%%%%%');
+                %                 disp(' ');
+                %                 idx = find(idx) - 20;
                 useVel = data.cont.vel(idx,:);
                 vel(trial,:) = rms(useVel,1);
+
             end
         else
             force = [];

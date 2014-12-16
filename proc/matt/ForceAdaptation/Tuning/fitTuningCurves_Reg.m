@@ -1,10 +1,13 @@
-function out = fitTuningCurves_Reg(data,tuningPeriod,useArray,paramSetName,iBlock,doPlots)
+function out = fitTuningCurves_Reg(data,tuningPeriod,useArray,paramSetName,iBlock,includeSpeed,doPlots)
 % notes about inputs
 % notes about outputs
 % can pass tuning method in as cell array with multiple types
 
-if nargin < 6
+if nargin < 7
     doPlots = false;
+    if nargin < 6
+        includeSpeed = false;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,8 +35,12 @@ sg = data.(useArray).sg;
 
 % Do bootstrapping with regression
 statTestParams = {'bootstrap',bootNumIters,confLevel};
-
+if ~includeSpeed
 [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
+else
+[tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves_Moran(fr,theta,vel,statTestParams,'doplots',doPlots);
+end
+
 pds = tcs(:,3);
 pd_cis = cbs{3};
 mds = tcs(:,2);

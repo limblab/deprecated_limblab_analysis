@@ -172,7 +172,7 @@ for iMonkey = 1:length(monkeys)
         %     plot([-180 180],[-180 180],'b--','LineWidth',1);
         
         %% compute some sort of "difference index"
-        dpd = angleDiff(pds(:,1),pds(:,2),false,false);
+        dpd = angleDiff(pds(:,1),pds(:,2),false,true);
         diffInd(i,:) = [mean(dpd) std(dpd)./sqrt(length(dpd))];
         
         % not during BL or WO

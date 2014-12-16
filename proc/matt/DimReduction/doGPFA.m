@@ -39,98 +39,171 @@ allFiles = {'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Chewie','2013-12-20','VR','CO'};    %35 S
 
 root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-dateInd = 6;
-doFile = allFiles(dateInd,:);
-
-epochs = {'BL','AD','WO'};
-
-useArray = 'M1';
-paramSetName = 'movement';
-
-[spikes,allMT,indices] = combineAllEpochs(root_dir,doFile,epochs,useArray,paramSetName);
-
-% reorganize indices to combine epochs and targets
 
 
-%-------------------------------------------------------------------------%
-%%%% DEFINE THESE FOLLOWING VARIABLES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-diff_conds = []; % e.g. {[1 3 5],[2 4 6]} means that
-%                                   trials [1 3 5] are from condition 1 and
-%                                   trials [2 4 6] are from condition 2.
-%                                   There can be any number of different
-%                                   conditions. If you don't want to
-%                                   separate by condition, set empty
-%                                   (diff_conds = [])
-trial_table = allMT; % Trial table size with rows
-%                                     representing trials
-t1 = [2,100];
-t2 = [6,-200];
-numTargets = 8;
-units = spikes; % Cell array in which each cell contains spike
-%                          from a single neuron
-% runIdx = 'Target_On to Go_Cue'; % Some identifying tag for the run
-%                            (e.g. 'Target_On to Go_Cue 01_30_2014')
-% directory = 'C:\Users\Matt Perich\Desktop\lab\code\s1_analysis\proc\matt\DimReduction\results\'; % Directory string for saving data.
-directory = 'C:\\Users\\Matt Perich\\Desktop\\lab\\code\\s1_analysis\\proc\\matt\\DimReduction\\results'; % Directory string for saving data.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%-------------------------------------------------------------------------%
+% allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili'),:);
+% dateInds = strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO');
+dateInds = [4];
+dateColors = {'b','r','g','m'};
 
-% automatically generate a subfolder
-runIdx = [useArray '_'];
-for iEpoch = 1:length(epochs)
-    runIdx = [runIdx, epochs{iEpoch} '_'];
+for iDate = 1:length(dateInds)
+    doFile = allFiles(dateInds(iDate),:);
+    
+    epochs = {'BL','AD1','AD2','AD3','WO1','WO2','WO3'};
+    
+    useArray = 'M1';
+    paramSetName = 'movement';
+    
+    [spikes,allMT,indices] = combineAllEpochs(root_dir,doFile,epochs,useArray,paramSetName);
+    
+    % reorganize indices to combine epochs and targets
+    
+    
+    %-------------------------------------------------------------------------%
+    %%%% DEFINE THESE FOLLOWING VARIABLES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    diff_conds = []; % e.g. {[1 3 5],[2 4 6]} means that
+    %                                   trials [1 3 5] are from condition 1 and
+    %                                   trials [2 4 6] are from condition 2.
+    %                                   There can be any number of different
+    %                                   conditions. If you don't want to
+    %                                   separate by condition, set empty
+    %                                   (diff_conds = [])
+    trial_table = allMT; % Trial table size with rows
+    %                                     representing trials
+    t1 = [4,0];
+    t2 = [5,0];
+    numTargets = 8;
+    units = spikes; % Cell array in which each cell contains spike
+    %                          from a single neuron
+    % runIdx = 'Target_On to Go_Cue'; % Some identifying tag for the run
+    %                            (e.g. 'Target_On to Go_Cue 01_30_2014')
+    % directory = 'C:\Users\Matt Perich\Desktop\lab\code\s1_analysis\proc\matt\DimReduction\results\'; % Directory string for saving data.
+    directory = 'C:\\Users\\Matt Perich\\Desktop\\lab\\code\\s1_analysis\\proc\\matt\\DimReduction\\results'; % Directory string for saving data.
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %-------------------------------------------------------------------------%
+    
+    % automatically generate a subfolder
+    runIdx = [useArray '_'];
+    for iEpoch = 1:length(epochs)
+        runIdx = [runIdx, epochs{iEpoch} '_'];
+    end
+    runIdx = [runIdx, '_' num2str(t1(1)) '_' num2str(t2(1)) '_' doFile{2}];
+    
+    
+    %-------------------------------------------------------------------------%
+    %%%% ADDITIONAL OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Cross validation takes a long time. For exploratory types of analysis,
+    % leave this as false.
+    do_cross_val = false;
+    % Plot the traces
+    plot_conditions = false; % Plot separate conditions
+    [trial_rast,dat] = trial_raster(units,trial_table,t1,t2);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %-------------------------------------------------------------------------%
+    
+    
+    %%
+    % ===========================================
+    % 1) Basic extraction of neural trajectories
+    % ===========================================
+    method = 'gpfa';
+    
+    % Select number of latent dimensions
+    xDim = 8; %find optimal using CV (below section)
+    kernSD = 30; % find optimal kernal using CV (below section)
+    binWidth = 20;
+    
+    % Extract neural trajectories
+    result = neuralTraj_limblab(runIdx, dat, directory, 'method', method, 'xDim', xDim,...
+        'kernSDList', kernSD,'binWidth',binWidth);
+    
+    % Orthonormalize neural trajectories
+    [estParams, seqTrain] = postprocess(result, 'kernSD', kernSD);
+    
+    % Seq train will NOT be ordered by trial. This makes labeling by trial
+    % with indices quite difficult, so we reorder it to be sequential. We also
+    % keep the original (orig_SeqTrain) in case a shuffled form is desired
+    ord_seqTrain = seqTrain;
+    for tr = 1:length(seqTrain)
+        tId = seqTrain(tr).trialId;
+        ord_seqTrain(tId) = seqTrain(tr);
+    end
+    orig_seqTrain = seqTrain; seqTrain = ord_seqTrain;
+    
+    % Plot neural trajectories in 3D space
+    % plot3D(seqTrain, 'xorth', 'dimsToPlot', 1:3);
+    % plot3D(seqTrain, 'xorth', 'dimsToPlot', 1:3,'nPlotMax',1000);
+    
+    % Plot each dimension of neural trajectories versus time
+    % plotEachDimVsTime(seqTrain, 'xorth', result.binWidth);
+    
+    fprintf('\nDone\n');
+    
+    %%
+    % Make figure to show progression of activity
+    if 1
+        figure; hold all;
+        dims = 1:3;
+        dimAvg = zeros(length(dims),length(seqTrain));
+        for iTrial = 1:length(seqTrain)
+            dimAvg(:,iTrial) = mean(seqTrain(iTrial).xorth(dims,:),2);
+        end
+        
+        
+        
+        allChange = [];
+        for iReach = 1:size(indices,2)
+            % get average in baseline for each dimension and reach direction
+            bl_avg = mean(dimAvg(:,indices{1,iReach}),2);
+            inds = [];
+            for iEpoch = 1:length(epochs)
+                inds = [inds;indices{iEpoch,iReach}];
+            end
+            dat = mean( abs(dimAvg(:,inds) - repmat(bl_avg,1,length(inds))),1);
+            plot(dat,'o');
+            allChange = [allChange, dat(floor(length(dat)/2):end)];
+        end
+        set(gca,'FontSize',14,'TickDir','out');
+        box off;
+        xlabel('Trials','FontSize',14);
+        ylabel('Abs(Mean Change in Low-D FR)','FontSize',14);
+    end
+    
+    %%
+    % Make figure to show progression of activity
+    dims = 1:8;
+    dimAvg = zeros(length(dims),length(seqTrain));
+    for iTrial = 1:length(seqTrain)
+        dimAvg(:,iTrial) = mean(seqTrain(iTrial).xorth(dims,:),2);
+    end
+    
+    
+    if iDate == 1
+        figure;
+        hold all;
+    end
+    
+    for iEpoch = 1:length(epochs)
+        dat = [];
+        for iReach = 1:size(indices,2)
+            % get average in baseline for each dimension and reach direction
+            bl_avg = mean(dimAvg(:,indices{1,iReach}),2);
+            
+            inds = indices{iEpoch,iReach};
+            dat = [dat, sum( abs(dimAvg(:,inds) - repmat(bl_avg,1,length(inds))),1)];
+        end
+        
+        plot(iEpoch,mean(dat),'o','LineWidth',3,'Color',dateColors{iDate});
+        plot([iEpoch,iEpoch],[mean(dat) + std(dat)./length(dat), mean(dat) - std(dat)./length(dat)],'-','LineWidth',2);
+        
+        allDat{iDate} = dat;
+        
+    end
 end
-runIdx = [runIdx, '_' num2str(t1(1)) '_' num2str(t2(1)) '_' doFile{2}];
-
-
-%-------------------------------------------------------------------------%
-%%%% ADDITIONAL OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Cross validation takes a long time. For exploratory types of analysis,
-% leave this as false.
-do_cross_val = false;
-% Plot the traces
-plot_conditions = true; % Plot separate conditions
-[trial_rast,dat] = trial_raster(units,trial_table,t1,t2);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%-------------------------------------------------------------------------%
-
-
-%%
-% ===========================================
-% 1) Basic extraction of neural trajectories
-% ===========================================
-method = 'gpfa';
-
-% Select number of latent dimensions
-xDim = 8; %find optimal using CV (below section)
-kernSD = 30; % find optimal kernal using CV (below section)
-binWidth = 20;
-
-% Extract neural trajectories
-result = neuralTraj_limblab(runIdx, dat, directory, 'method', method, 'xDim', xDim,...
-    'kernSDList', kernSD,'binWidth',binWidth);
-
-% Orthonormalize neural trajectories
-[estParams, seqTrain] = postprocess(result, 'kernSD', kernSD);
-
-% Seq train will NOT be ordered by trial. This makes labeling by trial
-% with indices quite difficult, so we reorder it to be sequential. We also
-% keep the original (orig_SeqTrain) in case a shuffled form is desired
-ord_seqTrain = seqTrain;
-for tr = 1:length(seqTrain)
-    tId = seqTrain(tr).trialId;
-    ord_seqTrain(tId) = seqTrain(tr);
-end
-orig_seqTrain = seqTrain; seqTrain = ord_seqTrain;
-
-% Plot neural trajectories in 3D space
-% plot3D(seqTrain, 'xorth', 'dimsToPlot', 1:3);
-% plot3D(seqTrain, 'xorth', 'dimsToPlot', 1:3,'nPlotMax',1000);
-
-% Plot each dimension of neural trajectories versus time
-plotEachDimVsTime(seqTrain, 'xorth', result.binWidth);
-
-fprintf('\nDone\n');
+set(gca,'FontSize',14,'TickDir','out');
+box off;
+xlabel('Trials','FontSize',14);
+ylabel('Abs(Mean Change in Low-D FR)','FontSize',14);
 
 %% plot by color
 %plotEachDimVsTime(seqTrain([indices{1,1};indices{2,1};indices{3,1}]), 'xorth', result.binWidth,'redTrials',indices{2,1},'blueTrials',indices{3,1},'nPlotMax',1000);
@@ -140,7 +213,7 @@ if plot_conditions
     figure; hold on;
     if ~isempty(diff_conds)
         diff_conds = indices(:,1);
-        cols2plot = distinguishable_colors(length(diff_conds));
+        %cols2plot = distinguishable_colors(length(diff_conds));
         cols2plot = rand(length(diff_conds),3);
         
         cond_seqTrain = cell(length(diff_conds),1);
@@ -151,56 +224,58 @@ if plot_conditions
         end
         
     end
-end
-
-%% Plot traces for each direction with subplot for each epoch
-figure; hold on;
-a = zeros(1,length(epochs));
-subplot1(1,length(epochs),'Gap',[0 0]);
-
-cols2plot = rand(numTargets,3);
-
-for i = 1:length(epochs)
-    a(i) = subplot1(i);
-    diff_conds = indices(i,:);
     
-    cond_seqTrain = cell(length(diff_conds),1);
-    for j = 1:length(diff_conds)
-        cond_seqTrain{j} = seqTrain(diff_conds{j});
-        plot3D_addon(cond_seqTrain{j}, 'xorth', cols2plot(j,:),...
-            'dimsToPlot', 1:3,'nPlotMax',10000);
-    end
-    set(a(i),'XLim',[-2,2],'YLim',[-2,2],'ZLim',[-2,2]);
-end
-
-Link = linkprop(a,{'CameraUpVector', 'CameraPosition', 'CameraTarget'});
-setappdata(gcf, 'StoreTheLink', Link);
-
-%% Plot traces for different epochs with subplot for each target
-figure;
-a = zeros(1,numTargets);
-subplot1(2,numTargets/2,'Gap',[0 0]);
-cols2plot = [0,0,1;1,0,0;0,1,0];
-for i = 1:numTargets
-    a(i) = subplot1(i);
-    hold on;
-    diff_conds = indices(:,i);
     
-    cond_seqTrain = cell(length(diff_conds),1);
-    for j = 1:length(diff_conds)
-        cond_seqTrain{j} = seqTrain(diff_conds{j});
-        plot3D_addon(cond_seqTrain{j}, 'xorth', cols2plot(j,:),...
-            'dimsToPlot', 1:3,'nPlotMax',10000);
+    %% Plot traces for each direction with subplot for each epoch
+    figure; hold on;
+    a = zeros(1,length(epochs));
+    subplot1(1,length(epochs),'Gap',[0 0]);
+    
+    cols2plot = rand(numTargets,3);
+    
+    for i = 1:3
+        a(i) = subplot1(i);
+        diff_conds = indices(i,:);
+        
+        cond_seqTrain = cell(length(diff_conds),1);
+        for j = 1:length(diff_conds)
+            cond_seqTrain{j} = seqTrain(diff_conds{j});
+            plot3D_addon(cond_seqTrain{j}, 'xorth', cols2plot(j,:),...
+                'dimsToPlot', 1:3,'nPlotMax',10000);
+        end
+        set(a(i),'XLim',[-2,2],'YLim',[-2,2],'ZLim',[-2,2]);
     end
-    set(a(i),'XLim',[-2,2],'YLim',[-2,2],'ZLim',[-2,2]);
+    
+    Link = linkprop(a,{'CameraUpVector', 'CameraPosition', 'CameraTarget'});
+    setappdata(gcf, 'StoreTheLink', Link);
+    
+    %% Plot traces for different epochs with subplot for each target
+    figure;
+    a = zeros(1,numTargets);
+    subplot1(2,numTargets/2,'Gap',[0 0]);
+    cols2plot = [0,0,1;1,0,0;0,1,0];
+    for i = 1:numTargets
+        a(i) = subplot1(i);
+        hold on;
+        diff_conds = indices(:,i);
+        
+        cond_seqTrain = cell(length(diff_conds),1);
+        for j = 1:length(diff_conds)
+            cond_seqTrain{j} = seqTrain(diff_conds{j});
+            plot3D_addon(cond_seqTrain{j}, 'xorth', cols2plot(j,:),...
+                'dimsToPlot', 1:3,'nPlotMax',10000);
+        end
+        set(a(i),'XLim',[-2,2],'YLim',[-2,2],'ZLim',[-2,2]);
+    end
+    
+    Link = linkprop(a,{'CameraUpVector', 'CameraPosition', 'CameraTarget'});
+    setappdata(gcf, 'StoreTheLink', Link);
+    
+    %%
+    % plotTrajProgression(seqTrain,indices([1,2],:));
+    % plotTrajProgression(seqTrain,indices([1,3],:));
+    
 end
-
-Link = linkprop(a,{'CameraUpVector', 'CameraPosition', 'CameraTarget'});
-setappdata(gcf, 'StoreTheLink', Link);
-
-%%
-plotTrajProgression(seqTrain,indices([1,2],:));
-plotTrajProgression(seqTrain,indices([1,3],:));
 
 %%
 if do_cross_val

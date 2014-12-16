@@ -70,7 +70,7 @@ for iMethod = 1:length(tuningMethods)
     % for regression or GLM, loop along the periods
     for iPeriod = 1:length(tuningPeriods)
         
-        arrays = fieldnames(tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}));        
+        arrays = fieldnames(tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}));
         for iArray = 1:length(arrays)
             
             useArray = arrays{iArray};
@@ -81,6 +81,21 @@ for iMethod = 1:length(tuningMethods)
                 warning(['File tuning not supported for ' tuningMethods{iMethod} ' method...']);
             elseif strcmpi(tuningMethods{iMethod},'nonparametric')
                 warning(['Classification not supported for ' tuningMethods{iMethod} ' method...']);
+                
+                cellClass = [];
+                % get cells that are significantly tuned in all epochs
+                %   first column is PDs, second is MDs
+                [istuned, sg] = excludeCells(data,tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}),tracking,useArray,classifierBlocks);
+                tunedCells = sg(all(istuned,2),:);
+                disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
+                
+                s.classes = cellClass;
+                s.sg = sg;
+                s.istuned = istuned;
+                s.tuned_cells = tunedCells;
+                
+                classes.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).(useArray) = s;
+                
             else
                 t = tuning.(tuningMethods{iMethod}).(tuningPeriods{iPeriod}).(useArray).tuning;
                 

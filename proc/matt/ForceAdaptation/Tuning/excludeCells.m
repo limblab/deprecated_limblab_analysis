@@ -40,7 +40,11 @@ r2Min = str2double(params.([lower(useArray) '_r2_minimum']){1});
 minFR = str2double(params.([lower(useArray) '_minimum_firing_rate']){1});
 clear params;
 
-all_sg = {t.sg};
+if isfield(t(1),'sg')
+    all_sg = {t.sg};
+else
+    all_sg = {t.unit_guide};
+end
 
 tracking_chan = tracking{1}.chan;
 
@@ -100,19 +104,53 @@ end
 
 % don't do this if the classifierBlocks input is empty
 if ~isempty(classifierBlocks)
-    %% Check confidence in PD estimates
-    all_pds = {t.pds};
-    for unit = 1:size(master_sg,1)
-        sig = zeros(size(all_pds));
-        for iBlock = 1:length(all_pds)
-            temp = all_pds{iBlock};
-            temp = temp(all_idx{iBlock},:);
-            sig(iBlock) = checkTuningCISignificance(temp(unit,:),ciSig,true);
+    if isfield(t(1),'pds') % this means it is regression/glm/etc
+        %% Check confidence in PD estimates
+        all_pds = {t.pds};
+        for unit = 1:size(master_sg,1)
+            sig = zeros(size(all_pds));
+            for iBlock = 1:length(all_pds)
+                temp = all_pds{iBlock};
+                temp = temp(all_idx{iBlock},:);
+                sig(iBlock) = checkTuningCISignificance(temp(unit,:),ciSig,true);
+            end
+            istuned(unit,5) = all(sig(classifierBlocks));
         end
-        istuned(unit,5) = all(sig(classifierBlocks));
+    elseif isfield(t(1),'mfr') % this means it is nonparametric
+        % basically, here I want to check if any one bin is significantly
+        % different from any other. I will call this a coarse estimate of
+        % "tuning"
+        nTargs = length(t(1).utheta);
+        for unit = 1:size(master_sg,1)
+            blockDiffs = zeros(1,length(t));
+            for iBlock = 1:length(t)
+                cil = t(iBlock).cil;
+                cih = t(iBlock).cih;
+                
+                targDiffs = [];
+                for iTarg = 1:nTargs-1
+                    % get confidence intervals for
+                    for iTarg2 = iTarg+1:nTargs
+                        % do the confidence intervals overlap?
+                        ci1 = [cil(unit,iTarg) cih(unit,iTarg)];
+                        ci2 = [cil(unit,iTarg2) cih(unit,iTarg2)];
+                        overlap = range_intersection(ci1,ci2);
+                        
+                        % build matrix showing how they differ
+                        if isempty(overlap)
+                            targDiffs = [targDiffs; 1];
+                        else
+                            targDiffs = [targDiffs; 0];
+                        end
+                    end
+                end
+                blockDiffs(iBlock) = sum(targDiffs) > 2;
+            end
+            %istuned(unit,5) = all(blockDiffs);
+            p = anova1(t(iBlock).boot_fr{unit},[],'off');
+            istuned(unit,5) = p < 0.05;
+        end
     end
-    
-    
     %% Check that r-squared of fit is okay
     if isfield(t(1),'r_squared') && ~isempty(t(1).r_squared)
         all_rs = {t.r_squared};
@@ -145,5 +183,6 @@ if ~isempty(classifierBlocks)
     else
         istuned(:,6) = ones(size(istuned(:,6)));
     end
+    
 end
 

@@ -6,18 +6,18 @@ close all;
 root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
 
 allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
-            'MrT','2013-08-20','FF','RT'; ...   % S x
-            'MrT','2013-08-21','FF','CO'; ...   % S x - AD is split in two so use second but don't exclude trials
-            'MrT','2013-08-22','FF','RT'; ...   % S x
-            'MrT','2013-08-23','FF','CO'; ...   % S x
-            'MrT','2013-08-30','FF','RT'; ...   % S x
-            'MrT','2013-09-03','VR','CO'; ...   % S x
-            'MrT','2013-09-04','VR','RT'; ...   % S x
-            'MrT','2013-09-05','VR','CO'; ...   % S x
-            'MrT','2013-09-06','VR','RT'; ...   % S x
-            'MrT','2013-09-09','VR','CO'; ...   % S x
-            'MrT','2013-09-10','VR','RT'; ...   % S x
-            'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
+    'MrT','2013-08-20','FF','RT'; ...   % S x
+    'MrT','2013-08-21','FF','CO'; ...   % S x - AD is split in two so use second but don't exclude trials
+    'MrT','2013-08-22','FF','RT'; ...   % S x
+    'MrT','2013-08-23','FF','CO'; ...   % S x
+    'MrT','2013-08-30','FF','RT'; ...   % S x
+    'MrT','2013-09-03','VR','CO'; ...   % S x
+    'MrT','2013-09-04','VR','RT'; ...   % S x
+    'MrT','2013-09-05','VR','CO'; ...   % S x
+    'MrT','2013-09-06','VR','RT'; ...   % S x
+    'MrT','2013-09-09','VR','CO'; ...   % S x
+    'MrT','2013-09-10','VR','RT'; ...   % S x
+    'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
     'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
     'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
@@ -54,7 +54,7 @@ allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
     'Chewie','2013-12-20','VR','CO'};    %35 S
 
 
-useArray = 'PMd';
+useArray = 'M1';
 classifierBlocks = [1 4 7];
 
 switch lower(useArray)
@@ -67,12 +67,18 @@ end
 dateInds = strcmpi(allFiles(:,3),'FF'); % & strcmpi(allFiles(:,4),'CO');
 doFiles = allFiles(dateInds,:);
 
-paramSetName = 'target';
+paramSetName = 'movement2';
 tuningMethod = 'regression';
-tuningPeriod = 'pre';
+tuningPeriod = 'onpeak';
 
 doMD = false;
 reassignOthers = true;
+% separate by waveform width
+%   0: don't do
+%   1: use cells below median
+%   2: use cells above median
+%   3: use all but store widths
+doWidthSeparation = 3;
 
 if ~doMD
     ymin = -180;
@@ -86,11 +92,37 @@ else
     y_lab = 'MD Change (Hz) ';
 end
 
+%%
+% If we want to separate by waveform width...
+if doWidthSeparation
+    count = 0;
+    clear allWFWidths;
+    for iFile = 1:size(doFiles,1)
+        % load baseline data to get width of all spike waveforms
+        dataFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
+        data = load(dataFile);
+        
+        units = data.(useArray).units;
+        for u = 1:length(units)
+            count = count + 1;
+            wf = mean(units(u).wf,2);
+            idx = find(abs(wf) > std(wf));
+            allWFWidths(count) = idx(end) - idx(1);
+        end
+    end
+    % now, set the threshold for narrow and wide APs
+    wfThresh = median(allWFWidths);
+end
 
 %% Get the classification for each day for tuned cells
 cellClasses = cell(size(doFiles,1),1);
 cellPDs = cell(size(doFiles,1),1);
+count = 0;
 for iFile = 1:size(doFiles,1)
+    % if we want to separate by waveform width...
+    
+    
+    % load tuning and class info
     classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
     classes = load(classFile);
     
@@ -98,10 +130,38 @@ for iFile = 1:size(doFiles,1)
     tuning = load(tuningFile);
     
     c = classes.(tuningMethod).(tuningPeriod).(useArray);
-    % first column is PD, second column is MD
-    cellClasses{iFile} = c.classes(all(c.istuned,2),1);
     
-    tunedCells = c.tuned_cells;
+    if doWidthSeparation
+        % load baseline data to get waveforms
+        dataFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
+        data = load(dataFile);
+        
+        units = data.(useArray).units;
+        fileWidths = zeros(length(units),1);
+        wfTypes = zeros(length(units),1);
+        for u = 1:length(units)
+            wf = mean(units(u).wf,2);
+            idx = find(abs(wf) > std(wf));
+            switch doWidthSeparation
+                case 1
+                    wfTypes(u) = (idx(end) - idx(1)) <= wfThresh;
+                case 2
+                    wfTypes(u) = (idx(end) - idx(1)) > wfThresh;
+                case 3
+                    wfTypes(u) = 1;
+            end
+            fileWidths(u) = idx(end) - idx(1);
+        end
+    else
+        wfTypes = ones(size(c.istuned,1),1);
+        fileWidths = ones(size(c.istuned,1),1);
+    end
+    
+    % first column is PD, second column is MD
+    cellClasses{iFile} = c.classes(all(c.istuned,2) & wfTypes,1);
+    
+    tunedCells = c.sg(all(c.istuned,2) & wfTypes,:);
+    % tunedCells = c.tuned_cells;
     
     t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
     
@@ -128,6 +188,7 @@ for iFile = 1:size(doFiles,1)
     r2_wo = mean(t(classifierBlocks(3)).r_squared,2);
     
     cellPDs{iFile} = {pds_bl, pds_ad, pds_wo};
+    cellWidths{iFile} = fileWidths(all(c.istuned,2) & wfTypes);
     cellR2{iFile} = {r2_bl(idx_bl), r2_ad(idx_ad), r2_wo(idx_wo)};
 end
 
@@ -137,6 +198,7 @@ dpd_ad = [];
 dpd_wo = [];
 classes = [];
 r2s = [];
+widths = [];
 for iFile = 1:size(doFiles,1)
     pds = cellPDs{iFile};
     if ~doMD
@@ -148,6 +210,7 @@ for iFile = 1:size(doFiles,1)
     end
     
     c = cellClasses{iFile};
+    w = cellWidths{iFile};
     
     if reassignOthers
         pds_wo = pds{3};
@@ -181,14 +244,14 @@ for iFile = 1:size(doFiles,1)
     end
     
     classes = [classes; c];
-    
+    widths = [widths; w];
     r2 = cellR2{iFile};
     r2s = [r2s; r2{1}];
 end
 
-%%
+%
 % see if class correlates with R2
-plot(r2s,classes,'o');
+% plot(r2s,classes,'o');
 
 %%
 

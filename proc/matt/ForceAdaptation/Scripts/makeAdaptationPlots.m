@@ -43,7 +43,6 @@ allFiles = {'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Chewie','2013-12-20','VR','CO'};    %35 S
 
 excludeFiles = [];
-metric = 'angle_error';
 
 %%
 fileInds = strcmpi(allFiles(:,1),'Mihili') & strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO');
@@ -72,20 +71,6 @@ doFiles = allFiles(fileInds,:);
 
 fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir);
 
-
-%% do angle error for CO
-fileInds = strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO');
-fileInds(excludeFiles) = 0;
-doFiles = allFiles(fileInds,:);
-
-fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'b','r','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false);
-
-fileInds = strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'RT');
-fileInds(excludeFiles) = 0;
-doFiles = allFiles(fileInds,:);
-
-fh=plotAdaptationOverTime('handle',fh,'dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir);
-
 %% do angle error for CO
 fileInds = strcmpi(allFiles(:,1),'Mihili') & strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO');
 fileInds(excludeFiles) = 0;
@@ -100,12 +85,12 @@ doFiles = allFiles(fileInds,:);
 
 fh=plotAdaptationOverTime('handle',fh,'dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir);
 
-%% do angle error for RT
+%% do curvature for RT
 clear fh;
 fileInds = strcmpi(allFiles(:,1),'Mihili') & strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'RT');
 fileInds(excludeFiles) = 0;
 doFiles = allFiles(fileInds,:);
-metric = 'time_to_target';
+metric = 'curvature';
 
 fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'b','r','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false);
 

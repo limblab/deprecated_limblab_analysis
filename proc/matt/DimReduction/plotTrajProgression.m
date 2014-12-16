@@ -32,7 +32,7 @@ for i = 1:numConds
                 'dimsToPlot', 1:3,'nPlotMax',10000);
         end
     end
-    set(a(i),'XLim',[-2,2],'YLim',[-2,2],'ZLim',[-2,2]);
+    set(a(i),'XLim',[0,4],'YLim',[-2,2],'ZLim',[-2,2]);
 end
 
 Link = linkprop(a,{'CameraUpVector', 'CameraPosition', 'CameraTarget'});

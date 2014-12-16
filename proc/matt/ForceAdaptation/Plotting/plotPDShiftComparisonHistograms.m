@@ -1,4 +1,4 @@
-function [allMeans,allDiffPDs] = plotPDShiftComparisonHistograms(varargin)
+function [allMeans,fileDiffPDs] = plotPDShiftComparisonHistograms(baseDir,doFiles,params)
 % possible inputs:
 %   baseDir
 %   *usedate (use cell, if multiple loop through and add them?)
@@ -28,38 +28,36 @@ useBlocks = [1,4,6];
 coordinates = 'movement';
 titleIndex = 3;
 doMD = false;
-for i = 1:2:length(varargin)
-    switch lower(varargin{i})
-        case 'dir'
-            baseDir = varargin{i+1};
-        case 'dates'
-            doFiles = varargin{i+1};
+doWidthSeparation = 0;
+fn = fieldnames(params);
+for i = 1:length(fn)
+    switch lower(fn{i})
         case 'period'
-            usePeriod = varargin{i+1};
+            usePeriod = params.(fn{i});
         case 'binsize'
-            binSize = varargin{i+1};
+            binSize = params.(fn{i});
         case 'maxangle'
-            maxAngle = varargin{i+1};
+            maxAngle = params.(fn{i});
         case 'figurepos'
-            figurePosition = varargin{i+1};
+            figurePosition = params.(fn{i});
         case 'array'
-            useArray = varargin{i+1};
+            useArray = params.(fn{i});
         case 'savepath'
-            savePath = varargin{i+1};
+            savePath = params.(fn{i});
         case 'tunemethod'
-            tuneMethod = varargin{i+1};
+            tuneMethod = params.(fn{i});
         case 'histbins'
-            histBins = varargin{i+1};
+            histBins = params.(fn{i});
         case 'useblocks'
-            useBlocks = varargin{i+1};
+            useBlocks = params.(fn{i});
         case 'coordinates'
-            coordinates = varargin{i+1};
+            coordinates = params.(fn{i});
         case 'titleindex'
-            titleIndex = varargin{i+1};
-        case 'numblocksepoch'
-            numBlocksEpoch = varargin{i+1};
+            titleIndex = params.(fn{i});
         case 'domd'
-            doMD = varargin{i+1};
+            doMD = params.(fn{i});
+        case 'dows'
+            doWidthSeparation = params.(fn{i});
     end
 end
 
@@ -69,13 +67,32 @@ else
     plotMult = 1;
 end
 
-% load plotting parameters
-fontSize = 16;
-
 if isempty(histBins)
     histBins = -(maxAngle-binSize/2):binSize:(maxAngle-binSize/2);
 end
 
+% If we want to separate by waveform width...
+if doWidthSeparation
+    count = 0;
+    clear allWFWidths;
+    for iFile = 1:size(doFiles,1)
+        % load baseline data to get width of all spike waveforms
+        dataFile = fullfile(baseDir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
+        data = load(dataFile);
+        
+        units = data.(useArray).units;
+        for u = 1:length(units)
+            count = count + 1;
+            wf = mean(units(u).wf,2);
+            idx = find(abs(wf) > std(wf));
+            allWFWidths(count) = idx(end) - idx(1);
+        end
+    end
+    % now, set the threshold for narrow and wide APs
+    wfThresh = median(allWFWidths);
+end
+
+% Now do the main code
 fileDiffPDs = cell(length(useBlocks),size(doFiles,1));
 fileErrs = cell(length(useBlocks),size(doFiles,1));
 
@@ -94,12 +111,32 @@ for iFile = 1:size(doFiles,1)
     % histograms of BL->AD and AD->WO
     
     useClasses = classes.(tuneMethod).(usePeriod).(useArray);
-    
-    tuned_cells = useClasses.sg(all(useClasses.istuned,2),:);
-    c = useClasses.classes(all(useClasses.istuned,2));
-    
+       
+    if doWidthSeparation
+        % load baseline data to get waveforms
+        dataFile = fullfile(baseDir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
+        data = load(dataFile);
+        
+        units = data.(useArray).units;
+        wfTypes = zeros(length(units),1);
+        for u = 1:length(units)
+            wf = mean(units(u).wf,2);
+            idx = find(abs(wf) > std(wf));
+            switch doWidthSeparation
+                case 1
+                    wfTypes(u) = (idx(end) - idx(1)) <= wfThresh;
+                case 2
+                    wfTypes(u) = (idx(end) - idx(1)) > wfThresh;
+            end
+        end
+    else
+        wfTypes = ones(size(useClasses.istuned,1),1);
+    end
+
+    tuned_cells = useClasses.sg(all(useClasses.istuned,2) & wfTypes,:);
+    c = useClasses.classes(all(useClasses.istuned,2) & wfTypes);
     % check for dynamic cells only
-    tuned_cells = tuned_cells(c==2 | c==5,:);
+    %tuned_cells = tuned_cells(c==2 | c==5,:);
     
     % get unit guides and pd matrices
     t = tuning.(tuneMethod).(usePeriod).(useArray).tuning;
@@ -148,7 +185,7 @@ for iFile = 1:size(doFiles,1)
                     if ~doMD
                         allDiffPDs = [allDiffPDs; angleDiff(pds_bl(blInd,1),pds,true,true)];
                     else
-                        allDiffPDs = [allDiffPDs; pds - pds_bl(blInd,1)];
+                        allDiffPDs = [allDiffPDs; (pds - pds_bl(blInd,1))];
                     end
                     allErrs = [allErrs; err];
                 end
@@ -203,11 +240,10 @@ end
 
 %%% Now make the plots
 % first, adaptation
-for iFig = 2%:length(useBlocks)
+for iFig = 1:length(useBlocks)
     fh = figure('Position', figurePosition);
     hold all;
     for iTitle = 1:length(uTitles)
-        % make any negative values positive
         groupDiffPDs = allDiffPDs{useBlocks(iFig),iTitle};
         
         % histograms of BL->AD for FF and VR

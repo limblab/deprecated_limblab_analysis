@@ -23,7 +23,7 @@ allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
     'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
     'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
-    'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
+%     'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
     'Mihili','2014-02-14','FF','RT'; ...    %5  S(M-P)
     'Mihili','2014-02-17','FF','CO'; ...    %6  S(M-P)
     'Mihili','2014-02-18','FF','CO'; ...    %7  S(M-P) - Did both perturbations
@@ -35,6 +35,7 @@ allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
     'Mihili','2014-03-04','VR','CO'; ...    %13 S(M-P)
     'Mihili','2014-03-06','VR','CO'; ...    %14 S(M-P)
     'Mihili','2014-03-07','FF','CO'; ...   % 15
+    'Mihili','2014-12-11','FF','CO'; ...
     'Chewie','2013-10-03','VR','CO'; ... %16  S ?
     'Chewie','2013-10-09','VR','RT'; ... %17  S x
     'Chewie','2013-10-10','VR','RT'; ... %18  S ?
@@ -78,16 +79,20 @@ monkeys = {'Chewie','Mihili'};
 
 remove_predicted = false;
 doMD = false;
-doAvg = true;
+doAvg = false; % do average across sessions (mainly for group scatter plot)
 useVel = false;
 useMasterTuned = false;
-
+% separate by waveform width
+%   0: don't do
+%   1: use cells below median
+%   2: use cells above median
+doWidthSeparation = 0;
 
 if ~doMD
     doAbs = true;
     doCirc = false;
-    ymin_pd = 40;
-    ymax_pd = 110;
+    ymin_pd = 0;
+    ymax_pd = 120;
     binSize = 10;
     plotMult = 180/pi;
     y_lab = 'PD Change (Deg) ';
@@ -123,6 +128,30 @@ subplot1(1,length(monkeys));
 % subplot1(1,length(monkeys));
 h4 = figure();
 subplot1(1,length(monkeys));
+
+%%
+% If we want to separate by waveform width...
+if doWidthSeparation
+    count = 0;
+    clear allWFWidths;
+    doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
+    for iFile = 1:size(doFiles,1)
+        % load baseline data to get width of all spike waveforms
+        dataFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
+        data = load(dataFile);
+        
+        units = data.(useArray).units;
+        for u = 1:length(units)
+            count = count + 1;
+            wf = mean(units(u).wf,2);
+            idx = find(abs(wf) > std(wf));
+            allWFWidths(count) = idx(end) - idx(1);
+        end
+    end
+    % now, set the threshold for narrow and wide APs
+    wfThresh = median(allWFWidths);
+end
+
 %%
 for iMonkey = 1:length(monkeys)
     
@@ -151,6 +180,25 @@ for iMonkey = 1:length(monkeys)
         tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
         tuning = load(tuningFile);
         
+        if doWidthSeparation
+            % load baseline data to get waveforms
+            dataFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
+            data = load(dataFile);
+            
+            units = data.(useArray).units;
+            wfTypes = zeros(length(units),1);
+            for u = 1:length(units)
+                wf = mean(units(u).wf,2);
+                idx = find(abs(wf) > std(wf));
+                switch doWidthSeparation
+                    case 1
+                        wfTypes(u) = (idx(end) - idx(1)) <= wfThresh;
+                    case 2
+                        wfTypes(u) = (idx(end) - idx(1)) >= wfThresh;
+                end
+            end
+        end
+        
         for iBlock = 1:length(classifierBlocks)
             neurons = struct();
             force = zeros(1,length(tuningPeriods));
@@ -158,7 +206,11 @@ for iMonkey = 1:length(monkeys)
             for iPeriod = 1:length(tuningPeriods)
                 tuningPeriod = tuningPeriods{iPeriod};
                 
+                try
                 t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
+                catch
+                    keyboard
+                end
                 
                 % find average force
                 if useVel
@@ -175,10 +227,15 @@ for iMonkey = 1:length(monkeys)
                 c = classes.(tuningMethod).(tuningPeriod).(useArray);
                 sg = t(classifierBlocks(iBlock)).sg;
                 
+                
                 if useMasterTuned
                     tunedCells = masterTunedSG{iFile};
                 else
-                    tunedCells = sg(all(c.istuned,2),:);
+                    if doWidthSeparation
+                        tunedCells = sg(all(c.istuned,2) & wfTypes,:);
+                    else
+                        tunedCells = sg(all(c.istuned,2),:);
+                    end
                 end
                 
                 [~,idx] = intersect(sg, tunedCells,'rows');
@@ -225,17 +282,23 @@ for iMonkey = 1:length(monkeys)
         fn = fieldnames(bl_neurons);
         for i = 1:length(fn)
             bl = bl_neurons.(fn{i}).pds;
-            ad = ad_neurons.(fn{i}).pds;
-            wo = wo_neurons.(fn{i}).pds;
-            if ~any(isnan(bl)) && ~any(isnan(ad)) && ~any(isnan(wo))
-                bl_pds = [bl_pds; bl];
-                ad_pds = [ad_pds; ad];
-                wo_pds = [wo_pds; wo];
+            try
+                ad = ad_neurons.(fn{i}).pds;
+                wo = wo_neurons.(fn{i}).pds;
+                if ~any(isnan(bl)) && ~any(isnan(ad)) && ~any(isnan(wo))
+                    bl_pds = [bl_pds; bl];
+                    ad_pds = [ad_pds; ad];
+                    wo_pds = [wo_pds; wo];
+                end
+            catch
+                %do nothin
             end
         end
         
         % now find difference from baseline
         if ~doMD
+            bl_ad = zeros(size(bl_pds));
+            bl_wo = zeros(size(bl_pds));
             for unit = 1:size(bl_pds,1)
                 bl_ad(unit,:) = angleDiff(bl_pds(unit,:),ad_pds(unit,:),true,~doAbs);
                 bl_wo(unit,:) = angleDiff(bl_pds(unit,:),wo_pds(unit,:),true,~doAbs);
@@ -356,13 +419,13 @@ for iMonkey = 1:length(monkeys)
     allMonkeyFits{iMonkey,1} = b;
     allMonkeyFits{iMonkey,2} = bint;
     
-%     clear npf npa
-%     for i = 2:2:size(periodForce,2)
-%         npf(:,i/2) = [periodForce(:,i); periodForce(:,i+1)];
-%         npa(:,i/2) = [periodPDs_AD(:,i); periodPDs_AD(:,i+1)];
-%     end
-%     periodForce = npf;
-%     periodPDs_AD = npa;
+    %     clear npf npa
+    %     for i = 2:2:size(periodForce,2)
+    %         npf(:,i/2) = [periodForce(:,i); periodForce(:,i+1)];
+    %         npa(:,i/2) = [periodPDs_AD(:,i); periodPDs_AD(:,i+1)];
+    %     end
+    %     periodForce = npf;
+    %     periodPDs_AD = npa;
     
     % NOW FUN STUFF!
     % plot on dual axes PD change and RMS force
@@ -406,7 +469,7 @@ for iMonkey = 1:length(monkeys)
         'YAxisLocation','right',...
         'Color','none', ...
         'TickDir','out');
-  
+    
     hold all;
     plot(1:size(periodForce,2),mean(periodForce,1),'o','LineWidth',2,'Color',[0.6 0.6 0.6],'Parent',ax2);
     plot(1:size(periodForce,2),mean(periodForce,1),'-','LineWidth',2,'Color',[0.6 0.6 0.6],'Parent',ax2);

@@ -304,6 +304,9 @@ for iEpoch = 1:length(epochs)
                 
                 uelecs = unique(electrodes);
                 
+                % for now, hard code to be 96 channels
+                uelecs = uelecs(uelecs <= 96);
+                
                 unitCount = 0;
                 sg = [];
                 for channel = 1:length(uelecs)

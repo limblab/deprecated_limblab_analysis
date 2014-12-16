@@ -1,4 +1,4 @@
-function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRandSubset)
+function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRandSubset,includeSpeed)
 % FITTUNINGCURVES  Wrapper function to calculate tuning curves
 %
 %   This function will calculate tuning using a variety of methods for
@@ -168,9 +168,9 @@ for iEpoch = 1:length(epochs)
                                     % keep passing in first block so we use those trials.
                                     % ad_exclude_trials might look like 0 0.33 0.33 0.33 0.33, to do 4 resamples
                                     %   weird format: pass in number of samples as negative
-                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,-numSamples,doPlots);
+                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,-numSamples,includeSpeed,doPlots);
                                 else % do normal stuff
-                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,doPlots);
+                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,includeSpeed,doPlots);
                                 end
                             else
                                 disp('WARNING: cannot use whole file for regression/vectorsum tuning method, so skipping this tuning period input');

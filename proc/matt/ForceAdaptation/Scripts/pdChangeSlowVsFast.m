@@ -69,7 +69,7 @@ doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'RT'),:);
 tuningMethod = 'regression';
 tuningPeriod = 'onpeak';
 
-doMD = true;
+doMD = false;
 
 if ~doMD
     ymin = -50;
@@ -208,15 +208,14 @@ hold all;
 
 % histograms of BL->AD for FF and VR
 [f,x]=hist(fast_dpd_ad,histBins);
-%         bar(x,f);
-bar(x,f/sum(f));
-
+% plot(x,100.*f/sum(f),'r','LineWidth',2);
+bar(x,100.*f/sum(f));
 h = findobj(gca,'Type','patch');
 set(h,'FaceColor','r','EdgeColor','w');
 
 [f,x]=hist(slow_dpd_ad,histBins);
-%         bar(x,f);
-bar(x,f/sum(f));
+% plot(x,100.*f/sum(f),'b','LineWidth',2);
+bar(x,100.*f/sum(f));
 h = findobj(gca,'Type','patch');
 set(h,'EdgeColor','w','facealpha',0.7,'edgealpha',0.7);
 

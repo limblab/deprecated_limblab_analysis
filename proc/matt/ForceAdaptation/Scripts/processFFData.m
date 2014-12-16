@@ -21,6 +21,7 @@ sigMethod = 'regression';
 % if false, will not copy over new parameter files if they already exist
 rewriteFiles  = 1;
 doRandSubset = false;
+includeSpeed = true;
 
 % exclude these analysis steps
 %    Note: I recommend if you change analysis parameters relevant to one of
@@ -31,7 +32,7 @@ doDataStruct        = 0;
 doAdaptation        = 0;
 doTracking          = 0;
 % tuning options
-doTuning            = 0;
+doTuning            = 1;
 doClassification    = 1;
 doReport            = 0;
 % plotting options
@@ -41,8 +42,8 @@ doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
 %%%% Specify these things %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-paramSetNames = {'move_time'};
-classifierBlocks = [1 2 3];
+paramSetNames = {'movement2'};
+classifierBlocks = [1 4 7];
 monkeys = {'Chewie','Mihili'};
 dataSummary;
 
@@ -56,19 +57,19 @@ for iMonkey = 1:length(monkeys)
     switch monkey
         case 'MrT'
             arrays = {'PMd'};
-            dateInds = strcmpi(mrt_data(:,3),'FF') | strcmpi(mrt_data(:,3),'VR');
+            dateInds = strcmpi(mrt_data(:,3),'FF') & strcmpi(mrt_data(:,4),'CO');
             
             dataDir = 'Z:\MrT_9I4\Matt';
             goodDates = mrt_data(dateInds,2);
         case 'Chewie'
             arrays = {'M1'};
-            dateInds = strcmpi(chewie_data(:,3),'FF') & strcmpi(chewie_data(:,4),'CO');
+            dateInds = strcmpi(chewie_data(:,3),'FF'); % & strcmpi(chewie_data(:,4),'CO');
             
             dataDir = 'Z:\Chewie_8I2\Matt';
             goodDates = chewie_data(dateInds,2);
         case 'Mihili'
             arrays = {'M1'};
-            dateInds = strcmpi(mihili_data(:,3),'FF') & strcmpi(mihili_data(:,4),'CO');
+            dateInds = strcmpi(mihili_data(:,3),'FF'); % & strcmpi(mihili_data(:,4),'CO');
             
             dataDir = 'Z:\Mihili_12A3\Matt';
             goodDates = mihili_data(dateInds,2);
@@ -135,6 +136,7 @@ for iMonkey = 1:length(monkeys)
             % make my data file (will convert things to BDF if necessary
             try
                 [~,useUnsorted] = makeDataStruct(expParamFile,dataDir,outDir,'nevnsx', false, useUnsorted);
+                disp('No NEVNSX found... trying NEV...')
             catch
                 [~,useUnsorted] = makeDataStruct(expParamFile,dataDir,outDir,'nev', false, useUnsorted);
             end
@@ -171,7 +173,7 @@ for iMonkey = 1:length(monkeys)
                     disp('%%%  Fit Tuning Curves %%%')
                     disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
                     % calculate tuning curves
-                    [~] = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRandSubset);
+                    [~] = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRandSubset,includeSpeed);
                 end
                 
                 if doClassification
