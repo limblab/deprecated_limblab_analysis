@@ -14,12 +14,13 @@ for i = 1:size(H1,2)
     Hy = squeeze(H1(:,i,size(H1,3)/2+1:end));
     Htemp = [Hx Hy];
     Hstruct.(['Lag',num2str(i)]) = Htemp;
-    [V{i},S_T,U_T] = svd(Hstruct.(['Lag',num2str(i)]));
+    [Vtemp,S_T,U_T] = svd(Hstruct.(['Lag',num2str(i)]));
+    V{i} = Vtemp;
     SingV = V{i}*S_T;
     ParticipationNum(:,i) = sqrt(SingV(:,1).^2 + SingV(:,2).^2);
 end
 
-clear Numlags Hx Hy Htemp Hstruct i H1
+clear Numlags Hx Hy Htemp Hstruct i H1 S_T U_T Vtemp 
 %% Find and plot common channels
 if findCommonCh == 1
     

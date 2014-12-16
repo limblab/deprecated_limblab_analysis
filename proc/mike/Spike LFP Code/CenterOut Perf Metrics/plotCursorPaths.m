@@ -61,11 +61,12 @@ end
 
 %% Plot velocity traces and overlay them with dotted movement onset lines
 Fnum = 17;
+Chnum = 39;
 VelocityTrace = [];
-for i = 1 :length(Trials{Fnum}.Vel_MO)
+for i = 1 :length(Trials{Chnum,Fnum}.Vel_MO)
     
-    VelocityTrace = [VelocityTrace; sqrt(Trials{Fnum}.Vel_MO{:,i}(:,2).^2 + Trials{Fnum}.Vel_MO{:,i}(:,3).^2)]; 
-    MOpoints(1,i) = 2000+4001*(i-1);
+    VelocityTrace = [VelocityTrace; sqrt(Trials{Chnum,Fnum}.Vel_MO{:,i}(:,2).^2 + Trials{Chnum,Fnum}.Vel_MO{:,i}(:,3).^2)]; 
+    MOpoints(1,i) = 40+80*(i-1);
     
 end
 
@@ -73,3 +74,6 @@ figure
 plot(repmat(MOpoints,length(min(VelocityTrace)-1:max(VelocityTrace)+1),1),repmat((min(VelocityTrace)-1:max(VelocityTrace)+1)',1,length(MOpoints)),'r--')
 hold on
 plot(VelocityTrace)
+
+xlabel('Time(s)')
+ylabel('Velocity')
