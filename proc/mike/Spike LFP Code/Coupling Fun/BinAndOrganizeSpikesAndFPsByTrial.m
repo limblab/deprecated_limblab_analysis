@@ -6,22 +6,22 @@ FP_Trial_timeIndex_start = [1750:2250];
 FP_Trial_timeIndex_MV = [1750:2250];
 FP_Trial_timeIndex_end = [1400:1900];
 samprate = 1000;
-HC_I = [1:6];
-BC_1DG = [7:11];
-BC_1DSp = [12:16];
-BC_I = [17:26];
+HC_I = [2:5];
+BC_1DG = [];
+BC_1DSp = [];
+BC_I = [17:32];
 
-
-ControlCh = 66;
-monkey_name = 'Mini';
+ControlCh = 39;
+monkey_name = 'Jaco';
 LGHG = 0;
-SpHG = 1;
+SpHG = 0;
+EvalRbyTarg = 1;
 
 for bin = 1:length(KernelSize)
     tstart = [-.25:.001:.25];
     tend = [1.4:.001:1.9];
     filestartindex = 0;
-    for f = [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end) BC_I(1):BC_I(end)]
+    for f = [HC_I(1):HC_I(end)  BC_I(1):BC_I(end)]% BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]
         for k = 1:size(Trials,1)
             % If there are no spikes then put fill with all Nans and continue
             if isfield(Trials{k,f},'tsend') == 1
@@ -52,6 +52,19 @@ for bin = 1:length(KernelSize)
                             fpByTrialStart(i,:,C) = Trials{k,f}.FPstart{i,C}(FP_Trial_timeIndex_start);
                             fpByTrialMaxV(i,:,C) = Trials{k,f}.FPMaxV{i,C}(FP_Trial_timeIndex_MV);
                             fpByTrialEnd(i,:,C) = Trials{k,f}.FPend{i,C}(FP_Trial_timeIndex_end);
+                            
+
+                            if C == 1
+%                                 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
+%                                 fpf=filtfilt(b,a,fp')';
+                                tfmatByTrialStart(i,:) = fft(Trials{k,f}.FPstart{i,C}(FP_Trial_timeIndex_start));
+                                tfmatByTrialMaxV(i,:) = fft(Trials{k,f}.FPMaxV{i,C}(FP_Trial_timeIndex_MV));
+                                tfmatByTrialEnd(i,:) = fft(Trials{k,f}.FPend{i,C}(FP_Trial_timeIndex_end));
+                                
+                                fpSpectByTrialStart(i,:) = log( tfmatByTrialStart(i,:).* conj(tfmatByTrialStart(i,:)));
+                                fpSpectByTrialMaxV(i,:) = log( tfmatByTrialMaxV(i,:).* conj(tfmatByTrialMaxV(i,:)));
+                                fpSpectByTrialEnd(i,:) = log( tfmatByTrialEnd(i,:).* conj(tfmatByTrialEnd(i,:)));
+                            end
                         else
                             continue
                         end
@@ -61,7 +74,59 @@ for bin = 1:length(KernelSize)
                 clear i Trial_GammaEnd Trial_GammaStart RhoValTrial PvalTrial...
                     SpikeCountsTempEnd SpikeCountsTempStart
                 
+                TList = Trials{k,f}.TargetID;
+                Targs = unique(Trials{k,f}.TargetID)               
+                Targs(Targs == 0 ) = []
                 
+                l = 1;
+                for tid = Targs
+                    MeanSpikeRateByTargStart = mean(SpikeRatesByTrialStart(tid == TList,:));
+                    MeanFPByTargStart = squeeze(mean(fpByTrialStart(tid == TList,:,:)));
+                    
+                    AvgCorr.SpectByTarg_MO{f}{k,l} = fpSpectByTrialStart(tid == TList,:);
+                    AvgCorr.SpectByTarg_MaxV{f}{k,l} = fpSpectByTrialMaxV(tid == TList,:);
+                    AvgCorr.SpectByTarg_Rew{f}{k,l} = fpSpectByTrialEnd(tid == TList,:);
+                    
+                    STESpikeRateByTargStart = std(SpikeRatesByTrialStart)./size(SpikeRatesByTrialStart,1);
+                    STEFPByTargStart = squeeze(std(fpByTrialStart))./size(fpByTrialStart,1);
+                    
+                    AvgCorr.FPTraceByTarg_MO{f}{k,l} = MeanFPByTargStart;
+                    AvgCorr.SpTraceByTarg_MO{f}{k,l} = MeanSpikeRateByTargStart';
+                    
+                    AvgCorr.FPTraceByTarg_MO_STE{f}{k,l} = STEFPByTargStart;
+                    AvgCorr.SpTraceByTarg_MO_STE{f}{k,l} = STESpikeRateByTargStart;
+                    
+                    [RhoVal Pval] = corr([MeanSpikeRateByTargStart' MeanFPByTargStart(:,3)],'type','Spearman');
+                    AvgCorr.ByTargMO{l}(k,f,bin) = RhoVal(1,2);
+                    AvgP.ByTargMO{l}(k,f,bin) = Pval(1,2);
+                    
+                    % Do this for period around maxiumum velocity
+%                     MeanSpikeRateByTargMaxV = mean(SpikeRatesByTrialMaxV);
+%                     MeanFPByTargMaxV = squeeze(mean(fpByTrialMaxV));
+%                     AvgCorr.FPTraceMaxVByTarg{f}(:,k,:) = MeanFPByTargStart;
+%                     AvgCorr.SpTraceMaxVByTarg{f}(:,k) = MeanSpikeRateByTargStart';
+%                     [RhoVal Pval] = corr([MeanSpikeRateByTargMaxV' MeanFPByTargMaxV(:,3)],'type','Spearman');
+%                     AvgCorr.MaximumVel(k,f,bin) = RhoVal(1,2);
+%                     AvgP.MaxiumumVel(k,f,bin) = Pval(1,2);
+                    
+                    MeanSpikeRateByTargEnd = mean(SpikeRatesByTrialEnd(tid == TList,:));
+                    MeanFPByTargEnd = squeeze(mean(fpByTrialEnd(tid == TList,:,:)));
+                    AvgCorr.FPTraceByTarg_Rew{f}{k,l} = MeanFPByTargEnd;
+                    AvgCorr.SpTraceByTarg_Rew{f}{k,l} = MeanSpikeRateByTargEnd';
+                    [RhoVal Pval] = corr([MeanSpikeRateByTargEnd' MeanFPByTargEnd(:,3)],'type','Spearman');
+                    AvgCorr.ByTargRew{l}(k,f,bin) = RhoVal(1,2);
+                    AvgP.ByTargRew{l}(k,f,bin) = Pval(1,2);
+                    
+%                     [RhoVal Pval] = corr([MeanFPByTargEnd(:,1) MeanFPByTargEnd(:,2)],'type','Spearman');
+%                     AvgCorr.LG_HG_PriorToReward(k,f,bin) = RhoVal(1,2);
+%                     AvgP.LG_HG_PriorToReward(k,f,bin) = Pval(1,2);
+                    
+                    l = l + 1;
+                    clear MeanSpikeRateByTarg* MeanFPByTarg*
+                        
+                end
+                    
+                clear Targs TList
                 %% Find correlation of trial averaged spike rate and gamma
                 %FP power during 500 ms centered on movement onset
                 
@@ -97,7 +162,7 @@ for bin = 1:length(KernelSize)
                 AvgP.LG_HG_MovementOnset(k,f,bin) = Pval(1,2);
                 
                 % Find correlation of trial averaged spike rate and gamma
-                % FP power during 150 ms prior to reward
+                % FP power prior to reward
                 MeanSpikeRateByFileEnd = mean(SpikeRatesByTrialEnd);
                 MeanFPByFileEnd = squeeze(mean(fpByTrialEnd));
                 AvgCorr.FPTraceEnd{f}(:,k,:) = MeanFPByFileEnd;
@@ -164,7 +229,34 @@ for bin = 1:length(KernelSize)
 end
 clear f k bin FP_Trial_time binsize t a_gamma b_gamma RhoVal Pval
 
-if 0
+if EvalRbyTarg == 1
+    
+    for m = 1 : 4
+        HC_MO_R_ByTargMean(m) = mean(AvgCorr.ByTargMO{m}(ControlCh,HC_I(1):HC_I(end)));
+        HC_MO_R_ByTarg(:,m) = AvgCorr.ByTargMO{m}(ControlCh,HC_I(1):HC_I(end));
+        HC_Rew_R_ByTargMean(m) = mean(AvgCorr.ByTargRew{m}(ControlCh,HC_I(1):HC_I(end)));
+        HC_Rew_R_ByTarg(:,m) = AvgCorr.ByTargRew{m}(ControlCh,HC_I(1):HC_I(end));
+        
+    end
+        figure
+        boxplot([HC_MO_R_ByTarg' HC_Rew_R_ByTarg'])
+        set(gca,'Xtick',[1,2],'XTicklabel',{'Movement Onset','Reward'})
+        figure
+        boxplot([HC_MO_R_ByTarg HC_Rew_R_ByTarg])
+        set(gca,'Xtick',[1,2,3,4,5,6,7,8],'XTicklabel',{'MO Target 1','MO Target 2','MO Target 3','MO Target 4', 'Rew Target 1','Rew Target 2','Rew Target 3','Rew Target 4'})
+    for m = 1 : 2
+        BC_MO_R_ByTargMean(m) = mean(AvgCorr.ByTargMO{m}(ControlCh,BC_I(1):BC_I(end)));
+        BC_MO_R_ByTarg(:,m) = AvgCorr.ByTargMO{m}(ControlCh,BC_I(1):BC_I(end));
+        BC_Rew_R_ByTargMean(m) = mean(AvgCorr.ByTargRew{m}(ControlCh,BC_I(1):BC_I(end)));
+        BC_Rew_R_ByTarg(:,m) = AvgCorr.ByTargRew{m}(ControlCh,BC_I(1):BC_I(end));
+    end
+    
+        figure
+        boxplot([BC_MO_R_ByTarg BC_Rew_R_ByTarg])
+        set(gca,'Xtick',[1,2,3,4],'XTicklabel',{'MO Target 1','MO Target 2','Rew Target 1','Rew Target 2'})
+end
+        
+if 1
     
     HC_MO_LGHG_mat = AvgCorr.LG_HG_MovementOnset';
     HC_R_LGHG_mat = AvgCorr.LG_HG_PriorToReward';

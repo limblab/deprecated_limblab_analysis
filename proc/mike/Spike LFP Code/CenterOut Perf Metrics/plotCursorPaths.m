@@ -6,36 +6,22 @@ BC_I = [17:26];
 
 Rows = ceil(nnz(~cellfun(@isempty,Trials(ControlCh,[HC_I(1):HC_I(end) BC_I(1):BC_I(end)])))/4);
 
-figure
 for j = [1 3 17] %17:26]
     CursorPaths = [];
     figure
     if isfield(Trials{ControlCh,j},'Path_MO')
-%         subplot(Rows,4,k)   
-        if j <= 6
-            h = fill([8.9,8.9,11.1,11.1],[1.108,-1.0920,-1.0920,1.08],'r');
+        %         subplot(Rows,4,k)
+        TC = unique(out_struct.targets.corners(:,2:5),'rows');
+        Center = min(min(abs(TC)));
+        h = fill([Center,Center,-1*Center,-1*Center],[Center,-1*Center,-1*Center,Center],'r');
+        % TC = target coordinates
+        hold on
+        for i = 1:size(TC,1)
+            h = fill([TC(i,1),TC(i,1),TC(i,3),TC(i,3)],[TC(i,2),TC(i,4),TC(i,4),TC(i,2)],'r');
+            
             set(h,'FaceAlpha',.3)
-            hold on
-            p = fill([-1.08,-1.08,1.1159,1.1159],[-8.9,-11.1,-11.1,-8.9],'r');
-            set(p,'FaceAlpha',.3)
-            m = fill([-11.1,-11.1,-8.9,-8.9],[1.0761,-1.1239,-1.1239,1.0761],'r');
-            set(m,'FaceAlpha',.3) 
-            n = fill([-1.1,-1.1,1.1,1.1],[11.1,8.9,8.9,11.1],'r');
-            set(n,'FaceAlpha',.3)           
-            q = fill([1.1,1.1,-1.1,-1.1],[1.1,-1.1,-1.1,1.1],'r');
-            set(q,'FaceAlpha',.3)
-%             axis square
-        elseif j >= 17 && j <= 26
-            h = fill([-2,-2,2,2],[9,5,5,9],'r');
-            set(h,'FaceAlpha',.3)
-            hold on
-            p = fill([9,9,5,5],[2,-2,-2,2],'r');
-            set(p,'FaceAlpha',.3)
-            m = fill([2,2,-2,-2],[2,-2,-2,2],'r');
-            set(m,'FaceAlpha',.3)
-            xlim([-12 12])
-            ylim([-12 12 ])
-%             axis square
+            xlim([min(min(TC))-1 max(max(TC))+1])
+            ylim([min(min(TC))-1 max(max(TC))+1])
         end
         if j ==1
             xlabel('X cursor position')
@@ -72,3 +58,18 @@ for j = [1 3 17] %17:26]
         clear TrialLength TrialLengths CursorPathsByTrial CursorPaths CursorPathsByTrial_HC 
     end
 end
+
+%% Plot velocity traces and overlay them with dotted movement onset lines
+Fnum = 17;
+VelocityTrace = [];
+for i = 1 :length(Trials{Fnum}.Vel_MO)
+    
+    VelocityTrace = [VelocityTrace; sqrt(Trials{Fnum}.Vel_MO{:,i}(:,2).^2 + Trials{Fnum}.Vel_MO{:,i}(:,3).^2)]; 
+    MOpoints(1,i) = 2000+4001*(i-1);
+    
+end
+
+figure
+plot(repmat(MOpoints,length(min(VelocityTrace)-1:max(VelocityTrace)+1),1),repmat((min(VelocityTrace)-1:max(VelocityTrace)+1)',1,length(MOpoints)),'r--')
+hold on
+plot(VelocityTrace)
