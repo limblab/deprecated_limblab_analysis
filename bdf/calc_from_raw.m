@@ -178,6 +178,19 @@ function out_struct = calc_from_raw(raw_struct, opts)
             out_struct.vel = [analog_time_base'  dx'  dy'];
             out_struct.acc = [analog_time_base' ddx' ddy'];
             
+            %clear databursts and unit activity outside the
+            %analog_time_base window
+            if (isfield(out_struct, 'units') && ~isempty(out_struct.units))
+                for i=1:length(out_struct.units)
+                    out_struct.units(i).ts=out_struct.units(i).ts( out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base) );
+                end
+            end
+            if (isfield(out_struct, 'databursts') && ~isempty(out_struct.databursts))
+                out_struct.databursts=out_struct.databursts(([out_struct.databursts{:,1}]'>=min(analog_time_base) & [out_struct.databursts{:,1}]'<=max(analog_time_base)),:);
+            end
+            if (isfield(out_struct, 'words') && ~isempty(out_struct.words))
+                out_struct.words=out_struct.words((out_struct.words(:,1)>=min(analog_time_base) & out_struct.words(:,1)<=max(analog_time_base)),:);
+            end
         elseif wrist_flexion_task
             
 %             enc_freq = 1000;

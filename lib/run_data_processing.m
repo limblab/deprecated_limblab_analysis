@@ -43,17 +43,15 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
     end
 
     %% make directory structure if it does not already exist
-    if exist(target_directory,'file')==7
-        warning('RUN_DATA_PROCESSING:FOLDER_EXISTS','A target folder of the given name already exists, you may lose data if you continue')
-        yesno=questdlg('The target fodler already exists. If you continue data may be lost. Do you want to continue?','Folder already exists','Yes','No','No');
+    
+    if exist(strcat(target_directory,'\Code'),'file')~=7
+        mkdir(strcat(target_directory,'\Code'))
+    else
+        warning('RUN_DATA_PROCESSING:FOLDER_EXISTS','A folder with processed data already exists, you may lose data if you continue')
+        yesno=questdlg('The target folder already exists. If you continue data may be lost. Do you want to continue?','Folder already exists','Yes','No','No');
         if strcmp(yesno,'No')
             return
         end
-    else
-        mkdir(target_directory)
-    end
-    if exist(strcat(target_directory,'\Code'),'file')~=7
-        mkdir(strcat(target_directory,'\Code'))
     end
     if exist(strcat(target_directory,'\Raw_Figures'),'file')~=7
         mkdir(strcat(target_directory,'\Raw_Figures'))
