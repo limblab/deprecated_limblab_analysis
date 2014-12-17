@@ -8,6 +8,9 @@ function c = get_spikes_corr(spikes,target_signals,varargin)
 %   target_signals  : MxP array, with P signals to which we want to correlate with the spikes
 %   varargins
 %      [num_lags]   : number of lags over which to evaluate covariance
+%
+% 06/2014 Chris
+%%
 
 num_lags = 10;
 if nargin >2
@@ -21,7 +24,7 @@ c = zeros(num_lags*2+1,num_neur_tot,num_sig); %covariance matrix
 
 for n = 1:num_neur_tot
     for s = 1:num_sig
-        c(:,n,s) = xcov(spikes(:,n),target_signals(:,s),num_lags,'coef').^2;
+        c(:,s,n) = xcov(spikes(:,n),target_signals(:,s),num_lags,'coef').^2;
     end
 end
 

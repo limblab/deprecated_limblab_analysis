@@ -3,13 +3,18 @@ function vaf = plot_emg_preds(testdata,N2E,E2F,varargin)
 % load('/Users/christianethier/Dropbox/Adaptation/temp_data/Jango_20140711_3m_TEST.mat');
 spikes = testdata.spikeratedata;
 
-% predsE = sigmoid(predMIMOCE3(spikes,N2E.H)    ,'direct',N2Esig);
 predsE = predMIMOCE3(spikes,N2E.H);
-predsF = predMIMOCE3(sigmoid(predsE,'direct'),E2F.H);
+% predsE = predMIMOCE3(spikes,N2E.H);
+% predsF = predMIMOCE3(sigmoid(predsE,'direct'),E2F.H);
+predsF = predMIMOCE3(predsE,E2F.H);
 preds = [predsE predsF];
+% preds = predsE;
 
 plot_data = [testdata.emgdatabin testdata.cursorposbin];
 plot_labels= [testdata.emgguide;testdata.cursorposlabels];
+% 
+% plot_data = [testdata.cursorposbin];
+% plot_labels= [testdata.cursorposlabels];
 
 ttl = '';
 if nargin > 3
@@ -23,13 +28,13 @@ vaf = nan(num_figs,1);
 for i = 1:num_figs
 %     subplot(num_figs,1,i);
     figure;
-    plot(testdata.timeframe,plot_data(:,i),'k');
     hold on;
-    plot(testdata.timeframe,preds(:,i),'r');
+    plotLM(testdata.timeframe,preds(:,i),'r');
+    plotLM(testdata.timeframe,plot_data(:,i),'k');
     vaf(i) = calc_vaf(preds(:,i),plot_data(:,i));
     title([plot_labels(i,:) ' ' ttl]);
-    legend('act',sprintf('pred (vaf = %.2f)',vaf(i)));
-    xlim([1300 1320]);
+    legend(sprintf('pred (vaf = %.2f)',vaf(i)),'act');
+    xlim([500 530]);
 end
  
 % for i = 1:3

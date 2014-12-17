@@ -1,4 +1,4 @@
-function preds = predMIMOCE3(inputs,H)
+function preds = predMIMOCE3(inputs,H,varargin)
 
 [numpts,Nin]=size(inputs);
 [rowH,Nout]=size(H);

@@ -35,11 +35,15 @@ end
 %---------------------
 % plot the filter's spatial distribution
 figure;
-colors = ['b','g','r','c','m','y','k','b','g'];
+colors = {'o-b','o-g','o-r','o-c','o-m','o-k',...
+          'ob:','og:','or:','oc:','om:','ok:',...
+          'o--b','o--g','o--r','o--c','o--m','o--k'};
 n_emgs = size(E2F.H,1);
 
 for i = 1:n_emgs
     hold on;
-    plot([0 E2F.H(i,1)],[0 E2F.H(i,2)],colors(i));
+    plot([0 E2F.H(i,1)],[0 E2F.H(i,2)],colors{i},'LineWidth',2);
 end
-legend({traindata.emgguide})
+legend({binnedData.emgguide},'Location','NorthEastOutside');
+axis square;
+ylim([-12 12]); xlim([-12 12]);

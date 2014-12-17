@@ -74,5 +74,6 @@ end
 
 %polar plot of EMGs
 if plotflag
-    plot_emg_patterns(EMGpatterns)
+    plot_emg_patterns(EMGpatterns);
+    plot_emg_PD(binnedData,EMGvector);
 end

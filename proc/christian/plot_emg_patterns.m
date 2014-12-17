@@ -12,7 +12,12 @@ col = ['k';'r';'b';'g';'c'];
 
 %EMG pattern for Go_Cues:
 figure;
-theta = 0:2*pi()/(numEMGs):2*pi();
+% theta = 0:2*pi()/(numEMGs):2*pi();
+% %specific angles for 7muscles (Spike):
+% theta = deg2rad([0;65;165.5;180;210;233.1;304.5;360]');
+%specific angles for 7muscles (Jango):
+theta = deg2rad([0;65;165.5;180;210;233.1;360]');
+
 %This is just a way to plot radial axis from 0 to 1:
 P = polar(theta, ones(size(theta)));
 set(P, 'Visible', 'off'); hold on;
@@ -20,20 +25,22 @@ set(P, 'Visible', 'off'); hold on;
 %now plot EMG pattern:
 for n = 1:num_patterns
     rho = [varargin{n}(1,:) varargin{n}(1,1)];
-    polar(theta,rho,col(n));
+    h = polar(theta,rho,col(n));
+    set(h,'Linewidth',3);
     title('Center Hold');
 end
 
 %EMG patterns for tgts
 for t=1:numTgts
     figure;
-    theta = 0:2*pi()/(numEMGs):2*pi();
+
     %same trick here:
     P = polar(theta, ones(size(theta)));
     set(P, 'Visible', 'off'); hold on;
     for n = 1:num_patterns
         rho = [varargin{n}(t+1,:) varargin{n}(t+1,1)];
-        polar(theta,rho,col(n));
+        h= polar(theta,rho,col(n));
+        set(h,'Linewidth',3);
         title(sprintf('Target %g',t));
     end
 end

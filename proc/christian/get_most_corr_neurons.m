@@ -24,6 +24,8 @@ function [neuronIDs_s,c_s,max_c_s] = get_most_corr_neurons(binnedData,varargin)
 %       num_lags    : number of lags to evaluate (default = 10);
 %       array_map   : if present, will plot xcov for each neurons with the spatial
 %                     mapping provided by the cmp file 'array_map'
+%
+% 06/2014 Chris
 %%
 
 num_lags    = 10;
