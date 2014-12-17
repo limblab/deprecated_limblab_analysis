@@ -5,6 +5,8 @@ function file_names = merge_spikes(file_path,file_prefix)
 %   creating a metatags file for later unmerging. Returns file_names, a
 %   list of file names to separate merged sorted file into. Also saves file
 %   names into mat file.
+%   
+%   DEPRECATED. JUST USE PROCESSSPIKESFORSORTING
 %
 %   See also UNMERGE_SPIKES.
 
