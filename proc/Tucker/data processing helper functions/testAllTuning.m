@@ -46,7 +46,6 @@ function [bdf]=testAllTuning(bdf)
             else
                 T(i)=inds(1)+maxInd(1);
             end
-
         end
         %deal with last point:
         i=i+1;%adds a single index to the array for the last point
