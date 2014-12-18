@@ -57,13 +57,14 @@ function selectEEGelectrodes4_OpeningFcn(hObject, eventdata, handles, varargin) 
 % Choose default command line output for selectEEGelectrodes4
 handles.output = '';
 
+[pathstr,junk,junk]=fileparts(get(handles.figure1,'FileName'));                 %#ok<*ASGLU,*NASGU>
+clear junk
+
 set(gcf,'Color',[1 1 1])
-capPic=imread('E:\s1_analysis\proc\robert\TMSi_CA-106_electrodeMap.png','png');
+capPic=imread(fullfile(pathstr,'TMSi_CA-106_electrodeMap.png'),'png');
 image(capPic,'Parent',handles.axes3)
 set(handles.axes3,'Visible','off')
 
-[pathstr,junk,junk]=fileparts(get(handles.figure1,'FileName'));                 %#ok<*ASGLU,*NASGU>
-clear junk
 arrowPic=imread([pathstr,filesep,'arrow.tif'],'tiff');
 image(arrowPic(15:45,:,:),'Parent',handles.rightArrow)
 set(handles.rightArrow,'Visible','off')
@@ -385,8 +386,10 @@ function menuBar_tools_showAxes_Callback(hObject, eventdata, handles)
 
 origUnits=get(gcf,'Units');
 set(gcf,'Units','normalized')
+[pathstr,junk,junk]=fileparts(get(handles.figure1,'FileName'));                 %#ok<*ASGLU,*NASGU>
+clear junk
 [elecCoords,elecNames,raw]= ...
-    xlsread('E:\s1_analysis\proc\robert\TMSi_CA-106_electrodePositions.xlsx');
+    xlsread(fullfile(pathstr,'TMSi_CA-106_electrodePositions.xlsx'));
 clear raw
 chansIncluded=get(handles.eventsIncluded,'String');
 [axIncluded,axInd,chanInd]=intersect(deblank(elecNames),chansIncluded);
