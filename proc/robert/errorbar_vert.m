@@ -24,18 +24,20 @@ else
 end
 
 ydatas=get(barH,'ydata');
+xdatas=get(barH,'xdata');
 if iscell(ydatas)
     wascell=1;
     ydatas=cat(1,ydatas{:});
+    xdatas=cat(1,xdatas{:});
 else
     wascell=0;
 end
 
-ydatas(:,4:9:end)=NaN;
-ydatas(:,5:9:end)=NaN;
-ydatas(:,7:9:end)=NaN;
-ydatas(:,8:9:end)=NaN;
+ydatas(:,4:9:end)=NaN; xdatas(:,4:9:end)=NaN;
+ydatas(:,5:9:end)=NaN; xdatas(:,5:9:end)=NaN;
+ydatas(:,7:9:end)=NaN; xdatas(:,7:9:end)=NaN;
+ydatas(:,8:9:end)=NaN; xdatas(:,8:9:end)=NaN;
 
 for n=1:size(ydatas,1)
-    set(barH(n),'ydata',ydatas(n,:))
+    set(barH(n),'ydata',ydatas(n,:),'xdata',xdatas(n,:))
 end

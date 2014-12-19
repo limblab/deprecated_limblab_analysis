@@ -26,11 +26,14 @@ fprintf(1,'finding %s signal...\n',SIGNALTOUSE)
 switch SIGNALTOUSE
     case {'force','dfdt'}
         force_ind=find(strcmpi(parameters.ChannelNames.Value,'force'));
+        if isempty(force_ind)
+            force_ind=find(strcmpi(parameters.ChannelNames.Value,'ainp1'));
+        end
         sig=[rowBoat(1:size(signal,1))/samprate, ...
             signal(:,force_ind).*str2double(parameters.SourceChGain.Value{force_ind})];
         % scale further by Normalizer values
-        sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
-            str2double(parameters.NormalizerGains.Value{2});
+%         sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
+%             str2double(parameters.NormalizerGains.Value{2});
         % shift 1 more time, for the application (cursor position is
         % defined by its displacement from 50, and is offset by
         % YOffsetValue

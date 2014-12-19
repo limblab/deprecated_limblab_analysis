@@ -61,6 +61,7 @@ fprintf(1,'loading %s...\n',files.name)
 fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
 clear N
+if ~isa(signal,'double'), signal=double(signal); end
 %%  5a.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
@@ -70,20 +71,25 @@ plot(signalRange,'.','MarkerSize',36)
 signalRangeLowLogical=signalRange<1;
 % for median range calculation, include everything except the zeros.
 rangeThresh=median(signalRange(~signalRangeLowLogical))+ ...
-    2*iqr(signalRange(~signalRangeLowLogical));
+    2*iqr(signalRange(~signalRangeLowLogical));    % for TMSi
+%      0.5*std(signalRange(~signalRangeLowLogical));   % for Blackrock (with 32 crap chans)
+
 signalRangeHighLogical=signalRange > rangeThresh;
 signalRangeBadLogical=signalRangeLowLogical | signalRangeHighLogical;
 hold on
 plot(find(signalRangeBadLogical),signalRange(signalRangeBadLogical),'r.','MarkerSize',36)
 plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
-try
+try                                                                         %#ok<TRYNC>
     title(sprintf('%s\nRange of raw signals.\nBad channel estimate=red. %d good channels.', ...
         FileName,nnz(~signalRangeBadLogical)),'Interpreter','none','FontSize',16)
 end
 set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
 % also, plot a cut-down version of the raw fp signals.
-fpCut=(signal(1:100:end,FPIND)')./mean(signalRange);
-fpCutFig=figure; set(fpCutFig,'Position',get(0,'ScreenSize'))
+% first, scale the signals so that they will appear 
+% separated by a nice amount.
+fpCut=(signal(1:100:end,FPIND)')./mean(signalRange); 
+% so as to scale nicely for plotting
+fpCutFig=figure; set(fpCutFig,'Units','normalized','OuterPosition',[0 0 1 1])
 fpCutAx=axes('Position',[0.0319    0.0297    0.9556    0.9636], ...
     'XLim',[0 size(fpCut,2)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
 hold on
@@ -104,6 +110,7 @@ figure(badChanF)
 % If you don't agree with the auto-estimation, then change 
 % signalRangeBadLogical to be something that you think is better.
 % this code also resets the flag FPSTOUSE_been_reset
+if ~isa(signal,'double'), signal=double(signal); end
 FPSTOUSE=FPIND;
 FPSTOUSE(signalRangeBadLogical)=[];
 fp=(signal(:,FPIND)').* ...
@@ -140,6 +147,18 @@ set(fpCutAx,'YTickLabel',YaxLabelStr)
 clear sig CG
 [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
+
+if ~isempty(CG)
+    CGrange=max(CG.data,[],1)-min(CG.data,[],1);
+    CGcut=CG.data(1:100:end,:)./mean(CGrange);
+    CGcutFig=figure; 
+    set(CGcutFig,'Units','normalized','OuterPosition',[0 0 1 1])
+    set(gca,'NextPlot','add','Position',[0.0374 0.1100 0.9272 0.8611])
+    for n=1:size(CGcut,2)
+        plot(n+CGcut(:,n))
+    end, clear n
+    set(gca,'Xlim',[0 size(CGcut,1)],'Ylim',[0 size(CGcut,2)+1])
+end
 
 %%  5b. optional: look at smoothed force signal
 existingFigTags=get(get(0,'Children'),'Tag');
@@ -180,7 +199,13 @@ FPSTOUSE=find(ismember(parameters.ChannelNames.Value,FPuseList));
 % channels that were selected out by hand, using the GUI
 FPSREMOVED=(~ismember(FPIND,FPSTOUSE) & ~signalRangeBadLogical);
 %%  7.  set parameters, and build the feature matrix.
-wsz=256;
+if exist('featMat','var') && exist ('sig','var')
+    if size(featMat,1)==size(sig,1)
+        sig=[fptimes', smForce]; % if you don't want the smoothed force, 
+                                 % it will be necessary to re-run 5b.
+    end
+end
+wsz=512;
 samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
 binsize=0.1; % TO CHANGE ANYTHING IN THIS CELL, MUST RE-RUN CELL 5, THEN COME BACK HERE.
 bandsToUse='1 2 3 4 5 6';
@@ -210,12 +235,11 @@ end, clear n
 %%  9.  assign parameters.
 Use_Thresh=0; lambda=6; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
-smoothfeats=0; featShift=30;
-nfeat=floor(1*size(x,2));                       %#ok<NASGU>
-nfeat=40;
+smoothfeats=0; featShift=0;
+nfeat=floor(0.9*size(x,2));
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
-if nfeat>(size(x,1)*size(x,2))
+if nfeat > (size(x,1)*size(x,2))
     fprintf(1,'setting nfeat to %d\n',size(x,1)*size(x,2))
     nfeat=size(x,1)*size(x,2);
 end
@@ -232,7 +256,7 @@ clear bestc bestf
 % in 2D with the number of features in a fast parameter exploration.
 disp('evaluating feature matrix using selected ECoG channels')
 [vaf,ytnew,y_pred,bestc,bestf,featind,H,P]=predonlyxy_ECoG(x,FPSTOUSE,sig, ...
-    PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<NASGU,*NASGU,*ASGLU>
+    PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,nfeat,smoothfeats,featShift); %#ok<*NASGU,*ASGLU>
 fprintf(1,'file %s\n',FileName)
 fprintf(1,'decoding %s\n',SIGNALTOUSE)
 fprintf(1,'numlags=%d\n',numlags)
@@ -251,7 +275,7 @@ set(gcf,'Position',[121 468 560 420])
 %%  11.  plot cross-validated predictions, with some informative text.
 % close
 figure, set(gcf,'Position',[88 100 1324 420])
-col=1;
+col=2;
 if exist('folds','var')==0, folds=10; end
 for n=1:folds
     leftEdge=(n-1)*length(ytnew{1}(:,col))+1;
