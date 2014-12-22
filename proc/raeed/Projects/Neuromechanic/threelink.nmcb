@@ -1,0 +1,199 @@
+<NeuromechanicFile>
+  <Bodies>
+    <RigidBody Name="Base">
+      <FrameLocation Parent="ground">0. 0. 0.</FrameLocation>
+      <Mass>4.18E-3</Mass>
+      <Inertia>1.6755E-7 1.6755E-7 1.6755E-7 0. 0. 0.</Inertia>
+      <DegreeOfFreedom Name="basetx" Type="translation">
+        <Axis>1. 0. 0.</Axis>
+        <State Type="Kinematic">0. 0.</State>
+        <Locked>true</Locked>
+        <Range>-2.E1 2.E1</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+      <DegreeOfFreedom Name="basety" Type="translation">
+        <Axis>0. 1. 0.</Axis>
+        <State Type="Kinematic">0. 0.</State>
+        <Locked>true</Locked>
+        <Range>-2.E1 2.E1</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+      <DegreeOfFreedom Name="basetz" Type="translation">
+        <Axis>0. 0. 1.</Axis>
+        <State Type="Kinematic">0. 0.</State>
+        <Locked>true</Locked>
+        <Range>-2.E1 2.E1</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+      <DegreeOfFreedom Name="baserx" Type="rotation">
+        <Axis>1. 0. 0.</Axis>
+        <State Type="Kinematic">0. 0.</State>
+        <Locked>true</Locked>
+        <Range>-6.28318530718 6.28318530718</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+      <DegreeOfFreedom Name="basery" Type="rotation">
+        <Axis>0. 1. 0.</Axis>
+        <State Type="Kinematic">0. 0.</State>
+        <Locked>true</Locked>
+        <Range>-6.28318530718 6.28318530718</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+      <DegreeOfFreedom Name="baserz" Type="rotation">
+        <Axis>0. 0. 1.</Axis>
+        <State Type="Kinematic">0. 0.</State>
+        <Locked>true</Locked>
+        <Range>-6.28318530718 6.28318530718</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+      <CenterOfMass>0. 0. 0.</CenterOfMass>
+    </RigidBody>
+    <RigidBody Name="link1">
+      <FrameLocation Parent="Base">0. 0. 0.</FrameLocation>
+      <Mass>1.676E-1</Mass>
+      <Inertia>3.4851E-4 2.6808E-5 3.4851E-4 0. 0. 0.</Inertia>
+      <CenterOfMass>0. 1.2E-1 0.</CenterOfMass>
+      <DegreeOfFreedom Name="link1z" Type="rotation">
+        <Axis>0. 0. 1.</Axis>
+        <State Type="Kinematic">5.41052E-1 0.</State>
+        <Locked>false</Locked>
+        <Range>-6.28318530718 6.28318530718</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+    </RigidBody>
+	<RigidBody Name="link2">
+      <FrameLocation Parent="link1">0. 0.24 0.</FrameLocation>
+      <Mass>1.676E-1</Mass>
+      <Inertia>3.4851E-4 2.6808E-5 3.4851E-4 0. 0. 0.</Inertia>
+      <CenterOfMass>0. 1.2E-1 0.</CenterOfMass>
+      <DegreeOfFreedom Name="link2z" Type="rotation">
+        <Axis>0. 0. 1.</Axis>
+        <State Type="Kinematic">5.41052E-1 0.</State>
+        <Locked>false</Locked>
+        <Range>-6.28318530718 6.28318530718</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+    </RigidBody>
+	<RigidBody Name="link3">
+      <FrameLocation Parent="link2">0. 0.24 0.</FrameLocation>
+      <Mass>1.676E-1</Mass>
+      <Inertia>3.4851E-4 2.6808E-5 3.4851E-4 0. 0. 0.</Inertia>
+      <CenterOfMass>0. 1.2E-1 0.</CenterOfMass>
+      <DegreeOfFreedom Name="link3z" Type="rotation">
+        <Axis>0. 0. 1.</Axis>
+        <State Type="Kinematic">5.41052E-1 0.</State>
+        <Locked>false</Locked>
+        <Range>-6.28318530718 6.28318530718</Range>
+        <MotionCost>1.</MotionCost>
+      </DegreeOfFreedom>
+    </RigidBody>
+  </Bodies>
+  <Functions/>
+  <View>
+    <Viewport Name="1" Type="xy">
+      <OrthoClippingBox>
+-3.854543622061E-1 3.895604007537E-1
+-1.011111961325E-1 2.653527381412E-1
+-1.999701648391E-2 1.999701648391E-2
+      </OrthoClippingBox>
+      <OrthoOrientation>
+1. 0. 0. 0.
+ 0. 1. 0. 0.
+ 0. 0. 1. 0.
+ 0. 0. 0. 1.
+      </OrthoOrientation>
+      <Eye>0. 1.049877582508E-1 -7.10546735915E-1</Eye>
+      <Center>0. 1.049877582508E-1 0.</Center>
+      <Up>0. 1. 0.</Up>
+      <Znf>1.E-4 1.E3</Znf>
+      <Fovy>4.5E1</Fovy>
+    </Viewport>
+    <Viewport Name="2" Type="xz">
+      <OrthoClippingBox>
+-5.035832976672E-2 5.035832976672E-2
+-2.381181950559E-2 2.381181950559E-2
+-9.998597753714E-2 9.998597753714E-2
+      </OrthoClippingBox>
+      <OrthoOrientation>
+1. 0. 0. 0.
+ 0. 0. -1. 0.
+ 0. 1. 0. 0.
+ 0. 0. 0. 1.
+      </OrthoOrientation>
+      <Eye>0. 1.049877582508E-1 -7.10546735915E-1</Eye>
+      <Center>0. 1.049877582508E-1 0.</Center>
+      <Up>0. 1. 0.</Up>
+      <Znf>1.E-4 1.E3</Znf>
+      <Fovy>4.5E1</Fovy>
+    </Viewport>
+    <Viewport Name="3" Type="yz">
+      <OrthoClippingBox>
+-4.229349264794E-2 2.23002058826E-1
+-5.783314861536E-2 5.655152756361E-2
+-1.999701648391E-2 1.999701648391E-2
+      </OrthoClippingBox>
+      <OrthoOrientation>
+0. 1. 0. 0.
+ 0. 0. 1. 0.
+ 1. 0. 0. 0.
+ 0. 0. 0. 1.
+      </OrthoOrientation>
+      <Eye>0. 1.049877582508E-1 -7.10546735915E-1</Eye>
+      <Center>0. 1.049877582508E-1 0.</Center>
+      <Up>0. 1. 0.</Up>
+      <Znf>1.E-4 1.E3</Znf>
+      <Fovy>4.5E1</Fovy>
+    </Viewport>
+    <Viewport Name="4" Type="xyz">
+      <OrthoClippingBox>
+-7.303133177772E-2 7.303133177772E-2
+ 7.349961157853E-2 1.364759049231E-1
+-1.999701648391E-2 1.999701648391E-2
+      </OrthoClippingBox>
+      <OrthoOrientation>
+1. 0. 0. 0.
+ 0. 1. 0. 0.
+ 0. 0. 0. 0.
+ 0. 0. 0. 1.
+      </OrthoOrientation>
+      <Eye>-1.140478346497E-2 3.095584257971E-2 -7.021063791267E-1</Eye>
+      <Center>-1.140478346497E-2 3.095584257971E-2 0.</Center>
+      <Up>0. 1. 0.</Up>
+      <Znf>1.E-4 1.E3</Znf>
+      <Fovy>4.5E1</Fovy>
+    </Viewport>
+  </View>
+  <Parameters>
+    <StartTime>0.</StartTime>
+    <EndTime>1.</EndTime>
+    <RelativeTolerance>1.E-8</RelativeTolerance>
+    <AbsoluteTolerance>1.E-8</AbsoluteTolerance>
+    <GuessFirstStepSize>1.E-7</GuessFirstStepSize>
+    <MinimumStepSize>0.</MinimumStepSize>
+    <MaximumStepSize>1.E-5</MaximumStepSize>
+    <ReportingInterval>1.E-3</ReportingInterval>
+    <MaximumIterations>500</MaximumIterations>
+    <MaximumFrictionIterations>50</MaximumFrictionIterations>
+    <Integrator>rk45</Integrator>
+    <MuscleSpecificTension>2.25E5</MuscleSpecificTension>
+    <MuscleDensity>1.06E3</MuscleDensity>
+    <BoneDensity>1.5E3</BoneDensity>
+    <Gear>0</Gear>
+    <EquilibrationType>minimumActivation</EquilibrationType>
+  </Parameters>
+  <Resources/>
+  <Environment>
+    <Gravity>0. -9.80665 0.</Gravity>
+    <Contacts>
+      <ContactModel Type="kaufman">
+        <ImpulseTimescale>1.E-3</ImpulseTimescale>
+        <Stiffness>1.</Stiffness>
+        <Viscosity>3.E-1</Viscosity>
+        <PenetrationDepth>1.E-3</PenetrationDepth>
+        <RestitutionCoefficient>0.</RestitutionCoefficient>
+        <FrictionCoefficient>7.E-1</FrictionCoefficient>
+      </ContactModel>
+    </Contacts>
+  </Environment>
+  <Muscles/>
+</NeuromechanicFile>
