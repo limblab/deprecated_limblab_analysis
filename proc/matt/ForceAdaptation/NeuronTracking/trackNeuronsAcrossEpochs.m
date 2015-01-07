@@ -1,4 +1,4 @@
-function tracking = trackNeuronsAcrossEpochs(expParamFile,outDir,criteria)
+function tracking = trackNeuronsAcrossEpochs(params)
 % TRACKNEURONS  Run empirical KS test to check for stability of neurons
 %
 %   This function will allow you to track cells across a session for the
@@ -21,32 +21,28 @@ function tracking = trackNeuronsAcrossEpochs(expParamFile,outDir,criteria)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-if ~iscell(criteria)
-    criteria = {criteria};
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(expParamFile);
-useDate = params.date{1};
-taskType = params.task{1};
-adaptType = params.adaptation_type{1};
-arrays = params.arrays;
-clear params
+dataDir = params.outDir; % we want to load from the output directory of makeDataStruct
+useDate = params.exp.date{1};
+taskType = params.exp.task{1};
+adaptType = params.exp.adaptation_type{1};
+monkey = params.exp.monkey{1};
 
-dataPath = fullfile(outDir,useDate);
+dataPath = fullfile(dataDir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Loading data to track neurons...')
-bl = load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']));
-ad = load(fullfile(dataPath,[taskType '_' adaptType '_AD_' useDate '.mat']));
-wo = load(fullfile(dataPath,[taskType '_' adaptType '_WO_' useDate '.mat']));
+bl = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'BL');
+ad = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'AD');
+wo = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'WO');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 saveFile = fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']);
 
-tracking = trackNeurons(criteria,arrays,bl,ad,wo);
+tracking = trackNeurons(params,bl,ad,wo);
 
 % save the new file with classification info
 disp(['Saving data to ' saveFile]);

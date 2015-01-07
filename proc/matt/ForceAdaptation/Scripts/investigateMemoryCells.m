@@ -79,11 +79,11 @@ groupLabels = {'Slow Movements','Fast Movements'};
 dateInds = strcmpi(allFiles(:,3),'FF'); % & strcmpi(allFiles(:,4),'CO');
 doFiles = allFiles(dateInds,:);
 paramSetName = 'movement';
-tuningMethod = 'regression';
-tuningPeriod = 'onpeak';
+tuneMethod = 'regression';
+tuneWindow = 'onpeak';
 
 % Get the classification and PDs for each day for tuned cells
-[cellClasses,cellPDs,cellMDs,cellBOs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningPeriod,doMD);
+[cellClasses,cellPDs,cellMDs,cellBOs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuneMethod,tuneWindow,doMD);
 
 if reassignOthers
     cellClasses = assignOthers(cellClasses,cellPDs);
@@ -138,7 +138,7 @@ doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
 % tuningMethod = 'regression';
 % tuningPeriod = 'full';
 
-[cellClasses,cellPDs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningPeriod,doMD);
+[cellClasses,cellPDs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuneMethod,tuneWindow,doMD);
 if reassignOthers
     cellClasses = assignOthers(cellClasses,cellPDs);
 end
@@ -181,28 +181,18 @@ set(gca,'XLim',[-1.5,1.5],'YLim',[-1.5,1.5],'FontSize',14);
 end
 
 %% Get the classification and PDs for each day for tuned cells
-function [cellClasses,cellPDs,cellMDs,cellBOs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningPeriod,doMD)
+function [cellClasses,cellPDs,cellMDs,cellBOs] = getClassesAndPDs(root_dir,doFiles,paramSetName,useArray,classifierBlocks,tuningMethod,tuningWindow,doMD)
 
 cellClasses = cell(size(doFiles,1),1);
 cellPDs = cell(size(doFiles,1),1);
 for iFile = 1:size(doFiles,1)
-    classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-    classes = load(classFile);
-    
-    tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-    tuning = load(tuningFile);
-    
-    try
-        c = classes.(tuningMethod).(tuningPeriod).(useArray);
-    catch
-        keyboard
-    end
+    % load tuning and classification data
+    [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
+
     cellClasses{iFile} = c.classes(all(c.istuned,2),1);
     
     tunedCells = c.tuned_cells;
-    
-    t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
-    
+
     disp([length(t(1).theta),length(t(2).theta),length(t(3).theta)])
     
     sg_bl = t(classifierBlocks(1)).sg;

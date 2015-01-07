@@ -6,22 +6,22 @@ clc
 close all;
 
 % load each file and get cell classifications
-% root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
+root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
+% root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
 
 allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
-            'MrT','2013-08-20','FF','RT'; ...   % S x
-            'MrT','2013-08-21','FF','CO'; ...   % S x - AD is split in two so use second but don't exclude trials
-            'MrT','2013-08-22','FF','RT'; ...   % S x
-            'MrT','2013-08-23','FF','CO'; ...   % S x
-            'MrT','2013-08-30','FF','RT'; ...   % S x
-            'MrT','2013-09-03','VR','CO'; ...   % S x
-            'MrT','2013-09-04','VR','RT'; ...   % S x
-            'MrT','2013-09-05','VR','CO'; ...   % S x
-            'MrT','2013-09-06','VR','RT'; ...   % S x
-            'MrT','2013-09-09','VR','CO'; ...   % S x
-            'MrT','2013-09-10','VR','RT'; ...   % S x
-            'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
+    'MrT','2013-08-20','FF','RT'; ...   % S x
+    'MrT','2013-08-21','FF','CO'; ...   % S x - AD is split in two so use second but don't exclude trials
+    'MrT','2013-08-22','FF','RT'; ...   % S x
+    'MrT','2013-08-23','FF','CO'; ...   % S x
+    'MrT','2013-08-30','FF','RT'; ...   % S x
+    'MrT','2013-09-03','VR','CO'; ...   % S x
+    'MrT','2013-09-04','VR','RT'; ...   % S x
+    'MrT','2013-09-05','VR','CO'; ...   % S x
+    'MrT','2013-09-06','VR','RT'; ...   % S x
+    'MrT','2013-09-09','VR','CO'; ...   % S x
+    'MrT','2013-09-10','VR','RT'; ...   % S x
+    'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
     'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
     'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
     'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
@@ -86,21 +86,15 @@ for iMonkey = 1:length(monkeys)
     
     for i = 1:length(classifierBlocks)
         % load first tuning
-        paramSetName = 'movement_fine';
-        tuningMethod = 'regression';
-        tuningPeriod = 'onpeak';
+        paramSetName = 'movementFine';
+        tuneMethod = 'regression';
+        tuneWindow = 'onpeak';
         
         moveSGs = cell(size(doFiles,1),1);
         movePDs = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-            classes = load(classFile);
-            
-            tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-            tuning = load(tuningFile);
-            
-            c = classes.(tuningMethod).(tuningPeriod).(useArray);
-            t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
+            % load data
+            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
             
             sg = t(classifierBlocks(i)).sg;
             tunedCells = sg(all(c.istuned,2),:);
@@ -114,21 +108,13 @@ for iMonkey = 1:length(monkeys)
         end
         
         paramSetName = 'target_fine';
-        tuningMethod = 'regression';
-        tuningPeriod = 'full';
+        tuneMethod = 'regression';
+        tuneWindow = 'full';
         
         targSGs = cell(size(doFiles,1),1);
         targPDs = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-            classes = load(classFile);
-            
-            tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-            tuning = load(tuningFile);
-            
-            c = classes.(tuningMethod).(tuningPeriod).(useArray);
-            
-            t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
+            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
             
             sg = t(classifierBlocks(i)).sg;
             tunedCells = sg(all(c.istuned,2),:);

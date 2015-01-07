@@ -70,8 +70,7 @@ for iTask = 1:length(tasks)
             fdir = fullfile(root_dir,monkeys{iMonk},doFiles{iFile,2});
             for iEpoch = 1:length(epochs)
                 % load data
-                fn = [doFiles{iFile,4} '_' doFiles{iFile,3} '_' epochs{iEpoch} '_' doFiles{iFile,2} '.mat'];
-                data = load( fullfile(fdir,fn) );
+                data = loadResults(root_dir,doFiles(iFile,:),'data',[],epochs{iEpoch});
                 
                 % filter the movement table
                 [mt,~] = filterMovementTable(data,'movement',false,[],false);
@@ -155,16 +154,7 @@ for iTask = 1:length(tasks)
         groupKinCount = zeros(size(doFiles,1),2);
         groupMemInd = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            fdir = fullfile(root_dir,monkeys{iMonk},doFiles{iFile,2},paramSetName);
-            
-            % load data
-            fn = [doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat'];
-            tuning = load( fullfile(fdir,fn) );
-            t = tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
-            
-            fn = [doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat'];
-            classes = load( fullfile(fdir,fn) );
-            c = classes.(tuningMethod).(tuningPeriod).(useArray);
+            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
             
             % find the cells that meet inclusion criteria
             goodCells = all(c.istuned(:,1:4),2);

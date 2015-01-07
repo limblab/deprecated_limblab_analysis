@@ -51,9 +51,9 @@ wo_blocks = 12:21;
 
 reassignOthers = true;
 dicknuggets = {'movement_noisy2','target_noisy2'};
-tuningPeriods = {'onpeak','full'};
+tuneWindows = {'onpeak','full'};
 
-tuningMethod = 'regression';
+tuneMethod = 'regression';
 
 doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
 
@@ -70,22 +70,12 @@ for k = 1:2
             processFFData2;
             
             paramSetName = dicknuggets{k};
-            tuningPeriod = tuningPeriods{k};
+            tuneWindow = tuneWindows{k};
             
             for iFile = 1:size(doFiles,1)
-                classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-                classes = load(classFile);
-                
-                c = classes.(tuningMethod).(tuningPeriod).(useArray);
+                [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
                 
                 s(iFile).c{i,j} = c.classes(all(c.istuned,2),1);
-                
-                tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-                tuning = load(tuningFile);
-                
-                tunedCells = c.tuned_cells;
-                
-                t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
                 
                 sg_bl = t(classifierBlocks(1)).sg;
                 sg_ad = t(classifierBlocks(2)).sg;

@@ -97,8 +97,7 @@ for iFile = 1:size(doFiles,1)
     
     ind = 4;
     
-    fn = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_' epochs{2} '_' doFiles{iFile,2} '.mat']);
-    data = load(fn);
+    data = loadResults(root_dir,doFiles(iFile,:),'data',[],epochs{2});
     c = data.cont;
     
     [mt,~] = filterMovementTable(data,'movement',true,3,false);

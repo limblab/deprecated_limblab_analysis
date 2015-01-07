@@ -1,68 +1,58 @@
-function out = fitTuningCurves_Reg(data,tuningPeriod,useArray,paramSetName,iBlock,includeSpeed,doPlots)
+function out = fitTuningCurves_Reg(data,params,tuningPeriod,useArray,doPlots)
 % notes about inputs
 % notes about outputs
-% can pass tuning method in as cell array with multiple types
 
-if nargin < 7
+if nargin < 6
     doPlots = false;
-    if nargin < 6
-        includeSpeed = false;
-    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(paramFile);
-movementTime = str2double(params.movement_time{1});
-binAngles = str2double(params.bin_angles{1});
-clear params;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-confLevel = str2double(params.confidence_level{1});
-bootNumIters = str2double(params.number_iterations{1});
-clear params;
-
-
-disp(['Regression tuning, ' num2str(movementTime) ' second window...']);
+includeSpeed = params.tuning.includeSpeed;
+confLevel = params.tuning.confidenceLevel;
+bootNumIters = params.tuning.numberBootIterations;
 
 %% Get data
 sg = data.(useArray).sg;
 
-[fr,theta,mt,force,vel] = getFR(data,useArray,tuningPeriod,paramSetName,iBlock);
+[fr,theta,mt,force,vel] = getFR(data,params,useArray,tuningPeriod);
 
 % Do bootstrapping with regression
 statTestParams = {'bootstrap',bootNumIters,confLevel};
-if ~includeSpeed
-[tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr,theta,statTestParams,'doplots',doPlots);
-else
-[tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves_Moran(fr,theta,vel,statTestParams,'doplots',doPlots);
+
+% the output will be cell array with element for each block if desired
+for iBlock = 1:length(fr)
+    disp(['%% Block ' num2str(iBlock) ' of ' num2str(length(fr)) '...']);
+    
+    if ~includeSpeed
+        [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr{iBlock},theta{iBlock},statTestParams,'doplots',doPlots);
+    else
+        [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves_Moran(fr{iBlock},theta{iBlock},vel{iBlock},statTestParams,'doplots',doPlots);
+    end
+    
+    pds = tcs(:,3);
+    pd_cis = cbs{3};
+    mds = tcs(:,2);
+    md_cis = cbs{2};
+    bos = tcs(:,1);
+    bo_cis = cbs{1};
+    
+    out(iBlock).pds = [pds pd_cis];
+    out(iBlock).mds = [mds md_cis];
+    out(iBlock).bos = [bos bo_cis];
+    
+    out(iBlock).boot_pds = boot_pds;
+    out(iBlock).boot_mds = boot_mds;
+    out(iBlock).r_squared = rs;
+    
+    out(iBlock).sg = sg;
+    out(iBlock).fr = fr{iBlock};
+    out(iBlock).theta = theta{iBlock};
+    out(iBlock).mt = mt{iBlock};
+    out(iBlock).forces = force{iBlock};
+    out(iBlock).vels = vel{iBlock};
+    out(iBlock).params = params;
+    
+    out(iBlock).meta = data.meta;
 end
-
-pds = tcs(:,3);
-pd_cis = cbs{3};
-mds = tcs(:,2);
-md_cis = cbs{2};
-bos = tcs(:,1);
-bo_cis = cbs{1};
-
-out.pds = [pds pd_cis];
-out.mds = [mds md_cis];
-out.bos = [bos bo_cis];
-
-out.boot_pds = boot_pds;
-out.boot_mds = boot_mds;
-out.r_squared = rs;
-
-out.sg = sg;
-out.fr = fr;
-out.theta = theta;
-out.mt = mt;
-out.forces = force;
-out.vels = vel;
-out.params.stats = statTestParams;
-out.params.bin_angles = binAngles;
-out.params.movement_time = movementTime;
 

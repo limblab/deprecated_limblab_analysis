@@ -1,55 +1,45 @@
-function [mt,centers] = filterMovementTable(data,paramSetName,excludeTrials,useBlock,verbose)
+function [outMT,outCenters] = filterMovementTable(data,params,blockTrials,verbose)
 % filter movements out of one of my movement tables based on:
 %   1) reaction time
 %   2) time to target
 %   3) amount of adaptation (not quite implemented... currently just
 %   filters some percentage of adaptation and washout files)
 %
-%   The values to use are specified in the analysis_parameters file
+%   If useBlock is true, will pass out a cell array corresponding to trials
+%   for each of the blocks specified in the params.tuning.blocks value, for
+%   whatever the current epoch data came from
+%
+% Note: for now, I require that blockTrials be true if I'm going to do the
+% random trial subset resampling thing or the speed separation thing
 
-% Stuff to do a random subset
-% currently hardcoded. Change this eventually
-
-% I pass in -1 if I'm doing the random subset thing
-
-doRandSubset = false;
-
-if nargin < 5
+if nargin < 4
     verbose = true;
-    if nargin < 4
-        useBlock = [];
-        if nargin < 3
-            excludeTrials = true;
-        end
+    if nargin < 3
+        blockTrials = true;
     end
 end
 
-if useBlock < 0
-    doRandSubset = true;
-    numSamples = -useBlock;
-end
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(paramFile);
-ADexcludeFraction = str2double(params.ad_exclude_fraction);
-WOexcludeFraction = str2double(params.wo_exclude_fraction);
-minReactionTime = str2double(params.min_reaction_time{1});
-maxReactionTime = str2double(params.max_reaction_time{1});
-minTimeToTarget = str2double(params.min_time_to_target{1});
-maxTimeToTarget = str2double(params.max_time_to_target{1});
-minTimeToPeak = str2double(params.min_time_to_peak{1});
-maxTimeToPeak = str2double(params.max_time_to_peak{1});
-clear params;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+MonkeyID = params.MonkeyID;
+epochs = params.exp.epochs;
+paramSetName = params.paramSetName;
+blocks = params.tuning.blocks;
+minReactionTime = params.trials.min_reactionTime(MonkeyID);
+maxReactionTime = params.trials.max_reactionTime(MonkeyID);
+minTimeToTarget = params.trials.min_time2target(MonkeyID);
+maxTimeToTarget = params.trials.max_time2target(MonkeyID);
+minTimeToPeak = params.trials.min_time2peak(MonkeyID);
+maxTimeToPeak = params.trials.max_time2peak(MonkeyID);
+doRandSubset = params.tuning.doRandSubset;
+numSamples = params.tuning.numSamples;
+numResamples = params.tuning.numSamples;
 
 % don't count the hold time in the time to target
-holdTime = data.params.hold_time;
+holdTime = str2double(params.exp.target_hold_high{1});
 mt = data.movement_table;
 centers = data.movement_centers;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 t = data.cont.t;
 vel = data.cont.vel;
@@ -98,111 +88,85 @@ if verbose
     disp(['Removed ' num2str(num_removed) ' trials (' num2str(100*num_removed/total_trials) '%)...']);
 end
 
-% for adaptation, exclude some trials
-if excludeTrials && ~isempty(ADexcludeFraction) && strcmp(data.meta.epoch,'AD')
-    if useBlock > 0 % then pick the correct indices
-        ADexcludeFraction = ADexcludeFraction(useBlock:useBlock+1);
-    elseif useBlock < 0
-        ADexcludeFraction = ADexcludeFraction(1:2);
+% used for breaking data into blocks of trials
+if blockTrials
+    fullMT = mt;
+    fullCenters = centers;
+    % get index of current data epoch
+    idx = find(strcmpi(epochs,data.meta.epoch));
+    b = blocks{idx};
+    
+    if doRandSubset
+        numBlocks = numResamples;
+    else
+        numBlocks = length(b)-1;
     end
     
-    if length(ADexcludeFraction) == 1
-        if ADexcludeFraction > 1 %it's a number of trials, not a fraction
-            % use the first however many trials
-            ADexcludeFraction = min([ADexcludeFraction,size(mt,1)]);
+    outMT = cell(1,numBlocks);
+    outCenters = cell(1,numBlocks);
+    
+    % break up trials for each block
+    for iBlock = 1:numBlocks
+        if doRandSubset % the first two points specify which trials
+            excludeFraction = b(1:2);
+        else % change based on each block
+            excludeFraction = b(iBlock:iBlock+1);
+        end
+        
+        if any(excludeFraction > 1) % not a proportion, so trial number must be specified
+            excludeFraction(2) = min([excludeFraction(2),size(fullMT,1)]);
+            mt = fullMT(excludeFraction(1):excludeFraction(2),:);
+            centers = fullCenters(excludeFraction(1):excludeFraction(2),:);
+        else
+            start = floor(excludeFraction(1)*size(fullMT,1));
+            if start <= 0,
+                start = 1;
+            end
+            theend = ceil(excludeFraction(2)*size(fullMT,1));
+            if theend > size(fullMT,1)
+                theend = size(fullMT,1);
+            end
+            mt = fullMT(start:theend,:);
+            centers = fullCenters(start:theend,:);
+        end
+        
+        % Now, select random subset of trials if it's that protocol
+        if doRandSubset
+            disp('DOING THE RANDOM SUBSET THING! WATCH OUT!');
+            idx = randi(size(mt,1),1,numSamples);
+            idx = sort(idx);
+            mt = mt(idx,:);
+            centers = centers(idx,:);
+        end
+        
+        % Now, filter based on speed (slow or fast?) if needed
+        % [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
+        if strcmpi(paramSetName,'speed_slow') || strcmpi(paramSetName,'speed_fast')
+            meanVels = zeros(size(mt,1),1);
+            for iMove = 1:size(mt,1)
+                % get time indices for this movement
+                idx = t > mt(iMove,4) & t < (mt(iMove,5));
+                v = sqrt(vel(idx,1).^2 + vel(idx,2).^2);
+                meanVels(iMove) = mean(v);
+            end
             
-            mt = mt(1:ADexcludeFraction,:);
-            centers = centers(1:ADexcludeFraction,:);
-        else
-            % remove the first fraction of trials trials
-            centers = centers(floor(ADexcludeFraction*size(mt,1)):end,:);
-            mt = mt(floor(ADexcludeFraction*size(mt,1)):end,:);
-        end
-    else
-        if any(ADexcludeFraction > 1)
-            % then trial number must be specified
-            ADexcludeFraction(2) = min([ADexcludeFraction(2),size(mt,1)]);
-            mt = mt(ADexcludeFraction(1):ADexcludeFraction(2),:);
-            centers = centers(ADexcludeFraction(1):ADexcludeFraction(2),:);
-        else
-            start = floor(ADexcludeFraction(1)*size(mt,1));
-            if start <= 0
-                start = 1;
+            % find the mean time
+            m = mean(meanVels);
+            switch lower(paramSetName)
+                case 'speed_slow'
+                    idx = meanVels < m;
+                case 'speed_fast'
+                    idx = meanVels > m;
             end
-            centers = centers(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
-            mt = mt(start:floor(ADexcludeFraction(2)*size(mt,1)),:);
+            mt = mt(idx,:);
+            centers = centers(idx,:);
         end
+        
+        % assign outputs now
+        outMT{iBlock} = mt;
+        outCenters{iBlock} = centers;
     end
-    
-end
-
-% Do the same for washout
-if excludeTrials && (length(WOexcludeFraction) > 0) && strcmp(data.meta.epoch,'WO')
-    if useBlock > 0 % then pick the correct indices
-        WOexcludeFraction = WOexcludeFraction(useBlock:useBlock+1);
-    elseif useBlock < 0
-        WOexcludeFraction = WOexcludeFraction(1:2);
-    end
-    
-    if length(WOexcludeFraction) == 1
-        if WOexcludeFraction > 1 %it's a number of trials, not a fraction
-            % use the first however many trials
-            WOexcludeFraction = min([WOexcludeFraction,size(mt,1)]);
-            mt = mt(1:WOexcludeFraction,:);
-            centers = centers(1:WOexcludeFraction,:);
-        else
-            % remove the first fraction of trials trials
-            centers = centers(floor(WOexcludeFraction*size(mt,1)):end,:);
-            mt = mt(floor(WOexcludeFraction*size(mt,1)):end,:);
-        end
-    else
-        if any(WOexcludeFraction > 1)
-            % then trial number must be specified
-            WOexcludeFraction(2) = min([WOexcludeFraction(2),size(mt,1)]);
-            mt = mt(WOexcludeFraction(1):WOexcludeFraction(2),:);
-            centers = centers(WOexcludeFraction(1):WOexcludeFraction(2),:);
-        else
-            start = floor(WOexcludeFraction(1)*size(mt,1));
-            if start <= 0
-                start = 1;
-            end
-            centers = centers(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
-            mt = mt(start:floor(WOexcludeFraction(2)*size(mt,1)),:);
-        end
-    end
-end
-
-% Now, select random subset of trials if it's that protocol
-if doRandSubset
-    disp('DOING THE RANDOM SUBSET THING! WATCH OUT!');
-    idx = randi(size(mt,1),1,numSamples);
-    idx = sort(idx);
-    mt = mt(idx,:);
-    centers = centers(idx,:);
-end
-
-% Now, filter based on speed (slow or fast?) if needed
-% [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
-if strcmpi(paramSetName,'speed_slow') || strcmpi(paramSetName,'speed_fast')
-    meanVels = zeros(size(mt,1),1);
-    for iMove = 1:size(mt,1)
-        % get time indices for this movement
-        idx = t > mt(iMove,4) & t < (mt(iMove,5));
-        v = sqrt(vel(idx,1).^2 + vel(idx,2).^2);
-        meanVels(iMove) = mean(v);
-    end
-    
-    % find the mean time
-    m = mean(meanVels);
-    
-    switch lower(paramSetName)
-        case 'speed_slow'
-            idx = meanVels < m;
-        case 'speed_fast'
-            idx = meanVels > m;
-    end
-    
-    mt = mt(idx,:);
-    centers = centers(idx,:);
-
+else
+    outMT = {mt};
+    outCenters = {centers};
 end

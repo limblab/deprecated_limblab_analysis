@@ -98,8 +98,8 @@ maxMC = zeros(1,size(useDate,1));
 dateMC = cell(1,size(useDate,1));
 numMoves = zeros(size(useDate,1),length(epochs));
 for iDate = 1:size(useDate,1)
-    adaptation = load(fullfile(baseDir,useDate{iDate,1},useDate{iDate,2},[useDate{iDate,4} '_' useDate{iDate,3} '_adaptation_' useDate{iDate,2} '.mat']));
-    
+    adaptation = loadResults(root_dir,useDate(iDate,:),'adaptation');
+        
     allMC = [];
     for iEpoch = 1:length(epochs)
         a = adaptation.(epochs{iEpoch});

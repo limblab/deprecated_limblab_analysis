@@ -1,4 +1,4 @@
-function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRandSubset,includeSpeed)
+function fitTuningCurves(params,arrays)
 % FITTUNINGCURVES  Wrapper function to calculate tuning curves
 %
 %   This function will calculate tuning using a variety of methods for
@@ -39,154 +39,88 @@ function tuning = fitTuningCurves(expParamFile, outDir, paramSetName,arrays,doRa
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
-% for doing the random subset
-numSamples = 32;
-numResamples = 100;
+doPlots = false;
 
-if nargin < 5
-    doRandSubset = false;
-    if nargin < 4
-        arrays = [];
-    end
+if nargin < 3
+    arrays = [];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(expParamFile);
-useDate = params.date{1};
-taskType = params.task{1};
-adaptType = params.adaptation_type{1};
-epochs = params.epochs;
-clear params
+root_dir = params.outDir;
+paramSetName = params.paramSetName;
+
+useDate = params.exp.date{1};
+taskType = params.exp.task{1};
+adaptType = params.exp.adaptation_type{1};
+epochs = params.exp.epochs;
+monkey = params.exp.monkey{1};
+
+tuningPeriods = params.tuning.tuningPeriods;
+tuningMethods = params.tuning.tuningMethods;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dataPath = fullfile(outDir,useDate);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Load some of the parameters
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, paramSetName, [ useDate '_' paramSetName '_tuning_parameters.dat']);
-params = parseExpParams(paramFile);
-tuningPeriods = params.tuning_periods;
-tuningMethods = params.tuning_methods;
-adBlocks = params.ad_exclude_fraction;
-woBlocks = params.wo_exclude_fraction;
-clear params;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-doPlots = false;
+dataPath = fullfile(root_dir,useDate);
 
 %%
-
-saveFile = fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']);
-
-blockLabels = [];
-
+% load all of the data into memory
+disp('%% Loading data...');
+epochData = cell(1,length(epochs));
 for iEpoch = 1:length(epochs)
-    getFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
-    data = load(getFile);
-    
-    if ~exist('data','var')
-        error('Data struct not found.');
-    end
-    
-    if ~exist('tuning','var')
-        tuning = struct();
-    end
-    
-    if isempty(arrays)
-        arrays = data.meta.arrays;
-    end
-    
-    for iArray = 1:length(arrays)
-        useArray = arrays{iArray};
-        for iMethod = 1:length(tuningMethods)
-            for iTune = 1:length(tuningPeriods)
-                
-                if doRandSubset
-                    switch lower(epochs{iEpoch})
-                        case 'bl'
-                            numBlocks = numResamples;
-                            idx = 0;
-                        case 'ad'
-                            numBlocks = numResamples;
-                            idx = numResamples;
-                        case 'wo'
-                            numBlocks = numResamples;
-                            idx = 2*numResamples;
-                    end
-                else
-                    switch lower(epochs{iEpoch})
-                        case 'bl'
-                            numBlocks = 1;
-                            idx = 0;
-                        case 'ad'
-                            numBlocks = length(adBlocks)-1;
-                            idx = 1;
-                        case 'wo'
-                            numBlocks = length(woBlocks)-1;
-                            idx = 1+length(adBlocks)-1;
-                    end
-                    
-                    if numBlocks < 1
-                        numBlocks = 1;
-                    end
-                end
-                
-                for iBlock = 1:numBlocks
-                    disp(['%% Running on ' epochs{iEpoch} ' file... (' num2str(iEpoch) ' of ' num2str(length(epochs)) ')']);
-                    disp(['%% Running on ' useArray ' data... (' num2str(iArray) ' of ' num2str(length(arrays)) ')']);
-                    disp(['%% Running for ' tuningMethods{iMethod} ' method... (' num2str(iMethod) ' of ' num2str(length(tuningMethods)) ')']);
-                    disp(['%% Running for ' tuningPeriods{iTune} ' period... (' num2str(iTune) ' of ' num2str(length(tuningPeriods)) ')']);
-                    disp(['%% Block ' num2str(iBlock) ' of ' num2str(numBlocks) '...']);
-                    
-                    switch lower(tuningMethods{iMethod})
-                        case 'glm' % fit a GLM model
-                            t = fitTuningCurves_GLM(data,tuningPeriods{iTune},useArray,paramSetName,iBlock);
-                        case 'nonparametric'
-                            % NOT: for now, must do regression (or vectorsum) first
-                            if ~strcmpi(tuningPeriods{iTune},'file')
-                                t = nonparametricTuning(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,doPlots);
-                            else
-                                disp('WARNING: cannot use whole file for nonparametric tuning method, so skipping this tuning period input');
-                            end
-                            
-                        case 'vectorsum'
-                            if ~strcmpi(tuningPeriods{iTune},'file')
-                                t = fitTuningCurves_VS(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,doPlots);
-                            else
-                                disp('WARNING: cannot use whole file for vectorsum tuning method, so skipping this tuning period input');
-                            end
-                            
-                        otherwise % do regression of cosine model for period specified in tuneType
-                            if ~strcmpi(tuningPeriods{iTune},'file')
-                                % here's a weird case. this allows for randomly resampling
-                                % the same subset of trials. If the second and third
-                                % numbers are the same, this is triggered
-                                if doRandSubset
-                                    % keep passing in first block so we use those trials.
-                                    % ad_exclude_trials might look like 0 0.33 0.33 0.33 0.33, to do 4 resamples
-                                    %   weird format: pass in number of samples as negative
-                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,-numSamples,includeSpeed,doPlots);
-                                else % do normal stuff
-                                    t = fitTuningCurves_Reg(data,tuningPeriods{iTune},useArray,paramSetName,iBlock,includeSpeed,doPlots);
-                                end
-                            else
-                                disp('WARNING: cannot use whole file for regression/vectorsum tuning method, so skipping this tuning period input');
-                            end
-                            
-                    end
-                    t.meta = data.meta;
-                    tuning.(tuningMethods{iMethod}).(tuningPeriods{iTune}).(useArray).tuning(idx+iBlock) = t;
-                    
-                end
-                clear t;
-            end
-        end
-    end
-    
+    epochData{iEpoch} = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],epochs{iEpoch});
+end
+disp('%% Done.');
+
+if isempty(arrays)
+    % if not specified, assume first data has correct array list
+    arrays = epochData{1}.meta.arrays;
 end
 
-% save the new file with tuning info
-save(saveFile,'-struct','tuning');
+for iArray = 1:length(arrays)
+    useArray = arrays{iArray};
+    for iMethod = 1:length(tuningMethods)
+        for iTune = 1:length(tuningPeriods)
+            disp(['%% Running on ' useArray ' data... (' num2str(iArray) ' of ' num2str(length(arrays)) ')']);
+            disp(['%% Running for ' tuningMethods{iMethod} ' method... (' num2str(iMethod) ' of ' num2str(length(tuningMethods)) ')']);
+            disp(['%% Running for ' tuningPeriods{iTune} ' period... (' num2str(iTune) ' of ' num2str(length(tuningPeriods)) ')']);
+            
+            % define the filename to save these results
+            saveFile = fullfile(dataPath,[arrays{iArray} '_tuning'],[taskType '_' adaptType '_' paramSetName '_' tuningMethods{iMethod} '_' tuningPeriods{iTune} '_' useDate '.mat']);
+            
+            % here is where I start combining epochs
+            tuning = [];
+            for iEpoch = 1:length(epochs)
+                disp(['%% Running on ' epochs{iEpoch} ' file... (' num2str(iEpoch) ' of ' num2str(length(epochs)) ')']);
+                
+                % 'file' method only works with GLM
+                if ~strcmpi(tuningPeriods{iTune},'file')
+                    switch lower(tuningMethods{iMethod})
+                        case {'regression','reg'} % do regression of cosine model for period specified in tuneType
+                            t_out = fitTuningCurves_Reg(epochData{iEpoch},params,tuningPeriods{iTune},useArray,doPlots);
+                        case 'glm' % fit a GLM model
+                            t_out = fitTuningCurves_GLM(epochData{iEpoch},params,tuningPeriods{iTune},useArray);
+                        case {'nonparametric','nonp'}
+                            t_out = nonparametricTuning(epochData{iEpoch},params,tuningPeriods{iTune},useArray,doPlots);
+                        case {'vectorsum','vecs'}
+                            error('Vector sum method not implemented currently.');
+                        otherwise
+                            error('Tuning method not recognized.');
+                    end
+                elseif strcmpi(tuningMethods{iMethod},'glm')
+                    t_out = fitTuningCurves_GLM(epochData{iEpoch},params,tuningPeriods{iTune},useArray);
+                else
+                    disp('WARNING: cannot use whole file for this method, so skipping');
+                end
+                
+                % assign results for saving... here we want to concatenate all of the epochs together
+                tuning = [tuning, t_out];
+            end
+            t.tuning = tuning;
+            % save the new file with tuning info
+            save(saveFile,'-struct','t');
+        end
+    end
+end
+
+

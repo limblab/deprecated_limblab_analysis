@@ -17,7 +17,7 @@ classifierBlocks = [1 4 7];
 
 paramSetName = 'movement';
 tuneMethod = 'regression';
-tunePeriod = 'onpeak';
+tuneWindow = 'onpeak';
 
 % paramSetName = 'target';
 % tuneMethod = 'regression';
@@ -86,17 +86,15 @@ for iMonkey = 1:length(monkeys)
         dataPath = fullfile(baseDir,useDate);
         
         % load the class data
-        classes = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
-        tuning = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']),tuneMethod);
+        [t,c] = loadResults(root_dir,{monkey,useDate,adaptType,taskType},'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         
         % get the classes for the current cell
-        sg = classes.(tuneMethod).(tunePeriod).(useArray).sg;
-        c = classes.(tuneMethod).(tunePeriod).(useArray).classes;
-        istuned = classes.(tuneMethod).(tunePeriod).(useArray).istuned;
+        sg = c.sg;
+        istuned = c.istuned;
         
-        t_bl = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(1));
-        t_ad = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(2));
-        t_wo = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(3));
+        t_bl = t(classifierBlocks(1));
+        t_ad = t(classifierBlocks(2));
+        t_wo = t(classifierBlocks(3));
         
         getClasses = -1*ones(size(sg,1),1);
         getDPDs = zeros(size(sg,1),1);

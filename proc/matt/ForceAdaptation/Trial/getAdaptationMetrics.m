@@ -1,4 +1,4 @@
-function adaptation = getAdaptationMetrics(expParamFile,outDir,paramSetName)
+function adaptation = getAdaptationMetrics(params)
 % GETADAPTATIONMETRICS  Gets metrics to show adaptation progression
 %
 %   Current returns mean curvature for each movement and a sliding window
@@ -23,29 +23,27 @@ function adaptation = getAdaptationMetrics(expParamFile,outDir,paramSetName)
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Load some of the experimental parameters
+% Get some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(expParamFile);
-useDate = params.date{1};
-taskType = params.task{1};
-adaptType = params.adaptation_type{1};
-epochs = params.epochs;
-rotationAngle = str2double(params.rotation_angle{1});
-clear params
+root_dir = params.outDir; % we want to load from the output directory of makeDataStruct
+useDate = params.exp.date{1};
+taskType = params.exp.task{1};
+adaptType = params.exp.adaptation_type{1};
+epochs = params.exp.epochs;
+rotationAngle = str2double(params.exp.rotation_angle{1});
+holdTime = str2double(params.exp.target_hold_high{1});
+monkey = params.exp.monkey{1};
 
-dataPath = fullfile(outDir,useDate);
+dataPath = fullfile(root_dir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Load some of the analysis parameters
+% Get some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-useMetrics = params.adaptation_metrics;
-behavWin = str2double(params.behavior_window{1});
-stepSize = str2double(params.behavior_step{1});
-filtWidth = str2double(params.filter_width{1});
-moveThresh = str2double(params.movement_threshold{1});
-clear params;
+useMetrics = params.behavior.adaptationMetrics;
+behavWin = params.behavior.behaviorWindow;
+stepSize = params.behavior.behaviorStep;
+filtWidth = params.behavior.filterWidth;
+moveThresh = params.behavior.movementThreshold;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 saveFile = fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
@@ -55,10 +53,9 @@ for iEpoch = 1:length(epochs)
     
     disp(['Loading data for ' epochs{iEpoch} '...']);
 
-    getFile = fullfile(dataPath,[taskType '_' adaptType '_' epochs{iEpoch} '_' useDate '.mat']);
-    load(getFile,'cont');
-    load(getFile,'params');
-    load(getFile,'meta');
+    data = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],epochs{iEpoch});
+    cont = data.cont;
+    meta = data.meta;
     
     t = cont.t;
     pos = cont.pos;
@@ -97,13 +94,11 @@ for iEpoch = 1:length(epochs)
     vel = svel(filtWidth/2:end-filtWidth/2,:);
     acc = sacc(filtWidth/2:end-filtWidth/2,:);
     
-%     load(getFile,'movement_table');
-%     mt = movement_table;
-
-    data = load(getFile);
-    [mt,centers] = filterMovementTable(data,paramSetName,false,[],false);
-    clear movement_table;
-    holdTime = params.hold_time;
+    [mt,~] = filterMovementTable(data,params,false);
+    
+    if iscell(mt)
+        mt = mt{1};
+    end
     
     % find the time windows of each movement
     disp('Getting movement data...')

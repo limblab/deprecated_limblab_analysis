@@ -1,4 +1,4 @@
-function [cellClass,master_sg] = classifyCells(t,tuningMethod,compMethod,classifierBlocks)
+function [cellClass,master_sg] = classifyCells(params,t,tuningMethod,compMethod,classifierBlocks)
 % cellClass is matrix, rows are units, first column is PD, second column is
 % Modulation depth
 % 
@@ -32,18 +32,15 @@ function [cellClass,master_sg] = classifyCells(t,tuningMethod,compMethod,classif
 % To compare if there is a significant difference across adaptation in the
 % above case, you might do useBlocks = [2 3 4];
 
-% if this is true, divide alpha by 2 since we are making two comparisons
-doNoise = false;
-doBonferroni = false;
-numComparisons = 3;
-
-meta = t(1).meta;
-
-paramFile = fullfile(meta.out_directory, [meta.recording_date '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-confLevel = str2double(params.confidence_level{1});
-numIters = str2double(params.number_iterations{1});
-clear params;
+%%%%%%%%%%%%%%%%%%%%%%
+% GET PARAMETER VALUES
+doBonferroni = params.classes.doBonferroni;
+numComparisons = params.classes.numComparisons;
+confLevel = params.classes.classConfidenceLevel;
+numIters = params.tuning.numberBootIterations;
+doNoise = params.classes.doNoise;
+noiseVal = params.classes.noiseVal;
+%%%%%%%%%%%%%%%%%%%%%
 
 if doBonferroni
     alpha = 1-confLevel;
@@ -139,8 +136,8 @@ switch lower(tuningMethod)
         % weird thing to add noise
         if doNoise
                 disp('MAKE THAT SHIT NOISY');
-                val = 0.12;
-                r = -0 + ( val ).*rand(size(usePDs{classifierBlocks(end)}));
+                
+                r = -0 + ( noiseVal ).*rand(size(usePDs{classifierBlocks(end)}));
                 usePDs{classifierBlocks(end)} = usePDs{classifierBlocks(end)} + r;
         end
         

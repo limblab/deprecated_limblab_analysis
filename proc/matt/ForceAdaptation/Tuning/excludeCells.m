@@ -1,4 +1,4 @@
-function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray,classifierBlocks)
+function [istuned, master_sg] = excludeCells(params,data,tuning,tracking,useArray)
 % This function will check all of the cells against various exclusion
 % criteria. For each cell:
 %
@@ -20,30 +20,27 @@ function [istuned, master_sg] = excludeCells(data,tuning,tracking,useArray,class
 % there then it will for the rest, or else it won't pass the "same neuron"
 % test.
 
-t = tuning.(useArray).tuning;
 tracking = tracking.(useArray);
 data = data.(useArray);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(t(1).meta.out_directory, [t(1).meta.recording_date '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-ciSig = str2double(params.ci_significance{1});
-confLevel = str2double(params.confidence_level{1});
-numIters = str2double(params.number_iterations{1});
-isiThresh = str2double(params.isi_threshold{1});
-isiPercent = str2double(params.isi_percent{1});
-waveSNR = str2double(params.waveform_snr{1});
+ciSig = params.units.ciSignificance;
+confLevel = params.classes.classConfidenceLevel;
+numIters = params.tuning.numberBootIterations;
+isiThresh = params.units.isiThreshold;
+isiPercent = params.units.isiPercent;
+waveSNR = params.units.waveformSNR;
+classifierBlocks = params.classes.classifierBlocks;
 % a couple of parameters depend on the array
-r2Min = str2double(params.([lower(useArray) '_r2_minimum']){1});
-minFR = str2double(params.([lower(useArray) '_minimum_firing_rate']){1});
-clear params;
+r2Min = params.units.([lower(useArray) '_r2Min']);
+minFR = params.units.([lower(useArray) '_minFR']);
 
-if isfield(t(1),'sg')
-    all_sg = {t.sg};
+if isfield(tuning(1),'sg')
+    all_sg = {tuning.sg};
 else
-    all_sg = {t.unit_guide};
+    all_sg = {tuning.unit_guide};
 end
 
 tracking_chan = tracking{1}.chan;
@@ -86,10 +83,10 @@ end
 
 
 %% Check that neuron meets firing rate criterion in each epoch
-if isfield(t(1),'fr')
+if isfield(tuning(1),'fr')
     temp = all_idx{1};
     for unit = 1:size(master_sg,1)
-        istuned(unit,3) = mean(t(1).fr(:,temp(unit)),1) >= minFR;
+        istuned(unit,3) = mean(tuning(1).fr(:,temp(unit)),1) >= minFR;
     end
 else
     istuned(:,3) = ones(size(istuned(:,3)));
@@ -104,9 +101,9 @@ end
 
 % don't do this if the classifierBlocks input is empty
 if ~isempty(classifierBlocks)
-    if isfield(t(1),'pds') % this means it is regression/glm/etc
+    if isfield(tuning(1),'pds') % this means it is regression/glm/etc
         %% Check confidence in PD estimates
-        all_pds = {t.pds};
+        all_pds = {tuning.pds};
         for unit = 1:size(master_sg,1)
             sig = zeros(size(all_pds));
             for iBlock = 1:length(all_pds)
@@ -116,16 +113,16 @@ if ~isempty(classifierBlocks)
             end
             istuned(unit,5) = all(sig(classifierBlocks));
         end
-    elseif isfield(t(1),'mfr') % this means it is nonparametric
+    elseif isfield(tuning(1),'mfr') % this means it is nonparametric
         % basically, here I want to check if any one bin is significantly
         % different from any other. I will call this a coarse estimate of
         % "tuning"
-        nTargs = length(t(1).utheta);
+        nTargs = length(tuning(1).utheta);
         for unit = 1:size(master_sg,1)
-            blockDiffs = zeros(1,length(t));
-            for iBlock = 1:length(t)
-                cil = t(iBlock).cil;
-                cih = t(iBlock).cih;
+            blockDiffs = zeros(1,length(tuning));
+            for iBlock = 1:length(tuning)
+                cil = tuning(iBlock).cil;
+                cih = tuning(iBlock).cih;
                 
                 targDiffs = [];
                 for iTarg = 1:nTargs-1
@@ -147,13 +144,13 @@ if ~isempty(classifierBlocks)
                 blockDiffs(iBlock) = sum(targDiffs) > 2;
             end
             %istuned(unit,5) = all(blockDiffs);
-            p = anova1(t(iBlock).boot_fr{unit},[],'off');
+            p = anova1(tuning(iBlock).boot_fr{unit},[],'off');
             istuned(unit,5) = p < 0.05;
         end
     end
     %% Check that r-squared of fit is okay
-    if isfield(t(1),'r_squared') && ~isempty(t(1).r_squared)
-        all_rs = {t.r_squared};
+    if isfield(tuning(1),'r_squared') && ~isempty(tuning(1).r_squared)
+        all_rs = {tuning.r_squared};
         all_rs_ci = cell(size(all_rs));
         
         for iBlock = 1:length(all_rs)

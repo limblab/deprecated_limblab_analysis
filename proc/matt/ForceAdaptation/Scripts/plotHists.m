@@ -63,7 +63,7 @@ useBlocks = [1,4,7];
 %         allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT'),:);
 % end
 
-doMD = false;
+doMD = true;
 if ~doMD
     binSize = 5;
     plotMax = 90;

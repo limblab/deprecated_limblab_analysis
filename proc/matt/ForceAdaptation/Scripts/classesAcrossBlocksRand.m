@@ -50,8 +50,8 @@ numSamples = 100;
 reassignOthers = true;
 paramSetNames = {'target_noisy'};
 paramSetName = 'target_noisy';
-tuningPeriod = 'full';
-tuningMethod = 'regression';
+tuneWindow = 'full';
+tuneMethod = 'regression';
 
 doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
 
@@ -60,10 +60,9 @@ doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
 masterTunedSG = cell(size(doFiles,1),1);
 masterTuned = cell(size(doFiles,1),1);
 for iFile = 1:size(doFiles,1)
-    classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},'Movement',[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-    classes = load(classFile);
-    masterTunedSG{iFile} = classes.(tuningMethod).onpeak.(useArray).tuned_cells;
-    masterTuned{iFile} = all(classes.(tuningMethod).onpeak.(useArray).istuned,2);
+    c = loadResults(root_dir,doFiles(iFile,:),'tuning','classes',useArray,paramSetName,tuneMethod,tuneWindow);
+    masterTunedSG{iFile} = c.tuned_cells;
+    masterTuned{iFile} = all(c.istuned,2);
 end
 
 %%
@@ -75,20 +74,13 @@ for i = 1:numSamples
     processFFData2;
     
     for iFile = 1:size(doFiles,1)
-        classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-        classes = load(classFile);
+        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         
-        c = classes.(tuningMethod).(tuningPeriod).(useArray);
         allC(iFile).c{i} = c.classes(masterTuned{iFile},1);
         %allC(iFile).c{i} =  c.classes(all(c.istuned,2));
         
-        tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-        tuning = load(tuningFile);
-        
         tunedCells = masterTunedSG{iFile};
         %tunedCells = c.tuned_cells;
-        
-        t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
         
         sg_bl = t(classifierBlocks(1)).sg;
         sg_ad = t(classifierBlocks(2)).sg;

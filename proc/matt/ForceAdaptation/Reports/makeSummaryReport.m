@@ -1,4 +1,4 @@
-function html = makeSummaryReport(expParamFile,outDir,paramSetName,useUnsorted,sigMethod,html)
+function html = makeSummaryReport(params,html)
 % NEURONREPORTS  Constructs html document to summarize a session's data
 %
 %   This function will load processed data and generate html for a summary
@@ -36,36 +36,30 @@ tableColors = {'#ff55ff','#55ffff','#ffff55','#55aaaa','#eeee77','#cccccc'};
 classNames = {'non-adapting','adapting','memory I','memory II','other','N/A'};
 
 newHTML = false;
-if nargin < 6
+if nargin < 2
     newHTML = true;
     html = [];
-    if nargin < 5
-        sigMethod = 'regression';
-    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(expParamFile);
-useDate = params.date{1};
-arrays = params.arrays;
-monkey = params.monkey{1};
-taskType = params.task{1};
-adaptType = params.adaptation_type{1};
-epochs = params.epochs;
-forceMag = str2double(params.force_magnitude{1});
-forceAng = str2double(params.force_angle{1});
-clear params;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+outDir = params.outDir;
+paramSetName = params.paramSetName;
+useUnsorted = params.useUnsorted;
 
-% Load some more parameters
-paramFile = fullfile(outDir, useDate, [ useDate '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-confLevel = str2double(params.confidence_level{1});
-ciSig = str2double(params.ci_significance{1});
-minFR = str2double(params.minimum_firing_rate{1});
-clear params;
+useDate = params.exp.date{1};
+arrays = params.exp.arrays;
+monkey = params.exp.monkey{1};
+taskType = params.exp.task{1};
+adaptType = params.exp.adaptation_type{1};
+epochs = params.exp.epochs;
+forceMag = str2double(params.exp.force_magnitude{1});
+forceAng = str2double(params.exp.force_angle{1});
+
+confLevel = params.classes.classConfidenceLevel;
+ciSig = params.classes.ciSignificance;
+
 
 dataPath = fullfile(outDir,useDate);
 genFigPath = fullfile(dataPath,'general_figs');

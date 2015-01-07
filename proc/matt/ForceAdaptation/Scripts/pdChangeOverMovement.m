@@ -1,95 +1,10 @@
-% plot PD over windows of movement
+% pdChangeOverMovement
+%   Plots change in PD of population against force or velocity of movement.
+% Intended for CO task only. Requires a set of results made using the
+% 'time' tuningWindow set in getFR.
 
-clear
-clc
-close all;
-
-% load each file and get cell classifications
-root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-% root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
-
-allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
-    'MrT','2013-08-20','FF','RT'; ...   % S x
-    'MrT','2013-08-21','FF','CO'; ...   % S x - AD is split in two so use second but don't exclude trials
-    'MrT','2013-08-22','FF','RT'; ...   % S x
-    'MrT','2013-08-23','FF','CO'; ...   % S x
-    'MrT','2013-08-30','FF','RT'; ...   % S x
-    'MrT','2013-09-03','VR','CO'; ...   % S x
-    'MrT','2013-09-04','VR','RT'; ...   % S x
-    'MrT','2013-09-05','VR','CO'; ...   % S x
-    'MrT','2013-09-06','VR','RT'; ...   % S x
-    'MrT','2013-09-09','VR','CO'; ...   % S x
-    'MrT','2013-09-10','VR','RT'; ...   % S x
-    'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
-    'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
-    'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
-%     'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
-    'Mihili','2014-02-14','FF','RT'; ...    %5  S(M-P)
-    'Mihili','2014-02-17','FF','CO'; ...    %6  S(M-P)
-    'Mihili','2014-02-18','FF','CO'; ...    %7  S(M-P) - Did both perturbations
-    %'Mihili','2014-02-18-VR','VR','CO'; ... %8  S(M-P) - Did both perturbations
-    'Mihili','2014-02-21','FF','RT'; ...    %9  S(M-P)
-    'Mihili','2014-02-24','FF','RT'; ...    %10 S(M-P) - Did both perturbations
-    %'Mihili','2014-02-24-VR','VR','RT'; ... %11 S(M-P) - Did both perturbations
-    'Mihili','2014-03-03','VR','CO'; ...    %12 S(M-P)
-    'Mihili','2014-03-04','VR','CO'; ...    %13 S(M-P)
-    'Mihili','2014-03-06','VR','CO'; ...    %14 S(M-P)
-    'Mihili','2014-03-07','FF','CO'; ...   % 15
-    'Mihili','2014-12-11','FF','CO'; ...
-    'Chewie','2013-10-03','VR','CO'; ... %16  S ?
-    'Chewie','2013-10-09','VR','RT'; ... %17  S x
-    'Chewie','2013-10-10','VR','RT'; ... %18  S ?
-    'Chewie','2013-10-11','VR','RT'; ... %19  S x
-    'Chewie','2013-10-22','FF','CO'; ... %20  S ?
-    'Chewie','2013-10-23','FF','CO'; ... %21  S ?
-    'Chewie','2013-10-28','FF','RT'; ... %22  S x
-    'Chewie','2013-10-29','FF','RT'; ... %23  S x
-    'Chewie','2013-10-31','FF','CO'; ... %24  S ?
-    'Chewie','2013-11-01','FF','CO'; ... %25 S ?
-    'Chewie','2013-12-03','FF','CO'; ... %26 S
-    'Chewie','2013-12-04','FF','CO'; ... %27 S
-    'Chewie','2013-12-09','FF','RT'; ... %28 S
-    'Chewie','2013-12-10','FF','RT'; ... %29 S
-    'Chewie','2013-12-12','VR','RT'; ... %30 S
-    'Chewie','2013-12-13','VR','RT'; ... %31 S
-    'Chewie','2013-12-17','FF','RT'; ... %32 S
-    'Chewie','2013-12-18','FF','RT'; ... %33 S
-    'Chewie','2013-12-19','VR','CO'; ... %34 S
-    'Chewie','2013-12-20','VR','CO'};    %35 S
-
-
-useArray = 'M1';
-classifierBlocks = [1 2 3];
-
-switch lower(useArray)
-    case 'm1'
-        allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'Chewie'),:);
-    case 'pmd'
-        allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT'),:);
-end
-
-paramSetName = 'move_time';
-tuningMethod = 'regression';
-% tuningPeriods = {'time1','time2','time3','time4','time5','time6','time7','time8'};
-tuningPeriods = {'time1','time2','time3','time4','time5','time6','time7','time8','time9','time10','time11','time12','time13','time14','time15'};
-% tuningPeriods = {'time1','time3','time5','time7','time9','time11','time13','time15'};
 colors = {'k','b','r'};
-
-monkeys = {'Chewie','Mihili'};
-
-remove_predicted = false;
-doMD = false;
-doAvg = false; % do average across sessions (mainly for group scatter plot)
-useVel = false;
-useMasterTuned = false;
-% separate by waveform width
-%   0: don't do
-%   1: use cells below median
-%   2: use cells above median
-doWidthSeparation = 0;
-
 if ~doMD
-    doAbs = true;
     doCirc = false;
     ymin_pd = 0;
     ymax_pd = 120;
@@ -97,7 +12,6 @@ if ~doMD
     plotMult = 180/pi;
     y_lab = 'PD Change (Deg) ';
 else
-    doAbs = true;
     if doAbs
         ymin_pd = -1;
         ymax_pd = 5;
@@ -111,6 +25,7 @@ else
     
 end
 
+% set the bounds for the plots
 if useVel
     ymin_f = 10;
     ymax_f = 28;
@@ -122,11 +37,7 @@ end
 
 h1 = figure();
 subplot1(1,length(monkeys));
-% h2 = figure();
-% subplot1(1,length(monkeys));
-% h3 = figure();
-% subplot1(1,length(monkeys));
-h4 = figure();
+h2 = figure();
 subplot1(1,length(monkeys));
 
 %%
@@ -134,11 +45,9 @@ subplot1(1,length(monkeys));
 if doWidthSeparation
     count = 0;
     clear allWFWidths;
-    doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
     for iFile = 1:size(doFiles,1)
         % load baseline data to get width of all spike waveforms
-        dataFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
-        data = load(dataFile);
+        data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
         
         units = data.(useArray).units;
         for u = 1:length(units)
@@ -155,35 +64,32 @@ end
 %%
 for iMonkey = 1:length(monkeys)
     
-    doFiles = allFiles(strcmpi(allFiles(:,1),monkeys{iMonkey}) & strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
+    doFiles = allFiles(strcmpi(allFiles(:,1),monkeys{iMonkey}),:);
     % Get the cells that are well-tuned from my normal analysis
     if useMasterTuned
         masterTunedSG = cell(size(doFiles,1),1);
         masterTuned = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},'Movement',[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-            classes = load(classFile);
-            masterTunedSG{iFile} = classes.(tuningMethod).onpeak.(useArray).tuned_cells;
-            masterTuned{iFile} = all(classes.(tuningMethod).onpeak.(useArray).istuned,2);
+            c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+            
+            masterTunedSG{iFile} = c.tuned_cells;
+            masterTuned{iFile} = all(c.istuned,2);
         end
     end
     
-    %
-    cellPDs = cell(size(doFiles,1),length(classifierBlocks));
-    meanForce = cell(size(doFiles,1),length(classifierBlocks));
-    meanVel = cell(size(doFiles,1),length(classifierBlocks));
+    % currently assumes there are 3 blocks for classification
+    cellPDs = cell(size(doFiles,1),3);
+    meanForce = cell(size(doFiles,1),3);
+    meanVel = cell(size(doFiles,1),3);
     
     for iFile = 1:size(doFiles,1)
-        classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-        classes = load(classFile);
+        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         
-        tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-        tuning = load(tuningFile);
+        classifierBlocks = t(1).params.classes.classifierBlocks;
         
         if doWidthSeparation
             % load baseline data to get waveforms
-            dataFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_BL_' doFiles{iFile,2} '.mat']);
-            data = load(dataFile);
+            data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
             
             units = data.(useArray).units;
             wfTypes = zeros(length(units),1);
@@ -199,42 +105,34 @@ for iMonkey = 1:length(monkeys)
             end
         end
         
-        for iBlock = 1:length(classifierBlocks)
+        for iBlock = 1:size(classifierBlocks,2)
             neurons = struct();
-            force = zeros(1,length(tuningPeriods));
-            vel = zeros(1,length(tuningPeriods));
-            for iPeriod = 1:length(tuningPeriods)
-                tuningPeriod = tuningPeriods{iPeriod};
-                
-                try
-                t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
-                catch
-                    keyboard
-                end
-                
+            force = zeros(1,length(tuneWindows));
+            vel = zeros(1,length(tuneWindows));
+            for iWin = 1:size(classifierBlocks,1)
+                tuningPeriod = tuneWindows{iWin};
+
                 % find average force
                 if useVel
-                    f = t(classifierBlocks(iBlock)).vels;
-                    v = t(classifierBlocks(iBlock)).vels;
+                    f = t(classifierBlocks(iWin,iBlock)).vels;
+                    v = t(classifierBlocks(iWin,iBlock)).vels;
                 else
-                    f = t(classifierBlocks(iBlock)).forces;
-                    v = t(classifierBlocks(iBlock)).vels;
+                    f = t(classifierBlocks(iWin,iBlock)).forces;
+                    v = t(classifierBlocks(iWin,iBlock)).vels;
                 end
                 
-                force(iPeriod) = mean(sqrt( f(:,1).^2 + f(:,2).^2 ));
-                vel(iPeriod) = mean(sqrt( v(:,1).^2 + v(:,2).^2 ));
+                force(iWin) = mean(sqrt( f(:,1).^2 + f(:,2).^2 ));
+                vel(iWin) = mean(sqrt( v(:,1).^2 + v(:,2).^2 ));
                 
-                c = classes.(tuningMethod).(tuningPeriod).(useArray);
-                sg = t(classifierBlocks(iBlock)).sg;
-                
+                sg = t(classifierBlocks(iWin,iBlock)).sg;
                 
                 if useMasterTuned
                     tunedCells = masterTunedSG{iFile};
                 else
                     if doWidthSeparation
-                        tunedCells = sg(all(c.istuned,2) & wfTypes,:);
+                        tunedCells = sg(all(c(iWin).istuned,2) & wfTypes,:);
                     else
-                        tunedCells = sg(all(c.istuned,2),:);
+                        tunedCells = sg(all(c(iWin).istuned,2),:);
                     end
                 end
                 
@@ -245,17 +143,17 @@ for iMonkey = 1:length(monkeys)
                 for i=1:length(inds)
                     if ~doMD
                         if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,length(tuningPeriods));
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iPeriod) = t(classifierBlocks(iBlock)).pds(inds(i),1);
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,length(tuneWindows));
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
                         else
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iPeriod) = t(classifierBlocks(iBlock)).pds(inds(i),1);
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
                         end
                     else
                         if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,length(tuningPeriods));
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iPeriod) = t(classifierBlocks(iBlock)).mds(inds(i),1);
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,length(tuneWindows));
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
                         else
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iPeriod) = t(classifierBlocks(iBlock)).mds(inds(i),1);
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
                         end
                     end
                 end
@@ -429,7 +327,7 @@ for iMonkey = 1:length(monkeys)
     
     % NOW FUN STUFF!
     % plot on dual axes PD change and RMS force
-    figure(h4);
+    figure(h2);
     subplot1(iMonkey);
     ax1 = gca;
     hold all;
@@ -453,7 +351,7 @@ for iMonkey = 1:length(monkeys)
     
     plot([0 size(periodPDs_AD,2)+1],[0 0],'k--','Parent',ax1);
     
-    set(gca,'XLim',[0,size(periodPDs_AD,2)+1],'YLim',[ymin_pd,ymax_pd],'XTick',1:size(periodPDs_AD,2),'XTickLabel',tuningPeriods,'TickDir','out','FontSize',14);
+    set(gca,'XLim',[0,size(periodPDs_AD,2)+1],'YLim',[ymin_pd,ymax_pd],'XTick',1:size(periodPDs_AD,2),'XTickLabel',tuneWindows,'TickDir','out','FontSize',14);
     if iMonkey == 1
         if ~doMD
             ylabel('Change in PD (Deg) Relative to Baseline','FontSize',14);

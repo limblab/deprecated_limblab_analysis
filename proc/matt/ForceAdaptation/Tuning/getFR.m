@@ -1,277 +1,169 @@
-function [fr, theta, mt, force, vel] = getFR(data,useArray,tuningPeriod,paramSetName,useBlock)
+function [outFR, outTheta, blockMT, outForce, outVel] = getFR(data,params,useArray,tuningPeriod)
 % finds firing rates for each movement based on the windows identified in
 % the data struct. returns firing rate matrix (each unit against trial
 % number) and direction of each movement
 %
-% useBlock is which block of trials to use. In parameter file, can do
-% excludeAD, let's say it's 0 0.25 0.5 0.75 1, then there are 4 potential
-% blocks. useBlock = 1 would be the first 25% of trials, useBlock = 4 would
-% be the last 25%.
-
-force = [];
-vel = [];
-
-if nargin < 5
-    % no useBlock, assume only one block
-    useBlock = 0;
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
-paramFile = fullfile(data.meta.out_directory, paramSetName, [data.meta.recording_date '_' paramSetName '_tuning_parameters.dat']);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(paramFile);
-angleBinSize = str2double(params.angle_bin_size{1});
-movementTime = str2double(params.movement_time{1});
-tuneDir = params.tuning_direction{1};
-doBinAngles = str2double(params.bin_angles{1});
-clear params ;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(data.meta.out_directory, [data.meta.recording_date '_analysis_parameters.dat']);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-params = parseExpParams(paramFile);
-latency = str2double(params.([lower(useArray) '_latency']){1});
-clear params;
+forceMag = str2double(params.exp.force_magnitude{1});
+forceDir = str2double(params.exp.force_angle{1});
+holdTime = str2double(params.exp.target_hold_high{1});
+angleBinSize = params.tuning.angleBinSize;
+movementTime = params.tuning.movementTime;
+tuneDir = params.tuning.tuningCoordinates;
+doBinAngles = params.tuning.binAngles;
+latency = params.tuning.([lower(useArray) '_latency']);
+timeDelay = params.tuning.timeDelay;
+divideTime = params.tuning.divideTime;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Get data
 sg = data.(useArray).sg;
 
-% for now, assume a hold time of 0.5 s
-holdTime = 0.5;
-
 % Get the movement table
-mt = filterMovementTable(data, paramSetName, true, useBlock);
+[blockMT,~] = filterMovementTable(data, params, true);
 
-%
-
-if size(mt,1)==0
-    keyboard
+if ~strcmpi(tuningPeriod,'time')
+    numBlocks = length(blockMT);
+else
+    % figure out how many blocks there should be, though here we are
+    % blocking with all trials in different sliding windows over CO reach
+    numBlocks = floor(( 1 + divideTime(2) - divideTime(1) ) / divideTime(2));
+    blockMT = repmat(blockMT,numBlocks,1);
 end
 
-%% Get spike count for each channel in desired window
-fr = zeros(size(mt,1),size(sg,1));
-useWin = zeros(size(mt,1),2);
+% mt will be a cell array, with multiple blocks if desired
+outFR = cell(1,numBlocks);
+outTheta = cell(1,numBlocks);
+outForce = cell(1,numBlocks);
+outVel = cell(1,numBlocks);
 
-% amount of time to wait after go cue
-timeDelay = 0; %seconds
+for iBlock = 1:numBlocks
+    mt = blockMT{iBlock};
+    %% Get spike count for each channel in desired window
+    fr = zeros(size(mt,1),size(sg,1));
+    useWin = zeros(size(mt,1),2);
+    
+    % mt is the movement table
+    % [ target angle, on_time, go cue, move_time, peak_time, end_time ]
+    for trial = 1:size(mt,1)
+        % Time window for which to look for neural activity
+        if strcmpi(tuningPeriod,'peak') % Use period around peak speed
+            useWin(trial,:) = [mt(trial,5) - movementTime/2, mt(trial,5) + movementTime/2];
+        elseif strcmpi(tuningPeriod,'initial') %Use initial movement period
+            useWin(trial,:) = [mt(trial,4), mt(trial,4)+movementTime];
+        elseif strcmpi(tuningPeriod,'final') % Use the final movement period
+            useWin(trial,:) = [mt(trial,6)-movementTime-holdTime, mt(trial,6)-holdTime];
+        elseif strcmpi(tuningPeriod,'pre') % Use pre-movement period
+            useWin(trial,:) = [mt(trial,2)+timeDelay, mt(trial,4)];
+        elseif strcmpi(tuningPeriod,'full') % Use entire movement
+            useWin(trial,:) = [mt(trial,4)-timeDelay, mt(trial,6)-holdTime];
+        elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak
+            useWin(trial,:) = [mt(trial,4), mt(trial,5)];
+        elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
+            useWin(trial,:) = [mt(trial,5)-movementTime, mt(trial,5)];
+        elseif strcmpi(tuningPeriod,'time') % sliding time windows over reaches
+            tstart = mt(trial,4)-timeDelay; % time that reach starts
+            tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart; % time duration of reach
+            useWin(trial,:) = [tstart + (iBlock-1)*divideTime(2)*tdur, tstart + (divideTime(1)+(iBlock-1)*divideTime(2)) * tdur];
+        end
 
-% mt is
-% [ target angle, on_time, go cue, move_time, peak_time, end_time ]
-for trial = 1:size(mt,1)
-    % Time window for which to look for neural activity
-    if strcmpi(tuningPeriod,'peak') % Use period around peak speed
-        useWin(trial,:) = [mt(trial,5) - movementTime/2, mt(trial,5) + movementTime/2];
-    elseif strcmpi(tuningPeriod,'initial') %Use initial movement period
-        useWin(trial,:) = [mt(trial,4), mt(trial,4)+movementTime];
-    elseif strcmpi(tuningPeriod,'final') % Use the final movement period
-        useWin(trial,:) = [mt(trial,6)-movementTime-holdTime, mt(trial,6)-holdTime];
-    elseif strcmpi(tuningPeriod,'pre') % Use pre-movement period
-        useWin(trial,:) = [mt(trial,2)+timeDelay, mt(trial,4)];
-    elseif strcmpi(tuningPeriod,'full') % Use entire movement
-        useWin(trial,:) = [mt(trial,4)-timeDelay, mt(trial,6)-holdTime];
-    elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak
-        useWin(trial,:) = [mt(trial,4), mt(trial,5)];
-    elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
-        useWin(trial,:) = [mt(trial,5)-movementTime, mt(trial,5)];
-        
-        % this is an odd case. It's for looking at progression over the
-        % duration of the movement.
-    elseif strcmpi(tuningPeriod,'time1')
-        % this is an odd case. It's for looking at progression over the
-        % duration of the movement.
-        
-        % find duration of movement (add a bit to end of target
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        
-        useWin(trial,:) = [tstart+0*tdur, tstart+0.3*tdur];
-    elseif strcmpi(tuningPeriod,'time2')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.05*tdur, tstart+0.35*tdur];
-    elseif strcmpi(tuningPeriod,'time3')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.1*tdur, tstart+0.4*tdur];
-    elseif strcmpi(tuningPeriod,'time4')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.15*tdur, tstart+0.45*tdur];
-    elseif strcmpi(tuningPeriod,'time5')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.2*tdur, tstart+0.5*tdur];
-    elseif strcmpi(tuningPeriod,'time6')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.25*tdur, tstart+0.55*tdur];
-    elseif strcmpi(tuningPeriod,'time7')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.3*tdur, tstart+0.6*tdur];
-    elseif strcmpi(tuningPeriod,'time8')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.35*tdur, tstart+0.65*tdur];
-    elseif strcmpi(tuningPeriod,'time9')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.4*tdur, tstart+0.7*tdur];
-    elseif strcmpi(tuningPeriod,'time10')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.45*tdur, tstart+0.75*tdur];
-    elseif strcmpi(tuningPeriod,'time11')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.5*tdur, tstart+0.8*tdur];
-    elseif strcmpi(tuningPeriod,'time12')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.55*tdur, tstart+0.85*tdur];
-    elseif strcmpi(tuningPeriod,'time13')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.6*tdur, tstart+0.9*tdur];
-    elseif strcmpi(tuningPeriod,'time14')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.65*tdur, tstart+0.95*tdur];
-    elseif strcmpi(tuningPeriod,'time15')
-        tstart = mt(trial,4)-timeDelay;
-        tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-        useWin(trial,:) = [tstart+0.7*tdur, tstart+1.0*tdur];
+        for unit = 1:size(sg,1)
+            ts = data.(useArray).units(unit).ts;
+            
+            %  the latency to account for transmission delays
+            ts = ts + latency;
+            
+            % how many spikes are in this window?
+            spikeCounts = sum(ts > useWin(trial,1) & ts <= useWin(trial,2));
+            fr(trial,unit) = spikeCounts./(useWin(trial,2)-useWin(trial,1)); % Compute a firing rate
+        end
     end
     
-% % % %          elseif strcmpi(tuningPeriod,'time1')
-% % % %             % this is an odd case. It's for looking at progression over the
-% % % %             % duration of the movement.
-% % % %     
-% % % %             % find duration of movement (add a bit to end of target
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %     
-% % % %             useWin(trial,:) = [tstart+0*tdur, tstart+0.3*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time2')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.1*tdur, tstart+0.4*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time3')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.2*tdur, tstart+0.5*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time4')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.3*tdur, tstart+0.6*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time5')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.4*tdur, tstart+0.7*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time6')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.5*tdur, tstart+0.8*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time7')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.6*tdur, tstart+0.9*tdur];
-% % % %         elseif strcmpi(tuningPeriod,'time8')
-% % % %             tstart = mt(trial,4)-timeDelay;
-% % % %             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart;
-% % % %             useWin(trial,:) = [tstart+0.7*tdur, tstart+tdur];
-% % % %         end
-    
-    for unit = 1:size(sg,1)
-        ts = data.(useArray).units(unit).ts;
-        
-        %  the latency to account for transmission delays
-        ts = ts + latency;
-        
-        % how many spikes are in this window?
-        spikeCounts = sum(ts > useWin(trial,1) & ts <= useWin(trial,2));
-        fr(trial,unit) = spikeCounts./(useWin(trial,2)-useWin(trial,1)); % Compute a firing rate
-    end
-end
-
-%% Now get direction for tuning
-if strcmpi(tuneDir,'target')
-    disp('Using target direction...')
-    theta = mt(:,1);
-elseif strcmpi(tuneDir,'movement')
-    disp('Using movement direction...')
-    
-    if strcmpi(tuningPeriod,'pre') || strcmpi(tuningPeriod,'time0') % in this case, use target direction
+    %% Now get direction for tuning
+    if strcmpi(tuneDir,'target')
         theta = mt(:,1);
-    else % find the net direction in the window
-        % compute force vector of hand
-        % - have net force and net velocity
-        % - use velocity from ~10 msec in past to compute present force vector
-        % - use these to find hand force vector
-        % - find angle and regress to that
-        
-        % calculate perturbation force
-        if strcmpi(data.meta.epoch,'ad') && strcmpi(data.meta.perturbation,'ff')
-            f_p = zeros(length(data.cont.t),2);
-            f_h = zeros(length(data.cont.t),2);
-            for i = 13:length(data.cont.t)
-                v = data.cont.vel(i-11,:);
-                t = atan2(data.cont.vel(i-11,2)-data.cont.vel(i-12,2),data.cont.vel(i-11,1)-data.cont.vel(i-12,1));
-                f_p(i,1) = 0.15.*sqrt(v(1).^2 + v(2).^2)*cos(t+(85*pi/180));
-                f_p(i,2) = 0.15.*sqrt(v(1).^2 + v(2).^2)*sin(t+(85*pi/180));
-                f_h(i,1) = data.cont.force(i,1)-f_p(i,1);
-                f_h(i,2) = data.cont.force(i,2)-f_p(i,2);
+    elseif strcmpi(tuneDir,'movement')
+        if strcmpi(tuningPeriod,'pre') || strcmpi(tuningPeriod,'time0') % in this case, use target direction
+            theta = mt(:,1);
+        else % find the net direction in the window
+            % compute force vector of hand
+            % - have net force and net velocity
+            % - use velocity from ~10 msec in past to compute present force vector
+            % - use these to find hand force vector
+            % - find angle and regress to that
+            
+            % calculate perturbation force
+            if strcmpi(data.meta.epoch,'ad') && strcmpi(data.meta.perturbation,'ff')
+                f_p = zeros(length(data.cont.t),2);
+                f_h = zeros(length(data.cont.t),2);
+                for i = 13:length(data.cont.t)
+                    v = data.cont.vel(i-11,:);
+                    t = atan2(data.cont.vel(i-11,2)-data.cont.vel(i-12,2),data.cont.vel(i-11,1)-data.cont.vel(i-12,1));
+                    f_p(i,1) = forceMag.*sqrt(v(1).^2 + v(2).^2)*cos(t+(forceDir*pi/180));
+                    f_p(i,2) = forceMag.*sqrt(v(1).^2 + v(2).^2)*sin(t+(forceDir*pi/180));
+                    f_h(i,1) = data.cont.force(i,1)-f_p(i,1);
+                    f_h(i,2) = data.cont.force(i,2)-f_p(i,2);
+                end
+            else
+                f_h = data.cont.force;
             end
-        else
-            f_h = data.cont.force;
+            
+            try
+                theta = zeros(size(mt,1),1);
+                theta_hand = zeros(size(mt,1),1);
+                for trial = 1:size(mt,1)
+                    idx = data.cont.t > useWin(trial,1) & data.cont.t <= useWin(trial,2);
+                    usePos = data.cont.pos(idx,:);
+                    theta(trial) = atan2(usePos(end,2)-usePos(1,2),usePos(end,1)-usePos(1,1));
+                    
+                    useHand = f_h(idx,:);
+                    theta_hand(trial) = atan2(mean(useHand(:,2)),mean(useHand(:,1)));
+                end
+            catch
+                theta_hand(trial) = NaN;
+            end
         end
         
-        theta = zeros(size(mt,1),1);
-        theta_hand = zeros(size(mt,1),1);
+    else
+        error('tuning direction not recognized');
+    end
+    % get mean force and velocity in that window
+    if isfield(data.cont,'force') && ~isempty(data.cont.force)
+        force = zeros(size(mt,1),2);
+        vel = zeros(size(mt,1),2);
         for trial = 1:size(mt,1)
             idx = data.cont.t > useWin(trial,1) & data.cont.t <= useWin(trial,2);
-            usePos = data.cont.pos(idx,:);
-            theta(trial) = atan2(usePos(end,2)-usePos(1,2),usePos(end,1)-usePos(1,1));
-
-            useHand = f_h(idx,:);
-            theta_hand(trial) = atan2(mean(useHand(:,2)),mean(useHand(:,1)));
+            useForce = data.cont.force(idx,:);
+            force(trial,:) = rms(useForce,1);
+            
+            % THIS IS A SHIFT
+            %                 disp(' ');
+            %                 disp('%%%%%%%%%%%%%');
+            %                 disp(' HEY BITCHES! IN getFR! THERES A SHIFT! ');
+            %                 disp(' %%%%%%%%%%%%');
+            %                 disp(' ');
+            %                 idx = find(idx) - 20;
+            useVel = data.cont.vel(idx,:);
+            vel(trial,:) = rms(useVel,1);
+            
         end
-        
-        
-        % get mean force and velocity in that window
-        if isfield(data.cont,'force') && ~isempty(data.cont.force)
-            force = zeros(size(mt,1),2);
-            vel = zeros(size(mt,1),2);
-            for trial = 1:size(mt,1)
-                idx = data.cont.t > useWin(trial,1) & data.cont.t <= useWin(trial,2);
-                useForce = data.cont.force(idx,:);
-                force(trial,:) = rms(useForce,1);
-                
-                % THIS IS A SHIFT
-                %                 disp(' ');
-                %                 disp('%%%%%%%%%%%%%');
-                %                 disp(' HEY BITCHES! IN getFR! THERES A SHIFT! ');
-                %                 disp(' %%%%%%%%%%%%');
-                %                 disp(' ');
-                %                 idx = find(idx) - 20;
-                useVel = data.cont.vel(idx,:);
-                vel(trial,:) = rms(useVel,1);
-
-            end
-        else
-            force = [];
-            vel = [];
-        end
-        clear t usePos movedir;
+    else
+        force = [];
+        vel = [];
     end
-else
-    error('tuning direction not recognized');
-end
-
-% theta = wrapAngle(theta,0); % make sure it goes from [-pi,pi)
-
-if doBinAngles % put in bins for regression
-    theta = binAngles(theta,angleBinSize);
+    clear t usePos movedir;
+    
+    % theta = wrapAngle(theta,0); % make sure it goes from [-pi,pi)
+    
+    if doBinAngles % put in bins for regression
+        theta = binAngles(theta,angleBinSize);
+    end
+    
+    outFR{iBlock} = fr;
+    outTheta{iBlock} = theta;
+    outForce{iBlock} = force;
+    outVel{iBlock} = vel;
 end
 

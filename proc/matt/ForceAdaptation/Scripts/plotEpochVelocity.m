@@ -70,11 +70,11 @@ for iEpoch = 2
             ind = 3;
         end
         
-        fn = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},[doFiles{iFile,4} '_' doFiles{iFile,3} '_' epochs{iEpoch} '_' doFiles{iFile,2} '.mat']);
-        data = load(fn);
+        data = loadResults(root_dir,doFiles(iFile,:),'data',[],epochs{iEpoch});
         c = data.cont;
-        
-        [mt,~] = filterMovementTable(data,'movement',true,3,false);
+         
+        [mt,~] = filterMovementTable(data,data.params,true,false);
+        mt = mt{end};
         
         getMoves = zeros(size(mt,1),1000);
         for iMove = 1:size(mt,1)

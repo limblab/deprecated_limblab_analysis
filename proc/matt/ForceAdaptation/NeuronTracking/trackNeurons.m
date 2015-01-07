@@ -1,4 +1,4 @@
-function tracking = trackNeurons(criteria,arrays,varargin)
+function tracking = trackNeurons(params,varargin)
 % TRACKNEURONS  Run empirical KS test to check for stability of neurons
 %
 %   This function will allow you to track cells across files, sessions, or
@@ -26,17 +26,17 @@ if length(varargin) == 1
     varargin = varargin{1};
 end
 
-dataPath = varargin{1}.meta.out_directory;
-useDate = varargin{1}.meta.recording_date;
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the analysis parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-paramFile = fullfile(dataPath, [ useDate '_analysis_parameters.dat']);
-params = parseExpParams(paramFile);
-confLevel = str2double(params.tracking_confidence_level{1});
-clear params;
+arrays = params.exp.arrays;
+criteria = params.tracking.criteria;
+confLevel = params.tracking.trackingConfidenceLevel;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if ~iscell(criteria)
+    criteria = {criteria};
+end
 
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};

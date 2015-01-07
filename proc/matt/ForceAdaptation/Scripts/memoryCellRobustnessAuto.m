@@ -67,8 +67,8 @@ end
 reassignOthers = true;
 paramSetNames = {'movement'};
 paramSetName = 'movement';
-tuningPeriod = 'onpeak';
-tuningMethod = 'regression';
+tuneWindow = 'onpeak';
+tuneMethod = 'regression';
 
 rewriteFiles  = 1;
 
@@ -80,18 +80,10 @@ for i = 1:3
     
     getData = [];
     for iFile = 1:size(doFiles,1)
-        classFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_classes_' doFiles{iFile,2} '.mat']);
-        classes = load(classFile);
-        
-        classes = classes.(tuningMethod).(tuningPeriod).(useArray);
-        c =  classes.classes(all(classes.istuned,2));
-        
-        tuningFile = fullfile(root_dir,doFiles{iFile,1},doFiles{iFile,2},paramSetName,[doFiles{iFile,4} '_' doFiles{iFile,3} '_tuning_' doFiles{iFile,2} '.mat']);
-        tuning = load(tuningFile);
-        
-        tunedCells = classes.tuned_cells;
-        
-        t=tuning.(tuningMethod).(tuningPeriod).(useArray).tuning;
+        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+
+        tunedCells = c.tuned_cells;
+        c =  c.classes(all(c.istuned,2));
         
         sg_bl = t(classifierBlocks(1)).sg;
         sg_ad = t(classifierBlocks(2)).sg;

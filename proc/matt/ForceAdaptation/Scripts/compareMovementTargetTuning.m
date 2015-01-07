@@ -1,24 +1,15 @@
 % This file will compare how individual cells are classified across days to
 % compare behavior under different experimental conditions
-
 clear;
 clc;
 
 rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-saveData = true;
-rewriteFiles = false;
-
-classifierBlocks = [1 4 6];
 
 monkey = 'Mihili';
 useArray = 'M1';
 paramSetName = 'movement';
 tuneMethod = 'regression';
-tunePeriod = 'initial';
-
-% paramSetName = 'glm';
-% tuneMethod = 'glm';
-% tunePeriod = 'full';
+tuneWindow = 'onpeak';
 
 dataSummary;
 
@@ -69,17 +60,18 @@ for iDay = 1:length(goodDates)
     % get movement data
     paramSetName = 'movement';
     
-    % load the class data
-    classes = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
-    tuning = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']),tuneMethod);
+    % load the tuning data
+    [t,classes] = loadResults(root_dir,{monkey,useDate,adaptType,taskType},'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+    
+    classifierBlocks = classes.params.classes.classifierBlocks;
     
     % get the classes for the current cell
-    sg = classes.(tuneMethod).(tunePeriod).(useArray).sg;
-    c = classes.(tuneMethod).(tunePeriod).(useArray).classes(:,1);
-    istuned = classes.(tuneMethod).(tunePeriod).(useArray).istuned;
+    sg = classes.sg;
+    c = classes(:,1);
+    istuned = classes.istuned;
     
-    t_bl = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(1));
-    t_ad = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(2));
+    t_bl = t(classifierBlocks(1));
+    t_ad = t(classifierBlocks(2));
     
     getClasses = -1*ones(size(c));
     getAdapts = cell(size(c));
@@ -134,17 +126,18 @@ for iDay = 1:length(goodDates)
     % get movement data
     paramSetName = 'target';
     
-    % load the class data
-    classes = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_classes_' useDate '.mat']));
-    tuning = load(fullfile(dataPath,paramSetName,[taskType '_' adaptType '_tuning_' useDate '.mat']),tuneMethod);
+    % load the tuning data
+    [t,classes] = loadResults(root_dir,{monkey,useDate,adaptType,taskType},'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+    
+    classifierBlocks = classes.params.classes.classifierBlocks;
     
     % get the classes for the current cell
-    sg = classes.(tuneMethod).(tunePeriod).(useArray).sg;
-    c = classes.(tuneMethod).(tunePeriod).(useArray).classes(:,1);
-    istuned = classes.(tuneMethod).(tunePeriod).(useArray).istuned;
+    sg = classes.sg;
+    c = classes(:,1);
+    istuned = classes.istuned;
     
-    t_bl = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(1));
-    t_ad = tuning.(tuneMethod).(tunePeriod).(useArray).tuning(classifierBlocks(2));
+    t_bl = t(classifierBlocks(1));
+    t_ad = t(classifierBlocks(2));
     
     getClasses = -1*ones(size(c));
     getAdapts = cell(size(c));
