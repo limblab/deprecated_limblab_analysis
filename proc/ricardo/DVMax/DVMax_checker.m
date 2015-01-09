@@ -11,9 +11,20 @@ function DVMax_checker()
     time = time(4);
     
     conn = database('OR','dvmax_lmiller','dvmax','Vendor','Oracle',...
-        'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521);
+        'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521);    
+    try
+        load('animalList')
+        oldAnimalList = animalList;
+    end
     animalList = load_animal_list(MonkeyWaterLocation);
+    save('animalList','animalList')
+    
     peopleList = load_people_list(MonkeyWaterLocation);
+    ccmList = load_ccm_list(MonkeyWaterLocation);
+    
+    if ~isequal(animalList,oldAnimalList)
+        send_monkey_person_email(animalList,peopleList,ccmList)
+    end
     
     [~,weekend_water_xls,~] = xlsread(MonkeyWaterLocation,3);   
     weekendWaterList = weekend_water_xls(2:end,2:end);
@@ -228,6 +239,15 @@ function peopleList = load_people_list(MonkeyWaterLocation)
     end 
 end
 
+function ccmList = load_ccm_list(MonkeyWaterLocation)
+    [~,ccm_xls,~] = xlsread(MonkeyWaterLocation,5);
+    for iPerson = 2:size(ccm_xls,1)
+        for iCol = 1:size(ccm_xls,2)
+            eval(['ccmList(iPerson-1).' ccm_xls{1,iCol} ' = ''' ccm_xls{iPerson,iCol} ''';'])
+        end  
+    end 
+end
+
 % function weekendList = load_weekend_list(MonkeyWaterLocation)    
 %     [~,weekend_xls,~] = xlsread(MonkeyWaterLocation,3);   
 %     weekendList = weekend_xls(2:end,2:end);
@@ -398,4 +418,19 @@ function monkey_final_list(animalList,peopleList,testing)
             end
         end
     end    
+end
+
+function send_monkey_person_email(animalList,peopleList,ccmList)
+    subject = 'NHP caretaker list update';
+    message_table = {};
+    for iAnimal = 1:length(animalList)
+        temp = length([animalList(iAnimal).animalID ' - ' animalList(iAnimal).animalName ':']);
+        message_table{iAnimal} = [animalList(iAnimal).animalID ' - ' animalList(iAnimal).animalName ':' repmat(' ',1,25-temp) animalList(iAnimal).personInCharge...
+            ' (' animalList(iAnimal).contactEmail '), ' animalList(iAnimal).secondInCharge ' (' animalList(iAnimal).secondarycontactEmail ')'];   
+    end
+    message = [{'Hi everyone, '} {''} {'This is the current list of monkeys and their caretakers from the Miller lab. You will automatically receive '...
+        'a new email whenever this list changes.'} {''} message_table {''} {'If you don''t want to receive these emails anymore please email Ricardo (ricardort@gmail.com).'}...
+        {''} {'Best regards,'} {'Miller Lab'}];
+    recepients = [{ccmList.contactEmail} {peopleList.contactEmail}];
+    send_mail_message(recepients,subject,message)
 end
