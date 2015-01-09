@@ -35,7 +35,7 @@ for iEMG = 1:length(RP.BMI.emgnames)
         ylabel('EMG (au)')
         title(['Perturbation direction: ' num2str(round(RP.perturbation_directions(iDir)*180/pi))...
             '^o. ' strrep(RP.BMI.emgnames{iEMG},'_',' ')],'Interpreter','tex')
-        set(params.fig_handles(end),'Name',['EMG movement ' strrep(RP.BMI.emgnames{iEMG},'_',' ')]) 
+        set(params.fig_handles(end),'Name',['Predicted EMG movement ' strrep(RP.BMI.emgnames{iEMG},'_',' ')]) 
         legend(legend_str)
 
     end
@@ -59,7 +59,6 @@ end
         sem_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));        
         for iFreq = 1:length(RP.perturbation_frequencies)  
             idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});            
-            emg_temp = RP.emg_pert_bmi(idx,:,iEMG);
             emg_temp = RP.emg_cocontraction_bmi_bi_tri(idx,:);
             mean_emg(iFreq,:) = mean(emg_temp);
             sem_emg(iFreq,:) = 1.96*std(emg_temp)/sqrt(size(emg_temp,1));           
@@ -137,7 +136,7 @@ for iEMG = 1:size(RP.emg_bump,3)
                 title({[strrep(RP.BMI.emgnames{iEMG},'_',' ') '. Bump: ' num2str(RP.bump_directions(iBump)*180/pi) '^o. '...
                     'Movement: ' num2str(mod(180+round(RP.perturbation_directions(iDir)*180/pi),360))...
                     '^o.'];[bump_str '. ' ]},'Interpreter','tex');
-                set(params.fig_handles(end),'Name',['EMG bump ' strrep(RP.BMI.emgnames{iEMG},'_',' ') ' Bump '...
+                set(params.fig_handles(end),'Name',['Predicted EMG bump ' strrep(RP.BMI.emgnames{iEMG},'_',' ') ' Bump '...
                     num2str(round(RP.bump_directions(iBump)*180/pi))]) 
                 legend(legend_str)
             end

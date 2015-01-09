@@ -26,10 +26,11 @@ function RP = RP_create_struct(bdf,params)
 %                 temp(:,1) = temp(:,1)+.05*remove_idx;
                 temp(:,1) = temp(:,1)-temp(1,1)+.05;
             end
-            temp(:,1) = temp(:,1)+BMI_data(end,1)+1.1; % Add one second in between files
+            temp(:,1) = temp(:,1)+BMI_data(end,1)+1.05; % Add one second in between files
             BMI_data = [BMI_data ; temp];
             clear temp
         end
+        BMI_data(:,1) = BMI_data(:,1)+.05;
         BMI_data(find(diff(BMI_data(:,1))==0)+1,:) = [];
         new_time_vector = 1:RP.BMI.dt:bdf.pos(end,1);
         new_BMI_data = zeros(length(new_time_vector),size(BMI_data,2));
@@ -76,7 +77,9 @@ function RP = RP_create_struct(bdf,params)
     else
         RP.perturbation_amplitudes_colors = jet(length(RP.perturbation_amplitudes));
     end
-    if length(RP.perturbation_frequencies) == 2
+    if length(RP.perturbation_frequencies) == 1
+        RP.perturbation_frequency_colors = [.8 0 0];
+    elseif length(RP.perturbation_frequencies) == 2
         RP.perturbation_frequency_colors = [.8 0 0; 0 0 .8];
     else
         RP.perturbation_frequency_colors = copper(length(RP.perturbation_frequencies));
@@ -403,7 +406,7 @@ function RP = RP_create_struct(bdf,params)
     if isfield(bdf,'emg')
         RP.emg = zeros(length(bdf.emg.emgnames),length(bdf.pos(:,1)));
         RP.emg_pert = zeros([size(RP.pert_idx_table) length(bdf.emg.emgnames)]);       
-        RP.emg_bump = zeros([size(RP.bump_idx_table) length(bdf.emg.emgnames)]);  
+        RP.emg_bump = zeros([size(RP.bump_idx_table) length(bdf.emg.emgnames)]);          
         RP.emg_pert_raw = zeros([size(RP.pert_idx_table) length(bdf.emg.emgnames)]);       
         RP.emg_bump_raw = zeros([size(RP.bump_idx_table) length(bdf.emg.emgnames)]);
         [b_lp,a_lp] = butter(4,10/(bdf.emg.emgfreq/2));        
@@ -438,24 +441,27 @@ function RP = RP_create_struct(bdf,params)
     end
     
     if isfield(RP,'BMI')
-        emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'EMG')));
+        emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'EMG')));        
         RP.BMI.emgnames = RP.BMI.params.headers(emg_idx);
         RP.emg_pert_bmi = zeros([size(RP.pert_idx_table_bmi) length(RP.BMI.emgnames)]);       
-        RP.emg_bump_bmi = zeros([size(RP.bump_idx_table_bmi) length(RP.BMI.emgnames)]);        
+        RP.emg_bump_bmi = zeros([size(RP.bump_idx_table_bmi) length(RP.BMI.emgnames)]);       
+        RP.cocontraction_pert_bmi = zeros([size(RP.pert_idx_table_bmi) length(RP.BMI.emgnames)]);
         for iEMG = 1:length(RP.BMI.emgnames)
             emg = RP.BMI.data(:,emg_idx(iEMG));
             RP.emg_pert_bmi(:,:,iEMG) = emg(RP.pert_idx_table_bmi);
-            RP.emg_bump_bmi(:,:,iEMG) = emg(RP.bump_idx_table_bmi);
+            RP.emg_bump_bmi(:,:,iEMG) = emg(RP.bump_idx_table_bmi);            
         end
-        RP.emg_cocontraction_bmi_bi_tri = zeros(size(RP.pert_idx_table_bmi));
-        emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.emgnames,'BI')));
-        emg_idx = [emg_idx find(~cellfun(@isempty,strfind(RP.BMI.emgnames,'TRI')))];
-        
-        temp_1 = RP.emg_pert_bmi(:,:,emg_idx(1))./RP.emg_pert_bmi(:,:,emg_idx(2));
-        temp_2 = RP.emg_pert_bmi(:,:,emg_idx(2))./RP.emg_pert_bmi(:,:,emg_idx(1));
-        temp = min(temp_1,temp_2);
-        
-        RP.emg_cocontraction_bmi_bi_tri = temp .* (RP.emg_pert_bmi(:,:,emg_idx(1)) + ...
-            RP.emg_pert_bmi(:,:,emg_idx(2)));
+        cocontraction_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'cocontraction')));    
+        cocontraction = RP.BMI.data(:,cocontraction_idx); %#ok<FNDSB>
+%         emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.emgnames,'BI')));
+%         emg_idx = [emg_idx find(~cellfun(@isempty,strfind(RP.BMI.emgnames,'TRI')))];
+%         
+%         temp_1 = RP.emg_pert_bmi(:,:,emg_idx(1))./RP.emg_pert_bmi(:,:,emg_idx(2));
+%         temp_2 = RP.emg_pert_bmi(:,:,emg_idx(2))./RP.emg_pert_bmi(:,:,emg_idx(1));
+%         temp = min(temp_1,temp_2);
+%         
+%         RP.emg_cocontraction_bmi_bi_tri = temp .* (RP.emg_pert_bmi(:,:,emg_idx(1)) + ...
+%             RP.emg_pert_bmi(:,:,emg_idx(2)));
+        RP.emg_cocontraction_bmi_bi_tri = cocontraction(RP.pert_idx_table_bmi);
     end
 end 

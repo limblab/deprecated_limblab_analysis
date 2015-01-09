@@ -60,14 +60,14 @@ end
         mean_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert));
         sem_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert));        
         for iFreq = 1:length(RP.perturbation_frequencies)  
-            idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});            
-            emg_temp = RP.emg_pert(idx,:,iEMG);
+            idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});                        
             emg_temp = RP.emg_cocontraction_bi_tri(idx,:);
             mean_emg(iFreq,:) = mean(emg_temp);
             sem_emg(iFreq,:) = 1.96*std(emg_temp)/sqrt(size(emg_temp,1));
             plot(RP.t_pert,mean_emg(iFreq,:),'Color',RP.perturbation_frequency_colors(iFreq,:))
             errorarea(RP.t_pert,mean_emg(iFreq,:),...
                 sem_emg(iFreq,:),RP.perturbation_frequency_colors(iFreq,:),.5);
+            plot(RP.t_pert([1 end]),repmat(mean(mean_emg(iFreq,:)),1,2),'--','Color',RP.perturbation_frequency_colors(iFreq,:))
             legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
             ' Hz.']}];
         end

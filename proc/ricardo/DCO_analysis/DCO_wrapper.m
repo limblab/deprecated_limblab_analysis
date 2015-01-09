@@ -1,5 +1,5 @@
 % params.DCO_file_prefix = 'Ricardo_2014-09-11_DCO_iso_ruiz';
-params.DCO_file_prefix = 'Chewie_2014-11-26_DCO_iso_hu';
+params.DCO_file_prefix = 'Chewie_2014-12-03_DCO_iso_hu';
 % target_folder = ['D:\Data\TestData\' params.DCO_file_prefix];
 target_folder = ['D:\Data\Chewie_8I2\' params.DCO_file_prefix];
 % target_folder = ['D:\Data\Kevin_12A2\Data\' params.DCO_file_prefix];

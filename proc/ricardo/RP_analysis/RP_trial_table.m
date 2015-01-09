@@ -41,6 +41,10 @@ tc.stiffness = iCol; iCol=iCol+1;
 tc.damping = iCol; iCol=iCol+1;
 tc.hold_target_radius = iCol; iCol=iCol+1;
 tc.early_bump = iCol; iCol=iCol+1;
+if databurst_version >= 3
+    tc.cocontraction_level = iCol; iCol=iCol+1;
+    tc.cocontraction_window = iCol; iCol=iCol+1;
+end
 
 start_trial_code = hex2dec('1F');
 end_code = hex2dec('20');
@@ -146,6 +150,10 @@ for iTrial = 1:num_trials
             trial_table(iTrial,tc.damping) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
             trial_table(iTrial,tc.hold_target_radius) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
             trial_table(iTrial,tc.early_bump) = bdf.databursts{iTrial,2}(temp_idx(1)); temp_idx = temp_idx+1;
+        end
+        if (databurst_version >= 3)
+            trial_table(iTrial,tc.cocontraction_level) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            trial_table(iTrial,tc.cocontraction_window) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
         end
     end        
 end
