@@ -44,11 +44,13 @@ function VAFstruct=batchAnalyzeECoGv7(infoStruct,signalToDecode,FPsToUse,paramSt
 %                                   H
 %                                   P
 %
-% a common paramStructIn might be:
+% a common paramStructIn might be (updated 01-15-2014):
 %
-%   paramStructIn=struct('PolynomialOrder',3,'folds',10,'numlags',10, ...
+%   paramStructIn=struct('PolynomialOrder',3,'folds',11,'numlags',10, ...
 %       'wsz',[256 512],'nfeat',6:6:(6:N),'smoothfeats',0:20:500, ...
-%       'binsize',[0.05 0.1],'fpSingle',0,'zscore',[0 1],'lambda',1);
+%       'binsize',[0.05 0.1],'fpSingle',0,'zscore',[0 1], ...
+%       'lambda',[0 1 2:2:10],'bands','1 2 3 4 5 6','random',0, ...
+%       'classify',struct('eventsToUse',[nan(1,4) 1 1]));
 %
 % for a parameter search.  In reality, any numerical value in paramStructIn
 % can be a scalar or a vector.  To use all the features, make
@@ -57,6 +59,12 @@ function VAFstruct=batchAnalyzeECoGv7(infoStruct,signalToDecode,FPsToUse,paramSt
 % scalar-valued paramStructIn.nfeat, as otherwise the code will experience
 % a Known Issue, and loop several times at the real max value for the file
 % until it would have made it up to the requested max value by iterating.
+%
+% 01-15-2014: the 'classify' field has been added to paramStructIn.
+% Currently its only contents are 1 sub-field, 'eventsToUse'.  The
+% size and composition of paramStructIn.classify.eventsToUse is dependent
+% on the events file, which is to be found at the appropriate path
+% indicated by infoStruct(n).eventsPath
 %
 % in v2, the paramStructIn was added
 % in v3, artifact rejection utilizing remove_artifact.m was added for
@@ -68,8 +76,10 @@ function VAFstruct=batchAnalyzeECoGv7(infoStruct,signalToDecode,FPsToUse,paramSt
 % in v6, we added the option to do a validation pass (using
 % predictionsfromfp8.m).
 % in v7, force and CG data can be combined.  Also, eventually
-%   will update to predictionsfromfp9.m, which does separate
+%   uses predictionsfromfp9.m, which does separate
 %   feature selection for each fold.  Also, a CAR is used by default.
+%   update (01-15-2014): v7 now also permits the use of a classifier, for
+%   analyzing combined kinematic-kinetic data.
 %
 % KEY to input parameter signalToDecode:
 %
