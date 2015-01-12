@@ -342,6 +342,15 @@ toc
 tic
 % Select best Nfeat freq band/channel combos based on R2 value c/w 1st component
 % of y
+%  this optioning is obviously terrible & needs to be changed.  But since
+%  I've already moved on to v9, it might not be worth the trouble to come
+%  up with an intelligent way of including the option.
+do_it=0;
+if do_it==1
+    [coeff_PB,PB,variances_PB]=PBtoPC(PB,nfeat,0);
+    assignin('base','coeff_PB',coeff_PB)
+    assignin('base','PB',PB)
+end
 
 if ~exist('nfeat','var')
     nfeat=100;
@@ -442,6 +451,8 @@ end
 [~,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
 % the default operation of sortrows is to sort first on column 1, then do a
 % secondary sort on column 2, which is exactly what we want, so we're done.
+
+% comment this for PCA test.
 x=x(:,sortInd);
 assignin('base','x',x)
 assignin('base','y',y)
@@ -479,6 +490,13 @@ assignin('base','y',y)
 %     else
 %         r2(j)=r{j}^2;
 %     end
+% end
+
+% this was for the 'templates' test
+% try
+%     H=evalin('base','H_UCI6_file1'); varargin{5}=H;
+% catch
+%     disp('couldn''t find H in base workspace.  creating a new one...')
 % end
 
 for i = 1:(folds-1)    
@@ -554,7 +572,7 @@ for i = 1:(folds-1)
         end
     end
     
-    vaftr(i,:)=v/100; %Divide by 100 because v is in percent
+    vaftr=[]; % vaftr(i,:)=v/100; %Divide by 100 because v is in percent
     vaf(i,:)=RcoeffDet(y_pred{i},ytnew{i});
     vaf_vald(i+1,:)=RcoeffDet(y_pred_vald{i},ytnew_vald{i});
     for j=1:size(y,2)
@@ -576,7 +594,7 @@ assignin('base','H',H)
 
 vmean=mean(vaf);
 vsd=std(vaf,0,1);
-vaftrm=mean(vaftr);
+vaftrm=[]; % vaftrm=mean(vaftr);
 r2mean=mean(r2);
 r2sd=std(r2);
 

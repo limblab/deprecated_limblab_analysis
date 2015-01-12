@@ -608,6 +608,15 @@ for i = 1:(folds-1)
                 y_pred_class{i}(1,2)= ...
                     y_pred{i}(find(strcmp(classResults{i},'no Force'),1,'first'),2);
             end
+            % add a column that is comprise of 'either force or movement,
+            % whatever is chosen by the classifier'.  So it will be a
+            % column of 'right'-ly predicted values, with no values that
+            % were predicted when the switch was in the other direction.
+            y_pred_class{i}(1,3)=y_pred{i}(1,1);
+            % since the 3rd column was added to y_pred_class, we must also
+            % add a 3rd column to ytnew, so as to have something
+            % approcpriate to which we can compare
+            ytnew{i}(1,3)=ytnew{i}(1,1);
         else
             % first point is a movement point.  Simply the converse of the
             % above scenario.  Use the real prediction for movement
@@ -621,6 +630,13 @@ for i = 1:(folds-1)
                 y_pred_class{i}(1,1)= ...
                     y_pred{i}(find(strcmp(classResults{i},'Force'),1,'first'),1);
             end
+            % add a column that is comprise of 'either force or movement,
+            % whatever is chosen by the classifier'.  So it will be a
+            % column of 'right'-ly predicted values, with no values that
+            % were predicted when the switch was in the other direction.
+            y_pred_class{i}(1,3)=y_pred{i}(1,2);
+            % add a third column to ytnew to have a proper comparison
+            ytnew{i}(1,3)=ytnew{i}(1,2);
         end
         for ypredind=2:size(y_pred{i},1)
             if strcmp(classResults{i}{ypredind},'Force')
@@ -631,10 +647,18 @@ for i = 1:(folds-1)
                 y_pred_class{i}(ypredind,2)=y_pred_class{i}(ypredind-1,2);
                 % or instead of cutting off motion, smooth predictions.
                 % y_pred_class{i}(ypredind,2)=mean(y_pred_class{i}(1:ypredind-1,2));
+                % finally, the 3rd column for only 'in-class' predictions.
+                y_pred_class{i}(ypredind,3)=y_pred{i}(ypredind,1);
+                % account for ytnew
+                ytnew{i}(ypredind,3)=ytnew{i}(ypredind,1);
             else
                 % reverse situation.  leave force alone
                 y_pred_class{i}(ypredind,1)=y_pred_class{i}(ypredind-1,1);
                 y_pred_class{i}(ypredind,2)=y_pred{i}(ypredind,2);
+                % 3rd column will contain movement data
+                y_pred_class{i}(ypredind,3)=y_pred{i}(ypredind,2);
+                % and its associated comparison
+                ytnew{i}(ypredind,3)=ytnew{i}(ypredind,2);
             end            
         end
         vaf_combined(i,:)=RcoeffDet(y_pred_class{i},ytnew{i});
