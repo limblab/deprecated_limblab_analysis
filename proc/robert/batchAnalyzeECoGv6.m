@@ -67,6 +67,22 @@ function VAFstruct=batchAnalyzeECoGv6(infoStruct,signalToDecode,FPsToUse,paramSt
 % in v5, added a scan for a lambda vector in the input parameters.
 % in v6, we added the option to do a validation pass (using
 % predictionsfromfp8.m).
+% note: as of 01-15-2014, there have (unwisely) been some post-v7 mods to
+% this code.  The biggest, in terms of lines of code, is what amounts to a
+% trivial reshuffling of where behavioral data gets processed.  In the
+% current state, it comes from getSigFromBCI2000.m just like in v7.  But
+% the operation should be exactly the same, so that's not actually an
+% *important* change.  There's also CAR in the current version, but that's
+% a 1 lines comment/un-comment situation.  The most *actually* important
+% change is that right now this code is using v9 of the predictions code,
+% instead of version 8v2.  8v2 was about causality if I recall, and v9 is
+% about making it more honest by putting the feature selection into the
+% cross-validation code, so that (potentially) different features are
+% selected for each fold.  Check that carefully when running this code, if
+% you want to go back to older behavior, it might be necessary to go back
+% to predictions 8v2.  Note that if you DO go back, you'll need to
+% eliminate out output from the predictions call, since v9 has one more
+% output than 8v2.
 %
 % KEY to input parameter signalToDecode:
 %
@@ -142,6 +158,7 @@ for fileInd=1:length(infoStruct)
         end
     elseif regexp(infoStruct(fileInd).path,'\.dat')
         [signal,states,parameters,~]=load_bcidat(infoStruct(fileInd).path); %#ok<*ASGLU>
+        if ~isa(signal,'double'), signal=double(signal); end
         BCI2000signal=signal;
     end
     % if something is done to cg (portion of the signal cut short to
@@ -169,8 +186,9 @@ for fileInd=1:length(infoStruct)
     else
         fp=fp';
     end
-    % CAR?
-    % fp=bsxfun(@minus,fp,mean(fp,1));
+    % CAR.  fp has been cut down by this point, according to
+    % infoStruct.montage
+    fp=bsxfun(@minus,fp,mean(fp,1));
     
     % baseline subtract
     %  fp=bsxfun(@minus,fp,mean(fp,2));
@@ -212,67 +230,10 @@ for fileInd=1:length(infoStruct)
     
     % assign and condition behavioral signals.
     if strcmpi(signalToDecode,'CG')
-        for i=1:22
-            cg(:,i)=eval(['states.GloveSensor',int2str(i)]);
-        end
-        clear i
-        % make sure and delete outrageously large deviations
-        % within the signals, often occurring at the beginning of files.
-        % Also, employ this for EMGs after filtering/rectification/etc.
-        cg=single(cg(:,infoStruct(fileInd).CG.channels))';
-        cgz=zscore(cg')'; clear cg
-        %Remove the noise "pops" that occur from using >1 file, or just inherent
-        %noise from the sensors, by interpolating in the parts that are >2SDs from
-        %the mean
-        %Do each channel separately in case they are different on different
-        %channels
-        cgnew=cgz;
-        for j=1:size(cgz,1)
-            clear badinds badepoch badstartinds badendinds
-            badinds=find(abs(cgz(j,:))>3);
-            if ~isempty(badinds)
-                badepoch=find(diff(badinds)>1);
-                badstartinds=[badinds(1) badinds(badepoch+1)];
-                badendinds=[badinds(badepoch) badinds(end)];
-                if badendinds(end)==length(cgnew)
-                    badendinds(end)=badendinds(end)-1;
-                end
-                if badstartinds(1)==1
-                    %If at the very beginning of the file need a 0 at start of file
-                    cgnew(j,1)=cgnew(j,badendinds(1)+1);
-                    badstartinds(1)=2;
-                end
-                for i=1:length(badstartinds)
-                    cgnew(j,badstartinds(i):badendinds(i))=interp1([(badstartinds(i)-1) ...
-                        (badendinds(i)+1)],[cgnew(j,badstartinds(i)-1) ...
-                        cgnew(j,badendinds(i)+1)], (badstartinds(i):badendinds(i)));
-                end
-            else
-                cgnew(j,:)=cgz(j,:);
-            end
-        end
-        cgz=cgnew;
-        clear cgnew
-        
-        [~,scores,variances,~] = princomp(cgz');
-        
-        % to determine how many components to use, find the # that account for
-        % >= 90% of the variance.
-        % FOR POSITION THE FUNCTION EXPECTS A TIME VECTOR PREPENDED
-        temp=cumsum(variances/sum(variances));
-        %         positionData=[rowBoat(analog_times), scores(:,1:find(temp >= 0.9,1,'first'))];
-        positionData=[rowBoat(analog_times), scores(:,1:3)];
-        fprintf(1,'Using %d PCs, which together account for\n',size(positionData,2)-1)
-        %         fprintf(1,'Using %d PCs, which together account for\n',size(positionData,2)-1)
-        fprintf(1,'%.1f%% of the total variance in the PC signal\n', ...
-            100*temp(size(positionData,2)-1))
-        
-        %         sig=[positionData(:,1:2), atan2(positionData(:,3),positionData(:,3))];
-        sig=positionData; % 'position'
-        % if you want to try velocity you're going to have to smooth the
-        % position signal first; probably with a wide window since the
-        % position signal is full of little discontinuous jumps (because
-        % it's only sampled every 50msec!).
+        [sig,CG]=getSigFromBCI2000(BCI2000signal,states, ...
+            parameters,signalToDecode);
+        % TODO: add option to read in automatically which CG you want to
+        % use, if it's not the PCA output.
     end
     
     if strcmp(signalToDecode,'force')
@@ -280,6 +241,9 @@ for fileInd=1:length(infoStruct)
         %         forceSignal=filtfilt(bh,ah, ...
         %             double(BCI2000signal(:,strcmpi(parameters.ChannelNames.Value,'force'))));
         forceSignal=double(BCI2000signal(:,strcmpi(parameters.ChannelNames.Value,'force')));
+        if isempty(forceSignal)
+            forceSignal=double(BCI2000signal(:,strcmpi(parameters.ChannelNames.Value,'ainp1')));
+        end
         % smooth force signal.  Takes place below in the loop, to take
         % advantage of the varying smoothing spans possible.  But,
         % forceSignal has to be determined up here, out of the loop.
