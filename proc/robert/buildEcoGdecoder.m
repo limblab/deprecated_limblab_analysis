@@ -19,9 +19,9 @@ clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
 clear N_KsectionInterp R badChanF bandsToUse existingFigTags files rangeThresh
 %% define constants.
 
-SIGNALTOUSE='force';
+% SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
-% SIGNALTOUSE='CG';
+SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
@@ -87,18 +87,20 @@ set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
 % also, plot a cut-down version of the raw fp signals.
 % first, scale the signals so that they will appear 
 % separated by a nice amount.
+fptimes=(1:size(signal,1))/samprate;
 fpCut=(signal(1:100:end,FPIND)')./mean(signalRange); 
+fpCutTimes=fptimes(1:100:end);
 % so as to scale nicely for plotting
 fpCutFig=figure; set(fpCutFig,'Units','normalized','OuterPosition',[0 0 1 1])
-fpCutAx=axes('Position',[0.0319    0.0297    0.9556    0.9636], ...
-    'XLim',[0 size(fpCut,2)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
+fpCutAx=axes('Position',[0.0365    0.0297    0.9510    0.9636], ...
+    'XLim',[0 max(fpCutTimes)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
 hold on
 maxStrLen=max(cellfun(@numel,parameters.ChannelNames.Value(FPIND)));
 for n=1:size(fpCut,1)
     if ~isempty(intersect(n,find(signalRangeBadLogical)))
-        plot(n+fpCut(n,:),'r')
+        plot(fpCutTimes,n+fpCut(n,:),'r')
     else
-        plot(n+fpCut(n,:))
+        plot(fpCutTimes,n+fpCut(n,:))
     end
     YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
         n,parameters.ChannelNames.Value{n});
@@ -115,34 +117,51 @@ FPSTOUSE=FPIND;
 FPSTOUSE(signalRangeBadLogical)=[];
 fp=(signal(:,FPIND)').* ...
     repmat(cellfun(@str2num,parameters.SourceChGain.Value(FPIND)),1,size(signal,1));
-fptimes=(1:size(fp,2))/samprate;
 %% CAR.  Include only good signals into the CAR, but apply to all signals
 %  (except channels zeroed out by the REFA)
 fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
-    mean(fp(FPSTOUSE,:),1));
-signalRange=max(fp(~signalRangeLowLogical,:),[],2)- ...
+    mean(fp(FPSTOUSE,:),1)); % FPSTOUSE is where we're including "only good signals into the CAR".
+signalRange2=max(fp(~signalRangeLowLogical,:),[],2)- ...
     min(fp(~signalRangeLowLogical,:),[],2);
-fpCut=(fp(FPIND,1:100:end))./mean(signalRange);
+fpCut=(fp(FPIND,1:100:end))./mean(signalRange2);
 if ishandle(fpCutFig)
     figure(fpCutFig)
     cla
 else
     fpCutFig=figure;
-    fpCutAx=axes('Position',[0.0319    0.0297    0.9556    0.9636], ...
+    fpCutAx=axes('Position',[0.0365    0.0297    0.9510    0.9636], ...
         'XLim',[0 size(fpCut,2)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
 end
 hold on
 for n=1:size(fpCut,1)
     if ~isempty(intersect(n,find(signalRangeBadLogical)))
-        plot(n+fpCut(n,:),'r')
+        plot(fpCutTimes,n+fpCut(n,:),'r')
     else
-        plot(n+fpCut(n,:))
+        plot(fpCutTimes,n+fpCut(n,:))
     end
     YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
         n,parameters.ChannelNames.Value{n});
 end, clear n
 set(fpCutAx,'YTickLabel',YaxLabelStr)
 
+% test the CAR, by re-plotting signalRange.  Compare to the original.
+signalRange2=max(fp,[],2)-min(fp,[],2);
+badChan2F=figureCenter; % set(badChanF,'Position',[121 468 560 420])
+plot(signalRange2,'.','MarkerSize',36)
+signalRangeLowLogical2=signalRange2<1;
+signalRangeHighLogical2=signalRange2 > rangeThresh;
+signalRangeBadLogical2=signalRangeLowLogical2 | signalRangeHighLogical2;
+hold on
+plot(find(signalRangeBadLogical2),signalRange2(signalRangeBadLogical2),'r.','MarkerSize',36)
+plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
+try                                                                         %#ok<TRYNC>
+    title(sprintf('%s\nRange of CAR''d fp signals.\nBad channel estimate=red. %d good channels.', ...
+        FileName,nnz(~signalRangeBadLogical2)),'Interpreter','none','FontSize',16)
+end
+set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
+if exist('badChanF','var') && ishandle(badChanF)
+    set(gca,'Ylim',get(findobj(badChanF,'Type','Axes'),'Ylim'))
+end
 %% CG info & PCA, or force info.
 clear sig CG
 [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
@@ -275,7 +294,7 @@ set(gcf,'Position',[121 468 560 420])
 %%  11.  plot cross-validated predictions, with some informative text.
 % close
 figure, set(gcf,'Position',[88 100 1324 420])
-col=2;
+col=1;
 if exist('folds','var')==0, folds=10; end
 for n=1:folds
     leftEdge=(n-1)*length(ytnew{1}(:,col))+1;

@@ -156,7 +156,8 @@ for fileInd=1:length(infoStruct)
         end
     elseif regexp(infoStruct(fileInd).path,'\.dat')
         [signal,states,parameters,~]=load_bcidat(infoStruct(fileInd).path); %#ok<*ASGLU>
-        if ~isa(signal,'double'), signal=double(signal); end
+        if ~isa(signal,'double'), signal=double(signal); end        
+        signal=bsxfun(@times,signal,parameters.SourceChGain.NumericValue');
         BCI2000signal=signal;
     end
     % if something is done to cg (portion of the signal cut short to
@@ -319,6 +320,8 @@ for fileInd=1:length(infoStruct)
         eventsNames(isnan(paramStructIn.classify.eventsToUse))=[];
         eventsMatrixToUse{1}=cat(2,eventsMatrix{:});        
         eventsMatrixToUse{2}=unique(regexpi(eventsNames,'(?<=start|stop).*','match','once'));
+    else
+        eventsMatrixToUse=cell(1,2);
     end
     
     emgsamplerate=samprate;
@@ -469,7 +472,7 @@ for fileInd=1:length(infoStruct)
                                             % fprintf(1,'zscoring fp signals\n')
                                             % OR
                                             fprintf(1,'\n')
-                                            if strcmpi(signalToDecode,'CG') && size(cgz,1)<22
+                                            if strcmpi(signalToDecode,'CG') && size(CG.data,2)<22
                                                 fprintf(1,'elimindating %d bad cg signals\n', ...
                                                     22-size(cgz,1))
                                             else

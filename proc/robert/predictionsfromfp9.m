@@ -500,78 +500,54 @@ for i = 1:(folds-1)
         end
         covMI(i,z)=0.5*log2(1/(1-r2ForMI));
     end
-    
-    
-%     % test combined continuous decording using the Euclidean norm of
-%     % force and position as the 1 output variable.  Test using each H in
-%     % turn.
-%     %     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,1,y_test{i});
-%     combined_y=sqrt(sum(y_test{i}.^2,2));
-%     for z=1:size(y_test{i},2)
-%         [y_pred_combined{i},xtnew{i},ytnew_combined{i}] = ...
-%             predMIMO3(x_test{i},H{i}(:,z),numsides,1,combined_y);
-%         % repeat the polynomial process.
-%         if PolynomialOrder
-%             % Find and apply polynomial.  P will always have just the one row
-%             % because combined_y is a combined variable.  However many
-%             % columns y had, combined_y will have just the 1.
-%             warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-%             warning('off','MATLAB:nearlySingularMatrix')
-%             P_combined = WienerNonlinearity(y_pred_combined{i}, ytnew_combined{i}, PolynomialOrder);
-%             warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-%             warning('off','MATLAB:nearlySingularMatrix')
-%             y_pred_combined{i} = polyval(P_combined,y_pred_combined{i});
-%         end
-%         % test the results: vaf
-%         vaf_combined(i,z)=RcoeffDet(y_pred_combined{i},ytnew_combined{i});
-%     end 
-
-    % as a control for the switching decoder (below), predict both force
-    % and position with just the force decoder.  
-    [y_pred_forceOnly{i},xtnew{i},ytnew_forceOnly{i}] = ...
-        predMIMO3(x_test{i},[H{i}(:,1) H{i}(:,1)],numsides,1,y_test{i});
-    % repeat the polynomial process.
-    for z=1:size(y_test{i},2)
-        if PolynomialOrder
-            % Find and apply polynomial.
-            warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-            warning('off','MATLAB:nearlySingularMatrix')
-            P_forceOnly(z,:) = WienerNonlinearity(y_pred_forceOnly{i}(:,z),ytnew_forceOnly{i}(:,z),PolynomialOrder);
-            warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-            warning('off','MATLAB:nearlySingularMatrix')
-            y_pred_forceOnly{i}(:,z) = polyval(P_forceOnly(z,:),y_pred_forceOnly{i}(:,z));
-        end
-    end
-    % test the results: vaf
-    vaf_forceOnly(i,:)=RcoeffDet(y_pred_forceOnly{i},ytnew_forceOnly{i});
-
-    % Then, predict both with just the position decoder.
-    [y_pred_positionOnly{i},xtnew{i},ytnew_positionOnly{i}] = ...
-        predMIMO3(x_test{i},[H{i}(:,2) H{i}(:,2)],numsides,1,y_test{i});
-    % repeat the polynomial process.
-    for z=1:size(y_test{i},2)
-        if PolynomialOrder
-            % Find and apply polynomial.
-            warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-            warning('off','MATLAB:nearlySingularMatrix')
-            P_positionOnly(z,:) = ...
-                WienerNonlinearity(y_pred_positionOnly{i}(:,z), ...
-                ytnew_positionOnly{i}(:,z),PolynomialOrder);
-            warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
-            warning('off','MATLAB:nearlySingularMatrix')
-            y_pred_positionOnly{i}(:,z) = ...
-                polyval(P_positionOnly(z,:),y_pred_positionOnly{i}(:,z));
-        end
-    end
-    % test the results: vaf
-    vaf_positionOnly(i,:)=RcoeffDet(y_pred_positionOnly{i},ytnew_positionOnly{i});
-    
+   
     % test a combined decoder that incorporates state switching, using the
     % force H when the classifier says it's appropriate, and using the
     % position H when the classifier says that's the appropriate one.
     % first, have to build the classifier from the training data in the
     % current fold
-    if exist('eventsMatrixToUse','var')
+    if exist('eventsMatrixToUse','var') && nnz(~cellfun(@isempty,eventsMatrixToUse))
+        % before we even get into the combined decoder, calculate a couple
+        % of controls: first one is with only the force decoder
+        [y_pred_forceOnly{i},xtnew{i},ytnew_forceOnly{i}] = ...
+            predMIMO3(x_test{i},[H{i}(:,1) H{i}(:,1)],numsides,1,y_test{i});
+        % repeat the polynomial process.
+        for z=1:size(y_test{i},2)
+            if PolynomialOrder
+                % Find and apply polynomial.
+                warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                warning('off','MATLAB:nearlySingularMatrix')
+                P_forceOnly(z,:) = WienerNonlinearity(y_pred_forceOnly{i}(:,z),ytnew_forceOnly{i}(:,z),PolynomialOrder);
+                warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                warning('off','MATLAB:nearlySingularMatrix')
+                y_pred_forceOnly{i}(:,z) = polyval(P_forceOnly(z,:),y_pred_forceOnly{i}(:,z));
+            end
+        end
+        % test the results: vaf
+        vaf_forceOnly(i,:)=RcoeffDet(y_pred_forceOnly{i},ytnew_forceOnly{i});
+        
+        % second control: predict both with just the position decoder.
+        [y_pred_positionOnly{i},xtnew{i},ytnew_positionOnly{i}] = ...
+            predMIMO3(x_test{i},[H{i}(:,2) H{i}(:,2)],numsides,1,y_test{i});
+        % repeat the polynomial process.
+        for z=1:size(y_test{i},2)
+            if PolynomialOrder
+                % Find and apply polynomial.
+                warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                warning('off','MATLAB:nearlySingularMatrix')
+                P_positionOnly(z,:) = ...
+                    WienerNonlinearity(y_pred_positionOnly{i}(:,z), ...
+                    ytnew_positionOnly{i}(:,z),PolynomialOrder);
+                warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
+                warning('off','MATLAB:nearlySingularMatrix')
+                y_pred_positionOnly{i}(:,z) = ...
+                    polyval(P_positionOnly(z,:),y_pred_positionOnly{i}(:,z));
+            end
+        end
+        % test the results: vaf
+        vaf_positionOnly(i,:)=RcoeffDet(y_pred_positionOnly{i},ytnew_positionOnly{i});
+        
+        % now, we're getting into the actual combined decoder
         eventsMatrix=eventsMatrixToUse{1};        
         % eventsMatrix(:,1)=eventsMatrix(:,1)+0.7;
         eventsNames=eventsMatrixToUse{2};
@@ -665,7 +641,9 @@ for i = 1:(folds-1)
     end
 end
 
-assignin('base','vaf_combined',vaf_combined)
+if exist('vaf_combined','var')
+    assignin('base','vaf_combined',vaf_combined)
+end
 
 disp('5th part: do predictions')
 
