@@ -19,6 +19,9 @@ function pathToBDF=findBDFonCitadel(nameIn,suppressDialog)
 %       general (the drive letter in particular) will change from machine
 %       to machine, so it is a LARGE ERROR to move this cache file around.
 %       Just let each machine create its own file in its own good time.
+% UPDATE: MRS 5/10/2014
+%       Cache was returning wrong file path, tried automating a rudimentary 
+%       fix.
 
 % todo: if the cache file has grown too big, lop off the oldest 
 % saved results
@@ -45,8 +48,21 @@ if nnz(cellfun(@isempty,regexp({thisD.name}, ...
     if ~isempty(pathToBDFind)
         pathToBDF=cellData{pathToBDFind};
         pathToBDF(regexp(pathToBDF,sprintf('\n')))='';
-        % returning here will preclude repeats appearing in the cache file.
-        return
+        % MRS added 5/10/2014 check on cache path, drive letter was
+        % incorrect, automating a fix
+        if exist(pathToBDF,'file') == 0
+            if strcmp(pathToBDF(1),'Y') == 1
+                % try to change drive letter to other common possibility
+                pathToBDF(1) = 'Z';
+            else
+                pathToBDF(1) = 'Y';
+            end
+            % If this doesn't fix the problem, then return
+            if exist(pathToBDF,'file') == 2
+            % returning here will preclude repeats appearing in the cache file.
+            return
+            end
+        end
     end
 end
 
@@ -75,7 +91,7 @@ if ismac
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=unix(['find ',pathToCitadelData,' -name "',nameIn,'" -print']);
 else
-    remoteDriveLetter=[citadelDriveLetter,':'];
+    remoteDriveLetter=[citadelDriveLetter,'Z:'];
     if isequal(remoteDriveLetter,':') || isempty(remoteDriveLetter)
         error('problem with citadelDriveLetter.m')
     end
