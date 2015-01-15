@@ -293,26 +293,30 @@ end
 % end
 
 PBtemp=[];
-bndGroups=regexp(bandsToUse,'[0-9]+','match');
-bands={'LMP','delta','mu','gam1','gam2','gam3'};
-% to attempt to average LMP with anything is inappropriate, and will lead
-% to unexpected results, probably errors.
-startind=1;
-if any(strcmp(bndGroups,'1'))
-    PBtemp(1,:,:)=LMP;
-    startind=2;
+if all(cellfun(@ischar,bandsToUse))
+    bndGroups=regexp(bandsToUse,'[0-9]+','match');
+    bands={'LMP','delta','mu','gam1','gam2','gam3'};
+    % to attempt to average LMP with anything is inappropriate, and will lead
+    % to unexpected results, probably errors.
+    startind=1;
+    if any(strcmp(bndGroups,'1'))
+        PBtemp(1,:,:)=LMP;
+        startind=2;
+    else
+        PBtemp=zeros(1,size(PA,2),size(PA,3));
+    end
+    for n=startind:length(bndGroups)
+        evalstr='PA(';
+        bandInds=cellfun(@str2double,regexp(bndGroups{n},'[0-9]','match'));
+        for k=1:length(bandInds)
+            evalstr=[evalstr, sprintf(' %s | ',bands{bandInds(k)})];
+        end, clear k
+        evalstr(end-1:end)=''; evalstr=[evalstr,',:,:)'];
+        PBtemp(n,:,:)=mean(eval(evalstr),1);
+    end, clear n startind
 else
-    PBtemp=zeros(1,size(PA,2),size(PA,3));
+    PBtemp=[PBtemp; mean(PA((freqs>=bandsToUse{1}(1)) & (freqs<=bandsToUse{1}(2)),:,:),1)];
 end
-for n=startind:length(bndGroups)
-    evalstr='PA(';
-    bandInds=cellfun(@str2double,regexp(bndGroups{n},'[0-9]','match'));
-    for k=1:length(bandInds)
-        evalstr=[evalstr, sprintf(' %s | ',bands{bandInds(k)})];
-    end, clear k
-    evalstr(end-1:end)=''; evalstr=[evalstr,',:,:)'];
-    PBtemp(n,:,:)=mean(eval(evalstr),1);
-end, clear n startind
 PB=PBtemp; clear PBtemp
 
 assignin('base','PB',PB)
