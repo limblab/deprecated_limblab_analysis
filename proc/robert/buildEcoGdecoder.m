@@ -38,8 +38,8 @@ FPIND=1:64;     % this controls which columns of the signal array are valid fp c
 % same file, skip this cell and move to the next.
 clear FileName files
 if ~exist('PathName','var')
-    if exist('E:\ECoG_Data\','file')==7
-        PathName='E:\ECoG_Data\';
+    if exist('E:\hEEG_Data\','file')==7
+        PathName='E:\hEEG_Data\';  
     else
         PathName='C:\Users\NECALHDEMG\Documents\BCI2000\data\';
     end
@@ -289,7 +289,8 @@ vaf                                                                             
 fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
-set(gcf,'Position',[121 468 560 420])
+figureCenter(gcf)
+% set(gcf,'Position',[121 468 560 420])
 
 %%  11.  plot cross-validated predictions, with some informative text.
 % close
@@ -331,7 +332,7 @@ end
 %% ranked bestc,bestf
 [bestfRanked,bestcRanked]=ind2sub([length(featind)/length(FPSTOUSE) length(FPSTOUSE)], ...
     featind((1:nfeat)+featShift));
-[parameters.ChannelNames.Value(FPSTOUSE(bestcRanked)), num2cell(bestfRanked')]; 
+[parameters.ChannelNames.Value(FPSTOUSE(bestcRanked)), num2cell(bestfRanked')];  %#ok<VUNUS>
 openvar('ans')
 % center of mass for bestfRanked
 
