@@ -10,11 +10,19 @@ close all
     fnames={folderlist.name};
     if ~isempty(strmatch( 'bdf.mat',fnames))
         temp=load(strcat( folderpath,'\Output_data\bdf.mat'));
-        bdf=temp.temp;
+        if isfield(temp,'temp')
+            bdf=temp.temp;
+        elseif isfield(temp,'bdf')
+            bdf=temp.bdf;
+        else
+            fname=follow_links([folderpath,input_data.filename]);
+            disp(strcat('converting: ',fname))
+            bdf=get_cerebus_data(fname,input_data.labnum,'verbose','noeye');
+        end
     else
         fname=follow_links([folderpath,input_data.filename]);
         disp(strcat('converting: ',fname))
-        bdf=get_cerebus_data(fname,3,'verbose','noeye');
+        bdf=get_cerebus_data(fname,input_data.labnum,'verbose','noeye');
     end
 
 
