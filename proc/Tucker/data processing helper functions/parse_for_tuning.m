@@ -121,12 +121,12 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
         if isfield(bdf,'dfdt')
             dfdt=bdf.dfdt;
         else
-            dfdt=central_difference(force(:,2:end),force(:,1));
+            dfdt=[bdf.force(:,1) central_difference(force(:,2:end),force(:,1))];
         end
         if isfield(bdf,'dfdtdt')
             dfdtdt=bdf.dfdtdt;
         else
-            dfdtdt=central_difference(dfdt(:,2:end),force(:,1));
+            dfdtdt=[bdf.force(:,1) central_difference(dfdt(:,2:end),force(:,1))];
         end
     else
         force=[pos(:,1),zeros(size(pos(:,2:end)))];
@@ -255,7 +255,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 sspd=filtfilt(B,A,spd);
                 %build output struct from data points around peak values in
                 %speed
-                outstruct=peak_value([vel,sspd],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
+                outstruct=peak_value([vel(:,1),sspd],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
 
             case 'peak force'
                 %viable method_opts for the peak dt method:
@@ -271,7 +271,10 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
 
                 %build output struct from data points around peak values in
                 %force
-                outstruct=peak_value(force,bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
+                forcemag=sqrt(sum(force(:,2:end).^2,2));
+                [B,A]=butter(3,.2,'low');
+                forcemag=filtfilt(B,A,forcemag);
+                outstruct=peak_value([force(:,1),forcemag],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
             case 'peak dfdt'
                 %viable method_opts for the peak dfdt method:
                 %   -lags
@@ -285,7 +288,10 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -data_window
                 %build output struct from data points around peak values in
                 %dfdt
-                outstruct=peak_value(dfdt,bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
+                dfdtmag=sqrt(sum(dfdt(:,2:end).^2,2));
+                [B,A]=butter(3,.2,'low');
+                dfdtmag=filtfilt(B,A,dfdtmag);
+                outstruct=peak_value([force(:,1),dfdtmag],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
             case 'peak acceleration'
                 %viable method_opts for the peak acc method:
                 %   -lags
@@ -304,7 +310,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 [B,A]=butter(3,.1,'low');
                 sspd=filtfilt(B,A,spd);
                 dsdt=central_difference(sspd,vel(:,1));
-                outstruct=peak_value([vel(:,1),dsdt],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
+                outstruct=peak_value([acc(:,1),dsdt],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
             case 'peak dfdtdt'
                 %viable method_opts for the peak dfdtdt method:
                 %   -lags
@@ -318,7 +324,10 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -data_window
                 %build output struct from data points around peak values in
                 %dfdtdt
-                outstruct=peak_value(dfdtdt,bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
+                dfdtdtmag=sqrt(sum(dfdtdt(:,2:end).^2,2));
+                [B,A]=butter(3,.2,'low');
+                dfdtdtmag=filtfilt(B,A,dfdtdtmag);
+                outstruct=peak_value([force(:,1),dfdtdtmag],bdf,target_onsets,num_lags,lags,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_window,data_offset,method_opts,which_units);
             case 'target onset'
                 %viable method_opts for the target onset method:
                 %   -lags

@@ -1,8 +1,9 @@
 %script to test parse for tuning:
 %% load up test data set
-load('Z:\MrT_9I4\Processed\experiment_20141119_RW\Output_Data\Multi_unit_bdf.mat')
-bdf=Multi_unit_bdf;
-clear Multi_unit_bdf
+%load('Z:\MrT_9I4\Processed\experiment_20141119_RW\Output_Data\Multi_unit_bdf.mat')
+% bdf=Multi_unit_bdf;
+% clear Multi_unit_bdf
+bdf=get_cerebus_data( 'Z:\Kramer_10I1\Kramer\RAW\Kramer_RW_neural_001.nev',3,'verbose','noeye');
 bdf.meta.task='RW';
 ts = 50;
 offset=0; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
