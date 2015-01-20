@@ -172,7 +172,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
             else
                 data_offset=0;
             end
-            if isfield(method_opts,'window')
+            if isfield(method_opts,'data_window')
                 data_window=method_opts.data_window;
                 if(data_window>5)
                     warning('Parse_For_Tuning:LargeWindow','The data window is greater than 5s. The parse_for_tuning function expects the window in s, and the input may specify the window in ms.')
@@ -232,8 +232,8 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -comptute_dfdtdt_pds
                 %   -data_offset
 
-                [FR,pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(FR_timeseries,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,which_units,data_offset);
-                outstruct=build_outstruct(FR,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units);
+                [pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset);
+                outstruct=build_outstruct(bdf,FR_timeseries,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units);
             case 'peak speed'
                 %viable method_opts for the peak vel method:
                 %   -lags
@@ -327,11 +327,11 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -comptute_acc_pds
                 %   -comptute_force_pds
                 %   -comptute_dfdt_pds
-                %   -comptute_dfdtdt_pds
+                %   -comptute_dfdtdt_pds 
                 %   -data_offset
                 %   -data_window
-                
-                outstruct=sample_around_timepoints(target_onsets,FR_timeseries,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset,num_lags,lags,method_opts,which_units);
+
+                outstruct=sample_around_timepoints(target_onsets,FR_timeseries,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset,data_window,num_lags,lags,method_opts,which_units);
             case 'go cues'
                 %viable method_opts for the target onset method:
                 %   -lags
@@ -343,8 +343,8 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -comptute_dfdtdt_pds
                 %   -data_offset
                 %   -data_window
-                
-                outstruct=sample_around_timepoints(go_cues,FR_timeseries,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset,num_lags,lags,method_opts,which_units);
+
+                outstruct=sample_around_timepoints(go_cues,FR_timeseries,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset,data_window,num_lags,lags,method_opts,which_units);
             case 'trials'
                 %viable method_opts for the trials method:
                 %   -lags
@@ -427,41 +427,35 @@ function outstruct=sample_around_timepoints(T,FR_timeseries,bdf,pos,vel,acc,forc
     %get firing rates in windows around the peak with the appropriate offset
     sample_times=[];
     for i=1:length(T)
-        mask=((FR_timeseries > (T(i)+data_offset-data_window)) & ((FR_timeseries+data_offset)<T(i)));
+        mask=((FR_timeseries < (T(i)+data_window)) & ((FR_timeseries)>T(i)));
         sample_times=[sample_times;FR_timeseries(mask)];
     end
-    [FR,pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(sample_times,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,which_units,data_offset);
-    outstruct=build_outstruct(FR,sample_times,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units);
+    [pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(sample_times,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset);
+    outstruct=build_outstruct(bdf,sample_times,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units);
 end
 
 function outstruct=sample_between_timepoints(T,FR_timeseries,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset,num_lags,lags,method_opts,which_units)
     %get firing rates in windows around the peak with the appropriate offset
     sample_times=[];
     for i=1:length(T)
-        mask=FR_timeseries > (T(i,1)+data_offset) & (FR_timeseries+data_offset)<T(i,2);
+        mask=FR_timeseries > (T(i,1)) & (FR_timeseries)<T(i,2);
         sample_times=[sample_times;FR_timeseries(mask)];
     end
-    [FR,pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(sample_times,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,which_units,data_offset);
-    outstruct=build_outstruct(FR,sample_times,sample_times,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units);
+    [pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(sample_times,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset);
+    outstruct=build_outstruct(bdf,sample_times,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units);
 end
 
-function [FR,pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(sample_times,bdf,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,which_units,data_offset)
+function [pos,vel,acc,force,dfdt,dfdtdt]=interpolate_kinematics(sample_times,pos,vel,acc,force,dfdt,dfdtdt,pos_lag_data,vel_lag_data,acc_lag_data,force_lag_data,dfdt_lag_data,dfdtdt_lag_data,data_offset)
     % interpolate to firing rate time points to the firing rate
     % timeseries with the specified offset
-    pos=interp1(pos(:,1),[pos(:,2:end),pos_lag_data],sample_times);
-    vel=interp1(vel(:,1),[vel(:,2:end),vel_lag_data],sample_times);
-    acc=interp1(acc(:,1),[acc(:,2:end),acc_lag_data],sample_times);
-    force=interp1(force(:,1),[force(:,2:end),force_lag_data],sample_times);
-    dfdt=interp1(dfdt(:,1),[dfdt(:,2:end),dfdt_lag_data],sample_times);
-    dfdtdt=interp1(dfdtdt(:,1),[dfdtdt(:,2:end),dfdtdt_lag_data],sample_times);
-    %get matrix of FR data at sample_times
-    FR=-1*ones(length(sample_times),length(which_units));
-    for i=1:length(which_units)
-        FR(:,i)=interp1(bdf.units(1).FR(:,1),bdf.units(which_units(i)).FR(:,2),(sample_times-data_offset));
-    end
-    
+    pos=interp1(pos(:,1),[pos(:,2:end),pos_lag_data],sample_times-data_offset);
+    vel=interp1(vel(:,1),[vel(:,2:end),vel_lag_data],sample_times-data_offset);
+    acc=interp1(acc(:,1),[acc(:,2:end),acc_lag_data],sample_times-data_offset);
+    force=interp1(force(:,1),[force(:,2:end),force_lag_data],sample_times-data_offset);
+    dfdt=interp1(dfdt(:,1),[dfdt(:,2:end),dfdt_lag_data],sample_times-data_offset);
+    dfdtdt=interp1(dfdtdt(:,1),[dfdtdt(:,2:end),dfdtdt_lag_data],sample_times-data_offset);
 end
-function outstruct=build_outstruct(FR,sample_times,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units)
+function outstruct=build_outstruct(bdf,sample_times,pos,vel,acc,force,dfdt,dfdtdt,num_lags,lags,method_opts,which_units)
 %% adds data to the output struct 
     %check for NaN's and prune data appropriately
     if (find(isnan(pos))  |    find(isnan(vel))    |    find(isnan(acc))    |    find(isnan(force))    |    find(isnan(dfdt))    |    find(isnan(dfdtdt))    )
@@ -534,13 +528,14 @@ function outstruct=build_outstruct(FR,sample_times,pos,vel,acc,force,dfdt,dfdtdt
             iend=min([length(pos(:,1)),length(vel(:,1)),length(acc(:,1)),length(force(:,1)),length(dfdt(:,1)),length(dfdtdt(:,1))]);
         end
         %trim off indices corresponding to leading NaNs
-        pos=pos(istart:iend);
-        vel=vel(istart:iend);
-        acc=acc(istart:iend);
-        force=force(istart:iend);
-        dfdt=dfdt(istart:iend);
-        dfdtdt=dfdtdt(istart:iend);
-        sample_times=sample_times(istart:iend);
+        pos=pos(istart:iend,:);
+        vel=vel(istart:iend,:);
+        acc=acc(istart:iend,:);
+        force=force(istart:iend,:);
+        dfdt=dfdt(istart:iend,:);
+        dfdtdt=dfdtdt(istart:iend,:);
+        sample_times=sample_times(istart:iend,:);
+        
     end
 
     %compose armdata cell array for position
@@ -605,7 +600,10 @@ function outstruct=build_outstruct(FR,sample_times,pos,vel,acc,force,dfdt,dfdtdt
     end
 
     %compose FR field
-    outstruct.FR=FR;
+    outstruct.FR=-1*ones(length(sample_times),length(which_units));
+    for i=1:length(which_units)
+        outstruct.FR(:,i)=interp1(bdf.units(1).FR(:,1),bdf.units(which_units(i)).FR(:,2),(sample_times));
+    end
     %compose the time vector
     outstruct.T=sample_times;
     %compose unit list field
