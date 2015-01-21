@@ -77,7 +77,10 @@ function [filter, varargout]=BuildModel(binnedData, options)
         else
             neuronIDs=binnedData.neuronIDs;
         end
-        desiredInputs=1:size(neuronIDs,1);
+%         desiredInputs=1:size(neuronIDs,1);
+        % Remove all channels with an average firing rate lower than 1 Hz.
+        desiredInputs=find(mean(binnedData.spikeratedata) > 1);
+        neuronIDs = neuronIDs(desiredInputs,:);
     else
         if ~exist('NeuronIDsFile','var')
             [FileName, PathName] =uigetfile('*.mat','Filename of desired inputs? ');

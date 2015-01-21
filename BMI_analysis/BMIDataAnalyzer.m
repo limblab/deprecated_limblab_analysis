@@ -82,7 +82,7 @@ function BMIDataAnalyzer()
     OLPred_FullFileName = 0;
     RTPred_FileName = 0;
     RTPred_FullFileName = 0;
-    BDF_opts = struct('LabNum',3,'RotHandle',true);
+    BDF_opts = struct('labnum',3,'rothandle',1);
        
      
 %% Creating UI
