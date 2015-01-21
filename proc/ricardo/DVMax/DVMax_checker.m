@@ -1,6 +1,25 @@
 function DVMax_checker()
+    % Add JDBC driver to path
+    path_file = fopen('classpath.txt');
+    path_file_text = fread(path_file)';
+    fclose(path_file);
+    driver_idx = strfind(char(path_file_text),'ojdbc6.jar')-2;
+    [current_folder,~,~] = fileparts(mfilename('fullpath'));
+    if ~isempty(driver_idx)
+        driver_path_start = find(path_file_text(1:driver_idx)==10,1,'last')+1;
+        driver_path = char(path_file_text(driver_path_start:driver_idx));        
+        if ~strcmp(current_folder,driver_path)
+            path_file_text(driver_path_start:driver_idx+11) = [];
+            path_file_text = [path_file_text 10 uint8([current_folder filesep 'ojdbc6.jar'])];
+            javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
+        end
+    else
+        path_file_text = [path_file_text 10 uint8([current_folder filesep 'ojdbc6.jar'])];
+        javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
+    end    
+    
     MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
-    testing = 0;
+    testing = 1;
     water_codes = {'EP8500','EP9000','EP2000','AC1091'};
     free_water_codes = {'EP9200 ','AC1093'};
     water_restriction_start_codes = {'EP9100','AC1092'};
@@ -41,9 +60,23 @@ function DVMax_checker()
     for iMonkey = 1:length(animalList)
         cagecardID = animalList(iMonkey).cageID;
         cagecardID(strfind(cagecardID,'C')) = [];
-        exestring= ['select distinct cage_card_id, datetime_performed_cst, med_rec_code, med_description from granite_reports.dvmax_med_rec_entries_vw where cage_card_id=' cagecardID 'order by datetime_performed_cst asc'];
+        exestring= ['select distinct cage_card_id, datetime_performed_cst, med_rec_code, med_description, comments'...
+           ' from granite_reports.dvmax_med_rec_entries_vw where cage_card_id=' cagecardID 'order by datetime_performed_cst asc'];
         data = fetch(conn,exestring);
         data = data(end:-1:1,:);
+
+        body_weight_entries = find(~cellfun(@isempty,strfind(data(:,3),'EX1050')));
+        body_weight_idx = cellfun(@strfind,data(body_weight_entries,5),repmat({'Weight: '},length(body_weight_entries),1),'UniformOutput',false);
+        units_idx = cellfun(@strfind,data(body_weight_entries,5),repmat({'Units: '},length(body_weight_entries),1),'UniformOutput',false);
+        animalList(iMonkey).body_weight = [];
+        animalList(iMonkey).body_weight_date = [];
+        for iEntry = 1:length(body_weight_entries)
+            if ~isempty(body_weight_idx{iEntry})
+                animalList(iMonkey).body_weight(end+1) = str2num(data{body_weight_entries(iEntry),5}(body_weight_idx{iEntry}+8 : units_idx{iEntry}-2));
+                animalList(iMonkey).body_weight_date(end+1) = round(datenum(data{body_weight_entries(iEntry),2}));
+            end
+        end
+        
         if today_is_a_holiday
             ccm_in_charge_water = weekendWaterList{find(strcmpi(weekendWaterList(:,1),['CC' cagecardID])),today_is_a_holiday};
             ccm_in_charge_water = strcmpi(ccm_in_charge_water,'ccm');
@@ -83,7 +116,7 @@ function DVMax_checker()
                 last_water_entry = min(last_water_entry);
             else
                 last_water_entry = 1000000;
-            end              
+            end
             
             last_water_restriction_start = inf;
             for iCode = 1:length(water_restriction_start_codes)
@@ -200,6 +233,26 @@ function DVMax_checker()
             monkey_final_list(animalList,peopleList,testing)
         end
     end
+    
+    %% Body weight
+    if time >= 18 && weekday(date) == 2
+        gf = figure;
+        hold on
+        colors = .9*hsv(length(animalList));
+        symbols = {'-^','-*','-o'};
+        legend_text = {};
+        for iMonkey = 1:length(animalList)
+            if ~isempty(animalList(iMonkey).body_weight_date)
+                plot(animalList(iMonkey).body_weight_date,animalList(iMonkey).body_weight,symbols{mod(iMonkey,3)+1},'Color',colors(iMonkey,:));              
+                legend_text{end+1} = animalList(iMonkey).animalName;
+            end
+        end
+        datetick('x',26)
+        legend(legend_text)
+        print(gf,'BodyWeights','-dpng')
+        body_weight_email(peopleList,testing)
+    end        
+    
     disp('Finished checking DVMax')
     close(conn)
 end
@@ -335,9 +388,7 @@ function monkey_last_warning(animal,peopleList,message,testing)
         recepients = 'ricardort@gmail.com';
         subject = ['(this is a test) Last warning: ' animal.animalName ' has not received ' message '!'];
     else
-        for iP = 1:length(peopleList)
-            recepients = {recepients{:} peopleList(iP).contactEmail};  
-        end
+       	recepients = {peopleList.contactEmail};       
         subject = ['Last warning: ' animal.animalName ' has not received ' message '!'];
     end    
     
@@ -433,4 +484,26 @@ function send_monkey_person_email(animalList,peopleList,ccmList)
         {''} {'Best regards,'} {'Miller Lab'}];
     recepients = [{ccmList.contactEmail} {peopleList.contactEmail}];
     send_mail_message(recepients,subject,message)
+end
+
+function body_weight_email(peopleList,testing)    
+    if testing
+        recepients = 'ricardort@gmail.com';
+        subject = ['(this is a test) Weekly body weights update'];
+    else
+       	recepients = {peopleList.contactEmail};       
+        subject = ['Weekly body weights update'];
+    end    
+
+    message = {'Here''s the weekly monkey body weight update.  Don''t forget to make body weight entries (EX1050) every week!'};
+ 
+    message_sent = 0;
+    while (~message_sent)
+        try
+            send_mail_message(recepients,subject,message,'BodyWeights.png')
+            message_sent = 1;            
+        catch
+            pause(5)
+        end
+    end
 end

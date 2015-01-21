@@ -45,6 +45,10 @@ if strcmp(mail,'GmailId@gmail.com')
     disp('after the comments.')
 end
 
-sendmail(emailto,subject,message)
+if isempty(attachment)
+    sendmail(emailto,subject,message)
+else
+    sendmail(emailto,subject,message,attachment)
+end
 
 end
