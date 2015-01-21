@@ -1,4 +1,6 @@
 function DVMax_checker()
+    testing = 0;
+    
     % Add JDBC driver to path
     path_file = fopen('classpath.txt');
     path_file_text = fread(path_file)';
@@ -11,15 +13,15 @@ function DVMax_checker()
         if ~strcmp(current_folder,driver_path)
             path_file_text(driver_path_start:driver_idx+11) = [];
             path_file_text = [path_file_text 10 uint8([current_folder filesep 'ojdbc6.jar'])];
+            javarmpath([driver_path filesep 'ojdbc6.jar'])
             javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
         end
     else
         path_file_text = [path_file_text 10 uint8([current_folder filesep 'ojdbc6.jar'])];
         javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
-    end    
+    end
     
     MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
-    testing = 1;
     water_codes = {'EP8500','EP9000','EP2000','AC1091'};
     free_water_codes = {'EP9200 ','AC1093'};
     water_restriction_start_codes = {'EP9100','AC1092'};
