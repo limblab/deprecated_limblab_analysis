@@ -62,8 +62,11 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
     if exist(strcat(target_directory,'\Raw_Figures\FIG'),'file')~=7
         mkdir(strcat(target_directory,'\Raw_Figures\FIG'))
     end
-    if exist(strcat(target_directory,'\Raw_Figures\EPS'),'file')~=7
-        mkdir(strcat(target_directory,'\Raw_Figures\EPS'))
+%     if exist(strcat(target_directory,'\Raw_Figures\EPS'),'file')~=7
+%         mkdir(strcat(target_directory,'\Raw_Figures\EPS'))
+%     end
+    if exist(strcat(target_directory,'\Raw_Figures\PNG'),'file')~=7
+        mkdir(strcat(target_directory,'\Raw_Figures\PNG'))
     end
     if exist(strcat(target_directory,'\Edited_Figures'),'file')~=7
         mkdir(strcat(target_directory,'\Edited_Figures'))
@@ -104,7 +107,8 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
         end
         fname(fname==' ')='_';%replace spaces in name for saving
         print('-dpdf',figure_list(i),strcat(target_directory,'\Raw_Figures\PDF\',fname,'.pdf'))
-        print('-deps',figure_list(i),strcat(target_directory,'\Raw_Figures\EPS\',fname,'.eps'))
+%         print('-deps',figure_list(i),strcat(target_directory,'\Raw_Figures\EPS\',fname,'.eps'))
+        print('-dpng',figure_list(i),strcat(target_directory,'\Raw_Figures\PNG\',fname,'.png'))
         %savefig(figure_list{i},strcat(target_directory,'\Raw_Figures\',fname,'.pdf'))
         saveas(figure_list(i),strcat(target_directory,'\Raw_Figures\FIG\',fname,'.fig'),'fig')
     end
@@ -133,12 +137,12 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
             save(strcat(target_directory,'\Output_Data\',data_list{i},'.mat'),data_list{i},'-mat')
             warn_message = lastwarn;
             %% Check to make sure that Matlab saved the data, if not, save as v7.3
-%             if strfind(warn_message,'Variable ')
-%                 disp('Ignore previous warning, data is being saved')
-%                 dummy_var = [];  % Matlab will compress the first variable saved, making it slower to load, so we compress an empty array.
-%                 save(strcat(target_directory,'\Output_Data\',data_list{i},'.mat'),'dummy_var',data_list{i},'-mat','-v7.3')
-%                 lastwarn('')
-%             end
+            if strfind(warn_message,'Variable ')
+                disp('Ignore previous warning, data is being saved')
+                dummy_var = [];  % Matlab will compress the first variable saved, making it slower to load, so we compress an empty array.
+                save(strcat(target_directory,'\Output_Data\',data_list{i},'.mat'),'dummy_var',data_list{i},'-mat','-v7.3')
+                lastwarn('')
+            end
                     
         end
     end
