@@ -1,5 +1,5 @@
 %% initialize (dataset date: 5/30/2014, Kramer)
-bdf = get_nev_mat_data('Y:\Han_13B1\Processed\Han_20141113_raeed_tucker_3a_B2_001-s.nev');
+bdf = get_nev_mat_data('Y:\Han_13B1\Processed\Sorted\Han_20141203_raeed_tucker_3aB1B2_2A2B1_001-s.nev',6);
 tt=rw_trial_table(bdf);
 channel_num = 22;
 unit_num = 1;

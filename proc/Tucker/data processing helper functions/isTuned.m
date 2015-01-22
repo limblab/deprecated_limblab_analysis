@@ -44,8 +44,8 @@ function [tuned,varargout]=isTuned(data,varargin)
     
     mdl=LinearModel.fit(ds,'interactions','ResponseVar','FiringRate');
     StatData=anova(mdl);
-    tuned=(double(StatData('Angle','pValue'))<ConfLevel) || (double(StatData('Angle:TimeWindow','pValue'))<ConfLevel);
-    modulated=(double(StatData('TimeWindow','pValue'))<ConfLevel);
+    tuned=(StatData{'Angle','pValue'}<ConfLevel) || (StatData{'Angle:TimeWindow','pValue'}<ConfLevel);
+    modulated=(StatData{'TimeWindow','pValue'}<ConfLevel);
     if (tuned & ~modulated)
         warning('ISTUNED:TUNEDBUTNOTMODULATED','The given data set does not modulated across the TimeWindow conditions. The baseline data appears to modulate with direction, indicating that the baseline is poorly selected')
     end
