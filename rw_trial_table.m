@@ -84,7 +84,7 @@ function varargout = rw_trial_table(bdf)
             x_offset,...                % x offset
             y_offset,...                % y offset
             tgt_size,...                % target size - tolerance
-            these_go_codes,...          % 0:center_tgt_on 1:go_cue 2:catch_trial
+            these_go_codes,...          % 
             these_go_cues,...           % time stamps of go_cue(s)
             stop_time, ...  % End of trial
             trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
@@ -95,10 +95,10 @@ function varargout = rw_trial_table(bdf)
     TT_hdr.x_offset=4;
     TT_hdr.y_offset=5;
     TT_hdr.target_size=6;
-    TT_hdr.go_codes=bdf.TT(:,7:7+num_targets-1);   
-    TT_hdr.go_cues=bdf.TT(:,7+num_targets:7+2*num_targets-1);
-    TT_hdr.end_time=9;
-    TT_hdr.result=10;
+    TT_hdr.go_codes=7:7+num_targets-1;   
+    TT_hdr.go_cues=7+num_targets:7+2*num_targets-1;
+    TT_hdr.end_time=7+2*num_targets;
+    TT_hdr.result=7+2*num_targets+1;
     
     varargout{1}=TT;
     if nargout>1
