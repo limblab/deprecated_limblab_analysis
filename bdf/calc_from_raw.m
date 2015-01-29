@@ -135,7 +135,11 @@ function out_struct = calc_from_raw(raw_struct, opts)
                     l1 = 24.765; l2 = 23.8125;
                 end
             elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
-                l1=27; l2=36.8;
+                if datenum(out_struct.meta.datetime) < datenum('01-Jan-2015')
+                    l1=27; l2=36.8;
+                else
+                    l1=46.8; l2=45;
+                end
             else
                 l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
             end
