@@ -2,7 +2,6 @@ clear;
 close all;
 
 baseDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-% baseDir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
 
 allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
             'MrT','2013-08-20','FF','RT'; ...   % S x
@@ -54,7 +53,7 @@ allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
 
 
 useArray = 'M1';
-useBlocks = [1,4,7];
+classifierBlocks = [1,4,7];
 
 % switch lower(useArray)
 %     case 'm1'
@@ -86,7 +85,7 @@ doWidthSeparation = 0;
 
 %%
 % build parameter struct
-params.blocks = useBlocks;
+params.blocks = classifierBlocks;
 params.coordinates = coordinates;
 params.period = usePeriod;
 params.tunemethod = tuneMethod;

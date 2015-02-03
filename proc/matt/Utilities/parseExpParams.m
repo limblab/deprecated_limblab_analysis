@@ -23,9 +23,13 @@ while dontstop
                 end
                 
                 if all(getTypes)
-                    params.(pname) = cellfun(@str2num,a);
+                    params.(pname) = cellfun(@str2num,vals);
                 else % at least one value is character
-                    params.(pname) = vals;
+                    if length(vals) == 1
+                        params.(pname) = vals{1};
+                    else
+                        params.(pname) = vals;
+                    end
                 end
             end
         else

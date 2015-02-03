@@ -2,7 +2,7 @@ function adiff = angleDiff(angle1,angle2,useRad,preserveSign)
 % ANGLEDIFF finds absolute value of difference in angle
 % 
 % INPUTS:
-%   angle1: an angle or vector of angles
+%   angle1: an angle or vector of angles (DOESN'T WORK WITH MATRICES YET)
 %   angle2: another angle or vector of angles. Same size as angle1
 %   useRad: (boolean) if true, inputs are in radians
 %   preserveSign: (boolean) if true, will not return absolute value

@@ -33,10 +33,10 @@ function findMemoryCells(params,arrays)
 root_dir = params.outDir; % we want to load from the output directory of makeDataStruct
 paramSetName = params.paramSetName;
 
-useDate = params.exp.date{1};
-taskType = params.exp.task{1};
-adaptType = params.exp.adaptation_type{1};
-monkey = params.exp.monkey{1};
+useDate = params.exp.date;
+taskType = params.exp.task;
+adaptType = params.exp.adaptation_type;
+monkey = params.exp.monkey;
 
 tuneWindows = params.tuning.tuningPeriods;
 tuneMethods = params.tuning.tuningMethods;
@@ -52,15 +52,17 @@ tracking = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'tracking
 for iMethod = 1:length(tuneMethods)
     % nonparametric tuning requires a different method for comparison
     % for regression or GLM, loop along the periods
-    for iPeriod = 1:length(tuneWindows)
+    for iWindow = 1:length(tuneWindows)
         % only glm can use the full file tuning
-        if strcmpi(tuneWindows{iPeriod},'file') && ~strcmpi(tuneMethods{iMethod},'glm')
+        if strcmpi(tuneWindows{iWindow},'file') && ~strcmpi(tuneMethods{iMethod},'glm')
             warning(['File tuning not supported for ' tuneMethods{iMethod} ' method...']);
         else
             % loop along the arrays
             for iArray = 1:length(arrays)
                 useArray = arrays{iArray};
                 disp(['Using ' useArray '...']);
+                
+                tuningFile = fullfile(root_dir,useDate,[useArray '_tuning'],[taskType '_' adaptType '_' paramSetName '_' tuneMethods{iMethod} '_' tuneWindows{iWindow} '_' useDate '.mat']);
                 
                 t = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'tuning',[],useArray,paramSetName,tuneMethods{iMethod},tuneWindows{iWindow});
                 

@@ -49,14 +49,14 @@ dataDir = params.dataDir;
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 useUnsorted = params.useUnsorted;
-useDate = params.exp.date{1};
-monkey = params.exp.monkey{1};
+useDate = params.exp.date;
+monkey = params.exp.monkey;
 arrays = params.exp.arrays;
-bdfArray = params.exp.bdf_array{1};
-task = params.exp.task{1};
-adaptType = params.exp.adaptation_type{1};
+bdfArray = params.exp.bdf_array;
+task = params.exp.task;
+adaptType = params.exp.adaptation_type;
 epochs = params.exp.epochs;
-rotationAngle = str2double(params.exp.rotation_angle{1});
+rotationAngle = params.exp.rotation_angle;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % parse the date parts from useDate

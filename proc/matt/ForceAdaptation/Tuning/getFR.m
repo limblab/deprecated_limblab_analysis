@@ -6,9 +6,9 @@ function [outFR, outTheta, blockMT, outForce, outVel] = getFR(data,params,useArr
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load all of the parameters
-forceMag = str2double(params.exp.force_magnitude{1});
-forceDir = str2double(params.exp.force_angle{1});
-holdTime = str2double(params.exp.target_hold_high{1});
+forceMag = params.exp.force_magnitude;
+forceDir = params.exp.force_angle;
+holdTime = params.exp.target_hold_high;
 angleBinSize = params.tuning.angleBinSize;
 movementTime = params.tuning.movementTime;
 tuneDir = params.tuning.tuningCoordinates;

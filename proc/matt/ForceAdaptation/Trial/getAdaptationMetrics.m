@@ -26,13 +26,13 @@ function adaptation = getAdaptationMetrics(params)
 % Get some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 root_dir = params.outDir; % we want to load from the output directory of makeDataStruct
-useDate = params.exp.date{1};
-taskType = params.exp.task{1};
-adaptType = params.exp.adaptation_type{1};
+useDate = params.exp.date;
+taskType = params.exp.task;
+adaptType = params.exp.adaptation_type;
 epochs = params.exp.epochs;
-rotationAngle = str2double(params.exp.rotation_angle{1});
-holdTime = str2double(params.exp.target_hold_high{1});
-monkey = params.exp.monkey{1};
+rotationAngle = str2double(params.exp.rotation_angle);
+holdTime = str2double(params.exp.target_hold_high);
+monkey = params.exp.monkey;
 
 dataPath = fullfile(root_dir,useDate);
 
@@ -278,8 +278,8 @@ for iEpoch = 1:length(epochs)
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     adaptation.(epochs{iEpoch}).movement_table = mt;
-    adaptation.(epochs{iEpoch}).vel = vel;
-    adaptation.(epochs{iEpoch}).acc = acc;
+    %adaptation.(epochs{iEpoch}).vel = vel;
+    %adaptation.(epochs{iEpoch}).acc = acc;
     adaptation.(epochs{iEpoch}).block_times = blockTimes';
     adaptation.(epochs{iEpoch}).meta = meta;
     

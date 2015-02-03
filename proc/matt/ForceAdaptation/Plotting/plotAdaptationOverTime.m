@@ -135,7 +135,8 @@ maxMC = max(maxMC);
 % get the minimum length across files in each epoch
 minMoves = min(numMoves,[],1);
 
-% now, truncate each of the data to this length
+% now, truncate each of the data to this length. So throw away later trials
+% from longer sessions
 for iDate = 1:size(useDate,1)
     for iEpoch = 1:length(epochs)
         temp = aMC{iDate,iEpoch};
@@ -154,17 +155,23 @@ numMoves(3) = ceil(.32*length(mean(cell2mat(aMC(:,3)),1)));
 meanVals = cell(1,length(epochs));
 seVals = cell(1,length(epochs));
 count = 0;
+% loop along epochs
 for iEpoch = 1:length(epochs)
+    % get the values for the adaptation metric in this epoch
     vals = cell2mat(aMC(:,iEpoch));
     
+    % get trial indices for each bin, defined above. This is starting and
+    % ending points of each bin (so min length is 2)
     inds = 1:numMoves(iEpoch):size(vals,2);
     
-    %newVals = zeros(size(vals,1),length(inds)-1);
+    % loop along each bin and get all trials from start of one bin to the
+    % start of the next bin
     newVals = cell(1,length(inds)-1);
     for j = 1:length(inds)-1
+        % rows are sessions, columns are trials
         temp = vals(:,inds(j):inds(j+1));
-        %newVals(:,j) = mean(temp,2);
         
+        % reshape to stitch all sessions together into one big pool
         newVals{j} = reshape(temp,size(temp,1)*size(temp,2),1);
         
         % compile a list of all of the data for significance testing
@@ -179,6 +186,7 @@ for iEpoch = 1:length(epochs)
         end
     end
     
+    % take mean and std of pooled trials
     meanVals{iEpoch} = cellfun(@(x) nanmean(x),newVals);
     seVals{iEpoch} = cellfun(@(x) nanstd(x)./sqrt(size(x,1)),newVals);
     

@@ -4,29 +4,30 @@
 % 'time' tuningWindow set in getFR.
 
 colors = {'k','b','r'};
-if ~doMD
-    doCirc = false;
-    ymin_pd = 0;
-    ymax_pd = 120;
-    binSize = 10;
-    plotMult = 180/pi;
-    y_lab = 'PD Change (Deg) ';
-else
-    if doAbs
-        ymin_pd = -1;
-        ymax_pd = 5;
-    else
-        ymin_pd = -5;
-        ymax_pd = 5;
-    end
-    binSize = 2;
-    plotMult = 1;
-    y_lab = 'MD Change (Hz) ';
-    
-end
+doCirc = false;
+
+metricInfo.PD.ymin = 0;
+metricInfo.PD.ymax = 120;
+metricInfo.PD.binSize = 10;
+metricInfo.PD.label = 'PD Change (Deg) ';
+
+metricInfo.MD.ymin = -1;
+metricInfo.MD.ymax = 5;
+metricInfo.MD.binSize = 2;
+metricInfo.MD.label = 'MD Change (Hz) ';
+
+metricInfo.BO.ymin = -1;
+metricInfo.BO.ymax = 5;
+metricInfo.BO.binSize = 2;
+metricInfo.BO.label = 'BO Change (Hz) ';
+
+metricInfo.FR.ymin = -1;
+metricInfo.FR.ymax = 5;
+metricInfo.FR.binSize = 2;
+metricInfo.FR.label = 'FR Change (Hz) ';
 
 % set the bounds for the plots
-if useVel
+if slidingParams.useVel
     ymin_f = 10;
     ymax_f = 28;
 else
@@ -34,6 +35,7 @@ else
     ymax_f = 2.8;
 end
 
+monkeys = unique(allFiles(:,1))';
 
 h1 = figure();
 subplot1(1,length(monkeys));

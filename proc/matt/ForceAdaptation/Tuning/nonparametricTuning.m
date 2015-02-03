@@ -80,6 +80,8 @@ for iBlock = 1:length(blockFR)
     out(iBlock).cih = cih;
     out(iBlock).boot_fr = boot_fr;
     out(iBlock).utheta = utheta;
+    out(iBlock).fr = blockFR;
+    out(iBlock).theta = blockTheta;
     out(iBlock).sg = sg;
     out(iBlock).params = params;
 end

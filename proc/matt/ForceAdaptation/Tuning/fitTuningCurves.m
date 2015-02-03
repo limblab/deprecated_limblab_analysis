@@ -51,11 +51,11 @@ end
 root_dir = params.outDir;
 paramSetName = params.paramSetName;
 
-useDate = params.exp.date{1};
-taskType = params.exp.task{1};
-adaptType = params.exp.adaptation_type{1};
+useDate = params.exp.date;
+taskType = params.exp.task;
+adaptType = params.exp.adaptation_type;
 epochs = params.exp.epochs;
-monkey = params.exp.monkey{1};
+monkey = params.exp.monkey;
 
 tuningPeriods = params.tuning.tuningPeriods;
 tuningMethods = params.tuning.tuningMethods;
@@ -68,7 +68,7 @@ dataPath = fullfile(root_dir,useDate);
 disp('%% Loading data...');
 epochData = cell(1,length(epochs));
 for iEpoch = 1:length(epochs)
-    epochData{iEpoch} = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],epochs{iEpoch});
+    epochData{iEpoch} = loadResults(params.dataRoot,{monkey, useDate, adaptType, taskType},'data',[],epochs{iEpoch});
 end
 disp('%% Done.');
 

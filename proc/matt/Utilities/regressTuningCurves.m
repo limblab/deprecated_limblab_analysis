@@ -167,12 +167,20 @@ switch lower(sigTest{1})
         bo_sig = [NaN,NaN];
         [tunCurves,rs] = regressTCs(fr,theta,doPlots);
 
+        boot_pds = [];
+        boot_mds = [];
+        boot_bos = [];
+        
     otherwise
         % Don't do any significance testing
         [tunCurves,rs] = regressTCs(fr,theta,doPlots);
         pd_sig = [NaN,NaN];
         md_sig = [NaN,NaN];
         bo_sig = [NaN,NaN];
+        
+        boot_pds = [];
+        boot_mds = [];
+        boot_bos = [];
 end
 
 confBounds = {bo_sig,md_sig,pd_sig};

@@ -11,6 +11,7 @@ end
 includeSpeed = params.tuning.includeSpeed;
 confLevel = params.tuning.confidenceLevel;
 bootNumIters = params.tuning.numberBootIterations;
+tuningStatTest = params.tuning.tuningStatTest;
 
 %% Get data
 sg = data.(useArray).sg;
@@ -18,7 +19,14 @@ sg = data.(useArray).sg;
 [fr,theta,mt,force,vel] = getFR(data,params,useArray,tuningPeriod);
 
 % Do bootstrapping with regression
-statTestParams = {'bootstrap',bootNumIters,confLevel};
+switch lower(tuningStatTest)
+    case 'bootstrap'
+        statTestParams = {'bootstrap',bootNumIters,confLevel};
+    case 'anova'
+        statTestParams = {'anova',confLevel};
+    case 'none'
+        statTestParams = {'none'};
+end
 
 % the output will be cell array with element for each block if desired
 for iBlock = 1:length(fr)

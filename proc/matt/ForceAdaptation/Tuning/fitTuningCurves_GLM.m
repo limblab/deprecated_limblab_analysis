@@ -4,7 +4,7 @@ function out = fitTuningCurves_GLM(data,params,tuningPeriod,useArray)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Get all of the parameters
-holdTime = str2double(params.exp.target_hold_high{1});
+holdTime = params.exp.target_hold_high;
 epochs = params.exp.epochs;
 movementTime = params.tuning.movementTime;
 blocks = params.tuning.blocks;

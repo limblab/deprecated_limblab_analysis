@@ -20,9 +20,8 @@ clc;
 % would be great to have proper database
 %   - could load monkey info
 dataRoot = 'C:\Users\Matt Perich\Desktop\lab\data\';
-monkeys = {'Mihili','Chewie','MrT'};
-paramSetNames = {'movement','target','moveTime','targTime','moveFine','targFine','speedSlow','speedFast'};
-% paramSetNames = {'moveTime','targTime'};
+monkeys = {'Mihili','Chewie'};
+paramSetNames = {'movement'};
 
 % exclude these analysis steps
 %    Note: I recommend if you change analysis parameters relevant to one of
@@ -30,11 +29,11 @@ paramSetNames = {'movement','target','moveTime','targTime','moveFine','targFine'
 %    date with the actual data
 % processing options
 doDataStruct        = 0;
-doAdaptation        = 0;
+doAdaptation        = 1;
 doTracking          = 0;
 % tuning options
-doTuning            = 1;
-doClassification    = 1;
+doTuning            = 0;
+doClassification    = 0;
 doReport            = 0;
 % plotting options
 doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning

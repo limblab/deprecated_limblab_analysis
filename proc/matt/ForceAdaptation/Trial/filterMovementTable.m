@@ -36,7 +36,7 @@ numSamples = params.tuning.numSamples;
 numResamples = params.tuning.numSamples;
 
 % don't count the hold time in the time to target
-holdTime = str2double(params.exp.target_hold_high{1});
+holdTime = params.exp.target_hold_high;
 mt = data.movement_table;
 centers = data.movement_centers;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
