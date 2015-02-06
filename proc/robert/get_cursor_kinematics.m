@@ -54,7 +54,7 @@ else
         else
             varName='bdf';
         end     % if we make it to this point we know the variable bdf exists. 
-        animal=regexp(bdf.meta.filename,'Chewie|Mini','match','once');
+        animal=regexp(bdf.meta.filename,'Chewie|Mini|Jaco','match','once');
         % now, re-direct to the BDF that's on citadel
         pathToBDF=findBDFonCitadel(regexprep(bdf.meta.filename,'\.plx','.mat'));
     else                % bdf has been passed in.
@@ -63,8 +63,8 @@ else
         varName=inputname(1);
         % try to be smart about where bdf might be located.  Do something
         % with bdf.meta.filename
-        CCMbank={'Chewie_8I2','Mini_7H1'};
-        animal=regexp(bdf.meta.filename,'Chewie|Mini','match','once');
+        CCMbank={'Chewie_8I2','Mini_7H1','Jaco_8I1'};
+        animal=regexp(bdf.meta.filename,'Chewie|Mini|Jaco','match','once');
         if isempty(animal)
             % revert to dialog, because the name was not found in our
             % database.  But now, the dialog is looking for the text file
@@ -127,6 +127,9 @@ switch animal
         pathToBR=regexprep(pathToBDF,{'bdf','\.mat'}, ...
             {['BrainReader logs',fsep,'online'],'\.txt'});
     case 'Chewie'
+        pathToBR=regexprep(pathToBDF,{'BDFs','\.mat'}, ...
+            {['BrainReader logs',fsep,'online'],'\.txt'});
+     case 'Jaco'
         pathToBR=regexprep(pathToBDF,{'BDFs','\.mat'}, ...
             {['BrainReader logs',fsep,'online'],'\.txt'});
 end

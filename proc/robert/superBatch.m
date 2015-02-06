@@ -36,6 +36,8 @@ try
         remoteFolder2=regexprep(remoteFolder,'BDFs','Filter files');
     elseif isequal(animal,'Mini')
         remoteFolder2=regexprep(remoteFolder,'bdf','FilterFiles');
+    elseif isequal(animal,'Jaco')
+        remoteFolder2=regexprep(remoteFolder,'bdf','FilterFiles');
     end
     
     % the long-winded stuff.

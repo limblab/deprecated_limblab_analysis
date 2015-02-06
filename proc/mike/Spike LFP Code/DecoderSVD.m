@@ -16,11 +16,15 @@ for i = 1:size(H1,2)
     Hstruct.(['Lag',num2str(i)]) = Htemp;
     [Vtemp,S_T,U_T] = svd(Hstruct.(['Lag',num2str(i)]));
     V{i} = Vtemp;
+    V12{i} = Vtemp(:,1:2);
+    U{i} = U_T';
+    S{i} = S_T';
     SingV = V{i}*S_T;
     ParticipationNum(:,i) = sqrt(SingV(:,1).^2 + SingV(:,2).^2);
 end
 
-clear Numlags Hx Hy Htemp Hstruct i H1 S_T U_T Vtemp 
+clear Numlags Hx Hy Htemp Hstruct i H1 S_T U_T Vtemp
+
 %% Find and plot common channels
 if findCommonCh == 1
     
@@ -50,6 +54,6 @@ if findCommonCh == 1
     
 end
 
-clear AvgWeight 
+clear AvgWeight findCommonCh
 
 

@@ -57,9 +57,9 @@ for bin = 1:length(KernelSize)
                             if C == 1
 %                                 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 %                                 fpf=filtfilt(b,a,fp')';
-                                tfmatByTrialStart(i,:) = fft(Trials{k,f}.FPstart{i,C}(FP_Trial_timeIndex_start));
-                                tfmatByTrialMaxV(i,:) = fft(Trials{k,f}.FPMaxV{i,C}(FP_Trial_timeIndex_MV));
-                                tfmatByTrialEnd(i,:) = fft(Trials{k,f}.FPend{i,C}(FP_Trial_timeIndex_end));
+                                tfmatByTrialStart(i,:) = fft(TrialsRawFP{k,f}.FPstart{i,C}(FP_Trial_timeIndex_start));
+                                tfmatByTrialMaxV(i,:) = fft(TrialsRawFP{k,f}.FPMaxV{i,C}(FP_Trial_timeIndex_MV));
+                                tfmatByTrialEnd(i,:) = fft(TrialsRawFP{k,f}.FPend{i,C}(FP_Trial_timeIndex_end));
                                 
                                 fpSpectByTrialStart(i,:) = log( tfmatByTrialStart(i,:).* conj(tfmatByTrialStart(i,:)));
                                 fpSpectByTrialMaxV(i,:) = log( tfmatByTrialMaxV(i,:).* conj(tfmatByTrialMaxV(i,:)));

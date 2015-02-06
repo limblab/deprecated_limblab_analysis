@@ -82,8 +82,8 @@ switch ext
         nameIn=[nameIn, '.mat'];
 end
 
-CCMbank={'Chewie_8I2','Mini_7H1'};
-animal=regexp(nameIn,'Chewie|Mini','match','once');
+CCMbank={'Chewie_8I2','Mini_7H1','Jaco_8I1'};
+animal=regexp(nameIn,'Chewie|Mini|Jaco','match','once');
 
 if ismac
     % automagically, assuming /Volumes is the mount point for data.

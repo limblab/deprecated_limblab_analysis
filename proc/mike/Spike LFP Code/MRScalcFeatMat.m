@@ -1,4 +1,4 @@
-function [PB r1 sr featind y] = MRScalcFeatMat(sig, signal, numfp, ...
+function [PB r1 sr featind y t] = MRScalcFeatMat(sig, signal, numfp, ...
     binsize, folds,numlags,numsides,samprate,fp,fptimes,analog_times,fnam,varargin)
 
 % $Id: predictions.m 67 2009-03-23 16:13:12Z brian $
@@ -121,8 +121,8 @@ if ~exist('wsz','var')
     wsz=256;    %FFT window size
 end
 
-if CalcWhat == 0
-    return
+if exist('CalcWhat','var') == 0
+    CalcWhat = 3;
 end
 
 if CalcWhat == 1 || CalcWhat == 3
