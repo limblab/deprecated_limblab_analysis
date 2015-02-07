@@ -235,46 +235,71 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if opts.verbose
                 disp('Aggregating data... get force')
             end
-            % Check date of recording to see if it's before or after the
-            % change to force handle mounting.
-            if datenum(out_struct.meta.datetime) < datenum('5/27/2010')            
-                fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
-                         -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
-                rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
-                force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
-                Fy_invert = -1; % old force setup was left hand coordnates.
-            elseif datenum(out_struct.meta.datetime) < datenum('6/28/2011')
-                fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
-                        -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
-                rotcal = [1 0; 0 1];                
-                force_offsets = [-.73 .08 .21 -.23 .25 .44];
-                Fy_invert = 1;
-            elseif opts.rothandle
-                % Fx,Fy,scaleX,scaleY from ATI calibration file:
-                % \\citadel\limblab\Software\ATI FT - March
-                % 2011\Calibration\FT7520.cal
-                % fhcal = [Fx;Fy]./[scaleX;scaleY]
-                % force_offsets acquired empirically by recording static
-                % handle.
-                fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
-                        -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
-                rotcal = [-1 0; 0 1];  
-                force_offsets = [306.5423 -847.5678 132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
-                force_offsets = [373.2183 -1017.803 -87.8063 -107.1702 -709.7454 21.6321];
-                Fy_invert = 1;
-            else
-                % Fx,Fy,scaleX,scaleY from ATI calibration file:
-                % \\citadel\limblab\Software\ATI FT - March
-                % 2011\Calibration\FT7520.cal
-                % fhcal = [Fx;Fy]./[scaleX;scaleY]
-                % force_offsets acquired empirically by recording static
-                % handle.
-                fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
-                        -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
-                rotcal = [1 0; 0 1];  
-                force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
-                Fy_invert = 1;
-            end 
+            % Check lab number for calibration parameters
+            if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
+                % Check date of recording to see if it's before or after the
+                % change to force handle mounting.
+                if datenum(out_struct.meta.datetime) < datenum('5/27/2010')            
+                    fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
+                             -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
+                    rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
+                    force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+                    Fy_invert = -1; % old force setup was left hand coordnates.
+                elseif datenum(out_struct.meta.datetime) < datenum('6/28/2011')
+                    fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
+                            -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
+                    rotcal = [1 0; 0 1];                
+                    force_offsets = [-.73 .08 .21 -.23 .25 .44];
+                    Fy_invert = 1;
+                elseif opts.rothandle
+                    % Fx,Fy,scaleX,scaleY from ATI calibration file:
+                    % \\citadel\limblab\Software\ATI FT\Calibration\Lab 3\FT7520.cal
+                    % fhcal = [Fx;Fy]./[scaleX;scaleY]
+                    % force_offsets acquired empirically by recording static
+                    % handle.
+                    fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
+                            -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
+                    rotcal = [-1 0; 0 1];  
+                    force_offsets = [306.5423 -847.5678 132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
+                    force_offsets = [373.2183 -1017.803 -87.8063 -107.1702 -709.7454 21.6321];
+                    Fy_invert = 1;
+                else
+                    % Fx,Fy,scaleX,scaleY from ATI calibration file:
+                    % \\citadel\limblab\Software\ATI FT\Calibration\Lab 3\FT7520.cal
+                    % fhcal = [Fx;Fy]./[scaleX;scaleY]
+                    % force_offsets acquired empirically by recording static
+                    % handle.
+                    fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
+                            -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
+                    rotcal = [1 0; 0 1];  
+                    force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
+                    Fy_invert = 1;
+                end
+            elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
+                if opts.rothandle
+                    % Fx,Fy,scaleX,scaleY from ATI calibration file:
+                    % \\citadel\limblab\Software\ATI FT\Calibration\Lab 6\FT16018.cal
+                    % fhcal = [Fx;Fy]./[scaleX;scaleY]
+                    % force_offsets acquired empirically by recording static
+                    % handle.
+                    fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
+                            0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
+                    rotcal = [-1 0; 0 1];  
+                    force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPRICALLY
+                    Fy_invert = 1;
+                else
+                    % Fx,Fy,scaleX,scaleY from ATI calibration file:
+                    % \\citadel\limblab\Software\ATI FT\Calibration\Lab 6\FT16018.cal
+                    % fhcal = [Fx;Fy]./[scaleX;scaleY]
+                    % force_offsets acquired empirically by recording static
+                    % handle.
+                    fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
+                            0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
+                    rotcal = [1 0; 0 1];  
+                    force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPIRICALLY
+                    Fy_invert = 1;
+                end
+            end
             
             [b,a] = butter(4, 200/adfreq);
             raw_force = zeros(length(analog_time_base), 6);
@@ -338,10 +363,15 @@ function out_struct = calc_from_raw(raw_struct, opts)
 %                 % and not elbow as it should.
 %                 out_struct.force(p,:) = out_struct.force(p,:) * r;
 %             end
-
-            temp = out_struct.force;            
-            out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
-            out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
+            
+            temp = out_struct.force;
+            if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection            
+                out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
+                out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
+            elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection         
+                out_struct.force(:,1) = temp(:,1).*cos(-th_1_adj)' - temp(:,2).*sin(th_1_adj)';
+                out_struct.force(:,2) = temp(:,1).*sin(th_1_adj)' + temp(:,2).*cos(th_1_adj)';
+            end
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
             out_struct.force(ia,2:3) = 0;
