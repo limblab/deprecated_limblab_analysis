@@ -543,12 +543,13 @@ end             %ending "if opts.eye"
     % temporal shift
     function dx = kin_diff(x) 
         [b, a] = butter(8, 100/adfreq);
-        dx = diff(x) .* adfreq;
+%         dx = diff(x) .* adfreq;
+        dx = gradient(x,1/adfreq);
         dx = filtfilt(b,a,dx);
-        if size(dx,1)==1
-            dx = [0 dx];
-        else
-            dx = [0;dx];
-        end
+%         if size(dx,1)==1
+%             dx = [0 dx];
+%         else
+%             dx = [0;dx];
+%         end
     end
 end % close outermost function
