@@ -2,8 +2,8 @@
 function [vaf,R2,decoders,preds,iter_params] = optimize_lambda2(E2F,optimdata,varargin)
 % varargin = {}
 L1     =  0;
-L2     = [2];
-LR     = [5e-5 1e-5 5e-6 1e-6 5e-7];
+L2     = [1];
+LR     = [5e-5 1e-5 5e-6 1e-6 5e-7 1e-7 5e-8];
 
 emg_vec    = [1:13];
 pos_vec    = [1 2];

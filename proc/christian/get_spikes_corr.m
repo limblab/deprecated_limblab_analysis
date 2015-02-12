@@ -24,7 +24,8 @@ c = zeros(num_lags*2+1,num_neur_tot,num_sig); %covariance matrix
 
 for n = 1:num_neur_tot
     for s = 1:num_sig
-        c(:,s,n) = xcov(spikes(:,n),target_signals(:,s),num_lags,'coef').^2;
+%         c(:,n,s) = xcov(spikes(:,n),target_signals(:,s),num_lags,'coef');
+        c(:,n,s) = xcov(spikes(:,n),target_signals(:,s),num_lags,'biased').^2;
     end
 end
 

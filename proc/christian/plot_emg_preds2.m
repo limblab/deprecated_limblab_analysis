@@ -24,10 +24,10 @@ plot_labels= [testdata.emgguide(ev,:) ;testdata.cursorposlabels];
 % plot_data = [testdata.cursorposbin];
 % plot_labels= [testdata.cursorposlabels];
 
-ttl = '';
-if nargin > 3
-    ttl = varargin{1};
-end
+% ttl = '';
+% if nargin > 4
+%     ttl = varargin{2};
+% end
 
 % figure;
 num_figs = size(plot_data,2);

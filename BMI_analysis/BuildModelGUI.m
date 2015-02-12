@@ -55,8 +55,11 @@ function BuildModelGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for BuildModelGUI
 handles.output = hObject;
-handles.binsize = varargin{1};
-handles.statelabels = varargin{2};
+handles.binsize = 0.05;
+handles.statelabels = [];
+
+if nargin>3 handles.binsize = varargin{1}; end
+if nargin>4 handles.statelabels = varargin{2}; end
 handles.OK = 0;
 
 % Update handles structure

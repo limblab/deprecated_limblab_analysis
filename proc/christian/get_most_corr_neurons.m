@@ -18,7 +18,9 @@ function [neuronIDs_s,c_s,max_c_s] = get_most_corr_neurons(binnedData,varargin)
 %                     order.
 %
 %   binnedData      : standard binnedData format
-%   varargin{signals, num_lags, cmp_file}
+%
+%   varargin {signals, num_lags, cmp_file}
+%
 %       signals     : string, either 'cursor' (default) or 'emg', to
 %                     specifying what to correlate spikes with.
 %       num_lags    : number of lags to evaluate (default = 10);
@@ -62,12 +64,12 @@ end
 
 num_sig     = size(signals,2);
 
-c = get_spikes_corr(signals,spikes,num_lags);
-m = squeeze(max(max(c)));
-[max_c_s, c_idx] = sort(m,1,'descend');
+c = get_spikes_corr(spikes,signals,num_lags);
+m = sum(max(c),3);
+[max_c_s, c_idx] = sort(m,2,'descend');
 
 neuronIDs_s = binnedData.neuronIDs(c_idx,:);
-c_s = c(:,:,c_idx);
+c_s = c(:,c_idx,:);
 
 
 if plot_flag
@@ -88,10 +90,17 @@ if plot_flag
             continue;
         end
         subplot(numrows,numcol,n);
-        plot(c(:,:,ch_id));
+        plot(squeeze(c(:,ch_id,:)));
         hold on; axis off;
-        plot([num_lags+1 num_lags+1],[0 ymax],'k--');
-        ylim([0 ymax]); xlim([1 2*num_lags+1]);
+        
+        % comment next line to normalize display:
+        ymax = 1.1*max(max(squeeze(c(:,ch_id,:))));
+        yrange = [min(0,ymax) max(0,ymax)];
+        xrange = [1 2*num_lags+1];
+        
+        plot(xrange,[0 0],'k-');
+        plot([num_lags+1 num_lags+1],yrange,'k--');
+        ylim(yrange); xlim(xrange);
         title(sprintf('ch %d',ch_id));
     end
  
