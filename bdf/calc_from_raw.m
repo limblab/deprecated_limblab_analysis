@@ -404,7 +404,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
                     fs = out_struct.raw.analog.adfreq(c);
                     chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{c})/fs;
                     a_data = double(get_analog_signal(out_struct, channame));
-                    a_data = a_data(fs:end-(out_struct.meta.duration-out_struct.vel(end,1))*fs,2);
+                    a_data = a_data(:,2);
                     if fs~=adfreq
                         a_data = interp1(chan_time_base, a_data, analog_time_base);
                     end
