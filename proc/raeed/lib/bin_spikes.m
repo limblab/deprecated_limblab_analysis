@@ -1,4 +1,5 @@
-function s = bin_spikes(bdf_cell,ts,channel,unit)
+function [s, t] = bin_spikes(bdf_cell,ts,channel,unit)
+% THIS FUNCTION NEEDS REVISION TO FIT INTO NEW WORKFLOW
 % BIN_SPIKES Bins spikes into bins of length ts, given set of BDFs
 %   Given cell array of BDF data structures, BIN_SPIKES counts the number
 %   of spikes that occur in ts millisecond bins and concatenates spike
