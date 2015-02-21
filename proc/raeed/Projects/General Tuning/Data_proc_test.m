@@ -14,4 +14,4 @@ end
 behaviors = parse_for_tuning(bdf,'continuous');
 
 %% compute tuning
-tunings = compute_tuning(
+tunings = compute_tuning(behaviors.FR,behaviors.armdata,[1 1 0 0 0 0],struct('num_rep',10),'poisson');
