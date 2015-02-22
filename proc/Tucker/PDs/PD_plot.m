@@ -83,10 +83,10 @@ for iChan = 1:length(u1)
         deselected_chan = [u1(iChan), deselected_chan];
         skipchans=[iChan,skipchans];
     end
-    if u1(iChan)>96
-        deselected_chan = [u1(iChan), deselected_chan];
-        skipchans=[iChan,skipchans];
-    end
+%     if u1(iChan)>96
+%         deselected_chan = [u1(iChan), deselected_chan];
+%         skipchans=[iChan,skipchans];
+%     end
 end
 %% identify channels with low modulation depth
 tmp_mean=mean(moddepth(setxor([1:length(moddepth)],skipchans)));

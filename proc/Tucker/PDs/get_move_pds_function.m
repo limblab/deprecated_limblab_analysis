@@ -15,9 +15,12 @@ close all
         elseif isfield(temp,'bdf')
             bdf=temp.bdf;
         else
-            fname=follow_links([folderpath,input_data.filename]);
-            disp(strcat('converting: ',fname))
-            bdf=get_cerebus_data(fname,input_data.labnum,'verbose','noeye');
+            %fname=follow_links([folderpath,input_data.filename]);
+            temppath=follow_links([folderpath,input_data.filename]);
+            [tempfolder,tempname,tempext]=fileparts(temppath);
+            disp(strcat('converting: ',temppath))
+            bdf=get_nev_mat_data(cerebus2NEVNSx(tempfolder,tempname),input_data.labnum,'verbose','noeye');
+            %bdf=get_cerebus_data(fname,input_data.labnum,'verbose','noeye');
         end
     else
         fname=follow_links([folderpath,input_data.filename]);
@@ -71,7 +74,7 @@ close all
     data_struct.Multi_unit_PD_data=outdata;
     
     pds=outdata([bdf_multiunit.units(:).tuned]',:);
-    pds=pds(pds(:,1)<97,:);
+    %pds=pds(pds(:,1)<97,:);
     pds=pds(pds(:,3)<1,:);
     pds=sortrows(pds,2);
     data_struct.Tuned_Multi_unit_PD_data=pds;
