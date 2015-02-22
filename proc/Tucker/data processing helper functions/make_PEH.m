@@ -21,18 +21,25 @@ function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
     %because the hist function does not return a figure handle make_PEH
     %uses a bar plot to produce a histogram
 
+    verbose=0;
+    bin_size=.050;%s
     if ~isempty(varargin)
         bin_size=varargin{1};
         if length(varargin)>1
             verbose=varargin{2};
-        else
-            verbose=0;
         end
-    else
-        bin_size=.050;%s
     end
     num_bins=round((window(1)+window(2))/bin_size);
-    bin_size=(window(1)+window(2))/num_bins;
+    if (window(1)+window(2))/num_bins~=bin_size;
+        if verbose
+            warning('make_PEH:WindowVSBinMismatch',strcat('The bin size ',num2str('bin_size'),' does not evenly subdevide the window length of ',num2str(window(1)+window(2))));
+            disp('adjusting bin_size to evenly split the window')
+        end
+        bin_size=(window(1)+window(2))/num_bins;
+        if verbose
+            disp(strcat('new bin_size is ',num2str(bin_size)))
+        end
+    end
     if verbose
         disp(strcat('Working on PEH for channel:',num2str(unit(1)),' unit #:',num2str(unit(2))))
         disp(strcat('Histogram will be computed starting ', num2str(window(1)),'ms prior to event onset, through ',num2str(window(2)),'ms after event onset'))
@@ -47,7 +54,7 @@ function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
     if length(window)~=2
         error('make_PEH:INVALIDWINDOWSPECIFICATION','The time window passed in to make_PEH is not a 2 element vector')
     end
-    if length(window)~=2
+    if length(unit)~=2
         error('make_PEH:INVALIDUNITSPECIFICATION','The unit passed in to make_PEH is not a 2 element vector')
     end
     
