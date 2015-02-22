@@ -28,7 +28,7 @@ addpath([dir '/bar_with_error']);
 dir = fileparts(fileparts(dir));
 
 addpath(dir);
-
+addpath([dir '/proc/basic functions']);
 addpath([dir '/lib']);
 addpath([dir '/lib/ml']);
 addpath([dir '/lib/stats']);
@@ -42,6 +42,7 @@ addpath([dir '/bdf/event_decoders']);
 addpath([dir '/bdf/lib_cb']);
 addpath([dir '/bdf/lib_plx']);
 addpath([dir '/bdf/lib_plx/core_files/']);
+addpath([dir '/bdf/NEVNSx']);
 addpath([dir '/BMI_analysis']);
 
 clear dir;
