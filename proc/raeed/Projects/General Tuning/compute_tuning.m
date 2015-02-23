@@ -35,15 +35,16 @@ neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tunin
 empty_PD = struct('dir',[],'moddepth',[],'dir_CI',[],'moddepth_CI',[]);
 
 %% Parallelize for speed
-% if isempty(gcp)
-%     parpool;
-% end
+if isempty(gcp)
+    parpool;
+end
+opt = statset('UseParallel',true);
 
 %% Bootstrap GLM function for each neuron
 tic
 for i = 1:num_units
     %bootstrap for firing rates to get output parameters
-    boot_tuning = bootstrp(bootstrap_params.num_rep,@(X,y) {bootfunc(X,y)}, armdata_mat, firing_rates(:,i));
+    boot_tuning = bootstrp(bootstrap_params.num_rep,@(X,y) {bootfunc(X,y)}, armdata_mat, firing_rates(:,i),'Options',opt);
     
     %Display verbose information
     disp(['Processed Unit ' num2str(i) ' (Time: ' num2str(toc) ')']);
@@ -117,10 +118,7 @@ for i = 1:num_units
         column_ctr = column_ctr+num_covar_col;
     end
 end
-
-%% Find means, Confidence intervals, PDs
-
 %% Delete parallel pool
-% delete(gcp('nocreate'))
+delete(gcp('nocreate'))
 
 end

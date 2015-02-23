@@ -1,7 +1,7 @@
 %%% General processing test scrit
 %% Get bdf
-% bdf = get_nev_mat_data('Y:\Chips_12H1\RAW\Chips_20150206_RW_tucker_001',6);
-bdf = get_nev_mat_data('/Users/raeedchowdhury/Projects/s1_analysis/proc/raeed/Projects/General Tuning/Chips_20150206_RW_tucker_001',6);
+bdf = get_nev_mat_data('Y:\Chips_12H1\RAW\Chips_20150206_RW_tucker_001',6);
+% bdf = get_nev_mat_data('/Users/raeedchowdhury/Projects/s1_analysis/proc/raeed/Projects/General Tuning/Chips_20150206_RW_tucker_001',6);
 
 %% parse for tuning
 % [bdf.TT,bdf.TT_hdr] = rw_trial_table(bdf);
@@ -20,4 +20,4 @@ bdf = make_tdf_function(bdf);
 behaviors = parse_for_tuning(bdf,'continuous');
 
 %% compute tuning
-tunings = compute_tuning(behaviors.FR,behaviors.armdata,[1 1 0 0 0 0],struct('num_rep',10),'poisson');
+tunings = compute_tuning(behaviors.FR,behaviors.armdata,[1 1 0 0 0 0],struct('num_rep',10000),'poisson');
