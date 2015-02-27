@@ -77,7 +77,7 @@ for i = 1:num_units
         neural_tuning(i,covar_ctr).weight_cov = coef_cov(column_ctr+1:column_ctr+num_covar_col,column_ctr+1:column_ctr+num_covar_col);
         
         %put CIs into outstruct
-        neural_tuning(i,covar_ctr).CI = coef_CIs(:,column_ctr+1:num_covar_col);
+        neural_tuning(i,covar_ctr).CI = coef_CIs(:,column_ctr+1:column_ctr+num_covar_col);
         
         %term significance
         neural_tuning(i,covar_ctr).term_signif = '?';

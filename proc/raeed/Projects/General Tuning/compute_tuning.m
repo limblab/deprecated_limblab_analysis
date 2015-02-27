@@ -35,10 +35,10 @@ neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tunin
 empty_PD = struct('dir',[],'moddepth',[],'dir_CI',[],'moddepth_CI',[]);
 
 %% Parallelize for speed
-if isempty(gcp)
-    parpool;
-end
-opt = statset('UseParallel',true);
+% if isempty(gcp)
+%     parpool;
+% end
+% opt = statset('UseParallel',true);
 
 %% Bootstrap GLM function for each neuron
 tic
@@ -77,7 +77,7 @@ for i = 1:num_units
         neural_tuning(i,covar_ctr).weight_cov = coef_cov(column_ctr+1:column_ctr+num_covar_col,column_ctr+1:column_ctr+num_covar_col);
         
         %put CIs into outstruct
-        neural_tuning(i,covar_ctr).CI = coef_CIs(:,column_ctr+1:num_covar_col);
+        neural_tuning(i,covar_ctr).CI = coef_CIs(:,column_ctr+1:column_ctr+num_covar_col);
         
         %term significance
         neural_tuning(i,covar_ctr).term_signif = '?';
@@ -119,6 +119,6 @@ for i = 1:num_units
     end
 end
 %% Delete parallel pool
-delete(gcp('nocreate'))
+% delete(gcp('nocreate'))
 
 end
