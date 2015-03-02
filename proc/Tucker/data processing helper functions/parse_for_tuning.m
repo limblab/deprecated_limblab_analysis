@@ -100,7 +100,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
         
     %% set up optional inputs to the function
     method_opts=[];
-    which_units=[1:length(bdf.units)];
+    which_units=[];
     for i=1:2:length(varargin)
         switch varargin{i}
             case 'opts'
@@ -111,7 +111,13 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 error('Parse_for_tuning:UnrecognizedFlag',strcat('The ',num2str(i+2),'input is not a valid input'))
         end
     end
-    
+    if isempty(which_units)
+        for i = 1:size(bdf.units, 2);
+            if size(bdf.units(i).ts, 1) > 0 & bdf.units(i).id(1,2)~=255
+                which_units = [which_units; i];
+            end
+        end
+    end
     %% set generic variables from the bdf 
     pos=bdf.pos;
     vel=bdf.vel;

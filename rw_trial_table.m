@@ -38,13 +38,11 @@ function varargout = rw_trial_table(bdf)
     num_targets = (bdf.databursts{1,2}(1)-18)/8;
 
     %tt= [-1 -1 -1 -1 -1 -1 NaN ... NaN -1 -1]
-    tt = [(zeros(num_trials-1,6)-1)  NaN(num_trials-1,2*num_targets)  (zeros(num_trials-1,2)-1) ];
 
     for trial = 1:num_trials-1
         start_time = start_words(trial);
         if (bdf.databursts{trial,2}(1)-18)/8 ~= num_targets
-            warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, operation interrupted',start_time);
-            tt = tt(1:trial-1,:);
+            warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, trial skipped',start_time);
             continue;
         end
 

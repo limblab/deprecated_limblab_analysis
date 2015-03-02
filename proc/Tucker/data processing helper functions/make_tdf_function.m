@@ -2,6 +2,7 @@ function bdf=make_tdf_function(bdf)
 %makes a tdf from a bdf. tdf is the Tucker data format which extends
 %the bdf by appending the trial table as a main element, and adding the
 %firing rate to the unit sub elements
+
 switch bdf.meta.task
     case 'RW'
         [bdf.TT,bdf.TT_hdr]=rw_trial_table_hdr(bdf);

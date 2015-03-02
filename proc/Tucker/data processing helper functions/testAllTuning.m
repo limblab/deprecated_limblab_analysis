@@ -16,7 +16,9 @@ function [bdf]=testAllTuning(bdf)
         window=.1;
 
     %% get the trial table for the bdf
-        bdf.TT=rw_trial_table(bdf);
+        if ~isfield(bdf,'TT')
+            bdf.TT=rw_trial_table(bdf);
+        end
     %% find individual reaches within trial
         %get list of target onset times
         numTarg=bdf.TT(:,2);
@@ -63,6 +65,10 @@ function [bdf]=testAllTuning(bdf)
                 T(i)=inds(1)+maxInd(1);
             end
         end
+        %strip the zeros out due to skipped points
+        T=T(find(T));
+        
+        
     %% get angle of individual reaches
         %get positions at target onset
         pos=zeros(size(T,1),2);

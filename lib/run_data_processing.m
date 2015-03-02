@@ -4,7 +4,7 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
     %2)the name of the directory to put all the results in: target_directory
     %3)optionally a struct of configuration parameters for their processing
     %functions
-
+    %
     %the script then perorms the following operations:
     %a)generates the lab standard folder tree
     %b)calls the function specified in main_function_name, passing in the
@@ -20,7 +20,7 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
     %pstrings in flat text files and all other data in individual m-files. 
     %The names of data files will be the names of the fields of the
     %output data struct
-    
+    %
     %the user's analysis function should accept a single argument which is the
     %target folder to save the processed data into
     %the analysis function should return one cell array, and one struct:

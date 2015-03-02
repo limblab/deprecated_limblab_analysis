@@ -28,12 +28,14 @@ close all
         bdf=get_cerebus_data(fname,input_data.labnum,'verbose','noeye');
     end
 
-
+    bdf.meta.task='RW';
+    bdf=make_tdf_function(bdf);
     
     %make single and multi unit data sets
     bdf_multiunit=remove_sorting(bdf);
     bdf_multiunit=testAllTuning(bdf_multiunit);
     data_struct.Multi_unit_bdf=bdf_multiunit;
+    
     temp=[];
     for i=1:length(bdf.units)
         if (bdf.units(1,i).id(2)==0 | bdf.units(1,i).id(2)==255)

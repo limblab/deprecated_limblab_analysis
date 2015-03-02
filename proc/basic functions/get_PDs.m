@@ -36,6 +36,13 @@ function [figure_handles, output_data]=get_PDs(folder,options)
     optionstruct.compute_force_pds=0;
     optionstruct.compute_dfdt_pds=0;
     optionstruct.compute_dfdtdt_pds=0;
+    if options.only_sorted
+        for i=1:length(bdf.units)
+            temp(i)=~(bdf.units(i).id(2)==0 | bdf.units(i).id(2)==255);
+        end
+        ulist=1:length(bdf.units);
+        optionstruct.which_units=ulist(temp);
+    end
     optionstruct.data_offset=-.015;%negative shift shifts the kinetic data later to match neural data caused at the latency specified by the offset
     %% if we are doing unit pds, generate the parsed behavioral data
     if options.do_unit_pds

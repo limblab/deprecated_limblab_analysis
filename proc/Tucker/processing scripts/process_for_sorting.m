@@ -4,14 +4,12 @@ basefilename='Chips_20150227_RW_tucker_001.nev';
 nodigitalfilename='Chips_20150227_RW_tucker_001_nodigital.nev';
 spikelessfilename='Chips_20150227_RW_tucker_001_nospikes.mat';
 
-
 %open data
 NEV = openNEV('read', [basepath, '\', basefilename],'nosave','nomat','report');
 %save just the spike data for sorting
 saveNEVOnlySpikes2(NEV,[basepath '\'  nodigitalfilename]);
 %save everything except the spikes so the nev can be recomposed.
 saveNEVOnlyDigital(NEV,[basepath '\' spikelessfilename]);
-
 
 %% save append digital data back on and re-save
 basepath='C:\Users\limblab\Documents\local_processing\chips\experiemnt_20150226_RW_sorting';
