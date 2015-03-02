@@ -1,7 +1,7 @@
 function status = processSpikesForSorting(file_path,file_prefix)
 % processSpikesForSorting combines spike data from .nev files in file_path that match
 %   file_prefix string.  Saves spike data to new file named '(file_prefix)-spikes.nev'.
-%   After running, sort spikes and save as '(file_prefix)-spikes-s.nev'.
+%   After running, sort spikes in Plexon OfflineSorter and save as '(file_prefix)-spikes-s.nev'.
 %   Run this script again after spike sorting to separate into independent 
 %   .mat files.
 

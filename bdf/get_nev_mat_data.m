@@ -1,6 +1,8 @@
 function out_struct = get_nev_mat_data(varargin)
 % GET_NEV_MAT_DATA Generates a BDF struct from NEVNSx structure or from
-% .nev and .nsx files.
+% .nev and .nsx files. If you want to sort the neurons in your files,
+% use the "processSpikesForSorting.m" script. To see an example of how it is used,
+% check out "mergeUnmergeSpikes.m".
 %
 %   OUT_STRUCT = GET_NEV_MAT_DATA(NEVNSx) returns a BDF populated by the
 %   structure NEVNSx.
@@ -62,7 +64,7 @@ function out_struct = get_nev_mat_data(varargin)
     end
     
     if isstruct(fileOrStruct)
-        NEVNSx = fileOrStruct;        
+        NEVNSx = fileOrStruct;
     else
         [filepath,fileprefix,~] = fileparts(fileOrStruct);
         if ~strcmp(filepath(end),filesep)
