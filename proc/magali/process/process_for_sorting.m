@@ -1,8 +1,8 @@
 %% strip digital data from NEV
-basepath='C:\Users\limblab\Documents\local_processing\chips\experiment_20150227_RW_sorting';
-basefilename='Chips_20150227_RW_tucker_001.nev';
-nodigitalfilename='Chips_20150227_RW_tucker_001_nodigital.nev';
-spikelessfilename='Chips_20150227_RW_tucker_001_nospikes.mat';
+basepath='C:\Users\limblab\Desktop\S1_analysis\proc\magali\data';
+basefilename='Chips_20150227_RW_tucker_002.nev';
+nodigitalfilename='Chips_20150227_RW_tucker_002_nodigital.nev';
+spikelessfilename='Chips_20150227_RW_tucker_002_nospikes.mat';
 
 
 %open data
@@ -14,10 +14,10 @@ saveNEVOnlyDigital(NEV,[basepath '\' spikelessfilename]);
 
 
 %% save append digital data back on and re-save
-basepath='C:\Users\limblab\Documents\local_processing\chips\experiemnt_20150226_RW_sorting';
-sortedfilename='Chips_20150226_RW_tucker_001_nodigital-01.nev';
-spikelessfilename='Chips_20150226_RW_tucker_001_nospikes.mat';
-processfilename='Chips_20150226_RW_tucker_001-s.nev';
+basepath='C:\Users\limblab\Desktop\S1_analysis\proc\magali\data';
+sortedfilename='Chips_20150227_RW_tucker_007_nodigital-01.nev';
+spikelessfilename='Chips_20150227_RW_tucker_002_nospikes.mat';
+processfilename='Chips_20150227_RW_tucker_002-s.nev';
 
 oldnevdata=load([basepath '\' spikelessfilename]);
 sortednev=openNEV([basepath '\' sortedfilename],'nosave','nomat','report');
