@@ -1,5 +1,5 @@
 %% strip digital data from NEV
-basepath='C:\Users\limblab\Desktop\S1_analysis\proc\magali\data\RAW';
+basepath='C:\Users\limblab\Desktop\S1_analysis\proc\magali\data';
 basefilename='Chips_20150227_RW_tucker_002.nev';
 nodigitalfilename='Chips_20150227_RW_tucker_002_nodigital.nev';
 spikelessfilename='Chips_20150227_RW_tucker_002_nospikes.mat';
@@ -14,8 +14,8 @@ saveNEVOnlyDigital(NEV,[basepath '\' spikelessfilename]);
 
 
 %% save append digital data back on and re-save
-basepath='C:\Users\limblab\Desktop\S1_analysis\proc\magali\data\processed';
-sortedfilename='Chips_20150227_RW_tucker_007_nodigital-01.nev';
+basepath='C:\Users\limblab\Desktop\S1_analysis\proc\magali\data';
+sortedfilename='Chips_20150227_RW_tucker_002_nodigital.nev';
 spikelessfilename='Chips_20150227_RW_tucker_002_nospikes.mat';
 processfilename='Chips_20150227_RW_tucker_002-s.nev';
 
