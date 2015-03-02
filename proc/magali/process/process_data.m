@@ -2,6 +2,7 @@
 %% process PDs using Raeed/Tucker functions
 folderpath='C:\Users\limblab\Documents\local_processing\experiment_20150223_b';
 input_data.prefix='Chips_20150223_RW_tucker_001-s';
+imput_data.only_sorted=1
 function_name='get_PDs';
 input_data.labnum=6;
 input_data.do_unit_pds=1;
