@@ -39,7 +39,7 @@ empty_PD = struct('dir',[],'moddepth',[],'dir_CI',[],'moddepth_CI',[]);
 %     parpool;
 % end
 % opt = statset('UseParallel',true);
-
+opt = statset('UseParallel','never');
 %% Bootstrap GLM function for each neuron
 tic
 for i = 1:num_units
