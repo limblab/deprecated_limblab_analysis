@@ -28,6 +28,7 @@ addpath([dir '/bar_with_error']);
 dir = fileparts(fileparts(dir));
 
 addpath(dir);
+addpath([dir '/lib/boundedline']);
 addpath([dir '/proc/basic functions']);
 addpath([dir '/lib']);
 addpath([dir '/lib/ml']);

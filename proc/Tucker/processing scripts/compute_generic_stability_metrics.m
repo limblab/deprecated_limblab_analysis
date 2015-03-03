@@ -68,7 +68,7 @@ function [figure_list,data_struct]=compute_generic_stability_metrics(fpath,input
                         data_struct.units=units;
                         data_struct.num_units=num_units;
                         data_struct.unit_SNR=unit_SNR;
-                    catch temperr
+                    catch temperr %catches the error in a MException class object called temperr
                         disp(strcat('Failed to process: ', fpath,tempname))
                         disp(temperr.identifier)
                         disp(temperr.message)
