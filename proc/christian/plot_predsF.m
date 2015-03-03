@@ -29,7 +29,7 @@ num_figs = size(f_data,2);
 vaf = nan(num_figs,1);
 R2 = nan(num_figs,1);
 
-t_range = [testdata.timeframe(1)+100 testdata.timeframe(1)+130];
+t_range = [testdata.timeframe(1) testdata.timeframe(1)+30];
 
 for i = 1:num_figs
     R2(i)  = CalculateR2(predsF(:,i),f_data(:,i));

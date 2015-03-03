@@ -1,4 +1,4 @@
-function varargout = plotLM(varargin)
+function h = plotLM(varargin)
 % Calls to plot.m with different default linewidth,tickmarks,boxes
 % properties, etc. to make plots prettier and standardized for Miller lab
 % 
@@ -20,5 +20,3 @@ for i = 1:numel(lines)
                 'MarkerFaceColor',lines_col(i,:) ...
                 );
 end
-
-varargout = {h};
