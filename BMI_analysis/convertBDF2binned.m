@@ -35,8 +35,6 @@ if isempty(params)
     return
 end
 
-
-    
 if isempty(datastruct)
    disp('Could not load BDF');
    binnedData=[];
@@ -62,7 +60,7 @@ kernel = const1 * (const2 - abs(times));
 %% Other time and frequency parameters
 numberbins = round((params.stoptime-params.starttime)/params.binsize);      
 timeframe = ones(numberbins,1);
-timeframe = timeframe.*(params.starttime:params.binsize:params.stoptime-params.binsize)';      %Time vector of the binned data, mostly for plotting
+timeframe = timeframe.*(params.starttime:params.binsize:params.stoptime-params.binsize)';
 
 %% Bin EMG Data
 
@@ -72,25 +70,20 @@ if ~isfield(datastruct, 'emg')
     emgguide = [];
 else
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%Want to assemble the analog data that is to be analyzed into a single
-    %%%matrix.  Each column is a different analog signal. If desired, the analog data is
-    %%%filtered and downsampled according to input specifications.
-    %%%EMG data is hi-pass filtered at 50Hz unless otherwise specified, it is
-    %%%then rectified and low pass filtered at 10Hz, again unless otherwise
-    %%%specified.  Finally it is downsampled to match the desired binsize.
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Want to assemble the emg data into a single
+    % matrix. Each column is a different analog signal. If desired, the analog data is
+    % filtered and downsampled according to input specifications.
+    % EMG data is hi-pass filtered at 50Hz, rectified and low pass filtered
+    % at 10Hz, unless otherwise specified. It is downsampled to match the desired binsize.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     emgsamplerate = datastruct.emg.emgfreq;   %Rate at which emg data were actually acquired.
-    EMGname = char(zeros(1,12));
     numEMGs = length(datastruct.emg.emgnames);
-    emgguide = char(zeros(numEMGs,length(EMGname)));
+    emgguide = cell(1,numEMGs);
     emgtimebins = find(datastruct.emg.data(:,1)>=params.starttime & datastruct.emg.data(:,1)<params.stoptime);
-%     emgtimebins = params.starttime*emgsamplerate+1:params.stoptime*emgsamplerate;
-
 
     for i=1:numEMGs
-        EMGname = char(strrep(datastruct.emg.emgnames(i),'EMG_',''));
-        emgguide(i,1:length(EMGname)) = EMGname;
+        emgguide{i} = strrep(datastruct.emg.emgnames{i},'EMG_','');
     end
 
     %Pre-allocate matrix for binned EMG 
@@ -132,17 +125,9 @@ if (~isfield(datastruct, 'force') || ~isfield(datastruct.force, 'labels'))
     forcedatabin = [];
     forcelabels = [];
 else
-%     forcesamplerate = datastruct.force.forcefreq;   %Rate at which force data were actually acquired.
-    forcename = char(zeros(1,12));
     numforcech = length(datastruct.force.labels);
-    forcelabels = char(zeros(numforcech,length(forcename)));
     forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
-%     forcetimebins = params.starttime*forcesamplerate+1:params.stoptime*forcesamplerate;
-
-    for i=numforcech:-1:1
-        forcename = char(datastruct.force.labels(i));
-        forcelabels(i,1:length(forcename))= forcename;
-    end
+    forcelabels = datastruct.force.labels;
 
     %downsample force data to desired bin size
 %         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
@@ -158,7 +143,7 @@ else
         end        
     end
 
-    clear forcesamplerate forcetimebins forcename numforcech forceNormRatio;
+    clear forcetimebins forcename numforcech forceNormRatio;
 end
 
 %% Bin Cursor Position
@@ -171,29 +156,16 @@ else
     cursorposbin = [];
 end
 
-cursposlabels(1:2,1:12) = [char(zeros(1,12));char(zeros(1,12))];
-cursposlabels(1,1:5)= 'x_pos';
-cursposlabels(2,1:5)= 'y_pos';
-
-% if NormData
-%     Normalize Cursor and Target position with same x and y ratios
-%     first, calculate the ratio for cursor and use it later also for
-%     target corners
-%     NormRatios = 1./max(abs(cursorposbin));
-% 
-%     Normalize cursor position
-%     cursorposbin = cursorposbin.*repmat(NormRatios,numberbins,1);
-% end
-
+cursposlabels = {'x_pos','y_pos'};
 
 %% Bin Velocity
 if ~isfield(datastruct, 'vel')
     if isfield(datastruct,'pos') && ~isempty(cursorposbin)
         %derive freshly binned pos data
-        dx = [0; diff(cursorposbin(:,1))./ params.binsize];
-        dy = [0; diff(cursorposbin(:,2))./ params.binsize];
-        magn = sqrt(dx.^2 + dy.^2);
-        velocbin = [dx dy magn];
+        [~,vel] = gradient(cursorposbin, params.binsize);
+        magn = sqrt(sum(vel.^2,2));
+        velocbin = [vel magn];
+        clear vel;
     else
         %disp(sprintf('No cursor/velocity data is found in structure " %s " ',datastructname));
         velocbin = [];
@@ -205,19 +177,16 @@ else
     velocbin = [velocbin vel_magn];
 end
 
-veloclabels(1:3,1:12) = [char(zeros(1,12));char(zeros(1,12));char(zeros(1,12))];
-veloclabels(1,1:5)= 'x_vel';
-veloclabels(2,1:5)= 'y_vel';
-veloclabels(3,1:8)= 'vel_magn';
+veloclabels ={'x_vel','y_vel','vel_magn'};
 
 %% Bin Acceleration
 if ~isfield(datastruct, 'acc')
     if isfield(datastruct,'pos') && ~isempty(velocbin)
         %derive freshly binned vel data
-        ddx = [0; diff(velocbin(:,1))./ params.binsize];
-        ddy = [0; diff(velocbin(:,2))./ params.binsize];
-        magn = sqrt(ddx.^2 + ddy.^2);
-        accelbin = [ddx ddy magn];
+        [~,acc] = gradient(velocbin(:,1:end-1),params.binsize);
+        magn = sqrt(sum(acc.^2,2));
+        accelbin = [acc magn];
+        clear acc;
     else
         %disp(sprintf('No cursor/acceleration data is found in structure " %s " ',datastructname));
         accelbin = [];
@@ -228,10 +197,7 @@ else
     accelbin = [accelbin acc_magn];
 end
 
-acclabels(1:3,1:12) = [char(zeros(1,12));char(zeros(1,12));char(zeros(1,12))];
-acclabels(1,1:5)= 'x_acc';
-acclabels(2,1:5)= 'y_acc';
-acclabels(3,1:8)= 'acc_magn';
+acclabels = {'x_acc', 'y_acc','acc_magn'};
 
 %% Bin Spike Data
 
@@ -239,7 +205,6 @@ if ~isfield(datastruct, 'units')
     warning('No spikes in data file!');
     spikeratedata = [];
     neuronIDs = [];
-    spikeguide = [];
 else
 
     %decide which signals to use: minimum of "minFiringRate spikes/sec on average:
@@ -252,24 +217,13 @@ else
     %Identify the sorted units %%%with minimum spike rate%%%
     for i=1:totalnumunits
 
-        if isempty(datastruct.units(i).id)
+        if isempty(datastruct.units(i).id) || datastruct.units(i).id(2)==255 ...
+             || (datastruct.units(i).id(2)==0 && ~params.Unsorted)
+            % skip empty units or id#255 (noise?)
+            % skip unit id 0 if params.Unsorted is false
             continue;
         end
-        % If Unsorted = false, skip unsorted units, which are mostly noise. skip units id 255,
-        % in autosort, I don't know what this is...
-        if params.Unsorted == 0;
-            if (datastruct.units(i).id(2)==0 || datastruct.units(i).id(2)==255)
-                continue; 
-            end
-        end
         
-        % If Unsorted = true, take into account the unsorted units
-        if params.Unsorted == 1;
-            if datastruct.units(i).id(2)==255
-                continue
-            end
-        end
-
         num_ts = length(datastruct.units(i).ts);
 
         if num_ts >= minimumspikenumber
@@ -283,39 +237,28 @@ else
     if (numusableunits < 1)
         fprintf('The data does not contain any unit with a minimum of %g spike/sec',params.minFiringRate);
         spikeratedata = [];
-        spikeguide = [];
         neuronIDs = [];
     else   
-
-        % Pre-allocate accordingly!
-        spikeguide= char(zeros(numusableunits,length('ee000u0'))); %preallocate space for spikeguide
         neuronIDs = zeros(numusableunits,2);
         spikeratedata=zeros(numberbins,numusableunits);
         
-        % Create the spikeguide with electrode names
+        % Create the neuronID field with electrode and unit numbers
         for i=1:numusableunits
-            spikeguide(i,:)=['ee' sprintf('%03d', datastruct.units(units_to_use(i)).id(1)) 'u' sprintf('%1d',datastruct.units(units_to_use(i)).id(2)) ];
             neuronIDs(i,:) = datastruct.units(units_to_use(i)).id;
         end
 
-       if params.TriKernel == 0; 
+       if ~params.TriKernel
             % Create the spike data matrix, using the specified bin size and
             % identified units
             for unit = 1:numusableunits
 
              %get the binned data from the desired timeframe
              binneddata=train2bins(datastruct.units(units_to_use(unit)).ts,timeframe);
-%              rand_idx = round(rand(round(.001*length(binneddata)),1)*length(binneddata));
-%              rand_idx = rand_idx(rand_idx>0 & rand_idx<length(binneddata));
-%              binneddata(rand_idx) = ...
-%                  binneddata(rand_idx)+1;
 
              %convert to firing rate and store in spike data matrix
              spikeratedata(:,unit) = binneddata /params.binsize;
              end
-        end
-        
-        if params.TriKernel == 1;
+       else
             BinTimes = params.starttime:params.binsize:params.stoptime;
             % spikeStartTime is the initial time in the spikeArray
             spikeStartTime = BinTimes(1);
@@ -370,21 +313,6 @@ else
                                                         datastruct.targets.rotation(:,1)<=timeframe(end),: );
      end
 
-%     %Normalize Cursor and Target position with same x and y ratios     
-%     if NormData && isfield(datastruct.targets, 'corners')
-%         %target x corners
-%         targets.corners(:,[2 4]) = targets.corners(:,[2 4])*NormRatios(1);
-%         %target y corners
-%         targets.corners(:,[3 5]) = targets.corners(:,[3 5])*NormRatios(2);                                            
-%     end
-%     
-%     if NormData && isfield(datastruct.targets, 'centers')
-%         numtgt = (size(targets.corners,2)-1)/2;
-%         %target x centers
-%         targets.centers(:,2:2:(2+2*(numtgt-1))) = targets.centers(:,2:2:(2+2*(numtgt-1)))*NormRatios(1);
-%         %target y centers
-%         targets.centers(:,3:2:(3+2*(numtgt-1))) = targets.centers(:,3:2:(3+2*(numtgt-1)))*NormRatios(1);
-%     end
 end
 
 %% Trial Table
@@ -443,23 +371,22 @@ end
 %% Outputs
 binnedData = struct('timeframe',timeframe,...
                     'meta',datastruct.meta,...
-                    'emgguide',emgguide,...
+                    'emgguide',{emgguide},...
                     'emgdatabin',emgdatabin,...
-                    'forcelabels',forcelabels,...
+                    'forcelabels',{forcelabels},...
                     'forcedatabin',forcedatabin,...
-                    'spikeguide',spikeguide,...
                     'neuronIDs',neuronIDs,...
                     'spikeratedata',spikeratedata,...
-                    'cursorposlabels',cursposlabels,...
+                    'cursorposlabels',{cursposlabels},...
                     'cursorposbin',cursorposbin,...
                     'velocbin',velocbin,...
-                    'veloclabels',veloclabels,...
+                    'veloclabels',{veloclabels},...
                     'accelbin',accelbin,...
-                    'acclabels',acclabels,...
+                    'acclabels',{acclabels},...
                     'words',words,...
                     'targets',targets,...
                     'trialtable',tt,...
-                    'trialtablelabels',tt_labels,...
+                    'trialtablelabels',{tt_labels},...
                     'stim',stim,...
                     'stimT',stimT);        
         
