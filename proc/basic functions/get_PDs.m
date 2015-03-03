@@ -82,10 +82,10 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         else
             %if we didn't parse the arm behavior for the single units, then
             %we need to compute it and the firing rate matrix now
-            behaviors = parse_for_tuning(bdf,'continuous','opts',optionstruct);
+            behaviors = parse_for_tuning(multiunit_bdf,'continuous','opts',optionstruct);
         end
         output_data.electrode_tuning_stats = compute_tuning(behaviors.FR,behaviors.armdata,[1 1 0 0 0 0],struct('num_rep',10),'poisson');
-        output_data.electrode_pd_table=get_pd_table(output_data.electrode_tuning_stats,behaviors,bdf);
+        output_data.electrode_pd_table=get_pd_table(output_data.electrode_tuning_stats,behaviors,multiunit_bdf);
         h=figure('name','electrode_PDs');
         figure_handles=[figure_handles h];
         hist(output_data.electrode_pd_table.dir(~isnan(output_data.electrode_pd_table.dir))*180/pi,[-175:20:180]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
