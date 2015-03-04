@@ -10,3 +10,4 @@ training Chips + recording
 March04
 sorting Chips recordings from 03
 stimulation Han to 'wake up' the array
+--------------------------------------------------------------------
