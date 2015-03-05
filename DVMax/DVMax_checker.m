@@ -36,14 +36,17 @@ function DVMax_checker()
     try
         load('animalList')
         oldAnimalList = animalList;
+        oldAnimalList2 = rmfield(oldAnimalList,'idealBodyWeight');
     end
+    
     animalList = load_animal_list(MonkeyWaterLocation);
-    save('animalList','animalList')
+    save('animalList','animalList')    
+    animalList2 = rmfield(animalList,'idealBodyWeight');
     
     peopleList = load_people_list(MonkeyWaterLocation);
-    ccmList = load_ccm_list(MonkeyWaterLocation);
+    ccmList = load_ccm_list(MonkeyWaterLocation);    
     
-    if ~isequal(animalList,oldAnimalList)
+    if ~isequal(animalList2,oldAnimalList2)
         send_monkey_person_email(animalList,peopleList,ccmList)
     end
     
@@ -74,8 +77,10 @@ function DVMax_checker()
         animalList(iMonkey).body_weight_date = [];
         for iEntry = 1:length(body_weight_entries)
             if ~isempty(body_weight_idx{iEntry})
-                animalList(iMonkey).body_weight(end+1) = str2num(data{body_weight_entries(iEntry),5}(body_weight_idx{iEntry}+8 : units_idx{iEntry}-2));
-                animalList(iMonkey).body_weight_date(end+1) = round(datenum(data{body_weight_entries(iEntry),2}));
+                try
+                    animalList(iMonkey).body_weight(end+1) = str2num(data{body_weight_entries(iEntry),5}(body_weight_idx{iEntry}+8 : units_idx{iEntry}-2));
+                    animalList(iMonkey).body_weight_date(end+1) = round(datenum(data{body_weight_entries(iEntry),2}));
+                end
             end
         end
         
@@ -237,21 +242,37 @@ function DVMax_checker()
     end
     
     %% Body weight
-    if time >= 18 && weekday(date) == 2
+    if time >= 18 && weekday(date) == 2   
         gf = figure;
-        hold on
-        colors = .9*hsv(length(animalList));
-        symbols = {'-^','-*','-o'};
-        legend_text = {};
-        for iMonkey = 1:length(animalList)
-            if ~isempty(animalList(iMonkey).body_weight_date)
-                plot(animalList(iMonkey).body_weight_date,animalList(iMonkey).body_weight,symbols{mod(iMonkey,3)+1},'Color',colors(iMonkey,:));              
-                legend_text{end+1} = animalList(iMonkey).animalName;
+        monkey_counter = 0;
+        num_plots = 3;
+        for iPlot = 1:num_plots
+            subplot(num_plots,1,iPlot)
+            hold on            
+            legend_text = {};
+            monkey_list = [1:floor(length(animalList)/num_plots)]+floor(length(animalList)/num_plots)*(iPlot-1);
+            if iPlot == num_plots && mod(length(animalList),num_plots)
+                monkey_list = [monkey_list monkey_list(end)+mod(length(animalList),num_plots)];
             end
+            colors = distinguishable_colors_2(length(monkey_list),{'w'});
+            color_idx = 0;
+            hp = [];
+            for iMonkey = monkey_list
+                color_idx = color_idx+1;
+                if ~isempty(animalList(iMonkey).body_weight_date)
+                    hp(end+1) = plot(animalList(iMonkey).body_weight_date,animalList(iMonkey).body_weight,'Color',colors(color_idx,:),'LineWidth',2);   
+                    if str2double(animalList(iMonkey).idealBodyWeight)
+                        plot(animalList(iMonkey).body_weight_date([1 end]),[str2double(animalList(iMonkey).idealBodyWeight) str2double(animalList(iMonkey).idealBodyWeight)],'LineStyle','--','Color',colors(color_idx,:));
+                    end
+                    legend_text{end+1} = [animalList(iMonkey).animalName ' ' num2str(round(100*(animalList(iMonkey).body_weight(1)/str2double(animalList(iMonkey).idealBodyWeight) - 1))) '%'];
+                end
+            end        
+            set(gca,'XTick',[datenum('2013-01-01'):182:datenum(date)])
+            datetick('x',26,'keepticks')   
+            xlim([datenum('2013-01-01') datenum(date)])                             
+            legend(hp,legend_text,'Location','West')
         end
-        datetick('x',26)
-        legend(legend_text)
-        print(gf,'BodyWeights','-dpng')
+        print(gf,'BodyWeights','-dpng')        
         body_weight_email(peopleList,testing)
     end        
     
@@ -260,11 +281,15 @@ function DVMax_checker()
 end
 
 function animalList = load_animal_list(MonkeyWaterLocation)    
-    [~,animal_xls,~] = xlsread(MonkeyWaterLocation,1);
+    [animal_xls_num,animal_xls,~] = xlsread(MonkeyWaterLocation,1);
     [~,people_xls,~] = xlsread(MonkeyWaterLocation,2);
     for iMonkey = 2:size(animal_xls,1)
         for iCol = 1:size(animal_xls,2)
-            eval(['animalList(iMonkey-1).' animal_xls{1,iCol} ' = ''' animal_xls{iMonkey,iCol} ''';'])
+            if isempty(animal_xls{iMonkey,iCol})
+                eval(['animalList(iMonkey-1).' animal_xls{1,iCol} ' = ''' num2str(animal_xls_num(iMonkey-1)) ''';'])
+            else
+                eval(['animalList(iMonkey-1).' animal_xls{1,iCol} ' = ''' animal_xls{iMonkey,iCol} ''';'])
+            end
         end
         for iPerson = 2:size(people_xls,1)
             if strcmpi(people_xls{iPerson,1},animalList(iMonkey-1).personInCharge)
