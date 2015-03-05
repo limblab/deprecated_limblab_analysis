@@ -81,7 +81,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        set(gca,'colororder',jet(length(angs)))
+        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
+        set(gca,'colororder',colorjet)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -98,7 +99,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        set(gca,'colororder',jet(length(angs)))
+        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
+        set(gca,'colororder',colorjet)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -163,7 +165,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        set(gca,'colororder',jet(length(angs)))
+        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
+        set(gca,'colororder',colorjet)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -180,7 +183,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        set(gca,'colororder',jet(length(angs)))
+        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
+        set(gca,'colororder',colorjet)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
