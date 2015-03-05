@@ -17,10 +17,10 @@ function pds=get_pd_table(tuning_data,varargin)
         end
     end
     chan_unit=zeros(size(tuning_data,1),2);
-    dir=arrayfun(size(tuning_data,1),1);
-    dirCI=zeros(size(tuning_data,1),2);
+    dir=zeros(size(tuning_data,1),1);
+    dir_CI=zeros(size(tuning_data,1),2);
     moddepth=zeros(size(tuning_data,1),1);
-    moddepthCI=zeros(size(tuning_data,1),2);
+    moddepth_CI=zeros(size(tuning_data,1),2);
     
     for j=1:length(behaviors.which_units)
         chan_unit(j,:)=tuning_data.unit_id;
