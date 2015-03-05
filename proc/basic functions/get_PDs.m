@@ -52,7 +52,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0],struct('num_rep',10),'poisson');
         output_data.unit_pd_table=get_pd_table(output_data.unit_tuning_stats,behaviors,bdf);
         %make a table that only has the best tuned units:
-        output_data.unit_best_modulated_table=output_data.unit_pd_table(output_data.unit_pd_table.moddepth>mean(output_data.unit_pd_table.moddepth),:);
+        output_data.unit_best_modulated_table=output_data.unit_pd_table(output_data.unit_pd_table.moddepth>median(output_data.unit_pd_table.moddepth),:);
         
         %plot a histogram of the unit pds
         h=figure('name','unit_PDs');
@@ -73,16 +73,23 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         
         %polar plot of all pds, with radial length equal to scaled 
         %modulation depth
+        %compute a scaling factor for the polar plots to use. Polar plots
+        %will use a log function of moddepth so that the small modulation
+        %PDs are visible. The scaling factor scales all the moddepths up so
+        %that the log produces positive values rather than negative values.
+        %all log scaled polar plots of the unit PDs will use the same
+        %factor
+        mag_scale=1/min(output_data.unit_pd_table.moddepth);
         h=figure('name','unit_polar_PDs');
         
         figure_handles=[figure_handles h];
         angs=[output_data.unit_pd_table.dir output_data.unit_pd_table.dir]';
-        mags=log((1+[zeros(size(output_data.unit_pd_table.dir)), (1/min(output_data.unit_pd_table.moddepth))*output_data.unit_pd_table.moddepth])');
+        mags=log((1+[zeros(size(output_data.unit_pd_table.dir)), mag_scale*output_data.unit_pd_table.moddepth])');
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
-        set(gca,'colororder',colorjet)
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        set(gca,'colororder',colorhsv)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -95,12 +102,12 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         h=figure('name','unit_best_modulated_polar_PDs');
         figure_handles=[figure_handles h];
         angs=[output_data.unit_best_modulated_table.dir output_data.unit_best_modulated_table.dir]';
-        mags=log((1+[zeros(size(output_data.unit_best_modulated_table.dir)), (1/min(output_data.unit_best_modulated_table.moddepth))*output_data.unit_best_modulated_table.moddepth])');
+        mags=log((1+[zeros(size(output_data.unit_best_modulated_table.dir)), mag_scale*output_data.unit_best_modulated_table.moddepth])');
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
-        set(gca,'colororder',colorjet)
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        set(gca,'colororder',colorhsv)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -137,7 +144,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         output_data.electrode_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0],struct('num_rep',10),'poisson');
         output_data.electrode_pd_table=get_pd_table(output_data.electrode_tuning_stats,behaviors,multiunit_bdf);
         %make a table that only has the best tuned electrodes:
-        output_data.electrode_best_modulated_table=output_data.electrode_pd_table(output_data.electrode_pd_table.moddepth>mean(output_data.electrode_pd_table.moddepth),:);
+        output_data.electrode_best_modulated_table=output_data.electrode_pd_table(output_data.electrode_pd_table.moddepth>median(output_data.electrode_pd_table.moddepth),:);
 
         %make a histogram of all PDs
         h=figure('name','electrode_PDs');
@@ -158,15 +165,22 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         
         %polar plot of all pds, with radial length equal to scaled 
         %modulation depth
+        %compute a scaling factor for the polar plots to use. Polar plots
+        %will use a log function of moddepth so that the small modulation
+        %PDs are visible. The scaling factor scales all the moddepths up so
+        %that the log produces positive values rather than negative values.
+        %all log scaled polar plots of the unit PDs will use the same
+        %factor
+        mag_scale=1/min(output_data.electrode_pd_table.moddepth);
         h=figure('name','electrode_polar_PDs');
         figure_handles=[figure_handles h];
         angs=[output_data.electrode_pd_table.dir output_data.electrode_pd_table.dir]';
-        mags=log((1+[zeros(size(output_data.electrode_pd_table.dir)), (1/min(output_data.electrode_pd_table.moddepth))*output_data.electrode_pd_table.moddepth])');
+        mags=log((1+[zeros(size(output_data.electrode_pd_table.dir)), mag_scale*output_data.electrode_pd_table.moddepth])');
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
-        set(gca,'colororder',colorjet)
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        set(gca,'colororder',colorhsv)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -179,12 +193,12 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         h=figure('name','electrode_best_modulated_polar_PDs');
         figure_handles=[figure_handles h];
         angs=[output_data.electrode_best_modulated_table.dir output_data.electrode_best_modulated_table.dir]';
-        mags=log((1+[zeros(size(output_data.electrode_best_modulated_table.dir)), (1/min(output_data.electrode_best_modulated_table.moddepth))*output_data.electrode_best_modulated_table.moddepth])');
+        mags=log((1+[zeros(size(output_data.electrode_best_modulated_table.dir)), mag_scale*output_data.electrode_best_modulated_table.moddepth])');
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorjet = interp1(linspace(0,2*pi,360)',jet(360),angs);
-        set(gca,'colororder',colorjet)
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        set(gca,'colororder',colorhsv)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
