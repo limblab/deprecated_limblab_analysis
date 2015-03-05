@@ -10,4 +10,14 @@ training Chips + recording
 March04
 sorting Chips recordings from 03
 stimulation Han to 'wake up' the array
+--> improvement in both zones for a few electrodes, stable otherwise
+-----> slight improvement in area 3a (approx. 2 channels, postcentral gyrus)
+-----> modest improvement in area 2 (approx. 3 channels were clearly influenced by the stim)
+training Chips at BD task (refused to work, no relevant recordings)
+--------------------------------------------------------------------
+March05
+corrections in get_PDs to have data and figures related to both sorted and unsorted units
+corrections in compute_electrode_stability for study of tuning changes in population across several days 
+training Chips (BD)
+training Han 
 --------------------------------------------------------------------
