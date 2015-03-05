@@ -135,6 +135,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
             behaviors.which_units=[1:length(multiunit_bdf.units)];
             for i=1:length(multiunit_bdf.units)
                 behaviors.FR(:,i)=interp1(multiunit_bdf.units(1).FR(:,1),multiunit_bdf.units(i).FR(:,2),(behaviors.T));
+                behaviors.unit_ids(i,:) = multiunit_bdf.units(i).id;
             end
         else
             %if we didn't parse the arm behavior for the single units, then
