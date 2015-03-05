@@ -6,7 +6,7 @@ bdf = get_nev_mat_data('Y:\Chips_12H1\RAW\Chips_20150206_RW_tucker_001',6);
 %% parse for tuning
 % [bdf.TT,bdf.TT_hdr] = rw_trial_table(bdf);
 bdf.meta.task = 'RW';
-bdf = make_tdf_function(bdf);
+bdf = postprocess_bdf(bdf);
 
 % for i = 1:length(bdf.units)
 %     [s,t] = bin_spikes(bdf,50,bdf.units(i).id(1),bdf.units(i).id(2));
