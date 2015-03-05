@@ -3,7 +3,7 @@ function pds=get_pd_table(tuning_data,varargin)
     %compute_tuning. Each row will be of the format: 
     %[channel unit PD CI_low CI_high Modulation Modulation_low Modulation_high]
     
-    %first figure out which column of the behaviors we need and store in
+    %first figure out which column of the tuning data we need and store in
     %variable i
     if ~isempty(varargin)
         pd_type=varargin{1};
@@ -22,7 +22,7 @@ function pds=get_pd_table(tuning_data,varargin)
     moddepth=zeros(size(tuning_data,1),1);
     moddepth_CI=zeros(size(tuning_data,1),2);
     
-    for j=1:length(behaviors.which_units)
+    for j=1:length(size(tuning_data,1))
         chan_unit(j,:)=tuning_data.unit_id;
         dir(j)=tuning_data(j,i).PD.dir;
         dir_CI(j,:)=tuning_data(j,i).PD.dir_CI;
