@@ -28,8 +28,13 @@ function [figure_list,data_struct]=compute_electrode_stability(fpath,input_data)
                     disp('loading pd dataset from from file')
                     temp=load(temppath);
                     if length(fieldnames(temp))==1
-                        fields=fieldnames(temp);    
-                        data_struct.all_pds{ctr}=temp.(fields{1});
+                        fields=fieldnames(temp); 
+                        temp=temp.(fields{1});
+                        if isstruct(temp)
+                            data_struct.all_pds{ctr}=
+                        else
+                            data_struct.all_pds{ctr}=temp;
+                        end
                         clear temp
                         data_struct.file_list=strcat(data_struct.file_list,',',temppath);
                     elseif isempty(fieldnames(temp))
@@ -70,7 +75,6 @@ function [figure_list,data_struct]=compute_electrode_stability(fpath,input_data)
     data_struct.welltuned_pdmat=data_struct.pdmat(data_struct.moddepthmat(data_struct.chan_list,1)>input_data.min_moddepth,:);
     data_struct.welltuned_moddepthmat=data_struct.moddepthmat(data_struct.moddepthmat(data_struct.chan_list,1)>input_data.min_moddepth,:);
     data_struct.welltuned_list=data_struct.chan_list(data_struct.moddepthmat(data_struct.chan_list,1)>input_data.min_moddepth,1);
-    
     
     %make a few plots:
     temp=data_struct.welltuned_pdmat;

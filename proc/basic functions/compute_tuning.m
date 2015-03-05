@@ -1,11 +1,11 @@
-function neural_tuning = compute_tuning(firing_rates,armdata,model_terms,bootstrap_params,noise_mdl)
+function neural_tuning = compute_tuning(behaviors,model_terms,bootstrap_params,noise_mdl)
 %COMPUTE_TUNING computes tuning to covariates designated by mdl, using
 % bootstrapping to compute statistics on GLM-fitted parameters, given a
 % noise model.
 %   
 
 %% Check input validity
-num_units = size(firing_rates,2);
+num_units = size(behaviors.FR,2);
 
 %% Set up parameters for bootstrap and GLM
 % set boot function by checking stats toolbox version number
@@ -25,10 +25,10 @@ end
 %   Might want to consider using some sort of Wilkinson notation...talk to
 %   Tucker about this
 % Extract the terms we care about
-armdata_terms = armdata(logical(model_terms));
+armdata_terms = behaviors.armdata(logical(model_terms));
 % Extract the data from each term into a matrix
-armdata_mat = cell2mat(cellfun(@(x) x.data,armdata_terms,'uniformoutput',false));
-
+% armdata_mat = cell2mat(cellfun(@(x) x.data,armdata_terms,'uniformoutput',false));
+armdata_mat = [armdata_terms.data];
 %% Set up output struct
 tuning_init = cell(num_units,length(armdata_terms));
 neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tuning_init,'term_signif',tuning_init,'PD',tuning_init,'name',tuning_init);
@@ -44,7 +44,7 @@ opt = statset('UseParallel','never');
 tic
 for i = 1:num_units
     %bootstrap for firing rates to get output parameters
-    boot_tuning = bootstrp(bootstrap_params.num_rep,@(X,y) {bootfunc(X,y)}, armdata_mat, firing_rates(:,i),'Options',opt);
+    boot_tuning = bootstrp(bootstrap_params.num_rep,@(X,y) {bootfunc(X,y)}, armdata_mat, behaviors.FR(:,i),'Options',opt);
     
     %Display verbose information
     disp(['Processed Unit ' num2str(i) ' (Time: ' num2str(toc) ')']);
@@ -65,10 +65,13 @@ for i = 1:num_units
     column_ctr = 0;
     for covar_ctr = 1:length(armdata_terms)
         %find number of columns
-        num_covar_col = armdata_terms{covar_ctr}.num_base_cols*(armdata_terms{covar_ctr}.num_lags+1);
+        num_covar_col = armdata_terms(covar_ctr).num_base_cols*(armdata_terms(covar_ctr).num_lags+1);
         
         %put name into outstruct
-        neural_tuning(i,covar_ctr).name = armdata_terms{covar_ctr}.name;
+        neural_tuning(i,covar_ctr).name = armdata_terms(covar_ctr).name;
+        
+        %put unit ID into outstruct
+        neural_tuning(i,covar_ctr).unit_id = behaviors.unit_ids(i,:);
         
         %put coefficients into outstruct
         neural_tuning(i,covar_ctr).weights = coef_means(column_ctr+1:column_ctr+num_covar_col);
@@ -83,7 +86,7 @@ for i = 1:num_units
         neural_tuning(i,covar_ctr).term_signif = '?';
         
         %PD
-        if(armdata_terms{covar_ctr}.doPD)
+        if(armdata_terms(covar_ctr).doPD)
             neural_tuning(i,covar_ctr).PD = empty_PD;
             
             % bootstrap directions
