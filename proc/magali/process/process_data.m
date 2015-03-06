@@ -8,3 +8,9 @@ input_data.labnum=6;
 input_data.do_unit_pds=1;
 input_data.do_electrode_pds=1;
 data_struct = run_data_processing(function_name,folderpath,input_data);
+%% check for electrode stability
+folderpath='C:\Users\limblab\Documents\local_processing\chips\20150220-27_electrode_stability';
+function_name='compute_electrode_stability';
+input_data.num_channels=96;
+input_data.min_moddepth=2*10^-4;
+electrode_stability=run_data_processing(function_name,folderpath,input_data);
