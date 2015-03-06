@@ -18,6 +18,7 @@ addpath([dir '/lib/ml']);
 addpath([dir '/lib/stats']);
 addpath([dir '/lib/bootstrapping']);
 addpath([dir '/lib/glm']);
+addpath([dir '/lib/boundedline']);
 addpath(genpath([dir '/lib/NPMK 2.5.2.0']));
 addpath([dir '/mimo']);
 addpath([dir '/spike']);
