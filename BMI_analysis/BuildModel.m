@@ -111,14 +111,17 @@ function [filter, varargout]=BuildModel(binnedData, options)
     if options.Use_EMGs
         Inputs = binnedData.emgdatabin;
         input_type = 'EMG';
+        decoder_type = 'E';
     elseif options.numPCs
         Inputs = binnedData.spikeratedata(:,desiredInputs);
         [PCoeffs,Inputs] = princomp(zscore(Inputs));
         Inputs = Inputs(:,1:options.numPCs);
         input_type = 'princomp';
+        decoder_type = 'PC';
     else
         Inputs = binnedData.spikeratedata(:,desiredInputs);
         input_type = 'spike';
+        decoder_type = 'N';
     end
 
 %     Inputs = DuplicateAndShift(binnedData.spikeratedata(:,desiredInputs),numlags); numlags = 1;
@@ -132,18 +135,22 @@ function [filter, varargout]=BuildModel(binnedData, options)
     if options.PredEMGs
        Outputs= [Outputs binnedData.emgdatabin];
        OutNames = [OutNames binnedData.emgguide];
+       decoder_type = [decoder_type '2E'];
     end
     if options.PredForce
         Outputs = [Outputs binnedData.forcedatabin];
         OutNames = [OutNames; binnedData.forcelabels];
+        decoder_type = [decoder_type '2F'];
     end
     if options.PredCursPos
         Outputs = [Outputs binnedData.cursorposbin];
         OutNames = [OutNames;  binnedData.cursorposlabels];
+        decoder_type = [decoder_type '2P'];
     end
     if options.PredVeloc
         Outputs = [Outputs binnedData.velocbin];
         OutNames = [OutNames;  binnedData.veloclabels];
+        decoder_type = [decoder_type '2V'];
     end
         
 %% Calculate Filter
@@ -157,8 +164,14 @@ function [filter, varargout]=BuildModel(binnedData, options)
         % Train ridge model
         H = train_ridge(Inputs',Outputs',condition_desired);
     else
-        [H,v,mcc]=filMIMO4(Inputs,Outputs,numlags,numsides,1);
-%         [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+        H = [];
+        if strcmp(input_type,'EMG')
+            % for EMG decoder, no offset (output = 0 when EMG = 0)
+            H=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+        else
+            H=[H,filMIMO4(Inputs,Outputs,numlags,numsides,1)];
+        end
+%     [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
 %     H = MIMOCE1(Inputs,Outputs,numlags);
 %     H = Inputs\Outputs;
 %     Inputs = DuplicateAndShift(Inputs,numlags); numlags = 1;
@@ -218,12 +231,13 @@ function [filter, varargout]=BuildModel(binnedData, options)
     filter = struct('neuronIDs', neuronIDs,...
                     'H', H,...
                     'P', P,...
-                    'T',T,...
+                    'T', T,...
                     'patch',patch,...
-                    'outnames', OutNames,...
+                    'outnames', {OutNames},...
                     'fillen',options.fillen,...
                     'binsize', binsize,...
-                    'input_type',input_type);
+                    'input_type',input_type,...
+                    'decoder_type',decoder_type);
 
     if options.numPCs
         filter.PC = PCoeffs(:,1:options.numPCs);
