@@ -17,7 +17,18 @@ training Chips at BD task (refused to work, no relevant recordings)
 --------------------------------------------------------------------
 March05
 corrections in get_PDs to have data and figures related to both sorted and unsorted units
-corrections in compute_electrode_stability for study of tuning changes in population across several days 
-training Chips (BD)
-training Han 
+corrections in compute_electrode_stability for study of tuning changes in population across several days
+modification process_data 
+training Chips (BD, did better than yesterday, no recording)
+training Han (BD, no recording)
+
+computing electrode stability for Chips (feb27th to march03)
+---> sudden change in PDs for the last day (march03)
+
+Will probably have to focus on unsorted data to study populations trends & plasticity
+instead of single units
+Need to work on what is missing in electrode_stability for the sake of my project
 --------------------------------------------------------------------
+March09
+decided to work with Han in area 2 bank A2 and area 3 bank B2
+recordings in the two areas
