@@ -164,12 +164,14 @@ function [filter, varargout]=BuildModel(binnedData, options)
         % Train ridge model
         H = train_ridge(Inputs',Outputs',condition_desired);
     else
-        H = [];
+        H = []; fs=1; numsides=1;
         if strcmp(input_type,'EMG')
             % for EMG decoder, no offset (output = 0 when EMG = 0)
             H=filMIMO3(Inputs,Outputs,numlags,numsides,1);
+            [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
         else
             H=[H,filMIMO4(Inputs,Outputs,numlags,numsides,1)];
+            [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,H,numsides,fs,Outputs);
         end
 %     [H,v,mcc]=filMIMO3(Inputs,Outputs,numlags,numsides,1);
 %     H = MIMOCE1(Inputs,Outputs,numlags);
@@ -179,12 +181,9 @@ function [filter, varargout]=BuildModel(binnedData, options)
     
 %% Then, add non-linearity if applicable
 
-    fs=1; numsides=1;
+ 
     P=[]; T=[];
     patch = [];
-
-    [PredictedData,spikeDataNew,ActualDataNew]=predMIMO4(Inputs,H,numsides,fs,Outputs);
-%     [PredictedData,spikeDataNew,ActualDataNew]=predMIMO3(Inputs,H,numsides,fs,Outputs);
         
     if options.PolynomialOrder
         %%%Find a Wiener Cascade Nonlinearity
