@@ -30,5 +30,34 @@ instead of single units
 Need to work on what is missing in electrode_stability for the sake of my project
 --------------------------------------------------------------------
 March09
-decided to work with Han in area 2 bank A2 and area 3 bank B2
-recordings in the two areas
+decided to work with Han in area 2 bank A2 and area 3 bank B2 (RW)
+recordings in the two areas (32 channels for each)
+separated digital from analog data on file 2A2_001
+sorted units in file 2A2_001
+reformed complete file
+sorted units in files 3B2_002 and 3B2_003
+reformed complete files
+
+PDs:
+---> units and electrodes not uniform in both areas; PD preference for 180-0 axis (strong elbow)
+---> however, electrodes more uniform than units in area 2 bank A2; units more uniform than electrode in 3B2
+---> need to see the results on the whole week to tell
+--------------------------------------------------------------------
+March10
+recording with Han in RW - 2A2 and 3B2 (30 min, 2 files for area 3)
+---> should record in files of 15mn instead of 10 next time
+
+PDS: 
+---> in area 2, recording shows uniform and consistent distribution of PDs (both units and electrodes)
+---> in area 3
+------> recording_001's weights are ill-conditionned (??)
+------> recording_002 shows clear preference for 0 amongst all electrodes (??)
+------> same recording shows relative uniformity amongst all units
+
+--------------------------------------------------------------------
+March11
+recording with Han in two areas (approx. 15 mn each)
+should try to influence half the channels in area 2 from next week (90deg angle)
+	and take the other half as a control, see if this other half changes too
+	after one week of stimulation
+
