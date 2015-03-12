@@ -33,7 +33,7 @@ function [figure_list,data_struct]=compute_electrode_stability(fpath,input_data)
                 disp(strcat('Working on: ',temppath))
                 ctr=ctr+1;
                 try
-                    disp('loading pd dataset from from file')
+                    disp('loading pd dataset from file')
                     temp=load(temppath);
                     if length(fieldnames(temp))==1
                         fields=fieldnames(temp); 
