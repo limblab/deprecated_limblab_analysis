@@ -1,7 +1,7 @@
 %script to set input data and execute data processing
 %% process PDs using Raeed/Tucker functions
-folderpath='Z:\Han_13B1\Processed\experiment_20150310_RW\area_3 bank_b2 recording_001';
-input_data.prefix='Han_20150310_RW_Magali_3B2_001-s';
+folderpath='Z:\Han_13B1\Processed\experiment_20150311_RW\area_2 bank_A2';
+input_data.prefix='Han_20150311_RW_Magali_2A2_001-s';
 input_data.only_sorted=1
 function_name='get_PDs';
 input_data.labnum=6;

@@ -1,21 +1,29 @@
+--------------------------------------------------------------------
 March02
+--------------------------------------------------------------------
 creation svn depository
 training Han (BD task)
 training Chips + recording
+
 --------------------------------------------------------------------
 March03
+--------------------------------------------------------------------
 training Han (BD)
 training Chips + recording
+
 --------------------------------------------------------------------
 March04
+--------------------------------------------------------------------
 sorting Chips recordings from 03
 stimulation Han to 'wake up' the array
 --> improvement in both zones for a few electrodes, stable otherwise
 -----> slight improvement in area 3a (approx. 2 channels, postcentral gyrus)
 -----> modest improvement in area 2 (approx. 3 channels were clearly influenced by the stim)
 training Chips at BD task (refused to work, no relevant recordings)
+
 --------------------------------------------------------------------
 March05
+--------------------------------------------------------------------
 corrections in get_PDs to have data and figures related to both sorted and unsorted units
 corrections in compute_electrode_stability for study of tuning changes in population across several days
 modification process_data 
@@ -28,8 +36,10 @@ computing electrode stability for Chips (feb27th to march03)
 Will probably have to focus on unsorted data to study populations trends & plasticity
 instead of single units
 Need to work on what is missing in electrode_stability for the sake of my project
+
 --------------------------------------------------------------------
 March09
+--------------------------------------------------------------------
 decided to work with Han in area 2 bank A2 and area 3 bank B2 (RW)
 recordings in the two areas (32 channels for each)
 separated digital from analog data on file 2A2_001
@@ -42,22 +52,36 @@ PDs:
 ---> units and electrodes not uniform in both areas; PD preference for 180-0 axis (strong elbow)
 ---> however, electrodes more uniform than units in area 2 bank A2; units more uniform than electrode in 3B2
 ---> need to see the results on the whole week to tell
+
 --------------------------------------------------------------------
 March10
+--------------------------------------------------------------------
 recording with Han in RW - 2A2 and 3B2 (30 min, 2 files for area 3)
 ---> should record in files of 15mn instead of 10 next time
 
 PDS: 
----> in area 2, recording shows uniform and consistent distribution of PDs (both units and electrodes)
+---> in area 2
+------> recording shows uniform and consistent distribution of PDs (both units and electrodes)
 ---> in area 3
-------> recording_001's weights are ill-conditionned (??)
+------> recording_001's weights are ill-conditionned
+------> same recording shows relative uniformity amongst units with a preference for the 180-0 axis
+------> clear problem for the electrode analysis only showing two PDs (370 and 155 approx)
 ------> recording_002 shows clear preference for 0 amongst all electrodes (??)
 ------> same recording shows relative uniformity amongst all units
 
 --------------------------------------------------------------------
 March11
+--------------------------------------------------------------------
 recording with Han in two areas (approx. 15 mn each)
 should try to influence half the channels in area 2 from next week (90deg angle)
 	and take the other half as a control, see if this other half changes too
 	after one week of stimulation
+
+PDs:
+---> area 2 
+------> showing uniform PDs for units with a slight lack between 120 and 0
+------> above results pretty consistent with the electrode PDs
+---> area 3
+------> pretty uniform PDs for all units with small moddepths (however, clear preference for elbow axis)
+------> above distribution consistent with electrode distribution
 
