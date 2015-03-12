@@ -40,7 +40,7 @@ Need to work on what is missing in electrode_stability for the sake of my projec
 --------------------------------------------------------------------
 March09
 --------------------------------------------------------------------
-decided to work with Han in area 2 bank A2 and area 3 bank B2 (RW)
+began to work with Han in area 2 bank A2 and area 3 bank B2 (RW)
 recordings in the two areas (32 channels for each)
 separated digital from analog data on file 2A2_001
 sorted units in file 2A2_001
@@ -62,26 +62,55 @@ recording with Han in RW - 2A2 and 3B2 (30 min, 2 files for area 3)
 PDS: 
 ---> in area 2
 ------> recording shows uniform and consistent distribution of PDs (both units and electrodes)
+
 ---> in area 3
-------> recording_001's weights are ill-conditionned
+------> recording_001's weights are ill-conditionned + NO INPUT NOR OUTPUT DATA IN THE FOLDER /!\
 ------> same recording shows relative uniformity amongst units with a preference for the 180-0 axis
 ------> clear problem for the electrode analysis only showing two PDs (370 and 155 approx)
+
 ------> recording_002 shows clear preference for 0 amongst all electrodes (??)
 ------> same recording shows relative uniformity amongst all units
+
+only take recording_002 into account? 
+I tried to redo the whole sorting process for recording_001 but I still have absurd results.
 
 --------------------------------------------------------------------
 March11
 --------------------------------------------------------------------
 recording with Han in two areas (approx. 15 mn each)
-should try to influence half the channels in area 2 from next week (90deg angle)
+is getting better at RW with 2 targets
+online recordings seem pretty stable for some channels
+	minor modification in online sorting for most of them
+	great changes for 3 to 4 channels
+in area 3, channel 23 is pure noise and only reacts to rewards
+area 2 expected to be more plastic than 3 because receives more information
+should try to influence half the channels in area 2 next week (90deg angle)
 	and take the other half as a control, see if this other half changes too
 	after one week of stimulation
+should keep track of the channels using a color code when studying the change over the week
+	32 channels are not enough for a correct polar plot --> should work with cartesian plot
+should use the 90deg angle modification because if we try to aim for a specific direction
+	the non-stimulated channels will probably compensate and the distribution will stay the same
+	also the 90deg change is easier
 
 PDs:
 ---> area 2 
-------> showing uniform PDs for units with a slight lack between 120 and 0
+------> showing uniform PDs for units except between 120 and 0
 ------> above results pretty consistent with the electrode PDs
 ---> area 3
 ------> pretty uniform PDs for all units with small moddepths (however, clear preference for elbow axis)
 ------> above distribution consistent with electrode distribution
+
+so far the PDs in both area 2 and area 3 seem pretty stable, especially for units
+
+--------------------------------------------------------------------
+March12
+--------------------------------------------------------------------
+recording with Han in both area 2 and area 3
+for the study over the week:
+	took data from recording_002 for march09 in area 3
+	took data from recording_002 for march10 in area 3
+	march11 had only one recording for area 3
+	area 2 always has only one recording
+should work on the color map and the cartesian representation
 
