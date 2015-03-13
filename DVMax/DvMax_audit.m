@@ -24,11 +24,11 @@ function animalList=DvMax_audit(varargin)
     %% set variables
     MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
     water_codes = {'EP8500','EP9000','EP2000','AC1091'};
-    free_water_codes = {'EP9200 ','AC1093'};
+    free_water_codes = {'EP9200 ','AC1093','FC1025'};
     water_restriction_start_codes = {'EP9100','AC1092'};
     food_codes = {'EP8600','EP8700','EP1000'};
-    free_food_codes = {'EP9400'};
-    food_restriction_start_code = 'EP9300';
+    free_food_codes = {'EP9400','FC1025'};
+    food_restriction_start_codes = {'EP9300'};
     
     do_save=0;
     start_date=datenum('1-Oct-2013');
@@ -57,6 +57,8 @@ function animalList=DvMax_audit(varargin)
 
     animalList = load_animal_list(MonkeyWaterLocation);
     save('animalList','animalList')
+%     load('audit_animalList.mat')
+%     animalList=audit_animalList;
     %% loop across all monkeys, checking each one
     for iMonkey = 1:length(animalList)
         %% get the info for this specific monkey
@@ -67,6 +69,7 @@ function animalList=DvMax_audit(varargin)
             data = fetch(conn,exestring);
             data = data(end:-1:1,:);
         %% get all body weights entries
+        iMonkey
             body_weight = datenum(data(strcmpi('EX1050',{data{:,3}}),2));
             body_weight =floor(sort(body_weight));
             %find first weight entry before the start date
@@ -129,11 +132,12 @@ function animalList=DvMax_audit(varargin)
                 prior_free_food = 0;%set value very small, comparison to real food restriction dates should show restriction dates after this value
             end
         %% get all food restriction start entries
-            temp=data(strcmpi(food_restriction_start_code,{data{:,3}}),2);
-            if ~isempty(temp)
-                food_restriction_start = datenum(temp);
-            else
-                food_restriction_start =[];
+            food_restriction_start=[];
+            for iFoodRestrictionCodes = 1:length(food_restriction_start_codes)
+                temp=data(strcmpi(food_restriction_start_codes{iFoodRestrictionCodes},{data{:,3}}),2);
+                if ~isempty(temp)
+                    food_restriction_start = [food_restriction_start;datenum(temp)];
+                end
             end
             food_restriction_start=floor(sort(food_restriction_start));
             % Find first food restriction entry in list before the start date
