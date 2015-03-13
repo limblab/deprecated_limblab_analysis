@@ -23,7 +23,7 @@ function pds=get_pd_table(tuning_data,varargin)
     moddepth_CI=zeros(size(tuning_data,1),2);
     
     for j=1:size(tuning_data,1)
-        chan_unit(j,:)=tuning_data.unit_id;
+        chan_unit(j,:)=tuning_data(j,i).unit_id;
         dir(j)=tuning_data(j,i).PD.dir;
         dir_CI(j,:)=tuning_data(j,i).PD.dir_CI;
         moddepth(j)=tuning_data(j,i).PD.moddepth;
