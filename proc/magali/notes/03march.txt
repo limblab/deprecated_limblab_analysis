@@ -114,3 +114,58 @@ for the study over the week:
 	area 2 always has only one recording
 should work on the color map and the cartesian representation
 
+so far, electrode stability can be studied in area 2 but the plots are empty in area 3
+	electrode_stability.welltuned_everything are empty --> problem
+
+PDs:
+---> area 2
+------> not a lot of units so nothing really good; however the distribution seems coherent with previous days
+------> slight rotation of prefered axis (now 130-310), relatively uniform and very stable so far
+---> area 3
+------> both distributions are very similar
+------> PDs mainly concentrated between 30 and 210 (preference for elbow)
+
+--------------------------------------------------------------------
+March13
+--------------------------------------------------------------------
+tried to re-analyse march10's data from scratch
+still have the scaling problem (now 3 electrodes seem incredibly well tuned 
+	and it wrecks the scaling)
+	need to modify something in get_PDs
+	so that the code will ignore moddepths > 10 
+for units, it looks usable
+
+have to run the get_PDs on all the files again just to make sure
+definitive analysis will be added to each day
+UPDATE: nothing changed
+
+PDs:
+---> area 2
+------> electrodes and units distribution are similar
+------> dense on the 150 - 300 axis
+---> area 3
+------> units PDs around 180-0 axis but pretty uniform overall
+------> electrode PDs between 210 and 0
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+WEEK 1 RESULTS: March09 - March13
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+STABILITY ANALYSIS:
+---> area 2
+------> electrodes
+---------> extremely stable, with few exceptions
+---------> very good news overall
+------> units
+--------->
+--------->
+
+---> area 3
+------> electrodes
+---------> half of the electrodes are very stable
+---------> 
+------> units
+--------->
+--------->
