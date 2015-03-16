@@ -1,1 +1,12 @@
+channels with little activity in area 2:
+
 4 5 9 11 12 13 23 24 18
+
+stable channels in area 3:
+
+13 29 18 32 2 26
+
+stable channels in area 2:
+
+15 3 30 4 17 1 13 25 2 14 26 
+
