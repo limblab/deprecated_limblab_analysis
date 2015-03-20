@@ -39,15 +39,16 @@ num_targets = (bdf.databursts{1,2}(1)-18)/8;
 
 %tt= [-1 -1 -1 -1 -1 -1 NaN ... NaN -1 -1]
 tt = [(zeros(num_trials-1,6)-1)  NaN(num_trials-1,2*num_targets)  (zeros(num_trials-1,2)-1) ];
-
+j=0;
 for trial = 1:num_trials-1
     start_time = start_words(trial);
     if (bdf.databursts{trial,2}(1)-18)/8 ~= num_targets
+        %catch weird/corrupt databursts with different numbers of targets
         warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, operation interrupted',start_time);
         tt = tt(1:end-1,:);
+        j=j+1;
         continue;
     end
-    
     % Find the end of the trial
     next_trial_start = start_words(trial+1);
     trial_end_idx = find(end_words > start_time & end_words < next_trial_start, 1, 'first');
@@ -71,13 +72,24 @@ for trial = 1:num_trials-1
         these_go_codes(1:num_targets_attempted)= go_codes(go_cue_idx);
     end
     
+    if length(these_go_cues) > num_targets
+        %catch trials with corrupt end codes that might end up with extra
+        %targets
+        warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, operation interrupted',start_time);
+        tt = tt(1:end-1,:);
+        j=j+1;
+        continue;
+    end
+    
+   
     % Offsets, target size
     x_offset = bytes2float(bdf.databursts{trial,2}(7:10));
     y_offset = bytes2float(bdf.databursts{trial,2}(11:14));
     tgt_size = bytes2float(bdf.databursts{trial,2}(15:18));
     
     % Build table
-    tt(trial,:) = [...
+
+    tt(trial-j,:) = [...
         start_time, ...             % Trial start
         num_targets, ...            % max number of targets
         num_targets_attempted, ...  % Bump Timing (-1 for none, 'H' for center hold, 'M' for movement, 'D' for go-cue
@@ -88,6 +100,7 @@ for trial = 1:num_trials-1
         these_go_cues,...           % time stamps of go_cue(s)
         stop_time, ...  % End of trial
         trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
+
 end
 tt_hdr.start_time               = 1;
 tt_hdr.num_targets              = 2;
