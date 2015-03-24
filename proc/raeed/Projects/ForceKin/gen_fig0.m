@@ -1,5 +1,6 @@
+function gen_fig0
 %% Generate data for active and passive
-numpts = 100;
+numpts = 25;
 active_right = 0.2*randn(numpts,2)+ones(numpts,2);
 active_left = 0.2*randn(numpts,2)-ones(numpts,2);
 passive_left = 0.2*randn(numpts,2)+repmat([-1 1],numpts,1);
@@ -50,12 +51,35 @@ set(gca,'xticklabel','','yticklabel','','xtick',[0],'ytick',[0])
 xlabel 'Velocity'
 ylabel 'Force x Velocity'
 
-% plot 3d
-% figure
-% plot3(active_right(:,1),active_right(:,2),active_right_forcevel,'.b', 'markersize', 30)
-% hold on
-% plot3(passive_left(:,1),passive_left(:,2),passive_left_forcevel,'or', 'markersize', 10)
-% plot3(active_left(:,1),active_left(:,2),active_left_forcevel,'.r', 'markersize', 30)
-% plot3(passive_right(:,1),passive_right(:,2),passive_right_forcevel,'ob', 'markersize', 10)
-% axis([-1.5 1.5 -1.5 1.5 -1.5 1.5])
-% grid on
+%% plot 3d view
+figure(3)
+clf
+plot3(active_right(:,1),active_right(:,2),active_right_forcevel,'.b', 'markersize', 30)
+hold on
+plot3(passive_left(:,1),passive_left(:,2),passive_left_forcevel,'or', 'markersize', 10)
+plot3(active_left(:,1),active_left(:,2),active_left_forcevel,'.r', 'markersize', 30)
+plot3(passive_right(:,1),passive_right(:,2),passive_right_forcevel,'ob', 'markersize', 10)
+
+% plot axis lines (x y z)
+% plot3([-1.5 1.5],[0 0],[0 0],'-k','linewidth',3)
+% plot3([0 0],[-1.5 1.5],[0 0],'-k','linewidth',3)
+% plot3([0 0],[0 0],[-1.5 1.5],'-k','linewidth',3)
+
+% plot plane of separation
+plot3([-1.5 1.5],[-1.5 -1.5],[0 0],'-k','linewidth',3)
+plot3([-1.5 1.5],[1.5 1.5],[0 0],'-k','linewidth',3)
+plot3([-1.5 -1.5],[-1.5 1.5],[0 0],'-k','linewidth',3)
+plot3([1.5 1.5],[-1.5 1.5],[0 0],'-k','linewidth',3)
+
+% plot stems
+for i = 1:numpts
+    plot3(active_right(i,1),active_right(i,2),active_right_forcevel(i),'-k')
+    plot3(passive_left(i,1),passive_left(i,2),passive_left_forcevel(i),'-k')
+    plot3(active_left(i,1),active_left(i,2),active_left_forcevel(i),'-k')
+    plot3([passive_right(i,1) passive_right(i,1)],[passive_right(i,2) passive_right(i,2)],[0 passive_right_forcevel(i)],'-k','linewidth',1)
+end
+
+axis([-1.5 1.5 -1.5 1.5 -1.5 1.5])
+% axis off
+
+
