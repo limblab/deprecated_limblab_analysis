@@ -88,8 +88,9 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),[0,angs(1,:)]);
         set(gca,'colororder',colorhsv)
+        %set(gcf,'colormap',colorhsv)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -106,8 +107,9 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),[0,angs(1,:)]);
         set(gca,'colororder',colorhsv)
+        %set(gcf,'colormap',colorhsv)
         hold all
         h=polar(angs,mags);
         set(h,'linewidth',2)
@@ -180,7 +182,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),[0,angs(1,:)]);
         set(gca,'colororder',colorhsv)
         hold all
         h=polar(angs,mags);
@@ -198,7 +200,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %dummy plot to get the polar axes set:
         polar(0,max(mags(2,:)))
         %set the colororder so we get a nice continuous variation
-        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),angs(1,:));
+        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),[0,angs(1,:)]);
         set(gca,'colororder',colorhsv)
         hold all
         h=polar(angs,mags);
