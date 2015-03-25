@@ -24,7 +24,7 @@ c = zeros(num_lags*2+1,num_force_sig,num_emgs); %covariance matrix
 
 for e = 1:num_emgs
     for f = 1:num_force_sig
-        c(:,f,e) = cov(force(:,f),emg(:,e),num_lags,'unbiased');
+        c(:,f,e) = xcov(force(:,f),emg(:,e),num_lags,'unbiased');
     end
 end
 

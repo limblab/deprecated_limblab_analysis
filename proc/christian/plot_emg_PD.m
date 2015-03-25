@@ -60,15 +60,13 @@ H = H*G;
 
 %EMG Preferred Direction
 figure;
-colors = {'o-b','o-g','o-r','o-c','o-m','o-k',...
-          'ob:','og:','or:','oc:','om:','ok:',...
-          'o--b','o--g','o--r','o--c','o--m','o--k'};
 
 for i = 1:n_emgs
     hold on;
 %     plot([0 H(i,1)],[0 H(i,2)],colors{EMGvector(i)},'LineWidth',2);
     plotLM([0 H(i,1)],[0 H(i,2)],'o-');
 end
+
 legend({binnedData.emgguide(EMGvector,:)},'Location','NorthEastOutside');
 axis square;
 mxy = ceil(max(max(H)));

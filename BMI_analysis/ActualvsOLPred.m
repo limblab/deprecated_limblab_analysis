@@ -25,34 +25,38 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
     for i=1:numPredSignals
         if isfield(ActualData,'emgdatabin')
             if ~isempty(ActualData.emgdatabin)
-                if all(strcmp(nonzeros(ActualData.emgguide(1,:)),nonzeros(PredData.outnames(i,:))))
-                    ActSignalsTrunk(:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin(idx,:);
-                    ActSignalsFull (:,i:i+size(ActualData.emgdatabin,2)-1) = ActualData.emgdatabin;
+                emg_i = strcmp(ActualData.emgguide,PredData.outnames(i));
+                if any(emg_i)
+                    ActSignalsTrunk(:,i) = ActualData.emgdatabin(idx,emg_i);
+                    ActSignalsFull (:,i) = ActualData.emgdatabin(:,emg_i);
                 end
             end
         end
         if isfield(ActualData,'forcedatabin')
             if ~isempty(ActualData.forcedatabin)
-                if all(strcmp(nonzeros(ActualData.forcelabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                    ActSignalsTrunk(:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin(idx,:);
-                    ActSignalsFull (:,i:i+size(ActualData.forcedatabin,2)-1) = ActualData.forcedatabin;
+                force_i = strcmp(ActualData.forcelabels,PredData.outnames(i));
+                if any(force_i)
+                    ActSignalsTrunk(:,i) = ActualData.forcedatabin(idx,force_i);
+                    ActSignalsFull (:,i) = ActualData.forcedatabin(:,force_i);
                 end
             end
         end
         if isfield(ActualData,'cursorposbin')
             if ~isempty(ActualData.cursorposbin)
-                if all(strcmp(nonzeros(ActualData.cursorposlabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                    ActSignalsTrunk(:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin(idx,:);
-                    ActSignalsFull (:,i:i+size(ActualData.cursorposbin,2)-1) = ActualData.cursorposbin;
+                curs_i = strcmp(ActualData.cursorposlabels,PredData.outnames(i));
+                if any(curs_i)
+                    ActSignalsTrunk(:,i) = ActualData.cursorposbin(idx,curs_i);
+                    ActSignalsFull (:,i) = ActualData.cursorposbin(:,curs_i);
                 end
             end
         end
 
         if isfield(ActualData,'velocbin')
             if ~isempty(ActualData.velocbin)
-                if all(strcmp(nonzeros(ActualData.veloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
-                    ActSignalsTrunk(:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin(idx,:);
-                    ActSignalsFull (:,i:i+size(ActualData.velocbin,2)-1) = ActualData.velocbin;
+                vel_i = strcmp(ActualData.veloclabels,PredData.outnames(i));
+                if any(vel_i)
+                    ActSignalsTrunk(:,i) = ActualData.velocbin(idx,vel_i);
+                    ActSignalsFull (:,i) = ActualData.velocbin(:,vel_i);
                 end
             end
         end
@@ -76,11 +80,11 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
         
     %Display R2
     if dispflag
-        disp(sprintf('\t\tR2  \tvaf  \tmse  '));
+        fprintf('\t\tR2  \tvaf  \tmse  ');
         for i=1:numPredSignals
-           disp(sprintf('%s\t%1.3f\t%1.3f\t%.2f',PredData.outnames(i,:),R2(i),vaf(i),mse(i)));
+           fprintf('%s\t%1.3f\t%1.3f\t%.2f',PredData.outnames{i},R2(i),vaf(i),mse(i));
         end
-        disp(sprintf('Averages:\t%1.3f\t%1.3f\t%.2f',aveR2,avevaf,avemse));
+        fprintf('Averages:\t%1.3f\t%1.3f\t%.2f',aveR2,avevaf,avemse);
     end
         
     if plotflag               
@@ -90,7 +94,7 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
             plot(ActualData.timeframe,ActSignalsFull(:,i),'k');
             hold on;
             plot(PredData.timeframe,PredData.preddatabin(:,i),'r');
-            title(PredData.outnames(i,:));
+            title(PredData.outnames{i});
             legend('Actual',['Predicted (vaf= ' num2str(vaf(i),3) ')']);
         end
     end

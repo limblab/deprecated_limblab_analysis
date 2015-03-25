@@ -41,16 +41,15 @@ end
 
 binsize = BinnedData.timeframe(2)-BinnedData.timeframe(1);
 numlags = round(filter.fillen/binsize); %round in case of floating point errror
-
-%get usable units from filter info
-matchingInputs = FindMatchingNeurons(BinnedData.spikeguide,filter.neuronIDs);
+num_bins = size(BinnedData.timeframe,1);
 
 %% Inputs:
 
 % default inputs is spike data
 %populate spike data for data units matching the filter units
-Inputs = zeros(size(BinnedData.spikeratedata,1),size(filter.neuronIDs,1));
-Inputs(:,logical(matchingInputs)) = BinnedData.spikeratedata(:,nonzeros(matchingInputs));
+Inputs = zeros(num_bins,size(filter.neuronIDs,1));
+[~,data_idx,filter_idx] = intersect(BinnedData.neuronIDs,filter.neuronIDs,'rows','stable');
+Inputs(:,filter_idx) = BinnedData.spikeratedata(:,data_idx);
 
 %overwrite if we actually want to use EMG or principal components
 if isfield(filter,'input_type')
@@ -120,7 +119,7 @@ spikeDataNew = Inputs(fillen:numpts,:);
 PredData = struct('timeframe', timeframeNew,...
                   'preddatabin', PredictedData,...
                   'spikeratedata', spikeDataNew,...
-                  'outnames',filter.outnames,...
+                  'outnames',{filter.outnames},...
                   'spikeguide', neuronIDs2spikeguide(filter.neuronIDs));
 
 end
