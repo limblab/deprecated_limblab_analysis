@@ -62,9 +62,9 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
     if exist(strcat(target_directory,'\Raw_Figures\FIG'),'file')~=7
         mkdir(strcat(target_directory,'\Raw_Figures\FIG'))
     end
-%     if exist(strcat(target_directory,'\Raw_Figures\EPS'),'file')~=7
-%         mkdir(strcat(target_directory,'\Raw_Figures\EPS'))
-%     end
+    if exist(strcat(target_directory,'\Raw_Figures\EPS'),'file')~=7
+        mkdir(strcat(target_directory,'\Raw_Figures\EPS'))
+    end
     if exist(strcat(target_directory,'\Raw_Figures\PNG'),'file')~=7
         mkdir(strcat(target_directory,'\Raw_Figures\PNG'))
     end
@@ -107,9 +107,8 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
         end
         fname(fname==' ')='_';%replace spaces in name for saving
         print('-dpdf',figure_list(i),strcat(target_directory,'\Raw_Figures\PDF\',fname,'.pdf'))
-%         print('-deps',figure_list(i),strcat(target_directory,'\Raw_Figures\EPS\',fname,'.eps'))
+        print('-deps',figure_list(i),strcat(target_directory,'\Raw_Figures\EPS\',fname,'.eps'))
         print('-dpng',figure_list(i),strcat(target_directory,'\Raw_Figures\PNG\',fname,'.png'))
-        %savefig(figure_list{i},strcat(target_directory,'\Raw_Figures\',fname,'.pdf'))
         saveas(figure_list(i),strcat(target_directory,'\Raw_Figures\FIG\',fname,'.fig'),'fig')
     end
 
