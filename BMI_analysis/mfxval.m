@@ -67,7 +67,7 @@ mse = [];
 for i=0:nfold-1
     
     %% split the appropriate data into training and testing segments
-    disp(sprintf('processing xval %d of %d',i+1,nfold));
+    fprintf('processing xval %d of %d\n',i+1,nfold);
 
     testDataStart = i*options.foldlength + binnedData.timeframe(1);      %move the test block from beginning of file up to the end
     testDataEnd = testDataStart + options.foldlength;    

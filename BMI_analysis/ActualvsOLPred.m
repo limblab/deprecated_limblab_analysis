@@ -80,11 +80,11 @@ function varargout = ActualvsOLPred(ActualData, PredData, varargin)
         
     %Display R2
     if dispflag
-        fprintf('\t\tR2  \tvaf  \tmse  ');
+        fprintf('\t\tR2  \tvaf  \tmse\n');
         for i=1:numPredSignals
-           fprintf('%s\t%1.3f\t%1.3f\t%.2f',PredData.outnames{i},R2(i),vaf(i),mse(i));
+           fprintf('%s\t%1.3f\t%1.3f\t%.2f\n',PredData.outnames{i},R2(i),vaf(i),mse(i));
         end
-        fprintf('Averages:\t%1.3f\t%1.3f\t%.2f',aveR2,avevaf,avemse);
+        fprintf('Averages:\t%1.3f\t%1.3f\t%.2f\n',aveR2,avevaf,avemse);
     end
         
     if plotflag               

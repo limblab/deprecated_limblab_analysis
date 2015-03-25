@@ -67,30 +67,31 @@ function [filter, varargout]=BuildModel(binnedData, options)
     %desiredInputs are the columns in the firing rate matrix that are to be
     %used as inputs for the models
     
+    if ~isfield(binnedData,'neuronIDs')
+        % legacy compatibility...
+        neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
+    else
+        neuronIDs=binnedData.neuronIDs;
+    end
+    
     if size(options.UseAllInputs,1)>1
-        NeuronIDs = options.UseAllInputs;
-        desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
+        filter_neuronIDs = options.UseAllInputs;
+        [~,desiredInputs,filter_idx] = intersect(binnedData.neuronIDs,filter_neuronIDs,'rows','stable');
+        neuronIDs = filter_neuronIDs(filter_idx,:);
+
     elseif options.UseAllInputs
-%        disp('Using all available inputs')
-        if ~isfield(binnedData,'neuronIDs')
-            neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
-        else
-            neuronIDs=binnedData.neuronIDs;
-        end
+%         disp('Using all available inputs')
         desiredInputs=1:size(neuronIDs,1);
-%         Nevermind, Chris didn't let me make the following change :(
-%         Remove all channels with an average firing rate lower than 1 Hz.
-%         desiredInputs=find(mean(binnedData.spikeratedata) > 1);
-%         neuronIDs = neuronIDs(desiredInputs,:);
     else
         if ~exist('NeuronIDsFile','var')
             [FileName, PathName] =uigetfile('*.mat','Filename of desired inputs? ');
             NeuronIDsFile = [PathName FileName];
         end
-        neuronIDs = load(NeuronIDsFile);
-        field_name = fieldnames(neuronIDs);
-        neuronIDs = getfield(neuronIDs, field_name{:});
-        desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
+        filter_neuronIDs = load(NeuronIDsFile);
+        field_name = fieldnames(filter_neuronIDs);
+        filter_neuronIDs = getfield(filter_neuronIDs, field_name{:});
+        [~,desiredInputs,filter_idx] = intersect(binnedData.neuronIDs,filter_neuronIDs,'rows','stable');
+        neuronIDs = filter_neuronIDs(filter_idx,:);
     end
     if isempty(desiredInputs)
         disp('Incompatible Data; Model Building Aborted');
@@ -245,7 +246,7 @@ function [filter, varargout]=BuildModel(binnedData, options)
     if nargout > 1
          PredData = struct('preddatabin', PredictedData, 'timeframe', ...
 			 binnedData.timeframe(numlags:end),'spikeratedata',spikeDataNew, ...
-			 'outnames',OutNames,'neuronIDs',binnedData.neuronIDs, ...
+			 'outnames',{OutNames},'neuronIDs',binnedData.neuronIDs, ...
 			 'vaf',RcoeffDet(PredictedData,ActualDataNew),'actualData',ActualDataNew);
         varargout{1} = PredData;
     end
