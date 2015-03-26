@@ -114,7 +114,7 @@ function [figure_list,data_struct]=compute_electrode_stability_plasticity(fpath,
     ylabel('change in PD')
     h=legend(num2str(data_struct.stimulated_list));
     set(h,'Location','northwest')
-    set(gca,'ylim',[-4 4])
+    set(gca,'ylim',[-5 4])
     
     temp2=data_struct.controls;
     mask=repmat(temp2(:,1),1,size(temp2,2));
@@ -127,7 +127,7 @@ function [figure_list,data_struct]=compute_electrode_stability_plasticity(fpath,
     h=legend(num2str(data_struct.controls_list));
     set(h,'Location','northwest')
     format_for_lee(figure_list(length(figure_list)))
-    set(gca,'ylim',[-4 4])
+    set(gca,'ylim',[-5 4])
     set(figure_list(length(figure_list)),'Position',[100 100 1000 1000])
     
     av1=mean(temp1,1);
