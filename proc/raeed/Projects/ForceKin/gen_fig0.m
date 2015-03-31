@@ -1,6 +1,6 @@
 function gen_fig0
 %% Generate data for active and passive
-numpts = 25;
+numpts = 10;
 active_right = 0.2*randn(numpts,2)+ones(numpts,2);
 active_left = 0.2*randn(numpts,2)-ones(numpts,2);
 passive_left = 0.2*randn(numpts,2)+repmat([-1 1],numpts,1);
@@ -15,11 +15,11 @@ forcepos = 0.1./velpos;
 % Plot velocity force
 figure(1)
 clf
-plot(active_right(:,1),active_right(:,2),'.b', 'markersize', 20)
+plot(active_right(:,1),active_right(:,2),'.b', 'markersize', 30)
 hold on
-plot(passive_left(:,1),passive_left(:,2),'or', 'markersize', 5)
-plot(active_left(:,1),active_left(:,2),'.r', 'markersize', 20)
-plot(passive_right(:,1),passive_right(:,2),'ob', 'markersize', 5)
+plot(passive_left(:,1),passive_left(:,2),'or', 'markersize', 10,'linewidth',2)
+plot(active_left(:,1),active_left(:,2),'.r', 'markersize', 30)
+plot(passive_right(:,1),passive_right(:,2),'ob', 'markersize', 10,'linewidth',2)
 plot(velneg,forceneg,'--k','linewidth',1)
 plot(velpos,forcepos,'--k','linewidth',1)
 
@@ -38,11 +38,11 @@ passive_right_forcevel = passive_right(:,1).*passive_right(:,2);
 % Plot velocity force-velocity
 figure(2)
 clf
-plot(active_right(:,1),active_right_forcevel,'.b', 'markersize', 20)
+plot(active_right(:,1),active_right_forcevel,'.b', 'markersize', 30)
 hold on
-plot(passive_left(:,1),passive_left_forcevel,'or', 'markersize', 5)
-plot(active_left(:,1),active_left_forcevel,'.r', 'markersize', 20)
-plot(passive_right(:,1),passive_right_forcevel,'ob', 'markersize', 5)
+plot(passive_left(:,1),passive_left_forcevel,'or', 'markersize', 10,'linewidth',2)
+plot(active_left(:,1),active_left_forcevel,'.r', 'markersize', 30)
+plot(passive_right(:,1),passive_right_forcevel,'ob', 'markersize', 10,'linewidth',2)
 plot([velneg velpos], zeros(size([velneg velpos])),'--k')
 
 axis([-2 2 -2 2])

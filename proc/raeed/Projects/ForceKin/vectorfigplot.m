@@ -6,26 +6,24 @@ function vectorfigplot
 dx = odefun(t,x');
 dx = dx';
 
-figure(1)
-clf
-% plot(t,x(:,1),t,x(:,2),t,dx(:,2))
-% plot(t,x(:,1),t,x(:,2))
-subplot(141)
-plot(x(:,2),-t,'g',dx(:,2)/3,-t,'k','linewidth',2)
-set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
-grid on
-subplot(142)
-plot(-x(:,2),-t,'g',-dx(:,2)/3,-t,'k','linewidth',2)
-set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
-grid on
-subplot(143)
-plot(x(:,2),-t,'g',-dx(:,2)/3,-t,'k','linewidth',2)
-set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
-grid on
-subplot(144)
-plot(-x(:,2),-t,'g',dx(:,2)/3,-t,'k','linewidth',2)
-set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
-grid on
+% figure(1)
+% clf
+% subplot(141)
+% plot(x(:,2),-t,'g',dx(:,2)/3,-t,'k','linewidth',2)
+% set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
+% grid on
+% subplot(142)
+% plot(-x(:,2),-t,'g',-dx(:,2)/3,-t,'k','linewidth',2)
+% set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
+% grid on
+% subplot(143)
+% plot(x(:,2),-t,'g',-dx(:,2)/3,-t,'k','linewidth',2)
+% set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
+% grid on
+% subplot(144)
+% plot(-x(:,2),-t,'g',dx(:,2)/3,-t,'k','linewidth',2)
+% set(gca,'xtick',[0],'ytick',[],'xticklabels',[])
+% grid on
 
 % get times to plot
 t_samp = linspace(0,1.5,30);
@@ -36,26 +34,30 @@ force_samp = dx_samp(:,2)/3;
 figure(2)
 clf
 subplot(141)
-stem(t_samp,vel_samp,'filled','g','linewidth',2,'markersize',10)
+stem(t_samp,force_samp,'filled','g','linewidth',2,'markersize',10)
 hold on
-stem(t_samp,force_samp,'filled','k','linewidth',2,'markersize',10)
-set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[])
+stem(t_samp,vel_samp,'filled','k','linewidth',2,'markersize',10)
+set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[],'ylim',[-10 10])
+hold off
 subplot(142)
-stem(t_samp,-vel_samp,'filled','g','linewidth',2,'markersize',10)
+stem(t_samp,-force_samp,'filled','g','linewidth',2,'markersize',10)
 hold on
-stem(t_samp,-force_samp,'filled','k','linewidth',2,'markersize',10)
-set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[])
+stem(t_samp,-vel_samp,'filled','k','linewidth',2,'markersize',10)
+set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[],'ylim',[-10 10])
+hold off
 subplot(143)
-stem(t_samp,vel_samp,'g','linewidth',2,'markersize',10)
+stem(t_samp,-force_samp,'g','linewidth',2,'markersize',10)
 hold on
-stem(t_samp,-force_samp,'k','linewidth',2,'markersize',10)
-set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[])
+stem(t_samp,vel_samp,'k','linewidth',2,'markersize',10)
+set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[],'ylim',[-10 10])
+hold off
 subplot(144)
-stem(t_samp,-vel_samp,'g','linewidth',2,'markersize',10)
+stem(t_samp,force_samp,'g','linewidth',2,'markersize',10)
 hold on
-stem(t_samp,force_samp,'k','linewidth',2,'markersize',10)
-set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[])
-legend('Force','Velocity')
+stem(t_samp,-vel_samp,'k','linewidth',2,'markersize',10)
+set(gca,'cameraupvector',[-1 0 0],'xtick',[],'ytick',[],'ylim',[-10 10])
+hold off
+% legend('Velocity','Force')
 
 end
 
