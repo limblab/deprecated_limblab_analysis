@@ -79,7 +79,7 @@ function DVMax_checker()
             if ~isempty(body_weight_idx{iEntry})
                 try
                     animalList(iMonkey).body_weight(end+1) = str2num(data{body_weight_entries(iEntry),5}(body_weight_idx{iEntry}+8 : units_idx{iEntry}-2));
-                    animalList(iMonkey).body_weight_date(end+1) = round(datenum(data{body_weight_entries(iEntry),2}));
+                    animalList(iMonkey).body_weight_date(end+1) = floor(datenum(data{body_weight_entries(iEntry),2}));
                 end
             end
         end
@@ -93,7 +93,7 @@ function DVMax_checker()
             ccm_in_charge_water = 0;
             ccm_in_charge_food = 0;
         end
-        
+        animalList(iMonkey).restricted = 0;
         if ccm_in_charge_water 
             animals_who_got_water{end+1} = animalList(iMonkey).animalName;
             disp([animalList(iMonkey).animalName ' was bottled by CCM.'])
@@ -138,6 +138,7 @@ function DVMax_checker()
             end
             
             if last_water_restriction_start < last_free_water_entry                 %% water restricted monkey
+                animalList(iMonkey).restricted = 1;
                 last_water_entry_date = data{last_water_entry,2};
                 if floor(datenum(last_water_entry_date)) ~= datenum(date)                    
                     if time < 18
@@ -204,6 +205,7 @@ function DVMax_checker()
             end
             
             if last_food_restriction_start < last_free_food_entry                 %% food restricted monkey
+                animalList(iMonkey).restricted = 1;
                 last_food_entry_date = data{last_food_entry,2};
                 if floor(datenum(last_food_entry_date)) ~= datenum(date)                    
                     if time < 18
@@ -221,7 +223,7 @@ function DVMax_checker()
                     disp([animalList(iMonkey).animalName ' received food today.'])
                     animalList(iMonkey).fed_by = 'lab';
                 end
-            elseif last_food_restriction_start > last_free_food_entry       %% free water monkey
+            elseif last_food_restriction_start > last_free_food_entry       %% free food monkey
                 animals_who_got_food{end+1} = animalList(iMonkey).animalName;
                 disp([animalList(iMonkey).animalName ' is not food restricted.'])
                 animalList(iMonkey).fed_by = 'CCM';
@@ -258,13 +260,18 @@ function DVMax_checker()
             color_idx = 0;
             hp = [];
             for iMonkey = monkey_list
+                if animalList(iMonkey).restricted
+                    animalList(iMonkey).days_since_last_weighing = num2str((datenum(date)-animalList(iMonkey).body_weight_date(1)));
+                else
+                    animalList(iMonkey).days_since_last_weighing = 'FW';
+                end
                 color_idx = color_idx+1;
                 if ~isempty(animalList(iMonkey).body_weight_date)
                     hp(end+1) = plot(animalList(iMonkey).body_weight_date,animalList(iMonkey).body_weight,'Color',colors(color_idx,:),'LineWidth',2);   
                     if str2double(animalList(iMonkey).idealBodyWeight)
                         plot(animalList(iMonkey).body_weight_date([1 end]),[str2double(animalList(iMonkey).idealBodyWeight) str2double(animalList(iMonkey).idealBodyWeight)],'LineStyle','--','Color',colors(color_idx,:));
                     end
-                    legend_text{end+1} = [animalList(iMonkey).animalName ' ' num2str(round(100*(animalList(iMonkey).body_weight(1)/str2double(animalList(iMonkey).idealBodyWeight) - 1))) '%'];
+                    legend_text{end+1} = [animalList(iMonkey).animalName ' ' num2str(round(100*(animalList(iMonkey).body_weight(1)/str2double(animalList(iMonkey).idealBodyWeight) - 1))) '%. (' animalList(iMonkey).days_since_last_weighing ')'];
                 end
             end        
             set(gca,'XTick',[datenum('2013-01-01'):182:datenum(date)])
@@ -273,7 +280,7 @@ function DVMax_checker()
             legend(hp,legend_text,'Location','West')
         end
         print(gf,'BodyWeights','-dpng')        
-        body_weight_email(peopleList,testing)
+        body_weight_email(animalList,peopleList,testing)
     end        
     
     disp('Finished checking DVMax')
@@ -513,7 +520,7 @@ function send_monkey_person_email(animalList,peopleList,ccmList)
     send_mail_message(recepients,subject,message)
 end
 
-function body_weight_email(peopleList,testing)    
+function body_weight_email(animalList,peopleList,testing)    
     if testing
         recepients = 'ricardort@gmail.com';
         subject = ['(this is a test) Weekly body weights update'];
@@ -522,7 +529,8 @@ function body_weight_email(peopleList,testing)
         subject = ['Weekly body weights update'];
     end    
 
-    message = {'Here''s the weekly monkey body weight update.  Don''t forget to make body weight entries (EX1050) every week!'};
+    message = {'Here''s the weekly monkey body weight update.  Don''t forget to make body weight entries (EX1050) every week!';...
+        'The numbers in parentheses are the numbers of days since the last EX1050 entry.'};
  
     message_sent = 0;
     while (~message_sent)
