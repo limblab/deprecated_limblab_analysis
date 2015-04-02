@@ -25,10 +25,19 @@ end
 %   Might want to consider using some sort of Wilkinson notation...talk to
 %   Tucker about this
 % Extract the terms we care about
+if(length(model_terms)~=length(behaviors.armdata))
+    error('model_terms must contain the same number of terms as behaviors.armdata');
+end
 armdata_terms = behaviors.armdata(logical(model_terms));
 % Extract the data from each term into a matrix
 % armdata_mat = cell2mat(cellfun(@(x) x.data,armdata_terms,'uniformoutput',false));
 armdata_mat = [armdata_terms.data];
+
+% compose dataset version
+% armdataset = dataset();
+% for i = 1:length(armdata_terms)
+%     armdataset = [armdataset mat2dataset(armdata_terms(i).data)];
+% end
 %% Set up output struct
 tuning_init = cell(num_units,length(armdata_terms));
 neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tuning_init,'term_signif',tuning_init,'PD',tuning_init,'name',tuning_init);
@@ -43,6 +52,12 @@ opt = statset('UseParallel','never');
 %% Bootstrap GLM function for each neuron
 tic
 for i = 1:num_units
+    %Compose glm input dataset
+%     glm_data = dataset(
+
+    %Full GLM
+    whole_tuning = bootfunc(armdata_mat,behaviors.FR(:,i));
+    
     %bootstrap for firing rates to get output parameters
     boot_tuning = bootstrp(bootstrap_params.num_rep,@(X,y) {bootfunc(X,y)}, armdata_mat, behaviors.FR(:,i),'Options',opt);
     
@@ -82,8 +97,14 @@ for i = 1:num_units
         %put CIs into outstruct
         neural_tuning(i,covar_ctr).CI = coef_CIs(:,column_ctr+1:column_ctr+num_covar_col);
         
-        %term significance
-        neural_tuning(i,covar_ctr).term_signif = '?';
+        %term significance using likelihood ratio test and alpha=0.05
+        armdata_terms_partial = armdata_terms;
+        armdata_terms_partial(covar_ctr) = [];
+        armdata_mat_partial = [armdata_terms_partial.data];
+        partial_tuning = bootfunc(armdata_mat_partial,behaviors.FR(:,i));
+        log_LR = 2*(whole_tuning.LogLikelihood-partial_tuning.LogLikelihood);
+        df_partial = whole_tuning.NumCoefficients-partial_tuning.NumCoefficients;
+        neural_tuning(i,covar_ctr).term_signif = chi2cdf(log_LR,df_partial,'upper')<0.05;
         
         %PD
         if(armdata_terms(covar_ctr).doPD)
