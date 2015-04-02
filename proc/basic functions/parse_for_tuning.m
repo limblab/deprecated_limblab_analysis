@@ -122,19 +122,27 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     end
     %% set generic kinetic variables from the bdf 
     pos=bdf.pos;
-    vel=bdf.vel;
-    acc=bdf.acc;
+    if isfield(bdf,'vel')
+        vel=bdf.vel;
+    else
+        vel=[bdf.pos(1,:),gradient(bdf.pos(2:end),bdf.pos(1,:))];
+    end 
+    if isfield(bdf,'acc')
+        acc=bdf.acc;
+    else
+        acc=[bdf.pos(1,:),gradient(bdf.vel(2:end),bdf.pos(1,:))];
+    end
     if isfield(bdf,'force')
         force=bdf.force;
         if isfield(bdf,'dfdt')
             dfdt=bdf.dfdt;
         else
-            dfdt=[bdf.force(:,1) central_difference(force(:,2:end),force(:,1))];
+            dfdt=[bdf.force(:,1) gradient(force(:,2:end),force(:,1))];
         end
         if isfield(bdf,'dfdtdt')
             dfdtdt=bdf.dfdtdt;
         else
-            dfdtdt=[bdf.force(:,1) central_difference(dfdt(:,2:end),force(:,1))];
+            dfdtdt=[bdf.force(:,1) gradient(dfdt(:,2:end),force(:,1))];
         end
     else
         force=[pos(:,1),zeros(size(pos(:,2:end)))];
@@ -321,7 +329,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 spd=sqrt(sum(vel(:,2:end).^2,2));
                 [B,A]=butter(3,.1,'low');
                 sspd=filtfilt(B,A,spd);
-                dsdt=central_difference(sspd,vel(:,1));
+                dsdt=gradient(sspd,vel(:,1));
                 outstruct=peak_value([acc(:,1),dsdt]);
             case 'peak dfdtdt'
                 %viable method_opts for the peak dfdtdt method:
