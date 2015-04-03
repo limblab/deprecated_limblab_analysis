@@ -59,6 +59,8 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     %       default is 0 (false)
     %   -comptute_dfdtdt_pds: flag that will be passed to the output struct
     %       default is 0 (false)
+    %   -comptute_EMG_pds: flag that will be passed to the output struct
+    %       default is 0 (false)
     %   -data_offset: offset in ms between kinetic and Firing rate data. Used to
     %       account for transmission latency. negative offset for FR data after
     %       kinetic data (sensory), positive offset for FR leading kinetic
@@ -80,7 +82,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     %   -data, a column matrix of data points, each row corresponding to an
     %   observation
     %   -name, a string defining the type of data e.g. 'pos', 'vel',
-    %   'force'
+    %   'force' 'EMG'
     %   -num_lags, an integer specifying the number of lags included in the
     %   data field. 
     %   -num_base_col, an integer telling how many data columns there are
@@ -125,29 +127,42 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     if isfield(bdf,'vel')
         vel=bdf.vel;
     else
-        vel=[bdf.pos(1,:),gradient(bdf.pos(2:end),bdf.pos(1,:))];
+        [grad_rows,grad_cols]=gradient(bdf.pos(:,2:end),[1:size(bdf.pos,2)-1],bdf.pos(:,1));
+        vel=[bdf.pos(:,1),grad_cols];
     end 
     if isfield(bdf,'acc')
         acc=bdf.acc;
     else
-        acc=[bdf.pos(1,:),gradient(bdf.vel(2:end),bdf.pos(1,:))];
+        [grad_rows,grad_cols]=gradient(vel(:,2:end),[1:size(vel,2)-1],vel(:,1));
+        acc=[bdf.pos(:,1),grad_cols];
     end
     if isfield(bdf,'force')
-        force=bdf.force;
+        if isfield(bdf.force,'labels')
+            force=bdf.force.data;
+        else
+            force=bdf.force;
+        end
         if isfield(bdf,'dfdt')
             dfdt=bdf.dfdt;
         else
-            dfdt=[bdf.force(:,1) gradient(force(:,2:end),force(:,1))];
+            [grad_rows,grad_cols]=gradient(force(:,2:end),[1:size(force,2)-1],force(:,1));
+            dfdt=[force(:,1), grad_cols];
         end
         if isfield(bdf,'dfdtdt')
             dfdtdt=bdf.dfdtdt;
         else
-            dfdtdt=[bdf.force(:,1) gradient(dfdt(:,2:end),force(:,1))];
+            [grad_rows,grad_cols]=gradient(dfdt(:,2:end),[1:size(dfdt,2)-1],force(:,1));
+            dfdtdt=[force(:,1), grad_cols];
         end
     else
         force=[pos(:,1),zeros(size(pos(:,2:end)))];
         dfdt=force;
         dfdtdt=force;
+    end
+    if isfield(bdf,'emg')
+        EMG=bdf.emg.data;
+    else
+        EMG=[pos(:,1),zeros(size(pos(:,2:end)))];
     end
     %% set the list of channel/unit IDs for the selected units:
     unit_ids=-1*ones(length(which_units),2);
@@ -162,6 +177,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
             force_lag_data=[];
             dfdt_lag_data=[];
             dfdtdt_lag_data=[];
+            EMG_lag_data=[];
             if isfield(method_opts,'lags')
                 num_lags=length(method_opts.lags);
                 lags=method_opts.lags;
@@ -173,14 +189,23 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 lags=[];
             end
             if num_lags>0
+                %preallocate matrices for shifted lag data
+                pos_lag_data=zeros(size(pos,1),(size(pos,2)-1)*num_lags);
+                vel_lag_data=zeros(size(vel,1),(size(vel,2)-1)*num_lags);
+                acc_lag_data=zeros(size(acc,1),(size(acc,2)-1)*num_lags);
+                force_lag_data=zeros(size(force,1),(size(force,2)-1)*num_lags);
+                dfdt_lag_data=zeros(size(dfdt,1),(size(dfdt,2)-1)*num_lags);
+                dfdtdt_lag_data=zeros(size(dfdtdt,1),(size(dfdtdt,2)-1)*num_lags);
+                EMG_lag_data=zeros(size(EMG,1),(size(EMG,2)-1)*num_lags);
                 for i=1:length(method_opts.lags)
                     tmp=bdf.pos(:,1)-method_opts.lags(i);
-                    pos_lag_data=[pos_lag_data,interp1(pos(:,1),pos(:,2:end),tmp)];
-                    vel_lag_data=[vel_lag_data,interp1(vel(:,1),vel(:,2:end),tmp)];
-                    acc_lag_data=[acc_lag_data,interp1(acc(:,1),acc(:,2:end),tmp)];
-                    force_lag_data=[force_lag_data,interp1(force(:,1),force(:,2:end),tmp)];
-                    dfdt_lag_data=[dfdt_lag_data,interp1(dfdt(:,1),dfdt(:,2:end),tmp)];
-                    dfdtdt_lag_data=[dfdtdt_lag_data,interp1(dfdtdt(:,1),dfdtdt(:,2:end),tmp)];
+                    pos_lag_data(:,(1+(i-1)*size(pos,2)):(i*size(pos,2))-1)=interp1(pos(:,1),pos(:,2:end),tmp);
+                    vel_lag_data(:,(1+(i-1)*size(vel,2)):(i*size(vel,2))-1)=interp1(vel(:,1),vel(:,2:end),tmp);
+                    acc_lag_data(:,(1+(i-1)*size(acc,2)):(i*size(acc,2))-1)=interp1(acc(:,1),acc(:,2:end),tmp);
+                    force_lag_data(:,(1+(i-1)*size(force,2)):(i*size(force,2))-1)=interp1(force(:,1),force(:,2:end),tmp);
+                    dfdt_lag_data(:,(1+(i-1)*size(dfdt,2)):(i*size(dfdt,2)))=interp1(dfdt(:,1),dfdt(:,2:end),tmp);
+                    dfdtdt_lag_data(:,(1+(i-1)*size(dfdtdt,2)):(i*size(dfdtdt,2))-1)=interp1(dfdtdt(:,1),dfdtdt(:,2:end),tmp);
+                    EMG_lag_data(:,(1+(i-1)*size(EMG,2)):(i*size(EMG,2))-1)=interp1(EMG_lag_data(1,:),EMG(:,2:end),tmp);
                 end
             end
         % set up offset and window
@@ -483,6 +508,7 @@ function interpolate_kinematics(sample_times)
     force=interp1(force(:,1),[force(:,2:end),force_lag_data],sample_times-data_offset);
     dfdt=interp1(dfdt(:,1),[dfdt(:,2:end),dfdt_lag_data],sample_times-data_offset);
     dfdtdt=interp1(dfdtdt(:,1),[dfdtdt(:,2:end),dfdtdt_lag_data],sample_times-data_offset);
+    EMG=interp1(EMG(:,1),[EMG(:,2:end),EMG_lag_data],sample_times-data_offset);
 end
 function outstruct=build_outstruct(sample_times)
 %% adds data to the output struct 
@@ -519,7 +545,11 @@ function outstruct=build_outstruct(sample_times)
             while isnan(dfdtdt(idfdtdt,2*idx))
                 idfdtdt=idfdtdt+1;
             end
-            istart=max([ipos,ivel,iacc,iforce,idfdt,idfdtdt])+1;
+            iEMG=1;
+            while isnan(EMG(iEMG,2*idx))
+                iEMG=iEMG+1;
+            end
+            istart=max([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])+1;
         else
             istart=1;
         end
@@ -552,9 +582,13 @@ function outstruct=build_outstruct(sample_times)
             while isnan(dfdtdt(idfdtdt,2*idx))
                 idfdtdt=idfdtdt-1;
             end
-            iend=min([ipos,ivel,iacc,iforce,idfdt,idfdtdt])-1;
+            iEMG=length(EMG(:,1));
+            while isnan(EMG(iEMG,2*idx))
+                iEMG=iEMG-1;
+            end
+            iend=min([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])-1;
         else
-            iend=min([length(pos(:,1)),length(vel(:,1)),length(acc(:,1)),length(force(:,1)),length(dfdt(:,1)),length(dfdtdt(:,1))]);
+            iend=min([length(pos(:,1)),length(vel(:,1)),length(acc(:,1)),length(force(:,1)),length(dfdt(:,1)),length(dfdtdt(:,1)),length(EMG(1,:))]);
         end
         %trim off indices corresponding to leading NaNs
         pos=pos(istart:iend,:);
@@ -563,6 +597,7 @@ function outstruct=build_outstruct(sample_times)
         force=force(istart:iend,:);
         dfdt=dfdt(istart:iend,:);
         dfdtdt=dfdtdt(istart:iend,:);
+        EMG=EMG(istart:iend,:);
         sample_times=sample_times(istart:iend,:);
         
     end
@@ -627,7 +662,16 @@ function outstruct=build_outstruct(sample_times)
     else
         outstruct.armdata(6).doPD=0;
     end
-
+    %compose armdata cell array for EMG
+    outstruct.armdata(7).data=EMG;
+    outstruct.armdata(7).name='EMG';
+    outstruct.armdata(7).num_lags=num_lags;
+    outstruct.armdata(7).num_base_cols=size(EMG,2);
+    if isfield(method_opts,'compute_EMG_pds')
+        outstruct.armdata(7).doPD=method_opts.compute_EMG_pds;
+    else
+        outstruct.armdata(7).doPD=0;
+    end
     %compose FR field
     outstruct.FR=-1*ones(length(sample_times),length(which_units));
     for k=1:length(which_units)
