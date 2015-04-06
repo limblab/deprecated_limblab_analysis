@@ -199,13 +199,13 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 EMG_lag_data=zeros(size(EMG,1),(size(EMG,2)-1)*num_lags);
                 for i=1:length(method_opts.lags)
                     tmp=bdf.pos(:,1)-method_opts.lags(i);
-                    pos_lag_data(:,(1+(i-1)*size(pos,2)):(i*size(pos,2))-1)=interp1(pos(:,1),pos(:,2:end),tmp);
-                    vel_lag_data(:,(1+(i-1)*size(vel,2)):(i*size(vel,2))-1)=interp1(vel(:,1),vel(:,2:end),tmp);
-                    acc_lag_data(:,(1+(i-1)*size(acc,2)):(i*size(acc,2))-1)=interp1(acc(:,1),acc(:,2:end),tmp);
-                    force_lag_data(:,(1+(i-1)*size(force,2)):(i*size(force,2))-1)=interp1(force(:,1),force(:,2:end),tmp);
-                    dfdt_lag_data(:,(1+(i-1)*size(dfdt,2)):(i*size(dfdt,2)))=interp1(dfdt(:,1),dfdt(:,2:end),tmp);
-                    dfdtdt_lag_data(:,(1+(i-1)*size(dfdtdt,2)):(i*size(dfdtdt,2))-1)=interp1(dfdtdt(:,1),dfdtdt(:,2:end),tmp);
-                    EMG_lag_data(:,(1+(i-1)*size(EMG,2)):(i*size(EMG,2))-1)=interp1(EMG_lag_data(1,:),EMG(:,2:end),tmp);
+                    pos_lag_data(:,(1+(i-1)*(size(pos,2)-1)):(i*(size(pos,2)-1)))=interp1(pos(:,1),pos(:,2:end),tmp);
+                    vel_lag_data(:,(1+(i-1)*(size(vel,2)-1)):(i*(size(vel,2)-1)))=interp1(vel(:,1),vel(:,2:end),tmp);
+                    acc_lag_data(:,(1+(i-1)*(size(acc,2)-1)):(i*(size(acc,2)-1)))=interp1(acc(:,1),acc(:,2:end),tmp);
+                    force_lag_data(:,(1+(i-1)*(size(force,2)-1)):(i*(size(force,2)-1)))=interp1(force(:,1),force(:,2:end),tmp);
+                    dfdt_lag_data(:,(1+(i-1)*(size(dfdt,2)-1)):(i*(size(dfdt,2)-1)))=interp1(dfdt(:,1),dfdt(:,2:end),tmp);
+                    dfdtdt_lag_data(:,(1+(i-1)*(size(dfdtdt,2)-1)):(i*(size(dfdtdt,2)-1)))=interp1(dfdtdt(:,1),dfdtdt(:,2:end),tmp);
+                    EMG_lag_data(:,(1+(i-1)*(size(EMG,2)-1)):(i*(size(EMG,2)-1)))=interp1(EMG(:,1),EMG(:,2:end),tmp);
                 end
             end
         % set up offset and window
@@ -260,6 +260,10 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
                     bump_times=bdf.TT(:,bdf.TT_hdr.bump_time)+bdf.TT(:,bdf.TT_hdr.bump_delay);
                 case 'isometric'
+                    target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
+                    go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
+                    bump_times=[];
+                case 'WF'
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
                     bump_times=[];
@@ -513,83 +517,78 @@ end
 function outstruct=build_outstruct(sample_times)
 %% adds data to the output struct 
     %check for NaN's and prune data appropriately
-    if (find(isnan(pos))  |    find(isnan(vel))    |    find(isnan(acc))    |    find(isnan(force))    |    find(isnan(dfdt))    |    find(isnan(dfdtdt))    )
+    if (find(isnan(pos))  |    find(isnan(vel))    |    find(isnan(acc))    |    find(isnan(force))    |    find(isnan(dfdt))    |    find(isnan(dfdtdt))    | find(isnan(EMG)))
         %positive lags will generate NaNs at the beginning of the data
         %series, negative lags will have them at the end. Since the user
         %can input both positive and negative lags, we must check for both
+
         %check for leading NaN's
-        if max(lags)>0
-            idx=find(lags==max(lags));
-            %find the last leading NaN
-            ipos=1;
-            while isnan(pos(ipos,2*idx))
-                ipos=ipos+1;
-            end
-            ivel=1;
-            while isnan(vel(ivel,2*idx))
-                ivel=ivel+1;
-            end
-            iacc=1;
-            while isnan(acc(iacc,2*idx))
-                iacc=iacc+1;
-            end
-            iforce=1;
-            while isnan(force(iforce,2*idx))
-                iforce=iforce+1;
-            end
-            idfdt=1;
-            while isnan(dfdt(idfdt,2*idx))
-                idfdt=idfdt+1;
-            end
-            idfdtdt=1;
-            while isnan(dfdtdt(idfdtdt,2*idx))
-                idfdtdt=idfdtdt+1;
-            end
-            iEMG=1;
-            while isnan(EMG(iEMG,2*idx))
-                iEMG=iEMG+1;
-            end
-            istart=max([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])+1;
-        else
-            istart=1;
+        idx=find(lags==max(lags));
+        %find the last leading NaN
+        ipos=1;
+        while isnan(pos(ipos,2*idx))
+            ipos=ipos+1;
         end
+        ivel=1;
+        while isnan(vel(ivel,2*idx))
+            ivel=ivel+1;
+        end
+        iacc=1;
+        while isnan(acc(iacc,2*idx))
+            iacc=iacc+1;
+        end
+        iforce=1;
+        while isnan(force(iforce,2*idx))
+            iforce=iforce+1;
+        end
+        idfdt=1;
+        while isnan(dfdt(idfdt,2*idx))
+            idfdt=idfdt+1;
+        end
+        idfdtdt=1;
+        while isnan(dfdtdt(idfdtdt,2*idx))
+            idfdtdt=idfdtdt+1;
+        end
+        iEMG=1;
+        while isnan(EMG(iEMG,2*idx))
+            iEMG=iEMG+1;
+        end
+        istart=max([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])+1;
+
         %check for trailing NaN's
-        if min(lags)<0
-            dips('found trailing NaNs')
-            idx=find(lags==min(lags));
-            %find the index of the first trailing NaN
-            ipos=length(pos(:,1));
-            while isnan(pos(ipos,2*idx))
-                ipos=ipos1-1;
-            end
-            ivel=length(vel(:,1));
-            while isnan(vel(ivel,2*idx))
-                ivel=ivel-1;
-            end
-            iacc=length(acc(:,1));
-            while isnan(acc(iacc,2*idx))
-                iacc=iacc-1;
-            end
-            iforce=length(force(:,1));
-            while isnan(force(iforce,2*idx))
-                iforce=iforce-1;
-            end
-            idfdt=length(dfdt(:,1));
-            while isnan(dfdt(idfdt,2*idx))
-                idfdt=idfdt-1;
-            end
-            idfdtdt=length(dfdtdt(:,1));
-            while isnan(dfdtdt(idfdtdt,2*idx))
-                idfdtdt=idfdtdt-1;
-            end
-            iEMG=length(EMG(:,1));
-            while isnan(EMG(iEMG,2*idx))
-                iEMG=iEMG-1;
-            end
-            iend=min([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])-1;
-        else
-            iend=min([length(pos(:,1)),length(vel(:,1)),length(acc(:,1)),length(force(:,1)),length(dfdt(:,1)),length(dfdtdt(:,1)),length(EMG(1,:))]);
+        idx=find(lags==min(lags));
+        %find the index of the first trailing NaN
+        ipos=length(pos(:,1));
+        while isnan(pos(ipos,2*idx))
+            ipos=ipos1-1;
         end
+        ivel=length(vel(:,1));
+        while isnan(vel(ivel,2*idx))
+            ivel=ivel-1;
+        end
+        iacc=length(acc(:,1));
+        while isnan(acc(iacc,2*idx))
+            iacc=iacc-1;
+        end
+        iforce=length(force(:,1));
+        while isnan(force(iforce,2*idx))
+            iforce=iforce-1;
+        end
+        idfdt=length(dfdt(:,1));
+        while isnan(dfdt(idfdt,2*idx))
+            idfdt=idfdt-1;
+        end
+        idfdtdt=length(dfdtdt(:,1));
+        while isnan(dfdtdt(idfdtdt,2*idx))
+            idfdtdt=idfdtdt-1;
+        end
+        iEMG=length(EMG(:,1));
+        while isnan(EMG(iEMG,2*idx))
+            iEMG=iEMG-1;
+        end
+
+        iend=min([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])-1;
+
         %trim off indices corresponding to leading NaNs
         pos=pos(istart:iend,:);
         vel=vel(istart:iend,:);

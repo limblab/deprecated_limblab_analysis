@@ -108,10 +108,10 @@ tt_hdr.num_targets_attempted    = 3;
 tt_hdr.x_offset                 = 4;
 tt_hdr.y_offset                 = 5;
 tt_hdr.tgt_size                 = 6;
-tt_hdr.go_codes                 = 7;
-tt_hdr.go_cues                  = 8;
-tt_hdr.end_time                 = 9;
-tt_hdr.trial_result             = 10;
+tt_hdr.go_codes                 =[ 7:7+max(tt(:,2))-1];
+tt_hdr.go_cues                  =[ 7+max(tt(:,2)): 7+2*max(tt(:,2))-1];
+tt_hdr.end_time                 = 7+2*max(tt(:,2));
+tt_hdr.trial_result             = 7+2*max(tt(:,2))+1;
     
 
     

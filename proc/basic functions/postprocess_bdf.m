@@ -22,6 +22,8 @@ function bdf=postprocess_bdf(bdf,varargin)
                 [bdf.TT,bdf.TT_hdr]=rw_trial_table_hdr(bdf);
             case 'BC'
                 [bdf.TT,bdf.TT_hdr]=bc_trial_table4(bdf);
+            case 'WF'
+                [bdf.TT,bdf.TT_hdr]=wf_trial_table_hdr(bdf);
             otherwise
                 error('make_tdf_function:UnidentifiedTask','The bdf.meta.task field is empty or contains an unrecognized task code')
         end
@@ -40,8 +42,8 @@ function bdf=postprocess_bdf(bdf,varargin)
         else
             offset=0;
         end
-        vt = bdf.vel(:,1);
-        t = vt(1):ts:vt(end);
+        pt = bdf.pos(:,1);
+        t = pt(1):ts:pt(end);
 
         for i=1:length(bdf.units)
             if isempty(bdf.units(i).id)
