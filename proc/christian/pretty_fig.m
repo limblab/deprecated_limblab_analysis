@@ -11,13 +11,13 @@ for i = 1:numel(lines)
  
 end
 
-legend('Fx','Fy');% 
-xlabel('Training time')
-
-title('Performance with Training Time');
+% legend('Fx','Fy');% 
+% xlabel('Training time')
 % 
-ylim([-0.5 0.8])
-ylabel('VAF')
+% title('Performance with Training Time');
+% % 
+% ylim([-0.5 0.8])
+% ylabel('VAF')
 %  
 % ylim([0 .7])
 % ylabel('R^2')

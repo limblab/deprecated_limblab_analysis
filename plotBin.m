@@ -54,14 +54,14 @@ function plotBin(datastructname)
 if ~isempty(datastruct.emgdatabin)
     
     EMGnames = datastruct.emgguide;
-    numEMGs=size(EMGnames,1);
+    numEMGs=length(EMGnames);
 
     EMG_cb=zeros(1,numEMGs);
 
     for i=1:numEMGs
         ctrlBottom = .9-(i-1)*.8/numEMGs;  %distribute EMG chkboxes from top to bottom of panel
         position = [.1 ctrlBottom .9 .05]; %
-        EMG_cb(i)=uicontrol('Parent',EMGpanel,'Style','checkbox','String',EMGnames(i,:),...
+        EMG_cb(i)=uicontrol('Parent',EMGpanel,'Style','checkbox','String',EMGnames{i},...
                             'Units','normalized','Position',position,'Callback',{@EMG_chbx_Callback,i});
     end
 
@@ -79,11 +79,11 @@ if ~isempty(datastruct.forcedatabin)
 
     ForceNames = datastruct.forcelabels;
     
-    Force_x_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(1,:),...
+    Force_x_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames{1},...
                                  'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Force_chbx_Callback,1});
 
     if size(datastruct.forcedatabin,2)>1
-        Force_y_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames(2,:),...
+        Force_y_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String',ForceNames{2},...
                                      'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Force_chbx_Callback,2});
     end
 end
@@ -126,9 +126,9 @@ if ~isempty(datastruct.cursorposbin)
 
     PosNames = datastruct.cursorposlabels;
     
-    Pos_x_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames(1,:),...
+    Pos_x_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames{1},...
                                  'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Pos_chbx_Callback,1});
-    Pos_y_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames(2,:),...
+    Pos_y_cb = uicontrol('Parent',Pospanel,'Style','checkbox','String',PosNames{2},...
                                  'Units','normalized','Position',[.1 .6 .9 .1],'Callback',{@Pos_chbx_Callback,2});
     
 end
@@ -268,8 +268,8 @@ end
             end
             [AX,H1,H2]=plotyy(datastruct.timeframe, datastruct.emgdatabin(:,EMGs_to_plot),...
                               datastruct.timeframe, force_pos );
-            [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot,:),'Location','NorthWest');
-            [leghf,objhf,outhf,outmf]=legend(AX(2),[ForceNames(Force_to_plot,:); PosNames(Pos_to_plot,:)],'Location','NorthEast');
+            [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames{EMGs_to_plot},'Location','NorthWest');
+            [leghf,objhf,outhf,outmf]=legend(AX(2),{ForceNames{Force_to_plot}; PosNames{Pos_to_plot}},'Location','NorthEast');
             legh = [leghe; leghf];
             outm = outme; outh = outhe;
             emg_handles = H1;
@@ -278,12 +278,12 @@ end
         elseif (usr_plotEMGs) %plot EMGs but not Force
             hold off; axis auto;
             emg_handles = plot(datastruct.timeframe,datastruct.emgdatabin(:,EMGs_to_plot));
-            [legh,objh,outh,outm]=legend(EMGnames(EMGs_to_plot,:),'Location','NorthWest');
+            [legh,objh,outh,outm]=legend(EMGnames{EMGs_to_plot},'Location','NorthWest');
             
         elseif (usr_plotForce || usr_plotPos) %plot Force but no EMG
             hold off; axis auto;            
             force_handles = plot(datastruct.timeframe, [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)] );
-            [legh,objh,outh,outm]=legend(force_handles, [ForceNames(Force_to_plot,:);PosNames(Pos_to_plot,:)],'Location','NorthEast');
+            [legh,objh,outh,outm]=legend(force_handles, {ForceNames{Force_to_plot};PosNames{Pos_to_plot}},'Location','NorthEast');
         end
        
  
@@ -353,8 +353,8 @@ end
                             
             hold off; axis auto;
             [AX,H1,H2]=plotyy(EMGs_PWTH(:,1),EMGs_PWTH(:,2:end),Force_PWTH(:,1),Force_PWTH(:,2:end));
-            [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames(EMGs_to_plot,:),'Location','NorthWest');
-            [leghf,objhf,outhf,outmf]=legend(AX(2),ForceNames(Force_to_plot,:),'Location','NorthEast');
+            [leghe,objhe,outhe,outme]=legend(AX(1),EMGnames{EMGs_to_plot},'Location','NorthWest');
+            [leghf,objhf,outhf,outmf]=legend(AX(2),ForceNames{Force_to_plot},'Location','NorthEast');
             legh = [leghe; leghf];
             outm = outme; outh = outhe;
             emg_handles = H1;
@@ -365,14 +365,14 @@ end
             EMGs_PWTH = PWTH([datastruct.timeframe datastruct.emgdatabin(:,EMGs_to_plot)],datastruct.words,...
                                 WordsValue(Words_to_plot), timeBefore, timeAfter);
             emg_handles = plot(EMGs_PWTH(:,1),EMGs_PWTH(:,2:end));
-            [legh,objh,outh,outm]=legend(EMGnames(EMGs_to_plot,:),'Location','NorthWest');
+            [legh,objh,outh,outm]=legend(EMGnames{EMGs_to_plot},'Location','NorthWest');
             
         elseif (usr_plotForce) %plot Force but no EMG
             hold off; axis auto;
             Force_PWTH = PWTH([datastruct.timeframe datastruct.forcedatabin(:,Force_to_plot)],datastruct.words,...
                                 WordsValue(Words_to_plot), timeBefore, timeAfter);
             force_handles = plot(Force_PWTH(:,1),Force_PWTH(:,2:end));
-            [legh,objh,outh,outm]=legend(force_handles, ForceNames(Force_to_plot),'Location','NorthEast');
+            [legh,objh,outh,outm]=legend(force_handles, ForceNames{Force_to_plot},'Location','NorthEast');
         end
 
     end

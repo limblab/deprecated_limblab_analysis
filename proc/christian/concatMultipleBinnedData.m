@@ -48,7 +48,11 @@ else
         tmp = tmp.(structname{1});
         bd = [bd;tmp];
     end
-    neuronIDs = getCommonUnits(bd);
+    neuronIDs = bd{1}.neuronIDs;
+    for i = 2:length(bd)
+        neuronIDs = intersect(neuronIDs,bd{i}.neuronIDs,'rows','stable');
+%     neuronIDs = getCommonUnits(bd);
+    end
 end
 
 if strcmp(MoreFiles,'Cancel')

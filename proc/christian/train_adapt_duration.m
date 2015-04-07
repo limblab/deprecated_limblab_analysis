@@ -1,4 +1,4 @@
-function [vaf,R2,preds] = train_adapt_duration(train_data,test_data,train_duration,type)
+function [vaf,R2,preds,decoders] = train_adapt_duration(train_data,test_data,train_duration,type,params)
 
 if any(train_duration > train_data.timeframe(end)-train_data.timeframe(1)+1)
     error('training time exceed duration of data');
@@ -9,15 +9,23 @@ num_iter = length(train_duration);
 [num_pts,num_out]  = size(test_data.cursorposbin);
 % [num_pts,num_out]  = size(test_data.emgdatabin);
 
-vaf   = nan(num_iter,num_out);
-R2    = nan(num_iter,num_out);
-preds = nan(num_pts, num_out, num_iter);
+vaf      = nan(num_iter,num_out);
+R2       = nan(num_iter,num_out);
+preds    = nan(num_pts, num_out, num_iter);
+decoders = cell(num_iter,1);
 
-params.adapt_params.LR = 5e-7;
+% bmi parameters:
 params.n_neurons = size(train_data.neuronIDs,1);
 params.neuronIDs = train_data.neuronIDs;
-% params.mode = 'emg_cascade';
-E2F = E2F_default;
+E2F = E2F_deRugy_PD(15);
+params.emg_decoder = E2F;
+
+% adaptation parameters:
+aveFR = mean(mean(train_data.spikeratedata));
+ref_aveFR = 10.69; %from jango_20150107
+params.adapt_params.LR       = 5e-7*ref_aveFR/aveFR;
+% params.adapt_params.duration = inf;
+% params.adapt_params.delay    = 0.65;
 
 for i = 1:num_iter
     
@@ -27,8 +35,8 @@ for i = 1:num_iter
         case 'normal'
             % use normal adaptive decoder training
             params.mode = 'emg_cascade';
-            N2E = adapt_offline(temp_train_data,params);
-            [vaf(i,:),R2(i,:),preds(:,:,i)] = plot_predsF(test_data,{N2E;E2F},params.mode);
+            decoders{i} = adapt_offline(temp_train_data,params);
+            [vaf(i,:),R2(i,:),preds(:,:,i)] = plot_predsF(test_data,{decoders{i};E2F},params.mode);
             
         case 'supervised'
             % use adaptive decoder with actual force
@@ -48,6 +56,7 @@ for i = 1:num_iter
             % use optimal decoders
             params.mode = 'direct';
             N2F.H = filMIMO4(temp_train_data.spikeratedata,temp_train_data.cursorposbin,10,1,1);
+            N2F.neuronIDs = temp_train_data.neuronIDs;
             [vaf(i,:),R2(i,:),preds(:,:,i)] = plot_predsF(test_data,{N2F;[]},params.mode);
 %             preds(:,:,i) = predMIMOCE3(test_data.spikeratedata,H);
 %             R2(i,:)  = CalculateR2(preds(:,:,i),test_data.cursorposbin);

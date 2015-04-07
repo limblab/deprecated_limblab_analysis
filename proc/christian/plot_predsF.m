@@ -1,17 +1,29 @@
 function [vaf,R2,predsF] = plot_predsF(testdata,decoders,mode,varargin)
 % decoders = {N2E;E2F} or N2F
 
-plot_flag = true;
-if nargin > 4
-    plot_flag = varargin{1};
-end
+plot_flag = true; emg_convolve = 1;
+if nargin > 3 plot_flag = varargin{1}; end
+if nargin > 4 emg_convolve = varargin{2}; end
 
-spikes = testdata.spikeratedata;
+n_chan = size(decoders{1}.neuronIDs,1);
+spikes = zeros(size(testdata.spikeratedata,1),n_chan);
+
+[~,test_idx,filt_idx] = intersect(testdata.neuronIDs,decoders{1}.neuronIDs,'rows','stable');
+
+spikes(:,filt_idx) = testdata.spikeratedata(:,test_idx);
 
 if ~strcmp(mode,'direct')
     predsE = sigmoid(predMIMOCE3(spikes,decoders{1}.H),'direct');
     % predsE = predMIMOCE3(spikes,N2E.H);
     % predsF = predMIMOCE3(sigmoid(predsE,'direct'),E2F.H);
+    
+    % apply emg_convolve to E2F.H:
+    n_emgs   = size(decoders{1}.H,2);
+    n_forces = size(decoders{2}.H,2);
+    emg_convolve = emg_convolve/sum(emg_convolve);
+          decoders{2}.H = reshape((rowvec(decoders{2}.H)*emg_convolve)',...
+                                            length(emg_convolve)*n_emgs,n_forces);
+    
     predsF = predMIMOCE3(predsE,decoders{2}.H);
 else
     predsF = predMIMOCE3(spikes,decoders{1}.H);

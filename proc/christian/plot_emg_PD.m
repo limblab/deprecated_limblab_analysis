@@ -35,7 +35,7 @@ end
 
 % scale H using mean ratio between actual and predicted Euclidian magnitudes
 G = mean(  sqrt(sum(binnedData.cursorposbin.^2,2)) ./ ...
-           sqrt(sum((binnedData.emgdatabin*H).^2,2))  );
+           sqrt(sum((binnedData.emgdatabin(:,EMGvector)*H).^2,2))  );
        
 H = H*G;
 
@@ -67,7 +67,7 @@ for i = 1:n_emgs
     plotLM([0 H(i,1)],[0 H(i,2)],'o-');
 end
 
-legend({binnedData.emgguide(EMGvector,:)},'Location','NorthEastOutside');
+legend(binnedData.emgguide{EMGvector},'Location','NorthEastOutside');
 axis square;
 mxy = ceil(max(max(H)));
 ylim([-mxy mxy]); xlim([-mxy mxy]);
