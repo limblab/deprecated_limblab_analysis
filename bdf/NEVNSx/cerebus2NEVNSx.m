@@ -8,6 +8,9 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
 %   will be loaded.   
 
     NEVlist_sorted = dir([filepath filesep file_prefix '*-s.mat']);
+    NEVlist_nodigital = dir([filepath filesep file_prefix '*-nodigital.nev']);
+    NEVlist_nodigital_sorted = dir([filepath filesep file_prefix '*-nodigital-s.nev']);
+    NEVlist_nospikes= dir([filepath filesep file_prefix '*-nospikes.mat']);
     NEVlist = dir([filepath filesep file_prefix '*.nev']);
     NS2list = dir([filepath filesep file_prefix '*.ns2']);
     NS3list = dir([filepath filesep file_prefix '*.ns3']);
@@ -16,6 +19,7 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
 
     NEVlist_sorted = NEVlist_sorted(cellfun('isempty',(regexp({NEVlist_sorted(:).name},'-spikes'))));
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-spikes'))));
+
     
     if isempty(NEVlist)
         disp('File(s) not found, aborting.')
@@ -23,18 +27,34 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
     end
     NEVNSxstruct = struct('NEV',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
     
-    if length(NEVlist_sorted)==length(NEVlist)
-        for iNEV = 1:length(NEVlist)
+    if length(NEVlist_nodigital_sorted)==length(NEVlist_nospikes)  || length(NEVlist_nodigital)==length(NEVlist_nospikes) 
+       for iNEV = 1:length(NEVlist_nospikes)
+            disp('Found files that have been split into *.nev files with only spikes, and *.mat files with digital data only.')
+            warning('cerebus2NEVNSx:FoundSplitFiles','Loading data from split files. To avoid this, do not use the *_nodigital.nev *_nospikes.mat file naming convention, or place these files in a different folder')
             clear NEV
-            load([filepath filesep NEVlist_sorted(iNEV).name]);
-            NEVNSxstruct(iNEV).NEV = NEV;
+            clear NEV_nospikes
+            load([filepath filesep NEVlist_nospikes(iNEV).name]); %loads a variable NEV_nospikes
+            NEVNSxstruct(iNEV).NEV = NEV_nospikes;
+            if length(NEVlist_nodigital_sorted) >=length(NEVlist_nodigital) %if we have sorted data use that, otherwise use the base files
+                NEV= openNEVLimblab('read', [filepath filesep NEVlist_nodigital_sorted(iNEV).name],'nosave');
+            else
+                NEV= openNEVLimblab('read', [filepath filesep NEVlist_nodigital(iNEV).name],'nosave');
+            end
+            NEVNSxstruct(iNEV).NEV.Data.Spikes= NEV.Data.Spikes;
         end
-    else
-        for iNEV = 1:length(NEVlist)
-            NEVNSxstruct(iNEV).NEV = openNEVLimblab('read', [filepath filesep NEVlist(iNEV).name],'nosave');
+    else    
+        if length(NEVlist_sorted)==length(NEVlist)
+            for iNEV = 1:length(NEVlist)
+                clear NEV
+                load([filepath filesep NEVlist_sorted(iNEV).name]);
+                NEVNSxstruct(iNEV).NEV = NEV;
+            end
+        else
+            for iNEV = 1:length(NEVlist)
+                NEVNSxstruct(iNEV).NEV = openNEVLimblab('read', [filepath filesep NEVlist(iNEV).name],'nosave');
+            end
         end
     end
-    
     fs = [0,1000,2000,10000,30000];
     for iNS = 2:5        
         for iFile = 1:length(eval(['NS' num2str(iNS) 'list']))
