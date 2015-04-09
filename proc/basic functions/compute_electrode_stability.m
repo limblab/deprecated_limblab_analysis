@@ -87,12 +87,11 @@ function [figure_list,data_struct]=compute_electrode_stability(fpath,input_data)
     %make a few plots:
     temp=data_struct.welltuned_pdmat;
     mask=repmat(temp(:,1),1,size(temp,2));
-    temp=temp-mask;
-
+    temp=temp-mask;   
     temp(temp>pi)=temp(temp>pi)-2*pi;
     temp(temp<-pi)=temp(temp<-pi)+2*pi;
     figure_list=[figure_list figure('name','PD_change')];
-    plot(temp')
+    plot(temp');
     title(['Change in PD from first file for channels with moddepth greater than ' num2str(input_data.min_moddepth) ' in file 1'])
     xlabel('file number')
     ylabel('change in PD')
