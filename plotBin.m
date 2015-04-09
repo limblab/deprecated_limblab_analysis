@@ -339,7 +339,8 @@ end
         end
          
         usr_plotEMGs = ~isempty(EMGs_to_plot);
-        usr_plotForce= ~isempty(Force_to_plot);   
+        usr_plotForce= ~isempty(Force_to_plot);
+        usr_plotPos  = ~isempty(Pos_to_plot);
 
         PWTH_h = figure('Units','normalized','Position',[.125 0.3 .75 .5]);
         
@@ -367,14 +368,13 @@ end
             emg_handles = plot(EMGs_PWTH(:,1),EMGs_PWTH(:,2:end));
             [legh,objh,outh,outm]=legend(EMGnames{EMGs_to_plot},'Location','NorthWest');
             
-        elseif (usr_plotForce) %plot Force but no EMG
+        elseif (usr_plotForce || usr_plotPos) %plot Force but no EMG
             hold off; axis auto;
-            Force_PWTH = PWTH([datastruct.timeframe datastruct.forcedatabin(:,Force_to_plot)],datastruct.words,...
+            Force_PWTH = PWTH([datastruct.timeframe [datastruct.forcedatabin(:,Force_to_plot) datastruct.cursorposbin(:,Pos_to_plot)]],datastruct.words,...
                                 WordsValue(Words_to_plot), timeBefore, timeAfter);
             force_handles = plot(Force_PWTH(:,1),Force_PWTH(:,2:end));
             [legh,objh,outh,outm]=legend(force_handles, ForceNames{Force_to_plot},'Location','NorthEast');
         end
-
     end
         
     function Close_Button_Callback(obj,event)

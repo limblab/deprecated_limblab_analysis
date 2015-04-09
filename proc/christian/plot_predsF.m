@@ -1,8 +1,8 @@
-function [vaf,R2,predsF] = plot_predsF(testdata,decoders,mode,varargin)
+function [vaf,R2,predsF,predsE] = plot_predsF(testdata,decoders,mode,varargin)
 % decoders = {N2E;E2F} or N2F
 
 plot_flag = true; emg_convolve = 1;
-if nargin > 3 plot_flag = varargin{1}; end
+if nargin > 3 plot_flag    = varargin{1}; end
 if nargin > 4 emg_convolve = varargin{2}; end
 
 n_chan = size(decoders{1}.neuronIDs,1);
@@ -60,3 +60,4 @@ for i = 1:num_figs
         ylim([-15 15]);
     end
 end
+    

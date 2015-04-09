@@ -1,9 +1,10 @@
-function [vaf,R2,preds,decoders] = train_adapt_duration(train_data,test_data,train_duration,type,params)
+function [vaf,R2,preds,decoders] = train_adapt_duration(train_data,test_data,train_duration,type,varargin)
 
 if any(train_duration > train_data.timeframe(end)-train_data.timeframe(1)+1)
     error('training time exceed duration of data');
 end
 
+if nargin>4 params = varargin{1}; end
 num_iter = length(train_duration);
 
 [num_pts,num_out]  = size(test_data.cursorposbin);
@@ -15,8 +16,8 @@ preds    = nan(num_pts, num_out, num_iter);
 decoders = cell(num_iter,1);
 
 % bmi parameters:
-params.n_neurons = size(train_data.neuronIDs,1);
-params.neuronIDs = train_data.neuronIDs;
+% params.n_neurons = size(train_data.neuronIDs,1);
+% params.neuronIDs = train_data.neuronIDs;
 E2F = E2F_deRugy_PD(15);
 params.emg_decoder = E2F;
 
