@@ -20,14 +20,13 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
     NEVlist_sorted = NEVlist_sorted(cellfun('isempty',(regexp({NEVlist_sorted(:).name},'-spikes'))));
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-spikes'))));
 
-    
     if isempty(NEVlist)
         disp('File(s) not found, aborting.')
         return
     end
     NEVNSxstruct = struct('NEV',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
     
-    if length(NEVlist_nodigital_sorted)==length(NEVlist_nospikes)  || length(NEVlist_nodigital)==length(NEVlist_nospikes) 
+    if length(NEVlist_nodigital_sorted)==length(NEVlist_nospikes) & length(NEVlist_nospikes)>0  || length(NEVlist_nodigital)==length(NEVlist_nospikes) & length(NEVlist_nospikes)>0
        for iNEV = 1:length(NEVlist_nospikes)
             disp('Found files that have been split into *.nev files with only spikes, and *.mat files with digital data only.')
             warning('cerebus2NEVNSx:FoundSplitFiles','Loading data from split files. To avoid this, do not use the *_nodigital.nev *_nospikes.mat file naming convention, or place these files in a different folder')
