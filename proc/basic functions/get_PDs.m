@@ -99,7 +99,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %get the timepoints of interest from the bdf and compose them into
         %a structure to use with compute tuning
         behaviors = parse_for_tuning(bdf,'continuous','opts',optionstruct,'units',which_units);
-<<<<<<< .mine
+
         output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0],struct('num_rep',100),'poisson');
         output_data.unit_pd_table=get_pd_table(output_data.unit_tuning_stats,behaviors,bdf);
         %make a table that only has the best tuned units:
@@ -167,12 +167,11 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         hold off
         title(['\fontsize{14}Polar plot of best modulated unit PDs.','\newline',...
                 '\fontsize{10}Amplitude normalized and log scaled for pretty picture.'])
-=======
+            
         output_data.unit_behaviors=behaviors;
         if optionstruct.compute_vel_pds
             output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0],struct('num_rep',10),'poisson');
             output_data.unit_pd_table=get_pd_table(output_data.unit_tuning_stats,'vel');
->>>>>>> .r1742
 
             %make a table that only has the best tuned units:
             output_data.unit_best_modulated_table=output_data.unit_pd_table(output_data.unit_pd_table.moddepth>median(output_data.unit_pd_table.moddepth),:);
