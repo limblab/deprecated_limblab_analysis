@@ -265,11 +265,11 @@ for i = 1:length(sta_params.stim_elecs)
             while t_stop < sta_params.ITI/1000
                 t_stop          = toc(t_start);
             end
-
-            if ~ishandle(sta_fig.h)
-                cbmex('close');
-                disp('Execution stopped by the user');
-            end
+ 
+%             if ~ishandle(sta_fig.h)
+%                 cbmex('close');
+%                 disp('Execution stopped by the user');
+%             end
         end
 
 
