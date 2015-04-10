@@ -2,7 +2,7 @@
 % Parameters for paired intracortical-muscle stimulation using
 % paired_stimulation() 
 %
-%       function paired_stim_params = paired_stimulation_default()
+%       function paired_stim_params = paired_stimulation_s88_default()
 %
 %       paired_stim_params      : structure with fields
 %           ISI                 : inter-stimulus interval. + = cortex first (ms)
@@ -19,7 +19,7 @@
 
 
 
-function paired_stim_params = paired_stimulation_default()
+function paired_stim_params = paired_stimulation_s88_default()
 
 % TODO: MAY NOT BE CORRECT
 

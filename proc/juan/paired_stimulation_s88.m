@@ -4,7 +4,7 @@
 %
 
 
-function paired_stimulation( varargin )
+function paired_stimulation_s88( varargin )
 
 
 
@@ -19,7 +19,7 @@ elseif nargin == 1
     paired_stim_params      = varargin{1};
 elseif nargin == 0
     
-    paired_stim_params      = paired_stimulation_default();
+    paired_stim_params      = paired_stimulation_s88_default();
 end
 
 
