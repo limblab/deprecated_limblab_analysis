@@ -27,24 +27,27 @@ elseif nargin == 1
     p_s_params              = varargin{1};
 elseif nargin == 0
     
-    p_s_params              = paired_stimulation_default();
+    p_s_params              = paired_stimulation_gv_default();
 end
 
 
 
 %--------------------------------------------------------------------------
-%% connect with Central 
+%% connect with Central - if want to record Force
 
 
 % Note: structure 'hw' will have all the cerebus and grapevine stuff
 
 
 % connect to central; if connection fails, return error message and quit
-if ~cbmex('open', 1)
-    
-    echoudp('off');
-%    close(handles.keep_running);
-    error('ERROR: Connection to Central Failed');
+if p_s_params.record_force_yn
+
+    if ~cbmex('open', 1)
+        
+        echoudp('off');
+        %    close(handles.keep_running);
+        error('ERROR: Connection to Central Failed');
+    end
 end
 
 
@@ -71,35 +74,33 @@ if p_s_params.save_data_yn
 end
 
 
-
-% flush central's buffer        % ToDo: see if it's necessary
-cbmex('trialconfig', 1);
-drawnow;
-
-pause(1);                       % ToDo: see if it's necessary
-
-
-
-% check if there's a sync out signal ('Stim_trig') in Central 
-[ts_cell_array, ~, analog_data] = cbmex('trialdata',1);
-
-hw.cb.stim_trig_ch_nbr  =  find(strncmp(ts_cell_array(:,1),'Stim',4));
-if isempty(hw.cb.stim_trig_ch_nbr)
-    error('ERROR: Sync signal not found in Cerebus. The channel has to be named Stim_trig');
-else
-    disp('Sync signal found');
-    
-    % define resistor to record sync pulse
-    hw.cb.sync_out_resistor    	= 1000;
-end
-
-
-
-% Preallocate matrices for recording the foce data in structure 'force'
+% Some stuff that is necessary to record force
 if p_s_params.record_force_yn
+
+    
+    % flush central's buffer        % ToDo: see if it's necessary
+    cbmex('trialconfig', 1);
+    drawnow;
+    
+    pause(1);                       % ToDo: see if it's necessary
+
+    
+    % check if there's a sync out signal ('Stim_trig') in Central 
+    [ts_cell_array, ~, analog_data] = cbmex('trialdata',1);
+
+    hw.cb.stim_trig_ch_nbr  =  find(strncmp(ts_cell_array(:,1),'Stim',4));
+    if isempty(hw.cb.stim_trig_ch_nbr)
+        error('ERROR: Sync signal not found in Cerebus. The channel has to be named Stim_trig');
+    else
+        disp('Sync signal found');
+
+        % define resistor to record sync pulse
+        hw.cb.sync_out_resistor    	= 1000;
+    end
 
     analog_data(:,1)        = ts_cell_array([analog_data{:,1}]',1); % replace channel numbers with names
 
+    % read force settings
     force.labels            = analog_data( strncmp(analog_data(:,1), 'Force', 5), 1 );
     force.nbr_forces        = numel(force.labels); disp(['Nbr Forces: ' num2str(force.nbr_forces)]), disp(' ');
     force.fs                = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'Force', 5),1),2));
@@ -107,6 +108,7 @@ if p_s_params.record_force_yn
 %    force.data              = analog_data( strncmp(analog_data(:,1), 'Force', 5), 3 );
     clear analog_data ts_cell_array;
 
+    % preallocate matrices for storing force
 %   force.evoked_force      = zeros( ( abs(p_s_params.pre_stim_win) + p_s_params.post_stim_win ) * 2000/1000, p_s_params.nbr_stimuli, force.nbr_forces ); % ToDo: replace by read Force sampling freq    
 end
 
@@ -239,11 +241,17 @@ for i = 1:p_s_params.nbr_stimuli
     pause(p_s_params.t_btw_pairs/1000);
     
     if ~ishandle(p_s_fig.h)
-       cbmex('close');
-       error('EXITING. Execution stopped by the user')
+        
+        if p_s_params.record_force_yn
+            cbmex('close');
+        end
+       disp('EXITING. Execution stopped by the user');
+       return;
     end
 end
 
 
-cbmex('close')
 
+if p_s_params.record_force_yn
+    cbmex('close');
+end
