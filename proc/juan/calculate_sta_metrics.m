@@ -24,7 +24,7 @@
 
 
 
-function sta_metrics = calculate_sta_metrics( emg, sta_params, varargin )
+function varargout = calculate_sta_metrics( emg, sta_params, varargin )
 
 
 
@@ -38,6 +38,12 @@ else
     disp('the function only takes 2 or 3 parameters')
 end
 
+
+if nargout > 1
+    
+    disp('the funciton only returns one variable of type sta_metrics')
+    return;
+end
 
 
 % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -108,7 +114,7 @@ mean_emg                      	= mean(abs(emg.evoked_emg(:,:,sta_metrics_params.
 
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Calculate the 'Mean percent facilitation' (Cheney & Fetz, 1985) - height
+% Calculate the "Mean percent facilitation" (Cheney & Fetz, 1985) - height
 % of the PSF peak above the mean baseline level, divided by the baseline
 % noise  
 
@@ -177,12 +183,104 @@ MPSI                            = zeros(emg.nbr_emgs,1);
 
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Return NPSF metrics
+% Calculate "Multiple fragment statistical analysis," (Poliakov &
+% Schiebert, 1998)
+
+
+% Definitions for the intervals in which we will divide the data
+% for clarity, the values are first specified in ms and then transformed to
+% indexes in the vectors
+r_T_intvl                       = [8 18];
+r_c1_intvl                      = [-12 -2];
+r_c2_intvl                      = [18 28];
+
+r_T_intvl                       = (r_T_intvl + sta_params.t_before) * emg.fs /1000 + 1;
+r_c1_intvl                      = (r_c1_intvl + sta_params.t_before) * emg.fs /1000 + 1;
+r_c2_intvl                      = (r_c2_intvl + sta_params.t_before) * emg.fs /1000 + 1;
+
+% check that we are not outside margins
+if min(t_emg(r_c1_intvl)) < -sta_params.t_before
+    disp('the r_c1 interval falls outside limits');
+    return;
+end
+
+if max(t_emg(r_c2_intvl)) > sta_params.t_after
+    disp('the r_c2 interval falls outside limits');
+    return;
+end
+
+
+% 1. Divide the dataset into sqrt(nbr of stimuli) non-overlapping windows
+% (of size sqrt(nbr of spikes)) 
+
+nbr_non_overlap_wdws            = floor(sqrt(length(emg.evoked_emg)));
+Xj_MFSA                         = zeros( nbr_non_overlap_wdws, emg.nbr_emgs );
+r_T                             = zeros( nbr_non_overlap_wdws, emg.nbr_emgs );
+r_c1                            = zeros( nbr_non_overlap_wdws, emg.nbr_emgs );
+r_c2                            = zeros( nbr_non_overlap_wdws, emg.nbr_emgs );
+%Z_MFSA                          = zeros( nbr_non_overlap_wdws, emg.nbr_emgs );
+P_Z_test                        = zeros( 1, emg.nbr_emgs );
+
+
+% 2. Calculate the mean SpTA rEMG for each segment, 'mean_temp_STAs_MFSA'
+
+for i = 1:emg.nbr_emgs
     
-sta_metrics.MPSF                = MPSF;
-sta_metrics.t_after_stim_start_PSF = t_after_stim_start_PSF;
-sta_metrics.duration_MPSF       = duration_PSF;
+    for ii = 1:nbr_non_overlap_wdws
+       
+        temp_start_indx         = 1+(ii-1)*nbr_non_overlap_wdws;
+        temp_end_indx           = ii*nbr_non_overlap_wdws;
+        
+        % 'temp_StTAs_MFSA' is the mean rectified EMG for this 'fragment',
+        % and muscle
+        temp_StTAs_MFSA         = mean(abs(squeeze(emg.evoked_emg(:,i,temp_start_indx:temp_end_indx))),2);
+        
+        % 3. Calculate the test parameter X for each segment. 
+        % 	X_j = mean(r_T - (r_c1 + r_C2)/2 (j = 1:nr_non_overlap_wdws)
+        r_T(ii,i)               = mean(temp_StTAs_MFSA(r_T_intvl));
+        r_c1(ii,i)              = mean(temp_StTAs_MFSA(r_c1_intvl));
+        r_c2(ii,i)              = mean(temp_StTAs_MFSA(r_c2_intvl));
+        
+        Xj_MFSA(ii,i)           = r_T(ii,i) - (r_c1(ii,i) + r_c2(ii,i))/2;
+                
+    end
+        
+    % 4. Test the null hypothesis that the mean value of X was zero
+    % with a two-tailed z-test.
+    %   Take the mean and SD of the sample population and the
+    %   standard (i.e. ~N(0,1)) normal distribution
+
+    [~, P_Z_test(i)]             = ztest(Xj_MFSA(:,i),0,1);
+end
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Return metrics
+    
+
 sta_metrics.nbr_stims           = sta_metrics_params.last_evoked_EMG - sta_metrics_params.first_evoked_EMG + 1;
 sta_metrics.mean_emg            = mean_emg;
 sta_metrics.mean_baseline_emg   = mean_mean_baseline_emg;
 sta_metrics.std_baseline_emg    = std_mean_baseline_emg;
+
+sta_metrics.MPSF                = MPSF;
+sta_metrics.t_after_stim_start_PSF = t_after_stim_start_PSF;
+sta_metrics.duration_MPSF       = duration_PSF;
+
+sta_metrics.P_Ztest             = P_Z_test;
+sta_metrics.Xj_Ztest            = Xj_MFSA;
+
+
+if nargout == 1
+   
+    varargout{1}                = sta_metrics;
+end
+
+
+
+% Plot, if specified in 'sta_metrics_params.plot_yn'
+if sta_metrics_params.plot_yn
+    
+    plot_sta( emg, sta_params, sta_metrics );
+end

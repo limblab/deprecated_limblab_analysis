@@ -24,7 +24,7 @@ length_evoked_emg           = length(t_emg);
 
 
 
-figure('Name',['Electrode #' sta_params.bank num2str(sta_params.stim_elecs) ' - n = ' num2str(sta_metrics.nbr_stims)]);
+figure('units','normalized','outerposition',[0 0 1 1],'Name',['Electrode #' sta_params.bank num2str(sta_params.stim_elecs) ' - n = ' num2str(sta_metrics.nbr_stims)]);
 
 for i = 1:emg.nbr_emgs
     
@@ -63,8 +63,12 @@ for i = 1:emg.nbr_emgs
            xlabel('time (ms)') 
         end
         
-        if sta_metrics.MPSF(i) > 0
-            title(['MPSF = ' num2str(sta_metrics.MPSF(i))]);
+        if  sta_metrics.MPSF(i) > 0 && sta_metrics.P_Ztest(i) < 0.05
+            title(['MPSF = ' num2str(sta_metrics.MPSF(i),3) ', P = ' num2str(sta_metrics.P_Ztest(i),3)],'color','r');
+        elseif  sta_metrics.MPSF(i) == 0 && sta_metrics.P_Ztest(i) < 0.05
+            title(['MPSF = ' num2str(sta_metrics.MPSF(i),3) ', P = ' num2str(sta_metrics.P_Ztest(i),3)],'color','b');
+        else
+            title(['P = ' num2str(sta_metrics.P_Ztest(i),3)]);
         end
     end
 end

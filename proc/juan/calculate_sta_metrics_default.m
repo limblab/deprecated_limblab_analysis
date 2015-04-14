@@ -27,6 +27,9 @@
 %                                   order Butterworth, zero-phase).
 %           fc_hp_filter_EMG	: cut-off frequency of the high-pass filter
 %                                   in Hz.
+%           plot_yn             : plot the results using plot_sta()
+%
+%
 
 
 function sta_metrics_params = calculate_sta_metrics_default()
@@ -41,4 +44,5 @@ sta_metrics_params  = struct(...
     'first_evoked_EMG',             1, ...
     'last_evoked_EMG',              0, ...
     'hp_filter_EMG_yn',             0, ...
-    'fc_hp_filter_EMG',             100);
+    'fc_hp_filter_EMG',             100, ...
+    'plot_yn',                      1);
