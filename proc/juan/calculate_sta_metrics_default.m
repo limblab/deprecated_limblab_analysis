@@ -27,8 +27,8 @@
 %                                   order Butterworth, zero-phase).
 %           fc_hp_filter_EMG	: cut-off frequency of the high-pass filter
 %                                   in Hz.
-%           plot_yn             : plot the results using plot_sta()
-%
+%           plot_yn             : plot the results using plot_sta().
+%                                   Includes the metrics
 %
 
 

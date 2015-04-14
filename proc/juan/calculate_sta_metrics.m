@@ -3,13 +3,12 @@
 % stim_trig_avg_simple3() function.
 %
 %
-%   varargout = calculate_sta_metrics( emg, sta_params, varargin )
+%   varargout = calculate_sta_metrics( emg, sta_params )
 %
 %       EMG: structure that contains the evoked EMG response (per stim) and
 %       other EMG information
 %       STA_PARAMS: structure that contains general information on the
 %       experiment
-%       VARARGIN: ...
 %
 %       STA_METRICS: metrics that characterize PSF: 1) Fetz' and Cheney's
 %       MPSF; 2) Polyakov and Schiebert's statistics 
@@ -19,7 +18,8 @@
 %
 %       % ToDos:
 %       - Calculate MPSI, analogously to MPSF
-%       - Include Polyakov's and Schiebert's code
+%       - Resample all EMGs to 4 kHz? (or at least downsample form 10 kHz
+%       to 4 kHz)
 %
 
 
