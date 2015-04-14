@@ -255,3 +255,5 @@ end
 if p_s_params.record_force_yn
     cbmex('close');
 end
+
+close all;
