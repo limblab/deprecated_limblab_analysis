@@ -65,6 +65,8 @@ for i = 1:emg.nbr_emgs
         
         if  sta_metrics.MPSF(i) > 0 && sta_metrics.P_Ztest(i) < 0.05
             title(['MPSF = ' num2str(sta_metrics.MPSF(i),3) ', P = ' num2str(sta_metrics.P_Ztest(i),3)],'color','r');
+        elseif sta_metrics.MPSF(i) > 0 && sta_metrics.P_Ztest(i) > 0.05
+            title(['MPSF = ' num2str(sta_metrics.MPSF(i),3) ', P = ' num2str(sta_metrics.P_Ztest(i),3)],'color','g');
         elseif  sta_metrics.MPSF(i) == 0 && sta_metrics.P_Ztest(i) < 0.05
             title(['MPSF = ' num2str(sta_metrics.MPSF(i),3) ', P = ' num2str(sta_metrics.P_Ztest(i),3)],'color','b');
         else

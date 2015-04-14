@@ -10,7 +10,15 @@
 %       VARARGIN{2}     : the folder that contains the files that will be
 %                           used for the plot. 
 %       VARARGIN{3}     : the array map file
-%           
+%
+%
+%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       % ToDos:
+%       - Disregard MPSFs when the P value (obtained following Poliakov &
+%       Schiebert's method) is non-significant.
+%       - Expand the code to look at MPSI
+%
 
 
 function plot_cortical_map( varargin )
