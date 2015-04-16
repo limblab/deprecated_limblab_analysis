@@ -1,8 +1,8 @@
 %% strip digital data from NEV
-basepath='Z:\Han_13B1\Processed\experiment_20150402_RW\after_stim';
-basefilename='Han_20150402_RW_Magali_area2_A2_after_stim_001.nev';
-nodigitalfilename='Han_20150402_RW_Magali_area2_A2_after_stim_001_nodigital.nev';
-spikelessfilename='Han_20150402_RW_Magali_area2_A2_after_stim_001_nospikes.mat';
+basepath='Z:\Han_13B1\Processed\experiment_20150415_RW\before_stim';
+basefilename='Han_20150415_RW_Magali_area2_A2_area3_b2_001.nev';
+nodigitalfilename='Han_20150415_RW_Magali_area2_A2_area3_b2_001-nodigital.nev';
+spikelessfilename='Han_20150415_RW_Magali_area2_A2_area3_b2_001-nospikes.mat';
 
 
 %open data
@@ -13,11 +13,11 @@ saveNEVOnlySpikes2(NEV,[basepath '\'  nodigitalfilename]);
 saveNEVOnlyDigital(NEV,[basepath '\' spikelessfilename]);
 
 
-%% save append digital data back on and re-save
-basepath='Z:\Han_13B1\Processed\experiment_20150401_RW\after_stim';
-sortedfilename='Han_20150401_RW_Magali_area2_A2_after_stim_001_nodigital.nev';
-spikelessfilename='Han_20150401_RW_Magali_area2_A2_after_stim_001_nospikes.mat';
-processfilename='Han_20150401_RW_Magali_area2_A2_after_stim_001-s.nev';
+%% save append digital data back on and re-save (doesn't have to be used)
+basepath='Z:\Han_13B1\Processed\experiment_20150406_RW';
+sortedfilename='Han_20150406_RW_Magali_area2_A2_001-nodigital.nev';
+spikelessfilename='Han_20150406_RW_Magali_area2_A2_001-nospikes.mat';
+processfilename='Han_20150406_RW_Magali_area2_A2_001-s.nev';
 
 oldnevdata=load([basepath '\' spikelessfilename]);
 sortednev=openNEV([basepath '\' sortedfilename],'nosave','nomat','report');
