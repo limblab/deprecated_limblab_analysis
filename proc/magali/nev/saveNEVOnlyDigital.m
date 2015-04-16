@@ -4,6 +4,6 @@ function saveNEVOnlyDigital(NEV,savename)
 % intended for use with saveNEVOnlySpikes to make offline sorter less
 % painful
     NEV.Data.Spikes=[];
-   
-    save(savename,'NEV')
+    NEV_nospikes=NEV;
+    save(savename,'NEV_nospikes')
 end
