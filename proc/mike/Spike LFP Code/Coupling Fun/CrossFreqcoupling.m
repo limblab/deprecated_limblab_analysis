@@ -27,18 +27,20 @@ pri = 1;
 fi =1;
 ind = 1;
 
-FileList = Jaco_Ch84_U20_GamX_SpikeY;
+FileList = Jaco_Ch52_U20_GamX_SpikeY;
 bandstarts = [30, 130, 200];
 bandends   = [50, 200, 300];
 
-HC_I = [1:7];
+HC_I = [1:4];
 BC_1DG = [7:9];
 BC_1DSp = [15];
-BC_I = [8:13];
+BC_I = [5:9];
 
-ControlCh = 84;
+LFPInds{1} = [52 6];
+SpikeInds{1} = [52 1];
+ControlCh = 1:96;
 %% Find file path, load file and start iterating through files
-for q = [ HC_I(1):HC_I(end) ]; % BC_I(1):BC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]% ] %
+for q = [HC_I(1):HC_I(end)]; % BC_I(1):BC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]% ] %
     
     if exist('fnam','var') == 0         
             fnam{q} =  findBDFonCitadel(FileList{q,1})
@@ -50,6 +52,11 @@ for q = [ HC_I(1):HC_I(end) ]; % BC_I(1):BC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp
         fnam{q} =  findBDFonCitadel(FileList{q,1}) 
     end
     
+    if length(fnam{q}) < 2
+        FilesNotRun{q,2} = 'File Not Found';
+        FilesNotRun{q,1} = fnam
+        continue
+    end
     try
         load(fnam{q})
     catch exception
@@ -65,6 +72,7 @@ for q = [ HC_I(1):HC_I(end) ]; % BC_I(1):BC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp
  
     fpAssignScript2
     bdf = out_struct;
+    Trials{1,q}.Targets = bdf.targets;
     clear out_struct fpchans
     
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
@@ -178,23 +186,24 @@ for q = [ HC_I(1):HC_I(end) ]; % BC_I(1):BC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp
     
     clear a b BP_Vec TrialBP
  %%   
-    for k = ControlCh% 1:size(fp,1)
+    for k = 1:size(fp,1) %ControlCh% 
         FPstartTime = fptimes(1);
         SpikedataToParse = tsFPorder{q,k};
         tic
         
         try
-        [TrialsFP{k,q}] = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikedataToParse);
-        [TrialsRawFP{k,q}] = parseTrials(bdf,fp(k,:)',FPstartTime,SpikedataToParse);
+        [Trials{k,q}] = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikedataToParse);
+        Trials{k,q}.Targets = bdf.targets;
+%         [TrialsRawFP{k,q}] = parseTrials(bdf,fp(k,:)',FPstartTime,SpikedataToParse);
         catch exception
             FilesNotRun{q,2} = exception;
             FilesNotRun{q,1} = fnam
             continue
         end
-        if length(TrialsRawFP{k,q}.FPstart) < 30           
-            FilesToCheck(ind) = q;
-            ind = ind+1;
-        end
+%         if length(TrialsRawFP{k,q}.FPstart) < 30      
+%             FilesToCheck(ind) = q;
+%             ind = ind+1;
+%         end
         
         toc
         clear FPdataToParse SpikedataToParse

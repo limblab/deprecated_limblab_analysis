@@ -6,16 +6,16 @@ FP_Trial_timeIndex_start = [1750:2250];
 FP_Trial_timeIndex_MV = [1750:2250];
 FP_Trial_timeIndex_end = [1400:1900];
 samprate = 1000;
-HC_I = [2:5];
-BC_1DG = [];
-BC_1DSp = [];
-BC_I = [17:32];
+HC_I = [1:4];
+BC_1DG = [7:9];
+BC_1DSp = [15];
+BC_I = [5:9];
 
-ControlCh = 39;
+ControlCh = 1:96;
 monkey_name = 'Jaco';
 LGHG = 0;
-SpHG = 0;
-EvalRbyTarg = 1;
+SpHG = 1;
+EvalRbyTarg = 0;
 
 for bin = 1:length(KernelSize)
     tstart = [-.25:.001:.25];
@@ -54,17 +54,17 @@ for bin = 1:length(KernelSize)
                             fpByTrialEnd(i,:,C) = Trials{k,f}.FPend{i,C}(FP_Trial_timeIndex_end);
                             
 
-                            if C == 1
+%                             if C == 1
 %                                 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 %                                 fpf=filtfilt(b,a,fp')';
-                                tfmatByTrialStart(i,:) = fft(TrialsRawFP{k,f}.FPstart{i,C}(FP_Trial_timeIndex_start));
-                                tfmatByTrialMaxV(i,:) = fft(TrialsRawFP{k,f}.FPMaxV{i,C}(FP_Trial_timeIndex_MV));
-                                tfmatByTrialEnd(i,:) = fft(TrialsRawFP{k,f}.FPend{i,C}(FP_Trial_timeIndex_end));
-                                
-                                fpSpectByTrialStart(i,:) = log( tfmatByTrialStart(i,:).* conj(tfmatByTrialStart(i,:)));
-                                fpSpectByTrialMaxV(i,:) = log( tfmatByTrialMaxV(i,:).* conj(tfmatByTrialMaxV(i,:)));
-                                fpSpectByTrialEnd(i,:) = log( tfmatByTrialEnd(i,:).* conj(tfmatByTrialEnd(i,:)));
-                            end
+%                                 tfmatByTrialStart(i,:) = fft(TrialsRawFP{k,f}.FPstart{i,C}(FP_Trial_timeIndex_start));
+%                                 tfmatByTrialMaxV(i,:) = fft(TrialsRawFP{k,f}.FPMaxV{i,C}(FP_Trial_timeIndex_MV));
+% %                                 tfmatByTrialEnd(i,:) = fft(TrialsRawFP{k,f}.FPend{i,C}(FP_Trial_timeIndex_end));
+% %                                 
+%                                 fpSpectByTrialStart(i,:) = log( tfmatByTrialStart(i,:).* conj(tfmatByTrialStart(i,:)));
+%                                 fpSpectByTrialMaxV(i,:) = log( tfmatByTrialMaxV(i,:).* conj(tfmatByTrialMaxV(i,:)));
+%                                 fpSpectByTrialEnd(i,:) = log( tfmatByTrialEnd(i,:).* conj(tfmatByTrialEnd(i,:)));
+%                             end
                         else
                             continue
                         end
@@ -79,52 +79,52 @@ for bin = 1:length(KernelSize)
                 Targs(Targs == 0 ) = []
                 
                 l = 1;
-                for tid = Targs
-                    MeanSpikeRateByTargStart = mean(SpikeRatesByTrialStart(tid == TList,:));
-                    MeanFPByTargStart = squeeze(mean(fpByTrialStart(tid == TList,:,:)));
-                    
-                    AvgCorr.SpectByTarg_MO{f}{k,l} = fpSpectByTrialStart(tid == TList,:);
-                    AvgCorr.SpectByTarg_MaxV{f}{k,l} = fpSpectByTrialMaxV(tid == TList,:);
-                    AvgCorr.SpectByTarg_Rew{f}{k,l} = fpSpectByTrialEnd(tid == TList,:);
-                    
-                    STESpikeRateByTargStart = std(SpikeRatesByTrialStart)./size(SpikeRatesByTrialStart,1);
-                    STEFPByTargStart = squeeze(std(fpByTrialStart))./size(fpByTrialStart,1);
-                    
-                    AvgCorr.FPTraceByTarg_MO{f}{k,l} = MeanFPByTargStart;
-                    AvgCorr.SpTraceByTarg_MO{f}{k,l} = MeanSpikeRateByTargStart';
-                    
-                    AvgCorr.FPTraceByTarg_MO_STE{f}{k,l} = STEFPByTargStart;
-                    AvgCorr.SpTraceByTarg_MO_STE{f}{k,l} = STESpikeRateByTargStart;
-                    
-                    [RhoVal Pval] = corr([MeanSpikeRateByTargStart' MeanFPByTargStart(:,3)],'type','Spearman');
-                    AvgCorr.ByTargMO{l}(k,f,bin) = RhoVal(1,2);
-                    AvgP.ByTargMO{l}(k,f,bin) = Pval(1,2);
-                    
-                    % Do this for period around maxiumum velocity
-%                     MeanSpikeRateByTargMaxV = mean(SpikeRatesByTrialMaxV);
-%                     MeanFPByTargMaxV = squeeze(mean(fpByTrialMaxV));
-%                     AvgCorr.FPTraceMaxVByTarg{f}(:,k,:) = MeanFPByTargStart;
-%                     AvgCorr.SpTraceMaxVByTarg{f}(:,k) = MeanSpikeRateByTargStart';
-%                     [RhoVal Pval] = corr([MeanSpikeRateByTargMaxV' MeanFPByTargMaxV(:,3)],'type','Spearman');
-%                     AvgCorr.MaximumVel(k,f,bin) = RhoVal(1,2);
-%                     AvgP.MaxiumumVel(k,f,bin) = Pval(1,2);
-                    
-                    MeanSpikeRateByTargEnd = mean(SpikeRatesByTrialEnd(tid == TList,:));
-                    MeanFPByTargEnd = squeeze(mean(fpByTrialEnd(tid == TList,:,:)));
-                    AvgCorr.FPTraceByTarg_Rew{f}{k,l} = MeanFPByTargEnd;
-                    AvgCorr.SpTraceByTarg_Rew{f}{k,l} = MeanSpikeRateByTargEnd';
-                    [RhoVal Pval] = corr([MeanSpikeRateByTargEnd' MeanFPByTargEnd(:,3)],'type','Spearman');
-                    AvgCorr.ByTargRew{l}(k,f,bin) = RhoVal(1,2);
-                    AvgP.ByTargRew{l}(k,f,bin) = Pval(1,2);
-                    
-%                     [RhoVal Pval] = corr([MeanFPByTargEnd(:,1) MeanFPByTargEnd(:,2)],'type','Spearman');
-%                     AvgCorr.LG_HG_PriorToReward(k,f,bin) = RhoVal(1,2);
-%                     AvgP.LG_HG_PriorToReward(k,f,bin) = Pval(1,2);
-                    
-                    l = l + 1;
-                    clear MeanSpikeRateByTarg* MeanFPByTarg*
-                        
-                end
+%                 for tid = Targs
+%                     MeanSpikeRateByTargStart = mean(SpikeRatesByTrialStart(tid == TList,:));
+%                     MeanFPByTargStart = squeeze(mean(fpByTrialStart(tid == TList,:,:)));
+%                     
+%                     AvgCorr.SpectByTarg_MO{f}{k,l} = fpSpectByTrialStart(tid == TList,:);
+%                     AvgCorr.SpectByTarg_MaxV{f}{k,l} = fpSpectByTrialMaxV(tid == TList,:);
+%                     AvgCorr.SpectByTarg_Rew{f}{k,l} = fpSpectByTrialEnd(tid == TList,:);
+%                     
+%                     STESpikeRateByTargStart = std(SpikeRatesByTrialStart)./size(SpikeRatesByTrialStart,1);
+%                     STEFPByTargStart = squeeze(std(fpByTrialStart))./size(fpByTrialStart,1);
+%                     
+%                     AvgCorr.FPTraceByTarg_MO{f}{k,l} = MeanFPByTargStart;
+%                     AvgCorr.SpTraceByTarg_MO{f}{k,l} = MeanSpikeRateByTargStart';
+%                     
+%                     AvgCorr.FPTraceByTarg_MO_STE{f}{k,l} = STEFPByTargStart;
+%                     AvgCorr.SpTraceByTarg_MO_STE{f}{k,l} = STESpikeRateByTargStart;
+%                     
+%                     [RhoVal Pval] = corr([MeanSpikeRateByTargStart' MeanFPByTargStart(:,3)],'type','Spearman');
+%                     AvgCorr.ByTargMO{l}(k,f,bin) = RhoVal(1,2);
+%                     AvgP.ByTargMO{l}(k,f,bin) = Pval(1,2);
+%                     
+%                     % Do this for period around maxiumum velocity
+% %                     MeanSpikeRateByTargMaxV = mean(SpikeRatesByTrialMaxV);
+% %                     MeanFPByTargMaxV = squeeze(mean(fpByTrialMaxV));
+% %                     AvgCorr.FPTraceMaxVByTarg{f}(:,k,:) = MeanFPByTargStart;
+% %                     AvgCorr.SpTraceMaxVByTarg{f}(:,k) = MeanSpikeRateByTargStart';
+% %                     [RhoVal Pval] = corr([MeanSpikeRateByTargMaxV' MeanFPByTargMaxV(:,3)],'type','Spearman');
+% %                     AvgCorr.MaximumVel(k,f,bin) = RhoVal(1,2);
+% %                     AvgP.MaxiumumVel(k,f,bin) = Pval(1,2);
+%                     
+%                     MeanSpikeRateByTargEnd = mean(SpikeRatesByTrialEnd(tid == TList,:));
+%                     MeanFPByTargEnd = squeeze(mean(fpByTrialEnd(tid == TList,:,:)));
+%                     AvgCorr.FPTraceByTarg_Rew{f}{k,l} = MeanFPByTargEnd;
+%                     AvgCorr.SpTraceByTarg_Rew{f}{k,l} = MeanSpikeRateByTargEnd';
+%                     [RhoVal Pval] = corr([MeanSpikeRateByTargEnd' MeanFPByTargEnd(:,3)],'type','Spearman');
+%                     AvgCorr.ByTargRew{l}(k,f,bin) = RhoVal(1,2);
+%                     AvgP.ByTargRew{l}(k,f,bin) = Pval(1,2);
+%                     
+% %                     [RhoVal Pval] = corr([MeanFPByTargEnd(:,1) MeanFPByTargEnd(:,2)],'type','Spearman');
+% %                     AvgCorr.LG_HG_PriorToReward(k,f,bin) = RhoVal(1,2);
+% %                     AvgP.LG_HG_PriorToReward(k,f,bin) = Pval(1,2);
+%                     
+%                     l = l + 1;
+%                     clear MeanSpikeRateByTarg* MeanFPByTarg*
+%                         
+%                 end
                     
                 clear Targs TList
                 %% Find correlation of trial averaged spike rate and gamma
@@ -179,32 +179,32 @@ for bin = 1:length(KernelSize)
                 
                 %% Ray Method
                 % Spike-Gamma Prior To Reward
-                MeanSpikeRateByFileEnd_Ray = mean(SpikeRatesByTrialEnd,2);
-                MeanFPByFileEnd_Ray = squeeze(mean(fpByTrialEnd,2));
-                AvgCorr.FPTraceEnd_Ray{f}(:,k,:) = MeanFPByFileEnd_Ray;
-                AvgCorr.SpTraceEnd_Ray{f}(:,k,:) = MeanSpikeRateByFileEnd_Ray';
-                [RhoVal Pval] = corr([MeanSpikeRateByFileEnd_Ray MeanFPByFileEnd_Ray(:,3)],'type','Spearman');
-                AvgCorr.Ray_End(k,f,bin) = RhoVal(1,2);
-                AvgP.Ray_End(k,f,bin) = Pval(1,2);
-                
-                % Now Low-Gamma and High-Gamma Prior to Reward
-                [RhoVal Pval] = corr([MeanFPByFileEnd_Ray(:,1) MeanFPByFileEnd_Ray(:,2)],'type','Spearman');
-                AvgCorr.LG_HG_Ray_End(k,f,bin) = RhoVal(1,2);
-                AvgP.LG_HG_Ray_End(k,f,bin) = Pval(1,2);
-                
-                % Now Spike-High Gamma around Movement Onset
-                MeanSpikeRateByFileStart_Ray = mean(SpikeRatesByTrialStart,2);
-                MeanFPByFileStart_Ray = squeeze(mean(fpByTrialStart,2));
-                AvgCorr.FPTraceStart_Ray{f}(:,k,:) = MeanFPByFileStart_Ray;
-                AvgCorr.SpTraceStart_Ray{f}(:,k,:) = MeanSpikeRateByFileStart_Ray';
-                [RhoVal Pval] = corr([MeanSpikeRateByFileStart_Ray MeanFPByFileStart_Ray(:,3)],'type','Spearman');
-                AvgCorr.Ray_Start(k,f,bin) = RhoVal(1,2);
-                AvgP.Ray_Start(k,f,bin) = Pval(1,2);
-                
-                % Now Low-Gamma and High-Gamma around Movement Onset
-                [RhoVal Pval] = corr([MeanFPByFileStart_Ray(:,1) MeanFPByFileStart_Ray(:,2)],'type','Spearman');
-                AvgCorr.LG_HG_Ray_Start(k,f,bin) = RhoVal(1,2);
-                AvgP.LG_HG_Ray_Start(k,f,bin) = Pval(1,2);
+%                 MeanSpikeRateByFileEnd_Ray = mean(SpikeRatesByTrialEnd,2);
+%                 MeanFPByFileEnd_Ray = squeeze(mean(fpByTrialEnd,2));
+%                 AvgCorr.FPTraceEnd_Ray{f}(:,k,:) = MeanFPByFileEnd_Ray;
+%                 AvgCorr.SpTraceEnd_Ray{f}(:,k,:) = MeanSpikeRateByFileEnd_Ray';
+%                 [RhoVal Pval] = corr([MeanSpikeRateByFileEnd_Ray MeanFPByFileEnd_Ray(:,3)],'type','Spearman');
+%                 AvgCorr.Ray_End(k,f,bin) = RhoVal(1,2);
+%                 AvgP.Ray_End(k,f,bin) = Pval(1,2);
+%                 
+%                 % Now Low-Gamma and High-Gamma Prior to Reward
+%                 [RhoVal Pval] = corr([MeanFPByFileEnd_Ray(:,1) MeanFPByFileEnd_Ray(:,2)],'type','Spearman');
+%                 AvgCorr.LG_HG_Ray_End(k,f,bin) = RhoVal(1,2);
+%                 AvgP.LG_HG_Ray_End(k,f,bin) = Pval(1,2);
+%                 
+%                 % Now Spike-High Gamma around Movement Onset
+%                 MeanSpikeRateByFileStart_Ray = mean(SpikeRatesByTrialStart,2);
+%                 MeanFPByFileStart_Ray = squeeze(mean(fpByTrialStart,2));
+%                 AvgCorr.FPTraceStart_Ray{f}(:,k,:) = MeanFPByFileStart_Ray;
+%                 AvgCorr.SpTraceStart_Ray{f}(:,k,:) = MeanSpikeRateByFileStart_Ray';
+%                 [RhoVal Pval] = corr([MeanSpikeRateByFileStart_Ray MeanFPByFileStart_Ray(:,3)],'type','Spearman');
+%                 AvgCorr.Ray_Start(k,f,bin) = RhoVal(1,2);
+%                 AvgP.Ray_Start(k,f,bin) = Pval(1,2);
+%                 
+%                 % Now Low-Gamma and High-Gamma around Movement Onset
+%                 [RhoVal Pval] = corr([MeanFPByFileStart_Ray(:,1) MeanFPByFileStart_Ray(:,2)],'type','Spearman');
+%                 AvgCorr.LG_HG_Ray_Start(k,f,bin) = RhoVal(1,2);
+%                 AvgP.LG_HG_Ray_Start(k,f,bin) = Pval(1,2);
                 
                 clear MeanSpikeRateByFileStart_Ray MeanSpikeRateByFile_Ray...
                     MeanFPByFileStart_Ray MeanFPByFile_Ray RhoVal Pval...
@@ -389,8 +389,8 @@ elseif SpHG == 1 && length(ControlCh) > 1
 elseif SpHG == 1 && length(ControlCh) == 1 
     ControlCh_correlations = NaN(max(length(HC_I),BC_I(end)-BC_I(1))+1,4);
     ControlCh_correlations(1:length(HC_I),1) = AvgCorr.MovementOnset(LFPInds{1}(1),HC_I(1:end));
-    ControlCh_correlations(1:BC_1DG(end)-BC_1DG(1)+1,2) = AvgCorr.MovementOnset(LFPInds{1}(1),BC_1DG(1):BC_1DG(end));
-    ControlCh_correlations(1:BC_1DSp(end)-BC_1DSp(1)+1,3) = AvgCorr.MovementOnset(LFPInds{1}(1),BC_1DSp(1):BC_1DSp(end)); % :BC_1DSp(end)-BC_1DSp(1)+1, BC_1DSp(1):BC_1DSp(end)
+%     ControlCh_correlations(1:BC_1DG(end)-BC_1DG(1)+1,2) = AvgCorr.MovementOnset(LFPInds{1}(1),BC_1DG(1):BC_1DG(end));
+%     ControlCh_correlations(1:BC_1DSp(end)-BC_1DSp(1)+1,3) = AvgCorr.MovementOnset(LFPInds{1}(1),BC_1DSp(1):BC_1DSp(end)); % :BC_1DSp(end)-BC_1DSp(1)+1, BC_1DSp(1):BC_1DSp(end)
     ControlCh_correlations(1:BC_I(end)-BC_I(1)+1,4) = AvgCorr.MovementOnset(LFPInds{1}(1),BC_I(1):BC_I(end));
     ControlCh_correlations(ControlCh_correlations==0) = NaN;
     
@@ -403,13 +403,13 @@ elseif SpHG == 1 && length(ControlCh) == 1
     % boxplot(ControlCh_correlations)
     means = nanmean(ControlCh_correlations)
     stes = nanstd(ControlCh_correlations)./[sqrt(nnz(~isnan(ControlCh_correlations(:,1)))),sqrt(nnz(~isnan(ControlCh_correlations(:,2)))),sqrt(nnz(~isnan(ControlCh_correlations(:,3)))),sqrt(nnz(~isnan(ControlCh_correlations(:,4))))]
-    H = barwitherr(stes,[1,2,3,4],means)
-    set(gca,'Xtick',[1,2,3,4],'XTicklabel',{'Hand Control','1D-Gamma Control','1D-Spike Control','ONF Control'})
+    barwitherr(stes,means)
+    set(gca,'Xtick',[1,4],'XTicklabel',{'Hand Control','ONF Control'})
     ylabel('Correlation (R)')
     ylim([-1 1])
     [h p] = ttest2(ControlCh_correlations(:,1),ControlCh_correlations(:,4))
     
-    title(['Low Gamma - High Gamma Correlations 500 ms Around Movement Onset in Hand Control vs Brain Control (P = ',sprintf('%f',p),')'])
+    title(['Spike - High Gamma Correlations 500 ms Around Movement Onset in Hand Control vs Brain Control (P = ',sprintf('%f',p),')'])
     % figure
     % plot(ControlCh_correlations)
     % legend('Hand Control','Brain Control')
@@ -419,10 +419,10 @@ elseif SpHG == 1 && length(ControlCh) == 1
     ControlCh_correlations(1:BC_I(end)-BC_I(1)+1,2) = AvgCorr.MaximumVel(LFPInds{1}(1),BC_I(1):BC_I(end));
     ControlCh_correlations(ControlCh_correlations==0) = NaN;
     
-    ControlCh_P = NaN(max(length(HC_I),BC_I(end)-BC_I(1))+1,2);
-    ControlCh_P(1:length(HC_I),1) = AvgP.MaximumVel(LFPInds{1}(1),HC_I(1:end));
-    ControlCh_P(1:BC_I(end)-BC_I(1)+1,2) = AvgP.MaximumVel(LFPInds{1}(1),BC_I(1):BC_I(end));
-    
+%     ControlCh_P = NaN(max(length(HC_I),BC_I(end)-BC_I(1))+1,2);
+%     ControlCh_P(1:length(HC_I),1) = AvgP.MaximumVel(LFPInds{1}(1),HC_I(1:end));
+%     ControlCh_P(1:BC_I(end)-BC_I(1)+1,2) = AvgP.MaximumVel(LFPInds{1}(1),BC_I(1):BC_I(end));
+%     
     figure
     % hist(ControlCh_correlations)
     % boxplot(ControlCh_correlations)

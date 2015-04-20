@@ -3,7 +3,7 @@
 Numlags = 10; % ***this assumes there are 10 time lags***
 findCommonCh = 0;
 
-H1 = reshape(H(:,1:2),1,Numlags,(size(H,1)/Numlags)*2)
+H1 = reshape(H(:,1:2),1,Numlags,(size(H,1)/Numlags)*2);
 % Reshape H so that columns = lag (lag 1 = col 1), and 3rd dim = neuron
 % (i.e. 1 layer = 1st neuron).  If N = num neurons the first N layers = the 
 % X-velocity weights across all lags and the subsequent N layers (N+1:2*N)=
@@ -20,7 +20,7 @@ for i = 1:size(H1,2)
     U{i} = U_T';
     S{i} = S_T';
     SingV = V{i}*S_T;
-    ParticipationNum(:,i) = sqrt(SingV(:,1).^2 + SingV(:,2).^2);
+%     ParticipationNum(:,i) = sqrt(SingV(:,1).^2 + SingV(:,2).^2);
 end
 
 clear Numlags Hx Hy Htemp Hstruct i H1 S_T U_T Vtemp

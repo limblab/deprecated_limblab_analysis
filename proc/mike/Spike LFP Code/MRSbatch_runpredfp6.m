@@ -57,8 +57,8 @@ for i = 1%:length(DaysNames)]
     %sig 
     signalType = 'vel';
     %numberOfFps
-    binsize = .1;
-    folds = 1;
+    binsize = .05;
+    folds = 10;
     numlags = 10;
     numsides = 1;
     %samprate
@@ -96,15 +96,16 @@ for i = 1%:length(DaysNames)]
             
         end
         %% Declare Datainput variables within loop that vary in each loop iteration:
-        
+        fpAssignScript2
         if exist('out_struct','var')
             bdf = out_struct;
             clear out_struct
         end
         
         if Usefeatmat == 0
-        [sig, samplerate, words, fp, numberOfFps, adfreq, fp_start_time, fp_stop_time,...
-            fptimes, analog_time_base] = SetPredictionsInputVar(bdf);
+        [sig, samplerate, words, ~, numberOfFps, ~, ~, ~,...
+            ~, analog_time_base] = SetPredictionsInputVar(bdf);
+        
         
         % Began to write code to Datainput featMat than decided it wouldn't be
         % worth the effort (for now at least).
@@ -182,7 +183,7 @@ for i = 1%:length(DaysNames)]
          y,featMat,ytnew,xtnew,predtbase,P,featind] =... %,sr]...
          MRSpredictionsfromfp6all(sig,signalType,numberOfFps,binsize,folds,numlags,numsides,...
          samplerate,fp,fptimes,analog_time_base,fnam,windowsize,nfeat,PolynomialOrder,...
-         Use_Thresh,H,words,emgsamplerate,lambda,0,featind,P,[]); %< --- last Datainput is featmat        
+         Use_Thresh,H,words,emgsamplerate,lambda,0,LFP1_featindBEST_Chewie,P,[]); %< --- last Datainput is featmat        
         %% Save output
         %save([sname,'velpred Using LFP Decoder from first HC file.mat'],'v*','y*','x*','r*','best*','H','feat*','P*','Use*','binsize');
         if exist('DecoderAge','var')

@@ -88,7 +88,7 @@ else
                 % citadel than local. If during superBatch, the network copy of the
                 % BDF almost certainly won't exist yet.  Either way, assume
                 % no local copies of brainReader logs exist.
-                remoteDriveLetter=[citadelDriveLetter,'Z:'];
+                remoteDriveLetter=[citadelDriveLetter,':'];
                 pathToCitadelData=fullfile(remoteDriveLetter, ...
                     CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
                 [status,result]=dos(['cd /d ',pathToCitadelData,' && dir *', ...
@@ -130,7 +130,7 @@ switch animal
         pathToBR=regexprep(pathToBDF,{'BDFs','\.mat'}, ...
             {['BrainReader logs',fsep,'online'],'\.txt'});
      case 'Jaco'
-        pathToBR=regexprep(pathToBDF,{'BDFs','\.mat'}, ...
+        pathToBR=regexprep(pathToBDF,{'bdf','\.mat'}, ...
             {['BrainReader logs',fsep,'online'],'\.txt'});
 end
 % just in case

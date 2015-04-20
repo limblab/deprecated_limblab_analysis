@@ -23,6 +23,9 @@ function driveLetter=citadelDriveLetter
 
 if status==0
     driveLetter=regexp(result,'[A-Z](?=:\s*\\\\citadel\\data)','match','once');
+    if isempty(driveLetter)
+        driveLetter=regexp(result,'[A-Z](?=:\s*\\\\165.124.111.182\\data)','match','once');
+    end
 else
     error(result)
 end

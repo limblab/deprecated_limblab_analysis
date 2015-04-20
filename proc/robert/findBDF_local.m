@@ -42,7 +42,10 @@ switch lower(machineName)
     case 'titan'
         username = username(7:end-1);
         basePath=fullfile(['C:\Users\',username,'\Desktop\',username,' Data', ...
-            filesep,animal]);
+            filesep,animal]);        
+    case 'odin'
+        Username = username(6:end-1);
+        basePath=['L:',filesep,animal];
 end
 [status,result]=dos(['cd /d ',basePath,' && dir *',nameIn,'* /s /b']);
 

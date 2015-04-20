@@ -11,8 +11,8 @@ bandstart=  [0, 7, 70, 130, 200];
 bandend=    [4, 20, 115, 200, 300];
 
 i = 1;
-lag= -0.15;
-binlen= 0.15;
+lag= -0.10;
+binlen= 0.10;
 pval=0.05;
 
 % for i=1:length(filelist)

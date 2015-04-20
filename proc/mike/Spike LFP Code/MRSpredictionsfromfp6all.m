@@ -147,7 +147,7 @@ if length(fp)~=length(y)
     end
     fptimesadj = analog_times(1):1/samprate:stop_time;
     %          fptimes=1:samp_fact:length(fp);
-    if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
+    if fptimes(1) < 1   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
         fpadj=interp1(fptimes,fp',fptimesadj);
         fp=fpadj';
         clear fpadj
@@ -224,7 +224,7 @@ tfmat(:,:,(ishift+1:end))=[];
 numbins=numbins-firstind+1;
 
 % t=t(1:numbins-firstind+1);
-t=t(1:length(t));
+t=t(1:numbins);
 y(ishift+1:end,:)=[];
 q(:,ishift+1:end)=[];
 clear fpf

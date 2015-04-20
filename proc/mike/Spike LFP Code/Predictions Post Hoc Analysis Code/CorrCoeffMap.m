@@ -14,7 +14,7 @@ end
 
 figure
 imagesc(r_map)
-title('Correlation Coefficient Map of PDs')
+title('Correlation Coefficient Map')
 xlabel('LFP Decoder Age')
 ylabel('LFP Decoder Age')
 
@@ -35,7 +35,7 @@ if PlotOn == 1
     plot(x, r_map_mean,'ko')
     xlabel('Decoder Age')
     ylabel('Mean Correlation Coefficient')
-    title('Mean Corr Coeff of PD Map')
+    title('Mean Corr Coeff Map')
     
     Xticks = min(x):floor(range(x)/4):max(x)
 % size(Xlabels,1)];

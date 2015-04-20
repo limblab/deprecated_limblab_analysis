@@ -31,8 +31,8 @@ if strcmpi(filelist{1}(1:4),'Mini')
         [datelist, DateNames] = CalcDecoderAge(datenames, '04-13-2012');
         DecoderStartDate = '04-13-2012'; 
     elseif strcmpi(Controltype,'spike')
-        [datelist, DateNames] = CalcDecoderAge(datenames, '01-25-2012');
-        DecoderStartDate = '01-25-2012'; 
+        [datelist, DateNames] = CalcDecoderAge(datenames, '08-24-2011');
+        DecoderStartDate = '08-24-2011'; 
     end
     
     shuntedCh = Mini_shuntedCh;
@@ -57,14 +57,14 @@ if strcmpi(filelist{1}(1:4),'Mini')
       
 elseif strcmpi(filelist{1}(1:4),'Chew')
     if strcmpi(Controltype,'lfp1')
-        [datelist, DateNames] = CalcDecoderAge(filelist, '09-01-2011');
+        [datelist, DateNames] = CalcDecoderAge(datenames, '09-01-2011');
         DecoderStartDate = '09-01-2011'; 
     elseif strcmpi(Controltype,'lfp2')
-        [datelist, DateNames] = CalcDecoderAge(filelist, '04-13-2012');
+        [datelist, DateNames] = CalcDecoderAge(datenames, '04-13-2012');
         DecoderStartDate = '04-13-2012'; 
     elseif strcmpi(Controltype,'spike')
-        [datelist, DateNames] = CalcDecoderAge(datenames, '01-25-2012');
-        DecoderStartDate = '01-25-2012';
+        [datelist, DateNames] = CalcDecoderAge(datenames, '09-01-2011');
+        DecoderStartDate = '09-01-2011';
     end
     
     shuntedCh = Chewie_shuntedCh;
@@ -97,16 +97,25 @@ for i=startind:length(filelist)
         if strcmpi(Signaltype,'spike')
             load([fnam(1:end-4),'spikePDs_allchans_bs-1cos'],...
             'spike_counts','spikePDs')
-        elseif strcmpi(Signaltype,'lfp1') && strcmpi(filelist{1}(1:4),'Chew')
-            load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz100mnpowlogLMPcos.mat'],...                
+        elseif strcmpi(Controltype,'lfp1') && strcmpi(filelist{1}(1:4),'Chew') || strcmpi(Signaltype,'AllLFP') && strcmpi(filelist{1}(1:4),'Chew')
+            try
+            load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos.mat'],...             
             'LFPcounts','LMPcounts','LFPfilesLMP_PDs','LFPfilesPDs')
-%             '_pdsallchanspos_bs-1wsz100mnpowlogAllFreqcos.mat'],... % Chewie's Non-LMP PD file extension 
+%              '_pdsallchanspos_bs-1wsz100mnpowlogAllFreqcos.mat'],... % Chewie's Non-LMP PD file extension 
 %              _pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos'],...              
-%              load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts'],...
-%             'LFPcounts','LMPcounts','LFPfilesLMP_PDs','LFPfiles_PDs')
+            catch 
+                try
+                    load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts.mat'],...
+                        'LFPcounts','LFP_counts','LMPcounts','LFPfilesLMP_PDs','LFPfiles_PDs')
+                catch  
+                    MissingFiles{i} = fnam;
+                    MissingFilesListInd = [MissingFilesListInd i];
+                    continue
+                end
+            end
         else         
             load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts'],...
-            'LFPcounts','LMPcounts')
+            'LFPcounts','LFP_counts','LMPcounts')
         end
 
     catch
@@ -128,17 +137,22 @@ for i=startind:length(filelist)
     if exist('LFPfilesPDs','var') & exist('LMPcounts','var')
             for k = 1:size(LFPfilesPDs{1,1},1)
                 
-                All_LMP_CI_Range(LFPfilesPDs{1,1}(k,5),j,i) = (LFPfilesPDs{1,1}(k,3) - LFPfilesPDs{1,1}(k,1))*180/pi;
+%                 All_LMP_CI_Range(LFPfilesPDs{1,1}(k,5),j,i) = (LFPfilesPDs{1,1}(k,3) - LFPfilesPDs{1,1}(k,1))*180/pi;
                 
             end
     end
-              
-    if exist('LFPcounts','var')
+    
+    if exist('LFP_counts','var')            
+            LFPcounts = LFP_counts;
+            clear LFP_counts;
+    end
+    
+    if exist('LFPcounts','var')   
         
         for j = 1:size(LFPcounts,1)
-            for k = 1:size(LFPcounts,2)
+            for k = 1:size(LFPcounts,2)   
                 
-                All_Non_LMP_counts(:,j,k,i) = cellfun(@mean,LFPcounts{j,k});
+                All_Non_LMP_counts(:,j,k,i) = cellfun(@mean,LFPcounts{j,k});                
                 All_Non_LMP_MDs(j,i,k) = range(All_Non_LMP_counts(:,j,k,i));
                 
             end
@@ -170,17 +184,29 @@ for i=startind:length(filelist)
 end; clear i j fnam bestf_Chewie bestc_Chewie bestf_Mini bestc_Mini LMPcounts...
     LFPcounts spike_counts
 % Take out all files that are not in the file list.
-if exist('All_LMP_counts','var')
+if exist('All_LMP_counts','var') & isempty(MissingFilesListInd) == 0
     All_Non_LMP_counts(:,:,:,MissingFilesListInd) = [];
     All_Non_LMP_MDs(:,MissingFilesListInd,:) = [];
     All_LMP_counts(:,:,MissingFilesListInd) = [];
     All_LMP_MDs(:,MissingFilesListInd) = [];
+elseif exist('All_Spike_counts','var') & isempty(MissingFilesListInd) == 0
+    All_Spike_counts(:,:,MissingFilesListInd) = [];
+    All_Spike_CI_Range(:,MissingFilesListInd) = [];
+    All_Spike_MDs(:,MissingFilesListInd) = [];
+    
+    All_Spike_Var(:,:,MissingFilesListInd) = [];
+    All_Spike_Mean(:,:,MissingFilesListInd) = [];
 end
+
 
 MissingFilesList(MissingFilesListInd,:) = [];
 MissingFilesDateList(MissingFilesListInd,:) = [];
 %% Take out shunts and average counts
 if exist('All_LMP_counts','var')
+%     AllChtoRemov = unique([badChannels; shuntedCh]);
+%     Bia = ismember(bestc_bychan, AllChtoRemov);
+%     bestc_NoShunt = bestc_bychan(~Bia);
+%     bestf_NoShunt = bestf_bychan(~Bia);
     Lia = ismember(bestc_bychan,shuntedCh);
     bestc_NoShunt = bestc_bychan(~Lia)
     bestf_NoShunt = bestf_bychan(~Lia);
@@ -190,7 +216,7 @@ if exist('All_LMP_counts','var')
     g1 = 1;
     g2 = 1;
     g3 = 1;    
-    if strcmpi(Signaltype,'AllLFP') 
+    if strcmpi(Signaltype,'AllLFP') || strcmpi(Signaltype,'LFP1') 
         for g = 1:length(bestc_NoShunt)
             if bestf_NoShunt(g) == 1
                 LMPFeats(:,h,:) = All_LMP_counts(:,bestc_NoShunt(g),:);
@@ -220,14 +246,14 @@ if exist('All_LMP_counts','var')
         for g = 1:length(bestc_NoShunt)
             if bestf_NoShunt(g) == 1
                 OnlineFeats(:,l,:) = All_LMP_counts(:,bestc_NoShunt(g),:);
-                OnlineFeats_CI_Range(:,l,:) = All_LMP__CI_Range(:,bestc_NoShunt(g),:);
+%                 OnlineFeats_CI_Range(:,l,:) = All_LMP_CI_Range(:,bestc_NoShunt(g),:);
                 OnlineFeatsMDs(l,:) = squeeze(All_LMP_MDs(bestc_NoShunt(g),:));
                 l=l+1;
             elseif bestf_NoShunt(g) == 2
                 continue
             else
                 OnlineFeats(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                OnlineFeats_CI_Range(:,l,:) = squeeze(All_Non_LMP__CI_Range(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
+%                 OnlineFeats_CI_Range(:,l,:) = squeeze(All_Non_LMP_CI_Range(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
                 OnlineFeatsMDs(l,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
                 l = l+1;
             end
@@ -453,7 +479,7 @@ else
     
     All_Freq_counts_Vector = reshape(OnlineFeats,size(OnlineFeats,1)*size(OnlineFeats,2),size(OnlineFeats,3));
     
-    [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,4:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
+    [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,startind:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
     
     [rOnline.map,rOnline.map_mean, rOnline.rho, rOnline.pval, rOnline.f, rOnline.x] = ...
         CorrCoeffMap(DayAvgDataX,1,DayNames(:,2))
@@ -469,10 +495,12 @@ if strcmpi(Controltype,'lfp1') || strcmpi(Controltype,'lfp2')
 %         CorrCoeffMap(DayAvgDataOfflineX,1,DayNames(:,2))
     
     % Now look at stability of modulation depths on indirect channels
-    All_Freq_MDs_Vector = OfflineFeatsMDs;
+    All_Freq_MDs_Vector = OnlineFeatsMDs;
+%     All_Freq_MDs_Vector = All_Spike_MDs;
     
     [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_MDs_Vector(:,startind:end), All_Freq_MDs_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
     
     [rOnline.map,rOnline.map_mean, rOnline.rho, rOnline.pval, rOnline.f, rOnline.x] = ...
         CorrCoeffMap(DayAvgDataX,1,DayNames(:,2))
+    title('All Feat MD SI')
 end

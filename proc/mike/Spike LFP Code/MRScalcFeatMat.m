@@ -142,7 +142,7 @@ if CalcWhat == 1 || CalcWhat == 3
     end
     fptimesadj = analog_times(1):1/samprate:stop_time;
 %          fptimes=1:samp_fact:length(fp);
-    if fptimes(end)>stop_time   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
+    if fptimes(1) < 1   %If fp is longer than stop_time( need this because of get_plexon_data silly way of labeling time vector)
         fpadj=interp1(fptimes,fp',fptimesadj);
         fp=fpadj';
         clear fpadj
@@ -169,11 +169,11 @@ if size(y,1)==1
 end
 
 % Find active regions
-if exist('words','var') && ~isempty(words)
-    q = find_active_regions_words(words,analog_times);
-else
+% if exist('words','var') && ~isempty(words)
+%     q = find_active_regions_words(words,analog_times);
+% else
     q=ones(1,length(analog_times));   %Temp kludge b/c find_active_regions gives too long of a vector back
-end
+% end
 q = interp1(analog_times, double(q), t);
     
     disp('2nd part:assign t,y,q')
@@ -189,8 +189,8 @@ if CalcWhat == 2 || CalcWhat == 3
     win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
     tfmat=zeros(wsz,numfp,numbins,'single');
     %% Notch filter for 60 Hz noise
-    %[b,a]=butter(2,[58 62]/(samprate/2),'stop');
-    %fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
+    [b,a]=butter(2,[58 62]/(samprate/2),'stop');
+    fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
     fpf =fp;
     clear fp
     itemp=1:numlags;
@@ -262,51 +262,53 @@ if CalcWhat == 2 || CalcWhat == 3
     toc
     tic
     
-    
-    if ~verLessThan('matlab','7.7.0') || size(y,2)>1
-        for c=1:size(PB,2)
-            for f=1:size(PB,1)
-                rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-                if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use
-                    % ALL outputs in calculating bestfeat
-                    % (orig modified 12/13/10 for 2 outputs)
-                    rsum=abs(rt1);
-                    for n=2:size(y,2)
-                        rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                        rsum=rsum+abs(rtemp);
-                    end
-                    rt=rsum/n;
-                    %                 rt=(abs(rt1)+abs(rt2))/2;
-                else
-                    rt=rt1;
-                end
-                r(f,c)=rt(1,2);    %take absolute value of r
-            end
-        end
-    else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar;
-        % in newer versions it outputs matrix for vectors
-        for c=1:size(PB,2)
-            for f=1:size(PB,1)
-                rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
-                if size(y,2)>1
-                    rsum=abs(rt1);
-                    for n=2:size(y,2)
-                        rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
-                        rsum=rsum+abs(rtemp);
-                    end
-                    rt=rsum/n;
-                else
-                    rt=rt1;
-                end
-                
-                r(f,c)=abs(rt);    %take absolute value of r
-            end
-        end
-    end
-    r1=reshape(r,1,[]);
-    r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
-    
-    [sr,featind]=sort(r1,'descend');
+%     PB = PB(:,:,q==1);
+%     y = y(q==1,:);
+  
+%     if ~verLessThan('matlab','7.7.0') || size(y,2)>1
+%         for c=1:size(PB,2)
+%             for f=1:size(PB,1)
+%                 rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+%                 if size(y,2)>1                  %%%%% NOTE: MODIFIED THIS 1/10/11 to use
+%                     % ALL outputs in calculating bestfeat
+%                     % (orig modified 12/13/10 for 2 outputs)
+%                     rsum=abs(rt1);
+%                     for n=2:size(y,2)
+%                         rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+%                         rsum=rsum+abs(rtemp);
+%                     end
+%                     rt=rsum/n;
+%                     %                 rt=(abs(rt1)+abs(rt2))/2;
+%                 else
+%                     rt=rt1;
+%                 end
+%                 r(f,c)=rt(1,2);    %take absolute value of r
+%             end
+%         end
+%     else  % if older versions than 2008 (7.7.0), corrcoef outputs a scalar;
+%         % in newer versions it outputs matrix for vectors
+%         for c=1:size(PB,2)
+%             for f=1:size(PB,1)
+%                 rt1=corrcoef(y(:,1),squeeze(PB(f,c,:)));
+%                 if size(y,2)>1
+%                     rsum=abs(rt1);
+%                     for n=2:size(y,2)
+%                         rtemp=corrcoef(y(:,n),squeeze(PB(f,c,:)));
+%                         rsum=rsum+abs(rtemp);
+%                     end
+%                     rt=rsum/n;
+%                 else
+%                     rt=rt1;
+%                 end
+%                 
+%                 r(f,c)=abs(rt);    %take absolute value of r
+%             end
+%         end
+%     end
+%     r1=reshape(r,1,[]);
+%     r1(isnan(r1))=0;    %If any NaNs, set them to 0 to not mess up the sorting
+%     
+%     [sr,featind]=sort(r1,'descend');
 end
 end
 

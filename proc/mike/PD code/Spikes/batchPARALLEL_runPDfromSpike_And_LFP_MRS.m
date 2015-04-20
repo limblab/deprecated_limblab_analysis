@@ -1,4 +1,4 @@
-filelist = [Chewie_handControlDays(:,1); Mini_handControlDays(:,1)];
+filelist = [Chewie_LFP1_tsNum];
 LFP = 1;
 Spike = 0;
 

@@ -91,7 +91,7 @@ if ismac
         CCMbank{cellfun(@isempty,regexp(CCMbank,animal))==0});
     [status,result]=unix(['find ',pathToCitadelData,' -name "',nameIn,'" -print']);
 else
-    remoteDriveLetter=[citadelDriveLetter,'Z:'];
+    remoteDriveLetter=[citadelDriveLetter,':'];
     if isequal(remoteDriveLetter,':') || isempty(remoteDriveLetter)
         error('problem with citadelDriveLetter.m')
     end
