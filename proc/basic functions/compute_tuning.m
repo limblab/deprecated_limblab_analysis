@@ -104,7 +104,7 @@ for i = 1:num_units
         partial_tuning = bootfunc(armdata_mat_partial,behaviors.FR(:,i));
         log_LR = 2*(whole_tuning.LogLikelihood-partial_tuning.LogLikelihood);
         df_partial = whole_tuning.NumCoefficients-partial_tuning.NumCoefficients;
-        neural_tuning(i,covar_ctr).term_signif = chi2cdf(log_LR,df_partial,'upper')<0.05;
+        neural_tuning(i,covar_ctr).term_signif = chi2cdf(log_LR,df_partial)<0.05;
         
         %PD
         if(armdata_terms(covar_ctr).doPD)
