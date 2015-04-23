@@ -40,7 +40,7 @@ armdata_mat = [armdata_terms.data];
 % end
 %% Set up output struct
 tuning_init = cell(num_units,length(armdata_terms));
-neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tuning_init,'term_signif',tuning_init,'PD',tuning_init,'name',tuning_init);
+neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tuning_init,'term_pval',tuning_init,'PD',tuning_init,'name',tuning_init);
 empty_PD = struct('dir',[],'moddepth',[],'dir_CI',[],'moddepth_CI',[]);
 
 %% Parallelize for speed
@@ -104,8 +104,7 @@ for i = 1:num_units
         partial_tuning = bootfunc(armdata_mat_partial,behaviors.FR(:,i));
         log_LR = 2*(whole_tuning.LogLikelihood-partial_tuning.LogLikelihood);
         df_partial = whole_tuning.NumCoefficients-partial_tuning.NumCoefficients;
-        neural_tuning(i,covar_ctr).term_signif = chi2cdf(log_LR,df_partial)<0.05;
-        
+        neural_tuning(i,covar_ctr).term_pval = 1-chi2cdf(log_LR,df_partial);        
         %PD
         if(armdata_terms(covar_ctr).doPD)
             neural_tuning(i,covar_ctr).PD = empty_PD;
