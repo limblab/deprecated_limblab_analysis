@@ -52,7 +52,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
     output_data.bdf=bdf;
     %% set up parse for tuning
     if isfield(options,'pos_pd')
-        optionstruct.compute_pos_pds=options.vel_pd;
+        optionstruct.compute_pos_pds=options.pos_pd;
     else
         optionstruct.compute_pos_pds=0;
     end
@@ -109,75 +109,6 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         %get the timepoints of interest from the bdf and compose them into
         %a structure to use with compute tuning
         behaviors = parse_for_tuning(bdf,'continuous','opts',optionstruct,'units',which_units);
-
-        output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',10),'poisson');
-        output_data.unit_pd_table=get_pd_table(output_data.unit_tuning_stats,behaviors,bdf);
-        %make a table that only has the best tuned units:
-        output_data.unit_best_modulated_table=output_data.unit_pd_table(output_data.unit_pd_table.moddepth>median(output_data.unit_pd_table.moddepth),:);
-        
-        %plot a histogram of the unit pds
-        h=figure('name','unit_PDs');
-        figure_handles=[figure_handles h];
-        hist(output_data.unit_pd_table.dir(~isnan(output_data.unit_pd_table.dir))*180/pi,[-175:20:180]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
-  
-        xlabel('degrees')
-        ylabel('PD counts')
-        title('Histogram of unit PDs')
-        %make a histogram of the best modulated PDs
-        h=figure('name','unit_best_modulated_PDs');
-        figure_handles=[figure_handles h];
-        hist(output_data.unit_best_modulated_table.dir(~isnan(output_data.unit_best_modulated_table.dir))*180/pi,[-175:20:180]) % channels that have been deselected or eliminated in another way have NaN as PD, CI's and moddepths
-  
-        xlabel('degrees')
-        ylabel('PD counts')
-        title('Histogram of the best modulated electrode PDs')
-        
-        %polar plot of all pds, with radial length equal to scaled 
-        %modulation depth
-        %compute a scaling factor for the polar plots to use. Polar plots
-        %will use a log function of moddepth so that the small modulation
-        %PDs are visible. The scaling factor scales all the moddepths up so
-        %that the log produces positive values rather than negative values.
-        %all log scaled polar plots of the unit PDs will use the same
-        %factor
-        mag_scale=1/min(output_data.unit_pd_table.moddepth);
-        h=figure('name','unit_polar_PDs');
-        
-        figure_handles=[figure_handles h];
-        angs=[output_data.unit_pd_table.dir output_data.unit_pd_table.dir]';
-        mags=log((1+[zeros(size(output_data.unit_pd_table.dir)), mag_scale*output_data.unit_pd_table.moddepth])');
-        %dummy plot to get the polar axes set:
-        polar(0,max(mags(2,:)))
-        %set the colororder so we get a nice continuous variation
-        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),[0,angs(1,:)]);
-        set(gca,'colororder',colorhsv)
-        %set(gcf,'colormap',colorhsv)
-        hold all
-        h=polar(angs,mags);
-        set(h,'linewidth',2)
-        hold off
-        title(['\fontsize{14}Polar plot of all unit PDs.','\newline',...
-                '\fontsize{10}Amplitude normalized and log scaled for pretty picture.'])
-        
-        %polar plot of best modulated pds, with radial length equal to 
-        %scaled modulation depth
-        h=figure('name','unit_best_modulated_polar_PDs');
-        figure_handles=[figure_handles h];
-        angs=[output_data.unit_best_modulated_table.dir output_data.unit_best_modulated_table.dir]';
-        mags=log((1+[zeros(size(output_data.unit_best_modulated_table.dir)), mag_scale*output_data.unit_best_modulated_table.moddepth])');
-        %dummy plot to get the polar axes set:
-        polar(0,max(mags(2,:)))
-        %set the colororder so we get a nice continuous variation
-        colorhsv = interp1(linspace(-pi,pi,360)',hsv(360),[0,angs(1,:)]);
-        set(gca,'colororder',colorhsv)
-        %set(gcf,'colormap',colorhsv)
-        hold all
-        h=polar(angs,mags);
-        set(h,'linewidth',2)
-        hold off
-        title(['\fontsize{14}Polar plot of best modulated unit PDs.','\newline',...
-                '\fontsize{10}Amplitude normalized and log scaled for pretty picture.'])
-            
         output_data.unit_behaviors=behaviors;
         if optionstruct.compute_vel_pds
             output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',10),'poisson');
