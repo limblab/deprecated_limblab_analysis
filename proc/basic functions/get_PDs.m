@@ -37,7 +37,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
     if isfield(options,'offset')
         opts.offset=options.offset;
     else
-        opts.offset=-.015;
+        %opts.offset=-.015;
+        opts.offset=0;
     end
     if isfield(options,'binsize')
         opts.binsize=options.binsize;
@@ -86,14 +87,23 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         optionstruct.compute_dfdtdt_pds=0;
     end
     
-    if options.only_sorted
-        for i=1:length(bdf.units)
-            temp(i)=~(bdf.units(i).id(2)==0 | bdf.units(i).id(2)==255);
-        end
-        ulist=1:length(bdf.units);
-        which_units=ulist(temp);
+    if isfield(options,'offset')%negative shift shifts the kinetic data later to match neural data caused at the latency specified by the offset
+        optionstruct.data_offset=options.offset;
+    else
+        optionstruct.data_offset=0;%negative shift shifts the kinetic data later to match neural data caused at the latency specified by the offset
     end
-    optionstruct.data_offset=-.015;%negative shift shifts the kinetic data later to match neural data caused at the latency specified by the offset
+    
+    which_units=1:length(bdf.units);
+    if isfield(options, 'only_sorted')
+        if options.only_sorted
+            for i=1:length(bdf.units)
+                temp(i)=~(bdf.units(i).id(2)==0 | bdf.units(i).id(2)==255);
+            end
+            ulist=1:length(bdf.units);
+            which_units=which_units(temp);
+        end
+    end
+    
     %% if we are doing unit pds, generate the parsed behavioral data
     if options.do_unit_pds
         %get the timepoints of interest from the bdf and compose them into
@@ -240,7 +250,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
                     '\fontsize{10}Amplitude normalized and log scaled for pretty picture.'])
         end
         if optionstruct.compute_force_pds
-            output_data.unit_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0],struct('num_rep',10),'poisson');
+            output_data.unit_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',10),'poisson');
             output_data.unit_force_pd_table=get_pd_table(output_data.unit_force_tuning_stats,'force');
 
             %make a table that only has the best tuned units:
@@ -334,7 +344,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         else
             %if we didn't parse the arm behavior for the single units, then
             %we need to compute it and the firing rate matrix now
-            behaviors = parse_for_tuning(multiunit_bdf,'continuous','opts',optionstruct);
+            behaviors = parse_for_tuning(multiunit_bdf,'continuous','opts',optionstruct,'units',which_units);
         end
         output_data.electrode_behaviors=behaviors;
         if optionstruct.compute_vel_pds
@@ -404,7 +414,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
                     '\fontsize{10} Amplitude normalized and log scaled for pretty picture.'])
         end
         if optionstruct.compute_force_pds
-            output_data.electrode_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0],struct('num_rep',10),'poisson');
+            output_data.electrode_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',10),'poisson');
             output_data.electrode_force_pd_table=get_pd_table(output_data.electrode_force_tuning_stats);
             %make a table that only has the best tuned electrodes:
             output_data.electrode_best_modulated_force_table=output_data.electrode_force_pd_table(output_data.electrode_force_pd_table.moddepth>median(output_data.electrode_force_pd_table.moddepth),:);
