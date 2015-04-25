@@ -120,19 +120,31 @@ else
 end
 
 %% Bin Force - Not implemented for handle force yet, only WF and other lab 1 stuff.
-if (~isfield(datastruct, 'force') || ~isfield(datastruct.force, 'labels'))
+if ~isfield(datastruct, 'force') 
     fprintf('No force data was found\n');
     forcedatabin = [];
     forcelabels = [];
 else
-    numforcech = length(datastruct.force.labels);
-    forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
-    forcelabels = datastruct.force.labels;
+    if isstruct(datastruct.force)
+        %datastruct is using the lab 1 WF format
+        numforcech = length(datastruct.force.labels);
+        forcetimebins = find(datastruct.force.data(:,1)>=params.starttime & datastruct.force.data(:,1)<params.stoptime);
+        forcelabels = datastruct.force.labels;
 
-    %downsample force data to desired bin size
-%         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
-    forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
-
+        %downsample force data to desired bin size
+    %         forcedatabin = resample(datastruct.force.data(forcetimebins,2:end), 1/binsize, forcesamplerate);
+        forcedatabin = interp1(datastruct.force.data(forcetimebins,1), datastruct.force.data(forcetimebins,2:end), timeframe,'linear','extrap');
+    else
+        %datastruct is using the lab3 &lab6 robottask format
+        numforcech=size(datastruct.force,2)-1;%1 time col, and the rest are data cols
+        if numforcech~=2
+            warning('convertBDF2binned:MoreThan2RobotForces','convertBDF2binned assumes the robottask force structure is a matrix with 3 columns [time,Fx,Fy]. This structure has a different number of channels, so the force labels may be incorrect.')
+        end
+        forcetimebins=find(datastruct.force(:,1)>=params.starttime & datastruct.force(:,1)<params.stoptime);
+        forcelabels={'Force_X','Force_y'};
+        %downsample force data to desired bin size
+        forcedatabin = interp1(datastruct.force(forcetimebins,1), datastruct.force(forcetimebins,2:end), timeframe,'linear','extrap');
+    end
     if params.NormData
         %Normalize Force
         for i=1:numforcech
@@ -142,7 +154,6 @@ else
             forcedatabin(:,i) = forcedatabin(:,i)/forceNormRatio;
         end        
     end
-
     clear forcetimebins forcename numforcech forceNormRatio;
 end
 
