@@ -77,7 +77,7 @@ for i = 1:num_units
     coef_CIs = prctile(boot_coef,[2.5 97.5]);
     
     %iterate through covariates
-    column_ctr = 0;
+    column_ctr = 1;
     for covar_ctr = 1:length(armdata_terms)
         %find number of columns
         num_covar_col = armdata_terms(covar_ctr).num_base_cols*(armdata_terms(covar_ctr).num_lags+1);

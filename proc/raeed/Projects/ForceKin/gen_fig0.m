@@ -72,12 +72,12 @@ plot3([-1.5 -1.5],[-1.5 1.5],[0 0],'-k','linewidth',3)
 plot3([1.5 1.5],[-1.5 1.5],[0 0],'-k','linewidth',3)
 
 % plot stems
-for i = 1:numpts
-    plot3(active_right(i,1),active_right(i,2),active_right_forcevel(i),'-k')
-    plot3(passive_left(i,1),passive_left(i,2),passive_left_forcevel(i),'-k')
-    plot3(active_left(i,1),active_left(i,2),active_left_forcevel(i),'-k')
-    plot3([passive_right(i,1) passive_right(i,1)],[passive_right(i,2) passive_right(i,2)],[0 passive_right_forcevel(i)],'-k','linewidth',1)
-end
+% for i = 1:numpts
+%     plot3(active_right(i,1),active_right(i,2),active_right_forcevel(i),'-k')
+%     plot3(passive_left(i,1),passive_left(i,2),passive_left_forcevel(i),'-k')
+%     plot3(active_left(i,1),active_left(i,2),active_left_forcevel(i),'-k')
+%     plot3([passive_right(i,1) passive_right(i,1)],[passive_right(i,2) passive_right(i,2)],[0 passive_right_forcevel(i)],'-k','linewidth',1)
+% end
 
 axis([-1.5 1.5 -1.5 1.5 -1.5 1.5])
 % axis off

@@ -3,8 +3,8 @@ function [activity,avg_act] = get_activity(neurons, scaled_lengths, num_sec)
 %   NEURONS - num_neurons x num_muscles array of neural weights
 %   SCALED_LENGTHS - num_positions x num_muscles array of muscle lengths
 %   scaled between 0 and 1
-%   ACTIVITY - Poisson noise neural activity
-%   AVG_ACT - mean of noisy neural activity
+%   ACTIVITY - Poisson noise neural activity (num_neurons x num_positions)
+%   AVG_ACT - mean of noisy neural activity (num_neurons x num_positions)
 
 % num_sec = 3*8;
 

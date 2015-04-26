@@ -9,6 +9,9 @@ function bdf_nosort=remove_sorting(bdf)
     
     %get a list of all the valid channels
     ul = unit_list(bdf,1);
+    
+    
+    
     channel_list=sort(unique(ul(:,1)));
         
     %for each channel 

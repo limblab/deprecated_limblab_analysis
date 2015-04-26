@@ -1,5 +1,4 @@
 % foo2
-
 %% setup
 % leg;
 clear
@@ -16,7 +15,7 @@ plotflag = false;
 %% First, set up our neurons
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % rng('default')
-neurons = random('Normal', 0, 1, 10000, 8);
+% neurons = random('Normal', 0, 1, 100, 8);
 
 % neurons(1,:) = [0 0 0 0 10 0 0 0];
 
@@ -58,7 +57,7 @@ scaled_lengths_unc = scaled_lengths{1};
 scaled_lengths_con = scaled_lengths{2};
 
 % calculate neural activity
-num_sec = 4;
+num_sec = 2;
 activity_unc = get_activity(neurons,scaled_lengths_unc,num_sec);
 activity_con = get_activity(neurons,scaled_lengths_con,num_sec);
 
@@ -195,7 +194,8 @@ end
 
 %%
 sum(VAF_unc>0.4 & VAF_con>0.4)
-sum(VAF_unc>0.4 & VAF_con>0.4 & pVal_neuron'>0.01)
+sum(VAF_unc>0.4 & VAF_con>0.4 & pVal_neuron'>0.01)/sum(VAF_unc>0.4 & VAF_con>0.4)
+acosd(median(cosdthetay(VAF_unc>0.4 & VAF_con>0.4)))
 figure; hist(abs(tStat_neuron(VAF_unc>0.4 & VAF_con>0.4)),20)
-figure; hist(cosdthetay,40)
-figure; plot_PD_distr(yupd,50)
+% figure; hist(cosdthetay(VAF_unc>0.4 & VAF_con>0.4),40)
+% figure; plot_PD_distr(yupd,50)

@@ -46,14 +46,6 @@ if(plotflag)
     title 'Unconstrained'
 end
 
-muscle_offset = min(muscle_lengths_unc);
-
-scaled_lengths_unc = muscle_lengths_unc - repmat(muscle_offset,num_positions,1);
-
-muscle_scale = max(scaled_lengths_unc);
-
-scaled_lengths_unc = scaled_lengths_unc ./ repmat(muscle_scale,num_positions,1);
-
 % make sure joint angles are between -pi and pi
 while(~isempty(find(joint_angles_unc<-pi | joint_angles_unc>pi, 1)))
     joint_angles_unc(joint_angles_unc<-pi) = joint_angles_unc(joint_angles_unc<-pi)+2*pi;
@@ -112,10 +104,12 @@ if(plotflag)
     title 'Constrained'
 end
 
-% scaled_lengths_con = muscle_lengths_con - repmat(min(muscle_lengths_con),num_positions,1);
-% scaled_lengths_con = scaled_lengths_con ./ repmat(max(scaled_lengths_con),num_positions,1);
-
+muscle_offset = min([muscle_lengths_unc;muscle_lengths_con]);
+scaled_lengths_unc = muscle_lengths_unc - repmat(muscle_offset,num_positions,1);
 scaled_lengths_con = muscle_lengths_con - repmat(muscle_offset,num_positions,1);
+
+muscle_scale = max([scaled_lengths_unc;scaled_lengths_con]);
+scaled_lengths_unc = scaled_lengths_unc ./ repmat(muscle_scale,num_positions,1);
 scaled_lengths_con = scaled_lengths_con ./ repmat(muscle_scale,num_positions,1);
 
 % make sure joint angles are between -pi and pi

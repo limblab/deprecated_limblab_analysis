@@ -8,8 +8,11 @@ function [tStat_neuron, pVal_neuron] = find_extrinsic_stats(pol_fit_full)
         pVal = pol_fit_full{i}.Coefficients.pValue(4:end);
     %     estimate = pol_fit_full{i}.Coeffiecients.Estimate(4:end);
     %     [~,max_ind] = max(estimate);
-        [pVal_neuron(i),max_ind] = max(pVal);
-        tStat_neuron(i) = tStat(max_ind);
+%         [pVal_neuron(i),min_ind] = min(pVal);
+%         tStat_neuron(i) = tStat(min_ind);
+        
+        [tStat_neuron(i),max_ind] = max(abs(tStat));
+        pVal_neuron(i) = pVal(max_ind);
     end
 
 end
