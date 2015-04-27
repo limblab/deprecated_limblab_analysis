@@ -2,7 +2,8 @@ function plotShadedSD(timeframe,Data, SD)
 
 numpts = length(timeframe);
 xIdx  = [1:numpts numpts:-1:1];
-xarea = timeframe(xIdx,1);
+% xarea = timeframe(xIdx,1);
+xarea = xIdx;
 
 figure;
 plot(timeframe,Data);

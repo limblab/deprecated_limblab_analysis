@@ -9,8 +9,8 @@ else
     cerebus_filename = fullfile(datapath,filename);
 end
 
-BDF_filename = [filename '_BDF.mat'];
-bin_filename = [filename '_bin.mat'];
+BDF_filename = [filename(1:end-4) '_BDF.mat'];
+bin_filename = [filename(1:end-4) '_bin.mat'];
 
 if nargin >1
     use_default = varargin{1};

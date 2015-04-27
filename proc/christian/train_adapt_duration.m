@@ -25,6 +25,7 @@ params.emg_decoder = E2F;
 aveFR = mean(mean(train_data.spikeratedata));
 ref_aveFR = 10.69; %from jango_20150107
 params.adapt_params.LR       = 5e-7*ref_aveFR/aveFR;
+if ~isfield(params,'emg_thresh') params.emg_thresh=0; end
 % params.adapt_params.duration = inf;
 % params.adapt_params.delay    = 0.65;
 
@@ -37,6 +38,7 @@ for i = 1:num_iter
             % use normal adaptive decoder training
             params.mode = 'emg_cascade';
             decoders{i} = adapt_offline(temp_train_data,params);
+%             title_str = sprintf('emg thresh = %.2f',params.emg_thresh);
             [vaf(i,:),R2(i,:),preds(:,:,i)] = plot_predsF(test_data,{decoders{i};E2F},params.mode);
             
         case 'supervised'

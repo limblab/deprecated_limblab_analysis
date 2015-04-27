@@ -76,6 +76,16 @@ for tgt = 1:num_targets
         binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),7)-1,1,'last');
         % until 'time_after' sec after tgt onset:
         binstop  = binstart + num_bins-1;
+        if binstop > size(binnedData.spikeratedata,1)
+            tmp_FR = tmp_FR(1:end-1,:);
+            if outs_to_ave == 1 || outs_to_ave ==3
+                tmp_path     = tmp_path(1:end-1,:,:);
+            end
+            if outs_to_ave == 2 || outs_to_ave ==3
+                tmp_emg      = tmp_emg(1:end-1,:,:);
+            end
+            continue;
+        end
         tmp_FR(trial,:)      = mean(binnedData.spikeratedata(binstart:binstop,:),2);
         if outs_to_ave == 1 || outs_to_ave ==3
             tmp_path(trial,:,:) = binnedData.cursorposbin(binstart:binstop,:);
@@ -107,48 +117,55 @@ for tgt = 1:num_targets
                 set(h2(1),'Color','b','LineWidth',3); set(ax(2),'YColor','b');set(get(ax(2),'YLabel'),'string','Ave Cursor');
                 set(h2(2),'Color','g','LineWidth',3);
                 fig_h       = [h1;h2];
-                leg         = [{'ave FR'};strrep(num2cell(binnedData.cursorposlabels,2),'_','\_')];
+                leg         = [{'ave FR'} strrep(binnedData.cursorposlabels,'_','\_')];
             case 2
                 [ax,h1,h2]  = plotyy(xvec,ave_fr(:,tgt),xvec,ave_emg(:,:,tgt));
                 set(h1,'Color','r','LineWidth',3); set(ax(1),'YColor','r');set(get(ax(1),'YLabel'),'string','Ave FR');
                 set(ax(2),'YColor','k'); set(get(ax(2),'YLabel'),'string','Ave EMG');
                 fig_h       = [h1,h2];
-                leg         = [{'ave FR'};strrep(num2cell(binnedData.emgguide,2)       ,'_','\_')];
+                leg         = [{'ave FR'} strrep(binnedData.emgguide       ,'_','\_')];
             case 3
                 [ax,fig_h]  = plotyyy(xvec,ave_fr(:,tgt),xvec,ave_path(:,:,tgt),...
                                       xvec,ave_emg(:,:,tgt),{'Ave FR';'Ave Cursor';'Ave EMG'});
                 set(fig_h(1),'Color','r','LineWidth',3);set(ax(1),'YColor','r');
                 set(fig_h(2),'Color','b','LineWidth',3);set(ax(2),'YColor','b');
                 set(fig_h(3),'Color','g','LineWidth',3);set(ax(3),'YColor','k');
-                leg         = [{'ave FR'};strrep(num2cell(binnedData.cursorposlabels,2),'_','\_'),...
-                                          strrep(num2cell(binnedData.emgguide,2)       ,'_','\_')];
+                leg         = [{'ave FR'} strrep(binnedData.cursorposlabels,'_','\_'),...
+                                          strrep(binnedData.emgguide       ,'_','\_')];
         end
 
-        %plot fr SD
-        ylow   = ave_fr(:,tgt) - fr_sd(:,tgt);
-        yhi    = ave_fr(:,tgt) + fr_sd(:,tgt);
-        xarea  = [xvec xvec(end:-1:1)];
-        yarea  = [yhi; ylow(end:-1:1)];
-        h      = area(xarea,yarea,'FaceColor',[1 0 0],'EdgeColor','none'); alpha(0.5);
-        fig_h  = [fig_h;h];
-        leg    = [leg;{'FR SD'}];
-        
-        % plot reward area
-        [yrange] = ylim;
+%         %plot fr SD
+%         ylow   = ave_fr(:,tgt) - fr_sd(:,tgt);
+%         yhi    = ave_fr(:,tgt) + fr_sd(:,tgt);
+%         hold on;
+%         h = shadedplot(xvec', ylow', yhi', 'b', 'b');
+%         xarea  = [xvec xvec(end:-1:1)];
+%         yarea  = [yhi; ylow(end:-1:1)];
+%         h      = area(xarea,yarea,'FaceColor',[1 0 0],'EdgeColor','none'); alpha(0.5);
+%         fig_h  = [fig_h;h];
+%         leg    = [leg {'FR SD'}];
+%         
+%         % plot reward area
+%         [yrange] = ylim;
+%         h_rew    = plot([ave_duration ave_duration],yrange,'k--');
+%         leg      = [leg{'Ave Reward'}];
+%         xlow     = ave_duration-std_duration;
+%         xhi      = ave_duration+std_duration;
+%         xarea    = [xlow xhi xhi xlow];
+%         yarea    = [yrange(1) yrange(1) yrange(2) yrange(2)];
+%         h        = area(xarea,yarea,'FaceColor',[.5 .5 .5],'EdgeColor','none'); alpha(0.5);
+%         fig_h    = [fig_h;h_rew;h];
+%         leg      = [leg {'Reward SD'}];
+
+        yrange   = ylim;
         h_rew    = plot([ave_duration ave_duration],yrange,'k--');
-        leg      = [leg;{'Ave Reward'}];
-        xlow     = ave_duration-std_duration;
-        xhi      = ave_duration+std_duration;
-        xarea    = [xlow xhi xhi xlow];
-        yarea    = [yrange(1) yrange(1) yrange(2) yrange(2)];
-        h        = area(xarea,yarea,'FaceColor',[.5 .5 .5],'EdgeColor','none'); alpha(0.5);
-        fig_h    = [fig_h;h_rew;h];
-        leg      = [leg;{'Reward SD'}];
-                
+        fig_h    = [fig_h;h_rew];
+        
         title(sprintf('target %d',tgt));
         xlabel('time relative to outer target onset (sec)');
         legend(fig_h,leg);
         grid on;
+        
   
     end
     if save_flag

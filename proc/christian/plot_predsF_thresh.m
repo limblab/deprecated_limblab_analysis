@@ -1,11 +1,9 @@
-function [vaf,R2,predsF,predsE] = plot_predsF(testdata,decoders,mode,varargin)
+function [vaf,R2,predsF,predsE] = plot_predsF_thresh(testdata,decoders,mode,varargin)
 % decoders = {N2E;E2F} or N2F
 
-plot_flag = true; emg_convolve = 1; emg_thresh = 0; title_str = '';
+threshold = 0.1; plot_flag = true; emg_convolve = 1;
 if nargin > 3 plot_flag    = varargin{1}; end
 if nargin > 4 emg_convolve = varargin{2}; end
-if nargin > 5 emg_thresh   = varargin{3}; end
-if nargin > 6 title_str    = varargin{4}; end
 
 n_chan = size(decoders{1}.neuronIDs,1);
 spikes = zeros(size(testdata.spikeratedata,1),n_chan);
@@ -16,7 +14,6 @@ spikes(:,filt_idx) = testdata.spikeratedata(:,test_idx);
 
 if ~strcmp(mode,'direct')
     predsE = sigmoid(predMIMOCE3(spikes,decoders{1}.H),'direct');
-    predsE(predsE<emg_thresh) = 0;
     % predsE = predMIMOCE3(spikes,N2E.H);
     % predsF = predMIMOCE3(sigmoid(predsE,'direct'),E2F.H);
     
@@ -61,9 +58,6 @@ for i = 1:num_figs
         legend(sprintf('pred (R^2=%.2f,vaf=%.2f)',R2(i),vaf(i)),'act');
         xlim(t_range);
         ylim([-15 15]);
-        if ~isempty(title_str)
-            title(title_str);
-        end
     end
 end
     
