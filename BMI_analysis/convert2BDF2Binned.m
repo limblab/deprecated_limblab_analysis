@@ -36,10 +36,6 @@ if use_default
     BDF2BinArgs = get_default_binning_params(BDF);
 end
 
-if BDF2BinArgs.ArtRemEnable
-    disp('Looking for Artifacts...');
-    BDF = artifact_removal(BDF,BDF2BinArgs.NumChan,BDF2BinArgs.TimeWind, 1);
-end
 fprintf('Binning data: %s...\n', BDF_filename);
 binnedData = convertBDF2binned(BDF,BDF2BinArgs);
 fprintf('Saving binned data file %s...\n',bin_filename);

@@ -18,13 +18,14 @@ decoders = cell(num_iter,1);
 % bmi parameters:
 % params.n_neurons = size(train_data.neuronIDs,1);
 % params.neuronIDs = train_data.neuronIDs;
-E2F = E2F_deRugy_PD(15);
+E2F = E2F_default(15);
 params.emg_decoder = E2F;
+params.adapt_params.emg_patterns = get_optim_emg_patterns(E2F);
 
 % adaptation parameters:
-aveFR = mean(mean(train_data.spikeratedata));
-ref_aveFR = 10.69; %from jango_20150107
-params.adapt_params.LR       = 5e-7*ref_aveFR/aveFR;
+% aveFR = mean(mean(train_data.spikeratedata));
+% ref_aveFR = 10.69; %from jango_20150107
+% params.adapt_params.LR       = 5e-7*ref_aveFR/aveFR;
 if ~isfield(params,'emg_thresh') params.emg_thresh=0; end
 % params.adapt_params.duration = inf;
 % params.adapt_params.delay    = 0.65;

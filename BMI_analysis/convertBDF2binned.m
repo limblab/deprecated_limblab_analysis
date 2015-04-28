@@ -41,6 +41,12 @@ if isempty(datastruct)
    return
 end
 
+
+if params.ArtRemEnable
+    disp('Looking for Artifacts...');
+    datastruct = artifact_removal(BDF,BDF2BinArgs.NumChan,BDF2BinArgs.TimeWind, 1);
+end
+
 %-------------------------------------------------------------------------
 %Create triangular kernel for convolution with spikes  %(SHT and SNN, added 3/8/12)
      

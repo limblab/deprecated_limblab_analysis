@@ -1,14 +1,15 @@
 
 filename = traindata.meta.filename;
+train_duration
+% conditions = {'optimal','normal','supervised','N2F_target'};
 
-conditions = {'optimal','normal','supervised','N2F_target'};
-
-% conditions = {'normal'};
+conditions = {'normal'};
 
 for cond = 1:length(conditions)
    
     params.adapt_params.duration = inf;
     params.adapt_params.delay    = 0.5;
+    params.adapt_params.LR       = 1e-7;
     [vaf,R2,preds,decoders] = train_adapt_duration(traindata,testdata,train_duration,conditions{cond},params);
     
     figure;
