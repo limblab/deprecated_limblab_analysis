@@ -1,8 +1,6 @@
 function binnedData = concatMultipleBinnedData(varargin)
 
-dataPath = 'Z:\';
-
-[FileName_tmp, PathName] = uigetfile( [dataPath '*.mat'], 'Choose First BinnedData File');
+[FileName_tmp, PathName] = uigetfile( {'*.mat'}, 'Choose First BinnedData File');
 dataPath = PathName;
 
 if ~FileName_tmp
