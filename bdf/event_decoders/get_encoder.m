@@ -40,19 +40,28 @@ if (length(ts_index)-2>=1)
     encoder(:,2) = strobed_events(ts_index(1:end-2),2) + strobed_events(ts_index(1:end-2)+1,2)*2^8 - 32765;
     encoder(:,3) = strobed_events(ts_index(1:end-2)+2,2) + strobed_events(ts_index(1:end-2)+3,2)*2^8 - 32765;
 end
-
+L1=length(encoder(:,1));
+L2=L1;
 temp_indices = (diff(encoder(:,2))<50 & diff(encoder(:,2))>-50 &...
     diff(encoder(:,3))<50 & diff(encoder(:,3))>-50);
-encoder_temp(:,1) = encoder(temp_indices,1);
-encoder_temp(:,2) = encoder(temp_indices,2);
-encoder_temp(:,3) = encoder(temp_indices,3);
-encoder = encoder_temp;
-
-clear encoder_temp;
-
-temp_indices = (diff(encoder(:,2))<50 & diff(encoder(:,2))>-50 &...
+L3=L2-length(find(~temp_indices));
+ctr=0;
+while L2~=L3
+    ctr=ctr+1;
+    if ctr>=10
+        error('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. Get_encoder could not remove all of these jumps')
+    end
+    encoder_temp(:,1) = encoder(temp_indices,1);
+    encoder_temp(:,2) = encoder(temp_indices,2);
+    encoder_temp(:,3) = encoder(temp_indices,3);
+    encoder = encoder_temp;
+    clear encoder_temp
+    L2=L3;
+    temp_indices = (diff(encoder(:,2))<50 & diff(encoder(:,2))>-50 &...
     diff(encoder(:,3))<50 & diff(encoder(:,3))>-50);
-encoder_temp(:,1) = encoder(temp_indices,1);
-encoder_temp(:,2) = encoder(temp_indices,2);
-encoder_temp(:,3) = encoder(temp_indices,3);
-encoder = encoder_temp;
+    L3=L2-length(find(~temp_indices));
+end
+if L1~=L3
+    warning('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. These jumps were removed in get_encoder')
+    disp(['Removed ',num2str(L1-L3),' bad points'])
+end
