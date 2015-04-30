@@ -102,7 +102,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
         analog_time_base = start_time:1/adfreq:stop_time;        
     end
     
-%% Position and Force for Robot Task
+%% Position for robot and wrist flexion tasks
     if (isfield(out_struct.raw,'enc') && ~isempty(out_struct.raw.enc) && opts.kin)
         if robot_task
             % Position
@@ -187,6 +187,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if (isfield(out_struct, 'units') && ~isempty(out_struct.units))
                 for i=1:length(out_struct.units)
                     out_struct.units(i).ts=out_struct.units(i).ts( out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base) );
+                    out_struct.units(i).waveforms=out_struct.units(i).waveforms(out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base),:);
                 end
             end
             if (isfield(out_struct, 'databursts') && ~isempty(out_struct.databursts))
@@ -202,7 +203,6 @@ function out_struct = calc_from_raw(raw_struct, opts)
             time_pos = out_struct.raw.enc(:,1);            
             x_pos = out_struct.raw.enc(:,2)/1000;
             y_pos = out_struct.raw.enc(:,3)/1000;
-            
 %             %LP filter at 100 Hz:
 %             [b, a] = butter(8, 100*2/enc_freq);
 %             
@@ -228,7 +228,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
     end
 
     
-%% Force Handle Analog Signals
+%% Robot_task:Force Handle and Analog Signals
     if robot_task && opts.force 
         force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) ); %#ok<EFIND>
         if (~isempty(force_channels))
@@ -353,17 +353,6 @@ function out_struct = calc_from_raw(raw_struct, opts)
             clear force_offsets; % cleanup a little
             out_struct.force(:,2) = Fy_invert.*out_struct.force(:,2); % fix left hand coords in old force
             
-            % Removed stupid loop for calculating rotation matrix of
-            % handle, substituted by next 4 lines
-%             for p = 1:size(out_struct.force, 1)                
-%                 r = [cos(-th_2_adj(p)) sin(th_2_adj(p)); -sin(th_2_adj(p)) cos(th_2_adj(p))];
-% %                 r = [cos(th_1_adj(p)) sin(-th_1_adj(p)); -sin(-th_1_adj(p)) cos(-th_1_adj(p))];
-%                 % Modified rotation matrix on Jan 15, 2013. Old matrix was
-%                 % incorrect, rotating handle force with respect to shoulder
-%                 % and not elbow as it should.
-%                 out_struct.force(p,:) = out_struct.force(p,:) * r;
-%             end
-            
             temp = out_struct.force;
             if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection            
                 out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
@@ -375,46 +364,40 @@ function out_struct = calc_from_raw(raw_struct, opts)
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
             out_struct.force(ia,2:3) = 0;
-
-            analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) &...
-                ~isempty(out_struct.raw.analog.channels)); %#ok<EFIND>
-            if ~isempty(analog_channels)
-                out_struct.analog.ts = analog_time_base;
-                for c = 1:length(analog_channels)
-                    channame = out_struct.raw.analog.channels{analog_channels(c)};
-                    fs = out_struct.raw.analog.adfreq(analog_channels(c));
-                    chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{analog_channels(c)})/fs;
-                    a_data = get_analog_signal(out_struct, channame);                
-                    a_data = interp1(chan_time_base, a_data, analog_time_base);
-                    out_struct.analog.channel{c} = channame;
-                    out_struct.analog.data{c} = a_data(:,2);
-                end
-            end
-            
+           
         else
             if (robot_task)
                 warning('BDF:noForceSignal','No force handle signal found because no channel named ''ForceHandle*''');
             end
-            analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) &...
-                ~isempty(out_struct.raw.analog.channels)); %#ok<EFIND>
-            if ~isempty(analog_channels)
-                out_struct.analog.ts = analog_time_base;
-                for c = 1:length(analog_channels)
-                    channame = out_struct.raw.analog.channels(c);
-                    fs = out_struct.raw.analog.adfreq(c);
-                    chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{c})/fs;
-                    a_data = double(get_analog_signal(out_struct, channame));
-                    a_data = a_data(:,2);
-                    if fs~=adfreq
-                        a_data = interp1(chan_time_base, a_data, analog_time_base);
-                    end
-                    out_struct.analog.channel{c} = channame;
-                    out_struct.analog.data{c} = a_data;
+        end
+        
+    end % matches with if robot_task & opts.force
+    if robot_task
+        %now handle any channels that aren't the robot_task force channels
+        analog_channels = find(~strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) &...
+            ~isempty(out_struct.raw.analog.channels)); %#ok<EFIND>
+        if ~isempty(analog_channels)
+            out_struct.analog.ts = analog_time_base;
+            for c = 1:length(analog_channels)
+                %assign channel names
+                channame = out_struct.raw.analog.channels(c);
+                out_struct.analog.channel(c) = channame;
+                %get subsampled analog data
+                fs = out_struct.raw.analog.adfreq(c);
+                chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{analog_channels(c)})/fs;
+                a_data = double(out_struct.raw.analog.data{analog_channels(c)});   
+                if fs==max(out_struct.raw.analog.adfreq)
+                   %we don't need to interpolate since this data was collected
+                   %with the same freq as analog_time_base:
+                   a_data=a_data(round(analog_time_base*fs));
+                else
+                    %we need to interpolate to the analog_time_base
+                    a_data = interp1(chan_time_base, a_data, analog_time_base);
                 end
+                out_struct.analog.data{c} = a_data;
             end
         end
-    end % opts.force
-
+    end
 %% EMG for robot task, making time base same as that for all analog signals
 % Chris: you should reconsider and remove the "robot_task" from below!
 if robot_task && isfield(out_struct,'emg')
