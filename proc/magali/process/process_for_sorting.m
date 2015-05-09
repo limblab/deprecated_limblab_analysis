@@ -1,8 +1,8 @@
 %% strip digital data from NEV
-basepath='Z:\Han_13B1\Processed\experiment_20150415_RW\before_stim';
-basefilename='Han_20150415_RW_Magali_area2_A2_area3_b2_001.nev';
-nodigitalfilename='Han_20150415_RW_Magali_area2_A2_area3_b2_001-nodigital.nev';
-spikelessfilename='Han_20150415_RW_Magali_area2_A2_area3_b2_001-nospikes.mat';
+basepath='Z:\Han_13B1\Processed\experiment_20150417_RW\before_stim';
+basefilename='Han_20150417_RW_Magali_area2_A2_area3_b2_001';
+nodigitalfilename='Han_20150417_RW_Magali_area2_A2_area3_b2_001-nodigital.nev';
+spikelessfilename='Han_20150417_RW_Magali_area2_A2_area3_b2_001-nospikes.mat';
 
 
 %open data
