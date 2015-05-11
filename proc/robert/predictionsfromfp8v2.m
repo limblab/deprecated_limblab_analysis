@@ -396,7 +396,7 @@ else %if older versions than 2008 (7.7.0), corrcoef outputs a scalar; in newer v
                 rt=rt1;
             end
 
-            r(f,c)=abs(rt);    %take absolute value of r
+            r(f,c)=abs(rt(1,2));    %take absolute value of r
         end
     end
 end
@@ -452,7 +452,7 @@ end
 
 % reorder x so that it's cast back into the arrangemnt in which it will
 % ultimately be evaluated online: that of cells and bands.
-[~,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
+[junk,sortInd]=sortrows([rowBoat(bestc), rowBoat(bestf)]);
 % the default operation of sortrows is to sort first on column 1, then do a
 % secondary sort on column 2, which is exactly what we want, so we're done.
 

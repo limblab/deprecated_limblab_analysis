@@ -157,7 +157,7 @@ for fileInd=1:length(infoStruct)
             signal=BCI2000signal;
         end
     elseif regexp(infoStruct(fileInd).path,'\.dat')
-        [signal,states,parameters,~]=load_bcidat(infoStruct(fileInd).path); %#ok<*ASGLU>
+        [signal,states,parameters,junk]=load_bcidat(infoStruct(fileInd).path); %#ok<*ASGLU>
         if ~isa(signal,'double'), signal=double(signal); end
         BCI2000signal=signal;
     end
@@ -255,7 +255,7 @@ for fileInd=1:length(infoStruct)
         %         R=zeros(numfp,numfp,6,length(infoStruct));
         % do CAR
         fp=fp-repmat(mean(fp,1),numfp,1);
-        [~,PB] = makefmatbp(fp,analog_times,numfp,0.05,samprate,256);
+        [junk,PB] = makefmatbp(fp,analog_times,numfp,0.05,samprate,256);
         
         R(:,:,1,fileInd)= corrcoef(squeeze(PB(1,:,:))'); %#ok<*AGROW>
         R(:,:,2,fileInd)= corrcoef(squeeze(PB(2,:,:))');
@@ -276,7 +276,7 @@ for fileInd=1:length(infoStruct)
             % [vmean,vaf,vaftr,r2mean,r2sd,r2,y_pred,y_test,varargout]= ...
             %   predonlyxy_nofeatselect(x,y,PolynomialOrder,Use_Thresh,lambda,numlags,numsides,binsamprate,folds,smoothflag)
             % P
-            [~,vaf(:,elecInd),~,~,~,~,y_pred,~,ytnew]=predonlyxy_nofeatselect(fp,sig(:,2),3,0,1,10,1,1,10,0); %#ok<NASGU>
+            [junk,vaf(:,elecInd),junk,junk,junk,junk,y_pred,junk,ytnew]=predonlyxy_nofeatselect(fp,sig(:,2),3,0,1,10,1,1,10,0); %#ok<NASGU>
         end
         continue
     end
@@ -376,8 +376,8 @@ for fileInd=1:length(infoStruct)
                                             numfp=size(fp,1);
                                             warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
                                             warning('off','MATLAB:nearlySingularMatrix')
-                                            [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~,~,~,ytnew,~,~,P, ...
-                                                ~,~,vaf_vald,ytnew_vald,y_pred_vald,P_vald,r2_vald,covMI] ...
+                                            [vaf,junk,junk,junk,y_pred,junk,junk,r2,junk,bestf,bestc,H,junk,junk,junk,junk,ytnew,junk,junk,P, ...
+                                                junk,junk,vaf_vald,ytnew_vald,y_pred_vald,P_vald,r2_vald,covMI] ...
                                                 = predictionsfromfp8v2(sig,'pos', ...
                                                 numfp,binsize,folds,numlags,numsides,samprate, ...
                                                 fp,fptimes,analog_times,'',wsz,nfeat,PolynomialOrder, ...
@@ -386,7 +386,7 @@ for fileInd=1:length(infoStruct)
                                             % close                                                        % featShift
                                             warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
                                             warning('on','MATLAB:nearlySingularMatrix')
-                                            [~,name,ext]=fileparts(infoStruct(fileInd).path);
+                                            [junk,name,ext]=fileparts(infoStruct(fileInd).path);
                                             VAFstruct(fileInd,m).name=[name,ext];
                                             VAFstruct(fileInd,m).PolynomialOrder=PolynomialOrder;
                                             VAFstruct(fileInd,m).folds=folds;
@@ -451,9 +451,9 @@ for fileInd=1:length(infoStruct)
                                             % fprintf(1,'zscoring fp signals\n')
                                             % OR
                                             fprintf(1,'\n')
-                                            if strcmpi(signalToDecode,'CG') && size(cgz,1)<22
+                                            if strcmpi(signalToDecode,'CG') && size(CG.data,2)<22
                                                 fprintf(1,'elimindating %d bad cg signals\n', ...
-                                                    22-size(cgz,1))
+                                                    22-size(CG.data,2))
                                             else
                                                 fprintf(1,'\n')
                                             end
@@ -477,8 +477,8 @@ for fileInd=1:length(infoStruct)
                                                     defaultElectrodeTypes)})
                                                 fpKeep=fp(fpSingleInd,:);
                                                 numfp=1;
-                                                [vaf,~,~,~,y_pred,~,~,r2,~,bestf,bestc,H,~,~, ...
-                                                    ~,~,ytnew,~,~,P,~,~,vaf_vald,ytnew_vald, ...
+                                                [vaf,junk,junk,junk,y_pred,junk,junk,r2,junk,bestf,bestc,H,junk,junk, ...
+                                                    junk,junk,ytnew,junk,junk,P,junk,junk,vaf_vald,ytnew_vald, ...
                                                     y_pred_vald,P_vald,r2_vald,covMI] ...
                                                     = predictionsfromfp9(sig,'pos', ...
                                                     numfp,binsize,folds,numlags,numsides,samprate, ...
@@ -489,7 +489,7 @@ for fileInd=1:length(infoStruct)
                                                 warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
                                                 warning('on','MATLAB:nearlySingularMatrix')
                                                 % close
-                                                [~,name,ext]=fileparts(infoStruct(fileInd).path);
+                                                [junk,name,ext]=fileparts(infoStruct(fileInd).path);
                                                 VAFstruct(fileInd,m).name=[name,ext];
                                                 VAFstruct(fileInd,m).PolynomialOrder=PolynomialOrder;
                                                 VAFstruct(fileInd,m).folds=folds;
@@ -554,9 +554,9 @@ for fileInd=1:length(infoStruct)
                                                 % fprintf(1,'zscoring fp signals\n')
                                                 % OR
                                                 fprintf(1,'\n')
-                                                if strcmpi(signalToDecode,'CG') && size(cgz,1)<22
+                                                if strcmpi(signalToDecode,'CG') && size(CG.data,2)<22
                                                     fprintf(1,'elimindating %d bad cg signals\n', ...
-                                                        22-size(cgz,1))
+                                                        22-size(CG.data,2))
                                                 else
                                                     fprintf(1,'\n')
                                                 end

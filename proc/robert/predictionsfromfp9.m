@@ -151,7 +151,7 @@ elseif strcmpi(signal,'emg')
 else
     y=sig;
 end
-samp_fact=1000/samprate;
+% samp_fact=1000/samprate;
 % Adjust the size of fp to make sure same number of samples as analog
 % signals
 
@@ -339,7 +339,8 @@ if smoothfeats > 0
 end
 fold_length = floor(length(y) ./ folds);
 
-y=zscore(y);
+% y=zscore(y);
+assignin('base','y',y)
 
 for i = 1:(folds-1)      
     fprintf(1,'fold ')

@@ -99,7 +99,7 @@ clear r
 x_test=cell(folds,1);
 y_test=x_test;
 y_pred=y_test;
-
+P=[];
 fprintf(1,'fold ')
 for i = 1:folds
     fold_start = (i-1) * fold_length + 1;
@@ -118,7 +118,6 @@ for i = 1:folds
     
     [y_pred{i},xtnew{i},ytnew{i}] = predMIMO3(x_test{i},H{i},numsides,binsamprate,y_test{i});
     
-    P=[];
     T=[];
     patch = [];
     
@@ -141,7 +140,7 @@ for i = 1:folds
                 Act_patches = mean(y_test{i}(~IncludedDataPoints,z)) * ones(1,length(Pred_patches));
                 
                 %Find Polynomial to Thresholded Data
-                [P(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
+                [P{i}(z,:)] = WienerNonlinearity([PredictedData_Thresh; Pred_patches'], [ActualData_Thresh; Act_patches'], PolynomialOrder,'plot');
                 
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,11 +153,11 @@ for i = 1:folds
                 %                 y_pred{i}(~IncludedDataPoints,z)= patch(z);
                 %
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            elseif ~exist('P','var') || size(P,1)<z
+            else%if ~exist('P','var') || size(P,1)<z
                 %Find and apply polynomial if it hasn't been input already
-                [P(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+                [P{i}(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
             end
-            y_pred{i}(:,z) = polyval(P(z,:),y_pred{i}(:,z));
+            y_pred{i}(:,z) = polyval(P{i}(z,:),y_pred{i}(:,z));
         end
     end
     

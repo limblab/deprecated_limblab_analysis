@@ -80,6 +80,8 @@ function VAFstruct=batchAnalyzeECoGv7(infoStruct,signalToDecode,FPsToUse,paramSt
 %   feature selection for each fold.  Also, a CAR is used by default.
 %   update (01-15-2014): v7 now also permits the use of a classifier, for
 %   analyzing combined kinematic-kinetic data.
+% update 04-13-2015: CAR now uses median (not mean) to calculate the
+% average reference.
 %
 % KEY to input parameter signalToDecode:
 %
@@ -187,7 +189,7 @@ for fileInd=1:length(infoStruct)
     end
     % CAR.  fp has been cut down by this point, according to
     % infoStruct.montage
-    fp=bsxfun(@minus,fp,mean(fp,1));
+    fp=bsxfun(@minus,fp,median(fp,1));
     
     % baseline subtract
     %  fp=bsxfun(@minus,fp,mean(fp,2));
@@ -482,14 +484,14 @@ for fileInd=1:length(infoStruct)
                                             [vaf,vaf_vald]                                              %#ok<NOPRT>
                                             
                                             formatstr='%s vaf mean across folds:    %.4f';
-                                            if size(sig,2)>2
-                                                for n=2:size(sig,2)
+                                            if size(vaf,2)>1
+                                                for n=2:size(vaf,2)
                                                     formatstr=[formatstr, '    %.4f'];
                                                 end
                                                 clear n
                                             end
                                             formatstr=[formatstr, '\n'];
-                                            fprintf(1,formatstr,signalToDecode,mean(nonzeros(vaf),1))
+                                            fprintf(1,formatstr,signalToDecode,mean(vaf(1:(folds-1),:),1))
                                             fprintf(1,'\noverall mean vaf %.4f\n',mean(vaf(:)))
                                         else
                                             warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
@@ -575,7 +577,7 @@ for fileInd=1:length(infoStruct)
                                                 % fprintf(1,'zscoring fp signals\n')
                                                 % OR
                                                 fprintf(1,'\n')
-                                                if strcmpi(signalToDecode,'CG') && size(cgz,1)<22
+                                                if strcmpi(signalToDecode,'CG') && size(CG.data,2)<22
                                                     fprintf(1,'elimindating %d bad cg signals\n', ...
                                                         22-size(cgz,1))
                                                 else
@@ -585,14 +587,14 @@ for fileInd=1:length(infoStruct)
                                                 vaf                                                     %#ok<NOPRT>
                                                 
                                                 formatstr='%s vaf mean across folds:    %.4f';
-                                                if size(sig,2)>2
-                                                    for n=2:size(sig,2)
+                                                if size(vaf,2) > 1
+                                                    for n=2:size(vaf,2)
                                                         formatstr=[formatstr, '    %.4f'];
                                                     end
                                                     clear n
                                                 end
                                                 formatstr=[formatstr, '\n'];
-                                                fprintf(1,formatstr,signalToDecode,mean(vaf,1))
+                                                fprintf(1,formatstr,signalToDecode,mean(vaf(1:(folds-1),:),1))
                                                 fprintf(1,'\noverall mean vaf %.4f\n',mean(vaf(:)))
                                                 fprintf(1,'single channel: %d \n',fpSingleInd)
                                                 disp('done')

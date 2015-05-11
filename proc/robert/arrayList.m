@@ -14,16 +14,4 @@ txtOut=[txtOut, ':', num2str(numIn(end)), ']'];
 return
 
 
-% n=2; k=1;
-% while n<numel(numIn)
-%     if numIn(n)==breaks(k)
-%         txtOut=[txtOut, ' '];
-%         n=breaks(k)+1;
-%         k=k+1;
-%     else
-%         continue
-%     end
-% end
-
-
 

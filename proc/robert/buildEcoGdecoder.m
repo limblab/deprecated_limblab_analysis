@@ -13,10 +13,11 @@ if ispc
 end
 %% 2. to start over, without losing important info
 % clear everything but the stuff in the next cell? FileName/PathName?
-clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* fp* freqs 
+clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* freqs 
 clear h junk lambda num* parameters save* sig signal states total_samples
 clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
-clear N_KsectionInterp R badChanF bandsToUse existingFigTags files rangeThresh
+clear N_KsectionInterp R badChanF bandsToUse existingFigTags files 
+clear YaxLabelStr maxStrLen rangeThresh badChan2F
 %% define constants.
 
 SIGNALTOUSE='force';
@@ -62,18 +63,27 @@ fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
 clear N
 if ~isa(signal,'double'), signal=double(signal); end
+%%  4 (optional).  account for possible online where there is a huge 
+%   gain (on the order of 1E6) applied to everything in the signal array
+signal=signal.*1E6;
 %%  5a.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
 signalRange=max(signal(:,FPIND),[],1)-min(signal(:,FPIND),[],1);
-badChanF=figureCenter; % set(badChanF,'Position',[121 468 560 420])
-plot(signalRange,'.','MarkerSize',36)
 signalRangeLowLogical=signalRange<1;
-% for median range calculation, include everything except the zeros.
-rangeThresh=median(signalRange(~signalRangeLowLogical))+ ...
-    2*iqr(signalRange(~signalRangeLowLogical));    % for TMSi
-%      0.5*std(signalRange(~signalRangeLowLogical));   % for Blackrock (with 32 crap chans)
-
+if exist('badChanF','var') && ishandle(badChanF)
+    if ~isequal(get(badChanF,'WindowStyle'),'docked')
+        figureCenter(badChanF)
+    end
+    rangeThresh=median(get(findobj(badChanF,'LineStyle','--'),'ydata'));
+else
+    badChanF=figureCenter; % set(badChanF,'Position',[121 468 560 420])
+    plot(signalRange,'.','MarkerSize',36)
+    % for median range calculation, include everything except the zeros.
+    rangeThresh=median(signalRange(~signalRangeLowLogical))+ ...
+        2*iqr(signalRange(~signalRangeLowLogical));    % for TMSi
+    %   0.5*std(signalRange(~signalRangeLowLogical));   % for Blackrock (with 32 crap chans)
+end
 signalRangeHighLogical=signalRange > rangeThresh;
 signalRangeBadLogical=signalRangeLowLogical | signalRangeHighLogical;
 hold on
@@ -85,8 +95,8 @@ try                                                                         %#ok
 end
 set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
 % also, plot a cut-down version of the raw fp signals.
-% first, scale the signals so that they will appear 
-% separated by a nice amount.
+%  first, scale the signals so that they will appear 
+%  separated by a nice amount.
 fptimes=(1:size(signal,1))/samprate;
 fpCut=(signal(1:100:end,FPIND)')./mean(signalRange); 
 fpCutTimes=fptimes(1:100:end);
@@ -117,12 +127,17 @@ figure(badChanF)
 if ~isa(signal,'double'), signal=double(signal); end
 FPSTOUSE=FPIND;
 FPSTOUSE(signalRangeBadLogical)=[];
-fp=(signal(:,FPIND)').* ...
-    repmat(cellfun(@str2num,parameters.SourceChGain.Value(FPIND)),1,size(signal,1));
+fp=signal(:,FPIND)';
+if max(signal(:)) < 1E6
+    fp=bsxfun(@times,fp, ...
+        cellfun(@str2num,parameters.SourceChGain.Value(FPIND)));
+end
+% to get something suitable for pasting into ECoGProjectAllFileInfo.m
+arrayList(FPSTOUSE)
 %% CAR.  Include only good signals into the CAR, but apply to all signals
 %  (except channels zeroed out by the REFA)
 fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
-    mean(fp(FPSTOUSE,:),1)); % FPSTOUSE is where we're including "only good signals into the CAR".
+    median(fp(FPSTOUSE,:),1)); % FPSTOUSE is where we're including "only good signals into the CAR".
 signalRange2=max(fp(~signalRangeLowLogical,:),[],2)- ...
     min(fp(~signalRangeLowLogical,:),[],2);
 fpCut=(fp(FPIND,1:100:end))./mean(signalRange2);
@@ -144,26 +159,27 @@ for n=1:size(fpCut,1)
     YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
         n,parameters.ChannelNames.Value{n});
 end, clear n
-set(fpCutAx,'YTickLabel',YaxLabelStr)
-
-% test the CAR, by re-plotting signalRange.  Compare to the original.
-signalRange2=max(fp,[],2)-min(fp,[],2);
-badChan2F=figureCenter; % set(badChanF,'Position',[121 468 560 420])
-plot(signalRange2,'.','MarkerSize',36)
-signalRangeLowLogical2=signalRange2<1;
-signalRangeHighLogical2=signalRange2 > rangeThresh;
-signalRangeBadLogical2=signalRangeLowLogical2 | signalRangeHighLogical2;
-hold on
-plot(find(signalRangeBadLogical2),signalRange2(signalRangeBadLogical2),'r.','MarkerSize',36)
-plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
-try                                                                         %#ok<TRYNC>
-    title(sprintf('%s\nRange of CAR''d fp signals.\nBad channel estimate=red. %d good channels.', ...
-        FileName,nnz(~signalRangeBadLogical2)),'Interpreter','none','FontSize',16)
+if exist('fpCutAx','var')==1 && ishandle(fpCutAx)
+    set(fpCutAx,'YTickLabel',YaxLabelStr)
 end
-set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
-if exist('badChanF','var') && ishandle(badChanF)
-    set(gca,'Ylim',get(findobj(badChanF,'Type','Axes'),'Ylim'))
-end
+% % test the CAR, by re-plotting signalRange.  Compare to the original.
+% signalRange2=max(fp,[],2)-min(fp,[],2);
+% badChan2F=figureCenter; % set(badChanF,'Position',[121 468 560 420])
+% plot(signalRange2,'.','MarkerSize',36)
+% signalRangeLowLogical2=signalRange2<1;
+% signalRangeHighLogical2=signalRange2 > rangeThresh;
+% signalRangeBadLogical2=signalRangeLowLogical2 | signalRangeHighLogical2;
+% hold on
+% plot(find(signalRangeBadLogical2),signalRange2(signalRangeBadLogical2),'r.','MarkerSize',36)
+% plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
+% try                                                                         %#ok<TRYNC>
+%     title(sprintf('%s\nRange of CAR''d fp signals.\nBad channel estimate=red. %d good channels.', ...
+%         FileName,nnz(~signalRangeBadLogical2)),'Interpreter','none','FontSize',16)
+% end
+% set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
+% if exist('badChanF','var') && ishandle(badChanF)
+%     set(gca,'Ylim',get(findobj(badChanF,'Type','Axes'),'Ylim'))
+% end
 %% CG info & PCA, or force info.
 clear sig CG
 try
@@ -205,6 +221,16 @@ plot(sig(:,1),smForce,'g','LineWidth',1.5)
 % to use EEGLAB.
 %%  5b(i).  optional add-on to 5b, to actually use the smoothed force
 sig=[fptimes', smForce];
+%%  5b(iii).  optional: look at the CG signal.
+figure, set(gcf,'Position',[419 -101 1042 673])
+plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,4),'.')
+axis vis3d
+xlabel('PC1'), ylabel('PC2'), zlabel('PC3')
+%%  5b(iv).   or, in case there are 4 PCs
+figure, set(gcf,'Position',[419 -101 1042 673])
+plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,5),'.')
+axis vis3d
+xlabel('PC1'), ylabel('PC2'), zlabel('PC4')
 %%  6.  new school: pick channels to include/exclude based on cap map
 % FPSTOUSE=1:64; % just in case it comes in handy
 elNames=parameters.ChannelNames.Value(FPIND); % change FPIND to FPSTOUSE, to keep selections.
@@ -256,7 +282,7 @@ end, clear n
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
 
 %%  9.  assign parameters.
-Use_Thresh=0; lambda=6; 
+Use_Thresh=0; lambda=4; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
 nfeat=floor(0.9*size(x,2));
@@ -339,6 +365,13 @@ end
 [parameters.ChannelNames.Value(FPSTOUSE(bestcRanked)), num2cell(bestfRanked')];  %#ok<VUNUS>
 openvar('ans')
 % center of mass for bestfRanked
+% display that shows subplots for each band, with feature R values 
+% displayed in a 2D color scale plot.  selected features can be highlighted
+% in some way.  Or, only selected features are displayed?  Could have 2
+% plots, or else a button that toggles back and forth between showing all
+% features and just selected features.  Allows us to look at which bands
+% are being more strongly represented, simultaneous with looking at the
+% location on the array.
 
 %%  12.  build a decoder.
 % at this point, bestc & bestf are sorted by channel, while featind is
@@ -432,104 +465,22 @@ if ~isempty(CG)
     fclose(fid); clear fid
 end
 
-
-%%
-% get parameter file to overwrite
-% write out new parameter file; tag filename with today's date
-if ~ischar(ParamPathName(1)) && ParamPathName==0
-    disp('cancelled.')
-    return
-end
-fid=fopen(fullfile(ParamPathName,ParamFileName));
-strData=fscanf(fid,'%c');
-fclose(fid); clear fid
-nCharPerLine = diff([0 find(strData == char(10)) numel(strData)]);
-cellData = strtrim(mat2cell(strData,1,nCharPerLine));
-clear strData nCharPerLine
-
-% frequency bands to use
-sprintfStr_fbands='Filtering:LFPDecodingFilter matrix FreqBands';
-fbandsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_fbands))==0);
-sprintfStr_fbands=[sprintfStr_fbands, '= %d { Low High }'];
-f_bands=[0 4; 7 20; 70 115; 130 200; 200 300];
-% only match 2-6 in bandsToUse because LMP does not need to be mentioned in
-% paramBands at all; it will be silently added if it shows up in bestf.
-bandsUsed=regexp(bandsToUse,'[2-6]+','match');
-paramBands=[];
-for n=1:length(bandsUsed)
-    paramBands=[paramBands, f_bands(str2double(bandsUsed{n}(1))-1,1)];          %#ok<AGROW>
-    paramBands=[paramBands, f_bands(str2double(bandsUsed{n}(end))-1,2)];        %#ok<AGROW>
-    sprintfStr_fbands=[sprintfStr_fbands, ' %d %d'];                            %#ok<AGROW>
-end, clear n
-sprintfStr_fbands=[sprintfStr_fbands, ' // Frequency bands to calculate for each channel'];
-cellData{fbandsCell}=sprintf(sprintfStr_fbands,length(bandsUsed),paramBands);
-
-% bestc, bestf
-sprintfStr_bestcf='Filtering:LFPDecodingFilter matrix Classifier';
-bestcfCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_bestcf))==0);
-sprintfStr_bestcf=[sprintfStr_bestcf, '= %d { bestc bestf }'];
-for n=1:size(bestcf,1)
-    sprintfStr_bestcf=[sprintfStr_bestcf, ' %d %d'];                           %#ok<AGROW>
-end, clear n
-sprintfStr_bestcf=[sprintfStr_bestcf, ' // bestc, bestf matrix'];
-cellData{bestcfCell}=sprintf(sprintfStr_bestcf,size(bestcf,1),reshape(bestcf',1,[]));
-
-% H
-sprintfStr_H='Filtering:LFPDecodingFilter matrix HMatrix';
-cellDataHcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_H))==0);
-sprintfStr_H=[sprintfStr_H, '= %d { Xwt Ywt }'];
+%% auto-save a decoder
+bestc=FPSTOUSE(bestc);
+% save bestc,bestf,H
+bestcf=[rowBoat(bestc), rowBoat(bestf)];
 if size(H,2)<2
     H=[zeros(size(H)), H];
 end
-for n=1:size(H,1)
-    for k=1:size(H,2)
-        sprintfStr_H=[sprintfStr_H, ' %.4f'];                                   %#ok<AGROW>
-    end, clear k
-end, clear n
-sprintfStr_H=[sprintfStr_H, ' // H Matrix'];
-cellData{cellDataHcell}=sprintf(sprintfStr_H,size(H,1),reshape(H',1,[]));
-
-% P
-sprintfStr_P='Filtering:LFPDecodingFilter matrix Pmatrix';
-cellDataPcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_P))==0);
-sprintfStr_P=[sprintfStr_P, '= 2 %d', repmat(' 0.0',1,PolynomialOrder), ...
-    repmat(' %.4f',1,PolynomialOrder)];
-cellData{cellDataPcell}=sprintf(sprintfStr_P,PolynomialOrder,P);
-
-% numlags
-sprintfStr_numlags='Filtering:LFPDecodingFilter int nBins';
-cellDataNumlagsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_numlags))==0);
-sprintfStr_numlags=[sprintfStr_numlags, '=%d 1 %% %% // ', ...
-    'The number of bins to save in the data buffer.'];
-cellData{cellDataNumlagsCell}=sprintf(sprintfStr_numlags,numlags);
-
-% wsz
-sprintfStr_wsz='Filtering:LFPDecodingFilter int FFTWinSize';
-cellDataWSZcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_wsz))==0);
-sprintfStr_wsz=[sprintfStr_wsz, '=%d 1 0 %% // ', ...
-    'The window size during the FFT calculation.'];
-cellData{cellDataWSZcell}=sprintf(sprintfStr_wsz,wsz);
-
-% smoothfeats
-sprintfStr_smoothfeats='Filtering:LFPDecodingFilter int MovingAverageWindow';
-cellDataSmoothfeatsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_smoothfeats))==0);
-sprintfStr_smoothfeats=[sprintfStr_smoothfeats, '=%d // ', ...
-    'Used for feature smoothing. 0=no smoothing.'];
-cellData{cellDataSmoothfeatsCell}=sprintf(sprintfStr_smoothfeats,smoothfeats);
-
-% now, write out the new parameter file.  tag it with the time of creation
-% so that we don't overwrite anything important.
-
-fid=fopen(fullfile(ParamPathName,[ParamFileName, ...
-    regexprep(datestr(now),{':',' '},{'_','_'})]),'w');
-fprintf(fid,'%c',cellData{:});
-fclose(fid); clear fid
-
-
-% save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
-%     [regexp(FileName,'.*(?=\.dat)','match','once'),'_H.txt']),'H','-ascii','-tabs','-double')
-% save(fullfile('C:\Program Files (x86)\BCI 2000 v3\parms\Human_Experiment_Params_v3\decoders', ...
-%     [regexp(FileName,'.*(?=\.dat)','match','once'),'_bestcf.txt']),'bestcf','-ascii','-tabs','-double')
+% if size(H,2)>2
+%     % until we get smarter...
+%     disp('only using 1st two columns of H...')
+%     H(:,3:end)=[];
+% end
+if size(P,1)<2
+    P=[zeros(size(P)); P];
+end
+writeBCI2000paramfile('E:\ECoG_Data\BF\',bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats)
 
 %% 14.  plot results of same-file decoder.
 % close

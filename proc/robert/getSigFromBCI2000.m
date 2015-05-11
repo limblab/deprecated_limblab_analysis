@@ -68,6 +68,9 @@ switch SIGNALTOUSE
         % Now, delete outrageously large deviations
         % within the signals, often occurring at the beginning of files.
         CG.mean=mean(CG.data); CG.std=std(CG.data);
+        % if any elements of CG.std are 0, change them to 1 for purposes of
+        % division
+        CG.std(CG.std==0)=1;
         cgz=CG.data-repmat(CG.mean,size(CG.data,1),1);
         cgz=cgz./repmat(CG.std,size(CG.data,1),1);
         % transpose for backwards compatibility with legacy code.
