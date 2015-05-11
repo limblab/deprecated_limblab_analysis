@@ -31,16 +31,20 @@ switch SIGNALTOUSE
         end
         sig=[rowBoat(1:size(signal,1))/samprate, ...
             signal(:,force_ind).*str2double(parameters.SourceChGain.Value{force_ind})];
-        % scale further by Normalizer values
-%         sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
-%             str2double(parameters.NormalizerGains.Value{2});
-        % shift 1 more time, for the application (cursor position is
+        % At one point, we were scaling further by Normalizer values...
+        % sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
+        %     str2double(parameters.NormalizerGains.Value{2});
+        % ...then shifting 1 more time, for the application (cursor position is
         % defined by its displacement from 50, and is offset by
-        % YOffsetValue
-        % sig(:,2)=sig(:,2)+50;  % this is hard-coded!
-        if isfield(parameters,'YCenterOffset')
-            sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
-        end
+        % if isfield(parameters,'YCenterOffset')
+        %     sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
+        % end
+        % 
+        % ultimately, I abandoned this additional scaling becaue I don't
+        % want to re-create the cursor position, I want to re-create the
+        % force applied.  Let the normalizer & offset, etc be the same in
+        % the brain-control params as in the hand-control params, then can
+        % adjust as necessary.
         if isequal(SIGNALTOUSE,'dfdt')
 %             sig=kindiff([sig, zeros(size(sig,1),1)],samprate);
 %             sig(:,end)=[];
@@ -100,6 +104,7 @@ switch SIGNALTOUSE
         cgz=cgnew;
         clear cgnew
         
+        assignin('base','CG',CG)
         [CG.coeff,CGscores,variances,junk] = princomp(cgz'); % CG.data
         
         % to determine how many components to use, find the # that account for

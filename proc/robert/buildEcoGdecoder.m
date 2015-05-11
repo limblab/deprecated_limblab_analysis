@@ -19,13 +19,13 @@ clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
 clear N_KsectionInterp R badChanF bandsToUse existingFigTags files rangeThresh
 %% define constants.
 
-% SIGNALTOUSE='force';
+SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
-SIGNALTOUSE='CG';
+% SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
+FPIND=66:67;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
                 % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
 % FPSTOUSE=[2 3 6 7 8 11 12 16 17 18 19 22 23 26 27 28 29 31 ...
@@ -38,8 +38,8 @@ FPIND=1:64;     % this controls which columns of the signal array are valid fp c
 % same file, skip this cell and move to the next.
 clear FileName files
 if ~exist('PathName','var')
-    if exist('E:\hEEG_Data\','file')==7
-        PathName='E:\hEEG_Data\';  
+    if exist('E:\ECoG_Data\','file')==7
+        PathName='E:\ECoG_Data\';  
     else
         PathName='C:\Users\NECALHDEMG\Documents\BCI2000\data\';
     end
@@ -111,7 +111,9 @@ figure(badChanF)
 %% Use signalRangeBadLogical to eliminate channels from FPSTOUSE.
 % If you don't agree with the auto-estimation, then change 
 % signalRangeBadLogical to be something that you think is better.
-% this code also resets the flag FPSTOUSE_been_reset
+% this code implicitly assumes that FPIND starts at 1.  When we're doing
+% clinical + research recordings, it might be necessary to revisit this
+% assumption.
 if ~isa(signal,'double'), signal=double(signal); end
 FPSTOUSE=FPIND;
 FPSTOUSE(signalRangeBadLogical)=[];
@@ -164,8 +166,10 @@ if exist('badChanF','var') && ishandle(badChanF)
 end
 %% CG info & PCA, or force info.
 clear sig CG
-[sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
+try
+    [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
+end
 
 if ~isempty(CG)
     CGrange=max(CG.data,[],1)-min(CG.data,[],1);
@@ -349,7 +353,7 @@ fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
 close
 %%  13.  saving.
-% bestc must be re-cast so that it properly indexes the full 32-channel
+% bestc must be re-cast so that it properly indexes the full numel(FPIND)
 % possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
 % adjusted once loaded into BCI2000.
 bestc=FPSTOUSE(bestc);
