@@ -11,14 +11,14 @@ if ispc
             addpath('C:\Users\NECALHDEMG\Documents\BCI2000\tools\mex')
     end
 end
-%% 2. to start over, without losing important info
+%% 2. to start over, without losing path info
 % clear everything but the stuff in the next cell? FileName/PathName?
 clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* freqs 
 clear h junk lambda num* parameters save* sig signal states total_samples
 clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
 clear N_KsectionInterp R badChanF bandsToUse existingFigTags files 
 clear YaxLabelStr maxStrLen rangeThresh badChan2F
-%% define constants.
+%% 3. define constants.
 
 SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
@@ -28,13 +28,8 @@ SIGNALTOUSE='force';
 %  decoder, which is always a game-time decision.
 FPIND=66:67;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
-                % [2:6 8 9 11:15] for ME                                                   %#ok<*NBRAK>
-% FPSTOUSE=[2 3 6 7 8 11 12 16 17 18 19 22 23 26 27 28 29 31 ...
-%     32 35 36 39 40 42 43 46 47 49 50 53 54 57 58 60 62 64];
-% FPSTOUSE=[4 5 6 9 10 13 14 15 16 20 21 24 25 26 29 33 34 37 38 41 42 44 45 46 47 51 52 55 56 59 61 63];
-                % build the decoder.  We can change our minds about this
-                % one in a later cell, if we so desire.
-%%  3. find file(s)
+                % [2:6 8 9 11:15] for ME
+%%  4. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
 % same file, skip this cell and move to the next.
 clear FileName files
@@ -42,12 +37,14 @@ if ~exist('PathName','var')
     if exist('E:\ECoG_Data\','file')==7
         PathName='E:\ECoG_Data\';  
     else
-        PathName='C:\Users\NECALHDEMG\Documents\BCI2000\data\';
+        PathName='/Users/rdflint/work/';
     end
 end
 [FileName,PathName,FilterIndex] = uigetfile([PathName,'*.dat'],'MultiSelect','on');
 if iscell(FileName)
-    for n=1:length(FileName), files(n).name=fullfile(PathName,FileName{n}); end
+    for n=1:length(FileName)
+        files(n).name=fullfile(PathName,FileName{n});                       %#ok<*SAGROW>
+    end
 else
     files.name=fullfile(PathName,FileName);
 end
@@ -63,10 +60,8 @@ fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
 clear N
 if ~isa(signal,'double'), signal=double(signal); end
-%%  4 (optional).  account for possible online where there is a huge 
-%   gain (on the order of 1E6) applied to everything in the signal array
-signal=signal.*1E6;
-%%  5a.  get fp array from signal array
+
+%%  5.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
 signalRange=max(signal(:,FPIND),[],1)-min(signal(:,FPIND),[],1);
@@ -103,7 +98,8 @@ fpCutTimes=fptimes(1:100:end);
 % so as to scale nicely for plotting
 fpCutFig=figure; set(fpCutFig,'Units','normalized','OuterPosition',[0 0 1 1])
 fpCutAx=axes('Position',[0.0365    0.0297    0.9510    0.9636], ...
-    'XLim',[0 max(fpCutTimes)],'Ylim',[0 max(FPIND)+1],'YTick',FPIND);
+    'XLim',[0 max(fpCutTimes)], ...
+    'Ylim',[0 max(FPIND)-min(FPIND)+2],'YTick',FPIND-min(FPIND)+1);
 hold on
 maxStrLen=max(cellfun(@numel,parameters.ChannelNames.Value(FPIND)));
 for n=1:size(fpCut,1)
@@ -118,14 +114,12 @@ end, clear n
 set(fpCutAx,'YTickLabel',YaxLabelStr)
 figure(badChanF)
 
-%% Use signalRangeBadLogical to eliminate channels from FPSTOUSE.
+%% 6. Use signalRangeBadLogical to eliminate channels from FPSTOUSE.
 % If you don't agree with the auto-estimation, then change 
 % signalRangeBadLogical to be something that you think is better.
-% this code implicitly assumes that FPIND starts at 1.  When we're doing
-% clinical + research recordings, it might be necessary to revisit this
-% assumption.
 if ~isa(signal,'double'), signal=double(signal); end
-FPSTOUSE=FPIND;
+% eliminate the implicit assumption that the FPIND block should start at 1.
+FPSTOUSE=FPIND-min(FPIND)+1;
 FPSTOUSE(signalRangeBadLogical)=[];
 fp=signal(:,FPIND)';
 if max(signal(:)) < 1E6
@@ -134,13 +128,14 @@ if max(signal(:)) < 1E6
 end
 % to get something suitable for pasting into ECoGProjectAllFileInfo.m
 arrayList(FPSTOUSE)
-%% CAR.  Include only good signals into the CAR, but apply to all signals
+% arrayList(FPIND)
+%% 7. CAR.  Include only good signals into the CAR, but apply to all signals
 %  (except channels zeroed out by the REFA)
 fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
     median(fp(FPSTOUSE,:),1)); % FPSTOUSE is where we're including "only good signals into the CAR".
 signalRange2=max(fp(~signalRangeLowLogical,:),[],2)- ...
     min(fp(~signalRangeLowLogical,:),[],2);
-fpCut=(fp(FPIND,1:100:end))./mean(signalRange2);
+fpCut=(fp(FPSTOUSE,1:100:end))./mean(signalRange2);
 if ishandle(fpCutFig)
     figure(fpCutFig)
     cla
@@ -180,7 +175,7 @@ end
 % if exist('badChanF','var') && ishandle(badChanF)
 %     set(gca,'Ylim',get(findobj(badChanF,'Type','Axes'),'Ylim'))
 % end
-%% CG info & PCA, or force info.
+%% 8. CG info & PCA, or force info.
 clear sig CG
 try
     [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
@@ -199,10 +194,10 @@ if ~isempty(CG)
     set(gca,'Xlim',[0 size(CGcut,1)],'Ylim',[0 size(CGcut,2)+1])
 end
 
-%%  5b. optional: look at smoothed force signal
+%%  9a. optional: look at smoothed force signal
 existingFigTags=get(get(0,'Children'),'Tag');
 if ~iscell(existingFigTags), existingFigTags={existingFigTags}; end
-if ~isstr(existingFigTags{1}), existingFigTags{1}=''; end
+if ~ischar(existingFigTags{1}), existingFigTags{1}=''; end
 if ~any(cellfun(@isempty,regexp(existingFigTags,'smForceFigure'))==0)
     smForceFigure=figureCenter; set(smForceFigure,'Tag','smForceFigure')
     plot(sig(:,1),sig(:,2)), hold on
@@ -219,19 +214,19 @@ plot(sig(:,1),smForce,'g','LineWidth',1.5)
 % successfully and which were not.  Also, tags that show eventCodes?  Was
 % going to be useful for EEGLAB but maybe we don't care if we're not going
 % to use EEGLAB.
-%%  5b(i).  optional add-on to 5b, to actually use the smoothed force
+%%  9b.  optional add-on to 9a, to actually use the smoothed force
 sig=[fptimes', smForce];
-%%  5b(iii).  optional: look at the CG signal.
+%%  9c(i).  optional: look at the CG signal.
 figure, set(gcf,'Position',[419 -101 1042 673])
 plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,4),'.')
 axis vis3d
 xlabel('PC1'), ylabel('PC2'), zlabel('PC3')
-%%  5b(iv).   or, in case there are 4 PCs
+%%  9c(ii).   or, in case there are 4 PCs
 figure, set(gcf,'Position',[419 -101 1042 673])
 plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,5),'.')
 axis vis3d
 xlabel('PC1'), ylabel('PC2'), zlabel('PC4')
-%%  6.  new school: pick channels to include/exclude based on cap map
+%%  10.  new school: pick channels to include/exclude based on cap map
 % FPSTOUSE=1:64; % just in case it comes in handy
 elNames=parameters.ChannelNames.Value(FPIND); % change FPIND to FPSTOUSE, to keep selections.
 elNames(signalRangeBadLogical)= ...
@@ -247,7 +242,7 @@ FPuseList=selectEEGelectrodes4(elNames,elNames(signalRangeBadLogical | FPSREMOVE
 FPSTOUSE=find(ismember(parameters.ChannelNames.Value,FPuseList));
 % channels that were selected out by hand, using the GUI
 FPSREMOVED=(~ismember(FPIND,FPSTOUSE) & ~signalRangeBadLogical);
-%%  7.  set parameters, and build the feature matrix.
+%%  11.  set parameters, and build the feature matrix.
 if exist('featMat','var') && exist ('sig','var')
     if size(featMat,1)==size(sig,1)
         sig=[fptimes', smForce]; % if you don't want the smoothed force, 
@@ -261,7 +256,7 @@ bandsToUse='1 2 3 4 5 6';
 [featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize,bandsToUse);
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
-%%  8.  index the fps - can change mind at this point as to which FPs to use.
+%%  12.  index the fps - can change mind at this point as to which FPs to use.
 % FPSTOUSE=33:48;
 clear x
 numBands=length(regexp(bandsToUse,'[0-9]+'));
@@ -281,7 +276,7 @@ end, clear n
 % or Triangle) but it could be added.  Alternately, just ensure it doesn't
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
 
-%%  9.  assign parameters.
+%%  13.  assign parameters.
 Use_Thresh=0; lambda=4; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
@@ -295,7 +290,7 @@ end
 fprintf('\nusing %d features...\n\n',nfeat)
 % have to clear bestc,bestf if going from more features to fewer!
 clear bestc bestf
-%%  10.  evaluate fps offline use cross-validated predictions code.
+%%  14.  evaluate fps offline use cross-validated predictions code.
 % because this is so sensitive to # of features, we should really do a
 % whole feature-dropping curve here.  Possibly an entire exploration of the
 % parameter space; since featMat does not have to be re-calculated, it
@@ -322,7 +317,7 @@ fprintf(1,'\n')
 figureCenter(gcf)
 % set(gcf,'Position',[121 468 560 420])
 
-%%  11.  plot cross-validated predictions, with some informative text.
+%%  15.  plot cross-validated predictions, with some informative text.
 % close
 figure, set(gcf,'Position',[88 100 1324 420])
 col=1;
@@ -359,7 +354,12 @@ else
         mean(vaf(:,col)),nfeat))
 end
 
-%% ranked bestc,bestf
+if iscell(H)
+    disp('remember to run H=H{bestVAF};')
+    disp('unless you plan to create a decoder from the whole file')
+end
+
+%% 16. ranked bestc,bestf
 [bestfRanked,bestcRanked]=ind2sub([length(featind)/length(FPSTOUSE) length(FPSTOUSE)], ...
     featind((1:nfeat)+featShift));
 [parameters.ChannelNames.Value(FPSTOUSE(bestcRanked)), num2cell(bestfRanked')];  %#ok<VUNUS>
@@ -373,7 +373,7 @@ openvar('ans')
 % are being more strongly represented, simultaneous with looking at the
 % location on the array.
 
-%%  12.  build a decoder.
+%%  17.  build a decoder from the entire data file at once.
 % at this point, bestc & bestf are sorted by channel, while featind is
 % still sorted by feature correlation rank.
 disp('calculating H,bestc,bestf using a single fold...')
@@ -385,7 +385,7 @@ fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
 close
-%%  13.  saving.
+%%  18.  saving.
 % bestc must be re-cast so that it properly indexes the full numel(FPIND)
 % possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
 % adjusted once loaded into BCI2000.
@@ -465,10 +465,26 @@ if ~isempty(CG)
     fclose(fid); clear fid
 end
 
-%% auto-save a decoder
+%% auto-save a decoder.
 bestc=FPSTOUSE(bestc);
 % save bestc,bestf,H
 bestcf=[rowBoat(bestc), rowBoat(bestf)];
+% if H has not been reduced, pick the fold with the highest VAF
+if iscell(H)
+    [val,ind]=max(vaf);
+    Hchoice = questdlg(sprintf('H is a cell.  Pick H{%d} (vaf=%.3f)?\n',ind,val), ...
+        'H not a double array','Yes','No','Yes');
+    % Handle response
+    switch Hchoice
+        case 'Yes'
+            fprintf(1,'evaluating H=H{%d}; and P=P{%d};\n',ind,ind)
+            H=H{ind}; P=P{ind};
+        case 'No'
+            fprintf(1,'leaving H and P alone.  Be sure to modify them yourself.\n')
+            return
+    end
+end
+
 if size(H,2)<2
     H=[zeros(size(H)), H];
 end
@@ -480,7 +496,12 @@ end
 if size(P,1)<2
     P=[zeros(size(P)); P];
 end
-writeBCI2000paramfile('E:\ECoG_Data\BF\',bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats)
+
+if exist('paramPathName','var')==0
+    paramPathName='';
+end
+paramPathName=writeBCI2000paramfile(paramPathName, ...
+    bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats);
 
 %% 14.  plot results of same-file decoder.
 % close
