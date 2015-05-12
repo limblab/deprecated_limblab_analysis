@@ -26,14 +26,14 @@ function [x_fixed,y_fixed]=fix_angles(y,varargin)
         j=1;
         for i=1:num_jumps-1
             j=j+1;
-            x_parts{j}=x(jumps(i)+1);
+            x_parts{j}=x(jumps(i));
             y_parts{j}=nan;
             j=j+1;
             x_parts{j}=x(jumps(i)+1:jumps(i+1));
             y_parts{j}=y(jumps(i)+1:jumps(i+1));
         end
         j=j+1;
-        x_parts{j}=x(jumps(end)+1);
+        x_parts{j}=x(jumps(end));
         y_parts{j}=nan;
         j=j+1;
         x_parts{j}=x(jumps(end)+1:end);
