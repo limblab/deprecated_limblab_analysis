@@ -26,15 +26,16 @@ function [x_fixed,y_fixed]=fix_angles(y,varargin)
         j=1;
         for i=1:num_jumps-1
             j=j+1;
-            x_parts{j}=x(jumps(i));
-            y_parts{j}=nan;
+            x_parts{j}=[    x(jumps(i)+1),                x(jumps(i)),    x(jumps(i))                 ];
+            y_parts{j}=[    y(jumps(i))-y(jumps(i)+1),  nan,            y(jumps(i)+1)-y(jumps(i))   ];
             j=j+1;
             x_parts{j}=x(jumps(i)+1:jumps(i+1));
             y_parts{j}=y(jumps(i)+1:jumps(i+1));
         end
         j=j+1;
-        x_parts{j}=x(jumps(end));
-        y_parts{j}=nan;
+        x_parts{j}=[    x(jumps(end)+1),                  x(jumps(end)),  x(jumps(end))                 ];
+        y_parts{j}=[    y(jumps(end))-y(jumps(end)+1),  nan,            y(jumps(end)+1)-y(jumps(end)) ];
+
         j=j+1;
         x_parts{j}=x(jumps(end)+1:end);
         x_fixed=cell2mat(x_parts);
