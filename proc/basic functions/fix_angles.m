@@ -1,4 +1,14 @@
 function [x_fixed,y_fixed]=fix_angles(y,varargin)
+    % assumes at least one input, which is a vector of angles in radians
+    % wraps angles onto the range -pi to pi
+    % wherever the angle changes by more than pi, inserts a nan, bounded by
+    % 2 points outside the range -pi to pi, such that plotted data will
+    % appear to wrap across the edges of a plot if the plot limits are set
+    % to -pi and pi. Optionally takes a second vector of time points that
+    % matches the angle vector. If no time vector is given, fix_angles will
+    % generate one using the indices of the original vector, and return
+    % that so that multiple corrected vectors may be plotted on the same
+    % axes.
     if isempty(varargin)
         x=1:length(y);
     else
@@ -21,9 +31,11 @@ function [x_fixed,y_fixed]=fix_angles(y,varargin)
     num_jumps=length(jumps);
     
     if num_jumps>0
+        %get the data before the first jump
         x_parts{1}=x(1:jumps(1));
         y_parts{1}=y(1:jumps(1));
         j=1;
+        %loop through the jumps filling the data after each jump
         for i=1:num_jumps-1
             j=j+1;
             x_parts{j}=[    x(jumps(i)+1),                x(jumps(i)),    x(jumps(i))                 ];
@@ -32,9 +44,10 @@ function [x_fixed,y_fixed]=fix_angles(y,varargin)
             x_parts{j}=x(jumps(i)+1:jumps(i+1));
             y_parts{j}=y(jumps(i)+1:jumps(i+1));
         end
+        %deal with the last jump specially
         j=j+1;
-        x_parts{j}=[    x(jumps(end)+1),                  x(jumps(end)),  x(jumps(end))                 ];
-        y_parts{j}=[    y(jumps(end))-y(jumps(end)+1),  nan,            y(jumps(end)+1)-y(jumps(end)) ];
+        x_parts{j}=[    x(jumps(end)+1),                x(jumps(end)),  x(jumps(end))                   ];
+        y_parts{j}=[    y(jumps(end))-y(jumps(end)+1),  nan,            y(jumps(end)+1)-y(jumps(end))   ];
 
         j=j+1;
         x_parts{j}=x(jumps(end)+1:end);
