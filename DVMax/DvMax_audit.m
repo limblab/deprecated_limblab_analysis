@@ -1,5 +1,6 @@
 function animalList=DvMax_audit(varargin)
-    %checks DvMax for missed water, food and weight entries
+    % checks DvMax for missed water, food and weight entries. Prints out
+    % uncommon entries.
     % animalList=DvMax_audit('startDate',datenum('1-Mar-2015'),'endDate',datenum('31-Mar-2015'))
     
     %% Add JDBC driver to path
@@ -22,7 +23,7 @@ function animalList=DvMax_audit(varargin)
         javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
     end
     %% set variables
-    MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterDataAudit.xlsx';
+    MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
     water_codes = {'EP8500','EP9000','EP2000','AC1091'};
     free_water_codes = {'EP9200 ','AC1093','FC1025'};
     water_restriction_start_codes = {'EP9100','AC1092'};

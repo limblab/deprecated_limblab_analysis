@@ -1,4 +1,4 @@
-data_location = '\\165.124.111.182\data\Chewie_8I2\Ricardo\2014-06-26\';
+data_location = '\\citadel\data\Chewie_8I2\Ricardo\2014-06-26\';
 BC_file = 'Chewie_Spike_RW_06262014003';
 log_file = dir([data_location BC_file '*.txt']);
 log_file = log_file(1).name;

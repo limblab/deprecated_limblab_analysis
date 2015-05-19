@@ -6,7 +6,7 @@ function params = DCO_plot_emg(data_struct,params)
     for iEMG = 1:length(bdf.emg.emgnames)
         params.fig_handles(end+1) = figure;        
         hold on
-        y_max = 0;
+        y_max = 0.01;
         for iTargetDir = 1:length(DCO.target_locations)
             hDir(iTargetDir) = subplot(4,2,iTargetDir);
             hold on

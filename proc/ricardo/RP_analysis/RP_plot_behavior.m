@@ -2,7 +2,11 @@ function params = RP_plot_behavior(data_struct,params)
 RP = data_struct.RP;
 bdf = data_struct.bdf;
 
-t_idx_bump = find(RP.t_bump > .1);
+if isfield(RP,'t_bump')    
+    t_idx_bump = find(RP.t_bump > .1);
+else
+    t_idx_bump = 1;
+end
 
 if ~isfield(RP,'BMI')
     t_pert = RP.t_pert_bmi;
@@ -18,12 +22,15 @@ else
     t_pert = RP.t_pert_bmi;
     pos_pert_x = RP.pos_pert_x_bmi;
     pos_pert_y = RP.pos_pert_y_bmi;
-    t_bump = RP.t_bump_bmi;
-    pos_bump_x = RP.pos_bump_x_bmi;
-    pos_bump_y = RP.pos_bump_y_bmi;
+    if isfield(RP,'t_bump_bmi')
+        t_bump = RP.t_bump_bmi;
+        pos_bump_x = RP.pos_bump_x_bmi;
+        pos_bump_y = RP.pos_bump_y_bmi;
+        force_bump_x = RP.force_bump_x_bmi;
+        force_bump_y = RP.force_bump_y_bmi;
+    end
     pos_pert_x_rot = RP.pos_pert_x_rot_bmi;
-    force_bump_x = RP.force_bump_x_bmi;
-    force_bump_y = RP.force_bump_y_bmi;
+    
 end
 
 %% Hand position
@@ -41,23 +48,25 @@ set(params.fig_handles(end),'Name','Handle position raw')
 axis equal
 
 %% Hand position - bump
-params.fig_handles(end+1) = figure;
-hold on
-t_zero = find(t_bump==0);
-% plot((RP.pos_bump_x(:,1)-RP.pos_bump_x(t_zero,1))',...
-%     (RP.pos_bump_y(:,2)-RP.pos_bump_x(t_zero,2))','.r')
-for iFreq = 1:length(RP.perturbation_frequencies)
-    idx = intersect(RP.bump_trials,RP.perturbation_frequencies_idx{iFreq});
-    plot((pos_bump_x(idx,:)-repmat(pos_bump_x(idx,t_zero),1,size(pos_bump_x(idx,:),2)))',...
-        (pos_bump_y(idx,:)-repmat(pos_bump_y(idx,t_zero),1,size(pos_bump_y(idx,:),2)))',...
-        'Color',RP.perturbation_frequency_colors(iFreq,:))
-end
+if exist('t_bump')
+    params.fig_handles(end+1) = figure;
+    hold on
+    t_zero = find(t_bump==0);
+    % plot((RP.pos_bump_x(:,1)-RP.pos_bump_x(t_zero,1))',...
+    %     (RP.pos_bump_y(:,2)-RP.pos_bump_x(t_zero,2))','.r')
+    for iFreq = 1:length(RP.perturbation_frequencies)
+        idx = intersect(RP.bump_trials,RP.perturbation_frequencies_idx{iFreq});
+        plot((pos_bump_x(idx,:)-repmat(pos_bump_x(idx,t_zero),1,size(pos_bump_x(idx,:),2)))',...
+            (pos_bump_y(idx,:)-repmat(pos_bump_y(idx,t_zero),1,size(pos_bump_y(idx,:),2)))',...
+            'Color',RP.perturbation_frequency_colors(iFreq,:))
+    end
 
-xlabel('X position (cm)')
-ylabel('Y position (cm)')
-title('Handle position - Bump')
-set(params.fig_handles(end),'Name','Handle position - Bump')
-axis equal
+    xlabel('X position (cm)')
+    ylabel('Y position (cm)')
+    title('Handle position - Bump')
+    set(params.fig_handles(end),'Name','Handle position - Bump')
+    axis equal
+end
 
 %% Hand position during perturbation separated by frequency, direction
 params.fig_handles(end+1) = figure;
@@ -102,7 +111,7 @@ for iDir = 1:length(RP.perturbation_directions_idx)
     title(['Handle force. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
         'Interpreter','tex')    
     xlabel('t (s)')
-    ylabel('X force (cm)')
+    ylabel('X force (N)')
 end
 
 set(params.fig_handles(end),'Name','Handle force during perturbation')
@@ -118,19 +127,20 @@ if isfield(RP,'BMI')
             idx = RP.perturbation_directions_idx{iDir};
             idx = intersect(idx,RP.perturbation_frequencies_idx{iFreq});
             idx = intersect(idx,union(RP.no_bump_trials,RP.late_bump));
+            idx = intersect(idx,RP.reward_trials);
             if ~isempty(idx)
                 plot(RP.t_pert_bmi,...
                     ((RP.force_pert_x_rot_bmi(idx,:))'),...
                     'Color',RP.perturbation_frequency_colors(iFreq,:))
             end
         end
-        title(['Handle force. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
+        title(['BMI force. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
             'Interpreter','tex')    
         xlabel('t (s)')
-        ylabel('X force (cm)')
+        ylabel('X force (N)')
     end
 
-    set(params.fig_handles(end),'Name','Handle force during perturbation')
+    set(params.fig_handles(end),'Name','BMI force during perturbation')
 end
 
 %% Stiffness vs time during perturbation
@@ -169,62 +179,63 @@ if ~isfield(RP,'BMI')
 end
 
 %% Hand force during bump separated by frequency, direction
-params.fig_handles(end+1) = figure;
-hold on
-for iDir = 1:length(RP.bump_directions_idx)   
-    subplot(length(RP.bump_directions_idx),2,iDir*2-1)
+if exist('t_bump')
+    params.fig_handles(end+1) = figure;
     hold on
-    idx = RP.bump_directions_idx{iDir};
-    idx = intersect(idx,RP.early_bump);
-    length(idx)
-    if ~isempty(idx)
-        plot(t_bump,...
-            ((force_bump_x(1,:))'),...
-            'Color','r')
-        plot(t_bump,...
-            ((force_bump_y(1,:))'),...
-            'Color','b')
-        plot(t_bump,...
-            ((force_bump_x(idx,:))'),...
-            'Color','r')
-        plot(t_bump,...
-            ((force_bump_y(idx,:))'),...
-            'Color','b')
+    for iDir = 1:length(RP.bump_directions_idx)   
+        subplot(length(RP.bump_directions_idx),2,iDir*2-1)
+        hold on
+        idx = RP.bump_directions_idx{iDir};
+        idx = intersect(idx,RP.early_bump);
+        length(idx)
+        if ~isempty(idx)
+            plot(t_bump,...
+                ((force_bump_x(1,:))'),...
+                'Color','r')
+            plot(t_bump,...
+                ((force_bump_y(1,:))'),...
+                'Color','b')
+            plot(t_bump,...
+                ((force_bump_x(idx,:))'),...
+                'Color','r')
+            plot(t_bump,...
+                ((force_bump_y(idx,:))'),...
+                'Color','b')
+        end
+        title(['Handle force (early bump). Bump at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
+            'Interpreter','tex')    
+        xlabel('t (s)')
+        ylabel('force (N)')
+
+        subplot(length(RP.bump_directions_idx),2,iDir*2)
+        hold on
+        idx = RP.bump_directions_idx{iDir};
+        idx = intersect(idx,RP.late_bump);
+        length(idx)
+        if ~isempty(idx)
+            plot(t_bump,...
+                ((force_bump_x(1,:))'),...
+                'Color','r')
+            plot(t_bump,...
+                ((force_bump_y(1,:))'),...
+                'Color','b')
+            plot(t_bump,...
+                ((force_bump_x(idx,:))'),...
+                'Color','r')
+            plot(t_bump,...
+                ((force_bump_y(idx,:))'),...
+                'Color','b')
+        end
+        title(['Handle force (late bump). Bump at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
+            'Interpreter','tex')    
+        xlabel('t (s)')
+        ylabel('force (N)')
+
+        legend('X force', 'Y force')
     end
-    title(['Handle force (early bump). Bump at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
-        'Interpreter','tex')    
-    xlabel('t (s)')
-    ylabel('force (N)')
-    
-    subplot(length(RP.bump_directions_idx),2,iDir*2)
-    hold on
-    idx = RP.bump_directions_idx{iDir};
-    idx = intersect(idx,RP.late_bump);
-    length(idx)
-    if ~isempty(idx)
-        plot(t_bump,...
-            ((force_bump_x(1,:))'),...
-            'Color','r')
-        plot(t_bump,...
-            ((force_bump_y(1,:))'),...
-            'Color','b')
-        plot(t_bump,...
-            ((force_bump_x(idx,:))'),...
-            'Color','r')
-        plot(t_bump,...
-            ((force_bump_y(idx,:))'),...
-            'Color','b')
-    end
-    title(['Handle force (late bump). Bump at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
-        'Interpreter','tex')    
-    xlabel('t (s)')
-    ylabel('force (N)')
-    
-    legend('X force', 'Y force')
+
+    set(params.fig_handles(end),'Name','Handle force during bump')
 end
-
-set(params.fig_handles(end),'Name','Handle force during bump')
-
  %% Hand force separated by frequency, direction - Used for testing motors
 % for iAmp = 1:length(RP.perturbation_amplitudes_idx)
 %     params.fig_handles(end+1) = figure;
@@ -246,7 +257,7 @@ set(params.fig_handles(end),'Name','Handle force during bump')
 %         title(['Handle force. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
 %             'Interpreter','tex')    
 %         xlabel('t (s)')
-%         ylabel('X force (cm)')
+%         ylabel('X force (N)')
 %     end
 % end
 % 
@@ -309,281 +320,287 @@ set(params.fig_handles(end),'Name','Handle force during bump')
 % end
 
 %% Stiffness - Bump response 
-if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
-    params.fig_handles(end+1) = figure;
-    t_zero = find(t_bump==0);
-    
-    subplot(121)
-    max_stiffness = 0;   
-    legend_str = {};
+if exist('t_bump')
+    if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
+        params.fig_handles(end+1) = figure;
+        t_zero = find(t_bump==0);
 
-    hold on       
-    stiffness = zeros(length(RP.perturbation_frequencies_idx),length(RP.bump_directions_idx));
-    for iFreq = 1:length(RP.perturbation_frequencies_idx)
-        for iBump = 1:length(RP.bump_directions_idx)
-            idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-            idx = intersect(idx,RP.early_bump);
-            if ~isempty(idx)
-%                x_pos = pos_bump_x(idx,end)-pos_bump_x(idx,t_zero);
-%                y_pos = pos_bump_y(idx,end)-pos_bump_y(idx,t_zero);
-%                displacement(iFreq,iBump) = mean(sqrt(x_pos.^2+y_pos.^2));
-%                x_force = max(abs(RP.force_bump_x(idx)));
-%                y_force = max(abs(RP.force_bump_y(idx)));
-%                    force(iFreq,iBump) = mean(sqrt(x_force.^2+y_force.^2));
-%                    force(iFreq,iBump) = RP.trial_table(idx(1),RP.table_columns.bump_magnitude);
-%                    stiffness(iFreq,iBump) = 100*force(iFreq,iBump)/displacement(iFreq,iBump);
-               temp = RP.force_bump_magnitude(idx,end-50:end)./...
-                   RP.bump_displacement(idx,end-50:end); 
+        subplot(121)
+        max_stiffness = 0;   
+        legend_str = {};
 
-               stiffness(iFreq,iBump) = 100*mean(mean(temp));
-               max_stiffness = max(max_stiffness,max(stiffness(:)));
-            end                
+        hold on       
+        stiffness = zeros(length(RP.perturbation_frequencies_idx),length(RP.bump_directions_idx));
+        for iFreq = 1:length(RP.perturbation_frequencies_idx)
+            for iBump = 1:length(RP.bump_directions_idx)
+                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                idx = intersect(idx,RP.early_bump);
+                if ~isempty(idx)
+    %                x_pos = pos_bump_x(idx,end)-pos_bump_x(idx,t_zero);
+    %                y_pos = pos_bump_y(idx,end)-pos_bump_y(idx,t_zero);
+    %                displacement(iFreq,iBump) = mean(sqrt(x_pos.^2+y_pos.^2));
+    %                x_force = max(abs(RP.force_bump_x(idx)));
+    %                y_force = max(abs(RP.force_bump_y(idx)));
+    %                    force(iFreq,iBump) = mean(sqrt(x_force.^2+y_force.^2));
+    %                    force(iFreq,iBump) = RP.trial_table(idx(1),RP.table_columns.bump_magnitude);
+    %                    stiffness(iFreq,iBump) = 100*force(iFreq,iBump)/displacement(iFreq,iBump);
+                   temp = RP.force_bump_magnitude(idx,end-50:end)./...
+                       RP.bump_displacement(idx,end-50:end); 
+
+                   stiffness(iFreq,iBump) = 100*mean(mean(temp));
+                   max_stiffness = max(max_stiffness,max(stiffness(:)));
+                end                
+            end
+    %         plot(5*(iFreq-1)+stiffness(iFreq,[1:end 1]).*cos(RP.bump_directions([1:end 1])'),...
+    %                    0*(iFreq-1)+stiffness(iFreq,[1:end 1]).*sin(RP.bump_directions([1:end 1])'),...
+    %                    'Color',RP.perturbation_frequency_colors(iFreq,:))
+            plot(180/pi*RP.bump_directions,stiffness(iFreq,:),...
+                       'Color',RP.perturbation_frequency_colors(iFreq,:))
+
+            legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+            ' Hz']}];
         end
-%         plot(5*(iFreq-1)+stiffness(iFreq,[1:end 1]).*cos(RP.bump_directions([1:end 1])'),...
-%                    0*(iFreq-1)+stiffness(iFreq,[1:end 1]).*sin(RP.bump_directions([1:end 1])'),...
-%                    'Color',RP.perturbation_frequency_colors(iFreq,:))
-        plot(180/pi*RP.bump_directions,stiffness(iFreq,:),...
-                   'Color',RP.perturbation_frequency_colors(iFreq,:))
+        title(['Stiffness (early bump)'],...
+            'Interpreter','tex')        
+        xlabel('Bump direction (deg)')
+        ylabel('K (N/m)')
+        axis square
 
-        legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-        ' Hz']}];
-    end
-    title(['Stiffness (early bump)'],...
-        'Interpreter','tex')        
-    xlabel('Bump direction (deg)')
-    ylabel('K (N/m)')
-    axis square
+        legend(legend_str)    
 
-    legend(legend_str)    
-    
-    subplot(122) 
-    legend_str = {};
+        subplot(122) 
+        legend_str = {};
 
-    hold on       
-    stiffness = zeros(length(RP.perturbation_frequencies_idx),length(RP.bump_directions_idx));
-    for iFreq = 1:length(RP.perturbation_frequencies_idx)
-        for iBump = 1:length(RP.bump_directions_idx)
-            idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-            idx = intersect(idx,RP.late_bump);
-            if ~isempty(idx)
-%                x_pos = pos_bump_x(idx,end)-pos_bump_x(idx,t_zero);
-%                y_pos = pos_bump_y(idx,end)-pos_bump_y(idx,t_zero);
-%                displacement(iFreq,iBump) = mean(sqrt(x_pos.^2+y_pos.^2));
-%                x_force = max(abs(RP.force_bump_x(idx)));
-%                y_force = max(abs(RP.force_bump_y(idx)));
-%                    force(iFreq,iBump) = mean(sqrt(x_force.^2+y_force.^2));
-%                    force(iFreq,iBump) = RP.trial_table(idx(1),RP.table_columns.bump_magnitude);
-%                    stiffness(iFreq,iBump) = 100*force(iFreq,iBump)/displacement(iFreq,iBump);
-               temp = RP.force_bump_magnitude(idx,end-50:end)./...
-                   RP.bump_displacement(idx,end-50:end);
-              
-               stiffness(iFreq,iBump) = 100*mean(mean(temp));
-               max_stiffness = max(max_stiffness,max(stiffness(:)));
-            end                
+        hold on       
+        stiffness = zeros(length(RP.perturbation_frequencies_idx),length(RP.bump_directions_idx));
+        for iFreq = 1:length(RP.perturbation_frequencies_idx)
+            for iBump = 1:length(RP.bump_directions_idx)
+                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                idx = intersect(idx,RP.late_bump);
+                if ~isempty(idx)
+    %                x_pos = pos_bump_x(idx,end)-pos_bump_x(idx,t_zero);
+    %                y_pos = pos_bump_y(idx,end)-pos_bump_y(idx,t_zero);
+    %                displacement(iFreq,iBump) = mean(sqrt(x_pos.^2+y_pos.^2));
+    %                x_force = max(abs(RP.force_bump_x(idx)));
+    %                y_force = max(abs(RP.force_bump_y(idx)));
+    %                    force(iFreq,iBump) = mean(sqrt(x_force.^2+y_force.^2));
+    %                    force(iFreq,iBump) = RP.trial_table(idx(1),RP.table_columns.bump_magnitude);
+    %                    stiffness(iFreq,iBump) = 100*force(iFreq,iBump)/displacement(iFreq,iBump);
+                   temp = RP.force_bump_magnitude(idx,end-50:end)./...
+                       RP.bump_displacement(idx,end-50:end);
+
+                   stiffness(iFreq,iBump) = 100*mean(mean(temp));
+                   max_stiffness = max(max_stiffness,max(stiffness(:)));
+                end                
+            end
+            plot(180/pi*RP.bump_directions,stiffness(iFreq,:),...
+                       'Color',RP.perturbation_frequency_colors(iFreq,:))
+
+            legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+            ' Hz']}];
         end
-        plot(180/pi*RP.bump_directions,stiffness(iFreq,:),...
-                   'Color',RP.perturbation_frequency_colors(iFreq,:))
+        title(['Stiffness (late bump)'],...
+            'Interpreter','tex')        
+        xlabel('Bump direction (deg)')
+        ylabel('K (N/m)')
+        axis square
 
-        legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-        ' Hz']}];
+        legend(legend_str)
+    %     plot(max_stiffness*cos([0:.01:2*pi 0]),max_stiffness*sin([0:.01:2*pi 0]),'--k')
+    %     subplot(121)
+    %     plot(max_stiffness*cos([0:.01:2*pi 0]),max_stiffness*sin([0:.01:2*pi 0]),'--k')
+
+        set(params.fig_handles(end),'Name','Stiffness summary')
     end
-    title(['Stiffness (late bump)'],...
-        'Interpreter','tex')        
-    xlabel('Bump direction (deg)')
-    ylabel('K (N/m)')
-    axis square
-
-    legend(legend_str)
-%     plot(max_stiffness*cos([0:.01:2*pi 0]),max_stiffness*sin([0:.01:2*pi 0]),'--k')
-%     subplot(121)
-%     plot(max_stiffness*cos([0:.01:2*pi 0]),max_stiffness*sin([0:.01:2*pi 0]),'--k')
-
-    set(params.fig_handles(end),'Name','Stiffness summary')
 end
 
-
 %% Stiffness vs time - Bump response 
-if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
-    h_sub = [];
-    
-    for iBump = 1:length(RP.bump_directions_idx)
-        params.fig_handles(end+1) = figure;    
+if exist('t_bump')
+    if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
+        h_sub = [];
 
-        for iDir = 1:length(RP.perturbation_directions_idx)
-            h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2-1);
-            legend_str = {};
+        for iBump = 1:length(RP.bump_directions_idx)
+            params.fig_handles(end+1) = figure;    
 
-            hold on       
-            for iFreq = 1:length(RP.perturbation_frequencies_idx)               
-                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-                idx = intersect(idx,RP.perturbation_directions_idx{iDir});
-                idx = intersect(idx,RP.early_bump);
-                plot(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
-                           'Color',RP.perturbation_frequency_colors(iFreq,:))
-                errorarea(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
-                    1.96/length(idx)*std(RP.stiffness_magnitude_bump(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
-                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-                ' Hz']}];
+            for iDir = 1:length(RP.perturbation_directions_idx)
+                h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2-1);
+                legend_str = {};
+
+                hold on       
+                for iFreq = 1:length(RP.perturbation_frequencies_idx)               
+                    idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                    idx = intersect(idx,RP.perturbation_directions_idx{iDir});
+                    idx = intersect(idx,RP.early_bump);
+                    plot(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
+                               'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
+                        1.96/length(idx)*std(RP.stiffness_magnitude_bump(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+                end
+                title({['Stiffness (early bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
+                    'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
+                    'Interpreter','tex')        
+                xlabel('t (s)')
+                ylabel('K (N/cm)')
+                axis square
+
+                legend(legend_str);
+
+                h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2);               
+                legend_str = {};
+
+                hold on                  
+                for iFreq = 1:length(RP.perturbation_frequencies_idx)               
+                    idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                    idx = intersect(idx,RP.perturbation_directions_idx{iDir});
+                    idx = intersect(idx,RP.late_bump);
+                    plot(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
+                               'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
+                        1.96/length(idx)*std(RP.stiffness_magnitude_bump(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+                end
+                title({['Stiffness (late bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
+                    'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
+                    'Interpreter','tex')        
+                xlabel('t (s)')
+                ylabel('K (N/cm)')
+                axis square            
+
+                legend(legend_str);
             end
-            title({['Stiffness (early bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
-                'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
-                'Interpreter','tex')        
-            xlabel('t (s)')
-            ylabel('K (N/cm)')
-            axis square
-
-            legend(legend_str);
-
-            h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2);               
-            legend_str = {};
-
-            hold on                  
-            for iFreq = 1:length(RP.perturbation_frequencies_idx)               
-                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-                idx = intersect(idx,RP.perturbation_directions_idx{iDir});
-                idx = intersect(idx,RP.late_bump);
-                plot(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
-                           'Color',RP.perturbation_frequency_colors(iFreq,:))
-                errorarea(RP.t_bump(t_idx_bump),mean(RP.stiffness_magnitude_bump(idx,t_idx_bump),1),...
-                    1.96/length(idx)*std(RP.stiffness_magnitude_bump(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
-                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-                ' Hz']}];
-            end
-            title({['Stiffness (late bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
-                'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
-                'Interpreter','tex')        
-            xlabel('t (s)')
-            ylabel('K (N/cm)')
-            axis square            
-
-            legend(legend_str);
+            set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
+            set(h_sub,'XLim',[RP.t_bump(t_idx_bump(1)) RP.t_bump(t_idx_bump(end))])
+            set(params.fig_handles(end),'Name',['Stiffness Bump ' num2str(180/pi*RP.bump_directions(iBump))])
         end
-        set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
-        set(h_sub,'XLim',[RP.t_bump(t_idx_bump(1)) RP.t_bump(t_idx_bump(end))])
-        set(params.fig_handles(end),'Name',['Stiffness Bump ' num2str(180/pi*RP.bump_directions(iBump))])
     end
 end
 
 %% Displacement vs time - Bump response 
-if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
-    h_sub = [];
-    
-    for iBump = 1:length(RP.bump_directions_idx)
-        params.fig_handles(end+1) = figure;    
+if exist('t_bump')
+    if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
+        h_sub = [];
 
-        for iDir = 1:length(RP.perturbation_directions_idx)
-            h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2-1);
-            legend_str = {};
+        for iBump = 1:length(RP.bump_directions_idx)
+            params.fig_handles(end+1) = figure;    
 
-            hold on       
-            for iFreq = 1:length(RP.perturbation_frequencies_idx)               
-                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-                idx = intersect(idx,RP.perturbation_directions_idx{iDir});
-                idx = intersect(idx,RP.early_bump);
-                plot(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
-                           'Color',RP.perturbation_frequency_colors(iFreq,:))
-                errorarea(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
-                    1.96/length(idx)*std(RP.bump_displacement(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
-                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-                ' Hz']}];
+            for iDir = 1:length(RP.perturbation_directions_idx)
+                h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2-1);
+                legend_str = {};
+
+                hold on       
+                for iFreq = 1:length(RP.perturbation_frequencies_idx)               
+                    idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                    idx = intersect(idx,RP.perturbation_directions_idx{iDir});
+                    idx = intersect(idx,RP.early_bump);
+                    plot(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
+                               'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
+                        1.96/length(idx)*std(RP.bump_displacement(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+                end
+                title({['Displacement (early bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
+                    'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
+                    'Interpreter','tex')        
+                xlabel('t (s)')
+                ylabel('displacement (cm)')
+                axis square
+
+                legend(legend_str);
+
+                h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2);               
+                legend_str = {};
+
+                hold on                  
+                for iFreq = 1:length(RP.perturbation_frequencies_idx)               
+                    idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                    idx = intersect(idx,RP.perturbation_directions_idx{iDir});
+                    idx = intersect(idx,RP.late_bump);
+                    plot(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
+                               'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
+                        1.96/length(idx)*std(RP.bump_displacement(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+                end
+                title({['Displacement (late bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
+                    'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
+                    'Interpreter','tex')        
+                xlabel('t (s)')
+                ylabel('displacement (cm)')
+                axis square            
+
+                legend(legend_str);
             end
-            title({['Displacement (early bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
-                'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
-                'Interpreter','tex')        
-            xlabel('t (s)')
-            ylabel('displacement (cm)')
-            axis square
-
-            legend(legend_str);
-
-            h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2);               
-            legend_str = {};
-
-            hold on                  
-            for iFreq = 1:length(RP.perturbation_frequencies_idx)               
-                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-                idx = intersect(idx,RP.perturbation_directions_idx{iDir});
-                idx = intersect(idx,RP.late_bump);
-                plot(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
-                           'Color',RP.perturbation_frequency_colors(iFreq,:))
-                errorarea(RP.t_bump(t_idx_bump),mean(RP.bump_displacement(idx,t_idx_bump),1),...
-                    1.96/length(idx)*std(RP.bump_displacement(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
-                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-                ' Hz']}];
-            end
-            title({['Displacement (late bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
-                'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
-                'Interpreter','tex')        
-            xlabel('t (s)')
-            ylabel('displacement (cm)')
-            axis square            
-
-            legend(legend_str);
+            set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
+            set(h_sub,'XLim',[RP.t_bump(t_idx_bump(1)) RP.t_bump(t_idx_bump(end))])
+            set(params.fig_handles(end),'Name',['Displacement Bump ' num2str(180/pi*RP.bump_directions(iBump))])
         end
-        set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
-        set(h_sub,'XLim',[RP.t_bump(t_idx_bump(1)) RP.t_bump(t_idx_bump(end))])
-        set(params.fig_handles(end),'Name',['Displacement Bump ' num2str(180/pi*RP.bump_directions(iBump))])
     end
 end
-
 %% Force vs time - Bump response 
-if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
-    h_sub = [];
-    
-    for iBump = 1:length(RP.bump_directions_idx)
-        params.fig_handles(end+1) = figure;    
+if exist('t_bump')
+    if ~isfield(RP,'BMI') && isfield(RP,'bump_directions_idx')
+        h_sub = [];
 
-        for iDir = 1:length(RP.perturbation_directions_idx)
-            h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2-1);
-            legend_str = {};
+        for iBump = 1:length(RP.bump_directions_idx)
+            params.fig_handles(end+1) = figure;    
 
-            hold on       
-            for iFreq = 1:length(RP.perturbation_frequencies_idx)               
-                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-                idx = intersect(idx,RP.perturbation_directions_idx{iDir});
-                idx = intersect(idx,RP.early_bump);
-                plot(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
-                           'Color',RP.perturbation_frequency_colors(iFreq,:))
-                errorarea(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
-                    1.96/length(idx)*std(RP.force_bump_magnitude(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
-                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-                ' Hz']}];
+            for iDir = 1:length(RP.perturbation_directions_idx)
+                h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2-1);
+                legend_str = {};
+
+                hold on       
+                for iFreq = 1:length(RP.perturbation_frequencies_idx)               
+                    idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                    idx = intersect(idx,RP.perturbation_directions_idx{iDir});
+                    idx = intersect(idx,RP.early_bump);
+                    plot(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
+                               'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
+                        1.96/length(idx)*std(RP.force_bump_magnitude(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+                end
+                title({['Force (early bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
+                    'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
+                    'Interpreter','tex')        
+                xlabel('t (s)')
+                ylabel('force (N)')
+                axis square
+
+                legend(legend_str);
+
+                h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2);               
+                legend_str = {};
+
+                hold on                  
+                for iFreq = 1:length(RP.perturbation_frequencies_idx)               
+                    idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
+                    idx = intersect(idx,RP.perturbation_directions_idx{iDir});
+                    idx = intersect(idx,RP.late_bump);
+                    plot(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
+                               'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
+                        1.96/length(idx)*std(RP.force_bump_magnitude(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+                end
+                title({['Force (late bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
+                    'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
+                    'Interpreter','tex')        
+                xlabel('t (s)')
+                ylabel('force (N)')
+                axis square            
+
+                legend(legend_str);
             end
-            title({['Force (early bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
-                'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
-                'Interpreter','tex')        
-            xlabel('t (s)')
-            ylabel('force (N)')
-            axis square
-
-            legend(legend_str);
-
-            h_sub(end+1) = subplot(length(RP.perturbation_directions_idx),2,iDir*2);               
-            legend_str = {};
-
-            hold on                  
-            for iFreq = 1:length(RP.perturbation_frequencies_idx)               
-                idx = intersect(RP.bump_directions_idx{iBump},RP.perturbation_frequencies_idx{iFreq});                
-                idx = intersect(idx,RP.perturbation_directions_idx{iDir});
-                idx = intersect(idx,RP.late_bump);
-                plot(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
-                           'Color',RP.perturbation_frequency_colors(iFreq,:))
-                errorarea(RP.t_bump(t_idx_bump),mean(RP.force_bump_magnitude(idx,t_idx_bump),1),...
-                    1.96/length(idx)*std(RP.force_bump_magnitude(idx,t_idx_bump),[],1),RP.perturbation_frequency_colors(iFreq,:),.5);
-                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-                ' Hz']}];
-            end
-            title({['Force (late bump).'];['Bump: ' num2str(180/pi*RP.bump_directions(iBump)) '^o. '...
-                'Movement: ' num2str(mod(180+180/pi*RP.perturbation_directions(iDir),360)) '^o']},...
-                'Interpreter','tex')        
-            xlabel('t (s)')
-            ylabel('force (N)')
-            axis square            
-
-            legend(legend_str);
+            set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
+            set(h_sub,'XLim',[RP.t_bump(t_idx_bump(1)) RP.t_bump(t_idx_bump(end))])
+            set(params.fig_handles(end),'Name',['Force Bump ' num2str(180/pi*RP.bump_directions(iBump))])
         end
-        set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
-        set(h_sub,'XLim',[RP.t_bump(t_idx_bump(1)) RP.t_bump(t_idx_bump(end))])
-        set(params.fig_handles(end),'Name',['Force Bump ' num2str(180/pi*RP.bump_directions(iBump))])
     end
 end

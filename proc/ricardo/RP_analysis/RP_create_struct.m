@@ -2,6 +2,7 @@ function RP = RP_create_struct(bdf,params)
     RP = params; 
     RP.dt = diff(bdf.pos(1:2,1));
     [RP.trial_table,RP.table_columns,bdf] = RP_trial_table(bdf);
+    RP.trial_table = RP.trial_table(1:end-1,:);
     BMI_data_files = dir([RP.target_folder '*data.txt']);
     BMI_param_files = dir([RP.target_folder '*params.mat']);
     
@@ -27,6 +28,7 @@ function RP = RP_create_struct(bdf,params)
                 temp(:,1) = temp(:,1)-temp(1,1)+.05;
             end
             temp(:,1) = temp(:,1)+BMI_data(end,1)+1.05; % Add one second in between files
+%             temp(:,1) = temp(:,1)+BMI_data(end,1)+1; % Add one second in between files
             BMI_data = [BMI_data ; temp];
             clear temp
         end
@@ -41,14 +43,14 @@ function RP = RP_create_struct(bdf,params)
         BMI_data = new_BMI_data;
         clear new_BMI_data        
         RP.BMI.data = BMI_data;
-        %%
+        
         if ~isempty(BMI_param_files)
             RP.BMI.params = load([RP.target_folder BMI_param_files(1).name]);
         end
         clear BMI_data
     end
-    
-    RP.trial_table(RP.trial_table(:,RP.table_columns.result)==33,:) = [];
+%%
+%     RP.trial_table(RP.trial_table(:,RP.table_columns.result)==33,:) = [];
     RP.perturbation_directions = unique(RP.trial_table(:,RP.table_columns.perturbation_direction)); 
     RP.perturbation_amplitudes = unique(RP.trial_table(:,RP.table_columns.perturbation_amplitude));
     RP.perturbation_frequencies = unique(RP.trial_table(:,RP.table_columns.perturbation_frequency));
@@ -80,13 +82,13 @@ function RP = RP_create_struct(bdf,params)
     if length(RP.perturbation_frequencies) == 1
         RP.perturbation_frequency_colors = [.8 0 0];
     elseif length(RP.perturbation_frequencies) == 2
-        RP.perturbation_frequency_colors = [.8 0 0; 0 0 .8];
+        RP.perturbation_frequency_colors = [ 0 0 .8; .8 0 0];
     else
         RP.perturbation_frequency_colors = copper(length(RP.perturbation_frequencies));
         r = (1:-1/(length(RP.perturbation_frequencies)-1):0)';
         g = zeros(1,length(RP.perturbation_frequencies))';
         b = (0:1/(length(RP.perturbation_frequencies)-1):1)';
-        RP.perturbation_frequency_colors = [r g b];
+        RP.perturbation_frequency_colors = [b g r];
     end
     
     RP.reward_trials = find(RP.trial_table(:,RP.table_columns.result) == 32);
@@ -137,12 +139,14 @@ function RP = RP_create_struct(bdf,params)
 %     pert_samples = floor(min(trial_ends(bump_trials)-perturbation_starts(bump_trials)))*round(1/RP.dt);
 %     pert_samples = floor(min(trial_ends(late_bump_trials)-perturbation_starts(late_bump_trials)))*round(1/RP.dt);
 %     pert_samples = floor(min(trial_ends(no_bump_trials)-perturbation_starts(no_bump_trials)))*round(1/RP.dt);
-
-    
     pert_samples = round(mode(trial_ends(intersect(RP.reward_trials,find(late_bump_trials)))-...
         perturbation_starts(intersect(RP.reward_trials,find(late_bump_trials))))*round(1/RP.dt));
-
+    if isnan(pert_samples)
+        pert_samples = round(mode(trial_ends(RP.reward_trials) - perturbation_starts(RP.reward_trials)))*round(1/RP.dt);
+    end
+    
     pert_offset = 100;
+    pert_samples = pert_samples + pert_offset;
     RP.t_pert = (0:RP.dt:RP.dt*pert_samples-RP.dt)-pert_offset*RP.dt;    
     RP.pert_idx_table = repmat(RP.perturbation_start_idx,1,pert_samples) + repmat(1:pert_samples,size(RP.perturbation_start_idx,1),1) - pert_offset;
     RP.pert_idx_table(RP.pert_idx_table<1) = 1;
@@ -186,12 +190,16 @@ function RP = RP_create_struct(bdf,params)
         RP.force_pert_x_rot(idx,:) = temp_x;
         RP.force_pert_y_rot(idx,:) = temp_y;
     end
-    
+
     if isfield(RP,'BMI')
         pert_samples = round(mode(trial_ends(intersect(RP.reward_trials,find(late_bump_trials)))-...
             perturbation_starts(intersect(RP.reward_trials,find(late_bump_trials))))*round(1/RP.BMI.dt));
+        if isnan(pert_samples)
+            pert_samples = round(mode(trial_ends(RP.reward_trials) - perturbation_starts(RP.reward_trials)))*round(1/RP.BMI.dt);
+        end
 
-        pert_offset = 10;
+        pert_offset = 2;
+        pert_samples = pert_samples + pert_offset;
         RP.t_pert_bmi = (0:RP.BMI.dt:RP.BMI.dt*pert_samples-RP.BMI.dt)-pert_offset*RP.BMI.dt;    
         RP.pert_idx_table_bmi = repmat(RP.perturbation_start_idx_bmi,1,pert_samples) + repmat(1:pert_samples,size(RP.perturbation_start_idx_bmi,1),1) - pert_offset;
         RP.pert_idx_table_bmi(RP.pert_idx_table_bmi<1) = 1;
@@ -235,7 +243,7 @@ function RP = RP_create_struct(bdf,params)
             RP.force_pert_y_rot_bmi(idx,:) = temp_y;
         end
     end
-    
+
     
     t_zero = find(RP.t_pert==0);
     RP.pert_displacement = sqrt((RP.pos_pert_x-repmat(RP.pos_pert_x(:,t_zero),1,size(RP.pos_pert_x,2))).^2 +...
@@ -253,134 +261,139 @@ function RP = RP_create_struct(bdf,params)
     RP.stiffness_magnitude_pert = RP.force_pert_magnitude./RP.pert_displacement;
            
     bump_t_offset = 50;
-    bump_samples = round(RP.trial_table(RP.bump_trials(1),RP.table_columns.bump_duration)/RP.dt) + bump_t_offset;    
-    if isnan(bump_samples)
-        bump_samples = 2*bump_t_offset;
-    end
-    
-    RP.t_bump = RP.dt*((1:bump_samples) - bump_t_offset -1);
-    RP.bump_idx_table = repmat(RP.bump_onset_idx,1,bump_samples) + repmat(1:bump_samples,size(RP.bump_onset_idx,1),1) - bump_t_offset;
-    RP.bump_idx_table(RP.bump_idx_table<1) = 1;
-    
-    RP.force_bump_x = reshape(bdf.force(RP.bump_idx_table,2),[],bump_samples);
-    RP.force_bump_y = reshape(bdf.force(RP.bump_idx_table,3),[],bump_samples);
-        
-    RP.pos_bump_x = reshape(bdf.pos(RP.bump_idx_table,2),[],bump_samples)+RP.trial_table(1,RP.table_columns.x_offset);
-    RP.pos_bump_y = reshape(bdf.pos(RP.bump_idx_table,3),[],bump_samples)+RP.trial_table(1,RP.table_columns.y_offset);
-    
-    RP.vel_bump_x = reshape(bdf.vel(RP.bump_idx_table,2),[],bump_samples);
-    RP.vel_bump_y = reshape(bdf.vel(RP.bump_idx_table,3),[],bump_samples);
-    
-    RP.pos_bump_x_rot = zeros(size(RP.pos_bump_x));
-    RP.pos_bump_y_rot = zeros(size(RP.pos_bump_x));
-    RP.force_bump_x_rot = zeros(size(RP.pos_bump_x));
-    RP.force_bump_y_rot = zeros(size(RP.pos_bump_x));
-   
-    for iDir = 1:length(RP.bump_directions)
-        theta = RP.bump_directions(iDir);
-        idx = RP.bump_directions_idx{iDir};
-        idx = intersect(idx,find(RP.trial_table(:,RP.table_columns.bump_trial)));
-        temp_x = RP.pos_bump_x(idx,:);
-        temp_y = RP.pos_bump_y(idx,:);
-        temp = [temp_x(:) temp_y(:)];
-        rot_mat = [cos(theta) -sin(theta); sin(theta) cos(theta)];        
-        temp = temp*rot_mat;
-        temp_x = reshape(temp(:,1),size(RP.pos_bump_x(idx,:)));
-        temp_y = reshape(temp(:,2),size(RP.pos_bump_x(idx,:)));
-        RP.pos_bump_x_rot(idx,:) = temp_x;
-        RP.pos_bump_y_rot(idx,:) = temp_y;
-        
-        temp_x = RP.force_bump_x(idx,:);
-        temp_y = RP.force_bump_y(idx,:);
-        temp = [temp_x(:) temp_y(:)];        
-        temp = temp*rot_mat;
-        temp_x = reshape(temp(:,1),size(RP.pos_bump_x(idx,:)));
-        temp_y = reshape(temp(:,2),size(RP.pos_bump_x(idx,:)));
-        RP.force_bump_x_rot(idx,:) = temp_x;
-        RP.force_bump_y_rot(idx,:) = temp_y;
-    end
-    bump_onset_idx = find(RP.t_bump==0);
-    for iTrial = 1:size(RP.trial_table,1)
-        RP.pos_bump_x_rot(iTrial,:) = RP.pos_bump_x_rot(iTrial,:)-RP.pos_bump_x_rot(iTrial,bump_onset_idx);
-        RP.pos_bump_y_rot(iTrial,:) = RP.pos_bump_y_rot(iTrial,:)-RP.pos_bump_y_rot(iTrial,bump_onset_idx);
-        RP.force_bump_x_rot(iTrial,:) = RP.force_bump_x_rot(iTrial,:)-RP.force_bump_x_rot(iTrial,bump_onset_idx);
-        RP.force_bump_y_rot(iTrial,:) = RP.force_bump_y_rot(iTrial,:)-RP.force_bump_y_rot(iTrial,bump_onset_idx);       
-    end
-    
-    t_zero = find(RP.t_bump==0);
-    RP.bump_displacement = sqrt((RP.pos_bump_x-repmat(RP.pos_bump_x(:,t_zero),1,size(RP.pos_bump_x,2))).^2 +...
-        (RP.pos_bump_y-repmat(RP.pos_bump_y(:,t_zero),1,size(RP.pos_bump_y,2))).^2);
-    RP.bump_displacement(RP.bump_displacement==0) = 0.01;
-    RP.bump_displacement_angle = atan2((RP.pos_bump_y-repmat(RP.pos_bump_y(:,t_zero),1,size(RP.pos_bump_y,2))),...
-        (RP.pos_bump_x-repmat(RP.pos_bump_x(:,t_zero),1,size(RP.pos_bump_x,2))));
-    
-    RP.force_bump_magnitude = sqrt((RP.force_bump_x-repmat(RP.force_bump_x(:,t_zero),1,size(RP.force_bump_x,2))).^2 +...
-        (RP.force_bump_y-repmat(RP.force_bump_y(:,t_zero),1,size(RP.force_bump_y,2))).^2);
-    RP.force_bump_magnitude(RP.force_bump_magnitude==0) = 0.01;
-    RP.force_bump_angle = atan2((RP.force_bump_y-repmat(RP.force_bump_y(:,t_zero),1,size(RP.force_bump_y,2))),...
-        (RP.force_bump_x-repmat(RP.force_bump_x(:,t_zero),1,size(RP.force_bump_x,2))));
-    
-    RP.stiffness_magnitude_bump = RP.force_bump_magnitude./RP.bump_displacement;
-    
-    
-    if isfield(RP,'BMI')
-        
-        bump_t_offset = 2;
-        bump_samples = round(RP.trial_table(RP.bump_trials(1),RP.table_columns.bump_duration)/RP.BMI.dt) + bump_t_offset;    
+    if ~isempty(RP.bump_trials)
+        bump_samples = round(RP.trial_table(RP.bump_trials(1),RP.table_columns.bump_duration)/RP.dt) + bump_t_offset;    
         if isnan(bump_samples)
             bump_samples = 2*bump_t_offset;
         end
 
-        RP.t_bump_bmi = RP.dt*((1:bump_samples) - bump_t_offset -1);
-        RP.bump_idx_table_bmi = repmat(RP.bump_onset_idx_bmi,1,bump_samples) + repmat(1:bump_samples,size(RP.bump_onset_idx_bmi,1),1) - bump_t_offset;
-        RP.bump_idx_table_bmi(RP.bump_idx_table_bmi<1) = 1;
+        RP.t_bump = RP.dt*((1:bump_samples) - bump_t_offset -1);
+        RP.bump_idx_table = repmat(RP.bump_onset_idx,1,bump_samples) + repmat(1:bump_samples,size(RP.bump_onset_idx,1),1) - bump_t_offset;
+        RP.bump_idx_table(RP.bump_idx_table<1) = 1;
 
-        force_idx = [find(strcmp(RP.BMI.params.headers,'F_x')) find(strcmp(RP.BMI.params.headers,'F_y'))];
-        RP.force_bump_x_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,force_idx(1)),[],bump_samples);
-        RP.force_bump_y_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,force_idx(2)),[],bump_samples);
+        RP.force_bump_x = reshape(bdf.force(RP.bump_idx_table,2),[],bump_samples);
+        RP.force_bump_y = reshape(bdf.force(RP.bump_idx_table,3),[],bump_samples);
 
-        pos_idx = [find(strcmp(RP.BMI.params.headers,'cursor_x')) find(strcmp(RP.BMI.params.headers,'cursor_y'))];
-        RP.pos_bump_x_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,pos_idx(1)),[],bump_samples);
-        RP.pos_bump_y_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,pos_idx(2)),[],bump_samples);
+        RP.pos_bump_x = reshape(bdf.pos(RP.bump_idx_table,2),[],bump_samples)+RP.trial_table(1,RP.table_columns.x_offset);
+        RP.pos_bump_y = reshape(bdf.pos(RP.bump_idx_table,3),[],bump_samples)+RP.trial_table(1,RP.table_columns.y_offset);
 
-        RP.pos_bump_x_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
-        RP.pos_bump_y_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
-        RP.force_bump_x_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
-        RP.force_bump_y_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
+        RP.vel_bump_x = reshape(bdf.vel(RP.bump_idx_table,2),[],bump_samples);
+        RP.vel_bump_y = reshape(bdf.vel(RP.bump_idx_table,3),[],bump_samples);
+
+        RP.pos_bump_x_rot = zeros(size(RP.pos_bump_x));
+        RP.pos_bump_y_rot = zeros(size(RP.pos_bump_x));
+        RP.force_bump_x_rot = zeros(size(RP.pos_bump_x));
+        RP.force_bump_y_rot = zeros(size(RP.pos_bump_x));
 
         for iDir = 1:length(RP.bump_directions)
             theta = RP.bump_directions(iDir);
             idx = RP.bump_directions_idx{iDir};
             idx = intersect(idx,find(RP.trial_table(:,RP.table_columns.bump_trial)));
-            temp_x = RP.pos_bump_x_bmi(idx,:);
-            temp_y = RP.pos_bump_y_bmi(idx,:);
+            temp_x = RP.pos_bump_x(idx,:);
+            temp_y = RP.pos_bump_y(idx,:);
             temp = [temp_x(:) temp_y(:)];
             rot_mat = [cos(theta) -sin(theta); sin(theta) cos(theta)];        
             temp = temp*rot_mat;
-            temp_x = reshape(temp(:,1),size(RP.pos_bump_x_bmi(idx,:)));
-            temp_y = reshape(temp(:,2),size(RP.pos_bump_x_bmi(idx,:)));
-            RP.pos_bump_x_rot_bmi(idx,:) = temp_x;
-            RP.pos_bump_y_rot_bmi(idx,:) = temp_y;
+            temp_x = reshape(temp(:,1),size(RP.pos_bump_x(idx,:)));
+            temp_y = reshape(temp(:,2),size(RP.pos_bump_x(idx,:)));
+            RP.pos_bump_x_rot(idx,:) = temp_x;
+            RP.pos_bump_y_rot(idx,:) = temp_y;
 
-            temp_x = RP.force_bump_x_bmi(idx,:);
-            temp_y = RP.force_bump_y_bmi(idx,:);
+            temp_x = RP.force_bump_x(idx,:);
+            temp_y = RP.force_bump_y(idx,:);
             temp = [temp_x(:) temp_y(:)];        
             temp = temp*rot_mat;
-            temp_x = reshape(temp(:,1),size(RP.pos_bump_x_bmi(idx,:)));
-            temp_y = reshape(temp(:,2),size(RP.pos_bump_x_bmi(idx,:)));
-            RP.force_bump_x_rot_bmi(idx,:) = temp_x;
-            RP.force_bump_y_rot_bmi(idx,:) = temp_y;
+            temp_x = reshape(temp(:,1),size(RP.pos_bump_x(idx,:)));
+            temp_y = reshape(temp(:,2),size(RP.pos_bump_x(idx,:)));
+            RP.force_bump_x_rot(idx,:) = temp_x;
+            RP.force_bump_y_rot(idx,:) = temp_y;
         end
-        bump_onset_idx = find(RP.t_bump_bmi==0);
+        bump_onset_idx = find(RP.t_bump==0);
         for iTrial = 1:size(RP.trial_table,1)
-            RP.pos_bump_x_rot_bmi(iTrial,:) = RP.pos_bump_x_rot_bmi(iTrial,:)-RP.pos_bump_x_rot_bmi(iTrial,bump_onset_idx);
-            RP.pos_bump_y_rot_bmi(iTrial,:) = RP.pos_bump_y_rot_bmi(iTrial,:)-RP.pos_bump_y_rot_bmi(iTrial,bump_onset_idx);
-            RP.force_bump_x_rot_bmi(iTrial,:) = RP.force_bump_x_rot_bmi(iTrial,:)-RP.force_bump_x_rot_bmi(iTrial,bump_onset_idx);
-            RP.force_bump_y_rot_bmi(iTrial,:) = RP.force_bump_y_rot_bmi(iTrial,:)-RP.force_bump_y_rot_bmi(iTrial,bump_onset_idx);       
+            RP.pos_bump_x_rot(iTrial,:) = RP.pos_bump_x_rot(iTrial,:)-RP.pos_bump_x_rot(iTrial,bump_onset_idx);
+            RP.pos_bump_y_rot(iTrial,:) = RP.pos_bump_y_rot(iTrial,:)-RP.pos_bump_y_rot(iTrial,bump_onset_idx);
+            RP.force_bump_x_rot(iTrial,:) = RP.force_bump_x_rot(iTrial,:)-RP.force_bump_x_rot(iTrial,bump_onset_idx);
+            RP.force_bump_y_rot(iTrial,:) = RP.force_bump_y_rot(iTrial,:)-RP.force_bump_y_rot(iTrial,bump_onset_idx);       
         end
-        
+
+        t_zero = find(RP.t_bump==0);
+        RP.bump_displacement = sqrt((RP.pos_bump_x-repmat(RP.pos_bump_x(:,t_zero),1,size(RP.pos_bump_x,2))).^2 +...
+            (RP.pos_bump_y-repmat(RP.pos_bump_y(:,t_zero),1,size(RP.pos_bump_y,2))).^2);
+        RP.bump_displacement(RP.bump_displacement==0) = 0.01;
+        RP.bump_displacement_angle = atan2((RP.pos_bump_y-repmat(RP.pos_bump_y(:,t_zero),1,size(RP.pos_bump_y,2))),...
+            (RP.pos_bump_x-repmat(RP.pos_bump_x(:,t_zero),1,size(RP.pos_bump_x,2))));
+
+        RP.force_bump_magnitude = sqrt((RP.force_bump_x-repmat(RP.force_bump_x(:,t_zero),1,size(RP.force_bump_x,2))).^2 +...
+            (RP.force_bump_y-repmat(RP.force_bump_y(:,t_zero),1,size(RP.force_bump_y,2))).^2);
+        RP.force_bump_magnitude(RP.force_bump_magnitude==0) = 0.01;
+        RP.force_bump_angle = atan2((RP.force_bump_y-repmat(RP.force_bump_y(:,t_zero),1,size(RP.force_bump_y,2))),...
+            (RP.force_bump_x-repmat(RP.force_bump_x(:,t_zero),1,size(RP.force_bump_x,2))));
+
+        RP.stiffness_magnitude_bump = RP.force_bump_magnitude./RP.bump_displacement;
+
+
+        if isfield(RP,'BMI')
+
+            bump_t_offset = 2;
+            bump_samples = round(RP.trial_table(RP.bump_trials(1),RP.table_columns.bump_duration)/RP.BMI.dt) + bump_t_offset;    
+            if isnan(bump_samples)
+                bump_samples = 2*bump_t_offset;
+            end
+
+            RP.t_bump_bmi = RP.dt*((1:bump_samples) - bump_t_offset -1);
+            RP.bump_idx_table_bmi = repmat(RP.bump_onset_idx_bmi,1,bump_samples) + repmat(1:bump_samples,size(RP.bump_onset_idx_bmi,1),1) - bump_t_offset;
+            RP.bump_idx_table_bmi(RP.bump_idx_table_bmi<1) = 1;
+
+            force_idx = [find(strcmp(RP.BMI.params.headers,'F_x')) find(strcmp(RP.BMI.params.headers,'F_y'))];
+            RP.force_bump_x_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,force_idx(1)),[],bump_samples);
+            RP.force_bump_y_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,force_idx(2)),[],bump_samples);
+
+            pos_idx = [find(strcmp(RP.BMI.params.headers,'cursor_x')) find(strcmp(RP.BMI.params.headers,'cursor_y'))];
+            RP.pos_bump_x_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,pos_idx(1)),[],bump_samples);
+            RP.pos_bump_y_bmi = reshape(RP.BMI.data(RP.bump_idx_table_bmi,pos_idx(2)),[],bump_samples);
+
+            RP.pos_bump_x_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
+            RP.pos_bump_y_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
+            RP.force_bump_x_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
+            RP.force_bump_y_rot_bmi = zeros(size(RP.pos_bump_x_bmi));
+
+            for iDir = 1:length(RP.bump_directions)
+                theta = RP.bump_directions(iDir);
+                idx = RP.bump_directions_idx{iDir};
+                idx = intersect(idx,find(RP.trial_table(:,RP.table_columns.bump_trial)));
+                temp_x = RP.pos_bump_x_bmi(idx,:);
+                temp_y = RP.pos_bump_y_bmi(idx,:);
+                temp = [temp_x(:) temp_y(:)];
+                rot_mat = [cos(theta) -sin(theta); sin(theta) cos(theta)];        
+                temp = temp*rot_mat;
+                temp_x = reshape(temp(:,1),size(RP.pos_bump_x_bmi(idx,:)));
+                temp_y = reshape(temp(:,2),size(RP.pos_bump_x_bmi(idx,:)));
+                RP.pos_bump_x_rot_bmi(idx,:) = temp_x;
+                RP.pos_bump_y_rot_bmi(idx,:) = temp_y;
+
+                temp_x = RP.force_bump_x_bmi(idx,:);
+                temp_y = RP.force_bump_y_bmi(idx,:);
+                temp = [temp_x(:) temp_y(:)];        
+                temp = temp*rot_mat;
+                temp_x = reshape(temp(:,1),size(RP.pos_bump_x_bmi(idx,:)));
+                temp_y = reshape(temp(:,2),size(RP.pos_bump_x_bmi(idx,:)));
+                RP.force_bump_x_rot_bmi(idx,:) = temp_x;
+                RP.force_bump_y_rot_bmi(idx,:) = temp_y;
+            end
+            bump_onset_idx = find(RP.t_bump_bmi==0);
+            for iTrial = 1:size(RP.trial_table,1)
+                RP.pos_bump_x_rot_bmi(iTrial,:) = RP.pos_bump_x_rot_bmi(iTrial,:)-RP.pos_bump_x_rot_bmi(iTrial,bump_onset_idx);
+                RP.pos_bump_y_rot_bmi(iTrial,:) = RP.pos_bump_y_rot_bmi(iTrial,:)-RP.pos_bump_y_rot_bmi(iTrial,bump_onset_idx);
+                RP.force_bump_x_rot_bmi(iTrial,:) = RP.force_bump_x_rot_bmi(iTrial,:)-RP.force_bump_x_rot_bmi(iTrial,bump_onset_idx);
+                RP.force_bump_y_rot_bmi(iTrial,:) = RP.force_bump_y_rot_bmi(iTrial,:)-RP.force_bump_y_rot_bmi(iTrial,bump_onset_idx);       
+            end
+
+        end
+    else
+        RP.bump_idx_table =[];
+        RP.bump_idx_table_bmi =[];
     end
-    
+%%
     if isfield(bdf,'units')
         units = unit_list(bdf,1);
         RP.firingrates_pert = zeros([size(RP.pert_idx_table) length(units)]); 
@@ -421,15 +434,20 @@ function RP = RP_create_struct(bdf,params)
             RP.emg(iEMG,:) = emg;            
             RP.emg_pert(:,:,iEMG) = emg(RP.pert_idx_table)/max(emg(RP.pert_idx_table(:)));
             RP.emg_pert(RP.emg_pert<0) = 0;
-            RP.emg_bump(:,:,iEMG) = emg(RP.bump_idx_table)/max(emg(RP.bump_idx_table(:)));
+            if ~isempty(RP.bump_idx_table)
+                RP.emg_bump(:,:,iEMG) = emg(RP.bump_idx_table)/max(emg(RP.bump_idx_table(:)));
+            end
             RP.emg_pert_raw(:,:,iEMG) = raw_emg(RP.pert_idx_table);
             RP.emg_bump_raw(:,:,iEMG) = raw_emg(RP.bump_idx_table);
         end
-        emg_idx = find(~cellfun(@isempty,strfind(bdf.emg.emgnames,'BI')));
+%         emg_idx = find(~cellfun(@isempty,strfind(bdf.emg.emgnames,'BI')));
+        emg_idx = find(~cellfun(@isempty,strfind(bdf.emg.emgnames,'BRD')));
         emg_idx = [emg_idx find(~cellfun(@isempty,strfind(bdf.emg.emgnames,'TRI')))];
         
-        temp_1 = RP.emg_pert(:,:,emg_idx(1))./RP.emg_pert(:,:,emg_idx(2));
+        temp_1 = RP.emg_pert(:,:,emg_idx(1))./RP.emg_pert(:,:,emg_idx(2));        
         temp_2 = RP.emg_pert(:,:,emg_idx(2))./RP.emg_pert(:,:,emg_idx(1));
+        temp_1(isnan(temp_1)) = 1;
+        temp_2(isnan(temp_2)) = 1;
         temp = min(temp_1,temp_2);
         
         RP.emg_cocontraction_bi_tri = temp .* (RP.emg_pert(:,:,emg_idx(1)) + ...
@@ -440,9 +458,21 @@ function RP = RP_create_struct(bdf,params)
         RP.emg_pert = [];
     end
     
-    if isfield(RP,'BMI')
-        emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'EMG')));        
-        RP.BMI.emgnames = RP.BMI.params.headers(emg_idx);
+    if isfield(RP,'BMI')  
+        if strcmp(bdf.meta.filename,'Chewie_2015-05-12_RP_n2e_hu_001')
+            emg_idx = 54:57;
+            RP.BMI.emgnames = {'BI','TRI','BRD','PD'};
+            cocontraction_idx = 74;
+        elseif strfind(bdf.meta.filename,'Chewie_2015-05-13_RP_n2e')
+            emg_idx = 54:57;
+            RP.BMI.emgnames = {'BI','TRI','BRD','PD'};
+            cocontraction_idx = 74;
+        else
+            emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'EMG')));        
+            RP.BMI.emgnames = RP.BMI.params.headers(emg_idx);
+            cocontraction_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'cocontraction')));                
+        end
+            
         RP.emg_pert_bmi = zeros([size(RP.pert_idx_table_bmi) length(RP.BMI.emgnames)]);       
         RP.emg_bump_bmi = zeros([size(RP.bump_idx_table_bmi) length(RP.BMI.emgnames)]);       
         RP.cocontraction_pert_bmi = zeros([size(RP.pert_idx_table_bmi) length(RP.BMI.emgnames)]);
@@ -451,8 +481,7 @@ function RP = RP_create_struct(bdf,params)
             RP.emg_pert_bmi(:,:,iEMG) = emg(RP.pert_idx_table_bmi);
             RP.emg_bump_bmi(:,:,iEMG) = emg(RP.bump_idx_table_bmi);            
         end
-        cocontraction_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'cocontraction')));    
-        cocontraction = RP.BMI.data(:,cocontraction_idx); %#ok<FNDSB>
+        
 %         emg_idx = find(~cellfun(@isempty,strfind(RP.BMI.emgnames,'BI')));
 %         emg_idx = [emg_idx find(~cellfun(@isempty,strfind(RP.BMI.emgnames,'TRI')))];
 %         
@@ -462,6 +491,7 @@ function RP = RP_create_struct(bdf,params)
 %         
 %         RP.emg_cocontraction_bmi_bi_tri = temp .* (RP.emg_pert_bmi(:,:,emg_idx(1)) + ...
 %             RP.emg_pert_bmi(:,:,emg_idx(2)));
+        cocontraction = RP.BMI.data(:,cocontraction_idx); %#ok<FNDSB>
         RP.emg_cocontraction_bmi_bi_tri = cocontraction(RP.pert_idx_table_bmi);
     end
 end 

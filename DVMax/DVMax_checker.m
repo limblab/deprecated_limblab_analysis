@@ -37,11 +37,15 @@ function DVMax_checker()
         load('animalList')
         oldAnimalList = animalList;
         oldAnimalList2 = rmfield(oldAnimalList,'idealBodyWeight');
+        oldAnimalList2 = rmfield(oldAnimalList2,'contactNumber');
+        oldAnimalList2 = rmfield(oldAnimalList2,'secondarycontactNumber');
     end
     
     animalList = load_animal_list(MonkeyWaterLocation);
     save('animalList','animalList')    
     animalList2 = rmfield(animalList,'idealBodyWeight');
+    animalList2 = rmfield(animalList2,'contactNumber');
+    animalList2 = rmfield(animalList2,'secondarycontactNumber');
     
     peopleList = load_people_list(MonkeyWaterLocation);
     ccmList = load_ccm_list(MonkeyWaterLocation);    
@@ -63,6 +67,7 @@ function DVMax_checker()
     animals_who_got_water = {};
     animals_who_got_food = {};
     for iMonkey = 1:length(animalList)
+        animalList(iMonkey).animalName;
         cagecardID = animalList(iMonkey).cageID;
         cagecardID(strfind(cagecardID,'C')) = [];
         exestring= ['select distinct cage_card_id, datetime_performed_cst, med_rec_code, med_description, comments'...
@@ -285,6 +290,7 @@ function DVMax_checker()
     
     disp('Finished checking DVMax')
     close(conn)
+    pause(10)
 end
 
 function animalList = load_animal_list(MonkeyWaterLocation)    

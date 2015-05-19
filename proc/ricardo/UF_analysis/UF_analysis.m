@@ -8,7 +8,7 @@
 % cmp_file = '\\citadel\limblab\lab_folder\Animal-Miscellany\Kevin 12A2\Microdrive info\MicrodriveMapFile_diagonal.cmp';
 % file_details.rot_handle = 1; 
 
-file_details.datapath = 'D:\Data\Mini_7H1\';
+file_details.datapath = 'D:\Mini_7H1\';
 file_details.UF_file_prefix = 'Mini_2013-12-16_UF_';
 file_details.RW_file_prefix = [];
 % file_details.RW_file_prefix = '';
@@ -36,7 +36,7 @@ end
 reload_data = 0;
 plot_behavior = 1;
 plot_emg = 1;
-plot_units = 1;
+plot_units = 0;
 plot_STAEMG = 0;
 plot_SSEP = 0;
 plot_decode = 0;

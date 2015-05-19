@@ -7,16 +7,29 @@ function DCO = DCO_create_struct(bdf,params)
     if ~isempty(BMI_data_files)
         BMI_data = [];
         DCO.BMI.dt = 0.05;
-        for iBMI = 1:length(BMI_data_files)
+        temp = load([DCO.target_folder BMI_data_files(1).name]);
+        if ~isempty(find(diff(temp(:,1))<0,1,'last'))
+            remove_idx = find(diff(temp(:,1))<0,1,'last');
+            temp = temp(remove_idx+1:end,:);   
+%             temp(:,1) = temp(:,1)+.05*remove_idx;
+            temp(:,1) = temp(:,1)+.1;
+%             temp(:,1) = temp(:,1)-temp(1,1)+.1;
+        end        
+        BMI_data = temp;
+        for iBMI = 2:length(BMI_data_files)
             temp = load([DCO.target_folder BMI_data_files(iBMI).name]);
             if ~isempty(find(diff(temp(:,1))<0,1,'last'))
-                temp = temp(find(diff(temp(:,1))<0,1,'last')+1:end,:);
+                remove_idx = find(diff(temp(:,1))<0,1,'last');
+                temp = temp(remove_idx+1:end,:);
+%                 temp(:,1) = temp(:,1)+.05*remove_idx;
+                temp(:,1) = temp(:,1)-temp(1,1)+.05;
             end
-            temp(:,1) = temp(:,1)+iBMI-1; % Add one second in between files
+            temp(:,1) = temp(:,1)+BMI_data(end,1)+1.05; % Add one second in between files
+%             temp(:,1) = temp(:,1)+BMI_data(end,1)+1; % Add one second in between files
             BMI_data = [BMI_data ; temp];
             clear temp
         end
-        
+        BMI_data(:,1) = BMI_data(:,1)+.05;
         BMI_data(find(diff(BMI_data(:,1))==0)+1,:) = [];
         new_time_vector = 1:DCO.BMI.dt:bdf.pos(end,1);
         new_BMI_data = zeros(length(new_time_vector),size(BMI_data,2));

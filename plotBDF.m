@@ -67,8 +67,11 @@ end
            
 %% Force Panel
 if isfield(datastruct,'force')
-
-    ForceNames = datastruct.force.labels;
+    if isstruct(datastruct.force)
+        ForceNames = datastruct.force.labels;
+    else
+        ForceNames = {'Fx','Fy'};
+    end
 
     Force_x_cb = uicontrol('Parent',Forcepanel,'Style','checkbox','String','Force x',...
                                  'Units','normalized','Position',[.1 .8 .9 .1],'Callback',{@Force_chbx_Callback,1});

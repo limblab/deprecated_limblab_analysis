@@ -16,18 +16,33 @@ for iEMG = 1:length(RP.BMI.emgnames)
         h_sub(end+1) = subplot(2,ceil(length(RP.perturbation_directions)/2),iDir);
         hold on   
         legend_str = {};
+        h_plot = [];
         mean_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));
         sem_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));        
-        for iFreq = 1:length(RP.perturbation_frequencies)  
-            idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});            
-            emg_temp = RP.emg_pert_bmi(idx,:,iEMG);
-            mean_emg(iFreq,:) = mean(emg_temp);
-            sem_emg(iFreq,:) = 1.96*std(emg_temp)/sqrt(size(emg_temp,1));                    
-            plot(RP.t_pert_bmi,mean_emg(iFreq,:),'Color',RP.perturbation_frequency_colors(iFreq,:))
-            errorarea(RP.t_pert_bmi,mean_emg(iFreq,:),...
-                sem_emg(iFreq,:),RP.perturbation_frequency_colors(iFreq,:),.5);
-            legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-            ' Hz']}];
+        for iFreq = 1:length(RP.perturbation_frequencies)            
+            for iOutcome = 1:2            
+                idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});            
+                if iOutcome == 1
+                    idx = intersect(idx,RP.reward_trials);
+                else
+                    idx = intersect(idx,setxor(1:size(RP.trial_table,1),RP.reward_trials));
+                end
+                emg_temp = RP.emg_pert_bmi(idx,:,iEMG);
+%                 idx = setxor(idx,idx(find(mean(emg_temp,2) > 3*std(emg_temp(:)))));
+                emg_temp = RP.emg_pert_bmi(idx,:,iEMG);
+                mean_emg(iFreq,:) = mean(emg_temp);
+                sem_emg(iFreq,:) = 1.96*std(emg_temp)/sqrt(size(emg_temp,1));    
+                if iOutcome == 1
+                    h_plot(end+1) = plot(RP.t_pert_bmi,mean_emg(iFreq,:),'Color',RP.perturbation_frequency_colors(iFreq,:));
+                    errorarea(RP.t_pert_bmi,mean_emg(iFreq,:),...
+                        sem_emg(iFreq,:),RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                        ' Hz']}];
+                else
+                    plot(RP.t_pert_bmi,mean_emg(iFreq,:),'--','Color',RP.perturbation_frequency_colors(iFreq,:))
+                end
+                
+            end
         end
        
         max_y = max(max_y,max(mean_emg(:)));        
@@ -36,7 +51,7 @@ for iEMG = 1:length(RP.BMI.emgnames)
         title(['Perturbation direction: ' num2str(round(RP.perturbation_directions(iDir)*180/pi))...
             '^o. ' strrep(RP.BMI.emgnames{iEMG},'_',' ')],'Interpreter','tex')
         set(params.fig_handles(end),'Name',['Predicted EMG movement ' strrep(RP.BMI.emgnames{iEMG},'_',' ')]) 
-        legend(legend_str)
+        legend(h_plot,legend_str)
 
     end
 
@@ -47,44 +62,54 @@ for iEMG = 1:length(RP.BMI.emgnames)
 end
 
 %% Movement co-contraction separated by frequency
-% for iEMG = 1:size(RP.emg_pert,3)
-    params.fig_handles(end+1) = figure;
-    h_sub = [];
-    max_y = 0;    
-    for iDir = 1:length(RP.perturbation_directions)
-        h_sub(end+1) = subplot(2,ceil(length(RP.perturbation_directions)/2),iDir);
-        hold on   
-        legend_str = {};
-        mean_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));
-        sem_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));        
-        for iFreq = 1:length(RP.perturbation_frequencies)  
-            idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});            
+
+params.fig_handles(end+1) = figure;
+h_sub = [];
+max_y = 0;
+for iDir = 1:length(RP.perturbation_directions)
+    h_sub(end+1) = subplot(2,ceil(length(RP.perturbation_directions)/2),iDir);
+    hold on
+    legend_str = {};
+    h_plot = [];
+    mean_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));
+    sem_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));
+    for iFreq = 1:length(RP.perturbation_frequencies)
+        for iOutcome = 1:2
+            idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});
+            if iOutcome == 1
+                idx = intersect(idx,RP.reward_trials);
+            else
+                idx = intersect(idx,setxor(1:size(RP.trial_table,1),RP.reward_trials));
+            end
+            %             idx = intersect(idx,RP.reward_trials);
             emg_temp = RP.emg_cocontraction_bmi_bi_tri(idx,:);
             mean_emg(iFreq,:) = mean(emg_temp);
-            sem_emg(iFreq,:) = 1.96*std(emg_temp)/sqrt(size(emg_temp,1));           
-           
-            plot(RP.t_pert_bmi,mean_emg(iFreq,:),'Color',RP.perturbation_frequency_colors(iFreq,:))
-            errorarea(RP.t_pert_bmi,mean_emg(iFreq,:),...
-                sem_emg(iFreq,:),RP.perturbation_frequency_colors(iFreq,:),.5);
-            legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
-            ' Hz.']}];
+            sem_emg(iFreq,:) = 1.96*std(emg_temp)/sqrt(size(emg_temp,1));
+            
+            if iOutcome == 1
+                h_plot(end+1) = plot(RP.t_pert_bmi,mean_emg(iFreq,:),'Color',RP.perturbation_frequency_colors(iFreq,:));
+                errorarea(RP.t_pert_bmi,mean_emg(iFreq,:),...
+                    sem_emg(iFreq,:),RP.perturbation_frequency_colors(iFreq,:),.5);
+                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+            else
+                plot(RP.t_pert_bmi,mean_emg(iFreq,:),'--','Color',RP.perturbation_frequency_colors(iFreq,:))
+            end
         end
-       
-        max_y = max(max_y,max(mean_emg(:)));        
-        xlabel('Time from go cue (s)')
-        ylabel('Co-contraction index')
-        title(['Co-contraction predicted bi-tri. Perturbation direction: ' num2str(round(RP.perturbation_directions(iDir)*180/pi))...
-            '^o.'],'Interpreter','tex')
-        set(params.fig_handles(end),'Name',['Co-contraction predicted bi-tri']) 
-        legend(legend_str)
-
     end
+    
+    max_y = max(max_y,max(mean_emg(:)));
+    xlabel('Time from go cue (s)')
+    ylabel('Co-contraction index')
+    title(['Co-contraction predicted bi-tri. Perturbation direction: ' num2str(round(RP.perturbation_directions(iDir)*180/pi))...
+        '^o.'],'Interpreter','tex')
+    set(params.fig_handles(end),'Name',['Co-contraction predicted bi-tri'])
+    legend(h_plot,legend_str)
+    
+end
 
-    set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
-%         h_axes = get(gcf,'Children');
-%         set(h_axes,'YLim',[0 max_y]);        
+set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
 
-% end
 
 %% Channel correlation coefficients
 % correlation = zeros(size(RP.emg,1),size(RP.emg,1));
@@ -145,3 +170,117 @@ for iEMG = 1:size(RP.emg_bump,3)
 
     end
 end
+
+%%
+if isfield(RP.table_columns,'cocontraction_target') && any(RP.trial_table(:,RP.table_columns.cocontraction_target))
+    params.fig_handles(end+1) = figure;
+    hold on
+
+    cocontraction_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'cocontraction')));    
+    cocontraction = RP.BMI.data(:,cocontraction_idx);
+    t_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'t_bin_start')));
+    plot(RP.BMI.data(:,t_idx),cocontraction)
+
+    for iTrial = 1:size(RP.trial_table,1)
+    %     rectangle('Position',[RP.trial_table(iTrial,RP.table_columns.t_trial_start)...
+    %         RP.trial_table(iTrial,RP.table_columns.cocontraction_level)-0.5*RP.trial_table(iTrial,RP.table_columns.cocontraction_window),...
+    %         diff(RP.trial_table(iTrial,[RP.table_columns.t_trial_start RP.table_columns.t_trial_end])),...
+    %         RP.trial_table(iTrial,RP.table_columns.cocontraction_window)])
+        rectangle('Position',[RP.trial_table(iTrial,RP.table_columns.t_ct_hold_on)...
+            RP.trial_table(iTrial,RP.table_columns.cocontraction_level)-0.5*RP.trial_table(iTrial,RP.table_columns.cocontraction_window),...
+            diff(RP.trial_table(iTrial,[RP.table_columns.t_ct_hold_on RP.table_columns.t_trial_end])),...
+            RP.trial_table(iTrial,RP.table_columns.cocontraction_window)])
+        plot(RP.trial_table(iTrial,[RP.table_columns.t_trial_start RP.table_columns.t_trial_end]),...
+            RP.trial_table(iTrial,[RP.table_columns.cocontraction_level RP.table_columns.cocontraction_level]),...
+            'r')
+    end
+end
+
+%% 
+params.fig_handles(end+1) = figure;
+hold on
+if strcmp(bdf.meta.filename,'Chewie_2015-05-12_RP_n2e_hu_001')   
+    cocontraction_idx = 74;
+    t_idx = 1;
+else
+    cocontraction_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'cocontraction')));
+    t_idx = find(~cellfun(@isempty,strfind(RP.BMI.params.headers,'t_bin_start')));
+end
+
+cocontraction = RP.BMI.data(:,cocontraction_idx);
+
+
+frequency_changes = [1;find(diff(RP.trial_table(:,RP.table_columns.perturbation_frequency))~=0)];
+
+for iFreq = 1:length(frequency_changes)-1
+    temp = cellfun(@(x) x==frequency_changes(iFreq),RP.perturbation_frequencies_idx,'UniformOutput',false);
+    freq_idx = find(cellfun(@sum,temp));
+    rectangle('Position',[RP.trial_table(frequency_changes(iFreq),RP.table_columns.t_trial_start) ...
+        0 RP.trial_table(frequency_changes(iFreq+1),RP.table_columns.t_trial_end) - RP.trial_table(frequency_changes(iFreq),RP.table_columns.t_trial_start) ...
+        max(cocontraction(:))],'FaceColor',min(.5+RP.perturbation_frequency_colors(freq_idx,:),1),'LineStyle','none');
+end
+temp = cellfun(@(x) x==frequency_changes(end),RP.perturbation_frequencies_idx,'UniformOutput',false);
+freq_idx = find(cellfun(@sum,temp));
+rectangle('Position',[RP.trial_table(frequency_changes(end),RP.table_columns.t_trial_start) ...
+    0 RP.trial_table(end,RP.table_columns.t_trial_end) - RP.trial_table(frequency_changes(end),RP.table_columns.t_trial_start) ...
+    max(cocontraction(:))],'FaceColor',min(.5+RP.perturbation_frequency_colors(freq_idx,:),1),'LineStyle','none');    
+
+plot(RP.BMI.data(:,t_idx),cocontraction,'k')
+title('Co-contraction')
+ylabel('Co-contraction')
+xlabel('t (s)')
+xlim([0 RP.trial_table(end,RP.table_columns.t_trial_end)])
+ylim([0 max(cocontraction(:))])
+
+%% Cocontraction as a function of session time
+params.fig_handles(end+1) = figure;
+h_sub = [];
+max_y = 0;
+for iDir = 1:length(RP.perturbation_directions)
+    h_sub(end+1) = subplot(2,ceil(length(RP.perturbation_directions)/2),iDir);
+    hold on
+    legend_str = {};
+    h_plot = [];
+%     mean_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));
+%     sem_emg = zeros(length(RP.perturbation_frequencies),length(RP.t_pert_bmi));
+    for iFreq = 1:length(RP.perturbation_frequencies)
+        for iOutcome = 1:2
+            idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});
+            if iOutcome == 1
+                idx = intersect(idx,RP.reward_trials);
+            else
+                idx = intersect(idx,setxor(1:size(RP.trial_table,1),RP.reward_trials));
+            end
+            %             idx = intersect(idx,RP.reward_trials);
+            emg_temp = RP.emg_cocontraction_bmi_bi_tri(idx,:);
+            mean_emg = mean(emg_temp(:,RP.t_pert_bmi > 0),2);
+            sem_emg = 1.96*std(emg_temp(:,RP.t_pert_bmi > 0),[],2);
+            t_trials = RP.trial_table(idx,RP.table_columns.t_trial_start);
+            
+            if iOutcome == 1
+                h_plot(end+1) = plot(t_trials,mean_emg,'.','Color',RP.perturbation_frequency_colors(iFreq,:));
+                plot(t_trials([1 end]),[mean(mean_emg(:)) mean(mean_emg(:))],'-','Color',RP.perturbation_frequency_colors(iFreq,:));
+%                 errorarea(t_trials,mean_emg,...
+%                     sem_emg,RP.perturbation_frequency_colors(iFreq,:),.5);
+                legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                    ' Hz']}];
+            else
+                plot(t_trials,mean_emg,'.','Color',min(1,[RP.perturbation_frequency_colors(iFreq,:)+.7]))
+                plot(t_trials([1 end]),[mean(mean_emg(:)) mean(mean_emg(:))],'-','Color',min(1,[RP.perturbation_frequency_colors(iFreq,:)+.7]));
+            end
+        end
+    end
+    
+%     max_y = max(max_y,max(mean_emg(:)));
+    xlabel('Time in session (s)')
+    ylabel('Mean co-contraction index')
+    title(['Mean co-contraction predicted bi-tri. Perturbation direction: ' num2str(round(RP.perturbation_directions(iDir)*180/pi))...
+        '^o.'],'Interpreter','tex')
+    set(params.fig_handles(end),'Name',['Mean co-contraction predicted bi-tri'])
+    legend(h_plot,legend_str)
+    
+end
+
+set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
+
+

@@ -44,6 +44,10 @@ tc.early_bump = iCol; iCol=iCol+1;
 if databurst_version >= 3
     tc.cocontraction_level = iCol; iCol=iCol+1;
     tc.cocontraction_window = iCol; iCol=iCol+1;
+    tc.outer_cursor_radius = iCol; iCol=iCol+1;
+end
+if databurst_version >= 4
+    tc.cocontraction_target = iCol; iCol=iCol+1;
 end
 
 start_trial_code = hex2dec('1F');
@@ -154,6 +158,14 @@ for iTrial = 1:num_trials
         if (databurst_version >= 3)
             trial_table(iTrial,tc.cocontraction_level) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
             trial_table(iTrial,tc.cocontraction_window) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            trial_table(iTrial,tc.outer_cursor_radius) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+        end
+        if (databurst_version >= 4)
+            try
+                trial_table(iTrial,tc.cocontraction_target) = bytes2float(bdf.databursts{iTrial,2}(temp_idx)); temp_idx = temp_idx+4;
+            catch
+                trial_table(iTrial,tc.cocontraction_target) = -1;
+            end
         end
     end        
 end
@@ -194,3 +206,6 @@ if strcmp(bdf.meta.filename,'Chewie_2014-10-23_RP_HC_001')
     trial_table(round(1000*trial_table(:,tc.perturbation_frequency))/1000==0.1,:) = [];
 end
 
+if diff(trial_table(end,[tc.t_start_perturbation tc.t_trial_end])) < 2
+    trial_table(end,:) = [];
+end

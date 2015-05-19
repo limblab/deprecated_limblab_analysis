@@ -147,12 +147,13 @@ trial_table(:,tc.outer_target_direction) = round(180/pi*trial_table(:,tc.outer_t
 remove_idx = find(isnan(trial_table(:,tc.t_trial_start)) |...
     isnan(trial_table(:,tc.t_ct_on)) |...
     isnan(trial_table(:,tc.t_ct_hold_on)) |...
-    isnan(trial_table(:,tc.t_trial_end)));
+    isnan(trial_table(:,tc.t_trial_end)) |...
+    isnan(trial_table(:,tc.t_go_cue)));
 
-remove_index = [remove_idx find(isnan(trial_table(:,tc.x_offset)))];
+remove_index = [remove_idx(:) find(isnan(trial_table(:,tc.x_offset)))];
 for iCol = 7:length(fieldnames(tc))    
     temp = find((trial_table(:,iCol) ~= 0 & abs(trial_table(:,iCol))<1e-10) | abs(trial_table(:,iCol))>1e10);
-    remove_index = [remove_index temp'];
+    remove_index = [remove_index(:); temp(:)];
 end
 remove_index = unique(remove_index);
 
