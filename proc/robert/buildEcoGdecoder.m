@@ -26,7 +26,7 @@ SIGNALTOUSE='force';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=66:67;     % this controls which columns of the signal array are valid fp channels.
+FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
                 % [2:6 8 9 11:15] for ME
 %%  4. find file(s)
