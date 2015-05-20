@@ -25,7 +25,7 @@ function out_struct = get_nev_mat_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     %initial setup
-    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0); %default to lab 1, no force, no eye
+    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0); %default to lab 1, no force, no eye
    
     % Parse arguments
     if (nargin == 1)
@@ -48,6 +48,10 @@ function out_struct = get_nev_mat_data(varargin)
                 opts.force = 0;
             elseif strcmp(opt_str, 'rothandle')
                 opts.rothandle = varargin{i+1};
+            elseif strcmp(opt_str, 'ignore_jumps')
+                opts.ignore_jumps=1;
+            elseif strcmp(opt_str, 'ignore_filecat')
+                opts.ignore_filecat=1;
             elseif isnumeric(varargin{i})
                 opts.labnum=varargin{i};    %Allow entering of the lab number               
             else 
@@ -88,7 +92,11 @@ function out_struct = get_nev_mat_data(varargin)
     out_struct.meta = struct('filename', NEVNSx.NEV.MetaTags.Filename, 'datetime', ...
         DateTime,'duration', NEVNSx.NEV.MetaTags.DataDurationSec, 'lab', opts.labnum, ...
         'bdf_info', ['converted with get_nev_mat_data on ' date]);
-
+    if isfield(NEVNSx.NEV.Data,'FileSepTime')
+        out_struct.meta.FileSepTime=NEVNSx.NEV.Data.FileSepTime;
+    else
+        out_struct.meta.FileSepTime=[];
+    end
     % Build catalogue of entities
     unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
     
@@ -340,11 +348,11 @@ function out_struct = get_nev_mat_data(varargin)
         % and encoder data
         if (opts.kin)
 %             out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
-            out_struct.raw.enc = get_encoder(all_enc);
+            [out_struct.raw.enc, out_struct.meta.jump_times]= get_encoder(all_enc);
         end
        
     end
-
+   
 %% Clean up
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);        
     

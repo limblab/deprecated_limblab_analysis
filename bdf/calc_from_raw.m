@@ -519,6 +519,35 @@ end             %ending "if opts.eye"
         out_struct.keyboard_events = sortrows( out_struct.keyboard_events, [1 2] );
     end
           
+%% generate masking vector for good data, using the concatenation times and jump times stored during loading of the bdf.
+    bad_times=[];
+    out_struct.good_kin_data=ones(size(out_struct.pos,1),1);
+    if isfield(opts,'ignore_jumps')
+        if ~opts.ignore_jumps
+            bad_times=reshape(out_struct.meta.jump_times,length(out_struct.meta.jump_times),1);
+        end
+    end
+    if isfield(opts,'ignore_filecat')
+        if opts.ignore_filecat
+            bad_times=[bad_times;reshape(out_struct.meta.FileSepTime,numel(out_struct.meta.FileSepTime),1)];
+        end
+    end
+    if ~isempty(bad_times)
+        temp=bad_times>analog_time_base(1) & bad_times<analog_time_base(end);
+        bad_times=sort(bad_times(temp));
+        %convert times into indices:
+        bad_ind=(bad_times-analog_time_base(1))*adfreq;
+        %convert single indices into 1s range. note that adfreq is taken as
+        %shorthand for 1s*adfreq here 
+        %a direct indexing method is used instead of a for-loop for speed
+        bad_ind=repmat(bad_ind,1,round(adfreq));
+        range_mat=repmat(([1:round(adfreq)]-round(0.5*adfreq)),size(bad_ind,1),1);
+        bad_ind=reshape((bad_ind+range_mat)',numel(bad_ind),1); 
+        clear range_mat
+        %set indices corresponding to bad data equal to zero in out_struct.good_kin_data
+        out_struct.good_kin_data(round(bad_ind))=0;
+        clear bad_ind
+    end
 %% Subroutines
 
     % diferentiater function for kinematic signals

@@ -1,4 +1,4 @@
-function encoder = get_encoder(strobed_events)
+function varargout = get_encoder(strobed_events)
 % GET_ENCODER(time_stamp_events)
 % 
 % Decodes the encoder positions of the new (Brian's) behavior system from
@@ -44,6 +44,7 @@ end
 %fix steps in encoder 1
 temp_indices = find(diff(encoder(:,2))>50 | diff(encoder(:,2))<-50);
 data_jumps=0;
+jump_times=encoder(temp_indices,1);
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
         encoder(temp_indices(i)+1:end,2) = encoder(temp_indices(i)+1:end,2)-(encoder(temp_indices(i)+1,2)-encoder(temp_indices(i),2));
@@ -53,6 +54,7 @@ end
 
 %fix steps in encoder 2
 temp_indices = find(diff(encoder(:,3))>50 | diff(encoder(:,3))<-50);
+jump_times=[jump_times;encoder(temp_indices)];
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
         encoder(temp_indices(i)+1:end,3) = encoder(temp_indices(i)+1:end,3)-(encoder(temp_indices(i)+1,3)-encoder(temp_indices(i),3));
@@ -62,4 +64,8 @@ end
 if data_jumps
     warning('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. These jumps were removed in get_encoder')
     disp(['Removed ',num2str(data_jumps),' step offsets in the data'])
+end
+varargout{1}=encoder;
+if nargout>1
+    varargout{2}=jump_times;
 end
