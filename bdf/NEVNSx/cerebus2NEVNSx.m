@@ -72,7 +72,7 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
     NEVNSx.MetaTags.NumFilesConcat = 1;
     NEVNSx.MetaTags.FileStartSec = 0;
     NEVNSx.MetaTags.NEVlist = {NEVlist.name};
-    NEVNSx.Data.FileSepTime=[];
+    NEVNSx.MetaTags.FileSepTime=[];
     for iNEVNSx = 2:length(NEVNSxstruct)
         NEV1 = NEVNSx.NEV;
         NEV2 = NEVNSxstruct(iNEVNSx).NEV;
@@ -108,7 +108,7 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
         NEV2.Data.SerialDigitalIO.TimeStampSec = NEV2.Data.SerialDigitalIO.TimeStampSec + double(NSx1DataLength)/30000;
         NEV2.Data.Spikes.TimeStamp = NEV2.Data.Spikes.TimeStamp + NSx1DataLength;
         %
-        NEVNSx.Data.FileSepTime(end+1,:)=[NEV1.MetaTags.DataDurationSec,NEV1.MetaTags.DataDurationSec+1];
+        NEVNSx.MetaTags.FileSepTime(end+1,:)=[NEV1.MetaTags.DataDurationSec,NEV1.MetaTags.DataDurationSec+1];
         % Combining the two NEV files
         NEVNSx.MetaTags.FileStartSec(end+1) = double(NSx1DataLength)/30000;
         NEV1.Data.Spikes.Electrode      = [NEV1.Data.Spikes.Electrode, NEV2.Data.Spikes.Electrode];

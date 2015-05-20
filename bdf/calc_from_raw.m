@@ -528,7 +528,7 @@ end             %ending "if opts.eye"
         end
     end
     if isfield(opts,'ignore_filecat')
-        if opts.ignore_filecat
+        if ~opts.ignore_filecat
             bad_times=[bad_times;reshape(out_struct.meta.FileSepTime,numel(out_struct.meta.FileSepTime),1)];
         end
     end

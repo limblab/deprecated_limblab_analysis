@@ -92,8 +92,8 @@ function out_struct = get_nev_mat_data(varargin)
     out_struct.meta = struct('filename', NEVNSx.NEV.MetaTags.Filename, 'datetime', ...
         DateTime,'duration', NEVNSx.NEV.MetaTags.DataDurationSec, 'lab', opts.labnum, ...
         'bdf_info', ['converted with get_nev_mat_data on ' date]);
-    if isfield(NEVNSx.NEV.Data,'FileSepTime')
-        out_struct.meta.FileSepTime=NEVNSx.NEV.Data.FileSepTime;
+    if isfield(NEVNSx.MetaTags,'FileSepTime')
+        out_struct.meta.FileSepTime=NEVNSx.MetaTags.FileSepTime;
     else
         out_struct.meta.FileSepTime=[];
     end
