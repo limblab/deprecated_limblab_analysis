@@ -164,6 +164,11 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     else
         EMG=[pos(:,1),zeros(size(pos(:,2:end)))];
     end
+    if isfield(bdf,'good_kin_data')
+        good_data=bdf.good_kin_data;
+    else
+        good_data=ones(size(bdf.pos(:,1)));
+    end
     %% set the list of channel/unit IDs for the selected units:
     unit_ids=-1*ones(length(which_units),2);
     for i=1:length(which_units)
@@ -438,250 +443,251 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     
 
 
-function outstruct=peak_value(x)
-    %computes the armdata struct for the peak velocity, peak dfdt, acc and
-    %get number of targets
-        num_targets=size(target_onsets,1);
-    %loop through targets finding the speed peaks
-        T=zeros(num_targets-1,1);%excludes the last point, which will be dealt with outside the loop
-        for j=1:length(target_onsets)-1
-            %just find first peak after target appearance
-            inds=find(x(:,1)>target_onsets(j) & x(:,1)<target_onsets(j+1));
-            [maxVal,maxInd]=extrema(x(inds));
-            if isempty(maxInd)
-                warning('testAllTuning:NoMaxVel',strcat('Could not find a maxima for target onset# ',num2str(j)))
-                disp('skipping target')
-                continue
+    function outstruct=peak_value(x)
+        %computes the armdata struct for the peak velocity, peak dfdt, acc and
+        %get number of targets
+            num_targets=size(target_onsets,1);
+        %loop through targets finding the speed peaks
+            T=zeros(num_targets-1,1);%excludes the last point, which will be dealt with outside the loop
+            for j=1:length(target_onsets)-1
+                %just find first peak after target appearance
+                inds=find(x(:,1)>target_onsets(j) & x(:,1)<target_onsets(j+1));
+                [maxVal,maxInd]=extrema(x(inds));
+                if isempty(maxInd)
+                    warning('testAllTuning:NoMaxVel',strcat('Could not find a maxima for target onset# ',num2str(j)))
+                    disp('skipping target')
+                    continue
+                end
+                if maxInd(1)==1 & length(maxInd)>1
+                    T(j)=inds(1)+maxInd(2);
+                else
+                    T(j)=inds(1)+maxInd(1);
+                end
+
             end
-            if maxInd(1)==1 & length(maxInd)>1
-                T(j)=inds(1)+maxInd(2);
-            else
-                T(j)=inds(1)+maxInd(1);
+            %deal with last point:
+
+            targets_per_trial=bdf.TT(end,bdf.TT_hdr.number_targets);
+            j=j+1;%adds a single index to the array for the last point
+            test_end=bdf.TT(bdf.TT(:,7+2*targets_per_trial-1)==target_onsets(j),7+2*targets_per_trial);
+            if ~isempty(test_end)
+                inds=find(x(:,1)>target_onsets(j) & x(:,1)<test_end);
+                [maxVal,maxInd]=extrema(x(inds));
+                if isempty(maxInd)
+                    warning('testAllTuning:NoMaxVel',strcat('Could not find a maxima for target onset# ',num2str(j)))
+                    T=T(1:end-1);
+                    disp('skipping target')
+                elseif maxInd(1)==1 & length(maxInd)>1
+                    T(j)=inds(1)+maxInd(2);
+                else
+                    T(j)=inds(1)+maxInd(1);
+                end
+            end
+            outstruct=sample_around_timepoints(x(T,1));
+    end
+
+    function outstruct=sample_around_timepoints(T)
+        %get firing rates in windows around the peak with the appropriate offset
+        sample_times=[];
+        for j=1:length(T)
+            mask=((FR_timeseries < (T(j)+data_window)) & ((FR_timeseries)>T(j)));
+            sample_times=[sample_times;FR_timeseries(mask)];
+        end
+        interpolate_kinematics(sample_times);
+        outstruct=build_outstruct(sample_times);
+    end
+
+    function outstruct=sample_between_timepoints(T,FR_timeseries)
+        %get firing rates in windows around the peak with the appropriate offset
+        sample_times=[];
+        for j=1:length(T)
+            mask=FR_timeseries > (T(j,1)) & (FR_timeseries)<T(j,2);
+            sample_times=[sample_times;FR_timeseries(mask)];
+        end
+        interpolate_kinematics(sample_times);
+        outstruct=build_outstruct(sample_times);
+    end
+
+    function interpolate_kinematics(sample_times)
+        % interpolate to firing rate time points to the firing rate
+        % timeseries with the specified offset
+        pos=interp1(pos(:,1),[pos(:,2:end),pos_lag_data],sample_times-data_offset);
+        vel=interp1(vel(:,1),[vel(:,2:end),vel_lag_data],sample_times-data_offset);
+        acc=interp1(acc(:,1),[acc(:,2:end),acc_lag_data],sample_times-data_offset);
+        force=interp1(force(:,1),[force(:,2:end),force_lag_data],sample_times-data_offset);
+        dfdt=interp1(dfdt(:,1),[dfdt(:,2:end),dfdt_lag_data],sample_times-data_offset);
+        dfdtdt=interp1(dfdtdt(:,1),[dfdtdt(:,2:end),dfdtdt_lag_data],sample_times-data_offset);
+        EMG=interp1(EMG(:,1),[EMG(:,2:end),EMG_lag_data],sample_times-data_offset);
+        good_data=interp1(pos(:,1),good_data,sample_times-data_offset);
+    end
+    function outstruct=build_outstruct(sample_times)
+    %% adds data to the output struct 
+        %check for NaN's and prune data appropriately
+        if (find(isnan(pos))  |    find(isnan(vel))    |    find(isnan(acc))    |    find(isnan(force))    |    find(isnan(dfdt))    |    find(isnan(dfdtdt))    | find(isnan(EMG)))
+            %positive lags will generate NaNs at the beginning of the data
+            %series, negative lags will have them at the end. Since the user
+            %can input both positive and negative lags, we must check for both
+
+            %check for leading NaN's
+            idx=find(lags==max(lags));
+            %find the last leading NaN
+            ipos=1;
+            while isnan(pos(ipos,2*idx))
+                ipos=ipos+1;
+            end
+            ivel=1;
+            while isnan(vel(ivel,2*idx))
+                ivel=ivel+1;
+            end
+            iacc=1;
+            while isnan(acc(iacc,2*idx))
+                iacc=iacc+1;
+            end
+            iforce=1;
+            while isnan(force(iforce,2*idx))
+                iforce=iforce+1;
+            end
+            idfdt=1;
+            while isnan(dfdt(idfdt,2*idx))
+                idfdt=idfdt+1;
+            end
+            idfdtdt=1;
+            while isnan(dfdtdt(idfdtdt,2*idx))
+                idfdtdt=idfdtdt+1;
+            end
+            iEMG=1;
+            while isnan(EMG(iEMG,2*idx))
+                iEMG=iEMG+1;
+            end
+            istart=max([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])+1;
+
+            %check for trailing NaN's
+            idx=find(lags==min(lags));
+            %find the index of the first trailing NaN
+            ipos=length(pos(:,1));
+            while isnan(pos(ipos,2*idx))
+                ipos=ipos1-1;
+            end
+            ivel=length(vel(:,1));
+            while isnan(vel(ivel,2*idx))
+                ivel=ivel-1;
+            end
+            iacc=length(acc(:,1));
+            while isnan(acc(iacc,2*idx))
+                iacc=iacc-1;
+            end
+            iforce=length(force(:,1));
+            while isnan(force(iforce,2*idx))
+                iforce=iforce-1;
+            end
+            idfdt=length(dfdt(:,1));
+            while isnan(dfdt(idfdt,2*idx))
+                idfdt=idfdt-1;
+            end
+            idfdtdt=length(dfdtdt(:,1));
+            while isnan(dfdtdt(idfdtdt,2*idx))
+                idfdtdt=idfdtdt-1;
+            end
+            iEMG=length(EMG(:,1));
+            while isnan(EMG(iEMG,2*idx))
+                iEMG=iEMG-1;
             end
 
-        end
-        %deal with last point:
-        
-        targets_per_trial=bdf.TT(end,bdf.TT_hdr.number_targets);
-        j=j+1;%adds a single index to the array for the last point
-        test_end=bdf.TT(bdf.TT(:,7+2*targets_per_trial-1)==target_onsets(j),7+2*targets_per_trial);
-        if ~isempty(test_end)
-            inds=find(x(:,1)>target_onsets(j) & x(:,1)<test_end);
-            [maxVal,maxInd]=extrema(x(inds));
-            if isempty(maxInd)
-                warning('testAllTuning:NoMaxVel',strcat('Could not find a maxima for target onset# ',num2str(j)))
-                T=T(1:end-1);
-                disp('skipping target')
-            elseif maxInd(1)==1 & length(maxInd)>1
-                T(j)=inds(1)+maxInd(2);
-            else
-                T(j)=inds(1)+maxInd(1);
-            end
-        end
-        outstruct=sample_around_timepoints(x(T,1));
-end
+            iend=min([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])-1;
 
-function outstruct=sample_around_timepoints(T)
-    %get firing rates in windows around the peak with the appropriate offset
-    sample_times=[];
-    for j=1:length(T)
-        mask=((FR_timeseries < (T(j)+data_window)) & ((FR_timeseries)>T(j)));
-        sample_times=[sample_times;FR_timeseries(mask)];
-    end
-    interpolate_kinematics(sample_times);
-    outstruct=build_outstruct(sample_times);
-end
+            %trim off indices corresponding to leading NaNs
+            pos=pos(istart:iend,:);
+            vel=vel(istart:iend,:);
+            acc=acc(istart:iend,:);
+            force=force(istart:iend,:);
+            dfdt=dfdt(istart:iend,:);
+            dfdtdt=dfdtdt(istart:iend,:);
+            EMG=EMG(istart:iend,:);
+            sample_times=sample_times(istart:iend,:);
 
-function outstruct=sample_between_timepoints(T,FR_timeseries)
-    %get firing rates in windows around the peak with the appropriate offset
-    sample_times=[];
-    for j=1:length(T)
-        mask=FR_timeseries > (T(j,1)) & (FR_timeseries)<T(j,2);
-        sample_times=[sample_times;FR_timeseries(mask)];
-    end
-    interpolate_kinematics(sample_times);
-    outstruct=build_outstruct(sample_times);
-end
-
-function interpolate_kinematics(sample_times)
-    % interpolate to firing rate time points to the firing rate
-    % timeseries with the specified offset
-    pos=interp1(pos(:,1),[pos(:,2:end),pos_lag_data],sample_times-data_offset);
-    vel=interp1(vel(:,1),[vel(:,2:end),vel_lag_data],sample_times-data_offset);
-    acc=interp1(acc(:,1),[acc(:,2:end),acc_lag_data],sample_times-data_offset);
-    force=interp1(force(:,1),[force(:,2:end),force_lag_data],sample_times-data_offset);
-    dfdt=interp1(dfdt(:,1),[dfdt(:,2:end),dfdt_lag_data],sample_times-data_offset);
-    dfdtdt=interp1(dfdtdt(:,1),[dfdtdt(:,2:end),dfdtdt_lag_data],sample_times-data_offset);
-    EMG=interp1(EMG(:,1),[EMG(:,2:end),EMG_lag_data],sample_times-data_offset);
-end
-function outstruct=build_outstruct(sample_times)
-%% adds data to the output struct 
-    %check for NaN's and prune data appropriately
-    if (find(isnan(pos))  |    find(isnan(vel))    |    find(isnan(acc))    |    find(isnan(force))    |    find(isnan(dfdt))    |    find(isnan(dfdtdt))    | find(isnan(EMG)))
-        %positive lags will generate NaNs at the beginning of the data
-        %series, negative lags will have them at the end. Since the user
-        %can input both positive and negative lags, we must check for both
-
-        %check for leading NaN's
-        idx=find(lags==max(lags));
-        %find the last leading NaN
-        ipos=1;
-        while isnan(pos(ipos,2*idx))
-            ipos=ipos+1;
-        end
-        ivel=1;
-        while isnan(vel(ivel,2*idx))
-            ivel=ivel+1;
-        end
-        iacc=1;
-        while isnan(acc(iacc,2*idx))
-            iacc=iacc+1;
-        end
-        iforce=1;
-        while isnan(force(iforce,2*idx))
-            iforce=iforce+1;
-        end
-        idfdt=1;
-        while isnan(dfdt(idfdt,2*idx))
-            idfdt=idfdt+1;
-        end
-        idfdtdt=1;
-        while isnan(dfdtdt(idfdtdt,2*idx))
-            idfdtdt=idfdtdt+1;
-        end
-        iEMG=1;
-        while isnan(EMG(iEMG,2*idx))
-            iEMG=iEMG+1;
-        end
-        istart=max([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])+1;
-
-        %check for trailing NaN's
-        idx=find(lags==min(lags));
-        %find the index of the first trailing NaN
-        ipos=length(pos(:,1));
-        while isnan(pos(ipos,2*idx))
-            ipos=ipos1-1;
-        end
-        ivel=length(vel(:,1));
-        while isnan(vel(ivel,2*idx))
-            ivel=ivel-1;
-        end
-        iacc=length(acc(:,1));
-        while isnan(acc(iacc,2*idx))
-            iacc=iacc-1;
-        end
-        iforce=length(force(:,1));
-        while isnan(force(iforce,2*idx))
-            iforce=iforce-1;
-        end
-        idfdt=length(dfdt(:,1));
-        while isnan(dfdt(idfdt,2*idx))
-            idfdt=idfdt-1;
-        end
-        idfdtdt=length(dfdtdt(:,1));
-        while isnan(dfdtdt(idfdtdt,2*idx))
-            idfdtdt=idfdtdt-1;
-        end
-        iEMG=length(EMG(:,1));
-        while isnan(EMG(iEMG,2*idx))
-            iEMG=iEMG-1;
         end
 
-        iend=min([ipos,ivel,iacc,iforce,idfdt,idfdtdt,iEMG])-1;
-
-        %trim off indices corresponding to leading NaNs
-        pos=pos(istart:iend,:);
-        vel=vel(istart:iend,:);
-        acc=acc(istart:iend,:);
-        force=force(istart:iend,:);
-        dfdt=dfdt(istart:iend,:);
-        dfdtdt=dfdtdt(istart:iend,:);
-        EMG=EMG(istart:iend,:);
-        sample_times=sample_times(istart:iend,:);
-        
+        %compose armdata struct array for position
+        outstruct.armdata(1).data=pos((good_data==1),:);
+        outstruct.armdata(1).name='pos';
+        outstruct.armdata(1).num_lags=num_lags;
+        outstruct.armdata(1).num_base_cols=size(pos,2);
+        if isfield(method_opts,'compute_pos_pds')
+            outstruct.armdata(1).doPD=method_opts.compute_pos_pds;
+        else
+            outstruct.armdata(1).doPD=0;
+        end
+        %compose armdata cell array for velocity
+        outstruct.armdata(2).data=vel((good_data==1),:);
+        outstruct.armdata(2).name='vel';
+        outstruct.armdata(2).num_lags=num_lags;
+        outstruct.armdata(2).num_base_cols=size(vel,2);
+        if isfield(method_opts,'compute_vel_pds')
+            outstruct.armdata(2).doPD=method_opts.compute_vel_pds;
+        else
+            outstruct.armdata(2).doPD=1;
+        end
+        %compose armdata cell array for acceleration
+        outstruct.armdata(3).data=acc((good_data==1),:);
+        outstruct.armdata(3).name='acc';
+        outstruct.armdata(3).num_lags=num_lags;
+        outstruct.armdata(3).num_base_cols=size(acc,2);
+        if isfield(method_opts,'compute_acc_pds')
+            outstruct.armdata(3).doPD=method_opts.compute_acc_pds;
+        else
+            outstruct.armdata(3).doPD=0;
+        end
+        %compose armdata cell array for force
+        outstruct.armdata(4).data=force((good_data==1),:);
+        outstruct.armdata(4).name='force';
+        outstruct.armdata(4).num_lags=num_lags;
+        outstruct.armdata(4).num_base_cols=size(force,2);
+        if isfield(method_opts,'compute_force_pds')
+            outstruct.armdata(4).doPD=method_opts.compute_force_pds;
+        else
+            outstruct.armdata(4).doPD=0;
+        end
+        %compose armdata cell array for dfdt
+        outstruct.armdata(5).data=dfdt((good_data==1),:);
+        outstruct.armdata(5).name='dfdt';
+        outstruct.armdata(5).num_lags=num_lags;
+        outstruct.armdata(5).num_base_cols=size(dfdt,2);
+        if isfield(method_opts,'compute_dfdt_pds')
+            outstruct.armdata(5).doPD=method_opts.compute_dfdt_pds;
+        else
+            outstruct.armdata(5).doPD=0;
+        end
+        %compose armdata cell array for dfdtdt
+        outstruct.armdata(6).data=dfdtdt((good_data==1),:);
+        outstruct.armdata(6).name='dfdtdt';
+        outstruct.armdata(6).num_lags=num_lags;
+        outstruct.armdata(6).num_base_cols=size(dfdtdt,2);
+        if isfield(method_opts,'compute_dfdtdt_pds')
+            outstruct.armdata(6).doPD=method_opts.compute_dfdtdt_pds;
+        else
+            outstruct.armdata(6).doPD=0;
+        end
+        %compose armdata cell array for EMG
+        outstruct.armdata(7).data=EMG((good_data==1),:);
+        outstruct.armdata(7).name='EMG';
+        outstruct.armdata(7).num_lags=num_lags;
+        outstruct.armdata(7).num_base_cols=size(EMG,2);
+        if isfield(method_opts,'compute_EMG_pds')
+            outstruct.armdata(7).doPD=method_opts.compute_EMG_pds;
+        else
+            outstruct.armdata(7).doPD=0;
+        end
+        %compose FR field
+        outstruct.FR=-1*ones(length(sample_times),length(which_units));
+        for k=1:length(which_units)
+            outstruct.FR(:,k)=interp1(bdf.units(1).FR(:,1),bdf.units(which_units(k)).FR(:,2),(sample_times));
+        end
+        outstruct.unit_ids=unit_ids;
+        %compose the time vector
+        outstruct.T=sample_times;
+        %compose unit list field
+        outstruct.which_units=which_units;
+        %compose list of lags
+        outstruct.lags=lags;
     end
-
-    %compose armdata struct array for position
-    outstruct.armdata(1).data=pos;
-    outstruct.armdata(1).name='pos';
-    outstruct.armdata(1).num_lags=num_lags;
-    outstruct.armdata(1).num_base_cols=size(pos,2);
-    if isfield(method_opts,'compute_pos_pds')
-        outstruct.armdata(1).doPD=method_opts.compute_pos_pds;
-    else
-        outstruct.armdata(1).doPD=0;
-    end
-    %compose armdata cell array for velocity
-    outstruct.armdata(2).data=vel;
-    outstruct.armdata(2).name='vel';
-    outstruct.armdata(2).num_lags=num_lags;
-    outstruct.armdata(2).num_base_cols=size(vel,2);
-    if isfield(method_opts,'compute_vel_pds')
-        outstruct.armdata(2).doPD=method_opts.compute_vel_pds;
-    else
-        outstruct.armdata(2).doPD=1;
-    end
-    %compose armdata cell array for acceleration
-    outstruct.armdata(3).data=acc;
-    outstruct.armdata(3).name='acc';
-    outstruct.armdata(3).num_lags=num_lags;
-    outstruct.armdata(3).num_base_cols=size(acc,2);
-    if isfield(method_opts,'compute_acc_pds')
-        outstruct.armdata(3).doPD=method_opts.compute_acc_pds;
-    else
-        outstruct.armdata(3).doPD=0;
-    end
-    %compose armdata cell array for force
-    outstruct.armdata(4).data=force;
-    outstruct.armdata(4).name='force';
-    outstruct.armdata(4).num_lags=num_lags;
-    outstruct.armdata(4).num_base_cols=size(force,2);
-    if isfield(method_opts,'compute_force_pds')
-        outstruct.armdata(4).doPD=method_opts.compute_force_pds;
-    else
-        outstruct.armdata(4).doPD=0;
-    end
-    %compose armdata cell array for dfdt
-    outstruct.armdata(5).data=dfdt;
-    outstruct.armdata(5).name='dfdt';
-    outstruct.armdata(5).num_lags=num_lags;
-    outstruct.armdata(5).num_base_cols=size(dfdt,2);
-    if isfield(method_opts,'compute_dfdt_pds')
-        outstruct.armdata(5).doPD=method_opts.compute_dfdt_pds;
-    else
-        outstruct.armdata(5).doPD=0;
-    end
-    %compose armdata cell array for dfdtdt
-    outstruct.armdata(6).data=dfdtdt;
-    outstruct.armdata(6).name='dfdtdt';
-    outstruct.armdata(6).num_lags=num_lags;
-    outstruct.armdata(6).num_base_cols=size(dfdtdt,2);
-    if isfield(method_opts,'compute_dfdtdt_pds')
-        outstruct.armdata(6).doPD=method_opts.compute_dfdtdt_pds;
-    else
-        outstruct.armdata(6).doPD=0;
-    end
-    %compose armdata cell array for EMG
-    outstruct.armdata(7).data=EMG;
-    outstruct.armdata(7).name='EMG';
-    outstruct.armdata(7).num_lags=num_lags;
-    outstruct.armdata(7).num_base_cols=size(EMG,2);
-    if isfield(method_opts,'compute_EMG_pds')
-        outstruct.armdata(7).doPD=method_opts.compute_EMG_pds;
-    else
-        outstruct.armdata(7).doPD=0;
-    end
-    %compose FR field
-    outstruct.FR=-1*ones(length(sample_times),length(which_units));
-    for k=1:length(which_units)
-        outstruct.FR(:,k)=interp1(bdf.units(1).FR(:,1),bdf.units(which_units(k)).FR(:,2),(sample_times));
-    end
-    outstruct.unit_ids=unit_ids;
-    %compose the time vector
-    outstruct.T=sample_times;
-    %compose unit list field
-    outstruct.which_units=which_units;
-    %compose list of lags
-    outstruct.lags=lags;
-end
 end

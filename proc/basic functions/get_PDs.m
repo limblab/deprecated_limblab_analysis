@@ -16,8 +16,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
 %     else
 %         error('get_PDs:found no matching files')
 %     end
-    NSx=cerebus2NEVNSx(folder,options.prefix);
-    bdf = get_nev_mat_data(NSx,options.labnum);
+    output_data.NSx=cerebus2NEVNSx(folder,options.prefix);
+    bdf = get_nev_mat_data(output_data.NSx,options.labnum);
 
     %% prep bdf
     if isfield(options,'task')
@@ -111,7 +111,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         behaviors = parse_for_tuning(bdf,'continuous','opts',optionstruct,'units',which_units);
         output_data.unit_behaviors=behaviors;
         if optionstruct.compute_vel_pds
-            output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',10),'poisson');
+            output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',100),'poisson');
             output_data.unit_pd_table=get_pd_table(output_data.unit_tuning_stats,'vel');
 
             %make a table that only has the best tuned units:
@@ -181,7 +181,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
                     '\fontsize{10}Amplitude normalized and log scaled for pretty picture.'])
         end
         if optionstruct.compute_force_pds
-            output_data.unit_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',10),'poisson');
+            output_data.unit_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',100),'poisson');
             output_data.unit_force_pd_table=get_pd_table(output_data.unit_force_tuning_stats,'force');
 
             %make a table that only has the best tuned units:
@@ -275,7 +275,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         else
             %if we didn't parse the arm behavior for the single units, then
             %we need to compute it and the firing rate matrix now
-            behaviors = parse_for_tuning(multiunit_bdf,'continuous','opts',optionstruct,'units',which_units);
+            behaviors = parse_for_tuning(multiunit_bdf,'continuous','opts',optionstruct);
         end
         output_data.electrode_behaviors=behaviors;
         if optionstruct.compute_vel_pds
