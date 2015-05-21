@@ -394,7 +394,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
                     %we need to interpolate to the analog_time_base
                     a_data = interp1(chan_time_base, a_data, analog_time_base);
                 end
-                out_struct.analog.data{c} = a_data;
+                out_struct.analog.data(:,c) = a_data;
             end
         end
     end
