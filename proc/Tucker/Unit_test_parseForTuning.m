@@ -9,7 +9,7 @@ ts = 50;
 offset=0; %a positive offset compensates for neural data leading kinematic data, a negative offset compensates for a kinematic lead
 
 if isfield(bdf,'units')
-    vt = bdf.vel(:,1);
+    vt = bdf.pos(:,1);
     t = vt(1):ts/1000:vt(end);
     for i=1:length(bdf.units)
         if isempty(bdf.units(i).id)
