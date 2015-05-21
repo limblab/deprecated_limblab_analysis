@@ -40,7 +40,9 @@ for i=1:length(foldercontents)
 
                 disp(strcat('Working on: ',temppath, tempname,tempext))
                 try
-                    bdf=get_cerebus_data( temppath,labnum,'verbose','noeye');
+                    NSx=cerebus2NEVNSx(temppath,tempname);
+                    bdf = get_nev_mat_data(NSx,labnum,'verbose','noeye');
+                    %bdf=get_cerebus_data( temppath,labnum,'verbose','noeye');
                     disp(strcat('Saving: ',strcat(folderpath, tempname, '.mat')))
                     save( strcat(folderpath, tempname, '.mat'), 'bdf','-v7.3')
                     clear bdf

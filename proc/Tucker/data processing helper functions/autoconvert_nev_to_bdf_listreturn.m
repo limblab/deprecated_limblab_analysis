@@ -34,19 +34,23 @@ for i=1:length(foldercontents)
         [tempfolder,tempname,tempext]=fileparts(temppath);
         if (strcmp(tempext,'.nev') & ~isempty(strfind(tempname,matchstring)))
             
-           file_list{end+1}=temppath;
-            if isempty(strmatch( strcat( folderpath,tempname, '.mat'),fnames))
-                %if we haven't found a .mat file to match the .nev then make
-                %one
+            file_list{end+1}=temppath;
+            try
+                if isempty(strmatch( strcat( tempfolder,tempname, '.mat'),fnames))
+                    %if we haven't found a .mat file to match the .nev then make
+                    %one
 
-                disp(strcat('Working on: ',temppath, tempname,tempext))
-                try
-                    bdf_list{end+1}=get_cerebus_data( temppath,labnum,'verbose','noeye');
-                catch temperr
-                    disp(strcat('Failed to process: ', folderpath,tempname))
-                    disp(temperr.identifier)
-                    disp(temperr.message)
+                    disp(strcat('Working on: ',temppath, tempname,tempext))
+                    NEVNSx=cerebus2NEVNSx( temppath,labnum,'verbose','noeye');
+                    bdf_list{end+1}=get_nev_mat_data(NEVNSx,'noeye',
+                else
+                    load(temppath);
+                    bdf_list{end+1}=bdf;
                 end
+            catch temperr
+                disp(strcat('Failed to process: ', folderpath,tempname))
+                disp(temperr.identifier)
+                disp(temperr.message)
             end
         end
     end
