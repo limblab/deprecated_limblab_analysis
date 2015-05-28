@@ -66,11 +66,15 @@ function [figure_list,data_struct]=compute_electrode_stability_plasticity(fpath,
     % channel each day into a single matrix
     data_struct.pdmat=zeros(input_data.num_channels,length(data_struct.all_pds));
     data_struct.moddepthmat=zeros(input_data.num_channels,length(data_struct.all_pds));
+    data_struct.dir_CImat=[];
+    data_struct.moddepth_CImat=[];
     for i=1:length(data_struct.all_pds)
         for j=1:length(data_struct.all_pds{i}.dir)
-            if data_struct.all_pds{i}.channel(j)<=input_data.num_channels;
+            if data_struct.all_pds{i}.channel(j)<=input_data.num_channels
                 data_struct.pdmat(data_struct.all_pds{i}.channel(j),i)=data_struct.all_pds{i}.dir(j);
                 data_struct.moddepthmat(data_struct.all_pds{i}.channel(j),i)=data_struct.all_pds{i}.moddepth(j);
+                data_struct.dir_CImat(data_struct.all_pds{i}.channel(j),i)=abs(data_struct.all_pds{i}.dir_CI(j,1)-data_struct.all_pds{i}.dir_CI(j,2));
+                data_struct.moddepth_CImat(data_struct.all_pds{i}.channel(j),i)=abs(data_struct.all_pds{i}.moddepth_CI(j,1)-data_struct.all_pds{i}.moddepth_CI(j,2));
             end
         end
     end
@@ -90,46 +94,200 @@ function [figure_list,data_struct]=compute_electrode_stability_plasticity(fpath,
     %by creating two lists with interesting pds
     data_struct.stimulated_list=[1 2 4 14 17 26 28 30]';
     data_struct.controls_list=[20 25 6 8 21 19 7 15]'; %those two lists are in matching order (1 is coupled with 20)
-    data_struct.stimulated=[];
-    data_struct.controls=[];
+    data_struct.stimulated_dir=[];
+    data_struct.controls_dir=[];
+    data_struct.stimulated_moddepth=[];
+    data_struct.controls_moddepth=[];
+    data_struct.stimulated_dir_CI=[];
+    data_struct.controls_dir_CI=[];
+    data_struct.stimulated_moddepth_CI=[];
+    data_struct.controls_moddepth_CI=[];
        
     for i=1:length(data_struct.stimulated_list)
-       data_struct.stimulated=[data_struct.stimulated;data_struct.pdmat((data_struct.stimulated_list(i)),:)];
-       data_struct.controls=[data_struct.controls;data_struct.pdmat((data_struct.controls_list(i)),:)];
+       data_struct.stimulated_dir=[data_struct.stimulated_dir;data_struct.pdmat((data_struct.stimulated_list(i)),:)];
+       data_struct.controls_dir=[data_struct.controls_dir;data_struct.pdmat((data_struct.controls_list(i)),:)];
+       data_struct.stimulated_moddepth=[data_struct.stimulated_moddepth;data_struct.moddepthmat((data_struct.stimulated_list(i)),:)];
+       data_struct.controls_moddepth=[data_struct.controls_moddepth;data_struct.moddepthmat((data_struct.controls_list(i)),:)];
+       data_struct.stimulated_dir_CI=[data_struct.stimulated_dir_CI;data_struct.dir_CImat((data_struct.stimulated_list(i)),:)];
+       data_struct.controls_dir_CI=[data_struct.controls_dir_CI;data_struct.dir_CImat((data_struct.controls_list(i)),:)];
+       data_struct.stimulated_moddepth_CI=[data_struct.stimulated_moddepth_CI;data_struct.moddepth_CImat((data_struct.stimulated_list(i)),:)];
+       data_struct.controls_moddepth_CI=[data_struct.controls_moddepth_CI;data_struct.moddepth_CImat((data_struct.controls_list(i)),:)];
     end
-               
+    %%
     %make a few plots:
-    temp1=data_struct.stimulated;
-    mask=repmat(temp1(:,1),1,size(temp1,2));
-    temp1=temp1-mask;
-    set(0,'DefaultAxesColorOrder',jet(8));   
+    %----PDs
+    %--------absolute values
+    %------------stimulated
+    temp1=data_struct.stimulated_dir;
     temp1(temp1>pi)=temp1(temp1>pi)-2*pi;
     temp1(temp1<-pi)=temp1(temp1<-pi)+2*pi;
-    figure_list=[figure_list figure('name','PD_change_16')];
-    
+    figure_list=[figure_list figure('name','PD_absoluteValues_16')];
+    color_order=jet(8);
     subplot(2,1,1);
-    plot(temp1');
-    title(['Change in PD from first file for stimulated channels'])
-    xlabel('file number')
-    ylabel('change in PD')
-    h=legend(num2str(data_struct.stimulated_list));
-    set(h,'Location','northwest')
-    set(gca,'ylim',[-10 10])
     
-    temp2=data_struct.controls;
-    mask=repmat(temp2(:,1),1,size(temp2,2));
-    temp2=temp2-mask;
+    for i=1:8
+        [x,a]=fix_angles(temp1(i,:));
+        plot(x,a,'-+','color',color_order(i,:));
+        hold on
+    end
+               
+    title(['Absolute values of PDs for stimulated channels'])
+    xlabel('day')
+    ylabel('PD (rad)')
+    h=legend(num2str(data_struct.stimulated_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-4 4])
+    
+    %------------controls
+    temp2=data_struct.controls_dir;
+    temp2(temp2>pi)=temp2(temp2>pi)-2*pi;
+    temp2(temp2<-pi)=temp2(temp2<-pi)+2*pi;    
     subplot(2,1,2);
-    plot(temp2');
-    title(['Change in PD from first file for control channels'])
-    xlabel('file number')
-    ylabel('change in PD')
+
+    for i=1:8
+        [x,a]=fix_angles(temp2(i,:));
+        plot(x,a,'-+','color',color_order(i,:));
+        hold on
+    end
+    title(['Absolute values of in PDs for control channels'])
+    xlabel('day')
+    ylabel('PD (rad)')
     h=legend(num2str(data_struct.controls_list));
-    set(h,'Location','northwest')
-    format_for_lee(figure_list(length(figure_list)))
-    set(gca,'ylim',[-10 10])
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-4 4])
     set(figure_list(length(figure_list)),'Position',[100 100 1000 1000])
     
+    %--------changing values: from 0
+    %------------stimulated
+    temp1=data_struct.stimulated_dir;
+    mask=repmat(temp1(:,1),1,size(temp1,2));
+    temp1=temp1-mask;
+    temp1(temp1>pi)=temp1(temp1>pi)-2*pi;
+    temp1(temp1<-pi)=temp1(temp1<-pi)+2*pi;
+    figure_list=[figure_list figure('name','PD_changeFrom0_16')];
+    subplot(2,1,1);
+    
+    for i=1:8
+        [x,a]=fix_angles(temp1(i,:));
+        plot(x,a,'-+','color',color_order(i,:));
+        hold on
+    end
+               
+    title(['Change in PD from first day for stimulated channels'])
+    xlabel('day')
+    ylabel('change in PD (rad)')
+    h=legend(num2str(data_struct.stimulated_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-4 4])
+       
+    %------------controls
+    temp2=data_struct.controls_dir;
+    mask=repmat(temp2(:,1),1,size(temp2,2));
+    temp2=temp2-mask;
+    temp2(temp2>pi)=temp2(temp2>pi)-2*pi;
+    temp2(temp2<-pi)=temp2(temp2<-pi)+2*pi;
+    subplot(2,1,2);
+    
+    for i=1:8
+        [x,a]=fix_angles(temp2(i,:));
+        plot(x,a,'-+','color',color_order(i,:));
+        hold on
+    end
+    title(['Change in PD from first day for control channels'])
+    xlabel('day')
+    ylabel('change in PD (rad)')
+    h=legend(num2str(data_struct.controls_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-4 4])
+    set(figure_list(length(figure_list)),'Position',[100 100 1000 1000])
+    
+    %--------changing values: from day -1
+    %------------stimulated
+    temp1=data_struct.stimulated_dir;
+    mask=repmat(temp1(:,1),1,size(temp1,2));
+    
+    for i=2:size(temp1,2)
+        temp1(:,i)=temp1(:,i)-mask(:,i-1);
+    end   
+    
+    temp1(temp1>pi)=temp1(temp1>pi)-2*pi;
+    temp1(temp1<-pi)=temp1(temp1<-pi)+2*pi;
+    figure_list=[figure_list figure('name','PD_changeFromD-1_16')];
+    subplot(2,1,1);
+    
+    for i=1:8
+        [x,a]=fix_angles(temp1(i,:));
+        plot(x,a,'-+','color',color_order(i,:));
+        hold on
+    end
+               
+    title(['Change in PD day to day for stimulated channels'])
+    xlabel('day')
+    ylabel('change in PD (rad)')
+    h=legend(num2str(data_struct.stimulated_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-4 4])
+    
+    %------------controls
+    temp2=data_struct.controls_dir;
+    mask=repmat(temp2(:,1),1,size(temp2,2));
+    
+    for i=2:size(temp2,2)
+        temp2(:,i)=temp2(:,i)-mask(:,i-1);
+    end   
+    
+    temp2(temp2>pi)=temp2(temp2>pi)-2*pi;
+    temp2(temp2<-pi)=temp2(temp2<-pi)+2*pi;
+    subplot(2,1,2);
+    
+    for i=1:8
+        [x,a]=fix_angles(temp2(i,:));
+        plot(x,a,'-+','color',color_order(i,:));
+        hold on
+    end
+               
+    title(['Change in PD day to day for controls channels'])
+    xlabel('day')
+    ylabel('change in PD (rad)')
+    h=legend(num2str(data_struct.controls_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-4 4])
+    
+    
+    %----moddepths
+    %--------stimulated
+    temp3=data_struct.stimulated_moddepth;
+    mask=repmat(temp3(:,1),1,size(temp3,2));
+    temp3=temp3-mask;
+    figure_list=[figure_list figure('name','moddepth_16')];
+    
+    set(0,'DefaultAxesColorOrder',jet(8));
+    subplot(2,1,1);
+    plot(temp3');
+    title(['Change in modulation depth from first day for stimulated channels'])
+    xlabel('day')
+    ylabel('change in modulation depth')
+    h=legend(num2str(data_struct.stimulated_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-6e-03 6e-03])
+    
+    %--------controls
+    temp4=data_struct.controls_moddepth;
+    mask=repmat(temp4(:,1),1,size(temp4,2));
+    temp4=temp4-mask;
+    
+    subplot(2,1,2);
+    plot(temp4');
+    title(['Change in modulation depth from first day for control channels'])
+    xlabel('day')
+    ylabel('change in modulation depth')
+    h=legend(num2str(data_struct.controls_list));
+    set(h,'Location','northwestoutside')
+    set(gca,'ylim',[-6e-03 6e-03])
+    set(figure_list(length(figure_list)),'Position',[100 100 1000 1000])
+    
+  
+    %----means
     av1=mean(temp1,1);
     st1=std(temp1,1);
     av2=mean(temp2,1);
