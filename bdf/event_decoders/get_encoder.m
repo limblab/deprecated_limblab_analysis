@@ -1,4 +1,4 @@
-function varargout = get_encoder(strobed_events)
+function varargout = get_encoder(strobed_events,varargin)
 % GET_ENCODER(time_stamp_events)
 % 
 % Decodes the encoder positions of the new (Brian's) behavior system from
@@ -21,9 +21,17 @@ function varargout = get_encoder(strobed_events)
 
 % $Id$
 
-[n,m] = size(strobed_events);
-if (m ~= 2)
-    error('input strobed_events must be a two column matrix');
+if ~isempty(varargin)
+    %variable input used to pass times that this function will ignore step
+    %shifts in the output. particularly important for ignoring shifts that
+    %occur when files are concatenated together.
+    ignore_windows=varargin{1};
+else
+    ignore_windows=[];
+end
+
+if (size(strobed_events,2) ~= 2)
+    error('get_encoder:BadMatrix','input strobed_events must be a two column matrix');
 end
 
 % get time-stamps of the first strobe in a set of four
@@ -31,6 +39,23 @@ ts = strobed_events(:,1);
 ts_index = find( diff(ts) > .000275 )+1;
 ts_index = ts_index( diff(ts_index) == 4 ); % throw out bad points
 time_stamps = ts( ts_index );
+
+%make mask vector to use as flag for ignoring timepoints
+mask=ones(size(time_stamps));
+temp=[];
+if ~isempty(ignore_windows)
+    for i=1:size(ignore_windows,1)
+        range=[find(time_stamps>=ignore_windows(i,1),1,'first'),find( time_stamps<=ignore_windows(i,2),1,'last')];
+        %if there are no points inside the window, as the case with
+        %fileseparateions, the first point of range will be larger than the
+        %second. Thus we use min and max to get the actual window for all
+        %cases
+        temp=[temp;[min(range):max(range)]'];
+    end
+    mask(temp)=0;
+end
+
+
 
 % assemble encoder signals
 encoder = zeros(length(ts_index)-2, 3);
@@ -47,23 +72,31 @@ data_jumps=0;
 jump_times=encoder(temp_indices,1);
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
-        encoder(temp_indices(i)+1:end,2) = encoder(temp_indices(i)+1:end,2)-(encoder(temp_indices(i)+1,2)-encoder(temp_indices(i),2));
+        if mask(temp_indices(i))
+            encoder(temp_indices(i)+1:end,2) = encoder(temp_indices(i)+1:end,2)-(encoder(temp_indices(i)+1,2)-encoder(temp_indices(i),2));
+            disp(temp_indices(i))
+        end
     end
     data_jumps=length(temp_indices);
 end
 
 %fix steps in encoder 2
 temp_indices = find(diff(encoder(:,3))>50 | diff(encoder(:,3))<-50);
-jump_times=[jump_times;encoder(temp_indices)];
+jump_times=[jump_times;encoder(temp_indices,1)];
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
-        encoder(temp_indices(i)+1:end,3) = encoder(temp_indices(i)+1:end,3)-(encoder(temp_indices(i)+1,3)-encoder(temp_indices(i),3));
+        if mask(temp_indices(i))
+            encoder(temp_indices(i)+1:end,3) = encoder(temp_indices(i)+1:end,3)-(encoder(temp_indices(i)+1,3)-encoder(temp_indices(i),3));
+        end
     end
     data_jumps=data_jumps+length(temp_indices);
 end
 if data_jumps
     warning('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. These jumps were removed in get_encoder')
-    disp(['Removed ',num2str(data_jumps),' step offsets in the data'])
+    disp(['Found',num2str(data_jumps),' step offsets in the data'])
+    if ~isempty(ignore_windows)
+        disp('Steps associated with some time points such as file concatination times may have been ignored')
+    end
 end
 varargout{1}=encoder;
 if nargout>1
