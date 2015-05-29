@@ -511,6 +511,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     function interpolate_kinematics(sample_times)
         % interpolate to firing rate time points to the firing rate
         % timeseries with the specified offset
+        good_data=interp1(pos(:,1),good_data,sample_times-data_offset);
         pos=interp1(pos(:,1),[pos(:,2:end),pos_lag_data],sample_times-data_offset);
         vel=interp1(vel(:,1),[vel(:,2:end),vel_lag_data],sample_times-data_offset);
         acc=interp1(acc(:,1),[acc(:,2:end),acc_lag_data],sample_times-data_offset);
@@ -518,7 +519,6 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
         dfdt=interp1(dfdt(:,1),[dfdt(:,2:end),dfdt_lag_data],sample_times-data_offset);
         dfdtdt=interp1(dfdtdt(:,1),[dfdtdt(:,2:end),dfdtdt_lag_data],sample_times-data_offset);
         EMG=interp1(EMG(:,1),[EMG(:,2:end),EMG_lag_data],sample_times-data_offset);
-        good_data=interp1(pos(:,1),good_data,sample_times-data_offset);
     end
     function outstruct=build_outstruct(sample_times)
     %% adds data to the output struct 
@@ -603,6 +603,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
             dfdt=dfdt(istart:iend,:);
             dfdtdt=dfdtdt(istart:iend,:);
             EMG=EMG(istart:iend,:);
+            good_data=good_data(istart:iend,:);
             sample_times=sample_times(istart:iend,:);
 
         end
@@ -682,6 +683,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
         for k=1:length(which_units)
             outstruct.FR(:,k)=interp1(bdf.units(1).FR(:,1),bdf.units(which_units(k)).FR(:,2),(sample_times));
         end
+        outstruct.FR=outstruct.FR((good_data==1),:);
         outstruct.unit_ids=unit_ids;
         %compose the time vector
         outstruct.T=sample_times;
