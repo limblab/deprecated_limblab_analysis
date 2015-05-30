@@ -42,6 +42,10 @@ for i=1:length(foldercontents)
                 disp(strcat('Failed to process: ', temppath,filesep,tempname))
                 disp(temperr.identifier)
                 disp(temperr.message)
+                for k=1:length(temperr.stack)
+                    disp(['in function: ',temperr.stack(k).name])
+                    disp(['on line: ',num2str(temperr.stack(k).line)])
+                end
             end
         end
     end
