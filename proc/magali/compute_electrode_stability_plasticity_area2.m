@@ -92,8 +92,8 @@ function [figure_list,data_struct]=compute_electrode_stability_plasticity(fpath,
     
     %reducing the list of studied electrodes to the 16 of interest
     %by creating two lists with interesting pds
-    data_struct.stimulated_list=[1 2 4 14 17 26 28 30]';
-    data_struct.controls_list=[20 25 6 8 21 19 7 15]'; %those two lists are in matching order (1 is coupled with 20)
+    data_struct.stimulated_list=[1 2 4 7 14 17 26 30]';
+    data_struct.controls_list=[21 25 6 20 19 15 8 28]'; %those two lists are in matching order (1 is coupled with 20)
     data_struct.stimulated_dir=[];
     data_struct.controls_dir=[];
     data_struct.stimulated_moddepth=[];
