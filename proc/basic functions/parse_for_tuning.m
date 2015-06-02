@@ -686,7 +686,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
         outstruct.FR=outstruct.FR((good_data==1),:);
         outstruct.unit_ids=unit_ids;
         %compose the time vector
-        outstruct.T=sample_times;
+        outstruct.T=sample_times((good_data==1),:);
         %compose unit list field
         outstruct.which_units=which_units;
         %compose list of lags
