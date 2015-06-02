@@ -67,7 +67,7 @@ if (length(ts_index)-2>=1)
 end
 
 %fix steps in encoder 1
-temp_indices = find(diff(encoder(:,2))>50 | diff(encoder(:,2))<-50);
+temp_indices = find( (diff(encoder(:,2))>50 | diff(encoder(:,2))<-50) & mask(1:end-3));
 data_jumps=0;
 jump_times=encoder(temp_indices,1);
 if ~isempty(temp_indices)
@@ -80,7 +80,7 @@ if ~isempty(temp_indices)
 end
 
 %fix steps in encoder 2
-temp_indices = find(diff(encoder(:,3))>50 | diff(encoder(:,3))<-50);
+temp_indices = find( (diff(encoder(:,3))>50 | diff(encoder(:,3))<-50) & mask(1:end-3));
 jump_times=[jump_times;encoder(temp_indices,1)];
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
