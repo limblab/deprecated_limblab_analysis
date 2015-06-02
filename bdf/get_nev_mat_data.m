@@ -346,9 +346,13 @@ function out_struct = get_nev_mat_data(varargin)
         out_struct.raw.words = actual_words;
 
         % and encoder data
-        if (opts.kin)
-%             out_struct.raw.enc = get_encoder(all_enc(logical(all_enc(:,2)),:));
-            [out_struct.raw.enc, out_struct.meta.jump_times]= get_encoder(all_enc,out_struct.meta.FileSepTime);
+        if opts.kin
+            if opts.ignore_jumps
+                % ignore jumps in lab1
+                out_struct.raw.enc = get_encoder(all_enc,[0 out_struct.meta.duration]);
+            else
+                [out_struct.raw.enc, out_struct.meta.jump_times]= get_encoder(all_enc,out_struct.meta.FileSepTime);
+            end
         end
        
     end

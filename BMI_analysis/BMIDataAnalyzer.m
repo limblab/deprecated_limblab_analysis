@@ -64,9 +64,7 @@ function BMIDataAnalyzer()
     
     
 %% Globals
-    
-    dataPath = 'Z:\';
-    dataPath = uigetdir(dataPath, 'Please choose the base data directory');
+    dataPath = '';
     Use_State =0;
     
     %Global Variables
@@ -82,7 +80,7 @@ function BMIDataAnalyzer()
     OLPred_FullFileName = 0;
     RTPred_FileName = 0;
     RTPred_FullFileName = 0;
-    BDF_opts = struct('labnum',3,'rothandle',1);
+    BDF_opts = struct('labnum',1,'rothandle',0,'ignore_jumps',1);
        
      
 %% Creating UI
@@ -120,6 +118,9 @@ function BMIDataAnalyzer()
     %Callbacks
     function CB_LoadButton_Callback(obj,event)
         [CB_FileName, PathName] = uigetfile( {'*.nev;*.plx'},'Open .nev or .plx Data File',dataPath );
+        filesep_idx = strfind(PathName,filesep);
+        dataPath = PathName(1:filesep_idx(end-1));
+        
         
         if isequal(CB_FileName,0) || isequal(PathName,0)
           %  CB_FileName = 'User Cancelled File Loading';
@@ -135,7 +136,7 @@ function BMIDataAnalyzer()
     end
 
     function CB_BDFOptionsButton_Callback(obj,event)
-        BDF_opts = BDFOptionsGUI;        
+        BDF_opts = BDFOptionsGUI(BDF_opts);        
     end
 
     function CB_ConvertButton_Callback(obj,event)
@@ -143,7 +144,11 @@ function BMIDataAnalyzer()
             disp('Converting .nev file to BDF structure, please wait...');
 %             out_struct = get_cerebus_data(CB_FullFileName,'verbose');
 %           Now uses get_nev_mat_data()--7/7/2014--CE
-            out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum);
+            if BDF_opts.ignore_jumps
+                out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum,'ignore_jumps');
+            else
+                out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum);
+            end
             disp('Done.');
             BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
         elseif strcmp(CB_FileName(end-3:end),'.plx')
@@ -191,6 +196,8 @@ function BMIDataAnalyzer()
     function BDF_LoadButton_Callback(obj,event)
         
         [BDF_FileName, PathName] = uigetfile([dataPath '/BDFStructs/*.mat'], 'Open BDF Data File');
+        filesep_idx = strfind(PathName,filesep);
+        dataPath = PathName(1:filesep_idx(end-1));
         
         if isequal(BDF_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -306,6 +313,8 @@ function BMIDataAnalyzer()
     function Bin_LoadButton_Callback(obj,event)
         
         [Bin_FileName, PathName] = uigetfile([dataPath '/BinnedData/*.mat'], 'Open Binned Data File');
+        filesep_idx = strfind(PathName,filesep);
+        dataPath = PathName(1:filesep_idx(end-1));
         
         if isequal(Bin_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -546,6 +555,8 @@ function BMIDataAnalyzer()
     
     function Filt_LoadButton_Callback(obj,event)
         [Filt_FileName, PathName] = uigetfile([dataPath '/SavedFilters/*.mat'], 'Open Filter Data File');
+        filesep_idx = strfind(PathName,filesep);
+        dataPath = PathName(1:filesep_idx(end-1));
         
         if isequal(Filt_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -650,6 +661,8 @@ function BMIDataAnalyzer()
     %Callbacks
     function OLPred_LoadButton_Callback(obj,event)
         [OLPred_FileName, PathName] = uigetfile([dataPath '/OLPreds/*.mat'], 'Open Offline Predictions Data File');
+        filesep_idx = strfind(PathName,filesep);
+        dataPath = PathName(1:filesep_idx(end-1));        
         
         if isequal(OLPred_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');
@@ -714,6 +727,8 @@ function BMIDataAnalyzer()
     %Callbacks
     function RTPred_LoadButton_Callback(obj,event)
         [RTPred_FileName, PathName] = uigetfile([dataPath '/RTPreds/*.mat'], 'Open Real-Time Predictions Data File');
+        filesep_idx = strfind(PathName,filesep);
+        dataPath = PathName(1:filesep_idx(end-1));
         
         if isequal(RTPred_FileName,0) || isequal(PathName,0)
           disp('User action cancelled');

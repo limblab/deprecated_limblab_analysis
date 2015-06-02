@@ -22,7 +22,7 @@ function varargout = BDFOptionsGUI(varargin)
 
 % Edit the above text to modify the response to help BDFOptionsGUI
 
-% Last Modified by GUIDE v2.5 04-Dec-2014 13:55:54
+% Last Modified by GUIDE v2.5 01-Jun-2015 17:23:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,6 +55,17 @@ function BDFOptionsGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for BDFOptionsGUI
 handles.output = hObject;
 handles.OK = 0;
+% handles.labnumberedit = 1;
+% handles.rotatehandlecheckbox = 0;
+% handles.ignore_jumps_chkbox = 1;
+
+if nargin > 3
+    BDF_opts = varargin{1};
+    set(handles.labnumberedit,'String',num2str(BDF_opts.labnum));
+    set(handles.labnumberedit,'Value',BDF_opts.labnum);
+    set(handles.rotatehandlecheckbox,'Value',BDF_opts.rothandle);
+    set(handles.ignore_jumps_chkbox,'Value',BDF_opts.ignore_jumps);
+end
 
 % Update handles structure
 guidata(hObject, handles);
@@ -73,8 +84,9 @@ function varargout = BDFOptionsGUI_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
     if handles.OK
         out_struct = struct(...
-                    'labnum',      get(handles.labnumberedit,'Value'),...
-                    'rothandle',    get(handles.rotatehandlecheckbox, 'Value'));
+                    'labnum',       get(handles.labnumberedit,'Value'),...
+                    'rothandle',    get(handles.rotatehandlecheckbox, 'Value'),...
+                    'ignore_jumps', get(handles.ignore_jumps_chkbox, 'Value'));
     else
         out_struct = [];
     end
@@ -125,3 +137,12 @@ function rotatehandlecheckbox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.rotatehandlecheckbox, 'value',(get(hObject,'Value')));
 % Hint: get(hObject,'Value') returns toggle state of rotatehandlecheckbox
+
+
+% --- Executes on button press in ignore_jumps_chkbox.
+function ignore_jumps_chkbox_Callback(hObject, eventdata, handles)
+% hObject    handle to ignore_jumps_chkbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.ignore_jumps_chkbox, 'value',(get(hObject,'Value')));
+% Hint: get(hObject,'Value') returns toggle state of ignore_jumps_chkbox
