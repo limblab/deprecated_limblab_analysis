@@ -200,7 +200,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
             
 %             enc_freq = 1000;
             
-            time_pos = out_struct.raw.enc(:,1);            
+            analog_time_base = out_struct.raw.enc(:,1);
             x_pos = out_struct.raw.enc(:,2)/1000;
             y_pos = out_struct.raw.enc(:,3)/1000;
 %             %LP filter at 100 Hz:
@@ -215,7 +215,7 @@ function out_struct = calc_from_raw(raw_struct, opts)
 %             ddy = [0; diff(dy) .* enc_freq];
 %             ddy = filtfilt(b,a,ddy);
             
-            out_struct.pos = [time_pos x_pos  y_pos];
+            out_struct.pos = [analog_time_base x_pos  y_pos];
 %             out_struct.vel = [time_pos    dx     dy];
 %             out_struct.acc = [time_pos   ddx    ddy];                      
             

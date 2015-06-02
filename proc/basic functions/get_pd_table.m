@@ -1,4 +1,4 @@
-function pds=get_pd_table(tuning_data,varargin)
+edifunction pds=get_pd_table(tuning_data,varargin)
     %gets a matrix of velocity PDs from the full tuning matrix returned by
     %compute_tuning. Each row will be of the format: 
     %[channel unit PD CI_low CI_high Modulation Modulation_low Modulation_high]

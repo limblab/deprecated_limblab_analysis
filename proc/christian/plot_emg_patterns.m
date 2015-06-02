@@ -16,7 +16,9 @@ figure;
 % %specific angles for 7muscles (Spike):
 % theta = deg2rad([0;65;165.5;180;210;233.1;304.5;360]');
 %specific angles for 7muscles (Jango):
-theta = deg2rad([0;65;165.5;180;210;233.1;360]');
+% theta = deg2rad([0;65;165.5;180;210;233.1;360]');
+%specific angles for de_Rugy_PD
+theta = deg2rad( [127.7 102.8 14.5 306.9 235.5 127.7]);
 
 %This is just a way to plot radial axis from 0 to 1:
 P = polar(theta, ones(size(theta)));

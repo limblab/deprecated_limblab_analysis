@@ -15,11 +15,13 @@ function [varargout] = ave_fr_wrt_tgt(binnedData,time_before,time_after,varargin
 %       save_path  =  if present, saves figures as .png and .pdf in save_path
 %
 % outputs:
-%   varargout   = {ave_fr,ave_path,ave_emg}
-%       ave_fr     = average firing rate wrt each target during time window
-%                    specified by [ OT_on-time_before, OT_on+time_after];
-%       ave_path   = average X and Y cursor position
-%       ave_emg   = average emgs
+%   varargout   = {ave_global_fr,ave_unit_fr,ave_path,ave_emg}
+%       ave_global_fr = average global firing rate wrt each target during time window
+%                       specified by [ OT_on-time_before, OT_on+time_after];
+%       ave_unit_fr   = average firing rate for each target over the whole
+%                       time window
+%       ave_path      = average X and Y cursor position
+%       ave_emg       = average emgs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 outs_to_ave = 0;
 plot_flag   = false;
@@ -40,6 +42,7 @@ end
 
 targets      = sort(unique(binnedData.trialtable(:,10)));
 num_targets  = length(targets);
+num_units    = size(binnedData.spikeratedata,2);
 successes    = find(binnedData.trialtable(:,9)==double('R'));
 ave_duration = mean(binnedData.trialtable(successes,8)-binnedData.trialtable(successes,7));
 std_duration = std(binnedData.trialtable(successes,8)-binnedData.trialtable(successes,7));
@@ -54,15 +57,19 @@ end
 
 ave_path     = nan(num_bins,2,num_targets);
 ave_emg      = nan(num_bins,num_emgs,num_targets);
-ave_fr       = nan(num_bins,num_targets);
-fr_sd        = nan(num_bins,num_targets);
+ave_g_fr     = nan(num_bins,num_targets);
+ave_u_fr     = nan(num_targets,num_units);
+g_fr_sd      = nan(num_bins,num_targets);
+u_fr_sd      = nan(num_targets,num_units);
 
 for tgt = 1:num_targets
     
     tgt_idx       = find(binnedData.trialtable(:,10)==targets(tgt));
     succ_idx      = intersect(tgt_idx,successes);
     num_succ      = length(succ_idx);
-    tmp_FR        = nan(num_succ,num_bins);
+    tmp_g_fr      = nan(num_succ,num_bins);
+    tmp_u_fr      = nan(num_succ,num_units);
+    
     if outs_to_ave == 1 || outs_to_ave ==3
         tmp_path     = nan(num_succ,num_bins,2);
     end
@@ -73,11 +80,12 @@ for tgt = 1:num_targets
     for trial = 1:num_succ
 
         % starting 'time_before' sec before tgt onset:
-        binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),7)-1,1,'last');
+        binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),7)-time_before,1,'last');
         % until 'time_after' sec after tgt onset:
         binstop  = binstart + num_bins-1;
         if binstop > size(binnedData.spikeratedata,1)
-            tmp_FR = tmp_FR(1:end-1,:);
+            tmp_g_fr = tmp_g_fr(1:end-1,:);
+            tmp_u_fr = tmp_u_fr(1:end-1,:);
             if outs_to_ave == 1 || outs_to_ave ==3
                 tmp_path     = tmp_path(1:end-1,:,:);
             end
@@ -86,7 +94,9 @@ for tgt = 1:num_targets
             end
             continue;
         end
-        tmp_FR(trial,:)      = mean(binnedData.spikeratedata(binstart:binstop,:),2);
+        tmp_g_fr(trial,:)      = mean(binnedData.spikeratedata(binstart:binstop,:),2);
+        tmp_u_fr(trial,:)      = mean(binnedData.spikeratedata(binstart:binstop,:),1);
+        
         if outs_to_ave == 1 || outs_to_ave ==3
             tmp_path(trial,:,:) = binnedData.cursorposbin(binstart:binstop,:);
         end
@@ -95,8 +105,11 @@ for tgt = 1:num_targets
         end
     end
     
-    ave_fr(:,tgt)     = mean(tmp_FR   ,1); 
-    fr_sd(:,tgt)      = std(tmp_FR    ,1);
+    ave_g_fr(:,tgt)   = mean(tmp_g_fr   ,1);
+    ave_u_fr(tgt,:)   = mean(tmp_u_fr   ,1);
+    g_fr_sd(:,tgt)    = std(tmp_g_fr    ,1);
+    u_fr_sd(tgt,:)    = std(tmp_u_fr    ,1);
+    
     if outs_to_ave == 1 || outs_to_ave ==3
         ave_path(:,:,tgt) = mean(tmp_path,1);
     end
@@ -109,23 +122,23 @@ for tgt = 1:num_targets
         figure; hold on;  
         switch outs_to_ave
             case 0
-                fig_h       = plot(xvec,ave_fr(:,tgt),'r','LineWidth',3);
+                fig_h       = plot(xvec,ave_g_fr(:,tgt),'r','LineWidth',3);
                 leg         = {'ave FR'};
             case 1
-                [ax,h1,h2]  = plotyy(xvec,ave_fr(:,tgt),xvec,ave_path(:,:,tgt));
+                [ax,h1,h2]  = plotyy(xvec,ave_g_fr(:,tgt),xvec,ave_path(:,:,tgt));
                 set(h1,'Color','r','LineWidth',3); set(ax(1),'YColor','r');set(get(ax(1),'YLabel'),'string','Ave FR');
                 set(h2(1),'Color','b','LineWidth',3); set(ax(2),'YColor','b');set(get(ax(2),'YLabel'),'string','Ave Cursor');
                 set(h2(2),'Color','g','LineWidth',3);
                 fig_h       = [h1;h2];
                 leg         = [{'ave FR'} strrep(binnedData.cursorposlabels,'_','\_')];
             case 2
-                [ax,h1,h2]  = plotyy(xvec,ave_fr(:,tgt),xvec,ave_emg(:,:,tgt));
+                [ax,h1,h2]  = plotyy(xvec,ave_g_fr(:,tgt),xvec,ave_emg(:,:,tgt));
                 set(h1,'Color','r','LineWidth',3); set(ax(1),'YColor','r');set(get(ax(1),'YLabel'),'string','Ave FR');
                 set(ax(2),'YColor','k'); set(get(ax(2),'YLabel'),'string','Ave EMG');
                 fig_h       = [h1,h2];
                 leg         = [{'ave FR'} strrep(binnedData.emgguide       ,'_','\_')];
             case 3
-                [ax,fig_h]  = plotyyy(xvec,ave_fr(:,tgt),xvec,ave_path(:,:,tgt),...
+                [ax,fig_h]  = plotyyy(xvec,ave_g_fr(:,tgt),xvec,ave_path(:,:,tgt),...
                                       xvec,ave_emg(:,:,tgt),{'Ave FR';'Ave Cursor';'Ave EMG'});
                 set(fig_h(1),'Color','r','LineWidth',3);set(ax(1),'YColor','r');
                 set(fig_h(2),'Color','b','LineWidth',3);set(ax(2),'YColor','b');
@@ -173,5 +186,5 @@ for tgt = 1:num_targets
         export_fig(fn,'-transparent',gcf);
     end
 end
-varargout = {ave_fr,ave_path,ave_emg};
+varargout = {ave_g_fr,ave_u_fr,ave_path,ave_emg};
 end

@@ -99,7 +99,8 @@ hold on
 if nRows > 1
     for col = 1:nCols
         % Extract the x location data needed for the errorbar plots:
-        x = get(get(handles.bar(col),'children'),'xdata');
+%         x = get(get(handles.bar(col),'children'),'xdata');
+        x = get(handles.bar(col),'xdata');
         % Use the mean x values to call the standard errorbar fn; the
         % errorbars will now be centred on each bar; these are in ascending
         % order so use xOrder to ensure y values and errors are too:
