@@ -16,7 +16,7 @@
 
 % %%%%%%%%%%%%
 %   Some known issues:
-%       - The resistor used in the analog input is hard-coded (1 kOhm)
+%       - The resistor used in the analog input is hard-coded (100 Ohm)
 
 
 function varargout = stim_trig_avg( varargin )
@@ -102,7 +102,7 @@ else
     disp('Sync signal found');
     
     % define resistor to record sync pulse
-    hw.cb.sync_out_resistor = 1000;
+    hw.cb.sync_out_resistor = 100;
 end
 
 
@@ -115,9 +115,9 @@ analog_data(:,1)            = ts_cell_array([analog_data{:,1}]',1); % ToDo: repl
 emg.labels                  = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 1 );
 emg.nbr_emgs                = numel(emg.labels); disp(['Nbr EMGs: ' num2str(emg.nbr_emgs)]), disp(' ');
 emg.fs                      = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'EMG', 3),1),2));
-emg.evoked_emg              = zeros( ( sta_params.t_before + sta_params.t_after ) * emg.fs/1000 + 1, ...
-                                emg.nbr_emgs, sta_params.nbr_stims_ch, numel(sta_params.stim_elecs) ); % ToDo: replace by read sampling freq % ToDo: see if the + 1 screws this up
 emg.length_evoked_emg       = ( sta_params.t_before + sta_params.t_after ) * emg.fs/1000 + 1;
+emg.evoked_emg              = zeros( emg.length_evoked_emg, emg.nbr_emgs, sta_params.nbr_stims_ch, ...
+                                numel(sta_params.stim_elecs) ); 
 emg.STA                     = zeros( emg.length_evoked_emg, emg.nbr_emgs, numel(sta_params.stim_elecs) );
 emg.STA_std                 = zeros( emg.length_evoked_emg, emg.nbr_emgs, numel(sta_params.stim_elecs) );
 
@@ -173,15 +173,15 @@ end
 clear nbr_ch_found
 
 
-% SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
-% or > 1 ms) 
-if sta_params.stim_ampl > 0.090
-    cbmex('close');
-    error('ERROR: stimulation amplitude is too large (> 90uA) !');    
-elseif sta_params.stim_pw > 1
-    cbmex('close');
-    error('ERROR: stimulation pulse width is too large (> 1ms) !');    
-end
+% % SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
+% % or > 1 ms) 
+% if sta_params.stim_ampl > 0.090
+%     cbmex('close');
+%     error('ERROR: stimulation amplitude is too large (> 90uA) !');    
+% elseif sta_params.stim_pw > 1
+%     cbmex('close');
+%     error('ERROR: stimulation pulse width is too large (> 1ms) !');    
+% end
    
 
 
@@ -298,14 +298,14 @@ for i = 1:length(sta_params.stim_elecs)
             emg.data(:,iii,i)   = double(aux{iii,1}); 
         end
 
-        ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
-            
 
         % ToDo: DELETE, ONLY TO CHECK
         % check if the trigger signal and the EMG are synchronized
-        ts_sync_pulses_its_freq             = ts_sync_pulses/30000*10000;
+        ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
+        
+        ts_sync_pulses_its_freq             = ts_sync_pulses/30000*emg.fs;
         ts_first_sync_pulse_emg_freq        = ts_sync_pulses_its_freq(find(ts_sync_pulses_its_freq<5000,1));
-        analog_sync_signal                  = double(analog_data{13,3});
+        analog_sync_signal                  = double(analog_data{10,3});
         
         ts_first_sync_pulse_analog_signal   = find(analog_sync_signal<-2000,1);
         
@@ -349,6 +349,7 @@ for i = 1:length(sta_params.stim_elecs)
                 trig_time_in_emg_sample_nbr     = floor(double(ts_sync_pulses(iii))/30000*emg.fs - sta_params.t_before/1000*emg.fs);
                 if (trig_time_in_emg_sample_nbr + (sta_params.t_after + sta_params.t_before)*emg.fs/1000 ) > length(emg.data)
                     disp('the last sync pulse is far too late!');
+                    break;
                     drawnow;
                 else
                     emg.evoked_emg(:,:,iii+hw.cb.ind_ev_emg,i)    = emg.data( trig_time_in_emg_sample_nbr : ...
