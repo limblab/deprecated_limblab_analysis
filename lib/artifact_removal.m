@@ -33,6 +33,10 @@ if isfield(unit_structure,'MetaTags')  %% If coming from an NEVNSx structure
     num_electrodes = length(unique(unit_structure.Data.Spikes.Electrode));
 elseif isfield(unit_structure,'units')  %% If coming from a bdf structure
     [timestamps,sort_order] = sort(vertcat(unit_structure.units.ts));
+    if isfield(unit_structure.units,'waveforms')
+        waveforms = vertcat(unit_structure.units.waveforms);
+        waveforms = waveforms(sort_order,:);
+    end
     timestamps = round(timestamps*30000);
     unit_index = [];
     units = [];
@@ -69,7 +73,7 @@ if ~isempty(timestamps)
         actual_spikes = unique([actual_spikes;new_spikes]);
         actual_spikes = actual_spikes(~ismember(actual_spikes,artifacts));
     end
-    disp(['Removed ' num2str(length(artifacts)) ' artifacts, found ' num2str(length(actual_spikes))...
+    disp(['Removed ' num2str(length(artifacts)) ' artifacts in approximately ' num2str(sum(diff(artifacts)>1)) ' events, found ' num2str(length(actual_spikes))...
         ' actual spikes in ' num2str(toc) ' seconds.'])
 
     if isfield(unit_structure,'MetaTags')  %% If coming from an unit_structureNSx structure    
@@ -83,13 +87,21 @@ if ~isempty(timestamps)
         end
     else                                    %% If coming from a unit_structure structure
         for iUnit = 1:size(unit_structure.units,2)
-            unit_structure.units(iUnit).ts = timestamps(intersect(actual_spikes,find(unit_index == iUnit)))/30000;            
+            temp_idx = intersect(actual_spikes,find(unit_index == iUnit));
+            unit_structure.units(iUnit).ts = timestamps(temp_idx)/30000;            
+            if isfield(unit_structure.units,'waveforms')
+                unit_structure.units(iUnit).waveforms = waveforms(temp_idx,:);
+            end
         end
         if ~delete_artifacts
             for iUnit = 1:size(unit_structure.units,2)
                 if ~isempty(intersect(artifacts,find(unit_index == iUnit)))
                     unit_structure.units(end+1).id = [unit_structure.units(iUnit).id(1) 99];
-                    unit_structure.units(end).ts = timestamps(intersect(artifacts,find(unit_index == iUnit)))/30000;
+                    temp_idx = intersect(artifacts,find(unit_index == iUnit));
+                    unit_structure.units(end).ts = timestamps(temp_idx)/30000;
+                    if isfield(unit_structure.units,'waveforms')
+                        unit_structure.units(end).waveforms = waveforms(temp_idx,:);
+                    end
                 end
             end
         end
