@@ -99,7 +99,6 @@ emg.evoked_emg(:,:,zero_emg_rows)   = [];
 % value is within limits
 if ( sta_metrics_params.last_evoked_EMG == 0 ) || ( sta_metrics_params.last_evoked_EMG > length(emg.evoked_emg) )
     sta_metrics_params.last_evoked_EMG  = length(emg.evoked_emg);
-    sta_metrics_params.last_evoked_EMG  = length(emg.evoked_emg);
 end
 
 

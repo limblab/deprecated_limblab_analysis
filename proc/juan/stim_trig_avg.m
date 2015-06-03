@@ -173,15 +173,15 @@ end
 clear nbr_ch_found
 
 
-% % SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
-% % or > 1 ms) 
-% if sta_params.stim_ampl > 0.090
-%     cbmex('close');
-%     error('ERROR: stimulation amplitude is too large (> 90uA) !');    
-% elseif sta_params.stim_pw > 1
-%     cbmex('close');
-%     error('ERROR: stimulation pulse width is too large (> 1ms) !');    
-% end
+% SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
+% or > 1 ms) 
+if sta_params.stim_ampl > 0.090
+    cbmex('close');
+    error('ERROR: stimulation amplitude is too large (> 90uA) !');    
+elseif sta_params.stim_pw > 1
+    cbmex('close');
+    error('ERROR: stimulation pulse width is too large (> 1ms) !');    
+end
    
 
 
@@ -307,23 +307,23 @@ for i = 1:length(sta_params.stim_elecs)
         ts_first_sync_pulse_emg_freq        = ts_sync_pulses_its_freq(find(ts_sync_pulses_its_freq<5000,1));
         analog_sync_signal                  = double(analog_data{10,3});
         
-        ts_first_sync_pulse_analog_signal   = find(analog_sync_signal<-2000,1);
+        ts_first_sync_pulse_analog_signal   = find( (analog_sync_signal-mean(analog_sync_signal)) <-2*std(analog_sync_signal), 1);
         
                 
-        if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) > 10
+        if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) > emg.fs/1000
             disp('the delay between the time stamps and the analog signal is > 1 ms!!!');
             disp(['it is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1))/10 )])
         else
             disp('the delay between the time stamps and the analog signal is < 1 ms!!!');
         end
         
-%         figure,plot(analog_sync_signal), hold on, xlim([0 1500]), 
-%         stem(ts_sync_pulses_its_freq,ones(length(ts_sync_pulses),1)*-5000,'marker','none','color','r')
+        figure,plot(analog_sync_signal), hold on, xlim([0 10000]), xlabel(['sample numer at EMG fs = ' num2str(emg.fs) ' (Hz)']), 
+        stem(ts_sync_pulses_its_freq,ones(length(ts_sync_pulses),1)*-5000,'marker','none','color','r'), legend('analog signal','time stamps')
         % ToDo: DELETE UNTIL HERE
         
         
         % this is a temporal fix to ignore the data when the analog and ts are not cynhronized
-        if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) < 10
+        if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) <  emg.fs/1000
         
             % remove the first and/or the last sync pulse if they fall outside the data
             if floor(ts_sync_pulses(1)/30000) < sta_params.t_before/1000
