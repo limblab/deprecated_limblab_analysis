@@ -122,7 +122,7 @@ for batchIndex=1:length(MATfiles)
                 % make a stab at perfectly silent failure
                 try
                     kinStruct(batchIndex).control=out_struct.meta.control;
-                catch
+                catch ME
                     % still need the name
                     kinStruct(batchIndex).name=MATfiles{batchIndex};
                     continue
@@ -213,7 +213,7 @@ fprintf(1,['%s no longer saves a copy of kinStruct.mat.\nIt ',...
     'is now the responsibility of the calling script/function.\n'],mfilename)
 return
 
-save(fullfile(PathName,'kinStruct.mat'),'kinStruct')
+save(fullfile(PathName,'kinStruct.mat'),'kinStruct')                        %#ok<UNRCH>
 % make sure to save a copy in FilterFiles, if we're operating on the
 % network.
 if ~isempty(regexp(pwd,'bdf|BDFs','once'))
