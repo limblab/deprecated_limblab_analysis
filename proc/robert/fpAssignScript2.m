@@ -38,6 +38,9 @@ fpCell=cell(1,length(out_struct.raw.analog.data));
 fptimesCell=fpCell;
 samprate=zeros(size(fpCell));
 FPstop_time=samprate; FPstart_time=FPstop_time;
+if max(cellfun(@numel,out_struct.raw.analog.ts))>500
+    warning('fpAssignScript2:bigTS','very large number of time stamps in FPs')
+end
 for n=1:length(out_struct.raw.analog.ts)
     samprate(n)=out_struct.raw.analog.adfreq(n);
     % time will be in units of integer ticks of a clock that's running at
@@ -119,16 +122,23 @@ for n=1:length(fpCell)
 end, clear n fpCell fptimesCell 
 clear FPstart_time FPstop_time temp
 
-
-%   0.0017  181547
-% 181.9737  2227
-% 184.2067	9648
-% 193.8767	330638
-% 524.8387	1965
-% 526.9357	1135
-% 528.4497	31203
-% 559.7197	1136
-% 561.0807	94517
-
-
+% if the sampling rate is >1kHz, the delta band will be empty at 256Hz
+% window size, which means that 1/6 of the SFDs will be all NaNs.  To avoid
+% this, adjust the sampling rate downward for higher-sampled LFPs.
+if samprate > 1000
+    % want final fs to be 1000
+    disp('downsampling to 1 kHz')
+    samp_fact=samprate/1000;
+    downsampledTimeVector=linspace(fptimes(1),fptimes(end),length(fptimes)/samp_fact);
+    fp=interp1(fptimes,fp',downsampledTimeVector)';
+    fptimes=downsampledTimeVector;
+    downsampledTimeVector=linspace(out_struct.vel(1,1),out_struct.vel(end,1), ...
+        size(out_struct.vel,1)/samp_fact);
+    out_struct.vel=[rowBoat(downsampledTimeVector), ...
+        interp1(out_struct.vel(:,1),out_struct.vel(:,2:3),downsampledTimeVector)];
+    out_struct.pos=[rowBoat(downsampledTimeVector), ...
+        interp1(out_struct.pos(:,1),out_struct.pos(:,2:3),downsampledTimeVector)];
+    clear downsampledTimeVector
+    samprate=1000;
+end
 
