@@ -33,6 +33,18 @@ end
 scaleFactor=1000;
 hold off
 
+% experimental: do a CAR, using only 32 channels at a time to calculate the 
+% common average to which all channels (in the group) should be referenced.
+% do within each file?
+for n=1:length(cutfp)
+    cutfp(n).data(1:32,:)=bsxfun(@minus,cutfp(n).data(1:32,:), ...
+        mean(cutfp(n).data(1:32,:),1));
+    cutfp(n).data(33:64,:)=bsxfun(@minus,cutfp(n).data(33:64,:), ...
+        mean(cutfp(n).data(33:64,:),1));
+    cutfp(n).data(65:96,:)=bsxfun(@minus,cutfp(n).data(65:96,:), ...
+        mean(cutfp(n).data(65:96,:),1));
+end
+
 plotTimes=0;
 for n=1:length(cutfp)
     cutfp(n).data(badChannels,:)=[];
@@ -47,6 +59,8 @@ for n=1:length(cutfp)
 	end
 end
 axis tight
+title(regexp(cutfp(1).name,'.*(?=[0-9]{3})','match','once'), ...
+    'Interpreter','none')
 
 %% guess at bad channels based on limited data available
 allCutFP=cat(2,cutfp.data);
