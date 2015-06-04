@@ -76,6 +76,9 @@ if length(varargin)>0
                                         bandToUse=varargin{9};
                                         if length(varargin)>9
                                             featShift=varargin{10};
+                                            if length(varargin)>10
+                                                powerOrPhase=varargin{11};
+                                            end
                                         else
                                             featShift=0;
                                         end
@@ -97,6 +100,9 @@ if length(varargin)>0
 end
 if ~exist('smoothfeats','var')
     smoothfeats=0;  %default to no smoothing
+end
+if ~exist('powerOrPhase','var')
+    powerOrPhase='power';
 end
 
 if (strcmpi(signal,'vel') || (strcmpi(signal,'pos')) || (strcmpi(signal,'acc')))
@@ -244,11 +250,6 @@ PB(6,:,:)=mean(PA(gam3,:,:),1);
 end
 PB(7,:,:)=mean(PA(freqs>30 & freqs<50,:,:),1);
 
-if exist('bandToUse','var')==1 && all(isfinite(bandToUse)) && all(bandToUse <= size(PB,1))
-    PB=PB(bandToUse,:,:);
-end
-
-
 % isolate powerbands for individual-band analysis.  Most times this will
 % remain commented.
 % PB([2:6],:,:)=[];
@@ -262,6 +263,33 @@ end
 % PB=[];
 % PB(1,:,:)=mean(PA(gam1 | gam2 | gam3,:,:),1);
 % assignin('base','PB',PB)
+
+phaseMat=tfmat(2:length(freqs)+1,:,:);
+PBphase(1,:,:)=LMP;
+PBphase(2,:,:)=angle(mean(phaseMat(delta,:,:),1));
+PBphase(3,:,:)=angle(mean(phaseMat(mu,:,:),1));
+PBphase(4,:,:)=angle(mean(phaseMat(gam1,:,:),1));
+PBphase(5,:,:)=angle(mean(phaseMat(gam2,:,:),1));
+if samprate>600
+    PBphase(6,:,:)=angle(mean(phaseMat(gam3,:,:),1));
+end
+PBphase(7,:,:)=angle(mean(phaseMat(freqs>30 & freqs<50,:,:),1));
+% % to use unwrapped phase:
+% [b,a]=butter(2,0.1/(bs/2),'high');
+% PBphase=double(PBphase);
+% for n=2:size(PBphase,1)
+%     for k=1:size(PBphase,2)
+%         PBphase(n,k,:)=filtfilt(b,a,unwrap(PBphase(n,k,:)));
+%     end, clear k
+% end, clear n b a
+
+if isequal(powerOrPhase,'phase')
+    PB=PBphase;
+end
+if exist('bandToUse','var')==1 && all(isfinite(bandToUse)) && all(bandToUse <= size(PB,1))
+    PB=PB(bandToUse,:,:);
+end
+
 
 % PB has dims freqs X chans X bins
 disp('4th part: calculate bandpower')
