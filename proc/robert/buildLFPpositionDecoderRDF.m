@@ -9,8 +9,8 @@ function [vaf,H,bestf,bestc]=buildLFPpositionDecoderRDF(varargin)
 
 numlags=10;
 wsz=256;
-nfeat=150; featShift=0;
-PolynomialOrder=3;
+nfeat=1; featShift=0;
+PolynomialOrder=0;
 smoothfeats=0;
 binsize=0.05;
 folds=10;
@@ -112,13 +112,10 @@ disp('static variables assigned')
 %%
 % downsample, so the delta band isn't empty at wsz=256; this is a current
 % limitation of BrainReader.
-if 0%samprate > 1000
+if (max(out_struct.raw.analog.adfreq)>1000 && samprate<=1000)
     % want final fs to be 1000
-    disp('downsampling to 1 kHz')
-    samp_fact=samprate/1000;
-    downsampledTimeVector=linspace(fptimes(1),fptimes(end),length(fptimes)/samp_fact);
-    fp=interp1(fptimes,fp',downsampledTimeVector)';
-    fptimes=downsampledTimeVector;
+    disp('downsampling behavioral signals to 1 kHz')
+    samp_fact=max(out_struct.raw.analog.adfreq)/samprate;
     downsampledTimeVector=linspace(analog_times(1),analog_times(end),length(analog_times)/samp_fact);
     downSampledBehaviorSignal=interp1(analog_times,sig(:,2:3),downsampledTimeVector);
     analog_times=downsampledTimeVector; clear downsampledTimeVector
@@ -130,13 +127,15 @@ numfp=size(fp,1);
 numsides=1;
 Use_Thresh=0; words=[]; emgsamplerate=[]; lambda=1;
 disp('done')
+bandsToUse=2:7;
+powerOrPhase='power';
 
 warning('off','MATLAB:polyfit:RepeatedPointsOrRescale')
 warning('off','MATLAB:nearlySingularMatrix')
 [vaf,~,~,~,~,~,~,~,~,bestf,bestc,H,~,~,~,~,ytnew_buildModel,xtnew_buildModel,~,P,~,~] = ...
     buildModel_fp(sig,signal,numfp,binsize,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,featShift);
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,featShift,bandsToUse,powerOrPhase);
 
 fprintf(1,'\n\n\n\n\n=====================\nDONE\n====================\n\n\n\n')
 
@@ -149,6 +148,7 @@ fprintf(1,'nfeat=%d\n',nfeat)
 fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
 fprintf(1,'smoothfeats=%d\n',smoothfeats)
 fprintf(1,'binsize=%.2f\n',binsize)
+fprintf(1,'bands used: '); fprintf('%d',bandsToUse); fprintf(1,'\n');
 
 vaf
 
@@ -170,6 +170,7 @@ samplingFreq = samprate;
 fillen=numlags*binsize;
 neuronIDs='';
 freq_bands =  [0,0;0,4;7,20;70,115;130,200;200,300;30,50];
+freq_bands=freq_bands(bandsToUse,:);
 % freq_bands = [70 300];
 % freq_bands(1:3,:)=[];
 % freq_bands = [30 50];
@@ -233,7 +234,7 @@ fprintf(1,'decoder saved in %s.\n',PathName)
     featMat,ytnew,xtnew,predtbase,P,featind,sr] = ...
     predictionsfromfp6(sig,signal,numfp,binsize,folds,numlags,numsides, ...
     samprate,fp,fptimes,analog_times,fnam,wsz,nfeat,PolynomialOrder, ...
-    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,1:7,featShift);
+    Use_Thresh,words,emgsamplerate,lambda,smoothfeats,bandsToUse,featShift,powerOrPhase);
 close
 warning('on','MATLAB:polyfit:RepeatedPointsOrRescale')
 warning('on','MATLAB:nearlySingularMatrix')
@@ -247,6 +248,7 @@ fprintf(1,'nfeat=%d\n',nfeat)
 fprintf(1,'PolynomialOrder=%d\n',PolynomialOrder)
 fprintf(1,'smoothfeats=%d\n',smoothfeats)
 fprintf(1,'binsize=%.2f\n',binsize)
+fprintf(1,'bands used: '); fprintf('%d',bandsToUse); fprintf(1,'\n');
 
 vaf
 
