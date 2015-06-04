@@ -17,16 +17,17 @@ clear FilterIndex H P PB SaveH* Use_Thresh ans best* col feat* freqs
 clear h junk lambda num* parameters save* sig signal states total_samples
 clear vaf x CG* bin* cg* folds recon* y* FP* Poly* S* nfeat s* wsz
 clear N_KsectionInterp R badChanF bandsToUse existingFigTags files 
-clear YaxLabelStr maxStrLen rangeThresh badChan2F
+clear YaxLabelStr maxStrLen rangeThresh badChan2F n fp fptimes fpCut*
+clear PA Pmat
 %% 3. define constants.
 
 SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
-% SIGNALTOUSE='CG';
+SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
+FPIND=17:32;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
                 % [2:6 8 9 11:15] for ME
 %%  4. find file(s)
@@ -40,7 +41,11 @@ if ~exist('PathName','var')
         PathName='/Users/rdflint/work/';
     end
 end
-[FileName,PathName,FilterIndex] = uigetfile([PathName,'*.dat'],'MultiSelect','on');
+if exist('FileName','var') && ~isempty(regexp(FileName,'\.dat','once'))
+    [FileName,PathName,FilterIndex] = uigetfile([PathName,'*.dat'],'MultiSelect','on');
+else
+    [FileName,PathName,FilterIndex] = uigetfile([PathName,'*.mat']);
+end
 if iscell(FileName)
     for n=1:length(FileName)
         files(n).name=fullfile(PathName,FileName{n});                       %#ok<*SAGROW>
@@ -53,9 +58,16 @@ if isnumeric(PathName) && PathName==0
     return
 end
 cd(PathName)
-%  load into workspace
+
+%  4.  load into memory
 fprintf(1,'loading %s...\n',files.name)
-[signal,states,parameters,N]=load_bcidat(files.name);
+if all(cellfun(@isempty,regexp({files.name},'\.dat','match','once')))==0
+    [signal,states,parameters,N]=load_bcidat(files.name);
+else
+    % only load 1st file if *.mat files are selected.  Multiple *.mat files
+    % not yet supported.
+    load(files(1).name)
+end
 fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
 clear N
@@ -65,7 +77,7 @@ if ~isa(signal,'double'), signal=double(signal); end
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
 signalRange=max(signal(:,FPIND),[],1)-min(signal(:,FPIND),[],1);
-signalRangeLowLogical=signalRange<1;
+signalRangeLowLogical=signalRange<(median(signalRange)-2*iqr(signalRange));
 if exist('badChanF','var') && ishandle(badChanF)
     if ~isequal(get(badChanF,'WindowStyle'),'docked')
         figureCenter(badChanF)
@@ -84,7 +96,7 @@ signalRangeBadLogical=signalRangeLowLogical | signalRangeHighLogical;
 hold on
 plot(find(signalRangeBadLogical),signalRange(signalRangeBadLogical),'r.','MarkerSize',36)
 plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
-try                                                                         %#ok<TRYNC>
+try
     title(sprintf('%s\nRange of raw signals.\nBad channel estimate=red. %d good channels.', ...
         FileName,nnz(~signalRangeBadLogical)),'Interpreter','none','FontSize',16)
 end
@@ -135,7 +147,7 @@ fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
     median(fp(FPSTOUSE,:),1)); % FPSTOUSE is where we're including "only good signals into the CAR".
 signalRange2=max(fp(~signalRangeLowLogical,:),[],2)- ...
     min(fp(~signalRangeLowLogical,:),[],2);
-fpCut=(fp(FPIND,1:100:end))./mean(signalRange2);
+fpCut=(fp(:,1:100:end))./mean(signalRange2);
 if ishandle(fpCutFig)
     figure(fpCutFig)
     cla
@@ -177,7 +189,7 @@ end
 % end
 %% 8. CG info & PCA, or force info.
 clear sig CG
-try
+try                                                                         %#ok<*TRYNC>
     [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
 end
@@ -223,9 +235,9 @@ axis vis3d
 xlabel('PC1'), ylabel('PC2'), zlabel('PC3')
 %%  9c(ii).   or, in case there are 4 PCs
 figure, set(gcf,'Position',[419 -101 1042 673])
-plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,5),'.')
+plot3(sig(1:100:end,3),sig(1:100:end,4),sig(1:100:end,5),'.')
 axis vis3d
-xlabel('PC1'), ylabel('PC2'), zlabel('PC4')
+xlabel('PC2'), ylabel('PC3'), zlabel('PC4')
 %%  10.  new school: pick channels to include/exclude based on cap map
 % FPSTOUSE=1:64; % just in case it comes in handy
 elNames=parameters.ChannelNames.Value(FPIND); % change FPIND to FPSTOUSE, to keep selections.
@@ -280,7 +292,7 @@ end, clear n
 Use_Thresh=0; lambda=2; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
-nfeat=floor(0.9*size(x,2)); 
+nfeat=floor(0.9*size(x,2));
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat > (size(x,1)*size(x,2))
