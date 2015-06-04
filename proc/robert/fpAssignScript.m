@@ -65,3 +65,21 @@ fptimes=max(allFPstartTS):1/samprate: ...
     (size(out_struct.raw.analog.data{1},1)/samprate + max(allFPstartTS));
 if length(fptimes)==(size(fp,2)+1), fptimes(end)=[]; end
 clear earlyStarters allFPstartTS disJoint setLength
+
+
+if samprate > 1000
+    % want final fs to be 1000
+    disp('downsampling to 1 kHz')
+    samp_fact=samprate/1000;
+    downsampledTimeVector=linspace(fptimes(1),fptimes(end),length(fptimes)/samp_fact);
+    fp=interp1(fptimes,fp',downsampledTimeVector)';
+    fptimes=downsampledTimeVector;
+    downsampledTimeVector=linspace(out_struct.vel(1,1),out_struct.vel(end,1), ...
+        size(out_struct.vel,1)/samp_fact);
+    out_struct.vel=[rowBoat(downsampledTimeVector), ...
+        interp1(out_struct.vel(:,1),out_struct.vel(:,2:3),downsampledTimeVector)];
+    out_struct.pos=[rowBoat(downsampledTimeVector), ...
+        interp1(out_struct.pos(:,1),out_struct.pos(:,2:3),downsampledTimeVector)];
+    clear downsampledTimeVector
+    samprate=1000;
+end
