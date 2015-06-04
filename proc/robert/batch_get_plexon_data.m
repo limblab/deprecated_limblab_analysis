@@ -45,13 +45,15 @@ for batch_get_plx_ind=1:length(allFiles)
         fprintf(1,'loading out_struct...\n')
         load([regexp(FileName,'.*(?=\.plx|\.mat)','match','once'),'.mat'],'out_struct')
     end
-    % save a cut-down version of the fp array for later inspection
-    fprintf(1,'building fp array\n')
-    fpAssignScript2
-    % puts fpchans, fp, samprate, and fptimes in the workspace 
-    cutfp(batch_get_plx_ind).name=regexp(FileName,'.*(?=\.plx|\.mat)','match','once');
-    cutfp(batch_get_plx_ind).data=fp(:,1:500:end);
-    cutfp(batch_get_plx_ind).times=fptimes(1:500:end);
+    if exist('out_struct','var')~=0
+        % save a cut-down version of the fp array for later inspection
+        fprintf(1,'building fp array\n')
+        fpAssignScript2
+        % puts fpchans, fp, samprate, and fptimes in the workspace
+        cutfp(batch_get_plx_ind).name=regexp(FileName,'.*(?=\.plx|\.mat)','match','once');
+        cutfp(batch_get_plx_ind).data=fp(:,1:500:end);
+        cutfp(batch_get_plx_ind).times=fptimes(1:500:end);
+    end
     clear out_struct fp fptimes
 end
 if exist('cutfp','var')==1
@@ -61,6 +63,7 @@ if exist('cutfp','var')==1
     % files with a bdf struct, and create a cutfp entry for each of them.
     % Duplicates are unwise, not useful, and cause problems later on down
     % the line, so remove them here.
+    cutfp(cellfun(@isempty,{cutfp.name}))=[];
     [~,uniqueInd,~]=unique({cutfp.name});
     cutfp=cutfp(uniqueInd);
     save(fullfile(PathName,'allFPsToPlot.mat'),'cutfp')
