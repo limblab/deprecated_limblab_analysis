@@ -52,9 +52,30 @@ switch SIGNALTOUSE
         end
     case 'CG'
         %         cg=zeros(size(signal,1),22);
+        CG.channelIndex=1:22;
         for i=1:22
-            CG.data(:,i)=states.(['GloveSensor',int2str(i)]);
+            if isfield(states,['GloveSensor',num2str(i)])
+                CG.data(:,i)=states.(['GloveSensor',int2str(i)]);
+            else
+                CG.channelIndex(CG.channelIndex==i)=[];
+            end
         end, clear i
+        % there can be a mismatch here, if channels in the middle were cut
+        % out by some other function, they will be filled in with all 0's
+        % by the above loop.  So make sure they're taken out
+        CG.data=CG.data(:,CG.channelIndex);        
+        % it could also happen independently of outside cut-out that CG
+        % channels are all =0 (say for instance, a file that has not yet
+        % been analyzed.
+        CG.channelIndex(all(CG.data==0,1))=[];
+        CG.data(:,all(CG.data==0,1))=[];
+        % additionally, look for channels with a max-min range of 0 after
+        % blockSize*2+1 (so as to exclude the initial 1-2 blocks where
+        % everything is zero).
+        CG.channelIndex((max(CG.data(blockSize*2+2:end,:))- ...
+            min(CG.data(blockSize*2+2:end,:)))==0)=[];
+        CG.data(:,(max(CG.data(blockSize*2+2:end,:))- ...
+            min(CG.data(blockSize*2+2:end,:)))==0)=[];
         % make CG.data 1 sample longer, in anticipation of interpolation
         CG.data=CG.data([(blockSize+1):blockSize:size(CG.data,1) size(CG.data,1) size(CG.data,1)],:);
         CG.data=double(CG.data);
