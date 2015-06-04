@@ -105,10 +105,14 @@ for i = 1:size(cells,1)
     try
         b = train2bins(ts, t);
     catch Merror
-        if isequal(Merror.identifier,'MATLAB:UndefinedFunction')
-            b=train2bins_mod(ts,t);
-        else
-            rethrow(Merror)
+        switch Merror.identifier
+            case 'MATLAB:UndefinedFunction'
+                b=train2bins_mod(ts,t);
+            case 'MATLAB:nonLogicalConditional'
+                % encountered this before when numel(ts)==1
+                b=zeros(size(x(:,i)));
+            otherwise
+                rethrow(Merror)
         end
     end
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
