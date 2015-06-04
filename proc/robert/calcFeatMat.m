@@ -34,42 +34,80 @@ end
 y=rowBoat(interp1(analog_times,y,t));
 
 LMP=zeros(numfp,length(y));
-win=repmat(hanning(wsz),1,numfp); %Put in matrix for multiplication compatibility
+win=repmat(hann(wsz),1,numfp); %Put in matrix for multiplication compatibility
 tfmat=zeros(wsz,numfp,numbins,'single');
 % Notch filter for 60 Hz noise
 [b,a]=butter(2,[58 62]/(samprate/2),'stop');
 fpf=filtfilt(b,a,double(fp)')';  %fpf is channels X samples
 clear fp
+% preparing to make bins causal
+itemp=1:100;
+firstind=find(bs*itemp>wsz,1,'first');
+freqs=linspace(0,samprate/2,wsz/2+1);
+freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
+fprintf(1,'\nfirst frequency bin at %.3f Hz\n',freqs(1))
+assignin('base','freqs',freqs)
+Pmean=zeros(numel(2:length(freqs)+1),numfp);
+databuf=zeros(numfp,wsz);
 for i=1:numbins
-    tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
+    if nnz(databuf)~=0
+        % shift buffer values leftwards
+        databuf(:,1:(wsz-bs))=databuf(:,(1:(wsz-bs))+bs);
+    end
+    % read in new values into rightmost part of databuf
+    databuf(:,(wsz-bs+1):wsz)=fpf(:,((i-1)*bs+1):(bs*i));
+    % next 2 lines are to make it causal
+    % ishift=i-firstind+1;
+    % if ishift <= 0, continue, end
+    % tmp=fpf(:,(bs*i-wsz+1:bs*i))';                %Make tmp samples X channels
+    % LMP(:,ishift)=mean(tmp',2);
+    LMP(:,i)=mean(databuf,2);
+    % tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
 %     if i==1 % to test with BCI2000 code.
 %         disp('calculating LMP/tfmat causally for first bin.')
 %         tmp(wsz-mod(wsz,bs)+1:end,:)=[];
 %         tmp=[zeros(mod(wsz,bs),size(tmp,2)); tmp];
 %     end
-    LMP(:,i)=mean(tmp',2);
-    tmp=win.*tmp;
-    tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
-    clear tmp
+    % LMP(:,i)=mean(tmp',2);
+    % tmp=win.*tmp;
+    % tfmat=fft(tmp,wsz);   %tfmat is freqs X chans X bins
+    % tfmat(:,:,i)=fft(tmp,wsz);      %tfmat is freqs X chans X bins
+    tfmat=fft(win.*databuf',wsz);
+    % clear tmp
+    % Pmat(:,:,ishift)=tfmat(2:length(freqs)+1,:).*conj(tfmat(2:length(freqs)+1,:))*0.75;
+    Pmat(:,:,i)=tfmat(2:length(freqs)+1,:).*conj(tfmat(2:length(freqs)+1,:))*0.75;
+    clear tfmat
+    % Pmean=Pmean+(squeeze(Pmat(:,:,ishift))-Pmean)/ishift;
+    Pmean=Pmean+(squeeze(Pmat(:,:,i))-Pmean)/i;
+    % PA(:,:,ishift)=10.*(log10(squeeze(Pmat(:,:,ishift)))-log10(Pmean));
+    PA(:,:,i)=10.*(log10(squeeze(Pmat(:,:,i)))-log10(Pmean));
     if i==1, fprintf(1,'progress: '), end
     if mod(i,floor(numbins/10))==0
         fprintf(1,'%.2f,',i/numbins)
     end
 end
-clear fpf tftmp
-freqs=linspace(0,samprate/2,wsz/2+1);
-freqs=freqs(2:end); %remove DC freq(c/w timefreq.m)
-fprintf(1,'\nfirst frequency bin at %.3f Hz\n',freqs(1))
-assignin('base','freqs',freqs)
+% % clean up tfmat to account for cutting off the firstind bins
+% tfmat(:,:,(ishift+1:end))=[];
+% numbins=numbins-firstind+1;
+% if size(LMP,2)>numbins
+%     LMP(:,numbins+1:end)=[];
+% end
+% if size(y,1)>numbins
+%     y(numbins+1:end,:)=[];
+% end
 
-% Calculate bandpower
-%0.75 factor comes from newtimef (correction for hanning window)
-Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   
-clear tfmat
-Pmean=mean(Pmat,3); %take mean over all times
-PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));
-% disp('mean PA not being subtracted!!!')
-% PA=Pmat; % to test with BCI2000 code
+clear fpf
+
+% % Calculate bandpower
+% %0.75 factor comes from newtimef (correction for hanning window)
+% Pmat=tfmat(2:length(freqs)+1,:,:).*conj(tfmat(2:length(freqs)+1,:,:))*0.75;   
+% clear tfmat
+% % instead of doing it this way:
+% % Pmean=mean(Pmat,3); %take mean over all times
+% % implement a mean calculation that is true to how it would be done if it
+% % were dong online.  
+% 
+% PA=10.*(log10(Pmat)-repmat(log10(Pmean),[1,1,numbins]));                    %#ok<*NASGU>
 clear Pmat
 
 %% Define freq bands

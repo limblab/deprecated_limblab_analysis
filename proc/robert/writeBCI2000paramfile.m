@@ -48,7 +48,15 @@ for n=1:length(bandsUsed)
 end, clear n
 sprintfStr_fbands=[sprintfStr_fbands, ' // Frequency bands to calculate for each channel\n'];
 % writeParamsCell={sprintf(sprintfStr_fbands,length(bandsUsed),paramBands)};
-cellData{fbandsCell}=sprintf(sprintfStr_fbands,length(bandsUsed),paramBands); 
+if ~isempty(fbandsCell)
+    cellData{fbandsCell}=sprintf(sprintfStr_fbands,length(bandsUsed),paramBands);
+else
+    ParamPathName='';
+    assignin('base','ParamPathName',ParamPathName)
+    error(['could not find the string\n',...
+        'Filtering:LFPDecodingFilter matrix FreqBands\n', ...
+        'reminder: the params file must be from a brain control session!'])
+end
 
 % bestc, bestf
 sprintfStr_bestcf='Filtering:LFPDecodingFilter matrix Classifier';

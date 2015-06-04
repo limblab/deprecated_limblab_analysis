@@ -53,7 +53,7 @@ if isnumeric(PathName) && PathName==0
     return
 end
 cd(PathName)
-%  4.  load into memory
+%  load into workspace
 fprintf(1,'loading %s...\n',files.name)
 [signal,states,parameters,N]=load_bcidat(files.name);
 fprintf(1,'load complete\n')
@@ -135,7 +135,7 @@ fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
     median(fp(FPSTOUSE,:),1)); % FPSTOUSE is where we're including "only good signals into the CAR".
 signalRange2=max(fp(~signalRangeLowLogical,:),[],2)- ...
     min(fp(~signalRangeLowLogical,:),[],2);
-fpCut=(fp(FPSTOUSE,1:100:end))./mean(signalRange2);
+fpCut=(fp(FPIND,1:100:end))./mean(signalRange2);
 if ishandle(fpCutFig)
     figure(fpCutFig)
     cla
@@ -277,10 +277,10 @@ end, clear n
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
 
 %%  13.  assign parameters.
-Use_Thresh=0; lambda=4; 
+Use_Thresh=0; lambda=2; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
-nfeat=floor(0.9*size(x,2));
+nfeat=floor(0.9*size(x,2)); 
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat > (size(x,1)*size(x,2))
@@ -385,7 +385,7 @@ fprintf(1,'mean vaf across folds: ')
 fprintf(1,'%.4f\t',mean(vaf))
 fprintf(1,'\n')
 close
-%%  18.  saving.
+%%  18.  saving. old-fashioned way.  scroll down for param-file-replacement
 % bestc must be re-cast so that it properly indexes the full numel(FPIND)
 % possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
 % adjusted once loaded into BCI2000.
@@ -466,10 +466,11 @@ if ~isempty(CG)
 end
 
 %% auto-save a decoder.
+% how to tell if this part is a redo?
 bestc=FPSTOUSE(bestc);
 % save bestc,bestf,H
 bestcf=[rowBoat(bestc), rowBoat(bestf)];
-% if H has not been reduced, pick the fold with the highest VAF
+%% if H has not been reduced, pick the fold with the highest VAF
 if iscell(H)
     [val,ind]=max(vaf);
     Hchoice = questdlg(sprintf('H is a cell.  Pick H{%d} (vaf=%.3f)?\n',ind,val), ...
@@ -502,6 +503,7 @@ if exist('paramPathName','var')==0
 end
 paramPathName=writeBCI2000paramfile(paramPathName, ...
     bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats);
+fprintf(1,'wrote\n%s\n',paramPathName)
 
 %% 14.  plot results of same-file decoder.
 % close

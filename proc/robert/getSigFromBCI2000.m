@@ -1,4 +1,4 @@
-function [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE)
+function [sig,CG,varargout]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE)
 
 switch lower(SIGNALTOUSE)
     case {'force','dfdt'}
@@ -108,7 +108,7 @@ switch SIGNALTOUSE
         clear cgnew
         
         assignin('base','CG',CG)
-        [CG.coeff,CGscores,variances,junk] = princomp(cgz'); % CG.data
+        [CG.coeff,CGscores,variances,junk] = princomp(cgz'); %#ok<NASGU> % CG.data
         
         % to determine how many components to use, find the # that account for
         % >= 90% of the variance.
@@ -121,6 +121,26 @@ switch SIGNALTOUSE
         fprintf(1,'%.1f%% of the total variance in the PC signal\n',100*temp(size(positionData,2)-1))
         
         sig=positionData;
+        
+        if nargout > 2
+            % do the same for VR data as we did for CG data
+            for i=1:20
+                VR.data(:,i)=double(states.(['VR',int2str(i)]))-500;
+            end, clear i
+            % for some reason the VR period of floor values lasts for 2
+            % blocks instead of 1 (the CG data only lasts for 1 block)
+            VR.data=VR.data([blockSize*2+1 (blockSize*2+1):blockSize:size(VR.data,1) ...
+                size(VR.data,1) size(VR.data,1)],:);
+            VR.data=interp1(blockTimes',VR.data,analog_times');
+            VR.mean=mean(VR.data); VR.std=std(VR.data);
+            % if any elements of VR.std are 0, change them to 1 for purposes of
+            % division
+            VR.std(VR.std==0)=1;
+            varargout{1}=VR;
+            % there are no (out-of-range) artifacts in VR data, so it is
+            % not necessary to implement the artifact removal code here as 
+            % it was for CG data.
+        end
 end
 
     % diferentiater function for kinematic signals
