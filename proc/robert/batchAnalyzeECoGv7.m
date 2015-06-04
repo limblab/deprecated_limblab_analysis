@@ -231,6 +231,14 @@ for fileInd=1:length(infoStruct)
     
     % assign and condition behavioral signals.
     if ~isempty(regexp(signalToDecode,'CG','once'))
+        % take out bad CG channels before calling getSigFromBCI2000.m
+        % because that function doesn't know about infoStruct
+        badCGchans=setdiff(1:22,infoStruct(fileInd).CG.channels);
+        for badCGind=1:numel(badCGchans)
+            if isfield(states,['GloveSensor',num2str(badCGchans(badCGind))])
+                states=rmfield(states,['GloveSensor',num2str(badCGchans(badCGind))]);
+            end
+        end
         [sig,CG]=getSigFromBCI2000(BCI2000signal,states,parameters,'CG');
         % TODO: add option to read in automatically which CG you want to
         % use, if it's not the PCA output.
@@ -476,7 +484,7 @@ for fileInd=1:length(infoStruct)
                                             fprintf(1,'\n')
                                             if strcmpi(signalToDecode,'CG') && size(CG.data,2)<22
                                                 fprintf(1,'elimindating %d bad cg signals\n', ...
-                                                    22-size(cgz,1))
+                                                    22-size(CG.data,2))
                                             else
                                                 fprintf(1,'\n')
                                             end
@@ -579,7 +587,7 @@ for fileInd=1:length(infoStruct)
                                                 fprintf(1,'\n')
                                                 if strcmpi(signalToDecode,'CG') && size(CG.data,2)<22
                                                     fprintf(1,'elimindating %d bad cg signals\n', ...
-                                                        22-size(cgz,1))
+                                                        22-size(CG.data,2))
                                                 else
                                                     fprintf(1,'\n')
                                                 end
