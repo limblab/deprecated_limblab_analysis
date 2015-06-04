@@ -17,12 +17,25 @@ if length(START_TRIAL_WORD)>1 && all(START_TRIAL_WORD==17 | START_TRIAL_WORD==18
     % from 07-04-2013 (file 003 on that day).  So, replace the former
     % behavior:
     % START_TRIAL_WORD=17;
-    % with a democratic approach:
+    % with a populist approach:
     if nnz(out_struct.words(:,2)==18) > 10*nnz(out_struct.words(:,2)==17)
         START_TRIAL_WORD=18;
     end
     if nnz(out_struct.words(:,2)==17) > 10*nnz(out_struct.words(:,2)==18)
         START_TRIAL_WORD=17;
+    end
+    
+end
+
+% broader coverage: if any START_TRIAL_WORD occurs only once, then it is
+% probably a glitch of some kind, & should be eliminated.
+startwordslen=zeros(numel(START_TRIAL_WORD),1);
+if numel(START_TRIAL_WORD) > 1
+    for n=1:numel(START_TRIAL_WORD)
+        startwordslen(n)=nnz(out_struct.words(:,2)==START_TRIAL_WORD(n));
+    end
+    if any(startwordslen==1)
+        START_TRIAL_WORD(startwordslen==1)=[];
     end
 end
 
