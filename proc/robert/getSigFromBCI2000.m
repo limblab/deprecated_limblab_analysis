@@ -28,30 +28,47 @@ switch SIGNALTOUSE
         force_ind=find(strcmpi(parameters.ChannelNames.Value,'force'));
         if isempty(force_ind)
             force_ind=find(strcmpi(parameters.ChannelNames.Value,'ainp1'));
+            if isempty(force_ind)
+                error('force channel not found\n')
+            end
         end
         sig=[rowBoat(1:size(signal,1))/samprate, ...
             signal(:,force_ind).*str2double(parameters.SourceChGain.Value{force_ind})];
-        % At one point, we were scaling further by Normalizer values...
-        % sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
-        %     str2double(parameters.NormalizerGains.Value{2});
-        % ...then shifting 1 more time, for the application (cursor position is
-        % defined by its displacement from 50, and is offset by
-        % if isfield(parameters,'YCenterOffset')
-        %     sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
-        % end
-        % 
-        % ultimately, I abandoned this additional scaling becaue I don't
-        % want to re-create the cursor position, I want to re-create the
-        % force applied.  Let the normalizer & offset, etc be the same in
-        % the brain-control params as in the hand-control params, then can
-        % adjust as necessary.
+        fprintf(1,'force channel gain was %s\n', ...
+            parameters.SourceChGain.Value{force_ind});
+        % We want to re-create the value that goes into the Application 
+        % module.  The Application's input is scaled such that the screen
+        % position is defined as a value from 0 (bottom of the screen) to
+        % 100 (top of the screen). To get into this range when doing hand
+        % control, we use the Normalizer.
+        sig(:,2)=(sig(:,2)-str2double(parameters.NormalizerOffsets.Value{2}))* ...
+            str2double(parameters.NormalizerGains.Value{2});
+        fprintf(1,'force channel adjusted by offset (%s) and gain (%s).\n', ...
+            parameters.NormalizerOffsets.Value{2}, ...
+            parameters.NormalizerGains.Value{2});
+%         % In addition, in Eric's original code there is an offset by a
+%         % value of 50, which makes the cursor starting position the 
+%         % center of the screen (for zero-valued input signals).  Currently,
+%         % this is hard-coded.
+%         EWLshift=50;
+%         sig(:,2)=sig(:,2)+EWLshift;
+%         fprintf(1,'shifting force signal upwards by %d (EWL code).\n', ...
+%             EWLshift);
+%         % Lastly, there is an addition parameter, YCenterOffset, that I
+%         % added so that I could make the start position be the top of the
+%         % screen (or the bottom, with a negative value) instead of the
+%         % center.  This is adjustable from within parameters.
+%         if isfield(parameters,'YCenterOffset')
+%             sig(:,2)=sig(:,2)+parameters.YCenterOffset.NumericValue;
+%         end
+%         fprintf(1,'shifting force signal upwards by %d (YCenterOffset parameter).\n', ...
+%             parameters.YCenterOffset.NumericValue);
         if isequal(SIGNALTOUSE,'dfdt')
 %             sig=kindiff([sig, zeros(size(sig,1),1)],samprate);
 %             sig(:,end)=[];
             sig(:,2)=kin_diff(sig(:,2));
         end
     case 'CG'
-        %         cg=zeros(size(signal,1),22);
         CG.channelIndex=1:22;
         for i=1:22
             if isfield(states,['GloveSensor',num2str(i)])
@@ -66,7 +83,7 @@ switch SIGNALTOUSE
         CG.data=CG.data(:,CG.channelIndex);        
         % it could also happen independently of outside cut-out that CG
         % channels are all =0 (say for instance, a file that has not yet
-        % been analyzed.
+        % been analyzed).
         CG.channelIndex(all(CG.data==0,1))=[];
         CG.data(:,all(CG.data==0,1))=[];
         % additionally, look for channels with a max-min range of 0 after

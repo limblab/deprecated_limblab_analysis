@@ -23,17 +23,23 @@ clear PA Pmat
 
 SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
-SIGNALTOUSE='CG';
+% SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder, which is always a game-time decision.
-FPIND=17:32;     % this controls which columns of the signal array are valid fp channels.
+FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
                 % this determines which ones we actually want to use to 
                 % [2:6 8 9 11:15] for ME
+% BLACKROCKGAIN is a bit of a fudge-factor that Nick Halpern(?) warned us
+% about.  He said the signals could be off by a factor of 4 from what they
+% really were.
+BLACKROCKGAIN=4;
 %%  4. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
 % same file, skip this cell and move to the next.
-clear FileName files
+% clear FileName files
+% make it the default that we're loading .dat files
+loadDAT=1;
 if ~exist('PathName','var')
     if exist('E:\ECoG_Data\','file')==7
         PathName='E:\ECoG_Data\';  
@@ -41,7 +47,17 @@ if ~exist('PathName','var')
         PathName='/Users/rdflint/work/';
     end
 end
-if exist('FileName','var') && ~isempty(regexp(FileName,'\.dat','once'))
+% if PathName exists, we'll go back to that same folder by default. If 
+% there are only .mat files in this folder, we'll assume
+% that one of them is the thing to be loaded in.
+if ischar(PathName)
+    D=dir(PathName);
+    if any(cellfun(@isempty,regexp({D.name},'\.mat'))==0) && ...
+            all(cellfun(@isempty,regexp{D.name},'\.dat'))
+        loadDAT=0;
+    end % if neither .mat nor .dat, this will still defualt to .dat
+end, clear D
+if loadDAT
     [FileName,PathName,FilterIndex] = uigetfile([PathName,'*.dat'],'MultiSelect','on');
 else
     [FileName,PathName,FilterIndex] = uigetfile([PathName,'*.mat']);
@@ -56,10 +72,11 @@ end
 if isnumeric(PathName) && PathName==0
     disp('cancelled.')
     return
+else
+    cd(PathName)
 end
-cd(PathName)
 
-%  4.  load into memory
+% load into memory
 fprintf(1,'loading %s...\n',files.name)
 if all(cellfun(@isempty,regexp({files.name},'\.dat','match','once')))==0
     [signal,states,parameters,N]=load_bcidat(files.name);
@@ -134,10 +151,7 @@ if ~isa(signal,'double'), signal=double(signal); end
 FPSTOUSE=FPIND-min(FPIND)+1;
 FPSTOUSE(signalRangeBadLogical)=[];
 fp=signal(:,FPIND)';
-if max(signal(:)) < 1E6
-    fp=bsxfun(@times,fp, ...
-        cellfun(@str2num,parameters.SourceChGain.Value(FPIND)));
-end
+fp=bsxfun(@times,fp,cellfun(@str2num,parameters.SourceChGain.Value(FPIND)));
 % to get something suitable for pasting into ECoGProjectAllFileInfo.m
 arrayList(FPSTOUSE)
 % arrayList(FPIND)
@@ -205,7 +219,7 @@ if ~isempty(CG)
     end, clear n
     set(gca,'Xlim',[0 size(CGcut,1)],'Ylim',[0 size(CGcut,2)+1])
 end
-
+sig(:,2)=sig(:,2)/BLACKROCKGAIN;
 %%  9a. optional: look at smoothed force signal
 existingFigTags=get(get(0,'Children'),'Tag');
 if ~iscell(existingFigTags), existingFigTags={existingFigTags}; end
@@ -258,7 +272,7 @@ FPSREMOVED=(~ismember(FPIND,FPSTOUSE) & ~signalRangeBadLogical);
 if exist('featMat','var') && exist ('sig','var')
     if size(featMat,1)==size(sig,1)
         sig=[fptimes', smForce]; % if you don't want the smoothed force, 
-                                 % it will be necessary to re-run 5b.
+                                 % it will be necessary to re-run cell 8.
     end
 end
 wsz=512;
@@ -289,7 +303,7 @@ end, clear n
 % show up in bestc (using FPSTOUSE in order to eliminate the channel).
 
 %%  13.  assign parameters.
-Use_Thresh=0; lambda=2; 
+Use_Thresh=0; lambda=4; 
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
 nfeat=floor(0.9*size(x,2));
@@ -371,13 +385,13 @@ if iscell(H)
     disp('unless you plan to create a decoder from the whole file')
 end
 
-%% 16. ranked bestc,bestf
+%% 16. ranked bestc,bestf - display in matlab spreadsheet format.
 [bestfRanked,bestcRanked]=ind2sub([length(featind)/length(FPSTOUSE) length(FPSTOUSE)], ...
     featind((1:nfeat)+featShift));
 [parameters.ChannelNames.Value(FPSTOUSE(bestcRanked)), num2cell(bestfRanked')];  %#ok<VUNUS>
 openvar('ans')
-% center of mass for bestfRanked
-% display that shows subplots for each band, with feature R values 
+% todo: calculate center of mass for bestfRanked?
+% wanted(?): display that shows subplots for each band, with feature R values 
 % displayed in a 2D color scale plot.  selected features can be highlighted
 % in some way.  Or, only selected features are displayed?  Could have 2
 % plots, or else a button that toggles back and forth between showing all
@@ -385,19 +399,67 @@ openvar('ans')
 % are being more strongly represented, simultaneous with looking at the
 % location on the array.
 
-%%  17.  build a decoder from the entire data file at once.
-% at this point, bestc & bestf are sorted by channel, while featind is
-% still sorted by feature correlation rank.
-disp('calculating H,bestc,bestf using a single fold...')
-[vaf,ytnew,y_pred,bestc,bestf,H,P]=buildModel_ECoG(x,FPSTOUSE,sig,PolynomialOrder,Use_Thresh, ...
-    lambda,numlags,numsides,binsamprate,featind,nfeat,smoothfeats);
 
-vaf                                                                                                 %#ok<NOPTS>
-fprintf(1,'mean vaf across folds: ')
-fprintf(1,'%.4f\t',mean(vaf))
-fprintf(1,'\n')
-close
-%%  18.  saving. old-fashioned way.  scroll down for param-file-replacement
+%% 17. prep for auto-save (using writeBCI2000paramfile.m)
+%  IT IS AN ERROR TO RUN THIS MORE THAN ONCE.
+%  for this, bestc should be in terms of the actual channel 
+%  numbers, not indices into FPSTOUSE. 
+
+% This begs the question: how to tell if this part is a redo?  
+% Out-of-range error is sufficient proof, but that error does not 
+% necessarily have to occur every time on a redo.  It could happen 
+% that a redo would not throw that error.  
+% Todo: make this determination.  Pre-requisite: be smarter.
+bestc=FPSTOUSE(bestc);
+% save bestc,bestf,H
+bestcf=[rowBoat(bestc), rowBoat(bestf)];
+%% 18. auto-save a decoder.  
+%  last stage of prep: reduce H if that has not yet occurred.
+[H,P,bestc,bestf]=reduceHcell(H,vaf,P,bestc,bestf);
+
+if size(H,2)<2
+    H=[zeros(size(H)), H];
+end
+% if size(H,2)>2
+%     % until we get smarter...
+%     disp('only using 1st two columns of H...')
+%     H(:,3:end)=[];
+% end
+if size(P,1)<2
+    P=[zeros(size(P)); P];
+end
+
+if exist('paramPathName','var')==0
+    paramPathName='';
+end
+[paramPathWritten,paramPathName]=writeBCI2000paramfile(paramPathName, ...
+    bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats);
+fprintf(1,'wrote\n%s\n',paramPathWritten)
+
+
+%%  19. calculate predictions for the entire file (based on 1 cell?)
+% This is valuable for doing online-offline comparison testing.
+% 
+[H,P,bestc,bestf]=reduceHcell(H,vaf,P,bestc,bestf);
+disp('calculating predictions for the file using selected H,P,bestc,bestf...')
+[vaf,ytnew,y_pred,bestc,bestf,H,P]=buildModel_ECoG(x,FPSTOUSE,sig,PolynomialOrder,Use_Thresh, ...
+    lambda,numlags,numsides,binsamprate,featind,nfeat,smoothfeats,featShift,H,P);
+
+
+figure, plot(sig((size(sig,1)-size(ytnew,1)+1):end,1),ytnew*40.96+50*40.96)
+hold on, plot(sig((size(sig,1)-size(y_pred,1)+1):end,1),y_pred*40.96+50*40.96,'g')
+ylabel('cursor position units')
+title(sprintf('vaf for the file using this fold: %.4f\n',vaf))
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Second-tier code.  Works, but has been superseded by something        %
+% above this line.                                                      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  18.  saving. old-fashioned way.  saves text files for H, P, bestcf.
+% they must be loaded in individually, from within the BCI2000 config
+% interface, using 'load matrix' for each one.
 % bestc must be re-cast so that it properly indexes the full numel(FPIND)
 % possible array of FPSTOUSE.  Keep MATLAB's 1-based indexing, it will be
 % adjusted once loaded into BCI2000.
@@ -477,45 +539,7 @@ if ~isempty(CG)
     fclose(fid); clear fid
 end
 
-%% auto-save a decoder.
-% how to tell if this part is a redo?
-bestc=FPSTOUSE(bestc);
-% save bestc,bestf,H
-bestcf=[rowBoat(bestc), rowBoat(bestf)];
-%% if H has not been reduced, pick the fold with the highest VAF
-if iscell(H)
-    [val,ind]=max(vaf);
-    Hchoice = questdlg(sprintf('H is a cell.  Pick H{%d} (vaf=%.3f)?\n',ind,val), ...
-        'H not a double array','Yes','No','Yes');
-    % Handle response
-    switch Hchoice
-        case 'Yes'
-            fprintf(1,'evaluating H=H{%d}; and P=P{%d};\n',ind,ind)
-            H=H{ind}; P=P{ind};
-        case 'No'
-            fprintf(1,'leaving H and P alone.  Be sure to modify them yourself.\n')
-            return
-    end
-end
 
-if size(H,2)<2
-    H=[zeros(size(H)), H];
-end
-% if size(H,2)>2
-%     % until we get smarter...
-%     disp('only using 1st two columns of H...')
-%     H(:,3:end)=[];
-% end
-if size(P,1)<2
-    P=[zeros(size(P)); P];
-end
-
-if exist('paramPathName','var')==0
-    paramPathName='';
-end
-paramPathName=writeBCI2000paramfile(paramPathName, ...
-    bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats);
-fprintf(1,'wrote\n%s\n',paramPathName)
 
 %% 14.  plot results of same-file decoder.
 % close
@@ -523,14 +547,17 @@ figure, set(gcf,'Position',[88         378        1324         420])
 plot(ytnew(:,1)), hold on, plot(y_pred(:,1),'g')
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
 
-
-
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THE CODE BELOW THIS LINE IS EITHER DEPRECATED OR ELSE JUST SELDOM-    %
+% USED.  IT MAY STILL WORK OR IT MAY NOT WORK ANYMORE.  NO PROMISES.    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
 % old school, fancy graphical solutions for inclusion/exclusion of
 % channels.  Bases things on the data instead of just picking them off
 % an image and assuming they're good.  Go figure, right?
-%%  6a. pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
+%%  pick out quality FP channels.  (plus: LP filter force/CAR/other filtering?)
 figure, set(gcf,'Position',[88         100        1324         420])
 set(gca,'Position',[0.0415    0.1100    0.9366    0.8150])
 h1=plot(fptimes,fp(FPSTOUSE,:)');
@@ -539,7 +566,7 @@ for n=1:length(h1)
 end, clear n
 legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match')), clear h1
 
-%% 6b. second option for plot
+%% second option for plot
 scaleFactor=mean(max(fp(FPSTOUSE,:),[],2)-min(fp(FPSTOUSE,:),[],2));
 figure, set(gcf,'Position',[88 100 1324 420],'Color',[0 0 0]+1)
 set(gca,'Position',[0.0415 0.0571 0.9366 0.9190])
@@ -558,7 +585,7 @@ set(gca,'YTickLabel',flipud(parameters.ChannelNames.Value(FPSTOUSE)), ...
 % for simple numeric list, instead
 % set(gca,'YTickLabel',regexp(sprintf('%d ',1:64),'[0-9]+(?= )','match'))
 % legend(regexp(sprintf('ch%d\n',FPSTOUSE),'ch[0-9]+','match'))
-%% 6c. if there are bad channels, try this code to figure out which ones they are...
+%% if there are bad channels, try this code to figure out which ones they are...
 % this works for either plot because it uses gco.  Just dock it, to make
 % sure it is the current plot when you run the cell.
 % step 1: zoom in and select with the plot edit tool!  Then, 

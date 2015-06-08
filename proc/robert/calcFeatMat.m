@@ -63,11 +63,6 @@ for i=1:numbins
     % LMP(:,ishift)=mean(tmp',2);
     LMP(:,i)=mean(databuf,2);
     % tmp=fpf(:,(bs*(i-1)+1:(bs*(i-1)+wsz)))';    %Make tmp samples X channels
-%     if i==1 % to test with BCI2000 code.
-%         disp('calculating LMP/tfmat causally for first bin.')
-%         tmp(wsz-mod(wsz,bs)+1:end,:)=[];
-%         tmp=[zeros(mod(wsz,bs),size(tmp,2)); tmp];
-%     end
     % LMP(:,i)=mean(tmp',2);
     % tmp=win.*tmp;
     % tfmat=fft(tmp,wsz);   %tfmat is freqs X chans X bins

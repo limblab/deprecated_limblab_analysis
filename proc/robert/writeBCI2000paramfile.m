@@ -1,6 +1,6 @@
-function ParamPathName=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats)
+function [ParamToWrite,ParamPathName]=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats)
 
-% syntax ParamPathName=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats))
+% syntax [ParamToWrite,ParamPathName]=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats))
 %
 % reads in an existing BCI2000 parameter file, and adds in the
 % H,P,bestf,bestc data, so that we no longer have to mess around with
@@ -28,7 +28,7 @@ fclose(fid); clear fid
 nCharPerLine = diff([0 find(strData == char(10)) numel(strData)]);
 cellData = strtrim(mat2cell(strData,1,nCharPerLine));
 for n=1:(numel(cellData)-1)
-    cellData{n}=[cellData{n},sprintf('\n')];
+    cellData{n}=[cellData{n},sprintf('\r\n')];
 end
 clear strData nCharPerLine
 
@@ -46,7 +46,7 @@ for n=1:length(bandsUsed)
     paramBands=[paramBands, f_bands(str2double(bandsUsed{n}(end))-1,2)];
     sprintfStr_fbands=[sprintfStr_fbands, ' %d %d'];
 end, clear n
-sprintfStr_fbands=[sprintfStr_fbands, ' // Frequency bands to calculate for each channel\n'];
+sprintfStr_fbands=[sprintfStr_fbands, ' // Frequency bands to calculate for each channel\r\n'];
 % writeParamsCell={sprintf(sprintfStr_fbands,length(bandsUsed),paramBands)};
 if ~isempty(fbandsCell)
     cellData{fbandsCell}=sprintf(sprintfStr_fbands,length(bandsUsed),paramBands);
@@ -55,7 +55,7 @@ else
     assignin('base','ParamPathName',ParamPathName)
     error(['could not find the string\n',...
         'Filtering:LFPDecodingFilter matrix FreqBands\n', ...
-        'reminder: the params file must be from a brain control session!'])
+        'reminder: the params file might be from a brain control session!'])
 end
 
 % bestc, bestf
@@ -65,7 +65,7 @@ sprintfStr_bestcf=[sprintfStr_bestcf, '= %d { bestc bestf }'];
 for n=1:size(bestcf,1)
     sprintfStr_bestcf=[sprintfStr_bestcf, ' %d %d'];
 end, clear n
-sprintfStr_bestcf=[sprintfStr_bestcf, ' // bestc, bestf matrix\n'];
+sprintfStr_bestcf=[sprintfStr_bestcf, ' // bestc, bestf matrix\r\n'];
 cellData{bestcfCell}=sprintf(sprintfStr_bestcf,size(bestcf,1),reshape(bestcf',1,[]));
 % writeParamsCell=[writeParamsCell, {sprintf(sprintfStr_bestcf,size(bestcf,1),reshape(bestcf',1,[]))}];
 
@@ -81,7 +81,7 @@ for n=1:size(H,1)
         sprintfStr_H=[sprintfStr_H, ' %.4f'];
     end, clear k
 end, clear n
-sprintfStr_H=[sprintfStr_H, ' // H Matrix\n'];
+sprintfStr_H=[sprintfStr_H, ' // H Matrix\r\n'];
 cellData{cellDataHcell}=sprintf(sprintfStr_H,size(H,1),reshape(H',1,[]));
 % writeParamsCell=[writeParamsCell, {sprintf(sprintfStr_H,size(H,1),reshape(H',1,[]))}];
 
@@ -89,7 +89,7 @@ cellData{cellDataHcell}=sprintf(sprintfStr_H,size(H,1),reshape(H',1,[]));
 sprintfStr_P='Filtering:LFPDecodingFilter matrix Pmatrix';
 cellDataPcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_P))==0);
 sprintfStr_P=[sprintfStr_P, '= 2 %d', ...
-    repmat(' %f',1,numel(P)), '\n'];
+    repmat(' %f',1,numel(P)), '\r\n'];
 cellData{cellDataPcell}=sprintf(sprintfStr_P,size(P,2),P');
 % writeParamsCell=[writeParamsCell, {sprintf(sprintfStr_P,size(P,2),reshape(P',1,[]))}];
 
@@ -97,7 +97,7 @@ cellData{cellDataPcell}=sprintf(sprintfStr_P,size(P,2),P');
 sprintfStr_numlags='Filtering:LFPDecodingFilter int nBins';
 cellDataNumlagsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_numlags))==0);
 sprintfStr_numlags=[sprintfStr_numlags, '= %d 1 %% %% // ', ...
-    'The number of bins to save in the data buffer.\n'];
+    'The number of bins to save in the data buffer.\r\n'];
 cellData{cellDataNumlagsCell}=sprintf(sprintfStr_numlags,numlags);
 % writeParamsCell=[writeParamsCell, {sprintf(sprintfStr_numlags,numlags)}];
 
@@ -105,7 +105,7 @@ cellData{cellDataNumlagsCell}=sprintf(sprintfStr_numlags,numlags);
 sprintfStr_wsz='Filtering:LFPDecodingFilter int FFTWinSize';
 cellDataWSZcell=find(cellfun(@isempty,regexp(cellData,sprintfStr_wsz))==0);
 sprintfStr_wsz=[sprintfStr_wsz, '= %d 1 0 %% // ', ...
-    'The window size during the FFT calculation.\n'];
+    'The window size during the FFT calculation.\r\n'];
 cellData{cellDataWSZcell}=sprintf(sprintfStr_wsz,wsz);
 % writeParamsCell=[writeParamsCell, {sprintf(sprintfStr_wsz,wsz)}];
 
@@ -113,22 +113,30 @@ cellData{cellDataWSZcell}=sprintf(sprintfStr_wsz,wsz);
 sprintfStr_smoothfeats='Filtering:LFPDecodingFilter int MovingAverageWindow';
 cellDataSmoothfeatsCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_smoothfeats))==0);
 sprintfStr_smoothfeats=[sprintfStr_smoothfeats, '= %d // ', ...
-    'Used for feature smoothing. 0=no smoothing.\n'];
+    'Used for feature smoothing. 0=no smoothing.\r\n'];
 cellData{cellDataSmoothfeatsCell}=sprintf(sprintfStr_smoothfeats,smoothfeats);
 % writeParamsCell=[writeParamsCell, {sprintf(sprintfStr_smoothfeats,smoothfeats)}];
 
+% though it is not input, assume that if things have gone well, we'll 
+% want our BC params file to start out with NormalizerGain values of 1.
+sprintfStr_normalizerGain='Filtering:Normalizer floatlist NormalizerGains';
+cellDataNormalizerGainCell=find(cellfun(@isempty,regexp(cellData,sprintfStr_normalizerGain))==0);
+sprintfStr_normalizerGain=[sprintfStr_normalizerGain, '= 2 0 %d 0 %% %% // ', ...
+    'normalizer gain values\r\n'];
+cellData{cellDataSmoothfeatsCell}=sprintf(sprintfStr_normalizerGain,1);
+
 % now, write out the new parameter file.  tag it with the time of creation
 % so that we don't overwrite anything important.
-if str2num(regexp(version,'(?<=\(R)[0-9]+(?=[a-z]*\))','match','once')) <= 2007
-    [PN,FN,ext,junk]=fileparts(ParamPathName); 
+if str2num(regexp(version,'(?<=\(R)[0-9]+(?=[a-z]*\))','match','once')) <= 2007 %#ok<ST2NM>
+    [PN,FN,ext,junk]=fileparts(ParamPathName);                                  %#ok<FPART>
 else
     [PN,FN,ext]=fileparts(ParamPathName); 
 end
 
-ParamPathName=fullfile(PN, ...
+ParamToWrite=fullfile(PN, ...
     [FN, regexprep(datestr(now),{':',' '},{'_','_'}),ext]);
     
-fid=fopen(ParamPathName,'w');
+fid=fopen(ParamToWrite,'w');
 fprintf(fid,'%c',cellData{:});  % instead of writeParamsCell{:}
 fclose(fid); clear fid
 

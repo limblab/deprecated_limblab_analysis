@@ -5,7 +5,7 @@ function [vaf,ytnew,y_pred,bestc,bestf,H,P]=buildModel_ECoG(x,fpind,y,Polynomial
 % useful once you have x and y matrices to run different levels of lambda
 
 
-Hinpflag=0;     %Whether H is input or not
+% Hinpflag=0;     %Whether H is input or not
 
 if ~isempty(varargin)
     smoothflag=varargin{1};
@@ -13,14 +13,12 @@ if ~isempty(varargin)
         featShift=varargin{2};
     else
         featShift=0;
-%         H=varargin{2};
-%         Hinpflag=1;
-%         if length(varargin)>2
-%             P=varargin{3};
-%             if length(varargin)>3
-%                 smoothflag=varargin{4};
-%             end
-%         end
+    end
+    if numel(varargin)>2
+        H=varargin{3};
+        H(:,all(H==0,1))=[];
+        % Hinpflag=1;
+        P=varargin{4};
     end
 end
 if ~exist('smoothflag','var')
@@ -68,9 +66,10 @@ if exist('featind','var')~=1
     % since r is an average, there is no need to reshape it; it will just be a
     % vector anyway.
     [sr,featind]=sort(r,'descend');
+else
+    [bestf,bestc]=ind2sub([6 length(fpind)],featind((1:nfeat)+featShift));
 end
 
-[bestf,bestc]=ind2sub([6 length(fpind)],featind((1:nfeat)+featShift));
 x=x(:,featind((1:nfeat)+featShift));
 figure, plot(mean(abs(x))), xlabel('feature number')
 title(sprintf(['mean raw values: if there is a large discrepancy at the far right side,\n',...
@@ -91,7 +90,11 @@ if ~exist('H','var')
 end
 [y_pred,xtnew,ytnew]=predMIMO3(x,H,numsides,binsamprate,y);
 
-P=[];
+if exist('P','var')==0
+    P=[];
+else
+    P(all(P==0,2),:)=[];
+end
 T=[];
 patch = [];
 

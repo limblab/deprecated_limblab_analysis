@@ -19,19 +19,11 @@ if ~isempty(varargin)
     end
     %     bestf_old=varargin{1};
     %     bestc_old=varargin{2};
-%     if length(varargin{1})>1
-%         featind=varargin{1};
-%     else
-%         smoothflag=varargin{1};
-%     end
-%     if length(varargin)>1
-%         H=varargin{2};
+%     if length(varargin)>2
+%         H=varargin{3};
 %         Hinpflag=1;
-%         if length(varargin)>2
-%             P=varargin{3};
-%             if length(varargin)>3
-%                 smoothflag=varargin{4};
-%             end
+%         if length(varargin)>3
+%             P=varargin{4};
 %         end
 %     end
 end
