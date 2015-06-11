@@ -16,40 +16,57 @@ metricInfo.PD.max = 180;
 metricInfo.PD.binSize = 10;
 metricInfo.PD.label = 'Preferred Direction (Deg) ';
 
-metricInfo.dPD.min = -180;
-metricInfo.dPD.max = 180;
-metricInfo.dPD.binSize = 10;
-metricInfo.dPD.label = 'PD Change (Deg) ';
-
 metricInfo.MD.min = 0;
 metricInfo.MD.max = 50;
 metricInfo.MD.binSize = 2;
 metricInfo.MD.label = 'Modulation Depth (Hz) ';
-
-metricInfo.dMD.min = -30;
-metricInfo.dMD.max = 30;
-metricInfo.dMD.binSize = 2;
-metricInfo.dMD.label = 'MD Change (Hz) ';
 
 metricInfo.BO.min = 0;
 metricInfo.BO.max = 50;
 metricInfo.BO.binSize = 2;
 metricInfo.BO.label = 'Offset (Hz) ';
 
-metricInfo.dBO.min = -30;
-metricInfo.dBO.max = 30;
-metricInfo.dBO.binSize = 2;
-metricInfo.dBO.label = 'BO Change (Hz) ';
-
 metricInfo.FR.min = 0;
 metricInfo.FR.max = 50;
 metricInfo.FR.binSize = 2;
 metricInfo.FR.label = 'Mean Firing Rate (Hz) ';
 
-metricInfo.dFR.min = -30;
-metricInfo.dFR.max = 30;
-metricInfo.dFR.binSize = 2;
-metricInfo.dFR.label = 'FR Change (Hz) ';
+metricInfo.dPD.min = -180;
+metricInfo.dPD.max = 180;
+metricInfo.dPD.binSize = 10;
+metricInfo.dPD.label = 'PD Change (Deg) ';
+
+if sComp.doPercent
+    metricInfo.dMD.min = -1;
+    metricInfo.dMD.max = 1;
+    metricInfo.dMD.binSize = 0.05;
+    metricInfo.dMD.label = 'MD Change';
+    
+    metricInfo.dBO.min = -1;
+    metricInfo.dBO.max = 1;
+    metricInfo.dBO.binSize = 0.05;
+    metricInfo.dBO.label = 'BO Change';
+    
+    metricInfo.dFR.min = -1;
+    metricInfo.dFR.max = 1;
+    metricInfo.dFR.binSize = 0.05;
+    metricInfo.dFR.label = 'FR Change';
+else
+    metricInfo.dMD.min = -30;
+    metricInfo.dMD.max = 30;
+    metricInfo.dMD.binSize = 2;
+    metricInfo.dMD.label = 'MD Change (Hz) ';
+    
+    metricInfo.dBO.min = -30;
+    metricInfo.dBO.max = 30;
+    metricInfo.dBO.binSize = 2;
+    metricInfo.dBO.label = 'BO Change (Hz) ';
+    
+    metricInfo.dFR.min = -30;
+    metricInfo.dFR.max = 30;
+    metricInfo.dFR.binSize = 2;
+    metricInfo.dFR.label = 'FR Change (Hz) ';
+end
 
 %%
 axisNames = {'x','y'};
@@ -78,45 +95,15 @@ end
 
 %% Get the master spike guide list
 for iAxis = 1:length(axisNames)
-    paramSetName = scatterCompare.params{iAxis};
-    useArray = scatterCompare.arrays{iAxis};
-    tuneMethod = scatterCompare.methods{iAxis};
-    tuneWindow = scatterCompare.windows{iAxis};
-    for iFile = 1:size(doFiles,1)
-        % load tuning and class info
-        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
-                tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned,2) & wfTypes,:);
-        
-        sg_bl = t(classifierBlocks(1)).sg;
-        sg_ad = t(classifierBlocks(2)).sg;
-        sg_wo = t(classifierBlocks(3)).sg;
-        
-        [~,idx_bl] = intersect(sg_bl, tunedCells,'rows');
-        [~,idx_ad] = intersect(sg_ad, tunedCells,'rows');
-        [~,idx_wo] = intersect(sg_wo, tunedCells,'rows');
-    end
-end
-        
-%% Get the classification for each day for tuned cells
-for iAxis = 1:length(axisNames)
-    paramSetName = scatterCompare.params{iAxis};
-    useArray = scatterCompare.arrays{iAxis};
-    tuneMethod = scatterCompare.methods{iAxis};
-    tuneWindow = scatterCompare.windows{iAxis};
-    
-    cellClasses = cell(size(doFiles,1),1);
-    cellWidths = cell(size(doFiles,1),1);
-    cellPDs = cell(size(doFiles,1),1);
-    cellMDs = cell(size(doFiles,1),1);
-    cellBOs = cell(size(doFiles,1),1);
-    cellFRs = cell(size(doFiles,1),1);
-    cellR2 = cell(size(doFiles,1),1);
-    count = 0;
+    paramSetName = sComp.params{iAxis};
+    useArray = sComp.arrays{iAxis};
+    tuneMethod = sComp.methods{iAxis};
+    tuneWindow = sComp.windows{iAxis};
     for iFile = 1:size(doFiles,1)
         % load tuning and class info
         [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         
-        classifierBlocks = c.params.classes.classifierBlocks;
+        classifierBlocks = c(whichBlock).params.classes.classifierBlocks;
         
         if doWidthSeparation
             % load baseline data to get waveforms
@@ -139,14 +126,71 @@ for iAxis = 1:length(axisNames)
                 fileWidths(u) = idx(end) - idx(1);
             end
         else
-            wfTypes = ones(size(c(whichBlock).istuned,1),1);
-            fileWidths = ones(size(c(whichBlock).istuned,1),1);
+            wfTypes = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
+            fileWidths = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
+        end
+        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes,:);
+        
+        sg_bl = t(classifierBlocks(1)).sg;
+        sg_ad = t(classifierBlocks(2)).sg;
+        sg_wo = t(classifierBlocks(3)).sg;
+        
+        [~,idx_bl] = intersect(sg_bl, tunedCells,'rows');
+        [~,idx_ad] = intersect(sg_ad, tunedCells,'rows');
+        [~,idx_wo] = intersect(sg_wo, tunedCells,'rows');
+    end
+end
+
+%% Get the classification for each day for tuned cells
+for iAxis = 1:length(axisNames)
+    paramSetName = sComp.params{iAxis};
+    useArray = sComp.arrays{iAxis};
+    tuneMethod = sComp.methods{iAxis};
+    tuneWindow = sComp.windows{iAxis};
+    
+    cellClasses = cell(size(doFiles,1),1);
+    cellWidths = cell(size(doFiles,1),1);
+    cellPDs = cell(size(doFiles,1),1);
+    cellMDs = cell(size(doFiles,1),1);
+    cellBOs = cell(size(doFiles,1),1);
+    cellFRs = cell(size(doFiles,1),1);
+    cellR2 = cell(size(doFiles,1),1);
+    count = 0;
+    for iFile = 1:size(doFiles,1)
+        % load tuning and class info
+        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+        
+        classifierBlocks = c(whichBlock).params.classes.classifierBlocks;
+        
+        if doWidthSeparation
+            % load baseline data to get waveforms
+            data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
+            
+            units = data.(useArray).units;
+            fileWidths = zeros(length(units),1);
+            wfTypes = zeros(length(units),1);
+            for u = 1:length(units)
+                wf = mean(units(u).wf,2);
+                idx = find(abs(wf) > std(wf));
+                switch doWidthSeparation
+                    case 1
+                        wfTypes(u) = (idx(end) - idx(1)) <= wfThresh;
+                    case 2
+                        wfTypes(u) = (idx(end) - idx(1)) > wfThresh;
+                    case 3
+                        wfTypes(u) = 1;
+                end
+                fileWidths(u) = idx(end) - idx(1);
+            end
+        else
+            wfTypes = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
+            fileWidths = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
         end
         
         % first column is PD, second column is MD
-        cellClasses{iFile} = c(whichBlock).classes(all(c(whichBlock).istuned,2) & wfTypes,1);
+        cellClasses{iFile} = c(whichBlock).classes(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes,1);
         
-        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned,2) & wfTypes,:);
+        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes,:);
         
         sg_bl = t(classifierBlocks(1)).sg;
         sg_ad = t(classifierBlocks(2)).sg;
@@ -184,7 +228,7 @@ for iAxis = 1:length(axisNames)
         r2_ad = mean(t(classifierBlocks(2)).r_squared,2);
         r2_wo = mean(t(classifierBlocks(3)).r_squared,2);
         
-        cellWidths{iFile} = fileWidths(all(c(whichBlock).istuned,2) & wfTypes);
+        cellWidths{iFile} = fileWidths(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes);
         cellR2{iFile} = {r2_bl(idx_bl), r2_ad(idx_ad), r2_wo(idx_wo)};
     end
     
@@ -203,41 +247,56 @@ for iAxis = 1:length(axisNames)
     widths = [];
     for iFile = 1:size(doFiles,1)
         pds = cellPDs{iFile};
+        mds = cellMDs{iFile};
+        bos = cellBOs{iFile};
+        frs = cellFRs{iFile};
+        
         pd_bl = [pd_bl; pds{1}.*(180/pi)];
         pd_ad = [pd_ad; pds{2}.*(180/pi)];
         pd_wo = [pd_wo; pds{3}.*(180/pi)];
+        
+        md_bl = [md_bl; mds{1}];
+        md_ad = [md_ad; mds{2}];
+        md_wo = [md_wo; mds{3}];
+        
+        bo_bl = [bo_bl; bos{1}];
+        bo_ad = [bo_ad; bos{2}];
+        bo_wo = [bo_wo; bos{3}];
+        
+        fr_bl = [fr_bl; frs{1}];
+        fr_ad = [fr_ad; frs{2}];
+        fr_wo = [fr_wo; frs{3}];
+        
+        if sComp.doPercent
+            md_mean = mds{1};
+            bo_mean = bos{1};
+            fr_mean = frs{1};
+        else
+            md_mean = ones(size(mds{1},1),1);
+            bo_mean = ones(size(bos{1},1),1);
+            fr_mean = ones(size(frs{1},1),1);
+        end
+        
         pd_bl_ad = [pd_bl_ad; angleDiff(pds{1},pds{2},true,true).*(180/pi)];
         pd_bl_wo = [pd_bl_wo; angleDiff(pds{1},pds{3},true,true).*(180/pi)];
         pd_ad_wo = [pd_ad_wo; angleDiff(pds{2},pds{3},true,true).*(180/pi)];
         
-        mds = cellMDs{iFile};
-        md_bl = [md_bl; mds{1}];
-        md_ad = [md_ad; mds{2}];
-        md_wo = [md_wo; mds{3}];
-        md_bl_ad = [md_bl_ad; mds{2}-mds{1}];
-        md_bl_wo = [md_bl_wo; mds{3}-mds{1}];
-        md_ad_wo = [md_ad_wo; mds{3}-mds{2}];
+        md_bl_ad = [md_bl_ad; (mds{2}-mds{1})./md_mean];
+        md_bl_wo = [md_bl_wo; (mds{3}-mds{1})./md_mean];
+        md_ad_wo = [md_ad_wo; (mds{3}-mds{2})./md_mean];
         
-        bos = cellBOs{iFile};
-        bo_bl = [bo_bl; bos{1}];
-        bo_ad = [bo_ad; bos{2}];
-        bo_wo = [bo_wo; bos{3}];
-        bo_bl_ad = [bo_bl_ad; bos{2}-bos{1}];
-        bo_bl_wo = [bo_bl_wo; bos{3}-bos{1}];
-        bo_ad_wo = [bo_ad_wo; bos{3}-bos{2}];
+        bo_bl_ad = [bo_bl_ad; (bos{2}-bos{1})./bo_mean];
+        bo_bl_wo = [bo_bl_wo; (bos{3}-bos{1})./bo_mean];
+        bo_ad_wo = [bo_ad_wo; (bos{3}-bos{2})./bo_mean];
         
-        frs = cellFRs{iFile};
-        fr_bl = [fr_bl; frs{1}];
-        fr_ad = [fr_ad; frs{2}];
-        fr_wo = [fr_wo; frs{3}];
-        fr_bl_ad = [fr_bl_ad; frs{2}-frs{1}];
-        fr_bl_wo = [fr_bl_wo; frs{3}-frs{1}];
-        fr_ad_wo = [fr_ad_wo; frs{3}-frs{2}];
+        fr_bl_ad = [fr_bl_ad; (frs{2}-frs{1})./fr_mean];
+        fr_bl_wo = [fr_bl_wo; (frs{3}-frs{1})./fr_mean];
+        fr_ad_wo = [fr_ad_wo; (frs{3}-frs{2})./fr_mean];
         
         c = cellClasses{iFile};
         w = cellWidths{iFile};
         
-        if scatterCompare.reassignOthers
+        if sComp.reassignOthers
             pd_wo = pds{3};
             pd_ad = pds{2};
             pd_bl = pds{1};
@@ -274,24 +333,32 @@ for iAxis = 1:length(axisNames)
         r2s = [r2s; r2{1}];
     end
     
+    % take absolute value of differences if requested
+    if sComp.doAbs
+        pd_bl_ad = abs(pd_bl_ad); pd_bl_wo = abs(pd_bl_wo); pd_ad_wo = abs(pd_ad_wo);
+        md_bl_ad = abs(md_bl_ad); md_bl_wo = abs(md_bl_wo); md_ad_wo = abs(md_ad_wo);
+        bo_bl_ad = abs(bo_bl_ad); bo_bl_wo = abs(bo_bl_wo); bo_ad_wo = abs(bo_ad_wo);
+        fr_bl_ad = abs(fr_bl_ad); fr_bl_wo = abs(fr_bl_wo); fr_ad_wo = abs(fr_ad_wo);
+    end
+    
     % see if class correlates with R2
     % plot(r2s,classes,'o');
     
     % decide what data to plot on two axes based on toCompare variable
-    if length(scatterCompare.epochs{iAxis}) > 2
+    if length(sComp.epochs{iAxis}) > 2
         temp = 'd';
     else
         temp = '';
     end
-    eval([axisNames{iAxis} '_data = ' lower(scatterCompare.metrics{iAxis}) '_' lower(scatterCompare.epochs{iAxis}) ';']);
-    eval([axisNames{iAxis} 'min = metricInfo.([ temp scatterCompare.metrics{iAxis} ]).min;']);
-    eval([axisNames{iAxis} 'max = metricInfo.([ temp scatterCompare.metrics{iAxis} ]).max;']);
-    eval([axisNames{iAxis} 'BinSize = metricInfo.([ temp scatterCompare.metrics{iAxis} ]).binSize;']);
-    eval([axisNames{iAxis} '_lab = [metricInfo.([ temp scatterCompare.metrics{iAxis} ]).label scatterCompare.epochs{iAxis} ];']);
+    eval([axisNames{iAxis} '_data = ' lower(sComp.metrics{iAxis}) '_' lower(sComp.epochs{iAxis}) ';']);
+    eval([axisNames{iAxis} 'min = metricInfo.([ temp sComp.metrics{iAxis} ]).min;']);
+    eval([axisNames{iAxis} 'max = metricInfo.([ temp sComp.metrics{iAxis} ]).max;']);
+    eval([axisNames{iAxis} 'BinSize = metricInfo.([ temp sComp.metrics{iAxis} ]).binSize;']);
+    eval([axisNames{iAxis} '_lab = [metricInfo.([ temp sComp.metrics{iAxis} ]).label sComp.epochs{iAxis} ];']);
     
 end
 
-if scatterCompare.reassignOthers
+if sComp.reassignOthers
     classColors = classColors(1:end-1);
     classNames = classNames(1:end-1);
 end
@@ -364,7 +431,7 @@ set(gca,'XLim',[xmin,xmax],'YLim',[ymin,ymax],'FontSize',14,'TickDir','out')
 V = axis(gca);
 plot([V(1) V(2)],[0 0],'k--');
 plot([0 0],[V(3) V(4)],'k--');
-plot([V(1) V(2)],[V(3) V(4)],'k-');
+% plot([V(1) V(2)],[V(3) V(4)],'k-');
 
 plot([mean(x_data) mean(x_data)],V(3:4),'k','LineWidth',2);
 plot(V(1:2),[mean(y_data) mean(y_data)],'k','LineWidth',2);

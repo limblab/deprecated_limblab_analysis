@@ -67,8 +67,16 @@ for iBlock = 1:numBlocks
             tstart = mt(trial,4)-timeDelay; % time that reach starts
             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart; % time duration of reach
             useWin(trial,:) = [tstart + (iBlock-1)*divideTime(2)*tdur, tstart + (divideTime(1)+(iBlock-1)*divideTime(2)) * tdur];
+        elseif strcmpi(tuningPeriod,'baseline') % baseline activity movementTime msec before target presentation
+            useWin(trial,:) = [mt(trial,2) - movementTime, mt(trial,2)];
+        elseif strcmpi(tuningPeriod,'afton') % window after target presentation
+            useWin(trial,:) = [mt(trial,2), mt(trial,2)+movementTime];
+        elseif strcmpi(tuningPeriod,'befgo') % window ending on go cue
+            useWin(trial,:) = [mt(trial,3)-movementTime, mt(trial,3)];
+        elseif strcmpi(tuningPeriod,'aftgo') % window after go cue
+            useWin(trial,:) = [mt(trial,3), mt(trial,3)+movementTime];
         end
-
+        
         for unit = 1:size(sg,1)
             ts = data.(useArray).units(unit).ts;
             
@@ -110,19 +118,19 @@ for iBlock = 1:numBlocks
                 f_h = data.cont.force;
             end
             
-            try
-                theta = zeros(size(mt,1),1);
-                theta_hand = zeros(size(mt,1),1);
-                for trial = 1:size(mt,1)
+            theta = zeros(size(mt,1),1);
+            theta_hand = zeros(size(mt,1),1);
+            for trial = 1:size(mt,1)
+                try
                     idx = data.cont.t > useWin(trial,1) & data.cont.t <= useWin(trial,2);
                     usePos = data.cont.pos(idx,:);
                     theta(trial) = atan2(usePos(end,2)-usePos(1,2),usePos(end,1)-usePos(1,1));
                     
                     useHand = f_h(idx,:);
                     theta_hand(trial) = atan2(mean(useHand(:,2)),mean(useHand(:,1)));
+                catch
+                    theta_hand(trial) = NaN;
                 end
-            catch
-                theta_hand(trial) = NaN;
             end
         end
         
@@ -146,8 +154,7 @@ for iBlock = 1:numBlocks
             %                 disp(' ');
             %                 idx = find(idx) - 20;
             useVel = data.cont.vel(idx,:);
-            vel(trial,:) = rms(useVel,1);
-            
+            vel(trial,:) = mean(useVel,1);
         end
     else
         force = [];

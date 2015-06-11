@@ -66,6 +66,10 @@ d = useDate(9:10);
 
 %% Before we do anything, make sure a cerebus file of correct type exists
 load_success = 1;
+if ~iscell(arrays)
+    arrays = {arrays};
+end
+
 for iArray = 1:length(arrays)
     switch lower(fileType)
         case 'nev'
@@ -101,7 +105,7 @@ if load_success
     
     % convert the file with continuous data into bdf if not done so
     if convertNEVFiles
-        convertDataToBDF(fullfile(dataDir,bdfArray),useDate);
+        convertDataToBDF(fullfile(dataDir,bdfArray,'CerebusData'),useDate);
     end
     
     %% start building the structs, new file for each epoch

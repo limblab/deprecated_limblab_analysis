@@ -37,6 +37,10 @@ numResamples = params.tuning.numSamples;
 
 % don't count the hold time in the time to target
 holdTime = params.exp.target_hold_high;
+if iscell(holdTime)
+    holdTime = str2num(holdTime{1});
+end
+
 mt = data.movement_table;
 centers = data.movement_centers;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -141,21 +145,21 @@ if blockTrials
         
         % Now, filter based on speed (slow or fast?) if needed
         % [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
-        if strcmpi(paramSetName,'speed_slow') || strcmpi(paramSetName,'speed_fast')
+        if strcmpi(paramSetName,'speedSlow') || strcmpi(paramSetName,'speedFast')
             meanVels = zeros(size(mt,1),1);
             for iMove = 1:size(mt,1)
                 % get time indices for this movement
                 idx = t > mt(iMove,4) & t < (mt(iMove,5));
                 v = sqrt(vel(idx,1).^2 + vel(idx,2).^2);
-                meanVels(iMove) = mean(v);
+                meanVels(iMove) = rms(v);
             end
             
             % find the mean time
             m = mean(meanVels);
             switch lower(paramSetName)
-                case 'speed_slow'
+                case 'speedslow'
                     idx = meanVels < m;
-                case 'speed_fast'
+                case 'speedfast'
                     idx = meanVels > m;
             end
             mt = mt(idx,:);

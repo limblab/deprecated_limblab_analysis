@@ -97,7 +97,13 @@ for iMethod = 1:length(tuneMethods)
                         
                         % get cells that are significantly tuned in all epochs
                         %   first column is PDs, second is MDs
+                        
+                        % hack to work with classifier blocks for moveTime.
+                        % Should really reconsider this all eventually
+                        params.classes.classifierBlocks = classifierBlocks(iBlock,:);
                         [istuned, sg] = excludeCells(params,data,t.tuning,tracking,useArray);
+                        params.classes.classifierBlocks = classifierBlocks;
+                        
                         tunedCells = sg(all(istuned,2),:);
                         disp(['There are ' num2str(length(tunedCells)) ' cells tuned in all epochs...']);
                         

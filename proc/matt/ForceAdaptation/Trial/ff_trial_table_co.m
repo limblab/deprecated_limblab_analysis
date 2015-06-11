@@ -1,4 +1,4 @@
-function tt = ff_trial_table_co(bdf)
+function tt = ff_trial_table_co(bdf,rewardFlag)
 % FF_TRIAL_TABLE_CO  Returns a table containing the key timestamps for all of
 %                  the successful center-out trials in BDF
 %
@@ -18,8 +18,15 @@ function tt = ff_trial_table_co(bdf)
 %    13: Trial End time
 %
 %  ASSUMES A 0.5 SECOND HOLD TIME WHEN REQUIRED
+%
+%   rewardFlag specifies what trials to return:
+%       rewardFlag = 1; Only rewarded (success) trials
+%       rewardFlag = 2; Only non-rewarded (failed) trials
+%       rewardFlag = 3; All trials
 
-% $Id: co_trial_table.m 334 2011-01-12 04:18:39Z chris $
+if nargin < 3
+    rewardFlag = 1;
+end
 
 words = bdf.words;
 
@@ -145,16 +152,16 @@ for trial = 1:num_trials-1
     if ot_dir ~= -1 % ignore trials that don't make it to target presentation
         if ot_dir < length(targ_angs)
         tt(trial,:) = [...
-            start_time, ... % Trial start
-            ot_dir, ...     % Outer target id (-1 for none)
-            targ_angs(ot_dir+1), ... % angle to target
-            target, ...     % target location by corners
-            ot_time, ...    % Timestamp of OT On event
-            go_cue, ...     % Timestamp of Go Cue
-            onset, ...      % Detected movement onset
-            peak, ...       % Time of peak movement speed
-            offset,...      % end of movement (back below threshold)
-            stop_time];  % End of trial
+            start_time, ... %1 Trial start
+            ot_dir, ...     %2 Outer target id (-1 for none)
+            targ_angs(ot_dir+1), ... %3 angle to target
+            target, ...     %4-7 target location by corners
+            ot_time, ...    %8 Timestamp of OT On event
+            go_cue, ...     %9 Timestamp of Go Cue
+            onset, ...      %10 Detected movement onset
+            peak, ...       %11 Time of peak movement speed
+            offset,...      %12 end of movement (back below threshold)
+            stop_time];  %13 End of trial
         else
             % I ran into a problem once where one single target had an
             % ot_dir that was greater than it should be... i have no idea what
@@ -168,6 +175,7 @@ end
 remInds = tt(:,9) == -1;
 tt(remInds,:) = [];
 
+% remove nan trials
 remInds = isnan(tt(:,10));
 tt(remInds,:) = [];
 

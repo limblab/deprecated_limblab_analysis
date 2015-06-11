@@ -2,8 +2,8 @@ clear;
 clc;
 close all;
 
-% rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
+root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
+% rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
 
 rewriteFiles = false;
 
@@ -12,6 +12,7 @@ monkeys = {'Mihili','Chewie'};
 useArray = 'M1';
 
 doMD = false;
+doMDNorm = true;
 
 classifierBlocks = [1 4 7];
 
@@ -27,6 +28,29 @@ ff_color = [0.2 0.25 0.95];
 vr_color = [0.95 0.25 0.2];
 
 dataSummary;
+
+%%
+if ~doMD
+    xmin = -180;
+    xmax = 180;
+    ymin = -180;
+    ymax = 180;
+    ylab = 'Change in PD on FF Session 1';
+else
+    if doMDNorm
+        xmin = -1;
+        xmax = 1;
+        ymin = -1;
+        ymax = 1;
+        ylab = 'Change in Normalized DOT on FF Session 1';
+    else
+        xmin = -70;
+        xmax = 70;
+        ymin = -70;
+        ymax = 70;
+        ylab = 'Change in DOT on FF Session 1';
+    end
+end
 
 cellCount = 0;
 for iMonkey = 1:length(monkeys)
@@ -51,10 +75,10 @@ for iMonkey = 1:length(monkeys)
     
     
     
-    baseDir = fullfile(rootDir,monkey);
+    baseDir = fullfile(root_dir,monkey);
     
     for i = 1:size(goodDates,1)
-        paramFiles{i} = fullfile(rootDir,monkey,goodDates{i},[goodDates{i} '_experiment_parameters.dat']);
+        paramFiles{i} = fullfile(root_dir,monkey,goodDates{i},[goodDates{i} '_experiment_parameters.dat']);
     end
     
     %% load the tracking
@@ -75,11 +99,11 @@ for iMonkey = 1:length(monkeys)
         % Load some of the experimental parameters
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
         params = parseExpParams(paramFiles{iDay});
-        useDate = params.date{1};
+        useDate = params.date;
         arrays = params.arrays;
-        monkey = params.monkey{1};
-        taskType = params.task{1};
-        adaptType = params.adaptation_type{1};
+        monkey = params.monkey;
+        taskType = params.task;
+        adaptType = params.adaptation_type;
         clear params;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
@@ -105,7 +129,7 @@ for iMonkey = 1:length(monkeys)
             u = sg(unit,2);
             
             if all(istuned(unit,:))
-                getClasses(unit) = c(unit);
+                getClasses(unit) = c.classes(unit,1);
             end
             
             if ~doMD % do PDs
@@ -137,7 +161,11 @@ for iMonkey = 1:length(monkeys)
                 ind = t_wo.sg(:,1)==e & t_wo.sg(:,2)==u;
                 pd_wo = t_wo.mds(ind,:);
                 
-                getDPDs(unit) = pd_ad(1) - pd_bl(1);
+                if doMDNorm
+                    getDPDs(unit) = (pd_ad(1) - pd_bl(1))/pd_bl(1);
+                else
+                    getDPDs(unit) = pd_ad(1) - pd_bl(1);
+                end
             end
             
             getPDs(unit,:) = [pd_bl(1),pd_ad(1),pd_wo(1)];
@@ -152,7 +180,7 @@ for iMonkey = 1:length(monkeys)
         getCIs(badInds,:) = [];
         
         tuneInfo(iDay).sg = sg;
-        tuneInfo(iDay).class = c(:,1);
+        tuneInfo(iDay).class = c.classes(:,1);
         tuneInfo(iDay).adapt = adaptType;
         tuneInfo(iDay).task = taskType;
         tuneInfo(iDay).dpd = getDPDs;
@@ -248,6 +276,8 @@ for unit = 1:size(allPDs,1)
     end
 end
 
+keepPDs = allPDs;
+
 allPDs = [];
 isdiff = [];
 markz = [];
@@ -265,7 +295,6 @@ for unit = 1:length(allCells)
                 % now, see if force PD is different on the two days
                 out = compareTuningParameter('pd',{allCells(unit).cis(idx(iDay),:), allCells(unit).cis(idx(iDay+1),:)},[1 1],{'diff',0.95,1000});
                 isdiff = [isdiff; out.elec1.unit1(1,2)];
-               
                 
                 if iDay > 1
                     markz = [markz; 1];
@@ -288,10 +317,11 @@ for unit = 1:size(allPDs,1)
     end
 end
 
+keepPDs = [keepPDs; allPDs];
 
 % plot(allPDs(:,1),allPDs(:,2),'o','LineWidth',3);
 plot([-180,180],[-180,180],'k--');
-set(gca,'XLim',[-70,70],'YLim',[-70,70],'TickDir','out','FontSize',14);
+set(gca,'XLim',[xmin,xmax],'YLim',[ymin,ymax],'TickDir','out','FontSize',14);
 box off;
 ylabel('Change in PD on FF Session 2','FontSize',14);
 xlabel('Change in PD on FF Session 1','FontSize',14);

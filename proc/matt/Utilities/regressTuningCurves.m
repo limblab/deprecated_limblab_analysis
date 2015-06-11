@@ -1,7 +1,7 @@
 function [tunCurves,confBounds,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves(fr,theta,sigTest,varargin)
 % Compute cosine tuning curves relating neural activity to output using a
 % linear regression method to get preferred directions. Uses model:
-%   
+%
 %       fr = b0 + b1*cos(theta + b2)
 %
 %   Where b0 is the baseline offset (BO), b1 is the modulation depth
@@ -25,6 +25,8 @@ function [tunCurves,confBounds,rs,boot_pds,boot_mds,boot_bos] = regressTuningCur
 %       Options:
 %           'doplots': (boolean) plot each unit with tuning curve? (default:false)
 %           'domeanfr': (boolean) find mean fr by direction for cosine fit (default: true)
+%           'doparallel: (boolean) whether to run bootstrap for loop in parallel (default: false)
+%
 % OUTPUTS
 %   tunCurves: tuning of each model using b0+b1*cos(theta+b2)
 %                   tunCurves = [b0,b1,b2]
@@ -58,12 +60,15 @@ end
 % set defaults
 doPlots = false; % By default, don't plot
 doMeanFR = true; % by default find mean for fit at each unique fr (if binned)
+doParallel = false;
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'doplots'
             doPlots = varargin{i+1};
         case 'domean'
             doMeanFR = varargin{i+1};
+        case 'doparallel'
+            doParallel = varargin{i+1};
     end
 end
 %%%%%
@@ -81,46 +86,67 @@ switch lower(sigTest{1})
         b1s = zeros(size(fr,2),numIters);
         b2s = zeros(size(fr,2),numIters);
         rs = zeros(size(fr,2),numIters);
-        for iter = 1:numIters
-            tempfr = zeros(size(fr));
-            tempTheta = zeros(size(fr));
-            for unit = 1:size(fr,2)
-                randInds = randi([1 size(fr,1)],size(fr,1),1);
-                tempfr(:,unit) = fr(randInds,unit);
-                tempTheta(:,unit) = theta(randInds);
-            end
-
-            if doMeanFR
-                % find the mean firing rate for each direction
-                udir = unique(tempTheta(:,1));
-                
-                mtempfr = zeros(length(udir),size(tempfr,2));
-                for idir = 1:length(udir)
-                    for unit = 1:size(fr,2)
-                        mtempfr(idir,unit) = mean(tempfr(tempTheta(:,unit)==udir(idir),unit));
-                    end
+        
+        if doParallel
+            parfor iter = 1:numIters
+                tempfr = zeros(size(fr));
+                tempTheta = zeros(size(fr));
+                for unit = 1:size(fr,2)
+                    randInds = randi([1 size(fr,1)],size(fr,1),1);
+                    tempfr(:,unit) = fr(randInds,unit);
+                    tempTheta(:,unit) = theta(randInds);
                 end
-                
-                tempfr = mtempfr;
-                tempTheta = udir;
+                if doMeanFR
+                    % find the mean firing rate for each direction
+                    udir = unique(tempTheta(:,1));
+                    mtempfr = zeros(length(udir),size(tempfr,2));
+                    for idir = 1:length(udir)
+                        for unit = 1:size(fr,2)
+                            mtempfr(idir,unit) = mean(tempfr(tempTheta(:,unit)==udir(idir),unit));
+                        end
+                    end
+                    tempfr = mtempfr;
+                    tempTheta = udir;
+                end
+                [tunCurves,r] = regressTCs(tempfr,tempTheta,doPlots);
+                b0s(:,iter) = tunCurves(:,1);
+                b1s(:,iter) = tunCurves(:,2);
+                b2s(:,iter) = tunCurves(:,3);
+                rs(:,iter) = r;
             end
-            
-            
-            [tunCurves,r] = regressTCs(tempfr,tempTheta,doPlots);
-
-            
-            b0s(:,iter) = tunCurves(:,1);
-            b1s(:,iter) = tunCurves(:,2);
-            b2s(:,iter) = tunCurves(:,3);
-            
-            rs(:,iter) = r;
-            
+        else % don't run in parallel
+            for iter = 1:numIters
+                tempfr = zeros(size(fr));
+                tempTheta = zeros(size(fr));
+                for unit = 1:size(fr,2)
+                    randInds = randi([1 size(fr,1)],size(fr,1),1);
+                    tempfr(:,unit) = fr(randInds,unit);
+                    tempTheta(:,unit) = theta(randInds);
+                end
+                if doMeanFR
+                    % find the mean firing rate for each direction
+                    udir = unique(tempTheta(:,1));
+                    mtempfr = zeros(length(udir),size(tempfr,2));
+                    for idir = 1:length(udir)
+                        for unit = 1:size(fr,2)
+                            mtempfr(idir,unit) = mean(tempfr(tempTheta(:,unit)==udir(idir),unit));
+                        end
+                    end
+                    tempfr = mtempfr;
+                    tempTheta = udir;
+                end
+                [tunCurves,r] = regressTCs(tempfr,tempTheta,doPlots);
+                b0s(:,iter) = tunCurves(:,1);
+                b1s(:,iter) = tunCurves(:,2);
+                b2s(:,iter) = tunCurves(:,3);
+                rs(:,iter) = r;
+            end
         end
-
+        
         boot_pds = b2s;
         boot_mds = b1s;
         boot_bos = b0s;
-
+        
         pds = circ_mean(b2s')';
         % Build vector of distances from mean for each channel
         ang_dist = boot_pds-pds(:,ones(1,numIters));
@@ -148,7 +174,7 @@ switch lower(sigTest{1})
         
         b0s = sort(b0s,2);
         bo_sig = [b0s(:,ceil(numIters*( (1-confLevel)/2 ) )), b0s(:,floor(numIters*( confLevel + (1-confLevel)/2 )))];
-
+        
         b0s = mean(b0s,2);
         b1s = mean(b1s,2);
         b2s = circ_mean(b2s')';
@@ -166,7 +192,7 @@ switch lower(sigTest{1})
         md_sig = [NaN,NaN];
         bo_sig = [NaN,NaN];
         [tunCurves,rs] = regressTCs(fr,theta,doPlots);
-
+        
         boot_pds = [];
         boot_mds = [];
         boot_bos = [];

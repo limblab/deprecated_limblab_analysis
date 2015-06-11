@@ -57,7 +57,7 @@ for i = 1:size(doFiles,1)
     % Run processSpiesForSorting again to separate sorted spikes into their
     % original files.
     disp('Splitting sorted file into NEVs...');
-    mergingStatus = processSpikesForSorting(file_path,file_prefix,true);
+    mergingStatus = mattProcessSpikesForSorting(file_path,file_prefix,true);
     
     % this section will make each file into its own BDF
     if ~exist(out_path, 'dir')

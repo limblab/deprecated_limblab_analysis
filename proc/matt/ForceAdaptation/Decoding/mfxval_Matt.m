@@ -94,12 +94,8 @@ for i=0:nfold-1
     end
     
     TestSigs = concatSigs_Matt(testData, options.PredEMGs, options.PredForce, options.PredCursPos, options.PredVeloc, options.PredTarg, options.PredCompVeloc,options.PredMoveDir); 
-%     R2   = [R2; CalculateR2(TestSigs,PredData.preddatabin)'];
-%     vaf  = [vaf; 1 - sum( (PredData.preddatabin-TestSigs).^2 ) ./ ...
-%                         sum( (TestSigs - ...
-%                         repmat(mean(TestSigs),...
-%                         size(TestSigs,1),1)).^2 )];  
-%     mse  = [mse; mean((PredData.preddatabin-TestSigs).^2)];
+    
+    PredData.testdatabin = TestSigs(round(fillen/binsize):end,:);
     
     R2   = [R2; CalculateR2(TestSigs(round(fillen/binsize):end,:),PredData.preddatabin)'];
     vaf  = [vaf; 1 - sum( (PredData.preddatabin-TestSigs(round(fillen/binsize):end,:)).^2 ) ./ ...
@@ -115,6 +111,7 @@ for i=0:nfold-1
     else
         AllPredData.timeframe = [AllPredData.timeframe; PredData.timeframe];
         AllPredData.preddatabin=[AllPredData.preddatabin;PredData.preddatabin];
+        AllPredData.testdatabin=[AllPredData.testdatabin;PredData.testdatabin];
     end
 
 end %for i=1:nfold

@@ -43,16 +43,16 @@ root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
 
 % allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili'),:);
 % dateInds = strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO');
-dateInds = [4];
+dateInds = [6];
 dateColors = {'b','r','g','m'};
+
+epochs = {'BL','AD3','WO3'};
+
+useArray = 'M1';
+paramSetName = 'movement';
 
 for iDate = 1:length(dateInds)
     doFile = allFiles(dateInds(iDate),:);
-    
-    epochs = {'BL','AD1','AD2','AD3','WO1','WO2','WO3'};
-    
-    useArray = 'M1';
-    paramSetName = 'movement';
     
     [spikes,allMT,indices] = combineAllEpochs(root_dir,doFile,epochs,useArray,paramSetName);
     
@@ -71,7 +71,7 @@ for iDate = 1:length(dateInds)
     trial_table = allMT; % Trial table size with rows
     %                                     representing trials
     t1 = [4,0];
-    t2 = [5,0];
+    t2 = [6,-400];
     numTargets = 8;
     units = spikes; % Cell array in which each cell contains spike
     %                          from a single neuron
@@ -96,7 +96,7 @@ for iDate = 1:length(dateInds)
     % leave this as false.
     do_cross_val = false;
     % Plot the traces
-    plot_conditions = false; % Plot separate conditions
+    plot_conditions = true; % Plot separate conditions
     [trial_rast,dat] = trial_raster(units,trial_table,t1,t2);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %-------------------------------------------------------------------------%
@@ -141,7 +141,7 @@ for iDate = 1:length(dateInds)
     
     %%
     % Make figure to show progression of activity
-    if 1
+    if 0
         figure; hold all;
         dims = 1:3;
         dimAvg = zeros(length(dims),length(seqTrain));
@@ -167,37 +167,38 @@ for iDate = 1:length(dateInds)
         box off;
         xlabel('Trials','FontSize',14);
         ylabel('Abs(Mean Change in Low-D FR)','FontSize',14);
-    end
-    
-    %%
-    % Make figure to show progression of activity
-    dims = 1:8;
-    dimAvg = zeros(length(dims),length(seqTrain));
-    for iTrial = 1:length(seqTrain)
-        dimAvg(:,iTrial) = mean(seqTrain(iTrial).xorth(dims,:),2);
-    end
-    
-    
-    if iDate == 1
-        figure;
-        hold all;
-    end
-    
-    for iEpoch = 1:length(epochs)
-        dat = [];
-        for iReach = 1:size(indices,2)
-            % get average in baseline for each dimension and reach direction
-            bl_avg = mean(dimAvg(:,indices{1,iReach}),2);
-            
-            inds = indices{iEpoch,iReach};
-            dat = [dat, sum( abs(dimAvg(:,inds) - repmat(bl_avg,1,length(inds))),1)];
+        
+        
+        %
+        % Make figure to show progression of activity
+        dims = 1:8;
+        dimAvg = zeros(length(dims),length(seqTrain));
+        for iTrial = 1:length(seqTrain)
+            dimAvg(:,iTrial) = mean(seqTrain(iTrial).xorth(dims,:),2);
         end
         
-        plot(iEpoch,mean(dat),'o','LineWidth',3,'Color',dateColors{iDate});
-        plot([iEpoch,iEpoch],[mean(dat) + std(dat)./length(dat), mean(dat) - std(dat)./length(dat)],'-','LineWidth',2);
         
-        allDat{iDate} = dat;
+        if iDate == 1
+            figure;
+            hold all;
+        end
         
+        for iEpoch = 1:length(epochs)
+            dat = [];
+            for iReach = 1:size(indices,2)
+                % get average in baseline for each dimension and reach direction
+                bl_avg = mean(dimAvg(:,indices{1,iReach}),2);
+                
+                inds = indices{iEpoch,iReach};
+                dat = [dat, sum( abs(dimAvg(:,inds) - repmat(bl_avg,1,length(inds))),1)];
+            end
+            
+            plot(iEpoch,mean(dat),'o','LineWidth',3,'Color',dateColors{iDate});
+            plot([iEpoch,iEpoch],[mean(dat) + std(dat)./length(dat), mean(dat) - std(dat)./length(dat)],'-','LineWidth',2);
+            
+            allDat{iDate} = dat;
+            
+        end
     end
 end
 set(gca,'FontSize',14,'TickDir','out');
@@ -211,7 +212,7 @@ ylabel('Abs(Mean Change in Low-D FR)','FontSize',14);
 %% Plot traces
 if plot_conditions
     figure; hold on;
-    if ~isempty(diff_conds)
+    if 1
         diff_conds = indices(:,1);
         %cols2plot = distinguishable_colors(length(diff_conds));
         cols2plot = rand(length(diff_conds),3);

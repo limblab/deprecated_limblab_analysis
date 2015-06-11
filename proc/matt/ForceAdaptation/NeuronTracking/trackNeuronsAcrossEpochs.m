@@ -24,13 +24,13 @@ function tracking = trackNeuronsAcrossEpochs(params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-dataDir = params.outDir; % we want to load from the output directory of makeDataStruct
-useDate = params.exp.date{1};
-taskType = params.exp.task{1};
-adaptType = params.exp.adaptation_type{1};
-monkey = params.exp.monkey{1};
+root_dir = params.outDir; % we want to load from the output directory of makeDataStruct
+useDate = params.exp.date;
+taskType = params.exp.task;
+adaptType = params.exp.adaptation_type;
+monkey = params.exp.monkey;
 
-dataPath = fullfile(dataDir,useDate);
+dataPath = fullfile(root_dir,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Loading data to track neurons...')

@@ -160,7 +160,7 @@ if ~isempty(classifierBlocks)
             all_rs{iBlock} = temp;
             
             % get 95% CI for each
-            all_rs_ci{iBlock} = [temp(:,ceil(numIters - confLevel*numIters)), temp(:,floor(confLevel*numIters))];
+            all_rs_ci{iBlock} = [temp(:,ceil(numIters - (confLevel/2)*numIters)), temp(:,floor((confLevel/2)*numIters))];
         end
         
         for unit = 1:size(master_sg,1)

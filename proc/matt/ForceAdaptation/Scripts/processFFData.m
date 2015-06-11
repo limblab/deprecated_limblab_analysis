@@ -19,9 +19,9 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % would be great to have proper database
 %   - could load monkey info
-dataRoot = 'C:\Users\Matt Perich\Desktop\lab\data\';
-monkeys = {'Mihili','Chewie'};
-paramSetNames = {'movement'};
+dataRoot = 'F:\';
+monkeys = {'Mihili'};
+paramSetNames = {'planning'}; %,'target','speedSlow','speedFast','moveTime','moveFine','targFine'};
 
 % exclude these analysis steps
 %    Note: I recommend if you change analysis parameters relevant to one of
@@ -29,11 +29,11 @@ paramSetNames = {'movement'};
 %    date with the actual data
 % processing options
 doDataStruct        = 0;
-doAdaptation        = 1;
+doAdaptation        = 0;
 doTracking          = 0;
 % tuning options
-doTuning            = 0;
-doClassification    = 0;
+doTuning            = 1;
+doClassification    = 1;
 doReport            = 0;
 % plotting options
 doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
@@ -62,6 +62,9 @@ for iMonkey = 1:length(monkeys)
             arrays = {'M1'};            
             params = setParamValues(params,'MonkeyID',2,'dataDir','Z:\Chewie_8I2\Matt');
             goodDates = chewie_data(:,2);
+            
+            %goodDates = {'2015-03-09';'2015-03-11';'2015-03-12';'2015-03-13';'2015-03-16';'2015-03-17';'2015-03-18';'2015-03-19';'2015-03-20'};
+                
         case 'Mihili'
             arrays = {'M1','PMd'};            
             params = setParamValues(params,'MonkeyID',3,'dataDir','Z:\Mihili_12A3\Matt');

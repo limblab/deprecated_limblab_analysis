@@ -1,8 +1,21 @@
 % get firing rates for all trials in all epochs for all cells
-metric = 'errors';
+metric = franova.metric;
+doPeakFRPlot = franova.doPeakFRPlot;
+doBehaviorPlot = franova.doBehaviorPlot;
+doAbs = franova.doAbs;
+pmax = franova.pmax;
 
+plotPopMean = true;
+plotOnlyPD = true;
+
+%%
+clear allWFWidths;
 count = 0;
 for iFile = 1:size(doFiles)
+    if doWidthSeparation
+        data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
+    end
+    
     a = loadResults(root_dir,doFiles(iFile,:),'adaptation');
     blErr{iFile} = a.BL.(metric).*(180/pi);
     adErr{iFile} = a.AD.(metric).*(180/pi);
@@ -20,6 +33,15 @@ for iFile = 1:size(doFiles)
             sg = t(1).sg;
             allTU(count) = all(c(1).istuned(unit,:));
             allMonk{count} = doFiles{iFile,1};
+            
+            % get width of waveform
+            if doWidthSeparation
+                u = data.(useArray).units;
+                idx = data.(useArray).sg(:,1)==master_sg(unit,1) & sg(:,2)==master_sg(unit,2);
+                allWF{count} = mean(u(idx).wf,2);
+            else
+                allWF{count} = 0;
+            end
             
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Get the data
@@ -50,16 +72,12 @@ for iFile = 1:size(doFiles)
                 md = t(iBlock).mds(idx,1);
                 bo = t(iBlock).bos(idx,1);
                 
-                % now get pre-movement activity
-                %                 sg = t_pre(iBlock).sg;
-                %                 idx = sg(:,1)==master_sg(unit,1) & sg(:,2)==master_sg(unit,2);
-                %                 fr_pre = t_pre(iBlock).fr(:,idx);
-                
                 getFR = [getFR; fr];
                 for iDir = 1:length(utheta)
                     idx = theta==utheta(iDir);
                     blockFR(iBlock,iDir) = mean(fr(idx));
                 end
+                
                 %getFR = [getFR; fr];
                 getTH = [getTH; theta];
                 getBL = [getBL; iBlock*ones(size(fr))];
@@ -102,6 +120,7 @@ for iFile = 1:size(doFiles)
                 % if -pi is one of the unique, make it pi
                 if abs(utheta(1)) > utheta(end-1)
                     theta(theta==utheta(1)) = utheta(end);
+                    utheta = unique(theta);
                 end
                 
                 sg = t(iBlock).sg;
@@ -212,11 +231,17 @@ for iFile = 1:size(doFiles)
 end
 
 p = ones(2,length(adFR));
-p2 = ones(1,length(adFR));
+p2 = zeros(2,length(adFR));
 for unit = 1:length(adFR)
     meanfr(unit) = mean(adFR{unit});
-    p(:,unit) = anovan(adFR{unit},{adBL{unit},adTH{unit}},'display','off');
-    p2(unit) = anovan(adFR{unit},{adBL{unit}},'display','off');
+    % AD only:
+    p(:,unit) = anovan([adFR{unit}],{[adBL{unit}],[adTH{unit}]},'display','off');
+    %WO only:
+    p2(:,unit) = anovan([woFR{unit}],{[woBL{unit}],[woTH{unit}]},'display','off');
+    %AD and WO:
+    %p(:,unit) = anovan([adFR{unit};woFR{unit}],{[adBL{unit};woBL{unit}],[adTH{unit};woTH{unit}]},'display','off');
+    %All three:
+    %p(:,unit) = anovan([blFR{unit};adFR{unit};woFR{unit}],{[blBL{unit};adBL{unit};woBL{unit}],[blTH{unit};adTH{unit};woTH{unit}]},'display','off');
 end
 
 % p = ones(8,length(allFR));
@@ -234,100 +259,104 @@ end
 %     end
 % end
 
-p(isnan(p))=1;
-
-disp(['Proportion of time-varying cells (p < 0.05): ' num2str(sum(p(1,:) < 0.05)/size(p,2))])
-disp(['Proportion of direction-varying cells (p < 0.05): ' num2str(sum(p(2,:) < 0.05)/size(p,2))])
-
-% find what proportion of significantly time-varying cells are cosine tuned
-idx = p(1,:) < 0.05;
-disp(['Proportion of time-varying cells that are cosine tuned: ' num2str(sum(allTU(idx))/sum(allTU)) ])
-
-%% Plot change in firing rate relative to start (or baseline average?) over entire session
-% clear cellFRDiff;
-% % first, find the length of the shortest file and get baseline FR
-% idx = find(p(1,:) <= 0.05);
-% 
-% blAv = zeros(1,length(idx));
-% trialMins = zeros(length(idx),3);
+%%
+% % look at PDs for the changing neurons
+% idx = find(p(1,:) <= 0.05 & p(2,:) <= 0.05 & allTU);
 % for i = 1:length(idx)
-%     blfr = blFR{idx(i)};
-%     adfr = adFR{idx(i)};
-%     wofr = woFR{idx(i)};
-%     
-%     blAv(i) = nanmean(blfr);
-%     trialMins(i,:) = [length(blfr), length(adfr), length(wofr)];
-%     
+%     getPDs(i,:) = [blPD(idx(i),:), adPD(idx(i),:), woPD(idx(i),:)];
+%     getDPDs(i,:) = [angleDiff(blPD(idx(i),:),blPD(idx(i),:),false,false), angleDiff(blPD(idx(i),:),adPD(idx(i),:),false,false), angleDiff(blPD(idx(i),:),woPD(idx(i),:),false,false)];
 % end
-% numTrials = min(trialMins,[],1);
-% 
-% % now, find baseline averages for each neuron
-% for i = 1:length(idx)
-%     count = 0;
-%     blfr = blFR{idx(i)};
-%     adfr = adFR{idx(i)};
-%     wofr = woFR{idx(i)};
-%     
-%     n = 10;
-%     
-%     % get baseline progression
-%     trialBins = 1:n:numTrials(1);
-%     for k = 1:length(trialBins)-1
-%         count = count+1;
-%         cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
-%     end
-%     epochMarkers(1) = count;
-%     % get adaptation progression
-%     trialBins = 1:n:numTrials(2);
-%     for k = 1:length(trialBins)-1
-%         count = count+1;
-%         cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
-%     end
-%     epochMarkers(2) = count;
-%     % get washout progression
-%     trialBins = 1:n:numTrials(3);
-%     for k = 1:length(trialBins)-1
-%         count = count+1;
-%         cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
-%     end
-%     epochMarkers(3) = count;
-% end
-% 
+%
 % figure;
 % hold all;
-% % Now plot
-% plot(mean(cellFRDiff,1),'o','LineWidth',4,'Color','b');
-% plot(mean(cellFRDiff,1),'--','LineWidth',1,'Color','b');
-% plot(mean(cellFRDiff,1) + std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1)),'LineWidth',1,'Color','b');
-% plot(mean(cellFRDiff,1) - std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1)),'LineWidth',1,'Color','b');
-% 
-% set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1:n:size(cellFRDiff,2));
-% xlabel('Bins of Trials','FontSize',14);
-% ylabel('Mean FR Change','FontSize',14);
-% 
-% V = axis;
-% % plot epoch divisions
-% plot([0.5 0.5] + epochMarkers(1),V(3:4),'k--');
-% plot([0.5 0.5] + epochMarkers(2),V(3:4),'k--');
+% plot(getDPDs','LineWidth',2);
+% % plot(mean(getDPDs,1),'k','LineWidth',5)
+% % plot(mean(getDPDs,1)+std(getDPDs,1)./sqrt(length(getDPDs)),'k--','LineWidth',3);
+% % plot(mean(getDPDs,1)-std(getDPDs,1)./sqrt(length(getDPDs)),'k--','LineWidth',3);
+% set(gca,'Box','off','TickDir','out','FontSize',14);
+% xlabel('Blocks of Trials','FontSize',14);
+% ylabel('Change in PD (Deg)','FontSize',14);
 
 
-%% Same as above but for different monkeys
+%%
+p(isnan(p))=1;
+p2(isnan(p2))=1;
+
+idx = p(1,:) <= pmax;
+disp(['Proportion of time-varying cells (p < ' num2str(pmax) '): ' num2str(sum(idx)/size(p,2))])
+idx = p(2,:) <= pmax;
+disp(['Proportion of direction-varying cells (p < ' num2str(pmax) '): ' num2str(sum(idx)/size(p,2))])
+idx = p(1,:) <= pmax & p(2,:) <= pmax;
+disp(['Proportion of both-varying cells (p < ' num2str(pmax) '): ' num2str(sum(idx)/size(p,2))])
+
+% % find what proportion of significantly time-varying cells are cosine tuned
+% idx = p(1,:) <= pmax;
+% fidx = find(idx);
+% % Get some more metrics for each time-varying neuron
+% for i = 1:length(fidx)
+%     % get mean firing rate of this neuron
+%     mFR(i) = mean(blFR{fidx(i)});
+%     % get waveform peak-to-peak of this neuron
+%     %   currently hard-code the scaling factor which is 250 nV/LSB
+%     p2p(i) = 0.25*(max(allWF{fidx(i)}) - min(allWF{fidx(i)}));
+%     % get waveform width of this neuron
+%     wf = allWF{fidx(i)};
+%     inds = find(abs(wf) >= 0*std(wf));
+%     wfw(i) = inds(end)-inds(1);
+% end
+%
+% % get the stats for non-time-varying neurons
+% fidx = find(~idx);
+% for i = 1:length(fidx)
+%     % get mean firing rate of this neuron
+%     mFRn(i) = mean(blFR{fidx(i)});
+%     % get waveform peak-to-peak of this neuron
+%     %   currently hard-code the scaling factor which is 250 nV/LSB
+%     p2pn(i) = 0.25*(max(allWF{fidx(i)}) - min(allWF{fidx(i)}));
+%     % get waveform width of this neuron
+%     wf = allWF{fidx(i)};
+%     inds = find(abs(wf) >= 0*std(wf));
+%     wfwn(i) = inds(end)-inds(1);
+% end
+
+disp(' ');
+%   Of the time-varying cells:
+%       1) How many are cosine tuned?
+disp(['Proportion of time-varying cells that are cosine tuned: ' num2str(sum(allTU(idx))/sum(idx)) ])
+disp(' ');
+% %       2) What is firing rate compared to rest of population?
+% disp(['Mean BL firing rate of time-varying cells: ' num2str(mean(mFR)) ' +/- ' num2str(std(mFR)./length(mFR))])
+% disp(['Mean BL firing rate of the rest: ' num2str(mean(mFRn)) ' +/- ' num2str(std(mFRn)./length(mFRn))])
+% disp(' ');
+% %       3) What is the average peak-to-peak waveform amplitude
+% disp(['Mean peak-to-peak waveform amplitude of time-varying cells: ' num2str(mean(p2p)) ' +/- ' num2str(std(p2p)./length(p2p))]);
+% disp(['Mean peak-to-peak waveform amplitude of the rest: ' num2str(mean(p2pn)) ' +/- ' num2str(std(p2pn)./length(p2pn))]);
+% disp(' ');
+% %       4) What is the waveform width
+% disp(['Mean waveform width of time-varying cells: ' num2str(mean(wfw)) ' +/- ' num2str(std(wfw)./length(wfw))]);
+% disp(['Mean waveform width of the rest: ' num2str(mean(wfwn)) ' +/- ' num2str(std(wfwn)./length(wfwn))]);
+
+
+%%
 
 % TO DO:
-%   - Make trial bins the same as the behavior plot
 %   - Do significance testing of FR changes
 
 figure;
 hold all;
 
-n = 69;
-ymin = 0;
-ymax = 0.5;
-
-pmax = 0.15;
+n = franova.numBins; % number of bins
+if doAbs
+    ymin = 0;
+    ymax = 0.5;
+else
+    ymin = -0.2;
+    ymax = 0.3;
+end
+xmin = 0.8;
 
 % Chewie
-clear cellFRDiff fileErr;
+clear cellFRDiff fileErr cellFRDiff_ADWO cellFRDiff_BLAD;
 % first, find the length of the shortest file and get baseline FR
 idx = find(p(1,:) < 2);
 blAv = zeros(1,length(idx));
@@ -343,8 +372,9 @@ for i = 1:length(idx)
 end
 numTrials = min(trialMins,[],1);
 
-% now do the rest
-idx = find(p(1,:) <= pmax & strcmpi(allMonk,'Chewie'));
+% do mean of all other neurons
+idx = find(p(1,:) > pmax & strcmpi(allMonk,'Chewie'));
+
 blAv = zeros(1,length(idx));
 for i = 1:length(idx)
     blfr = blFR{idx(i)};
@@ -359,41 +389,188 @@ for i = 1:length(idx)
     wofr = woFR{idx(i)};
     
     % get baseline progression
-    trialBins = 1:n:numTrials(1);
+    trialBins = [1,numTrials(1)];
     for k = 1:length(trialBins)-1
         count = count+1;
-        cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
+    end
+    % get adaptation progression
+    trialBins = 1:floor(numTrials(2)/n):numTrials(2);
+    for k = 1:length(trialBins)-1
+        count = count+1;
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
+    end
+    % get washout progression
+    trialBins = 1:floor(numTrials(3)/n):numTrials(3);
+    for k = 1:length(trialBins)-1
+        count = count+1;
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
+    end
+end
+
+if plotPopMean
+    % plot mean of population
+    bl = [mean(cellFRDiff(:,1)), std(cellFRDiff(:,1))./sqrt(size(cellFRDiff,1))];
+    temp = cellFRDiff(:,2:1+n);
+    temp = reshape(temp,n*length(temp),1);
+    ad = [mean(temp), std(temp)./sqrt(size(temp,1))];
+    temp = cellFRDiff(:,2+n:1+2*n);
+    temp = reshape(temp,n*length(temp),1);
+    wo = [mean(temp), std(temp)./sqrt(size(temp,1))];
+    clear temp cellFRDiff;
+    
+    patch([xmin,1+0.5,1+0.5,xmin],[bl(1)-bl(2),bl(1)-bl(2),bl(1)+bl(2),bl(1)+bl(2)],'k','LineWidth',2)
+    patch([1.5,1.5+n,1.5+n,1.5],[ad(1)-ad(2),ad(1)-ad(2),ad(1)+ad(2),ad(1)+ad(2)],'k','LineWidth',2)
+    patch([n+1.5,1.5+2*n,1.5+2*n,n+1.5],[wo(1)-wo(2),wo(1)-wo(2),wo(1)+wo(2),wo(1)+wo(2)],'k','LineWidth',2)
+end
+
+% do mean of all neurons for mihili
+idx = find(p(1,:) > pmax & strcmpi(allMonk,'Mihili'));
+
+blAv = zeros(1,length(idx));
+for i = 1:length(idx)
+    blfr = blFR{idx(i)};
+    blAv(i) = nanmean(blfr);
+end
+
+% now, find baseline averages for each neuron
+for i = 1:length(idx)
+    count = 0;
+    blfr = blFR{idx(i)};
+    adfr = adFR{idx(i)};
+    wofr = woFR{idx(i)};
+    
+    % get baseline progression
+    trialBins = [1,numTrials(1)];
+    for k = 1:length(trialBins)-1
+        count = count+1;
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
+    end
+    % get adaptation progression
+    trialBins = 1:floor(numTrials(2)/n):numTrials(2);
+    for k = 1:length(trialBins)-1
+        count = count+1;
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
+    end
+    % get washout progression
+    trialBins = 1:floor(numTrials(3)/n):numTrials(3);
+    for k = 1:length(trialBins)-1
+        count = count+1;
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
+    end
+end
+
+if plotPopMean
+    % plot mean of population
+    bl = [mean(cellFRDiff(:,1)), std(cellFRDiff(:,1))./sqrt(size(cellFRDiff,1))];
+    temp = cellFRDiff(:,2:1+n);
+    temp = reshape(temp,n*length(temp),1);
+    ad = [mean(temp), std(temp)./sqrt(size(temp,1))];
+    temp = cellFRDiff(:,2+n:1+2*n);
+    temp = reshape(temp,n*length(temp),1);
+    wo = [mean(temp), std(temp)./sqrt(size(temp,1))];
+    clear temp cellFRDiff;
+    
+    patch([xmin,1+0.5,1+0.5,xmin],[bl(1)-bl(2),bl(1)-bl(2),bl(1)+bl(2),bl(1)+bl(2)],'b','LineWidth',2)
+    patch([1.5,1.5+n,1.5+n,1.5],[ad(1)-ad(2),ad(1)-ad(2),ad(1)+ad(2),ad(1)+ad(2)],'b','LineWidth',2)
+    patch([n+1.5,1.5+2*n,1.5+2*n,n+1.5],[wo(1)-wo(2),wo(1)-wo(2),wo(1)+wo(2),wo(1)+wo(2)],'b','LineWidth',2)
+    
+    % make the patches slightly transparent
+    h = findobj(gca,'Type','patch');
+    set(h,'facealpha',0.7,'edgealpha',0);
+    
+end
+
+% do the directionally tuned cells
+idx = find(p(1,:) <= pmax & strcmpi(allMonk,'Chewie'));
+
+blAv = zeros(1,length(idx));
+for i = 1:length(idx)
+    blfr = blFR{idx(i)};
+    blAv(i) = nanmean(blfr);
+end
+
+% now, find baseline averages for each neuron
+for i = 1:length(idx)
+    count = 0;
+    blfr = blFR{idx(i)};
+    adfr = adFR{idx(i)};
+    wofr = woFR{idx(i)};
+    
+    % get baseline progression
+    trialBins = [1,numTrials(1)];
+    for k = 1:length(trialBins)-1
+        count = count+1;
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
     end
     epochMarkers(1) = count;
     % get adaptation progression
-    trialBins = 1:n:numTrials(2);
+    trialBins = 1:floor(numTrials(2)/n):numTrials(2);
     for k = 1:length(trialBins)-1
         count = count+1;
-        cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
     end
     epochMarkers(2) = count;
     % get washout progression
-    trialBins = 1:n:numTrials(3);
+    trialBins = 1:floor(numTrials(3)/n):numTrials(3);
     for k = 1:length(trialBins)-1
         count = count+1;
-        cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
     end
+    cellFRDiff_BLAD(i) = (nanmean(adfr(trialBins(end-1):trialBins(end))) - blAv(i))./blAv(i);
+    cellFRDiff_ADWO(i) = (nanmean(wofr(trialBins(end-1):trialBins(end))) - nanmean(adfr(trialBins(end-1):trialBins(end))))./blAv(i);
     epochMarkers(3) = count;
 end
 
 chewieDiff = cellFRDiff;
+allFRDiff_BLAD = cellFRDiff_BLAD;
+allFRDiff_ADWO = cellFRDiff_ADWO;
 
 % Now plot
 plot(1:count,mean(cellFRDiff,1),'o','LineWidth',4,'Color','k');
 plot([1:count;1:count], [mean(cellFRDiff,1) + std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1)); mean(cellFRDiff,1) - std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1))],'LineWidth',2,'Color','k');
 
-% figure;
-% hold all;
-% plot(1:count,mean(fileErr,1),'o','LineWidth',4,'Color','k');
-% plot([1:count;1:count], [mean(fileErr,1) + std(fileErr,0,1)./sqrt(size(fileErr,1)); mean(fileErr,1) - std(fileErr,0,1)./sqrt(size(fileErr,1))],'LineWidth',2,'Color','k');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mihili
-clear cellFRDiff cellErr;
+clear cellFRDiff cellErr cellFRDiff_ADWO cellFRDiff_BLAD;
+
 % first, find the length of the shortest file and get baseline FR
 idx = find(p(1,:) <= pmax & strcmpi(allMonk,'Mihili'));
 
@@ -411,35 +588,51 @@ for i = 1:length(idx)
     wofr = woFR{idx(i)};
     
     % get baseline progression
-    trialBins = 1:n:numTrials(1);
+    trialBins = [1,numTrials(1)];
     for k = 1:length(trialBins)-1
         count = count+1;
-        cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
     end
     epochMarkers(1) = count;
     % get adaptation progression
-    trialBins = 1:n:numTrials(2);
+    trialBins = 1:floor(numTrials(2)/n):numTrials(2);
     for k = 1:length(trialBins)-1
         count = count+1;
-        cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
     end
     epochMarkers(2) = count;
     % get washout progression
-    trialBins = 1:n:numTrials(3);
+    trialBins = 1:floor(numTrials(3)/n):numTrials(3);
     for k = 1:length(trialBins)-1
         count = count+1;
-        cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        if doAbs
+            cellFRDiff(i,count) = abs(nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        else
+            cellFRDiff(i,count) = (nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i)))./blAv(i);
+        end
     end
+    cellFRDiff_BLAD(i) = (nanmean(adfr(trialBins(end-1):trialBins(end))) - blAv(i))./blAv(i);
+    cellFRDiff_ADWO(i) = (nanmean(wofr(trialBins(end-1):trialBins(end))) - nanmean(adfr(trialBins(end-1):trialBins(end))))./blAv(i);
     epochMarkers(3) = count;
 end
 
 mihiliDiff = cellFRDiff;
+allFRDiff_BLAD = [allFRDiff_BLAD cellFRDiff_BLAD];
+allFRDiff_ADWO = [allFRDiff_ADWO cellFRDiff_ADWO];
 
 % Now plot
 plot((1:count)+0.1,mean(cellFRDiff,1),'o','LineWidth',4,'Color','b');
 plot([1:count;1:count]+0.1, [mean(cellFRDiff,1) + std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1)); mean(cellFRDiff,1) - std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1))],'LineWidth',2,'Color','b');
 
-set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1:n:size(cellFRDiff,2),'XLim',[0.8 count+0.2],'YLim',[ymin ymax]);
+set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1:n:size(cellFRDiff,2),'XLim',[xmin count+0.2],'YLim',[ymin ymax]);
 xlabel('Bins of Trials','FontSize',14);
 ylabel('FR Change','FontSize',14);
 
@@ -457,452 +650,187 @@ plot([0.5 0.5] + epochMarkers(2),V(3:4),'k--');
 % ylabel('Count','FontSize',14)
 
 
+%% Plot distribution of changes from end of AD to beginning of WO
+% figure;
+% hold all;
+% [N,X] = hist(allFRDiff_ADWO,[-1:1/6:1]);
+% bar(X,N./sum(N),1);
+% axis('tight');
+% plot([mean(allFRDiff_ADWO),mean(allFRDiff_ADWO)],[0 7],'r-','LineWidth',2);
+% set(gca,'Box','off','TickDir','out','FontSize',14);
+% xlabel('Normalized Change in FR (Adaptation to Washout)','FontSize',14);
+% ylabel('Percent','FontSize',14);
+%
+% figure;
+% hold all;
+% [N,X] = hist(allFRDiff_BLAD,[-1:1/6:1]);
+% bar(X,N./sum(N),1);
+% axis('tight');
+% plot([mean(allFRDiff_BLAD),mean(allFRDiff_BLAD)],[0 7],'r-','LineWidth',2);
+% set(gca,'Box','off','TickDir','out','FontSize',14);
+% xlabel('Normalized Change in FR (Baseline to Adaptation)','FontSize',14);
+% ylabel('Percent','FontSize',14);
+
 %%
-figure;
-hold all;
-
-ymin = -15;
-ymax = 5;
-
-% Chewie
-% first, find the length of the shortest file and get baseline FR
-% idx = find(p(1,:) < 2);
-% trialMins = zeros(length(idx),3);
-% for i = 1:length(idx)
-%     blfr = blFR{idx(i)};
-%     adfr = adFR{idx(i)};
-%     wofr = woFR{idx(i)};
-%     
-%     blAv(i) = nanmean(blfr);
-%     trialMins(i,:) = [length(blfr), length(adfr), length(wofr)];
-%     
-% end
-% numTrials = min(trialMins,[],1);
-
-% find error in each bin
-fileErr = [];
-idx = find(strcmpi(doFiles(:,1),'Chewie'));
-for iFile = 1:length(idx)
-    count = 0;
-    clear getErr;
-    % get baseline progression
-    err = blErr{idx(iFile)};
-    trialBins = 1:n:numTrials(1);
-    for k = 1:length(trialBins)-1
-        count = count+1;
-        getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
+if doBehaviorPlot
+    figure;
+    hold all;
+    
+    if ~doAbs
+        ymin = -15;
+        ymax = 5;
+    else
+        ymin = 0;
+        ymax = 20;
     end
-    epochMarkers(1) = count;
-    % get adaptation progression
-    err = adErr{idx(iFile)};
-    trialBins = 1:n:numTrials(2);
-    for k = 1:length(trialBins)-1
-        count = count+1;
-        getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
+    
+    % Chewie
+    % first, find the length of the shortest file and get baseline FR
+    % idx = find(p(1,:) < 2);
+    % trialMins = zeros(length(idx),3);
+    % for i = 1:length(idx)
+    %     blfr = blFR{idx(i)};
+    %     adfr = adFR{idx(i)};
+    %     wofr = woFR{idx(i)};
+    %
+    %     blAv(i) = nanmean(blfr);
+    %     trialMins(i,:) = [length(blfr), length(adfr), length(wofr)];
+    %
+    % end
+    % numTrials = min(trialMins,[],1);
+    
+    % find error in each bin
+    fileErr = [];
+    idx = find(strcmpi(doFiles(:,1),'Chewie'));
+    
+    nTot = 1+2*n; % how many total bins
+    
+    for iFile = 1:length(idx)
+        count = 0;
+        clear getErr;
+        % get baseline progression
+        err = blErr{idx(iFile)};
+        trialBins = [1,numTrials(1)];
+        for k = 1:length(trialBins)-1
+            count = count+1;
+            getErr{count} = [getErr{count}; (err(trialBins(k):trialBins(k+1)))];
+        end
+        epochMarkers(1) = count;
+        % get adaptation progression
+        err = adErr{idx(iFile)};
+        trialBins = 1:floor(numTrials(2)/n):numTrials(2);
+        for k = 1:length(trialBins)-1
+            count = count+1;
+            getErr{count} = [getErr{count}; (err(trialBins(k):trialBins(k+1)))];
+        end
+        epochMarkers(2) = count;
+        % get washout progression
+        err = woErr{idx(iFile)};
+        trialBins = 1:floor(numTrials(3)/n):numTrials(3);
+        for k = 1:length(trialBins)-1
+            count = count+1;
+            getErr{count} = [getErr{count}; (err(trialBins(k):trialBins(k+1)))];
+        end
+        epochMarkers(3) = count;
+        fileErr = [fileErr; getErr];
     end
-    epochMarkers(2) = count;
-    % get washout progression
-    err = woErr{idx(iFile)};
-    trialBins = 1:n:numTrials(3);
-    for k = 1:length(trialBins)-1
-        count = count+1;
-        getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
+    
+    plot(1:count,nanmean(fileErr,1),'o','LineWidth',4,'Color','k');
+    plot([1:count;1:count], [nanmean(fileErr,1) + nanstd(fileErr,0,1)./sqrt(size(fileErr,1)); nanmean(fileErr,1) - nanstd(fileErr,0,1)./sqrt(size(fileErr,1))],'LineWidth',2,'Color','k');
+    
+    % Mihili
+    % find error in each bin
+    fileErr = [];
+    idx = find(strcmpi(doFiles(:,1),'Mihili'));
+    for iFile = 1:length(idx)
+        count = 0;
+        % get baseline progression
+        err = blErr{idx(iFile)};
+        clear getErr
+        trialBins = [1,numTrials(1)];
+        for k = 1:length(trialBins)-1
+            count = count+1;
+            getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
+        end
+        epochMarkers(1) = count;
+        % get adaptation progression
+        err = adErr{idx(iFile)};
+        trialBins = 1:floor(numTrials(2)/n):numTrials(2);
+        for k = 1:length(trialBins)-1
+            count = count+1;
+            getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
+        end
+        % get washout progression
+        err = woErr{idx(iFile)};
+        trialBins = 1:floor(numTrials(3)/n):numTrials(3);
+        for k = 1:length(trialBins)-1
+            count = count+1;
+            getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
+        end
+        fileErr = [fileErr; getErr];
     end
-    epochMarkers(3) = count;
-    fileErr = [fileErr; getErr];
+    
+    % Now plot
+    plot(1:count,nanmean(fileErr,1),'o','LineWidth',4,'Color','b');
+    plot([1:count;1:count], [nanmean(fileErr,1) + nanstd(fileErr,0,1)./sqrt(size(fileErr,1)); nanmean(fileErr,1) - nanstd(fileErr,0,1)./sqrt(size(fileErr,1))],'LineWidth',2,'Color','b');
+    
+    set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1:n:size(cellFRDiff,2),'XLim',[0.8 count+0.2],'YLim',[ymin ymax]);
+    xlabel('Bins of Trials','FontSize',14);
+    ylabel('Behavior Error','FontSize',14);
+    
+    V = axis;
+    % plot epoch divisions
+    plot([0.5 0.5] + epochMarkers(1),V(3:4),'k--');
+    plot([0.5 0.5] + epochMarkers(2),V(3:4),'k--');
+    
 end
-
-plot(1:count,nanmean(fileErr,1),'o','LineWidth',4,'Color','k');
-plot([1:count;1:count], [nanmean(fileErr,1) + nanstd(fileErr,0,1)./sqrt(size(fileErr,1)); nanmean(fileErr,1) - nanstd(fileErr,0,1)./sqrt(size(fileErr,1))],'LineWidth',2,'Color','k');
-
-% Mihili
-% find error in each bin
-fileErr = [];
-idx = find(strcmpi(doFiles(:,1),'Mihili'));
-for iFile = 1:length(idx)
-    count = 0;
-    % get baseline progression
-    err = blErr{idx(iFile)};
-    clear getErr
-    trialBins = 1:n:numTrials(1);
-    for k = 1:length(trialBins)-1
-        count = count+1;
-        getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
-    end
-    epochMarkers(1) = count;
-    % get adaptation progression
-    err = adErr{idx(iFile)};
-    trialBins = 1:n:numTrials(2);
-    for k = 1:length(trialBins)-1
-        count = count+1;
-        getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
-    end
-    % get washout progression
-    err = woErr{idx(iFile)};
-    trialBins = 1:n:numTrials(3);
-    for k = 1:length(trialBins)-1
-        count = count+1;
-        getErr(:,count) = (err(trialBins(k):trialBins(k+1)));
-    end
-    fileErr = [fileErr; getErr];
-end
-
-% Now plot
-plot(1:count,nanmean(fileErr,1),'o','LineWidth',4,'Color','b');
-plot([1:count;1:count], [nanmean(fileErr,1) + nanstd(fileErr,0,1)./sqrt(size(fileErr,1)); nanmean(fileErr,1) - nanstd(fileErr,0,1)./sqrt(size(fileErr,1))],'LineWidth',2,'Color','b');
-
-set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1:n:size(cellFRDiff,2),'XLim',[0.8 count+0.2],'YLim',[ymin ymax]);
-xlabel('Bins of Trials','FontSize',14);
-ylabel('Behavior Error','FontSize',14);
-
-V = axis;
-% plot epoch divisions
-plot([0.5 0.5] + epochMarkers(1),V(3:4),'k--');
-plot([0.5 0.5] + epochMarkers(2),V(3:4),'k--');
-
 
 
 %% Plot change in FR as a function of distance from peak FR
-% idx = find(p(1,:) <= 0.05);
-% % figure;
-% % subplot1(1,2);
-% % subplot1(1);
-% % hold all;
-% allFRad = [];
-% allFRbl = [];
-% allFRwo = [];
-% for i = 1:length(idx)
-%     % get baseline firing rate
-%     blfr = blBlockFR{idx(i)};
-%     adfr = adBlockFR{idx(i)};
-%     wofr = woBlockFR{idx(i)};
-%     
-%     [~,I] = max(blfr(1,:)); % find direction of maximum
-%     
-%     blfr = circshift(blfr',4-I)';
-%     adfr = circshift(adfr',4-I)';
-%     wofr = circshift(wofr',4-I)';
-%     %plot(1:8,abs(fr(end,:)-fr(1,:)),'b');
-%     allFRbl = [allFRbl; abs(adfr(end,:)./mean(blfr)-blfr./mean(blfr))];
-%     allFRad = [allFRad; abs(adfr(end,:)./mean(blfr)-adfr(1,:)./mean(blfr))];
-%     allFRwo = [allFRwo; abs(wofr(end,:)./mean(blfr)-adfr(end,:)./mean(blfr))];
-% end
-% 
-% figure;
-% hold all;
-% plot(nanmean(allFRbl,1),'LineWidth',3,'Color','b');
-% plot(nanmean(allFRad,1),'LineWidth',3,'Color','r');
-% plot(nanmean(allFRwo,1),'LineWidth',3,'Color','g');
-% legend({'Adapt - Base','Late Adapt - Early Adapt','Wash - Base'},'FontSize',14);
-% 
-% plot(nanmean(allFRbl,1) - nanstd(allFRbl,0,1)./sqrt(size(allFRbl,1)),'LineWidth',1,'Color','b');
-% plot(nanmean(allFRbl,1) + nanstd(allFRbl,0,1)./sqrt(size(allFRbl,1)),'LineWidth',1,'Color','b');
-% 
-% plot(nanmean(allFRad,1) - nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','r');
-% plot(nanmean(allFRad,1) + nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','r');
-% 
-% plot(nanmean(allFRwo,1) - nanstd(allFRwo,0,1)./sqrt(size(allFRwo,1)),'LineWidth',1,'Color','g');
-% plot(nanmean(allFRwo,1) + nanstd(allFRwo,0,1)./sqrt(size(allFRwo,1)),'LineWidth',1,'Color','g');
-% 
-% set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[0 1],'XLim',[1,8],'XTickLabel',-135:45:180,'XTick',1:8);
-% xlabel('Distance from PD (Deg)','FontSize',14);
-% ylabel('Mean FR Change','FontSize',14);
+if doPeakFRPlot
+    idx = find(p(1,:) <= 0.05);
+    % figure;
+    % subplot1(1,2);
+    % subplot1(1);
+    % hold all;
+    allFRad = [];
+    allFRbl = [];
+    allFRwo = [];
+    for i = 1:length(idx)
+        % get baseline firing rate
+        blfr = blBlockFR{idx(i)};
+        adfr = adBlockFR{idx(i)};
+        wofr = woBlockFR{idx(i)};
+        
+        [~,I] = max(blfr(1,:)); % find direction of maximum
+        
+        blfr = circshift(blfr',4-I)';
+        adfr = circshift(adfr',4-I)';
+        wofr = circshift(wofr',4-I)';
+        %plot(1:8,abs(fr(end,:)-fr(1,:)),'b');
+        allFRbl = [allFRbl; abs( (adfr(end,:)-blfr)./mean(blfr) )];
+        allFRad = [allFRad; abs( (adfr(end,:)-adfr(1,:))./mean(blfr) )];
+        allFRwo = [allFRwo; abs( (wofr(end,:)-blfr)./mean(blfr) )];
+    end
+    
+    figure;
+    hold all;
+    plot(nanmean(allFRbl,1),'LineWidth',3,'Color','b');
+    plot(nanmean(allFRad,1),'LineWidth',3,'Color','r');
+    plot(nanmean(allFRwo,1),'LineWidth',3,'Color','g');
+    legend({'Adapt - Base','Late Adapt - Early Adapt','Wash - Base'},'FontSize',14);
+    
+    plot(nanmean(allFRbl,1) - nanstd(allFRbl,0,1)./sqrt(size(allFRbl,1)),'LineWidth',1,'Color','b');
+    plot(nanmean(allFRbl,1) + nanstd(allFRbl,0,1)./sqrt(size(allFRbl,1)),'LineWidth',1,'Color','b');
+    
+    plot(nanmean(allFRad,1) - nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','r');
+    plot(nanmean(allFRad,1) + nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','r');
+    
+    plot(nanmean(allFRwo,1) - nanstd(allFRwo,0,1)./sqrt(size(allFRwo,1)),'LineWidth',1,'Color','g');
+    plot(nanmean(allFRwo,1) + nanstd(allFRwo,0,1)./sqrt(size(allFRwo,1)),'LineWidth',1,'Color','g');
+    
+    set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[0 1],'XLim',[1,8],'XTickLabel',-135:45:180,'XTick',1:8);
+    xlabel('Distance from PD (Deg)','FontSize',14);
+    ylabel('Mean FR Change','FontSize',14);
+end
 
-
-
-
-
-%% Same plot as above but for three different levels of p-values
-% figure;
-% hold all;
-% 
-% 
-% % idx = find(p(1,:) > 0.05 & p(1,:) <= 0.6);
-% % allFRad = [];
-% % for i = 1:length(idx)
-% %     % get baseline firing rate
-% %     blfr = blBlockFR{idx(i)};
-% %     adfr = adBlockFR{idx(i)};
-% %     
-% %     [~,I] = max(blfr(1,:)); % find direction of maximum
-% %     
-% %     adfr = circshift(adfr',4-I)';
-% %     allFRad = [allFRad; abs(adfr(end,:)./mean(blfr)-adfr(1,:)./mean(blfr))];
-% % end
-% % 
-% % plot(nanmean(allFRad,1),'LineWidth',3,'Color','b');
-% % plot(nanmean(allFRad,1) - nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','b');
-% % plot(nanmean(allFRad,1) + nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','b');
-% 
-% idx = find(p(1,:) > 0.05);
-% allFRad = [];
-% for i = 1:length(idx)
-%     % get baseline firing rate
-%     blfr = blBlockFR{idx(i)};
-%     adfr = adBlockFR{idx(i)};
-%     
-%     [~,I] = max(blfr(1,:)); % find direction of maximum
-%     
-%     adfr = circshift(adfr',4-I)';
-% 
-%     allFRad = [allFRad; (adfr(end,:)./mean(blfr)-adfr(1,:)./mean(blfr))];
-% end
-% 
-% plot(nanmean(allFRad,1),'LineWidth',3,'Color','k');
-% plot(nanmean(allFRad,1) - nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','k');
-% plot(nanmean(allFRad,1) + nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','k');
-% 
-% idx = find(p(1,:) <= 0.05);
-% allFRad = [];
-% for i = 1:length(idx)
-%     % get baseline firing rate
-%     blfr = blBlockFR{idx(i)};
-%     adfr = adBlockFR{idx(i)};
-%     
-%     [~,I] = max(blfr(1,:)); % find direction of maximum
-%     
-%     adfr = circshift(adfr',4-I)';
-%     allFRad = [allFRad; (adfr(end,:)./mean(blfr)-adfr(1,:)./mean(blfr))];
-% end
-% 
-% plot(nanmean(allFRad,1),'LineWidth',3,'Color','b');
-% plot(nanmean(allFRad,1) - nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','b');
-% plot(nanmean(allFRad,1) + nanstd(allFRad,0,1)./sqrt(size(allFRad,1)),'LineWidth',1,'Color','b');
-% 
-% % legend({'Adapt - Base','Late Adapt - Early Adapt','Wash - Base'},'FontSize',14);
-% set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-0.25 0.25],'XLim',[1,8],'XTickLabel',-135:45:180,'XTick',1:8);
-% xlabel('Distance from PD (Deg)','FontSize',14);
-% ylabel('Mean FR Change','FontSize',14);
-% 
-
-
-%% Plot change in firing rate relative to start (or baseline average?) over entire session (split by direction)
-% clear cellFRDiff trialMins;
-% % first, find the length of the shortest file and get baseline FR
-% idx = find(p(1,:) < 0.05);
-% 
-% for i = 1:length(idx)
-%     blfr = blFR{idx(i)};
-%     blth = blTH{idx(i)};
-%     adth = adTH{idx(i)};
-%     woth = woTH{idx(i)};
-%     
-%     utheta = unique(blth);
-%     
-%     for j = 1:length(utheta)
-%         inds = blth == utheta(j);
-%         blAv(i,j) = nanmean(blfr(inds));
-%         trialMins(i,j,:) = [sum(blth == utheta(j)), sum(adth == utheta(j)), sum(woth == utheta(j))];
-%     end
-% end
-% trialMins = squeeze(min(trialMins,[],1));
-% 
-% % now, find baseline averages for each neuron
-% figure;
-% hold all;
-% for j = 1:length(utheta)
-%     clear cellFRDiff
-%     c = rand(1,3);
-%     numTrials = trialMins(j,:);
-%     for i = 1:length(idx)
-%         count = 0;
-%         blfr = blFR{idx(i)};
-%         adfr = adFR{idx(i)};
-%         wofr = woFR{idx(i)};
-%         
-%         blth = blTH{idx(i)};
-%         adth = adTH{idx(i)};
-%         woth = woTH{idx(i)};
-%         
-%         blfr = blfr(blth == utheta(j));
-%         blfr = blfr(1:numTrials(1));
-%         adfr = adfr(adth == utheta(j));
-%         adfr = adfr(1:numTrials(2));
-%         wofr = wofr(woth == utheta(j));
-%         wofr = wofr(1:numTrials(3));
-%         
-%         n = 3;
-%         
-%         % get baseline progression
-%         inds = blth == utheta(j);
-%         trialBins = 1:n:numTrials(1);
-%         for k = 1:length(trialBins)-1
-%             count = count+1;
-%             cellFRDiff(i,count) = (nanmean(blfr(trialBins(k):trialBins(k+1)) - blAv(i,j)));
-%         end
-%         % get adaptation progression
-%         trialBins = 1:n:numTrials(2);
-%         for k = 1:length(trialBins)-1
-%             count = count+1;
-%             cellFRDiff(i,count) = (nanmean(adfr(trialBins(k):trialBins(k+1)) - blAv(i,j)));
-%         end
-%         % get washout progression
-%         trialBins = 1:n:numTrials(3);
-%         for k = 1:length(trialBins)-1
-%             count = count+1;
-%             cellFRDiff(i,count) = (nanmean(wofr(trialBins(k):trialBins(k+1)) - blAv(i,j)));
-%         end
-%     end
-%     
-%     
-%     % Now plot
-%     plot(mean(cellFRDiff,1),'LineWidth',3,'Color',c);
-%     plot(mean(cellFRDiff,1) + std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1)),'LineWidth',1,'Color',c);
-%     plot(mean(cellFRDiff,1) - std(cellFRDiff,0,1)./sqrt(size(cellFRDiff,1)),'LineWidth',1,'Color',c);
-% end
-% 
-% set(gca,'Box','off','TickDir','out','FontSize',14,'XTick',1:n:size(cellFRDiff,2));
-% xlabel('Number of Trials','FontSize',14);
-% ylabel('Mean FR Change','FontSize',14);
-
-%% Plot the distribution of firing rate changes for each direction
-%%%%%%%%%%%%%%%%%
-% figure;
-% hold all;
-% idx = find(p(1,:) < 0.05);
-% finalChanges = [];
-% for i = 1:length(idx)
-%     fr = adBlockFR{idx(i)};
-%     for j = 1:size(fr,2)
-%         finalChanges = [finalChanges; fr(end,j)-fr(1,j)];
-%     end
-% end
-% hist(finalChanges,50);
-% xlabel('Change in FR After Adaptation (Hz)','FontSize',14)
-% ylabel('Count','FontSize',14);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-% axis('tight');
-%
-% %%%%%%%%%%%%%%%%%%%%
-% plotInds = [15,9,3,7,11,17,23,19];
-% figure;
-% subplot1(5,5);
-% idx = find(idx);
-% for j = 1:25
-%     if ~any(plotInds==j)
-%         subplot1(j);
-%         set(gca,'Box','off','TickDir','out','FontSize',14,'Visible','off');
-%     end
-% end
-%
-% for j = 1:length(plotInds)
-%     subplot1(plotInds(j));
-%     finalChanges = [];
-%     for i = 1:length(idx)
-%         fr = adBlockFR{i};
-%         finalChanges = [finalChanges; fr(end,j)-fr(1,j)];
-%     end
-%     hist(finalChanges,25);
-%     set(gca,'Box','off','TickDir','out','FontSize',14);
-%     axis('tight');
-% end
-
-
-
-
-
-
-
-
-
-%%
-
-%
-
-% numBins = 75;
-%
-% figure;
-% subplot1(2,2);
-% subplot1(1);
-% hist(p(1,allTU),numBins);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-% ylabel('Time','FontSize',16);
-% subplot1(2);
-% hist(p(1,~allTU),numBins);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-%
-% subplot1(3);
-% hist(p(2,allTU),numBins);
-% ylabel('Direction','FontSize',16);
-% xlabel('p-value of ANOVA','FontSize',16);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-% subplot1(4);
-% hist(p(2,~allTU),numBins);
-% xlabel('p-value of ANOVA','FontSize',16);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-%
-% figure;
-% barwitherr([std(p(1, allTU))/sum(allTU), std(p(1, ~allTU))/sum(~allTU); std(p(2, allTU))/sum(allTU),std(p(2, ~allTU))/sum(~allTU)],[mean(p(1, allTU)), mean(p(1, ~allTU)); mean(p(2, allTU)),mean(p(2, ~allTU))]);
-% ylabel('p-value','FontSize',16);
-% legend({'Well-Tuned','Not-Tuned'},'FontSize',16);
-% set(gca,'XTickLabels',{'Time','Direction'},'FontSize',14,'Box','off','TickDir','out');
-
-
-% % correlate p-values with things
-% figure;
-%
-% % time vs direction
-% subplot(2,2,1);
-% plot(p(1,:),p(2,:),'k.');
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-% xlabel('Time p-value','FontSize',14);
-% ylabel('Direction p-value','FontSize',14);
-%
-% % direction vs mean fr
-% subplot(2,2,2);
-% plot(meanfr,p(1,:),'k.');
-% xlabel('Mean Firing Rate','FontSize',14);
-% ylabel('Time p-value','FontSize',14);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-%
-% % time vs mean fr
-% subplot(2,2,3);
-% plot(meanfr,p(2,:),'k.');
-% xlabel('Mean Firing Rate','FontSize',14);
-% ylabel('Direction p-value','FontSize',14);
-% set(gca,'Box','off','TickDir','out','FontSize',14);
-%
-% %% Now, for the most significant cells, plot PD/MD over time
-%
-% % get IDs of well-tuned cells
-% [~,I] = sort(p(1,:));
-% tuned_I = I(allTU);
-%
-% numCells = ceil(0.2*length(tuned_I));
-% idx = tuned_I(1:numCells);
-%
-% pd_diff = zeros(size(allPD));
-% for i = 1:size(allPD,2)
-%     pd_diff(:,i) = angleDiff(allPD(:,i),allPD(:,1),false,true);
-% end
-%
-% figure;
-% subplot1(3,1);
-% subplot1(1);
-% hold all;
-% plot(pd_diff(idx,:)','LineWidth',2);
-% axis tight;
-% set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0.5 3.5]);
-% ylabel('| dPD | (deg)','FontSize',14);
-% subplot1(2);
-% hold all;
-% plot(abs(allMD(idx,:)' - repmat(allMD(idx,1),1,size(allMD,2))'),'LineWidth',2);
-% axis tight;
-% set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0.5 3.5]);
-% ylabel('| dDOT | (Hz)','FontSize',14);
-%
-% subplot1(3);
-% hold all;
-% plot(abs(allBO(idx,:)' - repmat(allBO(idx,1),1,size(allBO,2))'),'LineWidth',2);
-% axis tight;
-% set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0.5 3.5]);
-% ylabel('| dBO | (Hz)','FontSize',14);
-% xlabel('Bins of Trials over Adaptation','FontSize',14);
-%
-% %%
-% figure; hold all;
-% numCells = ceil(0.05*length(I));
-% idx = I(1:numCells);
-% for i=1:length(idx)
-%     plot((allFR{idx(i)}));
-% end

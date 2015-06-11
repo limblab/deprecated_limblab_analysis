@@ -1,9 +1,4 @@
 function [mt,targcent] = getMovementTable(tt,task)
-
-% if nargin < 4 && strcmp(task,'RT')
-%     error('position data not provided')
-% end
-
 % [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
 
 switch task

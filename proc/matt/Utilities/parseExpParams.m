@@ -1,5 +1,7 @@
 function params = parseExpParams(filename)
 % load parameter text file and parse it out
+% 
+% I should finish this documentation someday.
 
 fid = fopen(filename,'r');
 
@@ -8,8 +10,8 @@ while dontstop
     line = fgetl(fid);
     if ~isempty(line)
         if line ~= -1
-            line = strsplit(' ',line);
-            if ~strcmpi(line{1},'%') %ignore comment lines
+            line = strsplit(line,' ');
+            if ~strcmpi(line{1},'%') %ignore comment lines and empty lines
                 pname = line{1};
                 vals = line(2:end);
                 

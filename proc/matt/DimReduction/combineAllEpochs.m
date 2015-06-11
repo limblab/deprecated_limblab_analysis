@@ -4,10 +4,9 @@ function [allSpikes,allMT,indices] = combineAllEpochs(root_dir,doFiles,epochs,us
 % epochs: cell array with epoch names ie {'BL','AD','WO'}
 
 filterMT = true;
-excludeTrials = true;
 
 allMT = [];
-    indices = cell(length(epochs),8);
+indices = cell(length(epochs),8);
     
 t_end = 0;
 allSpikes = {};
@@ -15,16 +14,13 @@ for iFile = 1:size(doFiles)
     doFile = doFiles(iFile,:);
     
     % find out how many neurons are there
-    fn = fullfile(root_dir,doFile{1},doFile{2},[doFile{4} '_' doFile{3} '_tracking_' doFile{2} '.mat']);
-    tracking = load(fn);
+    tracking = loadResults(root_dir,doFiles(iFile,:),'tracking',[]);
     
-    dataFile = fullfile(root_dir,doFile{1},doFile{2},[doFile{4} '_' doFile{3} '_BL_' doFile{2} '.mat']);
-    data = load(dataFile);
+    data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
     
-    tuningFile = fullfile(root_dir,doFile{1},doFile{2},'movement',[doFile{4} '_' doFile{3} '_tuning_' doFile{2} '.mat']);
-    tuning = load(tuningFile);
+    tuning = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning'},useArray,paramSetName,'regression','onpeak');
     
-    [istuned, master_sg] = excludeCells(data,tuning.regression.onpeak,tracking,useArray,[1,4,7]);
+    [istuned, master_sg] = excludeCells(data.params,data,tuning,tracking,useArray);
     
     % don't care about tuning
     %   1) Waveform SNR
@@ -36,8 +32,6 @@ for iFile = 1:size(doFiles)
     
     spikes = cell(1,size(master_sg,1));
 
-    
-    
     for iEpoch = 1:length(epochs)
         epoch = epochs{iEpoch};
         
@@ -52,22 +46,22 @@ for iFile = 1:size(doFiles)
             iBlock = str2num(e(3));
             e = e(1:2);
         end
-        dataFile = fullfile(root_dir,doFile{1},doFile{2},[doFile{4} '_' doFile{3} '_' e '_' doFile{2} '.mat']);
         
         if filterMT
-            data = load(dataFile);
-            [movement_table,~] = filterMovementTable(data,paramSetName,excludeTrials,iBlock,false);
+            data = loadResults(root_dir,doFiles(iFile,:),'data',[],e);
+            [movement_table,~] = filterMovementTable(data,tuning(1).params,true,false);
+            movement_table = movement_table{iBlock};
         else
-            load(dataFile,'movement_table');
+            movement_table = loadResults(root_dir,doFiles(iFile,:),'data',{'movement_table'},e);
         end
         
-        n = load(dataFile,useArray);
+        n = loadResults(root_dir,doFiles(iFile,:),'data',{useArray},e);
         
-        [~,idx] = intersect(n.(useArray).sg, master_sg,'rows');
+        [~,idx] = intersect(n.sg, master_sg,'rows');
         
         % tack on the spikes
         for i = 1:length(idx)
-            ts = n.(useArray).units(idx(i)).ts;
+            ts = n.units(idx(i)).ts;
             
             spikes{i} = [spikes{i},ts+t_end];
         end

@@ -38,6 +38,10 @@ if ~iscell(criteria)
     criteria = {criteria};
 end
 
+if ~iscell(arrays)
+    arrays = {arrays};
+end
+
 for iArray = 1:length(arrays)
     currArray = arrays{iArray};
     

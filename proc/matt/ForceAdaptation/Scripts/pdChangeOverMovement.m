@@ -3,6 +3,14 @@
 % Intended for CO task only. Requires a set of results made using the
 % 'time' tuningWindow set in getFR.
 
+doAvg = slidingParams.doAvg; % do average across sessions (mainly for group scatter plot)
+useVel = slidingParams.useVel; % use velocity instead of measured force
+useMasterTuned = slidingParams.useMasterTuned; % whether to use tuning from standard 'movement' tuning method to see which are "well-tuned"
+doAbs = slidingParams.doAbs; % take absolute of difference between epochs
+doMD = slidingParams.doMD; % take absolute of difference between epochs
+doMDNorm = slidingParams.doMDNorm; % whether to normalize by baseline modulation depth
+metric = slidingParams.metric;
+
 colors = {'k','b','r'};
 doCirc = false;
 
@@ -11,10 +19,17 @@ metricInfo.PD.ymax = 120;
 metricInfo.PD.binSize = 10;
 metricInfo.PD.label = 'PD Change (Deg) ';
 
-metricInfo.MD.ymin = -1;
-metricInfo.MD.ymax = 5;
-metricInfo.MD.binSize = 2;
-metricInfo.MD.label = 'MD Change (Hz) ';
+if doMDNorm
+    metricInfo.MD.ymin = 0;
+    metricInfo.MD.ymax = 1.1;
+    metricInfo.MD.binSize = 0.2;
+    metricInfo.MD.label = 'Normalized MD Change (Hz) ';
+else
+    metricInfo.MD.ymin = -1;
+    metricInfo.MD.ymax = 5;
+    metricInfo.MD.binSize = 2;
+    metricInfo.MD.label = 'MD Change (Hz) ';
+end
 
 metricInfo.BO.ymin = -1;
 metricInfo.BO.ymax = 5;
@@ -27,12 +42,18 @@ metricInfo.FR.binSize = 2;
 metricInfo.FR.label = 'FR Change (Hz) ';
 
 % set the bounds for the plots
-if slidingParams.useVel
+if useVel
     ymin_f = 10;
     ymax_f = 28;
 else
     ymin_f = 0;
     ymax_f = 2.8;
+end
+
+if doMD
+    plotMult = 1;
+else
+    plotMult = 180/pi;
 end
 
 monkeys = unique(allFiles(:,1))';
@@ -64,6 +85,7 @@ if doWidthSeparation
 end
 
 %%
+allFiles = doFiles;
 for iMonkey = 1:length(monkeys)
     
     doFiles = allFiles(strcmpi(allFiles(:,1),monkeys{iMonkey}),:);
@@ -75,7 +97,7 @@ for iMonkey = 1:length(monkeys)
             c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,paramSetName,tuneMethod,tuneWindow);
             
             masterTunedSG{iFile} = c.tuned_cells;
-            masterTuned{iFile} = all(c.istuned,2);
+            masterTuned{iFile} = all(c.istuned(:,whichTuned),2);
         end
     end
     
@@ -83,6 +105,8 @@ for iMonkey = 1:length(monkeys)
     cellPDs = cell(size(doFiles,1),3);
     meanForce = cell(size(doFiles,1),3);
     meanVel = cell(size(doFiles,1),3);
+    
+    numBlocks = 15;
     
     for iFile = 1:size(doFiles,1)
         [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
@@ -109,11 +133,10 @@ for iMonkey = 1:length(monkeys)
         
         for iBlock = 1:size(classifierBlocks,2)
             neurons = struct();
-            force = zeros(1,length(tuneWindows));
-            vel = zeros(1,length(tuneWindows));
+            force = zeros(1,size(classifierBlocks,1));
+            vel = zeros(1,size(classifierBlocks,1));
             for iWin = 1:size(classifierBlocks,1)
-                tuningPeriod = tuneWindows{iWin};
-
+                
                 % find average force
                 if useVel
                     f = t(classifierBlocks(iWin,iBlock)).vels;
@@ -132,9 +155,9 @@ for iMonkey = 1:length(monkeys)
                     tunedCells = masterTunedSG{iFile};
                 else
                     if doWidthSeparation
-                        tunedCells = sg(all(c(iWin).istuned,2) & wfTypes,:);
+                        tunedCells = sg(all(c(iWin).istuned(:,whichTuned),2) & wfTypes,:);
                     else
-                        tunedCells = sg(all(c(iWin).istuned,2),:);
+                        tunedCells = sg(all(c(iWin).istuned(:,whichTuned),2),:);
                     end
                 end
                 
@@ -145,14 +168,14 @@ for iMonkey = 1:length(monkeys)
                 for i=1:length(inds)
                     if ~doMD
                         if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,length(tuneWindows));
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
                             neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
                         else
                             neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
                         end
                     else
                         if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,length(tuneWindows));
+                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
                             neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
                         else
                             neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
@@ -207,8 +230,22 @@ for iMonkey = 1:length(monkeys)
             dPDs{iFile,1} = bl_ad;
             dPDs{iFile,2} = bl_wo;
         else
-            dPDs{iFile,1} = ad_pds - bl_pds;
-            dPDs{iFile,2} = wo_pds - bl_pds;
+            if doMDNorm
+                bl_ad = [];
+                bl_wo = [];
+                for unit = 1:size(bl_pds,1)
+                    if all(bl_pds(unit,:)) > 0
+                        bl_ad = [bl_ad; (ad_pds(unit,:) - bl_pds(unit,:))./bl_pds(unit,:)];
+                        bl_wo = [bl_wo; (wo_pds(unit,:) - bl_pds(unit,:))./bl_pds(unit,:)];
+                    end
+                end
+                
+                dPDs{iFile,1} = bl_ad;
+                dPDs{iFile,2} = bl_wo;
+            else
+                dPDs{iFile,1} = ad_pds - bl_pds;
+                dPDs{iFile,2} = wo_pds - bl_pds;
+            end
         end
     end
     
@@ -353,7 +390,7 @@ for iMonkey = 1:length(monkeys)
     
     plot([0 size(periodPDs_AD,2)+1],[0 0],'k--','Parent',ax1);
     
-    set(gca,'XLim',[0,size(periodPDs_AD,2)+1],'YLim',[ymin_pd,ymax_pd],'XTick',1:size(periodPDs_AD,2),'XTickLabel',tuneWindows,'TickDir','out','FontSize',14);
+    set(gca,'XLim',[0,size(periodPDs_AD,2)+1],'YLim',[metricInfo.(metric).ymin,metricInfo.(metric).ymax],'XTick',1:size(periodPDs_AD,2),'XTickLabel',[],'TickDir','out','FontSize',14);
     if iMonkey == 1
         if ~doMD
             ylabel('Change in PD (Deg) Relative to Baseline','FontSize',14);
@@ -429,7 +466,7 @@ if length(monkeys) > 1
     %     bint2 = allMonkeyFits{2,2};
     %     out2 = range_intersection(bint(2,:),bint2(2,:));
     
-    set(gca,'YLim',[ymin_pd,ymax_pd],'TickDir','out','FontSize',14);
+    set(gca,'YLim',[metricInfo.(metric).ymin,metricInfo.(metric).ymax],'TickDir','out','FontSize',14);
     if useVel
         xlabel('Velocity','FontSize',14);
     else

@@ -1,6 +1,6 @@
 function [fh,outData] = plotAdaptationOverTime(varargin)
 % necessary variables
-%   baseDir
+%   root_dir
 %   useDate (date, task, perturbation, title)
 %   metric
 %   doFiltering
@@ -39,7 +39,7 @@ fh = [];
 for i = 1:2:length(varargin)
     switch lower(varargin{i})
         case 'dir'
-            baseDir = varargin{i+1};
+            root_dir = varargin{i+1};
         case 'dates'
             useDate = varargin{i+1};
         case 'metric'
@@ -149,7 +149,7 @@ end
 % movements and THEN averaged across days?
 % numMoves = ceil(.35*length(mean(cell2mat(aMC(:,1)),1)));
 numMoves(1) = ceil(0.99*length(mean(cell2mat(aMC(:,1)),1)));
-numMoves(2) = ceil(.19*length(mean(cell2mat(aMC(:,2)),1)));
+numMoves(2) = ceil(.32*length(mean(cell2mat(aMC(:,2)),1)));
 numMoves(3) = ceil(.32*length(mean(cell2mat(aMC(:,3)),1)));
 
 meanVals = cell(1,length(epochs));
