@@ -26,7 +26,7 @@ end
     
 fprintf('Converting %s to BDF structure...\n',cerebus_filename);
 % BDF = get_cerebus_data(cerebus_filename,'verbose');
-BDF = get_nev_mat_data(cerebus_filename,'verbose');
+BDF = get_nev_mat_data(cerebus_filename,'verbose','ignore_jumps');
 
 fprintf('Saving BDF structure %s...\n',BDF_filename);
 save([datapath filesep BDF_filename], 'BDF');
