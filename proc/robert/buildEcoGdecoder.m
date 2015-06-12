@@ -23,17 +23,12 @@ clear PA Pmat
 
 SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
-% SIGNALTOUSE='CG';
+SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
-%  decoder, which is always a game-time decision.
-FPIND=1:64;     % this controls which columns of the signal array are valid fp channels.
-                % this determines which ones we actually want to use to 
-                % [2:6 8 9 11:15] for ME
-% BLACKROCKGAIN is a bit of a fudge-factor that Nick Halpern(?) warned us
-% about.  He said the signals could be off by a factor of 4 from what they
-% really were.
-BLACKROCKGAIN=4;
+%  decoder (FPSTOUSE), which is always a game-time decision.
+FPIND=1:64;
+
 %%  4. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
 % same file, skip this cell and move to the next.
@@ -53,7 +48,7 @@ end
 if ischar(PathName)
     D=dir(PathName);
     if any(cellfun(@isempty,regexp({D.name},'\.mat'))==0) && ...
-            all(cellfun(@isempty,regexp{D.name},'\.dat'))
+            all(cellfun(@isempty,regexp({D.name},'\.dat')))
         loadDAT=0;
     end % if neither .mat nor .dat, this will still defualt to .dat
 end, clear D
@@ -87,7 +82,7 @@ else
 end
 fprintf(1,'load complete\n')
 samprate=parameters.SamplingRate.NumericValue;
-clear N
+clear N loadDAT
 if ~isa(signal,'double'), signal=double(signal); end
 
 %%  5.  get fp array from signal array
@@ -128,7 +123,7 @@ fpCutTimes=fptimes(1:100:end);
 fpCutFig=figure; set(fpCutFig,'Units','normalized','OuterPosition',[0 0 1 1])
 fpCutAx=axes('Position',[0.0365    0.0297    0.9510    0.9636], ...
     'XLim',[0 max(fpCutTimes)], ...
-    'Ylim',[0 max(FPIND)-min(FPIND)+2],'YTick',FPIND-min(FPIND)+1);
+    'Ylim',[0 max(FPIND)-min(FPIND)+2],'YTick',sort(FPIND-min(FPIND)+1));
 hold on
 maxStrLen=max(cellfun(@numel,parameters.ChannelNames.Value(FPIND)));
 for n=1:size(fpCut,1)
@@ -138,7 +133,7 @@ for n=1:size(fpCut,1)
         plot(fpCutTimes,n+fpCut(n,:))
     end
     YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
-        n,parameters.ChannelNames.Value{n});
+        n,parameters.ChannelNames.Value{FPIND(n)});
 end, clear n
 set(fpCutAx,'YTickLabel',YaxLabelStr)
 figure(badChanF)
@@ -218,8 +213,16 @@ if ~isempty(CG)
         plot(n+CGcut(:,n))
     end, clear n
     set(gca,'Xlim',[0 size(CGcut,1)],'Ylim',[0 size(CGcut,2)+1])
+else
+    if nnz(cellfun(@isempty, ...
+            regexpi(parameters.SignalSourceFilterChain.Value(:,1), ...
+            'blackrock'))==0) && strcmp(SIGNALTOUSE,'force')
+        % This additional Blackrock gain factor is a bit of a fudge-factor 
+        % that Nick Halpern(?) warned us about.  He said the signals could 
+        % be off by a factor of 4 from what they really were.
+        sig(:,2)=sig(:,2)/4;
+    end
 end
-sig(:,2)=sig(:,2)/BLACKROCKGAIN;
 %%  9a. optional: look at smoothed force signal
 existingFigTags=get(get(0,'Children'),'Tag');
 if ~iscell(existingFigTags), existingFigTags={existingFigTags}; end
@@ -243,12 +246,12 @@ plot(sig(:,1),smForce,'g','LineWidth',1.5)
 %%  9b.  optional add-on to 9a, to actually use the smoothed force
 sig=[fptimes', smForce];
 %%  9c(i).  optional: look at the CG signal.
-figure, set(gcf,'Position',[419 -101 1042 673])
+figure, set(gcf,'Position',[69 75 864 578])
 plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,4),'.')
 axis vis3d
 xlabel('PC1'), ylabel('PC2'), zlabel('PC3')
 %%  9c(ii).   or, in case there are 4 PCs
-figure, set(gcf,'Position',[419 -101 1042 673])
+figure, set(gcf,'Position',[69 75 864 578])
 plot3(sig(1:100:end,3),sig(1:100:end,4),sig(1:100:end,5),'.')
 axis vis3d
 xlabel('PC2'), ylabel('PC3'), zlabel('PC4')
@@ -275,7 +278,7 @@ if exist('featMat','var') && exist ('sig','var')
                                  % it will be necessary to re-run cell 8.
     end
 end
-wsz=512;
+wsz=896;
 samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
 binsize=0.1; % TO CHANGE ANYTHING IN THIS CELL, MUST RE-RUN CELL 5, THEN COME BACK HERE.
 bandsToUse='1 2 3 4 5 6';
@@ -307,6 +310,7 @@ Use_Thresh=0; lambda=4;
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
 nfeat=floor(0.9*size(x,2));
+nfeat=108;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat > (size(x,1)*size(x,2))

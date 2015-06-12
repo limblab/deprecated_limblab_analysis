@@ -239,7 +239,8 @@ for fileInd=1:length(infoStruct)
                 states=rmfield(states,['GloveSensor',num2str(badCGchans(badCGind))]);
             end
         end
-        [sig,CG]=getSigFromBCI2000(BCI2000signal,states,parameters,'CG');
+        [sig,CG]=getSigFromBCI2000(BCI2000signal,states, ...
+            parameters,signalToDecode);
         % TODO: add option to read in automatically which CG you want to
         % use, if it's not the PCA output.
     end
@@ -639,3 +640,21 @@ if strcmp(signalToDecode,'xcorr')
 end
 
 disp('done')
+
+end % function batchAnalyzeECoGv7
+
+% diferentiater function for kinematic signals
+% should differentiate, LP filter at 100Hz and add a zero to adjust for
+% temporal shift
+function dx = kin_diff(x,fs)
+
+[b, a] = butter(8, 100/fs);
+dx = diff(x) .* fs;
+dx = filtfilt(b,a,dx);
+if size(dx,1) > size(dx,2)
+    dx = [zeros(1,size(dx,2)); dx];
+else
+    dx = [zeros(size(dx,1),1), dx];
+end
+
+end % function kin_diff
