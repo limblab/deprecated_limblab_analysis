@@ -27,7 +27,7 @@ for iEMG = 1:size(RP.emg_pert,3)
                 if iOutcome == 1
                     idx = intersect(idx,RP.reward_trials);
                 else
-                    idx = intersect(idx,setxor(1:size(RP.trial_table,1),RP.reward_trials));
+                    idx = intersect(idx,RP.fail_trials);
                 end
                 emg_temp = RP.emg_pert(idx,:,iEMG);
                 idx = setxor(idx,idx(find(mean(emg_temp,2) > 3*std(emg_temp(:)))));
@@ -82,7 +82,7 @@ for iDir = 1:length(RP.perturbation_directions)
             if iOutcome == 1
                 idx = intersect(idx,RP.reward_trials);
             else
-                idx = intersect(idx,setxor(1:size(RP.trial_table,1),RP.reward_trials));
+                idx = intersect(idx,RP.fail_trials);
             end
             %             idx = intersect(idx,RP.reward_trials);
             emg_temp = RP.emg_cocontraction_bi_tri(idx,:);
@@ -191,7 +191,7 @@ for iDir = 1:length(RP.perturbation_directions)
             if iOutcome == 1
                 idx = intersect(idx,RP.reward_trials);
             else
-                idx = intersect(idx,setxor(1:size(RP.trial_table,1),RP.reward_trials));
+                idx = intersect(idx,RP.fail_trials);
             end
             %             idx = intersect(idx,RP.reward_trials);
             emg_temp = RP.emg_cocontraction_bi_tri(idx,:);

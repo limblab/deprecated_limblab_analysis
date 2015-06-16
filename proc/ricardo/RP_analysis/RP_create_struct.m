@@ -14,9 +14,7 @@ function RP = RP_create_struct(bdf,params)
         if ~isempty(find(diff(temp(:,1))<0,1,'last'))
             remove_idx = find(diff(temp(:,1))<0,1,'last');
             temp = temp(remove_idx+1:end,:);   
-%             temp(:,1) = temp(:,1)+.05*remove_idx;
-            temp(:,1) = temp(:,1)+.1;
-%             temp(:,1) = temp(:,1)-temp(1,1)+.1;
+            temp(:,1) = temp(:,1)+.15;
         end        
         BMI_data = temp;
         for iBMI = 2:length(BMI_data_files)
@@ -24,15 +22,15 @@ function RP = RP_create_struct(bdf,params)
             if ~isempty(find(diff(temp(:,1))<0,1,'last'))
                 remove_idx = find(diff(temp(:,1))<0,1,'last');
                 temp = temp(remove_idx+1:end,:);
-%                 temp(:,1) = temp(:,1)+.05*remove_idx;
-                temp(:,1) = temp(:,1)-temp(1,1)+.05;
+                temp(:,1) = temp(:,1) + .1;
+%                 temp(:,1) = temp(:,1)-temp(1,1)+.05;
             end
-            temp(:,1) = temp(:,1)+BMI_data(end,1)+1.05; % Add one second in between files
-%             temp(:,1) = temp(:,1)+BMI_data(end,1)+1; % Add one second in between files
+            temp(:,1) = temp(:,1)+BMI_data(end,1)+1; % Add one second in between files
+%             temp(:,1) = temp(:,1)+BMI_data(end,1)+1.05; % Add one second in between files
             BMI_data = [BMI_data ; temp];
             clear temp
         end
-        BMI_data(:,1) = BMI_data(:,1)+.05;
+%         BMI_data(:,1) = BMI_data(:,1)+.05;
         BMI_data(find(diff(BMI_data(:,1))==0)+1,:) = [];
         new_time_vector = 1:RP.BMI.dt:bdf.pos(end,1);
         new_BMI_data = zeros(length(new_time_vector),size(BMI_data,2));
@@ -92,6 +90,8 @@ function RP = RP_create_struct(bdf,params)
     end
     
     RP.reward_trials = find(RP.trial_table(:,RP.table_columns.result) == 32);
+    RP.abort_trials = find(RP.trial_table(:,RP.table_columns.result) == 33);
+    RP.fail_trials = find(RP.trial_table(:,RP.table_columns.result) == 34);
     
     trial_starts = RP.trial_table(:,RP.table_columns.t_ct_hold_on); 
     perturbation_starts = RP.trial_table(:,RP.table_columns.t_start_perturbation); 
@@ -142,7 +142,7 @@ function RP = RP_create_struct(bdf,params)
     pert_samples = round(mode(trial_ends(intersect(RP.reward_trials,find(late_bump_trials)))-...
         perturbation_starts(intersect(RP.reward_trials,find(late_bump_trials))))*round(1/RP.dt));
     if isnan(pert_samples)
-        pert_samples = round(mode(trial_ends(RP.reward_trials) - perturbation_starts(RP.reward_trials)))*round(1/RP.dt);
+        pert_samples = round(mode(trial_ends(RP.reward_trials) - perturbation_starts(RP.reward_trials))*10)/10*round(1/RP.dt);
     end
     
     pert_offset = 100;
@@ -195,10 +195,10 @@ function RP = RP_create_struct(bdf,params)
         pert_samples = round(mode(trial_ends(intersect(RP.reward_trials,find(late_bump_trials)))-...
             perturbation_starts(intersect(RP.reward_trials,find(late_bump_trials))))*round(1/RP.BMI.dt));
         if isnan(pert_samples)
-            pert_samples = round(mode(trial_ends(RP.reward_trials) - perturbation_starts(RP.reward_trials)))*round(1/RP.BMI.dt);
+            pert_samples = round(mode(trial_ends(RP.reward_trials) - perturbation_starts(RP.reward_trials))*10)/10*round(1/RP.BMI.dt);
         end
 
-        pert_offset = 2;
+        pert_offset = 5;
         pert_samples = pert_samples + pert_offset;
         RP.t_pert_bmi = (0:RP.BMI.dt:RP.BMI.dt*pert_samples-RP.BMI.dt)-pert_offset*RP.BMI.dt;    
         RP.pert_idx_table_bmi = repmat(RP.perturbation_start_idx_bmi,1,pert_samples) + repmat(1:pert_samples,size(RP.perturbation_start_idx_bmi,1),1) - pert_offset;
@@ -476,8 +476,27 @@ function RP = RP_create_struct(bdf,params)
         RP.emg_pert_bmi = zeros([size(RP.pert_idx_table_bmi) length(RP.BMI.emgnames)]);       
         RP.emg_bump_bmi = zeros([size(RP.bump_idx_table_bmi) length(RP.BMI.emgnames)]);       
         RP.cocontraction_pert_bmi = zeros([size(RP.pert_idx_table_bmi) length(RP.BMI.emgnames)]);
+        BMI_muscle_order = {'EMG_PD','EMG_AD','EMG_BI','EMG_TRI'};
+        if RP.BMI.params.arm_params.use_brd
+            BMI_muscle_order{3} = 'EMG_BRD';
+        end
         for iEMG = 1:length(RP.BMI.emgnames)
-            emg = RP.BMI.data(:,emg_idx(iEMG));
+            temp_idx = find(~cellfun(@isempty,strfind(BMI_muscle_order, RP.BMI.emgnames{iEMG})));
+            if ~isempty(temp_idx)
+                emg_divisor = RP.BMI.params.arm_params.emg_max(temp_idx);
+                if temp_idx > 2
+                    emg_multiplier = RP.BMI.params.arm_params.emg_to_torque_gain(2) / emg_divisor;
+                    emg_multiplier = emg_multiplier / RP.BMI.params.arm_params.l(2);
+                else
+                    emg_multiplier = RP.BMI.params.arm_params.emg_to_torque_gain(1) / emg_divisor;
+                    emg_multiplier = emg_multiplier / RP.BMI.params.arm_params.l(1);
+                end
+            else
+                emg_multiplier = 1;
+            end
+            
+            emg = RP.BMI.data(:,emg_idx(iEMG)) * emg_multiplier;    % Converts EMG to Newtons at endpoint       
+            
             RP.emg_pert_bmi(:,:,iEMG) = emg(RP.pert_idx_table_bmi);
             RP.emg_bump_bmi(:,:,iEMG) = emg(RP.bump_idx_table_bmi);            
         end
@@ -492,6 +511,6 @@ function RP = RP_create_struct(bdf,params)
 %         RP.emg_cocontraction_bmi_bi_tri = temp .* (RP.emg_pert_bmi(:,:,emg_idx(1)) + ...
 %             RP.emg_pert_bmi(:,:,emg_idx(2)));
         cocontraction = RP.BMI.data(:,cocontraction_idx); %#ok<FNDSB>
-        RP.emg_cocontraction_bmi_bi_tri = cocontraction(RP.pert_idx_table_bmi);
+        RP.emg_cocontraction_bmi_bi_tri = cocontraction(RP.pert_idx_table_bmi);        
     end
 end 

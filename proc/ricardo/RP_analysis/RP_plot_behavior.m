@@ -604,3 +604,17 @@ if exist('t_bump')
         end
     end
 end
+
+ %% Synchronization debugging stuff
+% clear first_idx
+% for iTrial = 1:size(RP.force_pert_x_rot_bmi,1)
+%     temp = find(RP.force_pert_x_rot_bmi(iTrial,:)~=0,1,'first');
+%     if ~isempty(temp)  
+%         first_idx(iTrial) = temp;
+%     else
+%         first_idx(iTrial) = nan;
+%     end
+% end
+%    
+% figure
+% plot(RP.trial_table(~isnan(first_idx),RP.table_columns.t_start_perturbation),RP.t_pert_bmi(first_idx(~isnan(first_idx))),'.')
