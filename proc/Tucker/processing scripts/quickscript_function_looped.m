@@ -88,7 +88,7 @@ data_struct.aggregate_bdf=bdf;
     %get number of stim directions
     for i=1:input_data.num_stim_cases
         %new fitting plus inverting the y axis of the sigmoid
-        [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian] =  bc_psychometric_curve_stim6(bdf.TT,bdf.TT_hdr,input_data.stimcodes(i),1);
+        [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian] =  bc_psychometric_curve_stim7(bdf.TT,bdf.TT_hdr,input_data.stimcodes(i),1);
         temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
         str=strcat(num2str(input_data.currents(i)),'uA');
         data_struct.(strcat('reach_data_',str))=temp;
@@ -99,7 +99,7 @@ data_struct.aggregate_bdf=bdf;
 
         %new fitting plus inverting the y axis of the sigmoid and folding into a
         %single hemispace
-        [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian] =  bc_psychometric_curve_stim6_compressed(bdf.TT,bdf.TT_hdr,input_data.stimcodes(i),1);
+        [dirs_stim,proportion_stim,number_reaches_stim,dirs_no_stim,proportion_no_stim,number_reaches_no_stim,H_cartesian] =  bc_psychometric_curve_stim7_compressed(bdf.TT,bdf.TT_hdr,input_data.stimcodes(i),1);
         temp=[dirs_stim,proportion_stim,number_reaches_stim,ones(length(dirs_stim),1);dirs_no_stim,proportion_no_stim,number_reaches_no_stim,zeros(length(dirs_no_stim),1)];
         data_struct.(strcat('reach_data_compressed_',str))=temp;
         figure(H_cartesian)

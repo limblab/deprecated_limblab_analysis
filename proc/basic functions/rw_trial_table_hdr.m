@@ -75,7 +75,7 @@ for trial = 1:num_trials-1
     if length(these_go_cues) > num_targets
         %catch trials with corrupt end codes that might end up with extra
         %targets
-        warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, operation interrupted',start_time);
+        warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, skipping trial:%d',start_time,trial);
         tt = tt(1:end-1,:);
         j=j+1;
         continue;

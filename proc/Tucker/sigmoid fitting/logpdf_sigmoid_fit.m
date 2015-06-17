@@ -26,7 +26,7 @@ function pdf=logpdf_sigmoid_fit(data,mask,params)
     R_primary_stim=N_primary_stim;
 
     log_p=zeros(length(angles),2);
-    
+    const=zeros(length(angles),2);
 %     model=sigmoid_stim([min_val,min_val_stim,max_val,max_val_stim,ctr_point,ctr_point_stim,steepness,steepness_stim],[angles, zeros(length(angles),1)]);
 %     model_stim=sigmoid_stim([min_val,min_val_stim,max_val,max_val_stim,ctr_point,ctr_point_stim,steepness,steepness_stim],[angles, ones(length(angles),1)]);
 %     

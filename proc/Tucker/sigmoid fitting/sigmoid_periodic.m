@@ -9,5 +9,5 @@ function [y]=sigmoid_periodic(params,x)
     center=params(3);
     steepness=params(4);
     P1=params(5);
-    y=minimum+(maximum-minimum)./(1+exp(-steepness*(P1+cos(x-center))));
+    y=minimum+(maximum-minimum)./(1+exp(-steepness*(P1+cos(pi*x/180-center))));
 end

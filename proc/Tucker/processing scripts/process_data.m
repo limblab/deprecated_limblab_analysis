@@ -1,6 +1,6 @@
 %script to set input data and execute data processing
 %% process psyhcometrics
-folderpath='C:\Users\tucker\Desktop\local_processing\chips\experiment_20150528-0601_BD_216degPD';
+folderpath='E:\local_processing\chips\experiment_20150616_BD_316degPD';
 function_name='quickscript_function_looped';
 input_data.matchstring='Chips';
 input_data.labnum=6;
@@ -8,7 +8,15 @@ input_data.stimcodes=[0 1 2 3];
 input_data.num_stim_cases=4;
 input_data.currents=[5 10 15 20];
 run_data_processing(function_name,folderpath,input_data)
-
+%% batch of psychometrics:
+function_name='quickscript_function_looped';
+input_data.labnum=3;
+input_data.stimcodes=[0 1 2 3];
+input_data.num_stim_cases=4;
+input_data.currents=[5 10 15 20];
+input_data.matchstring='Kramer';
+folderpath='E:\local_processing\kramer\experiment_20130305_0322_BD_70degstim';
+run_data_processing(function_name,folderpath,input_data)
 %% process PDs
 folderpath='C:\Users\limblab\Documents\local_processing\experiment_20150223';
 input_data.filename='Chips_20150223_RW_tucker_001-01.nev';
@@ -19,8 +27,8 @@ input_data.array_map_path='Y:\lab_folder\Animal-Miscellany\Chips_12H1\map_files\
 data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% process PDs using Raeed/Tucker functions
-folderpath='C:\Users\tucker\Desktop\local_processing\chips\experiment_20150602_RW_PD';
-input_data.prefix='Chips_20150602_RW_Tucker_001';
+folderpath='E:\local_processing\chips\experiment_20150615_RW_PD';
+input_data.prefix='Chips_20150615_RW_Tucker_002';
 function_name='get_PDs';
 input_data.labnum=6;
 input_data.do_unit_pds=0;
@@ -78,4 +86,9 @@ electrode_stability=run_data_processing(function_name,folderpath,input_data);
 %% compute SNR
 folderpath='';
 function_name='analyze_SNR';
+run_data_processing(function_name,folderpath,input_data)
+%% make polar plots of stimulated electrode groups for chips
+folderpath='Z:\Chips_12H1\processed\summary of stim directions';
+function_name='make_chips_polar_PD_summaries';
+input_data.monkey_name='C';
 run_data_processing(function_name,folderpath,input_data)
