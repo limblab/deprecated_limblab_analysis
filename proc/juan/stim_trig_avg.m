@@ -118,8 +118,8 @@ emg.fs                      = cell2mat(analog_data(find(strncmp(analog_data(:,1)
 emg.length_evoked_emg       = ( sta_params.t_before + sta_params.t_after ) * emg.fs/1000 + 1;
 emg.evoked_emg              = zeros( emg.length_evoked_emg, emg.nbr_emgs, sta_params.nbr_stims_ch, ...
                                 numel(sta_params.stim_elecs) ); 
-emg.STA                     = zeros( emg.length_evoked_emg, emg.nbr_emgs, numel(sta_params.stim_elecs) );
-emg.STA_std                 = zeros( emg.length_evoked_emg, emg.nbr_emgs, numel(sta_params.stim_elecs) );
+% emg.STA                     = zeros( emg.length_evoked_emg, emg.nbr_emgs, numel(sta_params.stim_elecs) );
+% emg.STA_std                 = zeros( emg.length_evoked_emg, emg.nbr_emgs, numel(sta_params.stim_elecs) );
 
 clear analog_data ts_cell_array;
 cbmex('trialconfig', 0);        % stop data collection for until the stim starts
@@ -173,16 +173,16 @@ end
 clear nbr_ch_found
 
 
-% SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
-% or > 1 ms) 
-if sta_params.stim_ampl > 0.090
-    cbmex('close');
-    error('ERROR: stimulation amplitude is too large (> 90uA) !');    
-elseif sta_params.stim_pw > 1
-    cbmex('close');
-    error('ERROR: stimulation pulse width is too large (> 1ms) !');    
-end
-   
+% % SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
+% % or > 1 ms) 
+% if sta_params.stim_ampl > 0.090
+%     cbmex('close');
+%     error('ERROR: stimulation amplitude is too large (> 90uA) !');    
+% elseif sta_params.stim_pw > 1
+%     cbmex('close');
+%     error('ERROR: stimulation pulse width is too large (> 1ms) !');    
+% end
+%    
 
 
 %--------------------------------------------------------------------------
@@ -317,8 +317,8 @@ for i = 1:length(sta_params.stim_elecs)
             disp('the delay between the time stamps and the analog signal is < 1 ms!!!');
         end
         
-        figure,plot(analog_sync_signal), hold on, xlim([0 10000]), xlabel(['sample numer at EMG fs = ' num2str(emg.fs) ' (Hz)']), 
-        stem(ts_sync_pulses_its_freq,ones(length(ts_sync_pulses),1)*-5000,'marker','none','color','r'), legend('analog signal','time stamps')
+%         figure,plot(analog_sync_signal), hold on, xlim([0 10000]), xlabel(['sample numer at EMG fs = ' num2str(emg.fs) ' (Hz)']), 
+%         stem(ts_sync_pulses_its_freq,ones(length(ts_sync_pulses),1)*-5000,'marker','none','color','r'), legend('analog signal','time stamps')
         % ToDo: DELETE UNTIL HERE
         
         
@@ -413,5 +413,5 @@ cbmex('close')
 if sta_params.plot_yn
    
     sta_metrics             = calculate_sta_metrics( emg, sta_params );
-    plot_sta( emg, sta_params, sta_metrics )
+%     plot_sta( emg, sta_params, sta_metrics )
 end
