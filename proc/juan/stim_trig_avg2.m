@@ -35,6 +35,9 @@
 
 
 % %%%%%%%%%%%%
+%   ToDo: 
+%       - When the first threshold crossing is missed, read the rest of the
+%       data
 %   Some known issues:
 %       - The resistor used in the analog input is hard-coded (100 Ohm)
 
@@ -312,14 +315,11 @@ for i = 1:hw.cb.nbr_epochs
     analog_data(:,1)        = ts_cell_array([analog_data{:,1}]',1);
     aux                     = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 3 );
 
-    % ToDo: try wihtout the loop
     for ii = 1:emg.nbr_emgs
         emg.data(:,ii)   = double(aux{ii,1}); 
     end
     clear aux
-
     
-    % ToDo: try wihtout the loop
     if sta_params.record_force_yn
         aux2                = analog_data( strncmp(analog_data(:,1), 'Force', 5), 5 ); % ToDo: double check this line
         for ii = 1:force.nbr_forces
@@ -327,18 +327,18 @@ for i = 1:hw.cb.nbr_epochs
         end
     end
 
+    ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
 
-
-    % THIS IS SOME OLD CODE TO RESOLVE ISSUES RELATED TO THE
-%     SYNCHRONIZATION BETWEEN TIME STAMPS AND ANALOG SIGNALS WHEN READING
-%     FROM CENTRAL. THIS HAS BEEN FIXED IN CBMEX v6.3
-    % check if the trigger signal and the EMG are synchronized
-     ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
-
+    
+    
+    % RESOLVE ISSUES RELATED TO THE SYNCHRONIZATION BETWEEN TIME STAMPS AND
+    % ANALOG SIGNALS WHEN READING FROM CENTRAL. THIS HAS BEEN FIXED IN
+    % CBMEX v6.3, ALTHOUGH IT SOMETIMES MISSES THE FIRST THRESHOLD CROSSING  
+    
     ts_sync_pulses_its_freq             = ts_sync_pulses/30000*emg.fs;
-%    ts_first_sync_pulse_emg_freq        = ts_sync_pulses_its_freq(find(ts_sync_pulses_its_freq<5000,1));
+    %    ts_first_sync_pulse_emg_freq        = ts_sync_pulses_its_freq(find(ts_sync_pulses_its_freq<5000,1));
     analog_sync_signal                  = double(analog_data{10,3});
-
+    
     ts_first_sync_pulse_analog_signal   = find( (analog_sync_signal-mean(analog_sync_signal)) <-1.5*std(analog_sync_signal), 1);
 
 
@@ -351,7 +351,7 @@ for i = 1:hw.cb.nbr_epochs
             disp(['it is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1))/10 )])
         end
     else
-        disp('the delay between the time stamps and the analog signal is < 1 ms!!!');
+        disp('the delay between the time stamps and the analog signal is < 1 ms');
     end
 
     
@@ -360,7 +360,8 @@ for i = 1:hw.cb.nbr_epochs
 %    ToDo: DELETE UNTIL HERE
 
 
-    % this is a temporal fix to ignore the data when the analog and ts are not cynhronized
+    % when the time stamps and the analog data are not synchronized, they
+    % won't be stored; 
     if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) <  emg.fs/1000
 
 
@@ -370,14 +371,6 @@ for i = 1:hw.cb.nbr_epochs
         elseif (length(emg.data) - sta_params.t_after) < floor(ts_sync_pulses(end)/30000*emg.fs)
             ts_sync_pulses(end) = [];
         end
-
-
-    %     % This is just to check the communication, it can probably be
-    %     % deleted
-    %     if hw.cb.nbr_stims_this_epoch < length(ts_sync_pulses)
-    %         disp('length(emg.evoked_emg) < length(ts_sync_pulses)');
-    %         pause;
-    %     end
 
 
         %------------------------------------------------------------------
@@ -393,7 +386,7 @@ for i = 1:hw.cb.nbr_epochs
                 emg.evoked_emg(:,:,ii+hw.cb.ind_ev_emg)    = emg.data( trig_time_in_emg_sample_nbr : ...
                     (trig_time_in_emg_sample_nbr + emg.length_evoked_emg - 1), : );
             else
-                disp('the last sync pulse in the EMG is far too late!');
+                disp('one sync pulse in the EMG is far too late!');
                 drawnow;
             end
         end
@@ -416,7 +409,7 @@ for i = 1:hw.cb.nbr_epochs
                 force.evoked_force(:,:,ii+hw.cb.ind_ev_emg)   = force.data( trig_time_in_force_sample_nbr : ...
                     (trig_time_in_force_sample_nbr + force.length_evoked_force - 1), : );
             else
-                disp('the last sync pulse in the Force is far too late!');
+                disp('one sync pulse in the Force is far too late!');
                 drawnow;
             end
         end
