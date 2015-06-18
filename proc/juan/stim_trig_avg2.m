@@ -88,7 +88,7 @@ if sta_params.save_data_yn
         mkdir(hw.data_dir);
     end
     hw.start_t                  = datestr(now,'yyyymmdd_HHMMSS');
-    hw.cb.full_file_name        = fullfile( hw.data_dir, [sta_params.monkey '_' sta_params.bank '_' num2str(sta_params.stim_elecs(1)) '_' hw.start_t '_' sta_params.task '_STA' ]);
+    hw.cb.full_file_name        = fullfile( hw.data_dir, [sta_params.monkey '_' sta_params.bank '_' num2str(sta_params.stim_elec) '_' hw.start_t '_' sta_params.task '_STA' ]);
 
     % start 'file storage' app, or stop ongoing recordings
     cbmex('fileconfig', fullfile( hw.data_dir, hw.cb.full_file_name ), '', 0 );  
@@ -145,7 +145,7 @@ emg.evoked_emg              = zeros( emg.length_evoked_emg, emg.nbr_emgs, sta_pa
 if sta_params.record_force_yn
    
     force.labels            = analog_data( strncmp(analog_data(:,1), 'Force', 5), 1 );
-    force.nbr_forces        = numel( strncmp(analog_data(:,1), 'Force', 5), 1 );
+    force.nbr_forces        = numel(force.labels); disp(['Nbr Force Sensors: ' num2str(force.nbr_forces)]), disp(' ');
     force.fs                = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'Force', 5),1),2));
     force.length_evoked_force   = ( sta_params.t_before + sta_params.t_after ) * force.fs/1000 + 1;
     force.evoked_force      = zeros( force.length_evoked_force, force.nbr_forces, sta_params.nbr_stims_ch );
@@ -170,7 +170,7 @@ end
 
 
 % check if the sync out channel has been mistakenly chosen for stimulation
-if ~isempty(find(sta_params.stim_elecs == sta_params.sync_out_elec,1))
+if ~isempty(find(sta_params.stim_elec == sta_params.sync_out_elec,1))
     cbmex('close');
     error('ERROR: sync out channel chosen for ICMS!');
 end
@@ -186,22 +186,16 @@ if isempty(hw.gv.stim_ch)
 end
 
 
-% quit if the specified channels (in 'sta_params.stim_elecs') do
-% not exist, or if the sync_out channel does not exist 
-nbr_ch_found                = 0;
-for i = 1:length(sta_params.stim_elecs)
-    nbr_ch_found            = nbr_ch_found + numel(find( hw.gv.stim_ch == sta_params.stim_elecs(i)));
-end
+% quit if the specified channel (in 'sta_params.stim_elec') does not exist,
+% or if the sync_out channel does not exist  
 
-if ( nbr_ch_found < length(sta_params.stim_elecs) ) % ToDo: double check syntaxis 
+if isempty(find(hw.gv.stim_ch==sta_params.stim_elec,1))
     cbmex('close');
-    error('ERROR: specified stimulator channels not found!');
+    error('ERROR: stimulation channel not found!');
 elseif isempty(find(hw.gv.stim_ch==sta_params.sync_out_elec,1))
     cbmex('close');
     error('ERROR: sync out channel not found!');
 end
-
-clear nbr_ch_found
 
 
 % SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
@@ -241,12 +235,12 @@ drawnow;
 % the StTA (defined in sta_params.t_before) + 10 ms, to avoid
 % synchronization issues
 
-stim_string             = [ 'Elect = ' num2str(sta_params.stim_elecs(i)) ',' num2str(sta_params.sync_out_elec) ',;' ...
-                            'TL = ' num2str(sta_params.train_duration) ',' num2str(sta_params.train_duration) ',; ' ...
-                            'Freq = ' num2str(sta_params.stim_freq) ',' num2str(1000/sta_params.train_duration) ',; ' ...
+stim_string             = [ 'Elect = ' num2str(sta_params.stim_elec) ',' num2str(sta_params.sync_out_elec) ',;' ...
+                            'TL = ' num2str(1000/sta_params.stim_freq) ',' num2str(1000/sta_params.stim_freq) ',; ' ...
+                            'Freq = ' num2str(sta_params.stim_freq) ',' num2str(sta_params.stim_freq) ',; ' ...
                             'Dur = ' num2str(sta_params.stim_pw) ',' num2str(sta_params.stim_pw) ',; ' ...
                             'Amp = ' num2str(sta_params.stim_ampl/sta_params.stimulator_resolut) ',' num2str(ceil(3/hw.cb.sync_out_resistor/sta_params.stimulator_resolut*1000)) ',; ' ...
-                            'TD = ' num2str((sta_params.t_before+10)/1000) ',' num2str((sta_params.t_before+10)/1000) ',; ' ...
+                            'TD = ' num2str((sta_params.t_before)/1000) ',' num2str((sta_params.t_before)/1000) ',; ' ...
                             'FS = 0,0,; ' ...
                             'PL = 1,1,;'];
 
@@ -258,7 +252,8 @@ for i = 1:hw.cb.nbr_epochs
     drawnow;
     drawnow;
     drawnow;
-
+%    pause(0.1); % this pause prevents missing the first stimuli; ToDo: see if the drawnows are necessary
+    
     %------------------------------------------------------------------
     % Stimulate the channel as many times as specified
 
@@ -280,7 +275,7 @@ for i = 1:hw.cb.nbr_epochs
 
         % wait for the inter-stimulus interfal (defined by stim freq)
         t_stop              = toc(t_start);
-        while t_stop < sta_params.ITI/1000
+        while t_stop < (1/sta_params.stim_freq)
             t_stop          = toc(t_start);
         end
 
@@ -320,11 +315,12 @@ for i = 1:hw.cb.nbr_epochs
     % ToDo: try wihtout the loop
     for ii = 1:emg.nbr_emgs
         emg.data(:,ii)   = double(aux{ii,1}); 
-        clear aux
     end
+    clear aux
 
+    
     % ToDo: try wihtout the loop
-    if params.record_force_yn
+    if sta_params.record_force_yn
         aux2                = analog_data( strncmp(analog_data(:,1), 'Force', 5), 5 ); % ToDo: double check this line
         for ii = 1:force.nbr_forces
             force.data(:,ii)   = double(aux2{ii,1});
@@ -333,72 +329,76 @@ for i = 1:hw.cb.nbr_epochs
 
 
 
-%     % THIS IS SOME OLD CODE TO RESOLVE ISSUES RELATED TO THE
+    % THIS IS SOME OLD CODE TO RESOLVE ISSUES RELATED TO THE
 %     SYNCHRONIZATION BETWEEN TIME STAMPS AND ANALOG SIGNALS WHEN READING
 %     FROM CENTRAL. THIS HAS BEEN FIXED IN CBMEX v6.3
-%     % check if the trigger signal and the EMG are synchronized
-%     ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
-% 
-%     ts_sync_pulses_its_freq             = ts_sync_pulses/30000*emg.fs;
-%     ts_first_sync_pulse_emg_freq        = ts_sync_pulses_its_freq(find(ts_sync_pulses_its_freq<5000,1));
-%     analog_sync_signal                  = double(analog_data{10,3});
-% 
-%     ts_first_sync_pulse_analog_signal   = find( (analog_sync_signal-mean(analog_sync_signal)) <-2*std(analog_sync_signal), 1);
-% 
-% 
-%     if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) > emg.fs/1000
-%         disp('the delay between the time stamps and the analog signal is > 1 ms!!!');
-%         disp(['it is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1))/10 )])
-%     else
-%         disp('the delay between the time stamps and the analog signal is < 1 ms!!!');
-%     end
-% 
-% %     figure,plot(analog_sync_signal), hold on, xlim([0 10000]), xlabel(['sample numer at EMG fs = ' num2str(emg.fs) ' (Hz)']), 
-% %     stem(ts_sync_pulses_its_freq,ones(length(ts_sync_pulses),1)*-5000,'marker','none','color','r'), legend('analog signal','time stamps')
-    % ToDo: DELETE UNTIL HERE
+    % check if the trigger signal and the EMG are synchronized
+     ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
+
+    ts_sync_pulses_its_freq             = ts_sync_pulses/30000*emg.fs;
+%    ts_first_sync_pulse_emg_freq        = ts_sync_pulses_its_freq(find(ts_sync_pulses_its_freq<5000,1));
+    analog_sync_signal                  = double(analog_data{10,3});
+
+    ts_first_sync_pulse_analog_signal   = find( (analog_sync_signal-mean(analog_sync_signal)) <-1.5*std(analog_sync_signal), 1);
 
 
-%     % this is a temporal fix to ignore the data when the analog and ts are not cynhronized
-%     if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) <  emg.fs/1000
-
-
-
-
-    % remove the first and/or the last sync pulse if they fall outside the data
-    if floor(ts_sync_pulses(1)/30000) < sta_params.t_before/1000
-        ts_sync_pulses(1)   = [];
-    elseif (length(emg.data) - sta_params.t_after) < floor(ts_sync_pulses(end)/30000*emg.fs)
-        ts_sync_pulses(end) = [];
+    if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) > emg.fs/1000
+        if ts_first_sync_pulse_analog_signal < ts_sync_pulses_its_freq(1)
+            disp('Central has skipped the first threshold crossing of the sync signal!!!');
+            disp(['the delay btw analog/thr crossing is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1))/10 )])
+        else
+            disp('the delay between the time stamps and the analog signal is > 1 ms!!!');
+            disp(['it is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1))/10 )])
+        end
+    else
+        disp('the delay between the time stamps and the analog signal is < 1 ms!!!');
     end
 
     
-%     % This is just to check the communication, it can probably be
-%     % deleted
-%     if hw.cb.nbr_stims_this_epoch < length(ts_sync_pulses)
-%         disp('length(emg.evoked_emg) < length(ts_sync_pulses)');
-%         pause;
-%     end
+%     figure,plot(analog_sync_signal), hold on, xlim([0 10000]), xlabel(['sample numer at EMG fs = ' num2str(emg.fs) ' (Hz)']), 
+%     stem(ts_sync_pulses_its_freq,ones(length(ts_sync_pulses),1)*-5000,'marker','none','color','r'), legend('analog signal','time stamps')
+%    ToDo: DELETE UNTIL HERE
 
 
-    %------------------------------------------------------------------
-    % store the evoked EMG (interval around the stimulus defined by
-    % t_before and t_after in params 
+    % this is a temporal fix to ignore the data when the analog and ts are not cynhronized
+    if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_its_freq(1) ) <  emg.fs/1000
 
-    for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
-        trig_time_in_emg_sample_nbr     = floor(double(ts_sync_pulses(ii))/30000*emg.fs - sta_params.t_before/1000*emg.fs);
-        
-        % check if we haven't recorded EMG for long enough, during some of
-        % the stimuli. If not, store the data
-        if (trig_time_in_emg_sample_nbr + (sta_params.t_after + sta_params.t_before)*emg.fs/1000 ) < length(emg.data)
-            emg.evoked_emg(:,:,ii+hw.cb.ind_ev_emg)    = emg.data( trig_time_in_emg_sample_nbr : ...
-                (trig_time_in_emg_sample_nbr + emg.length_evoked_emg - 1), : );
-        else
-            disp('the last sync pulse in the EMG is far too late!');
-            drawnow;
+
+        % remove the first and/or the last sync pulse if they fall outside the data
+        if floor(ts_sync_pulses(1)/30000) < sta_params.t_before/1000
+            ts_sync_pulses(1)   = [];
+        elseif (length(emg.data) - sta_params.t_after) < floor(ts_sync_pulses(end)/30000*emg.fs)
+            ts_sync_pulses(end) = [];
         end
-    end
 
-%     end
+
+    %     % This is just to check the communication, it can probably be
+    %     % deleted
+    %     if hw.cb.nbr_stims_this_epoch < length(ts_sync_pulses)
+    %         disp('length(emg.evoked_emg) < length(ts_sync_pulses)');
+    %         pause;
+    %     end
+
+
+        %------------------------------------------------------------------
+        % store the evoked EMG (interval around the stimulus defined by
+        % t_before and t_after in params 
+
+        for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
+            trig_time_in_emg_sample_nbr     = floor(double(ts_sync_pulses(ii))/30000*emg.fs - sta_params.t_before/1000*emg.fs);
+
+            % check if we haven't recorded EMG for long enough, during some of
+            % the stimuli. If not, store the data
+            if (trig_time_in_emg_sample_nbr + (sta_params.t_after + sta_params.t_before)*emg.fs/1000 ) < length(emg.data)
+                emg.evoked_emg(:,:,ii+hw.cb.ind_ev_emg)    = emg.data( trig_time_in_emg_sample_nbr : ...
+                    (trig_time_in_emg_sample_nbr + emg.length_evoked_emg - 1), : );
+            else
+                disp('the last sync pulse in the EMG is far too late!');
+                drawnow;
+            end
+        end
+
+    end
 
     %------------------------------------------------------------------
     % store the evoked Force (interval around the stimulus defined by
@@ -429,7 +429,9 @@ for i = 1:hw.cb.nbr_epochs
     % delete some variables
     clear analog_data ts_cell_array; 
     emg                     = rmfield(emg,'data');
-    force                   = rmfield(force,'data');
+    if sta_params.record_force_yn
+        force                   = rmfield(force,'data');
+    end
 end
 
 
@@ -439,7 +441,7 @@ end
 % Save data and stop cerebus recordings
 
 
-disp(['Finished stimulating electrode ' num2str(params.stim_elec)]);
+disp(['Finished stimulating electrode ' num2str(sta_params.stim_elec)]);
 disp(' ');
 
 
@@ -456,11 +458,11 @@ if sta_params.save_data_yn
 %    xippmex('close');
 
     % save matlab data. Note: the time in the faile name will be the same as in the cb file
-    hw.matlab_full_file_name    = fullfile( hw.data_dir, [sta_params.monkey '_' sta_params.bank '_' num2str(sta_params.stim_elecs(1)) '_' hw.start_t '_' sta_params.task '_STA' ]);
+    hw.matlab_full_file_name    = fullfile( hw.data_dir, [sta_params.monkey '_' sta_params.bank '_' num2str(sta_params.stim_elec) '_' hw.start_t '_' sta_params.task '_STA' ]);
     
     disp(' ');
     
-    if params.record_force_yn == false
+    if sta_params.record_force_yn == false
         save(hw.matlab_full_file_name,'emg','sta_params');
         disp(['EMG data and Stim Params saved in ' hw.matlab_full_file_name]);
     else
@@ -475,7 +477,7 @@ cbmex('close')
 % Calculate the STA metrics and plot, if specified in sta_params
 if sta_params.plot_yn
    
-    if params.record_force_yn == false
+    if sta_params.record_force_yn == false
         sta_metrics             = calculate_sta_metrics2( emg, sta_params );
     else
         sta_metrics             = calculate_sta_metrics2( emg, force, sta_params );
