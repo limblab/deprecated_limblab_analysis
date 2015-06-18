@@ -217,7 +217,8 @@ end
 %% some preliminary stuff
 
 
-% number of 30-s epochs + duration of the last epoch (in s)
+% this creates 'epochs' of continuous ICMS and cerebus recordings. To avoid
+% the need of reading a huge chunk of data from Central at once
 hw.cb.epoch_duration        = 10;   % epoch duration (in s)
 hw.cb.nbr_epochs            = ceil(sta_params.nbr_stims_ch/sta_params.stim_freq/hw.cb.epoch_duration);
 hw.cb.nbr_stims_this_epoch  = sta_params.stim_freq*hw.cb.epoch_duration;
@@ -390,32 +391,34 @@ for i = 1:hw.cb.nbr_epochs
             end
         end
 
-    end
-
-    %------------------------------------------------------------------
-    % store the evoked Force (interval around the stimulus defined by
-    % t_before and t_after in params 
-
-    if sta_params.record_force_yn
-       
-        for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
-
-            trig_time_in_force_sample_nbr   = floor(double(ts_sync_pulses(ii))/30000*force.fs - sta_params.t_before/1000*force.fs);
+        
+        %------------------------------------------------------------------
+        % store the evoked Force (interval around the stimulus defined by
+        % t_before and t_after in params
+        
+        if sta_params.record_force_yn
             
-            % check if we haven't recorded Force for long enough, during some
-            % of the stimuli. If not, store the data
-            if (trig_time_in_force_sample_nbr + (sta_params.t_after + sta_params.t_before)*force.fs/1000 ) < length(force.data)
-                force.evoked_force(:,:,ii+hw.cb.ind_ev_emg)   = force.data( trig_time_in_force_sample_nbr : ...
-                    (trig_time_in_force_sample_nbr + force.length_evoked_force - 1), : );
-            else
-                disp('one sync pulse in the Force is far too late!');
-                drawnow;
+            for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
+                
+                trig_time_in_force_sample_nbr   = floor(double(ts_sync_pulses(ii))/30000*force.fs - sta_params.t_before/1000*force.fs);
+                
+                % check if we haven't recorded Force for long enough, during some
+                % of the stimuli. If not, store the data
+                if (trig_time_in_force_sample_nbr + (sta_params.t_after + sta_params.t_before)*force.fs/1000 ) < length(force.data)
+                    force.evoked_force(:,:,ii+hw.cb.ind_ev_emg)   = force.data( trig_time_in_force_sample_nbr : ...
+                        (trig_time_in_force_sample_nbr + force.length_evoked_force - 1), : );
+                else
+                    disp('one sync pulse in the Force is far too late!');
+                    drawnow;
+                end
             end
         end
     end
+
     
     
-    hw.cb.ind_ev_emg        = length(ts_sync_pulses) + hw.cb.ind_ev_emg;  % update ptr to index
+    % update ptr to index
+    hw.cb.ind_ev_emg        = length(ts_sync_pulses) + hw.cb.ind_ev_emg;
 
 
     % delete some variables
