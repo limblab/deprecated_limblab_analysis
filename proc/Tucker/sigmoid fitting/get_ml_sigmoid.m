@@ -15,23 +15,39 @@ function [phat,varargout]=get_ml_sigmoid(data)
 
 % 
 % 
-%     tmp=sort(unique(data(:,1)));
-%     angles=tmp(tmp<180  &  0<tmp);
-%     for i=1:length(angles)
-%         N_tot(i)=sum(data(:,1)==angles(i));%trials at the current angle 
-%         N_primary(i)=sum(data(:,1)==angles(i) & data(:,2)==1);%trials at the current angle and to the primary target
-%     end
-%     p=N_primary./N_tot;
-% 
-%     %estimate min val:
-%     min_val=max(p);
-%     %estimate max val:
-%     max_val=min(p);
-%     %estimate center point of the sigmoid:
-%     ctr_p=min_val-max_val;
-%     ctr_point=mean(angles(abs(p-ctr_p)<.1));
-%     %estimate steepness:
-%     steepness=0.2;
+    tmp=sort(unique(data(:,1)));
+    angles=tmp(tmp<180  &  0<tmp);
+    for i=1:length(angles)
+        N_tot(i)=sum(data(:,1)==angles(i));%trials at the current angle 
+        N_primary(i)=sum(data(:,1)==angles(i) & data(:,2)==1);%trials at the current angle and to the primary target
+    end
+    p=N_primary./N_tot;
+
+    %estimate min val:
+    min_val=max(p) ;
+    %estimate max val:
+    max_val=min(p);
+    %build vectors of initial guesses:
+    diff_p=min_val-max_val;
+    min_val=min_val+diff_p*[-.1 0 .1];
+    min_val(min_val>=1)=.99;
+    min_val(min_val<=0)=.01;
+    max_val=max_val+diff_p*[-.1 0 .1];
+    max_val(max_val>=1)=.99;
+    max_val(max_val<=0)=.01;
+    %estimate center point of the sigmoid:
+    ctr_p=min_val-diff_p*[.4 .5 .6];
+    ctr_p(ctr_p>=1)=.99;
+    ctr_p(ctr_p<=0)=.01;
+    
+    pts=angles(abs(p-ctr_p)<.1);
+    if ~isempty(pts);
+        ctr_point=mean(pts)+[-15 0 15];
+    else
+        ctr_point=[75 90 105];
+    end
+    %estimate steepness:
+    steepness=[0.1 0.2];
 %     start(2,:)=[min_val,max_val,ctr_point,steepness];
 %     goodness_start(1)=logpdf_sigmoid2(data,start(1,:));
 %     goodness_start(2)=logpdf_sigmoid2(data,start(2,:));
@@ -65,12 +81,25 @@ function [phat,varargout]=get_ml_sigmoid(data)
     phat_max=[1 0.5 180 .5];
     problem=createOptimProblem('fmincon','objective',logpdf,'x0',[.9 .1 90 .1],'lb',phat_min,'ub',phat_max);
     ms=MultiStart('StartPointsToRun','bounds','Maxtime',600,'UseParallel','always');
-    
+    %build custom set of start points:
+    startpoints=zeros(length(min_val)*length(max_val)*1:length(ctr_point)*length(steepness),4);
+    n=1;
+    for i=1:length(min_val)
+        for j=1:length(max_val)
+            for k=1:length(ctr_p)
+                for m=1:length(steepness)
+                    startpoints(n,:)=[min_val(i) max_val(j) ctr_point(k) steepness(m)];
+                    n=n+1;
+                end
+            end
+        end
+    end
+    cs=CustomStartPointSet(startpoints);
     % [phat,pci] = mle(data,'logpdf',logpdf,'start',start);
     %phat=fminsearch(logpdf,phat3,optimset('MaxIter',10000,'MaxFunEvals',100000));
     %phat=fmincon(logpdf,start(best_start,:),a,b,[],[],phat_min,phat_max);
     %phat=fminsearch(logpdf,start);
-    phat=run(ms,problem,50);
+    phat=run(ms,problem,cs);
     if nargout>1
         varargout{1}=logpdf_sigmoid2(data,phat);
     end
