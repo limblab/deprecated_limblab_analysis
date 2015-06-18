@@ -40,7 +40,7 @@ function [phat,varargout]=get_ml_sigmoid(data)
     ctr_p(ctr_p>=1)=.99;
     ctr_p(ctr_p<=0)=.01;
     
-    pts=angles(abs(p-ctr_p)<.1);
+    pts=angles(abs(p-diff_p*.5)<.1);
     if ~isempty(pts);
         ctr_point=mean(pts)+[-15 0 15];
     else
@@ -79,8 +79,11 @@ function [phat,varargout]=get_ml_sigmoid(data)
     %set up a multistart solver object:
     phat_min=[0.5 0 0 0];
     phat_max=[1 0.5 180 .5];
+    a=[1 1 0 0];
+    b=1;
+    %problem=createOptimProblem('fmincon','objective',logpdf,'x0',[.9 .1 90 .1],'Aineq',a,'bineq',b,'lb',phat_min,'ub',phat_max);
     problem=createOptimProblem('fmincon','objective',logpdf,'x0',[.9 .1 90 .1],'lb',phat_min,'ub',phat_max);
-    ms=MultiStart('StartPointsToRun','bounds','Maxtime',600,'UseParallel','always');
+    ms=MultiStart('StartPointsToRun','bounds','MaxTime',600,'UseParallel','always');
     %build custom set of start points:
     startpoints=zeros(length(min_val)*length(max_val)*1:length(ctr_point)*length(steepness),4);
     n=1;
