@@ -1,66 +1,93 @@
 %
-% Function to plot the cortical map with data recorded with the
-% stim_trig_avg_simple3() function.
+% Function to calculate the StTA metrics from data recorded with the
+% 'stim_trig_avg' function 
+%
+%       function varargout = calculate_sta_metrics( emg, sta_params )
 %
 %
-%   varargout = calculate_sta_metrics( emg, sta_params )
+% Syntax:
+%       STA_METRICS         = CALCULATE_STA_METRICS( EMG, STA_PARAMS )
+%       STA_METRICS         = CALCULATE_STA_METRICS( EMG, FORCE, STA_PARAMS )
+%       STA_METRICS         = CALCULATE_STA_METRICS( EMG, STA_PARAMS, STA_METRICS_PARAMS ), 
+%               if sta_params.record_force_yn = false 
+%       STA_METRICS         = CALCULATE_STA_METRICS( EMG, FORCE, STA_PARAMS, STA_METRICS_PARAMS )
+%       
 %
-%       EMG: structure that contains the evoked EMG response (per stim) and
-%       other EMG information
-%       STA_PARAMS: structure that contains general information on the
-%       experiment
+% Input parameters:
+%       'emg'                   : structure that contains the evoked EMG
+%                                   response (per stim) and other EMG
+%                                   information    
+%       'force'                 : structure that contains the evoked Force
+%                                   response (per stim) and other Force
+%                                   information    
+%       'sta_params'            : structure that contains the parameters
+%                                   for the experiment 
+%       'sta_metrics_params'    : structure that contains the parameters to
+%                                   calculate the metrics
 %
-%       STA_METRICS: metrics that characterize PSF: 1) Fetz' and Cheney's
-%       MPSF; 2) Polyakov and Schiebert's statistics 
+% Outputs:
+%       'sta_metrics'           : metrics that characterize PSF: 1) Fetz'
+%                                   and Cheney's MPSF; 2) Polyakov and
+%                                   Schiebert's statistics    
 %
 %
+%
+%                           Last modified by Juan Gallego 6/17/2015
+
+
 %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %       % ToDos:
 %       - Calculate MPSI, analogously to MPSF
+%       - Rectify the force?
 %       - Resample all EMGs to 4 kHz? (or at least downsample form 10 kHz
 %       to 4 kHz)
 %
 
 
 
-function varargout = calculate_sta_metrics2( emg, sta_params, varargin )
+function varargout = calculate_sta_metrics2( emg, varargin )
 
 
 
-if nargin == 2
-    
-    sta_metrics_params = calculate_sta_metrics_default();
+% read parameters
+
+if nargin == 1
+    error('the function needs at least two parameters');
+elseif nargin == 2
+    sta_params                  = varargin{1};
+    sta_metrics_params          = calculate_sta_metrics_default2();
 elseif nargin == 3
-   
-    sta_metrics_params          = varargin{1};
-else 
-    disp('the function only takes 2 or 3 parameters')
+    if isfield(varargin{2},'record_force_yn')
+        sta_params              = varargin{2};
+        sta_metrics_params      = calculate_sta_metrics_default2();
+    else
+        sta_params              = varargin{1};
+        sta_metrics_params      = varargin{2};
+    end
+elseif nargin == 4
+    sta_params                  = varargin{2};
+    sta_metrics_params          = varargin{3};
+elseif nargin > 4
+    error('the function only takes up to 4 parameters');
 end
 
 
 if nargout > 1
-    
-    disp('the funciton only returns one variable of type sta_metrics')
-    return;
+    error('the function only returns one variable of type sta_metrics');
 end
 
 
-% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % Some parameters to choose - read from the structure
-% 
-% min_duration_PSF             	= sta_metrics_params.min_duration_PSF;    % (ms) [has to be greater!]
-% 
-% 
-% % For the MPSF by Fetz & Cheney
-% beg_bsln                        = sta_metrics_params.beg_bsln;    % (ms) when the baseline begins [0 = the beginning]
-% end_bsln                        = sta_metrics_params.t_before - 2;   % (ms) when the baseline ends [0 = the beginning] 
-% t_after_stimulus                = sta_metrics_params.min_t_after_stim_PSF;    % (ms) minimum time for the EMG activity to be possibily considered an effect. Anything that happens earlier will be disregarded for the PSF  
-% 
+% override the plot option of sta_metrics_params, if specified in
+% sta_params.plot_yn
+if sta_params.plot_yn && ~sta_metrics_params.plot_yn
+    sta_metrics_params.plot_yn  = true;
+end
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% If you want to high pass filter the EMG...
+
+%-------------------------------------------------------------------------- 
+% If we want to high pass filter the EMG
 
 if sta_metrics_params.hp_filter_EMG_yn
    
@@ -83,7 +110,8 @@ end
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%--------------------------------------------------------------------------
+%-------------------------------------------------------------------------- 
 % Some preliminary stuff
 
 % get rid of the EMG data epochs that are zero (because of a misalignment
@@ -95,24 +123,58 @@ zero_emg_rows                   = squeeze(zero_emg_rows(1,1,:));    % array of l
 emg.evoked_emg(:,:,zero_emg_rows)   = [];
 
 
-% check, if the 'last_evoked_EMG' ~= 0 (last sample), if the specified
+% check, if the 'last_evoked_resp' ~= 0 (last sample), if the specified
 % value is within limits
-if ( sta_metrics_params.last_evoked_EMG == 0 ) || ( sta_metrics_params.last_evoked_EMG > length(emg.evoked_emg) )
-    sta_metrics_params.last_evoked_EMG  = length(emg.evoked_emg);
+[~,~,nbr_evoked_emg_responses]  = size(emg.evoked_emg);
+if ( sta_metrics_params.last_evoked_resp == 0 ) || ( sta_metrics_params.last_evoked_resp > nbr_evoked_emg_responses )
+    sta_metrics_params.last_evoked_resp  = nbr_evoked_emg_responses;
 end
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Compute the StTAs
+%-------------------------------------------------------------------------- 
+% Compute the StTAs of the EMGs
 % Calculate mean (and SD) rectified EMG -> The mean is used to compute the STA
 
-mean_emg                      	= mean(abs(emg.evoked_emg(:,sta_metrics_params.first_evoked_EMG:sta_metrics_params.last_evoked_EMG)),2);
+mean_emg                      	= mean( abs(emg.evoked_emg(:,:,sta_metrics_params.first_evoked_resp:sta_metrics_params.last_evoked_resp)),3 );
 %std_emg                                 = std(abs(emg.evoked_emg(:,:,first_evoked_emg:last_evoked_emg)),0,3);
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%--------------------------------------------------------------------------
+%-------------------------------------------------------------------------- 
+% Calculate the StTAs of the Force, if it is passed to the funciton
+
+if numel(varargin) > 1 && isfield(varargin{2},'nbr_forces')
+    
+    % get rid of the Force data epochs that are zero (because of a
+    % misalignment of the sync pulse in the time stamps and analog data
+    % that are read from central)  
+    zero_force_rows             = all(force.evoked_force==0,1);
+    zero_force_rows             = squeeze(zero_force_rows(1,1,:));    % array of logic variables that tell if that row is == 0
+    force.evoked_force(:,:,zero_force_rows)   = [];
+
+    % check, if the 'last_evoked_resp' ~= 0 (last sample), if the specified
+    % value is within limits
+    [~,~,nbr_evoked_force_responses]    = size(force.evoked_force);
+    if ( sta_metrics_params.last_evoked_resp == 0 ) || ( sta_metrics_params.last_evoked_resp > nbr_evoked_force_responses )
+        sta_metrics_params.last_evoked_resp  = nbr_evoked_force_responses;
+    end
+    
+    % Calculate the mean force response, for each force sensor
+    mean_force                  = mean(abs(force.evoked_force(:,:,sta_metrics_params.first_evoked_resp:sta_metrics_params.last_evoked_resp)),3);
+end
+    
+
+
+
+
+%--------------------------------------------------------------------------
+%-------------------------------------------------------------------------- 
+% EMG Metrics
+
+
+%-------------------------------------------------------------------------- 
 % Calculate the "Mean percent facilitation" (Cheney & Fetz, 1985) - height
 % of the PSF peak above the mean baseline level, divided by the baseline
 % noise  
@@ -124,17 +186,17 @@ mean_emg                      	= mean(abs(emg.evoked_emg(:,sta_metrics_params.fi
 % (Griffin et al., 2009) 
 
 mean_baseline_emg            	= mean(abs(emg.evoked_emg((sta_metrics_params.beg_bsln*emg.fs/1000+1):((sta_params.t_before - sta_metrics_params.end_bsln)*emg.fs/1000+1), ...
-    :,sta_metrics_params.first_evoked_EMG:sta_metrics_params.last_evoked_EMG)),3);
+    :,sta_metrics_params.first_evoked_resp:sta_metrics_params.last_evoked_resp)),3);
 mean_mean_baseline_emg          = mean(mean_baseline_emg,1);
 std_mean_baseline_emg           = std(mean_baseline_emg,0,1);
 
 
 % Look for a threshold (mean + 2*SD) crossing that lasts > 1 ms (the time
 % specified in 'sta_metrics_params.min_duration_PSF'). The code start
-% several ms after the stimulus (sta_metrics_params.min_t_after_stim_PSF)
+% several ms after the stimulus (sta_metrics_params.min_t_after_stim_for_PSF)
 % to avoid the effect of stimulation artefacts
 
-start_PSF_win               	= (sta_params.t_before + sta_metrics_params.min_t_after_stim_PSF)*emg.fs/1000 + 1;
+start_PSF_win               	= (sta_params.t_before + sta_metrics_params.min_t_after_stim_for_PSF)*emg.fs/1000 + 1;
 MPSF                            = zeros(emg.nbr_emgs,1);
 duration_PSF                    = zeros(emg.nbr_emgs,1);
 t_after_stim_start_PSF          = zeros(emg.nbr_emgs,1);
@@ -171,7 +233,7 @@ end
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------------------------------------------- 
 % Calculate MPSI - similar to MPSF but for inhibition
 
 MPSI                            = zeros(emg.nbr_emgs,1);
@@ -181,7 +243,7 @@ MPSI                            = zeros(emg.nbr_emgs,1);
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------------------------------------------- 
 % Calculate "Multiple fragment statistical analysis," (Poliakov &
 % Schiebert, 1998)
 
@@ -254,21 +316,31 @@ end
 
 
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------------------------------------------- 
 % Return metrics
     
 
-sta_metrics.nbr_stims           = sta_metrics_params.last_evoked_EMG - sta_metrics_params.first_evoked_EMG + 1;
-sta_metrics.mean_emg            = mean_emg;
-sta_metrics.mean_baseline_emg   = mean_mean_baseline_emg;
-sta_metrics.std_baseline_emg    = std_mean_baseline_emg;
+sta_metrics.emg.nbr_stims       = sta_metrics_params.last_evoked_resp - sta_metrics_params.first_evoked_resp + 1;
+sta_metrics.emg.mean_emg        = mean_emg;
+sta_metrics.emg.mean_baseline_emg       = mean_mean_baseline_emg;
+sta_metrics.emg.std_baseline_emg        = std_mean_baseline_emg;
 
-sta_metrics.MPSF                = MPSF;
-sta_metrics.t_after_stim_start_PSF = t_after_stim_start_PSF;
-sta_metrics.duration_MPSF       = duration_PSF;
+sta_metrics.emg.MPSF            = MPSF;
+sta_metrics.emg.t_after_stim_start_PSF  = t_after_stim_start_PSF;
+sta_metrics.emg.duration_MPSF   = duration_PSF;
 
-sta_metrics.P_Ztest             = P_Z_test;
-sta_metrics.Xj_Ztest            = Xj_MFSA;
+sta_metrics.emg.P_Ztest         = P_Z_test;
+sta_metrics.emg.Xj_Ztest        = Xj_MFSA;
+
+
+if numel(varargin) > 1 && isfield(varargin{2},'nbr_forces')
+
+    sta_metrics.force.nbr_stims = sta_metrics_params.last_evoked_resp - sta_metrics_params.first_evoked_resp + 1;
+    sta_metrics.force.mean_force    = mean_force;
+    
+    % ToDo: include the rest
+end
+    
 
 
 if nargout == 1
@@ -278,8 +350,13 @@ end
 
 
 
+%--------------------------------------------------------------------------
 % Plot, if specified in 'sta_metrics_params.plot_yn'
 if sta_metrics_params.plot_yn
     
-    plot_sta( emg, sta_params, sta_metrics );
+    if numel(varargin) > 1 && isfield(varargin{2},'nbr_forces')
+        plot_sta2( emg, force, sta_params, sta_metrics );
+    else
+        plot_sta2( emg, sta_params, sta_metrics );
+    end
 end

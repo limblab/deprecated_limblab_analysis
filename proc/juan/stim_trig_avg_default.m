@@ -14,9 +14,9 @@
 %           ITI                 : interval between bursts (ms)
 %           nbr_stims_ch        : nbr stimuli delivered at each channel
 %           pre_stim_win        : delay for the stimulation command (ms), 
-%           time_before         : time before the stim that is plotted and used for computations (ms)
-%           time_after          : time after the stim that is plotted and used for computations (ms)
-%           fc_hp_filt          : f_c of the online high-pass filter for the EMG. No filter if == 0
+%           t_before            : time before the stim that is plotted and used for computations (ms)
+%           t_after             : time after the stim that is plotted and used for computations (ms)
+%           record_force_yn     : 
 %           save_data_yn        : save Matlab and Cerebus data
 %           plot_yn             : plot the results
 %           data_dir            : directory where the data will be saved
@@ -43,6 +43,7 @@ sta_params              = struct( ...
     'pre_stim_win',             30, ...
     't_before',                 20, ...             % 20
     't_after',                  30, ...             % 30
+    'record_force_yn',          1, ...
     'save_data_yn',             0, ...
     'plot_yn',                  1, ...
     'data_dir',                 'E:\Data-lab1\12A1-Jango\CerebusData\TDCS', ...
