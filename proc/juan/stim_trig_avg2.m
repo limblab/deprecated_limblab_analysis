@@ -255,7 +255,6 @@ for i = 1:hw.cb.nbr_epochs
     drawnow;
     drawnow;
     drawnow;
-%    pause(0.1); % this pause prevents missing the first stimuli; ToDo: see if the drawnows are necessary
     
     %------------------------------------------------------------------
     % Stimulate the channel as many times as specified
