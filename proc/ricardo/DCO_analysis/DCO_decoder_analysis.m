@@ -1,6 +1,6 @@
 % function params = DCO_build_decoders(data_struct,params)
-% DCO = data_struct.DCO;
-% bdf = data_struct.bdf;
+DCO = data_struct.DCO;
+bdf = data_struct.bdf;
 
 BDF2BinArgs.binsize = 0.05;
 BDF2BinArgs.starttime = 1;
@@ -177,10 +177,11 @@ t_idx = zeros(size(trial_t,1),num_bins);
 for iTrial = 1:size(trial_t,1)
     t_idx(iTrial,:) = find(binnedData.timeframe >= trial_t(iTrial,1),1,'first')+[0:num_bins-1];    
 end
-firing_rates = binnedData.spikeratedata(t_idx(:),binnedData.neuronIDs(:,2)>0 & binnedData.neuronIDs(:,2) < 255);
+% firing_rates = binnedData.spikeratedata(t_idx(:),binnedData.neuronIDs(:,2)>0 & binnedData.neuronIDs(:,2) < 255);
+firing_rates = binnedData.spikeratedata(t_idx(:),:);
 [coeff,score,latent,tsquared] = pca(firing_rates);
-reshape(score,size(t_idx,1),[],55);
-temp = reshape(score,size(t_idx,1),[],55);
+reshape(score,size(t_idx,1),[],size(binnedData.neuronIDs,1)/10);
+temp = reshape(score,size(t_idx,1),[],size(binnedData.neuronIDs,1)/10);
 pc1 = temp(:,:,1);
 pc2 = temp(:,:,2);
 pc3 = temp(:,:,3);
@@ -229,10 +230,15 @@ figure
 subplot(151)
 hold on
 emg_idx = 2:3;
+if length(DCO.target_locations) == 3
+    idx_temp = [1 2 3];
+else
+    idx_temp = [1 3 5];
+end
 for iEMG = 1:length(emg_idx)    
-    errorbar(emg_idx(iEMG)-.1,mean(R2{1}(:,emg_idx(iEMG))),std(R2{1}(:,emg_idx(iEMG))),'.b')
-    errorbar(emg_idx(iEMG),mean(R2{3}(:,emg_idx(iEMG))),std(R2{3}(:,emg_idx(iEMG))),'.r')
-    errorbar(emg_idx(iEMG)+.1,mean(R2{5}(:,emg_idx(iEMG))),std(R2{5}(:,emg_idx(iEMG))),'.k')
+    errorbar(emg_idx(iEMG)-.1,mean(R2{idx_temp(1)}(:,emg_idx(iEMG))),std(R2{idx_temp(1)}(:,emg_idx(iEMG))),'.b')
+    errorbar(emg_idx(iEMG),mean(R2{idx_temp(2)}(:,emg_idx(iEMG))),std(R2{idx_temp(2)}(:,emg_idx(iEMG))),'.r')
+    errorbar(emg_idx(iEMG)+.1,mean(R2{idx_temp(3)}(:,emg_idx(iEMG))),std(R2{idx_temp(3)}(:,emg_idx(iEMG))),'.k')
 end
 ylim([0 1])
 xlim([1 4])
@@ -246,9 +252,9 @@ subplot(152)
 hold on
 emg_idx = 2:3;
 for iEMG = 1:length(emg_idx)    
-    errorbar(emg_idx(iEMG)-.1,mean(r_squared_all{1,1}(:,emg_idx(iEMG))),std(r_squared_all{1,1}(:,emg_idx(iEMG))),'.b')
-    errorbar(emg_idx(iEMG),mean(r_squared_all{3,3}(:,emg_idx(iEMG))),std(r_squared_all{3,3}(:,emg_idx(iEMG))),'.r')
-    errorbar(emg_idx(iEMG)+.1,mean(r_squared_all{5,5}(:,emg_idx(iEMG))),std(r_squared_all{5,5}(:,emg_idx(iEMG))),'.k')
+    errorbar(emg_idx(iEMG)-.1,mean(r_squared_all{idx_temp(1),idx_temp(1)}(:,emg_idx(iEMG))),std(r_squared_all{idx_temp(1),idx_temp(1)}(:,emg_idx(iEMG))),'.b')
+    errorbar(emg_idx(iEMG),mean(r_squared_all{idx_temp(2),idx_temp(2)}(:,emg_idx(iEMG))),std(r_squared_all{idx_temp(2),idx_temp(2)}(:,emg_idx(iEMG))),'.r')
+    errorbar(emg_idx(iEMG)+.1,mean(r_squared_all{idx_temp(3),idx_temp(3)}(:,emg_idx(iEMG))),std(r_squared_all{idx_temp(3),idx_temp(3)}(:,emg_idx(iEMG))),'.k')
 end
 ylim([0 1])
 xlim([1 4])
@@ -262,9 +268,9 @@ subplot(153)
 hold on
 emg_idx = 2:3;
 for iEMG = 1:length(emg_idx)    
-    errorbar(emg_idx(iEMG)-.1,mean(r_squared{1,1}(:,emg_idx(iEMG))),std(r_squared{1,1}(:,emg_idx(iEMG))),'.b')
-    errorbar(emg_idx(iEMG),mean(r_squared{1,3}(:,emg_idx(iEMG))),std(r_squared{1,3}(:,emg_idx(iEMG))),'.r')
-    errorbar(emg_idx(iEMG)+.1,mean(r_squared{1,5}(:,emg_idx(iEMG))),std(r_squared{1,5}(:,emg_idx(iEMG))),'.k')
+    errorbar(emg_idx(iEMG)-.1,mean(r_squared{1,idx_temp(1)}(:,emg_idx(iEMG))),std(r_squared{1,idx_temp(1)}(:,emg_idx(iEMG))),'.b')
+    errorbar(emg_idx(iEMG),mean(r_squared{1,idx_temp(2)}(:,emg_idx(iEMG))),std(r_squared{1,idx_temp(2)}(:,emg_idx(iEMG))),'.r')
+    errorbar(emg_idx(iEMG)+.1,mean(r_squared{1,idx_temp(3)}(:,emg_idx(iEMG))),std(r_squared{1,idx_temp(3)}(:,emg_idx(iEMG))),'.k')
 end
 ylim([0 1])
 xlim([1 4])
@@ -278,9 +284,9 @@ subplot(154)
 hold on
 emg_idx = 2:3;
 for iEMG = 1:length(emg_idx)    
-    errorbar(emg_idx(iEMG)-.1,mean(r_squared{3,1}(:,emg_idx(iEMG))),std(r_squared{3,1}(:,emg_idx(iEMG))),'.b')
-    errorbar(emg_idx(iEMG),mean(r_squared{3,3}(:,emg_idx(iEMG))),std(r_squared{3,3}(:,emg_idx(iEMG))),'.r')
-    errorbar(emg_idx(iEMG)+.1,mean(r_squared{3,5}(:,emg_idx(iEMG))),std(r_squared{3,5}(:,emg_idx(iEMG))),'.k')
+    errorbar(emg_idx(iEMG)-.1,mean(r_squared{idx_temp(2),idx_temp(1)}(:,emg_idx(iEMG))),std(r_squared{idx_temp(2),idx_temp(1)}(:,emg_idx(iEMG))),'.b')
+    errorbar(emg_idx(iEMG),mean(r_squared{idx_temp(2),idx_temp(2)}(:,emg_idx(iEMG))),std(r_squared{idx_temp(2),idx_temp(2)}(:,emg_idx(iEMG))),'.r')
+    errorbar(emg_idx(iEMG)+.1,mean(r_squared{idx_temp(2),idx_temp(3)}(:,emg_idx(iEMG))),std(r_squared{idx_temp(2),idx_temp(3)}(:,emg_idx(iEMG))),'.k')
 end
 ylim([0 1])
 xlim([1 4])
@@ -294,9 +300,9 @@ subplot(155)
 hold on
 emg_idx = 2:3;
 for iEMG = 1:length(emg_idx)    
-    errorbar(emg_idx(iEMG)-.1,mean(r_squared{5,1}(:,emg_idx(iEMG))),std(r_squared{5,1}(:,emg_idx(iEMG))),'.b')
-    errorbar(emg_idx(iEMG),mean(r_squared{5,3}(:,emg_idx(iEMG))),std(r_squared{5,3}(:,emg_idx(iEMG))),'.r')
-    errorbar(emg_idx(iEMG)+.1,mean(r_squared{5,5}(:,emg_idx(iEMG))),std(r_squared{5,5}(:,emg_idx(iEMG))),'.k')
+    errorbar(emg_idx(iEMG)-.1,mean(r_squared{idx_temp(3),idx_temp(1)}(:,emg_idx(iEMG))),std(r_squared{idx_temp(3),idx_temp(1)}(:,emg_idx(iEMG))),'.b')
+    errorbar(emg_idx(iEMG),mean(r_squared{idx_temp(3),idx_temp(2)}(:,emg_idx(iEMG))),std(r_squared{idx_temp(3),idx_temp(2)}(:,emg_idx(iEMG))),'.r')
+    errorbar(emg_idx(iEMG)+.1,mean(r_squared{idx_temp(3),idx_temp(3)}(:,emg_idx(iEMG))),std(r_squared{idx_temp(3),idx_temp(3)}(:,emg_idx(iEMG))),'.k')
 end
 ylim([0 1])
 xlim([1 4])
@@ -415,12 +421,12 @@ end
 
 %% Triceps correlations
 figure; 
-plot(squeeze(meancorrelations(3,2,:))', squeeze(meancorrelations(5,2,:))','.')
+plot(squeeze(meancorrelations(idx_temp(2),2,:))', squeeze(meancorrelations(idx_temp(3),2,:))','.')
 axis square
 title('Triceps')
 xlabel('Correlations co-contraction')
 ylabel('Correlations reciprocal')
-temp = corrcoef(squeeze(meancorrelations(3,2,:))',squeeze(meancorrelations(5,2,:))');
+temp = corrcoef(squeeze(meancorrelations(idx_temp(2),2,:))',squeeze(meancorrelations(idx_temp(3),2,:))');
 temp_x = get(gca,'XLim');
 temp_y = get(gca,'YLim');
 text(temp_x(1)+diff(temp_x)*.1, temp_y(2)-diff(temp_y)*.1, ['R^2 = ' num2str(temp(2)^2)])
@@ -428,11 +434,11 @@ text(temp_x(1)+diff(temp_x)*.1, temp_y(2)-diff(temp_y)*.1, ['R^2 = ' num2str(tem
 %% Brd correlations
 figure; 
 if sorted_file
-    plot(squeeze(correlations(3,3,:)),squeeze(correlations(1,3,:)),'.')
-    temp = corrcoef(correlations(3,3,:),correlations(1,3,:));
+    plot(squeeze(correlations(idx_temp(2),3,:)),squeeze(correlations(idx_temp(1),3,:)),'.')
+    temp = corrcoef(correlations(idx_temp(2),3,:),correlations(idx_temp(1),3,:));
 else    
-    plot(mean(reshape(correlations(3,3,:),10,[])),mean(reshape(correlations(1,3,:),10,[])),'.')
-    temp = corrcoef(mean(reshape(correlations(3,3,:),10,[])),mean(reshape(correlations(1,3,:),10,[])));
+    plot(mean(reshape(correlations(idx_temp(2),3,:),10,[])),mean(reshape(correlations(idx_temp(1),3,:),10,[])),'.')
+    temp = corrcoef(mean(reshape(correlations(idx_temp(2),3,:),10,[])),mean(reshape(correlations(idx_temp(1),3,:),10,[])));
 end
     
 axis square
@@ -447,11 +453,11 @@ text(temp_x(1)+diff(temp_x)*.1, temp_y(2)-diff(temp_y)*.1, ['R^2 = ' num2str(tem
 %% Extension depth of modulation
 figure; 
 if sorted_file
-    plot(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(5,:)),'.')
-    temp = corrcoef(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(5,:)));
+    plot(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(3),:)),'.')
+    temp = corrcoef(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(3),:)));
 else
-    plot(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(5,:),10,[])),'.')
-    temp = corrcoef(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(5,:),10,[])));
+    plot(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(3),:),10,[])),'.')
+    temp = corrcoef(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(3),:),10,[])));
 end
 axis square
 title('Triceps')
@@ -465,11 +471,11 @@ text(temp_x(1)+diff(temp_x)*.1, temp_y(2)-diff(temp_y)*.1, ['R^2 = ' num2str(tem
 %% Flexion depth of modulation
 figure; 
 if sorted_file
-    plot(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(1,:)),'.')
-    temp = corrcoef(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(1,:)));
+    plot(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(1),:)),'.')
+    temp = corrcoef(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(1),:)));
 else
-    plot(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(1,:),10,[])),'.')
-    temp = corrcoef(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(1,:),10,[])));
+    plot(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(1),:),10,[])),'.')
+    temp = corrcoef(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(1),:),10,[])));
 end
 axis square
 title('Brd')
@@ -483,15 +489,15 @@ text(temp_x(1)+diff(temp_x)*.1, temp_y(2)-diff(temp_y)*.1, ['R^2 = ' num2str(tem
 figure; 
 hold on
 if sorted_file
-    plot(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(1,:)),'.b')
-    plot(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(5,:)),'.r')
-    temp = corrcoef(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(1,:)));
-    temp2 = corrcoef(squeeze(depthmodulation(3,:)),squeeze(depthmodulation(5,:)));
+    plot(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(1),:)),'.b')
+    plot(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(3),:)),'.r')
+    temp = corrcoef(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(1),:)));
+    temp2 = corrcoef(squeeze(depthmodulation(idx_temp(2),:)),squeeze(depthmodulation(idx_temp(3),:)));
 else
-    plot(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(1,:),10,[])),'.b')
-    plot(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(5,:),10,[])),'.r')
-    temp = corrcoef(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(1,:),10,[])));
-    temp2 = corrcoef(mean(reshape(depthmodulation(3,:),10,[])),mean(reshape(depthmodulation(5,:),10,[])));
+    plot(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(1),:),10,[])),'.b')
+    plot(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(3),:),10,[])),'.r')
+    temp = corrcoef(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(1),:),10,[])));
+    temp2 = corrcoef(mean(reshape(depthmodulation(idx_temp(2),:),10,[])),mean(reshape(depthmodulation(idx_temp(3),:),10,[])));
 end
 
 axis square
@@ -514,8 +520,8 @@ for iPlot = 1:7
     idx = ((iPlot-1)*floor(size(meandepth,2)/6))+(1:floor(size(meandepth,2)/6));
     idx(idx>size(meandepth,2)) = [];
     plot(meandepth(:,idx))
-    xlim([1 5])
-    set(gca,'Xtick',[1 3 5])
+    xlim([1 length(DCO.target_locations)])
+    set(gca,'Xtick',idx_temp)
     set(gca,'Xticklabel',{'Flex','Co','Ext'})
     if iPlot == 1
         ylabel('Modulation')
@@ -543,21 +549,21 @@ elseif 0
     error_emg = sum(sememg_final([1 3 5],:));
 elseif 1
 %     sum_flex_ext = sqrt(sum(meanfr_final([1 5],:).^2));
-    sum_flex_ext = sum(meanfr_final([1 5],:));
+    sum_flex_ext = sum(meanfr_final([1 idx_temp(3)],:));
     
-    errors = sum(meansemfr_final([1 5],:));
-    cocon = meanfr_final(3,:);
-    cocon_errors = meansemfr_final(3,:);
+    errors = sum(meansemfr_final([1 idx_temp(3)],:));
+    cocon = meanfr_final(idx_temp(2),:);
+    cocon_errors = meansemfr_final(idx_temp(2),:);
 
 %     sum_flex_ext_emg = sum(meanemg_final([1 5],2:3) - meanemg_initial([1 5],2:3));
 %     error_emg = sum(sememg_final([1 5],2:3) + sememg_initial([1 5],2:3));
 %     cocon_emg = meanemg_final(3,2:3) - meanemg_initial(3,2:3);
 %     cocon_emg_errors = sememg_final(3,2:3) - sememg_initial(3,2:3);
 
-    sum_flex_ext_emg = sum(meanemg_final([1 5],2:3)- meanemg_initial([1 5],2:3));
-    error_emg = sum(sememg_final([1 5],2:3)+ sememg_initial([1 5],2:3));
-    cocon_emg = meanemg_final(3,2:3) - meanemg_initial(3,2:3);
-    cocon_emg_errors = sememg_final(3,2:3) + sememg_initial(3,2:3);
+    sum_flex_ext_emg = sum(meanemg_final([idx_temp(1) idx_temp(3)],2:3)- meanemg_initial([idx_temp(1) idx_temp(3)],2:3));
+    error_emg = sum(sememg_final([idx_temp(1) idx_temp(3)],2:3)+ sememg_initial([idx_temp(1) idx_temp(3)],2:3));
+    cocon_emg = meanemg_final(idx_temp(2),2:3) - meanemg_initial(idx_temp(2),2:3);
+    cocon_emg_errors = sememg_final(idx_temp(2),2:3) + sememg_initial(idx_temp(2),2:3);
 end
 
 figure;
@@ -593,28 +599,28 @@ text(0.01, 0.01, bdf.meta.filename,'Interpreter','none','FontSize',6)
 %%
 figure; 
 hold on
-plot(binnedData_final{1}.emgdatabin(:,3),binnedData_final{1}.emgdatabin(:,2),'.b')
-plot(binnedData_final{5}.emgdatabin(:,3),binnedData_final{5}.emgdatabin(:,2),'.r')
-plot(binnedData_final{3}.emgdatabin(:,3),binnedData_final{3}.emgdatabin(:,2),'.k')
-plot(binnedData_initial{1}.emgdatabin(:,3),binnedData_initial{1}.emgdatabin(:,2),'.b')
-plot(binnedData_initial{5}.emgdatabin(:,3),binnedData_initial{5}.emgdatabin(:,2),'.r')
-plot(binnedData_initial{3}.emgdatabin(:,3),binnedData_initial{3}.emgdatabin(:,2),'.k')
+plot(binnedData_final{idx_temp(1)}.emgdatabin(:,3),binnedData_final{idx_temp(1)}.emgdatabin(:,2),'.b')
+plot(binnedData_final{idx_temp(3)}.emgdatabin(:,3),binnedData_final{idx_temp(3)}.emgdatabin(:,2),'.r')
+plot(binnedData_final{idx_temp(2)}.emgdatabin(:,3),binnedData_final{idx_temp(2)}.emgdatabin(:,2),'.k')
+plot(binnedData_initial{idx_temp(1)}.emgdatabin(:,3),binnedData_initial{idx_temp(1)}.emgdatabin(:,2),'.b')
+plot(binnedData_initial{idx_temp(3)}.emgdatabin(:,3),binnedData_initial{idx_temp(3)}.emgdatabin(:,2),'.r')
+plot(binnedData_initial{idx_temp(2)}.emgdatabin(:,3),binnedData_initial{idx_temp(2)}.emgdatabin(:,2),'.k')
 axis equal
 
 %%
 figure; 
 subplot(121)
 hold on
-plot([meanfr_final(1,:); meanfr_initial(1,:)],[meanfr_final(5,:); meanfr_initial(5,:)],'-b')
-plot(meanfr_final(1,:),meanfr_final(5,:),'ob')
+plot([meanfr_final(idx_temp(1),:); meanfr_initial(idx_temp(1),:)],[meanfr_final(idx_temp(3),:); meanfr_initial(idx_temp(3),:)],'-b')
+plot(meanfr_final(idx_temp(1),:),meanfr_final(idx_temp(3),:),'ob')
 xlabel('fr flexion (Hz)')
 ylabel('fr extension (Hz)')
 axis square
 axis equal
 subplot(122)
 hold on
-plot([meanfr_final(1,:); meanfr_initial(1,:)]./[meanfr_initial(1,:); meanfr_initial(1,:)],...
-    [meanfr_final(5,:); meanfr_initial(5,:)]./[meanfr_initial(5,:); meanfr_initial(5,:)],'-b')
+plot([meanfr_final(idx_temp(1),:); meanfr_initial(idx_temp(1),:)]./[meanfr_initial(idx_temp(1),:); meanfr_initial(idx_temp(1),:)],...
+    [meanfr_final(idx_temp(3),:); meanfr_initial(idx_temp(3),:)]./[meanfr_initial(idx_temp(3),:); meanfr_initial(idx_temp(3),:)],'-b')
 xlabel('normalized fr flexion (Hz)')
 ylabel('normalized fr extension (Hz)')
 axis square
@@ -624,17 +630,17 @@ axis equal
 figure;
 subplot(121)
 hold on
-plot([meanfr_initial(1,:); meanfr_final(1,:)],...
-    [meanfr_initial(3,:); meanfr_final(3,:)],'-b')
-plot(meanfr_initial(1,:),meanfr_initial(3,:),'ob')
+plot([meanfr_initial(idx_temp(1),:); meanfr_final(idx_temp(1),:)],...
+    [meanfr_initial(idx_temp(2),:); meanfr_final(idx_temp(2),:)],'-b')
+plot(meanfr_initial(idx_temp(2),:),meanfr_initial(idx_temp(2),:),'ob')
 xlabel('fr flexion (Hz)')
 ylabel('fr co-contraction (Hz)')
 axis equal
 subplot(122)
 hold on
-plot([meanfr_initial(1,:); meanfr_final(1,:)]./[meanfr_initial(1,:); meanfr_initial(1,:)],...
-    [meanfr_initial(3,:); meanfr_final(3,:)]./[meanfr_initial(3,:);meanfr_initial(3,:)],'-b')
-plot(meanfr_initial(1,:)./meanfr_initial(1,:),meanfr_initial(3,:)./meanfr_initial(3,:),'ob')
+plot([meanfr_initial(idx_temp(1),:); meanfr_final(idx_temp(1),:)]./[meanfr_initial(idx_temp(1),:); meanfr_initial(idx_temp(1),:)],...
+    [meanfr_initial(idx_temp(2),:); meanfr_final(idx_temp(2),:)]./[meanfr_initial(idx_temp(2),:);meanfr_initial(idx_temp(2),:)],'-b')
+plot(meanfr_initial(idx_temp(1),:)./meanfr_initial(idx_temp(1),:),meanfr_initial(idx_temp(2),:)./meanfr_initial(idx_temp(2),:),'ob')
 xlabel('normalized fr flexion (Hz)')
 ylabel('normalized fr co-contraction (Hz)')
 axis equal
@@ -642,16 +648,16 @@ axis equal
 %%
 figure; 
 hold on
-plot([meanfr_initial(5,:); meanfr_final(5,:)],...
-    [meanfr_initial(3,:); meanfr_final(3,:)],'-b')
-plot(meanfr_initial(5,:),meanfr_initial(3,:),'ob')
+plot([meanfr_initial(idx_temp(3),:); meanfr_final(idx_temp(3),:)],...
+    [meanfr_initial(idx_temp(2),:); meanfr_final(idx_temp(2),:)],'-b')
+plot(meanfr_initial(idx_temp(3),:),meanfr_initial(idx_temp(2),:),'ob')
 xlabel('fr extension (Hz)')
 ylabel('fr co-contraction (Hz)')
 axis equal
 %%
 figure; 
-plot([0*meanfr_final(1,:);meanfr_final(1,:)+meanfr_final(5,:)-meanfr_initial(1,:)-meanfr_initial(5,:)],...
-    [0*meanfr_final(3,:);meanfr_final(3,:)-meanfr_initial(3,:)],'-b')
+plot([0*meanfr_final(idx_temp(1),:);meanfr_final(idx_temp(1),:)+meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(1),:)-meanfr_initial(idx_temp(3),:)],...
+    [0*meanfr_final(idx_temp(2),:);meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:)],'-b')
 axis equal
 xlabel('Change in fr extension + flexion (Hz)')
 ylabel('Change in fr co-contraction (Hz)')
@@ -661,32 +667,32 @@ ylabel('Change in fr co-contraction (Hz)')
 figure; 
 subplot(121)
 hold on
-hist([meanfr_final(1,:)-meanfr_initial(1,:);meanfr_final(3,:)-meanfr_initial(3,:);meanfr_final(5,:)-meanfr_initial(5,:)]',20)
-plot([mean(meanfr_final(1,:)-meanfr_initial(1,:)) mean(meanfr_final(1,:)-meanfr_initial(1,:))],[0 35],'b')
-plot([mean(meanfr_final(3,:)-meanfr_initial(3,:)) mean(meanfr_final(3,:)-meanfr_initial(3,:))],[0 35],'g')
-plot([mean(meanfr_final(5,:)-meanfr_initial(5,:)) mean(meanfr_final(5,:)-meanfr_initial(5,:))],[0 35],'r')
+hist([meanfr_final(idx_temp(1),:)-meanfr_initial(idx_temp(1),:);meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:);meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(3),:)]',20)
+plot([mean(meanfr_final(idx_temp(1),:)-meanfr_initial(idx_temp(1),:)) mean(meanfr_final(idx_temp(1),:)-meanfr_initial(idx_temp(1),:))],[0 35],'b')
+plot([mean(meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:)) mean(meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:))],[0 35],'g')
+plot([mean(meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(3),:)) mean(meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(3),:))],[0 35],'r')
 xlabel('firing rate hold - baseline (Hz)')
 legend('Flexion','Co-contraction','Extension')
 subplot(122)
 hold on
-hist([(meanfr_final(1,:)-meanfr_initial(1,:))./meanfr_initial(1,:);...
-    (meanfr_final(3,:)-meanfr_initial(3,:))./meanfr_initial(3,:);...
-    (meanfr_final(5,:)-meanfr_initial(5,:))./meanfr_initial(3,:)]',20)
-plot([mean((meanfr_final(1,:)-meanfr_initial(1,:))./meanfr_initial(1,:)) mean((meanfr_final(1,:)-meanfr_initial(1,:))./meanfr_initial(1,:))],[0 35],'b')
-plot([mean((meanfr_final(3,:)-meanfr_initial(3,:))./meanfr_initial(3,:)) mean((meanfr_final(3,:)-meanfr_initial(3,:))./meanfr_initial(3,:))],[0 35],'g')
-plot([mean((meanfr_final(5,:)-meanfr_initial(5,:))./meanfr_initial(5,:)) mean((meanfr_final(5,:)-meanfr_initial(5,:))./meanfr_initial(5,:))],[0 35],'r')
+hist([(meanfr_final(idx_temp(1),:)-meanfr_initial(idx_temp(1),:))./meanfr_initial(idx_temp(1),:);...
+    (meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:))./meanfr_initial(idx_temp(2),:);...
+    (meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(3),:))./meanfr_initial(idx_temp(2),:)]',20)
+plot([mean((meanfr_final(idx_temp(1),:)-meanfr_initial(idx_temp(1),:))./meanfr_initial(idx_temp(1),:)) mean((meanfr_final(idx_temp(1),:)-meanfr_initial(idx_temp(1),:))./meanfr_initial(idx_temp(1),:))],[0 35],'b')
+plot([mean((meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:))./meanfr_initial(idx_temp(2),:)) mean((meanfr_final(idx_temp(2),:)-meanfr_initial(idx_temp(2),:))./meanfr_initial(idx_temp(2),:))],[0 35],'g')
+plot([mean((meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(3),:))./meanfr_initial(idx_temp(3),:)) mean((meanfr_final(idx_temp(3),:)-meanfr_initial(idx_temp(3),:))./meanfr_initial(idx_temp(3),:))],[0 35],'r')
 xlabel('Normalized firing rate hold - baseline (Hz)')
 legend('Flexion','Co-contraction','Extension')
 %%
-% figure; plot(sum(meanfr_final([1 5],:)) - meanfr_final(3,:),'.')
+% figure; plot(sum(meanfr_final([1 5],:)) - meanfr_final(idx_temp(2),:),'.')
 % 
 % figure;
 % subplot(121)
 % errorbar(sum_flex_ext,errors,'.')
 % hold on
 % plot(meanfr_final(1,:),'xk','MarkerSize',6)
-% plot(meanfr_final(3,:),'xr','MarkerSize',6)
-% plot(meanfr_final(5,:),'xg','MarkerSize',6)
+% plot(meanfr_final(idx_temp(2),:),'xr','MarkerSize',6)
+% plot(meanfr_final(idx_temp(3),:),'xg','MarkerSize',6)
 % plot(mean(meanfr_initial),'xc','MarkerSize',6)
 % plot([0 length(sum_flex_ext)+1],[0 0],'--k')
 % xlabel('Channel')
@@ -698,8 +704,8 @@ legend('Flexion','Co-contraction','Extension')
 % errorbar(sum_flex_ext_emg(2:3),error_emg(2:3),'.')
 % hold on
 % plot(meanemg_final(1,2:3),'xk','MarkerSize',6)
-% plot(meanemg_final(3,2:3),'xr','MarkerSize',6)
-% plot(meanemg_final(5,2:3),'xg','MarkerSize',6)
+% plot(meanemg_final(idx_temp(2),2:3),'xr','MarkerSize',6)
+% plot(meanemg_final(idx_temp(3),2:3),'xg','MarkerSize',6)
 % plot(mean(meanemg_initial(:,2:3)),'xc','MarkerSize',6)
 % plot([0 length(sum_flex_ext_emg(2:3))+1],[0 0],'--k')
 % xlabel('Channel')
@@ -711,11 +717,11 @@ legend('Flexion','Co-contraction','Extension')
 % 
 % %%
 %%
-%         corrcoef(reshape(depthmodulation(3,2,:),10,[]),reshape(depthmodulation(5,2,:),10,[]))
+%         corrcoef(reshape(depthmodulation(idx_temp(2),2,:),10,[]),reshape(depthmodulation(idx_temp(3),2,:),10,[]))
 
 
 
-% corrcoef(reshape(depthmodulation(5,3,:),10,[]),reshape(depthmodulation(1,2,:),10,[]))
+% corrcoef(reshape(depthmodulation(idx_temp(3),3,:),10,[]),reshape(depthmodulation(1,2,:),10,[]))
 
 % [mfxval_R2, mfxval_vaf, mfxval_mse, OLPredData] = mfxval(binnedData, DecoderOptions);
 % disp('Done.');
@@ -726,7 +732,7 @@ legend('Flexion','Co-contraction','Extension')
 % title(deblank(binnedData.emgguide(2,:)))
 % subplot(212)
 % plot(binnedData.timeframe,binnedData.emgdatabin(:,3),OLPredData.timeframe,OLPredData.preddatabin(:,3))
-% title(deblank(binnedData.emgguide(3,:)))
+% title(deblank(binnedData.emgguide(idx_temp(2),:)))
 % legend('Real data','Predicted')
 
 % mean(mfxval_vaf)

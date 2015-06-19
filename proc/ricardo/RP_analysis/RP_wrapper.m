@@ -1,8 +1,8 @@
 % params.RP_file_prefix = 'Test_2015-06-09_RP_emg_hu';
 % target_folder = ['D:\Data\TestData\' params.RP_file_prefix];
-params.RP_file_prefix = 'Chewie_2015-06-16_RP_n2e2_hu';
+params.RP_file_prefix = 'Chewie_2015-06-17_RP_n2e2_hu';
 target_folder = ['D:\Chewie_8I2\' params.RP_file_prefix '\CerebusData\'];
-params.reprocess_data = 1;
+params.reprocess_data = 0;
 params.plot_behavior = 1;
 params.plot_units = 0;
 params.plot_each_neuron = 0;

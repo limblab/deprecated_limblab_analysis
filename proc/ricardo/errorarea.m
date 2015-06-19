@@ -22,6 +22,6 @@ function h = errorarea(x,ymean,yerror,c,alpha_val)
     
     hChildren = get(gca,'children');
     hType = get(hChildren,'Type');
-    set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]))
+    set(gca,'children',hChildren([find(strcmp(hType,'line')); find(~strcmp(hType,'line'))]));
     
 end

@@ -74,23 +74,34 @@ hold on
 for iDir = 1:length(RP.perturbation_directions_idx)   
     subplot(length(RP.perturbation_directions_idx),1,iDir)
     hold on
-    for iFreq = 1:length(RP.perturbation_frequencies_idx)
-        idx = RP.perturbation_directions_idx{iDir};
-        idx = intersect(idx,RP.perturbation_frequencies_idx{iFreq});
-        idx = intersect(idx,union(RP.no_bump_trials,RP.late_bump));
-        if ~isempty(idx)
-            plot(t_pert,...
-                (pos_pert_x_rot(idx,:)'),...
-                'Color',RP.perturbation_frequency_colors(iFreq,:))
+    for iResult = 1:2
+        for iFreq = 1:length(RP.perturbation_frequencies_idx)
+            idx = RP.perturbation_directions_idx{iDir};
+            idx = intersect(idx,RP.perturbation_frequencies_idx{iFreq});
+            idx = intersect(idx,union(RP.no_bump_trials,RP.late_bump));        
+            if iResult==1
+                idx = intersect(idx,RP.reward_trials);
+                if ~isempty(idx)
+                    plot(t_pert,...
+                        mean(pos_pert_x_rot(idx,:)),...
+                        'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(t_pert,mean(pos_pert_x_rot(idx,:)),std(pos_pert_x_rot(idx,:)),RP.perturbation_frequency_colors(iFreq,:),.5);
+                end
+            else
+                idx = intersect(idx,RP.fail_trials);
+                plot(t_pert,...
+                        mean(pos_pert_x_rot(idx,:)),...
+                        '--','Color',RP.perturbation_frequency_colors(iFreq,:))
+            end
         end
     end
-    title(['Handle position. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
+    title(['Cursor position. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
         'Interpreter','tex')    
     xlabel('t (s)')
     ylabel('X pos (cm)')
 end
 
-set(params.fig_handles(end),'Name','Handle position during perturbation')
+set(params.fig_handles(end),'Name','Cursor position during perturbation')
 
 %% Hand force during perturbation separated by frequency, direction
 params.fig_handles(end+1) = figure;
@@ -98,14 +109,27 @@ hold on
 for iDir = 1:length(RP.perturbation_directions_idx)   
     subplot(length(RP.perturbation_directions_idx),1,iDir)
     hold on
-    for iFreq = 1:length(RP.perturbation_frequencies_idx)
-        idx = RP.perturbation_directions_idx{iDir};
-        idx = intersect(idx,RP.perturbation_frequencies_idx{iFreq});
-        idx = intersect(idx,union(RP.no_bump_trials,RP.late_bump));
-        if ~isempty(idx)
-            plot(RP.t_pert,...
-                ((RP.force_pert_x_rot(idx,:))'),...
-                'Color',RP.perturbation_frequency_colors(iFreq,:))
+    for iResult = 1:2
+        for iFreq = 1:length(RP.perturbation_frequencies_idx)
+            idx = RP.perturbation_directions_idx{iDir};
+            idx = intersect(idx,RP.perturbation_frequencies_idx{iFreq});
+            idx = intersect(idx,union(RP.no_bump_trials,RP.late_bump));
+            if iResult == 1
+                idx = intersect(idx,RP.reward_trials);
+                if ~isempty(idx)
+                    plot(RP.t_pert,...
+                        mean((RP.force_pert_x_rot(idx,:))),...
+                        'Color',RP.perturbation_frequency_colors(iFreq,:))
+                    errorarea(RP.t_pert,mean(RP.force_pert_x_rot(idx,:)),std(RP.force_pert_x_rot(idx,:)),RP.perturbation_frequency_colors(iFreq,:),.5);
+                end
+            else
+                idx = intersect(idx,RP.fail_trials);
+                if ~isempty(idx)
+                    plot(RP.t_pert,...
+                        mean((RP.force_pert_x_rot(idx,:))),...
+                        '--','Color',RP.perturbation_frequency_colors(iFreq,:))
+                end
+            end
         end
     end
     title(['Handle force. Perturbation at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
