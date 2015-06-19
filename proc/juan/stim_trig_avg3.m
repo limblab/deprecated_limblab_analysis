@@ -130,6 +130,8 @@ end
 
 
 
+% If chosen to record EMG
+
 % EMG data will be stored in the 'emg' data structure
 % 'emg.evoked_emg' has dimensions EMG signal -by- EMG channel- by- stimulus
 % nbr 
