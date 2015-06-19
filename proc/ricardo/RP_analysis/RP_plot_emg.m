@@ -200,15 +200,19 @@ for iDir = 1:length(RP.perturbation_directions)
             t_trials = RP.trial_table(idx,RP.table_columns.t_trial_start);
             
             if iOutcome == 1
-                h_plot(end+1) = plot(t_trials,mean_emg,'.','Color',RP.perturbation_frequency_colors(iFreq,:));
-                plot(t_trials([1 end]),[mean(mean_emg(:)) mean(mean_emg(:))],'-','Color',RP.perturbation_frequency_colors(iFreq,:));
+                if ~isempty(t_trials)
+                    h_plot(end+1) = plot(t_trials,mean_emg,'.','Color',RP.perturbation_frequency_colors(iFreq,:));
+                    plot(t_trials([1 end]),[mean(mean_emg(:)) mean(mean_emg(:))],'-','Color',RP.perturbation_frequency_colors(iFreq,:));
+                end
 %                 errorarea(t_trials,mean_emg,...
 %                     sem_emg,RP.perturbation_frequency_colors(iFreq,:),.5);
                 legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
                     ' Hz']}];
             else
-                plot(t_trials,mean_emg,'.','Color',min(1,[RP.perturbation_frequency_colors(iFreq,:)+.7]))
-                plot(t_trials([1 end]),[mean(mean_emg(:)) mean(mean_emg(:))],'-','Color',min(1,[RP.perturbation_frequency_colors(iFreq,:)+.7]));
+                if ~isempty(t_trials)
+                    plot(t_trials,mean_emg,'.','Color',min(1,[RP.perturbation_frequency_colors(iFreq,:)+.7]))
+                    plot(t_trials([1 end]),[mean(mean_emg(:)) mean(mean_emg(:))],'-','Color',min(1,[RP.perturbation_frequency_colors(iFreq,:)+.7]));
+                end
             end
         end
     end
