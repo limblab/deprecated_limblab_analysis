@@ -130,8 +130,6 @@ end
 
 
 
-% If chosen to record EMG
-
 % EMG data will be stored in the 'emg' data structure
 % 'emg.evoked_emg' has dimensions EMG signal -by- EMG channel- by- stimulus
 % nbr 
@@ -323,7 +321,7 @@ for i = 1:hw.cb.nbr_epochs
     clear aux
     
     if sta_params.record_force_yn
-        aux2                = analog_data( strncmp(analog_data(:,1), 'Force', 5), 5 ); % ToDo: double check this line
+        aux2                = analog_data( strncmp(analog_data(:,1), 'Force', 5), 3 ); % ToDo: double check this line
         for ii = 1:force.nbr_forces
             force.data(:,ii)   = double(aux2{ii,1});
         end

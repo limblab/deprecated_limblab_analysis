@@ -38,6 +38,7 @@ if nargin == 3
     sta_params              = varargin{1};
     sta_metrics             = varargin{2};
 elseif nargin == 4
+    force                   = varargin{1};
     sta_params              = varargin{2};
     sta_metrics             = varargin{3};
 elseif nargin < 3 || nargin > 4
@@ -112,5 +113,14 @@ end
 if nargin == 4
 
     t_force                     = -sta_params.t_before:1/force.fs*1000:sta_params.t_after;       % in ms
+    
+    figure('units','normalized','outerposition',[0 0 1 1],'Name',['Electrode #' sta_params.bank num2str(sta_params.stim_elec) ' - n = ' num2str(sta_metrics.emg.nbr_stims)]);
+    
     % ToDo: code for plotting the forces
+    if force.nbr_forces == 2
+        subplot(221),plot(t_force, sta_metrics.force.mean_detrended_force(:,1),'b','linewidth',2), ylabel('detrended force X')
+        subplot(222),plot(t_force, sta_metrics.force.mean_detrended_force(:,2),'k','linewidth',2), ylabel('detrended force Y')
+        subplot(223),plot(t_force, sta_metrics.force.mean_force(:,1),'c','linewidth',2), ylabel('force X'), xlabel('times (ms)')
+        subplot(224),plot(t_force, sta_metrics.force.mean_force(:,1),'color',[0.5 0.5 0.5],'linewidth',2), ylabel('force Y'), xlabel('times (ms)')
+    end
 end
