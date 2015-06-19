@@ -1,5 +1,5 @@
 WaterSheetFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\';
-WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2015-05-16.xlsx'];
+WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2015-06-20.xlsx'];
 % WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-HPs.xlsx'];
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
