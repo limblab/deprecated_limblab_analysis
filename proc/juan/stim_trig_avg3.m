@@ -38,6 +38,7 @@
 %   ToDo: 
 %       - When the first threshold crossing is missed, read the rest of the
 %       data
+%       - Read the channel number of the sync signal, and the 
 %   Some known issues:
 %       - The resistor used in the analog input is hard-coded (100 Ohm)
 
@@ -104,52 +105,70 @@ if sta_params.save_data_yn
 end
 
 
-% configure acquisition
+
+% check if we want to record EMG, Force, or both. If none of them is
+% specified
+if ~sta_params.record_emg_yn && ~sta_params.record_force_yn
+    cbmex('close');
+    error('ERROR: It is necessary to record EMG, force or both');
+end
+
+
+
+% configure acquisition with Blackrock NSP
 cbmex('trialconfig', 1);            % start data collection
 drawnow;
 
 pause(1);                           % ToDo: see if it's necessary
 
-
-
-% figure out how many EMG channels there are, and preallocate matrices
-% accordingly. Check that there is a 'sync out' signal from the stimulator 
-
 [ts_cell_array, ~, analog_data] = cbmex('trialdata',1);
+analog_data(:,1)                = ts_cell_array([analog_data{:,1}]',1); % ToDo: replace channel numbers with names
+
 
 % look for the 'sync out' signal ('Stim_trig')
-hw.cb.stim_trig_ch_nbr  =  find(strncmp(ts_cell_array(:,1),'Stim',4));
-if isempty(hw.cb.stim_trig_ch_nbr)
+hw.cb.sync_signal_ch_nbr        =  find(strncmp(ts_cell_array(:,1),'Stim',4));
+if isempty(hw.cb.sync_signal_ch_nbr)
     error('ERROR: Sync signal not found in Cerebus. The channel has to be named Stim_trig');
 else
     disp('Sync signal found');
     
-    % define resistor to record sync pulse
-    hw.cb.sync_out_resistor = 100;
+    % ToDo: store the channel of the sync signal
+    hw.cb.sync_signal_fs        = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'Stim', 4),1),2));
+    hw.cb.sync_out_resistor     = 100;  % define resistor to record sync pulse
 end
 
 
 
-% EMG data will be stored in the 'emg' data structure
-% 'emg.evoked_emg' has dimensions EMG signal -by- EMG channel- by- stimulus
-% nbr 
+% If chosen to record EMG
 
-analog_data(:,1)            = ts_cell_array([analog_data{:,1}]',1); % ToDo: replace channel numbers with names
-emg.labels                  = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 1 );
-emg.nbr_emgs                = numel(emg.labels); disp(['Nbr EMGs: ' num2str(emg.nbr_emgs)]), disp(' ');
-emg.fs                      = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'EMG', 3),1),2));
-emg.length_evoked_emg       = ( sta_params.t_before + sta_params.t_after ) * emg.fs/1000 + 1;
-emg.evoked_emg              = zeros( emg.length_evoked_emg, emg.nbr_emgs, sta_params.nbr_stims_ch ); 
+if sta_params.record_emg_yn 
 
+    % figure out how many EMG channels there are
+    emg.labels                  = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 1 );
+    emg.nbr_emgs                = numel(emg.labels); disp(['Nbr EMGs: ' num2str(emg.nbr_emgs)]), disp(' ');
+    
+    emg.fs                      = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'EMG', 3),1),2));
+
+    % EMG data will be stored in the 'emg' data structure 'emg.evoked_emg'
+    % has dimensions EMG response -by- EMG channel- by- stimulus nbr
+    emg.length_evoked_emg       = ( sta_params.t_before + sta_params.t_after ) * emg.fs/1000 + 1;
+    emg.evoked_emg              = zeros( emg.length_evoked_emg, emg.nbr_emgs, sta_params.nbr_stims_ch ); 
+end
 
 
 % If chosen to record force
 
 if sta_params.record_force_yn
    
+    % figure out how many EMG sensors there are
     force.labels            = analog_data( strncmp(analog_data(:,1), 'Force', 5), 1 );
     force.nbr_forces        = numel(force.labels); disp(['Nbr Force Sensors: ' num2str(force.nbr_forces)]), disp(' ');
+    
     force.fs                = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'Force', 5),1),2));
+    
+    % Force data will be stored in the 'emg' data structure
+    % 'force.evoked_force' has dimensions Force response -by- Force sensor
+    % - by- stimulus nbr
     force.length_evoked_force   = ( sta_params.t_before + sta_params.t_after ) * force.fs/1000 + 1;
     force.evoked_force      = zeros( force.length_evoked_force, force.nbr_forces, sta_params.nbr_stims_ch );
 end
@@ -217,12 +236,12 @@ end
 %% some preliminary stuff
 
 
-% this creates 'epochs' of continuous ICMS and cerebus recordings. To avoid
+% this defines 'epochs' of continuous ICMS and cerebus recordings. To avoid
 % the need of reading a huge chunk of data from Central at once
 hw.cb.epoch_duration        = 10;   % epoch duration (in s)
 hw.cb.nbr_epochs            = ceil(sta_params.nbr_stims_ch/sta_params.stim_freq/hw.cb.epoch_duration);
 hw.cb.nbr_stims_this_epoch  = sta_params.stim_freq*hw.cb.epoch_duration;
-hw.cb.ind_ev_emg            = 0;    % ptr to know where to store the evoked EMG
+hw.cb.ind_ev_resp            = 0;    % ptr to know where to store the evoked EMG
 
 
 drawnow;
@@ -286,6 +305,8 @@ for i = 1:hw.cb.nbr_epochs
         % extra time. To avoid loosing the last epoch ?it may happen
         % some times  
         if ii == hw.cb.nbr_stims_this_epoch
+            % ToDo: try increasing this number to avoid loosing sync pulses
+            % at the end 
             pause(0.01);
         end
     end
@@ -300,58 +321,70 @@ for i = 1:hw.cb.nbr_epochs
     drawnow;
 
     % display if some of the stim pulses were lost
-    if numel(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2))) ~= hw.cb.nbr_stims_this_epoch
+    lost_sync_pulses                = numel( cell2mat(ts_cell_array(hw.cb.sync_signal_ch_nbr,2)) ) - hw.cb.nbr_stims_this_epoch;
+    if lost_sync_pulses ~= 0
         disp(' ');
-        disp(['Warning: ' num2str(hw.cb.nbr_stims_this_epoch - numel(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)))) ' sync pulses lost in this stim epoch!']);
+        disp(['Warning: ' num2str(hw.cb.nbr_stims_this_epoch - numel(cell2mat(ts_cell_array(hw.cb.sync_signal_ch_nbr,2)))) ' sync pulses lost in this stim epoch!']);
     else
         disp(' ');
-        disp('all sync pulses detected for this stim epoch');
+        disp('all sync pulses detected during this stim epoch');
     end
 
     
     %------------------------------------------------------------------
-    % retrieve EMG (and Force, if specified) data, and stimulation time
-    % stamps 
-    analog_data(:,1)        = ts_cell_array([analog_data{:,1}]',1);
-    aux                     = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 3 );
+    % retrieve EMG, Force, or both, as well as the stimulation time stamps 
 
-    for ii = 1:emg.nbr_emgs
-        emg.data(:,ii)   = double(aux{ii,1}); 
+    ts_sync_pulses                  = double( cell2mat(ts_cell_array(hw.cb.sync_signal_ch_nbr,2)) );
+
+    
+    analog_data(:,1)                = ts_cell_array([analog_data{:,1}]',1);
+
+    if sta_params.record_emg_yn
+        aux                         = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 3 );
+        for ii = 1:emg.nbr_emgs
+            emg.data(:,ii)          = double(aux{ii,1}); 
+        end
+        clear aux
     end
-    clear aux
     
     if sta_params.record_force_yn
-        aux2                = analog_data( strncmp(analog_data(:,1), 'Force', 5), 3 ); % ToDo: double check this line
+        aux2                        = analog_data( strncmp(analog_data(:,1), 'Force', 5), 5 ); % ToDo: double check this line
         for ii = 1:force.nbr_forces
-            force.data(:,ii)   = double(aux2{ii,1});
+            force.data(:,ii)        = double(aux2{ii,1});
         end
+        clear aux2
     end
-
-    ts_sync_pulses          = double(cell2mat(ts_cell_array(hw.cb.stim_trig_ch_nbr,2)));
-
     
     
     %------------------------------------------------------------------  
     % RESOLVE ISSUES RELATED TO THE SYNCHRONIZATION BETWEEN TIME STAMPS AND
     % ANALOG SIGNALS WHEN READING FROM CENTRAL. THIS HAS BEEN FIXED IN
-    % CBMEX v6.3, ALTHOUGH IT SOMETIMES MISSES THE FIRST THRESHOLD CROSSING  
+    % CBMEX v6.3, ALTHOUGH IT SOMETIMES MISSES THE FIRST THRESHOLD CROSSING 
+    % IN THE TRIAL     
     
-    ts_sync_pulses_emg_freq             = ts_sync_pulses/30000*emg.fs;    
-    analog_sync_signal                  = double(analog_data{10,3});
-    ts_first_sync_pulse_analog_signal   = find( (analog_sync_signal-mean(analog_sync_signal)) <-2*std(analog_sync_signal), 1);
+    % ToDo: check if these changes broke the code
+    
+    ts_sync_pulses_analog_freq  = ts_sync_pulses / 30000 * hw.cb.sync_signal_fs;    
+    analog_sync_signal          = double( analog_data{ hw.cb.sync_signal_ch_nbr,3 } );
+    
+    % find the first threshold crossing in the analog signal. Note that the
+    % -(mean + 2SD) threshold is totally arbitrary, but it works
+    ts_first_sync_pulse_analog_signal   = find( (analog_sync_signal - mean(analog_sync_signal)) < -2*std(analog_sync_signal), 1);
 
 
     % check if the misalignment between the time stamps and the analog signal is > 1 ms 
-    if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_emg_freq(1) ) > emg.fs/1000
-        if ts_first_sync_pulse_analog_signal < ts_sync_pulses_emg_freq(1)
-            disp('Central has skipped the first threshold crossing of the sync signal!!!');
-            disp(['the delay btw analog/thr crossing is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_emg_freq(1))/10 )])
+    misalign_btw_ts_analog      = ts_first_sync_pulse_analog_signal - ts_sync_pulses_analog_freq(1);
+    
+    if abs( misalign_btw_ts_analog ) > hw.cb.sync_signal_fs/1000
+        if misalign_btw_ts_analog < 0
+            disp('Warning: Central has skipped the first threshold crossing of the sync signal!!!');
+            disp(['the delay btw analog/thr crossing is: ' num2str( misalign_btw_ts_analog / hw.cb.sync_signal_fs * 1000 )])
         else
-            disp('the delay between the time stamps and the analog signal is > 1 ms!!!');
-            disp(['it is: ' num2str( (ts_first_sync_pulse_analog_signal - ts_sync_pulses_emg_freq(1))/10 )])
+            disp('Warning: The delay between the time stamps and the analog signal is > 1 ms!!!');
+            disp(['it is: ' num2str( misalign_btw_ts_analog / hw.cb.sync_signal_fs * 1000 )])
         end
     else
-        disp('the delay between the time stamps and the analog signal is < 1 ms');
+        disp('The delay between the time stamps and the analog signal is < 1 ms');
     end
 
 %   % this plot compares the time stamps of the threshold crossings and the analog signals    
@@ -363,34 +396,70 @@ for i = 1:hw.cb.nbr_epochs
     %------------------------------------------------------------------  
     % Retrieve the data and store it in their corresponding structure(s)
     
-    % when the time stamps and the analog data are not synchronized, they
-    % won't be stored; 
-    if abs( ts_first_sync_pulse_analog_signal - ts_sync_pulses_emg_freq(1) ) <  emg.fs/1000
+    % When the time stamps and the analog data are not synchronized, they
+    % won't be stored. A <1 ms difference in the analog data and the time
+    % stamps is allowed, to compensate for rounding errors. Besides, if the
+    % first sync pulse has been missed, the code stores the rest of the
+    % epoch. This bug has been detected in the latest version of CBMex
+    
+    if abs( misalign_btw_ts_analog ) <  hw.cb.sync_signal_fs/1000
 
 
-        % remove the first and/or the last sync pulse if they fall outside the data
+        %------------------------------------------------------------------
+        % remove the time stamps of the sync pulses which responses would
+        % fall outside the recorded EMG/Force data
+        
+        % remove the first sync pulse if the EMG/force baseline
+        % (sta_params.t_before) falls outside the recorded data 
         if floor(ts_sync_pulses(1)/30000) < sta_params.t_before/1000
             ts_sync_pulses(1)   = [];
-        elseif (length(emg.data) - sta_params.t_after) < floor(ts_sync_pulses(end)/30000*emg.fs)
-            ts_sync_pulses(end) = [];
+%         elseif (length(emg.data) - sta_params.t_after) < floor(ts_sync_pulses(end)/30000*emg.fs)
+%             ts_sync_pulses(end) = [];
         end
+                
+        % remove sync pulses at the end, if the evoked response
+        % (duration = sta_params.t_after) falls outside the recorded data
+        if sta_params.record_emg_yn
 
+            last_ts_number_in_emg_window    = find( ts_sync_pulses > ( length(emg.data)/emg.fs - sta_params.t_after), 1 );
+            
+            if ~isempty('last_ts_number_in_emg_window')
+               ts_sync_pulses(last_ts_number_in_emg_window:end) = [];
+               disp(['Warning: ' num2str(hw.cb.nbr_stims_this_epoch - last_ts_number_in_emg_window + 1) ' sync pulses were too late in the EMG data'])
+            end
+        end
+        
+        if sta_params.record_force_yn
+
+            last_ts_number_in_force_window  = find( ts_sync_pulses > ( length(force.data)/force.fs - sta_params.t_after), 1 );
+            
+            if ~isempty('last_ts_number_in_force_window')
+               ts_sync_pulses(last_ts_number_in_force_window:end) = [];
+               disp(['Warning: ' num2str(hw.cb.nbr_stims_this_epoch - last_ts_number_in_force_window + 1) ' sync pulses were too late in the Force data'])
+            end
+        end
+        
 
         %------------------------------------------------------------------
         % store the evoked EMG (interval around the stimulus defined by
         % t_before and t_after in params 
 
-        for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
-            trig_time_in_emg_sample_nbr     = floor(double(ts_sync_pulses(ii))/30000*emg.fs - sta_params.t_before/1000*emg.fs);
+        if sta_params.record_emg_yn
+        
+            for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
+                
+                trig_time_in_emg_sample_nbr     = floor( double(ts_sync_pulses(ii))/30000*emg.fs - sta_params.t_before/1000*emg.fs );
 
-            % check if we haven't recorded EMG for long enough, during some of
-            % the stimuli. If not, store the data
-            if (trig_time_in_emg_sample_nbr + (sta_params.t_after + sta_params.t_before)*emg.fs/1000 ) < length(emg.data)
-                emg.evoked_emg(:,:,ii+hw.cb.ind_ev_emg)    = emg.data( trig_time_in_emg_sample_nbr : ...
-                    (trig_time_in_emg_sample_nbr + emg.length_evoked_emg - 1), : );
-            else
-                disp('one sync pulse in the EMG is far too late!');
-                drawnow;
+%                 % check if we haven't recorded EMG for long enough, during some of
+%                 % the stimuli. If not, store the data
+%                 if (trig_time_in_emg_sample_nbr + (sta_params.t_after + sta_params.t_before)*emg.fs/1000 ) < length(emg.data)
+                    
+                    emg.evoked_emg(:,:,ii+hw.cb.ind_ev_resp)    = emg.data( trig_time_in_emg_sample_nbr : ...
+                        (trig_time_in_emg_sample_nbr + emg.length_evoked_emg - 1), : );
+%                 else
+%                     disp('one sync pulse in the EMG is far too late!');
+%                     drawnow;
+%                 end
             end
         end
 
@@ -403,17 +472,18 @@ for i = 1:hw.cb.nbr_epochs
             
             for ii = 1:min(length(ts_sync_pulses),length(emg.evoked_emg))
                 
-                trig_time_in_force_sample_nbr   = floor(double(ts_sync_pulses(ii))/30000*force.fs - sta_params.t_before/1000*force.fs);
+                trig_time_in_force_sample_nbr   = floor( double(ts_sync_pulses(ii))/30000*force.fs - sta_params.t_before/1000*force.fs );
                 
-                % check if we haven't recorded Force for long enough, during some
-                % of the stimuli. If not, store the data
-                if (trig_time_in_force_sample_nbr + (sta_params.t_after + sta_params.t_before)*force.fs/1000 ) < length(force.data)
-                    force.evoked_force(:,:,ii+hw.cb.ind_ev_emg)   = force.data( trig_time_in_force_sample_nbr : ...
+%                 % check if we haven't recorded Force for long enough, during some
+%                 % of the stimuli. If not, store the data
+%                 if (trig_time_in_force_sample_nbr + (sta_params.t_after + sta_params.t_before)*force.fs/1000 ) < length(force.data)
+                    
+                    force.evoked_force(:,:,ii+hw.cb.ind_ev_resp)   = force.data( trig_time_in_force_sample_nbr : ...
                         (trig_time_in_force_sample_nbr + force.length_evoked_force - 1), : );
-                else
-                    disp('one sync pulse in the Force is far too late!');
-                    drawnow;
-                end
+%                 else
+%                     disp('one sync pulse in the Force is far too late!');
+%                     drawnow;
+%                 end
             end
         end
     end
@@ -421,12 +491,14 @@ for i = 1:hw.cb.nbr_epochs
     
     
     % update ptr to index
-    hw.cb.ind_ev_emg        = length(ts_sync_pulses) + hw.cb.ind_ev_emg;
+    hw.cb.ind_ev_resp           = length(ts_sync_pulses) + hw.cb.ind_ev_resp;
 
 
     % delete some variables
     clear analog_data ts_cell_array; 
-    emg                     = rmfield(emg,'data');
+    if sta_params.record_emg_yn
+        emg                     = rmfield(emg,'data');
+    end
     if sta_params.record_force_yn
         force                   = rmfield(force,'data');
     end
@@ -475,10 +547,12 @@ cbmex('close')
 % Calculate the STA metrics and plot, if specified in sta_params
 if sta_params.plot_yn
    
-    if sta_params.record_force_yn == false
-        sta_metrics             = calculate_sta_metrics2( emg, sta_params );
+    if ~sta_params.record_force_yn
+        sta_metrics             = calculate_sta_metrics3( emg, sta_params );
+    elseif ~sta_params.record_emg_yn
+        sta_metrics             = calculate_sta_metrics3( force, sta_params );
     else
-        sta_metrics             = calculate_sta_metrics2( emg, force, sta_params );
+        sta_metrics             = calculate_sta_metrics3( emg, force, sta_params );
     end
 end
 
