@@ -58,7 +58,7 @@ if nargin > 1
 elseif nargin == 1
     sta_params                  = varargin{1};
 elseif nargin == 0
-    sta_params                  = stim_trig_avg_default();
+    sta_params                  = stim_trig_avg_default3();
 end
 
 if nargout > 4
