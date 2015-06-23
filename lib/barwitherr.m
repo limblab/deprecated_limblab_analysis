@@ -99,15 +99,27 @@ hold on
 if nRows > 1
     for col = 1:nCols
         % Extract the x location data needed for the errorbar plots:
-%         x = get(get(handles.bar(col),'children'),'xdata');
-        x = get(handles.bar(col),'xdata');
+        
+        % this was the old code, worked with previous versions of matlab:
+        if verLessThan('matlab', '8.5')
+            x = get(get(handles.bar(col),'children'),'xdata');
+        
+        % but now (v2015a) bar works differently, I found a hidden XOffset property!
+        else
+            x = get(handles.bar(col),'xdata') + get(handles.bar(col),'xoffset');
+        end
         % Use the mean x values to call the standard errorbar fn; the
         % errorbars will now be centred on each bar; these are in ascending
         % order so use xOrder to ensure y values and errors are too:
         errorbar(mean(x,1),values(xOrder,col),lowerErrors(xOrder,col), upperErrors(xOrder, col), '.k')
     end
 else
-    x = get(get(handles.bar,'children'),'xdata');
+    %same update here:
+    if verLessThan('matlab','8.5')
+        x = get(get(handles.bar,'children'),'xdata');
+    else
+        x = get(handles.bar,'xdata') + get(handles.bar,'xoffset');
+    end
     errorbar(mean(x,1),values,errors,'.k')
 end
 

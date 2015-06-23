@@ -308,10 +308,9 @@ end
                 words_handles(1:size(tmpWords_ts,1),i)=plot(tmpWords_ts',tmpmarker',colors{Words_to_plot(i)});
 %                 words_handles(1:size(tmpWords_ts,1),i)=plot(tmpWords_ts', tmpmarker');
             end
-            outh = [outh; words_handles(1,1:length(Words_to_plot))'];
+            outh = [outh words_handles(1,1:length(Words_to_plot))];
             outm = [outm WordsNames(Words_to_plot)];
             [leghw,objh,outh,outm]=legend(outh,outm,'Location','Northwest');
-            legh(1) = leghw;
         end
                 
 %         if plot_Targets %TODO ??
