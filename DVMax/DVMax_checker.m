@@ -39,6 +39,7 @@ function DVMax_checker()
         oldAnimalList2 = rmfield(oldAnimalList,'idealBodyWeight');
         oldAnimalList2 = rmfield(oldAnimalList2,'contactNumber');
         oldAnimalList2 = rmfield(oldAnimalList2,'secondarycontactNumber');
+        oldAnimalList2 = rmfield(oldAnimalList2,'dateOfWeightUpdate');
     end
     
     animalList = load_animal_list(MonkeyWaterLocation);
@@ -46,6 +47,7 @@ function DVMax_checker()
     animalList2 = rmfield(animalList,'idealBodyWeight');
     animalList2 = rmfield(animalList2,'contactNumber');
     animalList2 = rmfield(animalList2,'secondarycontactNumber');
+    animalList2 = rmfield(animalList2,'dateOfWeightUpdate');
     
     peopleList = load_people_list(MonkeyWaterLocation);
     ccmList = load_ccm_list(MonkeyWaterLocation);    
