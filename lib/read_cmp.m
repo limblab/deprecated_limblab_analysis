@@ -22,7 +22,7 @@ for iText = 1:length(text)
     temp_text = text{iText};
     temp_text = temp_text(1:strfind(text{iText},char(13))-1);
     temp_text = regexp(temp_text,'\t','split');
-    if length(temp_text)>5 && length(temp_text{2}>0) && ~strcmp(temp_text{1}(1),'/') && str2double(temp_text{5})~=0
+    if length(temp_text)>4 && length(temp_text{2}>0) && ~strcmp(temp_text{1}(1),'/') && str2double(temp_text{5})~=0
         switch temp_text{3}
             case 'A'
                 bank = 0;
