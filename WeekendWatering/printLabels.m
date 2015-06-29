@@ -1,6 +1,6 @@
 WaterSheetFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\';
-WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2015-06-20.xlsx'];
-% WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-HPs.xlsx'];
+% WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2015-06-27.xlsx'];
+WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-HPs.xlsx'];
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
 existing_watering_weekends = datenum(WeekendWatering(2,3:end));
@@ -140,30 +140,42 @@ for iPage = 1:num_pages
     page_data = labelData((iPage-1)*30+1:min((iPage)*30,length(labelData)));
     page_colors = color_order((iPage-1)*30+1:min((iPage)*30,length(labelData)));
     h = figure;    
+    hold on
     set(gca,'YDir','reverse','units','inches','Position',[0 0 8.5 11])
+%     set(gca,'YDir','reverse','units','inches','Position',[0.375 0.5 7.75 10])
     xlim([0 8.5])
-    ylim([0 11])    
+    ylim([0 11])   
+%     ylim([-2.5 8.5])    
     axis equal
     axis off
     set(h,'Units','inches')
+    set(h,'PaperUnits','inches')
     set(h,'PaperType','usletter')
-    set(h,'PaperPosition',[0 0 8.5 11])
-    set(h,'Position',[0 -1 8.5 11])
-    hold on
+    set(h,'PaperPositionMode','manual')
     
+    a = ver;
+    if str2double(a(strcmp({a.Name},'MATLAB')).Version) < 8.3
+        set(h,'PaperPosition',[0 0 8.5 11])
+        set(h,'Position',[0 -1 8.5 11])
+    else
+        set(h,'PaperPosition',[0.375 0.25 7.75 11])
+        set(h,'Position',[0 0 7.75 10])
+    end
+    
+    hold on  
     iLabel = 0;
     for iRow = 1:num_rows
         for iCol = 1:num_cols
             iLabel = iLabel+1;
             x = x_offset + (iCol-1)*label_width + 0.5 * label_width;
-            y = y_offset + (iRow)*label_height + 0.5 * label_height;
+            y = y_offset + (iRow-1)*label_height + 0.5 * label_height;
             if iLabel <= length(page_data) 
-                fill([x-0.5*label_width x+0.5*label_width x+0.5*label_width x-0.5*label_width],...
+                patch([x-0.5*label_width x+0.5*label_width x+0.5*label_width x-0.5*label_width],...
                    [y+0.5*label_height y+0.5*label_height y-0.5*label_height y-0.5*label_height],...
-                   [1 1 1],'LineStyle','none')
-                fill([x-0.35*label_width x+0.5*label_width x+0.5*label_width x-0.35*label_width],...
+                   [1 1 1],'LineStyle','none','Clipping','off')
+                patch([x-0.35*label_width x+0.5*label_width x+0.5*label_width x-0.35*label_width],...
                    [y+0.5*label_height y+0.5*label_height y-0.5*label_height y-0.5*label_height],...
-                   colors(page_colors(iLabel),:),'LineStyle','none')        
+                   colors(page_colors(iLabel),:),'LineStyle','none','Clipping','off')  
                 text(x,y,page_data{iLabel},'VerticalAlignment','middle',...
                     'HorizontalAlignment','center','FontSize',18)
                 text(x-0.425*label_width,y,{'Fold here'},'Rotation',90,'VerticalAlignment','middle',...
@@ -174,5 +186,11 @@ for iPage = 1:num_pages
                    [1 1 1],'LineStyle','none')
             end
         end
+    end
+    drawnow
+    a = ver;
+    if str2double(a(strcmp({a.Name},'MATLAB')).Version) > 8.3
+        temp = get(h,'Position');
+        ylim([temp(4)-11 temp(4)])
     end
 end
