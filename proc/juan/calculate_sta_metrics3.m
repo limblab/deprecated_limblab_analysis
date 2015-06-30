@@ -191,8 +191,14 @@ if numel(varargin) > 1 && isfield(varargin{2},'nbr_forces')
         sta_metrics_params.last_evoked_resp  = nbr_evoked_force_responses;
     end
     
+    % detrend the evoked force
+    for i = 1:force.nbr_forces
+        force.detrend_evoked_force(:,i,:)  = detrend(squeeze(force.evoked_force(:,i,:)));
+    end
+    
     % Calculate the mean force response, for each force sensor
-    mean_force                  = mean(abs(force.evoked_force(:,:,sta_metrics_params.first_evoked_resp:sta_metrics_params.last_evoked_resp)),3);
+    mean_force                  = mean(force.evoked_force(:,:,sta_metrics_params.first_evoked_resp:sta_metrics_params.last_evoked_resp),3);
+    mean_detrended_force        = mean(force.detrend_evoked_force(:,:,sta_metrics_params.first_evoked_resp:sta_metrics_params.last_evoked_resp),3);
 end
     
 
@@ -365,8 +371,9 @@ sta_metrics.emg.Xj_Ztest        = Xj_MFSA;
 
 if numel(varargin) > 1 && isfield(varargin{2},'nbr_forces')
 
-    sta_metrics.force.nbr_stims = sta_metrics_params.last_evoked_resp - sta_metrics_params.first_evoked_resp + 1;
+    sta_metrics.force.nbr_stims     = sta_metrics_params.last_evoked_resp - sta_metrics_params.first_evoked_resp + 1;
     sta_metrics.force.mean_force    = mean_force;
+    sta_metrics.force.mean_detrended_force    = mean_detrended_force;
     
     % ToDo: include the rest
 end

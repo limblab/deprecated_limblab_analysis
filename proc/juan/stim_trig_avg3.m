@@ -145,7 +145,7 @@ if sta_params.record_emg_yn
 
     % figure out how many EMG channels there are
     emg.labels                  = analog_data( strncmp(analog_data(:,1), 'EMG', 3), 1 );
-    emg.nbr_emgs                = numel(emg.labels); disp(['Nbr EMGs: ' num2str(emg.nbr_emgs)]), disp(' ');
+    emg.nbr_emgs                = numel(emg.labels); disp(['Nbr EMGs: ' num2str(emg.nbr_emgs)]);
     
     emg.fs                      = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'EMG', 3),1),2));
 
@@ -162,7 +162,7 @@ if sta_params.record_force_yn
    
     % figure out how many EMG sensors there are
     force.labels            = analog_data( strncmp(analog_data(:,1), 'Force', 5), 1 );
-    force.nbr_forces        = numel(force.labels); disp(['Nbr Force Sensors: ' num2str(force.nbr_forces)]), disp(' ');
+    force.nbr_forces        = numel(force.labels); disp(['Nbr Force Sensors: ' num2str(force.nbr_forces)]);
     
     force.fs                = cell2mat(analog_data(find(strncmp(analog_data(:,1), 'Force', 5),1),2));
     
@@ -279,7 +279,7 @@ for i = 1:hw.cb.nbr_epochs
     %------------------------------------------------------------------
     % Stimulate the channel as many times as specified
 
-    if i == hw.cb.nbr_epochs 
+    if ( i == hw.cb.nbr_epochs ) && ( rem(sta_params.nbr_stims_ch,sta_params.stim_freq*30) ~= 0) 
         hw.cb.nbr_stims_this_epoch  = rem(sta_params.nbr_stims_ch,sta_params.stim_freq*30);
     end
 
@@ -348,7 +348,7 @@ for i = 1:hw.cb.nbr_epochs
     end
     
     if sta_params.record_force_yn
-        aux2                        = analog_data( strncmp(analog_data(:,1), 'Force', 5), 5 ); % ToDo: double check this line
+        aux2                        = analog_data( strncmp(analog_data(:,1), 'Force', 5), 3 ); % ToDo: double check this line
         for ii = 1:force.nbr_forces
             force.data(:,ii)        = double(aux2{ii,1});
         end
@@ -365,7 +365,7 @@ for i = 1:hw.cb.nbr_epochs
     % ToDo: check if these changes broke the code
     
     ts_sync_pulses_analog_freq  = ts_sync_pulses / 30000 * hw.cb.sync_signal_fs;    
-    analog_sync_signal          = double( analog_data{ hw.cb.sync_signal_ch_nbr,3 } );
+    analog_sync_signal          = double( analog_data{ strncmp(analog_data(:,1), 'Stim', 4), 3 } );
     
     % find the first threshold crossing in the analog signal. Note that the
     % -(mean + 2SD) threshold is totally arbitrary, but it works
@@ -421,9 +421,9 @@ for i = 1:hw.cb.nbr_epochs
         % (duration = sta_params.t_after) falls outside the recorded data
         if sta_params.record_emg_yn
 
-            last_ts_number_in_emg_window    = find( ts_sync_pulses > ( length(emg.data)/emg.fs - sta_params.t_after), 1 );
+            last_ts_number_in_emg_window    = find( ts_sync_pulses/30000 > ( length(emg.data)/emg.fs - sta_params.t_after/1000), 1 );
             
-            if ~isempty('last_ts_number_in_emg_window')
+            if ~isempty(last_ts_number_in_emg_window)
                ts_sync_pulses(last_ts_number_in_emg_window:end) = [];
                disp(['Warning: ' num2str(hw.cb.nbr_stims_this_epoch - last_ts_number_in_emg_window + 1) ' sync pulses were too late in the EMG data'])
             end
@@ -431,9 +431,9 @@ for i = 1:hw.cb.nbr_epochs
         
         if sta_params.record_force_yn
 
-            last_ts_number_in_force_window  = find( ts_sync_pulses > ( length(force.data)/force.fs - sta_params.t_after), 1 );
+            last_ts_number_in_force_window  = find( ts_sync_pulses/30000 > ( length(force.data)/force.fs - sta_params.t_after/1000), 1 );
             
-            if ~isempty('last_ts_number_in_force_window')
+            if ~isempty(last_ts_number_in_force_window)
                ts_sync_pulses(last_ts_number_in_force_window:end) = [];
                disp(['Warning: ' num2str(hw.cb.nbr_stims_this_epoch - last_ts_number_in_force_window + 1) ' sync pulses were too late in the Force data'])
             end
