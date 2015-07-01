@@ -1,9 +1,9 @@
 %
 % Parameters to do stimulus triggered averaging of the EMG
 %
-%       function sta_params = stim_trig_avg_defaults()
+%       function tta_params = train_trig_avg_defaults()
 %
-%       stim_trig_avg_params    : structure with fields
+%       train_trig_avg_params   : structure with fields
 %           stim_elec           : the electrode that will be stimulated
 %           stim_ampl           : stimulation amplitude (mA)
 %           stim_pw             : stimulation pulse width (ms)
