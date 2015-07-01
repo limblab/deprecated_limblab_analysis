@@ -261,7 +261,7 @@ drawnow;
 %------------------------------------------------------------------
 % Define the stimulation string and start data collection
 % Note that TD adds a delay that is the time before the stimulation for
-% the StTA (defined in tta_params.t_before) + 10 ms, to avoid
+% the StTA (defined in tta_params.t_before) + 50 ms, to avoid
 % synchronization issues
 
 
@@ -270,7 +270,7 @@ stim_string             = [ 'Elect = ' num2str(tta_params.stim_elec) ',' num2str
                             'Freq = ' num2str(tta_params.stim_freq) ',' num2str(tta_params.stim_freq) ',; ' ...
                             'Dur = ' num2str(tta_params.stim_pw) ',' num2str(tta_params.stim_pw) ',; ' ...
                             'Amp = ' num2str(tta_params.stim_ampl/tta_params.stimulator_resolut) ',' num2str(ceil(3/hw.cb.sync_out_resistor/tta_params.stimulator_resolut*1000)) ',; ' ...
-                            'TD = ' num2str((tta_params.t_before)/1000) ',' num2str((tta_params.t_before)/1000) ',; ' ...
+                            'TD = ' num2str(tta_params.t_before/1000) ',' num2str(tta_params.t_before/1000) ',; ' ...
                             'FS = 0,0,; ' ...
                             'PL = 1,1,;'];
 
@@ -287,6 +287,9 @@ for i = 1:tta_params.nbr_stims_ch
     drawnow;
     drawnow;
 
+    % wait 50 ms to prevent loosing the baseline EMG/force in the
+    % recordings with Central
+    pause(0.05);
 
     t_start             = tic;
     drawnow;
@@ -300,7 +303,7 @@ for i = 1:tta_params.nbr_stims_ch
 
     % wait for the inter-stimulus interfal (defined by stim freq)
     t_stop              = toc(t_start);
-    while t_stop < (tta_params.min_time_btw_trains)
+    while t_stop < (tta_params.min_time_btw_trains/1000)
         t_stop          = toc(t_start);
     end
 
@@ -327,7 +330,7 @@ for i = 1:tta_params.nbr_stims_ch
 
     ts_sync_pulse                   = double( cell2mat(ts_cell_array(hw.cb.sync_signal_ch_nbr,2)) );
 
-    if iesmpty(ts_sync_pulse)
+    if isempty(ts_sync_pulse)
         warning('The synchronization pulse was not detected')
     end
 
@@ -371,7 +374,7 @@ for i = 1:tta_params.nbr_stims_ch
 
 
         % check if the misalignment between the time stamps and the analog signal is > 1 ms
-        misalign_btw_ts_analog      = ts_first_sync_pulse_analog_signal - ts_sync_pulses_analog_freq(1);
+        misalign_btw_ts_analog      = ts_first_sync_pulse_analog_signal - ts_sync_pulse_analog_freq;
 
         if abs( misalign_btw_ts_analog ) > hw.cb.sync_signal_fs/1000
             disp('Warning: The delay between the time stamps and the analog signal is > 1 ms!!!');
@@ -402,7 +405,7 @@ for i = 1:tta_params.nbr_stims_ch
 
             % remove the sync pulse if the EMG/force baseline
             % (tta_params.t_before) falls outside the recorded data
-            if floor(ts_sync_pulse/30000) < tta_params.t_before/1000
+            if ts_sync_pulse/30000 < tta_params.t_before/1000
 
                 ts_sync_pulse               = [];
 
@@ -428,7 +431,7 @@ for i = 1:tta_params.nbr_stims_ch
             end
 
 
-            if ~iesmpty(ts_sync_pulse)
+            if ~isempty(ts_sync_pulse)
                 
                 %------------------------------------------------------------------
                 % store the evoked EMG (interval around the stimulus defined by
@@ -455,16 +458,16 @@ for i = 1:tta_params.nbr_stims_ch
                 end
             end
         end
-    end
-
-
-    % delete some variables
-    clear analog_data ts_cell_array;
-    if tta_params.record_emg_yn
-        emg                     = rmfield(emg,'data');
-    end
-    if tta_params.record_force_yn
-        force                   = rmfield(force,'data');
+        
+        % delete some variables
+        clear analog_data ts_cell_array;
+        if tta_params.record_emg_yn
+            emg                     = rmfield(emg,'data');
+        end
+        if tta_params.record_force_yn
+            force                   = rmfield(force,'data');
+        end
+        
     end
 
 end
@@ -478,6 +481,10 @@ end
 
 disp(['Finished stimulating electrode ' num2str(tta_params.stim_elec)]);
 disp(' ');
+
+
+% Add some metadata
+tta_params.stim_mode            = 'trains';
 
 
 % Save the data, if specified in tta_params
