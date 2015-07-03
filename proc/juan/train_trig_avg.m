@@ -226,15 +226,15 @@ elseif isempty(find(hw.gv.stim_ch==tta_params.sync_out_elec,1))
 end
 
 
-% % SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
-% % or > 1 ms) 
-% if tta_params.stim_ampl > 0.090
-%     cbmex('close');
-%     error('ERROR: stimulation amplitude is too large (> 90uA) !');    
-% elseif tta_params.stim_pw > 1
-%     cbmex('close');
-%     error('ERROR: stimulation pulse width is too large (> 1ms) !');    
-% end
+% SAFETY! check that the stimulation amplitude is not too large ( > 90 uA
+% or > 1 ms) 
+if tta_params.stim_ampl > 0.090
+    cbmex('close');
+    error('ERROR: stimulation amplitude is too large (> 90uA) !');    
+elseif tta_params.stim_pw > 1
+    cbmex('close');
+    error('ERROR: stimulation pulse width is too large (> 1ms) !');    
+end
    
 
 
