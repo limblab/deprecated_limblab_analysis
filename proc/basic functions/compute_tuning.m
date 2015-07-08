@@ -44,11 +44,32 @@ neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tunin
 empty_PD = struct('dir',[],'moddepth',[],'dir_CI',[],'moddepth_CI',[]);
 
 %% Parallelize for speed
-% if isempty(gcp)
-%     parpool;
-% end
-% opt = statset('UseParallel',true);
-opt = statset('UseParallel','never');
+parpool_created = false;
+if(isfield(bootstrap_params,'UseParallel'))
+    if(bootstrap_params.UseParallel)
+        try
+            if(verLessThan('distcomp','6.3'))
+                matlabpool open
+                opt = statset('UseParallel','always');
+            else
+                if(isempty(gcp))
+                    parpool;
+                    parpool_created = true;
+                end
+                opt = statset('UseParallel',true);
+            end
+        catch
+            warning('Problem with Parallel Computing Toolbox. Code may not execute properly')
+        end
+    else
+        if(verLessThan('distcomp','6.3'))
+            opt = statset('UseParallel','never');
+        else
+            opt = statset('UseParallel',false);
+        end
+    end
+end
+
 %% Bootstrap GLM function for each neuron
 tic
 for i = 1:num_units
@@ -74,7 +95,16 @@ for i = 1:num_units
     coef_means = mean(boot_coef);
     
     %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]);
+    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+    
+    % Offset stuff
+    offset_tuning(i,1).name = 'offset';
+    offset_tuning(i,1).unit_id = behaviors.unit_ids(i,:);
+    offset_tuning(i,1).weights = coef_means(1);
+    offset_tuning(i,1).weight_cov = coef_cov(1,1);
+    offset_tuning(i,1).CI = coef_CIs(:,1);
+    offset_tuning(i,1).term_pval = NaN; % we don't really care about constant term significance. Change later if that changes]
+    offset_tuning(i,1).PD = empty_PD; % no PD for offset
     
     %iterate through covariates
     column_ctr = 1;
@@ -132,7 +162,8 @@ for i = 1:num_units
             neural_tuning(i,covar_ctr).PD.dir_CI = dir_CI;
             
             % bootstrap moddepth
-            boot_moddepth = sum(boot_coef(:,column_ctr+1:column_ctr+2).^2,2);
+            boot_coscoeff = sqrt(sum(boot_coef(:,column_ctr+1:column_ctr+2).^2,2));
+            boot_moddepth = exp(boot_coef(:,1)).*(exp(boot_coscoeff)-exp(-boot_coscoeff));
             moddepth_mean = mean(boot_moddepth);
             moddepth_CI = prctile(boot_moddepth,[2.5 97.5]);
             neural_tuning(i,covar_ctr).PD.moddepth = moddepth_mean;
@@ -142,7 +173,23 @@ for i = 1:num_units
         column_ctr = column_ctr+num_covar_col;
     end
 end
+
+neural_tuning = [offset_tuning neural_tuning];
 %% Delete parallel pool
-% delete(gcp('nocreate'))
+if(isfield(bootstrap_params,'UseParallel'))
+    if(bootstrap_params.UseParallel)
+        try
+            if(parpool_created)
+                if(verLessThan('distcomp','6.3'))
+                    matlabpool close
+                else
+                    delete(gcp('nocreate'))
+                end
+            end
+        catch
+            warning('Problem with Parallel Computing Toolbox. Code may not execute properly')
+        end
+    end
+end
 
 end
