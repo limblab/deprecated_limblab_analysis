@@ -515,7 +515,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
             end
             %deal with last point:
 
-            targets_per_trial=bdf.TT(end,bdf.TT_hdr.number_targets);
+            targets_per_trial=bdf.TT(end,bdf.TT_hdr.num_targets);
             j=j+1;%adds a single index to the array for the last point
             test_end=bdf.TT(bdf.TT(:,7+2*targets_per_trial-1)==target_onsets(j),7+2*targets_per_trial);
             if ~isempty(test_end)
