@@ -71,6 +71,8 @@ options_DL.bdf = options.bdf_DL;
 [~,tuning_DL] = get_tuning_curves(folder,options_DL);
 
 % get relevant data
+binned_spd_PM = tuning_PM.binned_spd;
+binned_spd_DL = tuning_DL.binned_spd;
 FR_PM = tuning_PM.binned_FR;
 FR_DL = tuning_DL.binned_FR;
 angs_PM = repmat(tuning_PM.bins,1,size(FR_PM,2));
@@ -130,6 +132,7 @@ for i = 1:size(FR_PM,2)
     set(h,'linewidth',2,'color',[1 0 0])
     h=plot(180/pi*rays_fit,mags_fit);
     set(h,'linewidth',2,'color',[0 1 0])
+    
     set(gca,'xlim',[-180,180],'xtick',[-180 -90 0 90 180],'tickdir','out','box','off');
     xlabel 'Movement direction (deg)'
     ylabel 'Average spikes per 50 ms time bin'
@@ -139,6 +142,27 @@ for i = 1:size(FR_PM,2)
     
     saveas(fig,['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot' '.png'])
 end
+
+%% Plot binned speed
+subplot(211)
+max_rad = max(abs([binned_spd_PM;binned_spd_DL]));
+h=polar(0,max_rad);
+set(h,'color','w')
+hold on
+h=polar(repmat(tuning_PM.bins,2,1),repmat(binned_spd_PM,2,1));
+set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+hold on
+h=polar(repmat(tuning_DL.bins,2,1),repmat(binned_spd_DL,2,1));
+set(h,'linewidth',2,'color',[1 0 0])
+title 'Wrapped speed curves'
+
+% flat tuning curve
+subplot(212)
+h=plot(tuning_PM.bins,binned_spd_PM);
+set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+hold on
+h=plot(tuning_DL.bins,binned_spd_DL);
+set(h,'linewidth',2,'color',[1 0 0])
 
 %% Plot summary
 array_break = 21;
