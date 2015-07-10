@@ -222,13 +222,13 @@ function out_struct = get_nev_mat_data(varargin)
             % get_cerebus_data to the one from this script. It must come
             % from the data type conversion that happens when pulling 
             % analog data.
-            out_struct.raw.fullbandwidth.data{i} = out_struct.raw.analog.data{i}/6.5584993;
+            out_struct.raw.fullbandwidth.data{i} = out_struct.raw.fullbandwidth.data{i}/6.5584993;
         end
 
         % The start time of each channel.  Note that this NS library
         % function ns_GetTimeByIndex simply multiplies the index by the 
         % ADResolution... so it will always be zero.
-        out_struct.raw.analog.ts(1:length(fullbandwidth_list)) = {0};
+        out_struct.raw.fullbandwidth.ts(1:length(fullbandwidth_list)) = {0};
     end
 %% The Emgs
     if ~isempty(emg_list) & ~opts.delete_raw

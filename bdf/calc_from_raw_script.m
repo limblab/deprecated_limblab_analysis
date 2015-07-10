@@ -105,7 +105,27 @@
         stop_time=floor(last_analog_time)-1;
         analog_time_base = start_time:1/adfreq:stop_time; 
     end
-    
+%% get full bandwidth data if it exists
+    if isfield(out_struct.raw,'fullbandwidth')
+        out_struct.fullbandwidth.channels=out_struct.raw.fullbandwidth.channels;
+        out_struct.fullbandwidth.adfreq=out_struct.raw.fullbandwidth.adfreq;
+        out_struct.fullbandwidth.data=cell2mat(out_struct.raw.fullbandwidth.data);
+        out_struct.fullbandwidth.ts=out_struct.raw.fullbandwidth.ts;
+    elseif (opts.delete_raw && exist('NEVNSx','var') && exist('fullbandwidth_list','var') && ~isempty(fullbandwidth_list))
+        out_struct.fullbandwidth.channels = NSx_info.NSx_labels(fullbandwidth_list);
+        out_struct.fullbandwidth.adfreq = NSx_info.NSx_sampling(fullbandwidth_list);
+        
+        out_struct.fullbandwidth.data = (1/6.5584993)*single(NEVNSx.NS5.Data(NSx_info.NSx_idx(fullbandwidth_list),:))';
+        % 6.5584993 is the ratio when comparing the output of 
+        % get_cerebus_data to the one from this script. It must come
+        % from the data type conversion that happens when pulling 
+        % analog data.
+        
+        % The start time of each channel.  Note that this NS library
+        % function ns_GetTimeByIndex simply multiplies the index by the 
+        % ADResolution... so it will always be zero.
+        out_struct.raw.fullbandwidth.ts(1:length(fullbandwidth_list)) = zeros(1,length(fullbandwidth_list));;
+    end
 %% Position for robot and wrist flexion tasks
     if (robot_task && opts.kin)
         % Position
@@ -242,7 +262,7 @@
         elseif(isfield(opts,'delete_raw') && opts.delete_raw && exist('NEVNSx','var') )
             force_channels = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'ForceHandle')));
         end
-        if (length(force_channels)==6)
+        if (exist('force_channels','var') && length(force_channels)==6)
             raw_force = zeros(length(analog_time_base), 6);
             zero_force = [];
             for c = 1:6
