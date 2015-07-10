@@ -55,8 +55,6 @@ if ~isempty(ignore_windows)
     mask(temp)=0;
 end
 
-
-
 % assemble encoder signals
 encoder = zeros(length(ts_index)-2, 3);
 

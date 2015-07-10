@@ -25,7 +25,7 @@ function out_struct = get_nev_mat_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     %initial setup
-    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0); %default to lab 1, no force, no eye
+    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'delete_raw',0); %default to lab 1, no force, no eye
    
     % Parse arguments
     if (nargin == 1)
@@ -52,6 +52,8 @@ function out_struct = get_nev_mat_data(varargin)
                 opts.ignore_jumps=1;
             elseif strcmp(opt_str, 'ignore_filecat')
                 opts.ignore_filecat=1;
+            elseif strcmp(opt_str, 'delete_raw')
+                opts.delete_raw=1;
             elseif isnumeric(varargin{i})
                 opts.labnum=varargin{i};    %Allow entering of the lab number               
             else 
@@ -130,9 +132,11 @@ function out_struct = get_nev_mat_data(varargin)
     stim_marker  = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'stim')));
     emg_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'emg_')));
     force_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'force_')));
+    fullbandwidth_list = find(NSx_info.NSx_sampling==30000);
     analog_list = setxor(1:length(NSx_info.NSx_labels),emg_list);
     analog_list = setxor(analog_list,force_list);    
-
+    analog_list = setxor(analog_list,fullbandwidth_list);
+    
 %% The Units
     progress = 2/8;
     if opts.verbose
@@ -164,14 +168,14 @@ function out_struct = get_nev_mat_data(varargin)
         end
     end
 
-%% The raw data analog data (other than emgs)
-    progress = 3/8;
-    if opts.verbose
-        waitbar(progress,h,'Extracting Raw Analog Data');
-    end
-    
-    if ~isempty(analog_list)
-        
+%% The raw data analog data (other than emgs and full bandwidth data)
+
+    if ~isempty(analog_list) & ~opts.delete_raw
+        progress = 3/8;
+        if opts.verbose
+            waitbar(progress,h,'Extracting Raw Analog Data');
+        end
+
         out_struct.raw.analog.channels = NSx_info.NSx_labels(analog_list);
         out_struct.raw.analog.adfreq = NSx_info.NSx_sampling(analog_list);
         
@@ -203,14 +207,36 @@ function out_struct = get_nev_mat_data(varargin)
         out_struct.raw.analog.ts = [];
         out_struct.raw.analog.data = [];
     end
-
-%% The Emgs
-    progress = 4/8;
-    if opts.verbose
-        waitbar(progress,h,'Extracting EMG Data');
-    end
     
-    if ~isempty(emg_list)
+%% The full bandwidth data
+    if ~isempty(find(NSx_info.NSx_sampling==30000,1,'first')) & ~opts.delete_raw
+        progress = 3/8;
+        if opts.verbose
+            waitbar(progress,h,'Extracting Full bandwidth Analog Data');
+        end
+        out_struct.raw.fullbandwidth.channels = NSx_info.NSx_labels(fullbandwidth_list);
+        out_struct.raw.fullbandwidth.adfreq = NSx_info.NSx_sampling(fullbandwidth_list);
+        for i = length(fullbandwidth_list):-1:1
+            out_struct.raw.fullbandwidth.data{i} = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(fullbandwidth_list(i)),:))';
+            % 6.5584993 is the ratio when comparing the output of 
+            % get_cerebus_data to the one from this script. It must come
+            % from the data type conversion that happens when pulling 
+            % analog data.
+            out_struct.raw.fullbandwidth.data{i} = out_struct.raw.analog.data{i}/6.5584993;
+        end
+
+        % The start time of each channel.  Note that this NS library
+        % function ns_GetTimeByIndex simply multiplies the index by the 
+        % ADResolution... so it will always be zero.
+        out_struct.raw.analog.ts(1:length(fullbandwidth_list)) = {0};
+    end
+%% The Emgs
+    if ~isempty(emg_list) & ~opts.delete_raw
+        progress = 4/8;
+        if opts.verbose
+            waitbar(progress,h,'Extracting EMG Data');
+        end
+
         out_struct.emg.emgnames = NSx_info.NSx_labels(emg_list);
         out_struct.emg.emgfreq = NSx_info.NSx_sampling(emg_list);
                
@@ -236,12 +262,13 @@ function out_struct = get_nev_mat_data(varargin)
     end
 
 %% The Force for WF & MG tasks, or whenever an annalog channel is nammed force_* or Force_*)
-    progress = 5/8;
-    if opts.verbose
-        waitbar(progress,h,'Extracting Force Data');
-    end
     
-    if ~isempty(force_list)    
+    if ~isempty(force_list) 
+        progress = 5/8;
+        if opts.verbose
+            waitbar(progress,h,'Extracting Force Data');
+        end
+      
         out_struct.force.labels = NSx_info.NSx_labels(force_list);
         out_struct.force.forcefreq = NSx_info.NSx_sampling(force_list);        
                
@@ -292,12 +319,13 @@ function out_struct = get_nev_mat_data(varargin)
     end   
         
 %% Events
+
+    if ~isempty(NEVNSx.NEV.Data.SerialDigitalIO.TimeStamp)  
     progress = 7/8;
     if opts.verbose
         waitbar(progress,h,'Extracting Events');
     end
-    
-    if ~isempty(NEVNSx.NEV.Data.SerialDigitalIO.TimeStamp)        
+          
         event_data = double(NEVNSx.NEV.Data.SerialDigitalIO.UnparsedData);
         event_ts = NEVNSx.NEV.Data.SerialDigitalIO.TimeStampSec';       
         
@@ -343,18 +371,22 @@ function out_struct = get_nev_mat_data(varargin)
             actual_words = actual_words(word_indices_keep,:);
         end
 
-        out_struct.raw.words = actual_words;
+        if ~opts.delete_raw
+            %if this section is skipped, calc_from_raw *should* catch the
+            %delete_raw flag, and get the word/encoder values directly from
+            %actual_words and all_enc, rather than looking for the
+            %out_struct.raw fields
+            out_struct.raw.words = actual_words;
 
-        % and encoder data
-        if opts.kin
-            if opts.ignore_jumps
-                % ignore jumps in lab1
-                out_struct.raw.enc = get_encoder(all_enc,[0 out_struct.meta.duration]);
-            else
-                [out_struct.raw.enc, out_struct.meta.jump_times]= get_encoder(all_enc,out_struct.meta.FileSepTime);
+            % and encoder data
+            if opts.kin
+                if opts.ignore_jumps
+                    out_struct.raw.enc = get_encoder(all_enc,[0 out_struct.meta.duration]);
+                else
+                    [out_struct.raw.enc, out_struct.meta.jump_times]= get_encoder(all_enc,out_struct.meta.FileSepTime);
+                end
             end
         end
-       
     end
    
 %% Clean up
@@ -365,7 +397,11 @@ function out_struct = get_nev_mat_data(varargin)
     if opts.verbose
         waitbar(progress,h,'Processing Raw Data');
     end
-    out_struct = calc_from_raw(out_struct,opts);
+    %out_struct = calc_from_raw(out_struct,opts);
+    calc_from_raw_script
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
     if opts.verbose
         close(h);
     end
