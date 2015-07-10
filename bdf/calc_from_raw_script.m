@@ -465,7 +465,7 @@
                     if NSx_info.NSx_sampling(analog_list(c))==max(NSx_info.NSx_sampling(analog_list))
                        %we don't need to interpolate since this data was collected
                        %with the same freq as analog_time_base:
-                       a_data=a_data(round(analog_time_base*fs));
+                       a_data=a_data(round(analog_time_base/step));
                     else
                         %we need to interpolate to the analog_time_base
                         a_data = interp1(chan_time_base, a_data, analog_time_base);
