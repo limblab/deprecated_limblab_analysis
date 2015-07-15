@@ -61,12 +61,13 @@ if(isfield(bootstrap_params,'UseParallel'))
         catch
             warning('Problem with Parallel Computing Toolbox. Code may not execute properly')
         end
+        
+    end
+else
+    if(verLessThan('distcomp','6.3'))
+        opt = statset('UseParallel','never');
     else
-        if(verLessThan('distcomp','6.3'))
-            opt = statset('UseParallel','never');
-        else
-            opt = statset('UseParallel',false);
-        end
+        opt = statset('UseParallel',false);
     end
 end
 
