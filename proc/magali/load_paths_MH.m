@@ -22,6 +22,7 @@ addpath([dir '/lib/boundedline']);
 addpath(genpath([dir '/lib/NPMK 2.5.2.0']));
 addpath([dir '/mimo']);
 addpath([dir '/spike']);
+addpath([dir '/spike/Neuron Tracking']);
 addpath([dir '/bdf']);
 addpath([dir '/bdf/event_decoders']);
 addpath([dir '/bdf/lib_cb']);
