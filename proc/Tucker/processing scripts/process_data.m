@@ -92,3 +92,8 @@ folderpath='Z:\Chips_12H1\processed\summary of stim directions';
 function_name='make_chips_polar_PD_summaries';
 input_data.monkey_name='C';
 run_data_processing(function_name,folderpath,input_data)
+%% Track Neurons across days
+folderpath='Z:\Han_13B1\Processed\0_unit_stability_plasticity\0420_0612_firstweekwithoutstim_4weekswith45degstim\area2_a2';
+function_name='get_neuron_matching';
+input_data.matchstring='bdf';
+run_data_processing(function_name,folderpath,input_data)
