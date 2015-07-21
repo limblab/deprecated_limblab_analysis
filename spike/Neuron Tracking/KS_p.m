@@ -21,20 +21,20 @@ sort_inds = cell(length(alldays),1);
 
 prev_l = 0; % Do terrible i++ indexing...
 for i = 1:num_days   % Loop through each day 
-    l = length(alldays(i).bdf.units);
+    m = length(alldays(i).bdf.units);
     
     % Find the day's unit indices (channel, unit)
     dayids = vertcat(alldays(i).bdf.units.id);
     sort_inds{i}.inds = find(ismember(dayids(:,2),1:10));
     sort_inds{i}.ch_un = dayids(sort_inds{i}.inds);
     
-    for j = 1:l % Loop through all of the day's neurons
+    for j = 1:m % Loop through all of the day's neurons
         % Parse ID, timestamps, and wave shape
         UNITS(j+prev_l).id = alldays(i).bdf.units(j).id;
         UNITS(j+prev_l).ts = alldays(i).bdf.units(j).ts;
         UNITS(j+prev_l).wave = alldays(i).bdf.units(j).wave;
     end
-    prev_l = prev_l + l; % increment counter
+    prev_l = prev_l + m; % increment counter
 end
 
 % Combine all unit IDs
@@ -108,10 +108,10 @@ numpts_lda=length(lda_proj);
 for i = 1:num_days % Loop through days
     
     % Initialize
-    COMPS{i}.chan = zeros(length(sort_inds{i}.inds),num_days);
+    COMPS{i}.chan = zeros(length(sort_inds{i}.inds),num_days,2);
     COMPS{i}.inds = zeros(length(sort_inds{i}.inds),num_days);
     
-    for j = 1:length(sort_inds{i}.inds) % find ID of unit in day i
+    for j = 1:length(sort_inds{i}.inds) % find ID of unit in reference (base) day
         
         % Compile isi/wave information
         index = sort_inds{i}.inds(j);
@@ -124,10 +124,10 @@ for i = 1:num_days % Loop through days
         for k = find(1:num_days ~= i) % Look at other days
             % Find units on the same channel    
             same_chan = find(sort_inds{k}.ch_un(:,1) == chan);
-            for l = 1:length(same_chan) % For all units on the same electrode
+            for m = 1:length(same_chan) % For all units on the same electrode
                 
                 % Compile their isi/wave information
-                index2 = sort_inds{k}.inds(same_chan(l));
+                index2 = sort_inds{k}.inds(same_chan(m));
                 sorted_list_ind = find(sort_inds{k}.inds == index2);
                 
                 ISI_2 = diff(alldays(k).bdf.units(index2).ts);
@@ -156,8 +156,8 @@ for i = 1:num_days % Loop through days
                 if p_isi*p_wave < conf
                     
                     % Link the two as matched neurons
-                    COMPS{i}.chan(j,k) = alldays(k).bdf.units(index2).id(1) + ...
-                        0.1*alldays(k).bdf.units(index2).id(2);
+                    COMPS{i}.chan(j,k,:) = [alldays(k).bdf.units(index2).id(1) , ...
+                                            alldays(k).bdf.units(index2).id(2)];
                     COMPS{i}.inds(j,k) = sorted_list_ind;
                 end
             end
