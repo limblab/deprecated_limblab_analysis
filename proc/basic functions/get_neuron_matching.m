@@ -13,16 +13,17 @@ function [figure_list,data_struct]=get_neuron_matching(fpath,input_data)
     figure_list=[];
     foldercontents=dir(fpath);
     fnames={foldercontents.name};%extracts just the names from the foldercontents
-    aggregate_bdf = dir([fpath 'Output_data' filesep 'aggregate_bdf.mat']);
-    if ~isempty(aggregate_bdf)
-        warning('quickscript_function_looped:FoundAggregateBDF','Loading aggregate bdf. Remove aggregate_bdf.mat from the folder to load individual files')
-        disp(['opening: ' fpath,'Output_data',filesep,aggregate_bdf.name])
-        load([fpath,'Output_data',filesep,aggregate_bdf.name])
-        bdf=aggregate_bdf;
-        clear aggregate_bdf;
+    session_path = dir([fpath 'Output_data' filesep 'session.mat']);
+    if ~isempty(session_path)
+        warning('quickscript_function_looped:FoundSessionData','Loading session from file. Remove session.mat from the Output_data folder to load individual files')
+        disp(['opening: ' fpath,'Output_data',filesep,session_path.name])
+        load([fpath,'Output_data',filesep,session_path.name])
+        data_struct.session=session;
+        clear session
     else
         file_list={};
-        bdf_list={};
+        data_struct.session={};
+        ind=0;
         for i=1:length(foldercontents)
             if (length(fnames{i})>3)
                 if exist(strcat(fpath,fnames{i}),'file')~=2
@@ -32,20 +33,21 @@ function [figure_list,data_struct]=get_neuron_matching(fpath,input_data)
                 [tempfolder,tempname,tempext]=fileparts(temppath);
                 if (strcmp(tempext,'.mat') & ~isempty(strfind(tempname,input_data.matchstring)))
                     file_list{end+1}=temppath;
+                    ind=ind+1;
                     try
                         %load the bdf from the current file:
                         disp(strcat('Working on: ',temppath))
                         load(temppath);%loads a variable named bdf from the file
-                        session{ind}.bdf = bdf;
+                        data_struct.session{ind}.bdf = bdf;
                         clear bdf
                         %get the mean waveshape for every unit and append to
                         %bdf.units
-                        for j=1:length(bdf.units)
-                            session{ind}.bdf.units(j).wave=mean(bdf.units(j));
-                            session{ind}.bdf.units(j).wave(2,:)=stdev(bdf.units(j));
+                        for j=1:length(data_struct.session{ind}.bdf.units)
+                            data_struct.session{ind}.bdf.units(j).wave=mean(data_struct.session{ind}.bdf.units(j).waveforms);
+                            data_struct.session{ind}.bdf.units(j).wave(2,:)=std(double(data_struct.session{ind}.bdf.units(j).waveforms));
                         end
                         %get the spiking distribution
-                        session{i}.units=spiketrains(bdf,1);
+                        data_struct.session{i}.units=spiketrains(data_struct.session{ind}.bdf,1);
                         %put the bdf and the spiking distribution into our
                         %session variable:
                     catch temperr
@@ -60,29 +62,11 @@ function [figure_list,data_struct]=get_neuron_matching(fpath,input_data)
                 end
             end
         end
-        if length(bdf_list)==1
-            bdf=bdf_list{1};
-            clear bdf_list
-        else
-            for i=1:length(bdf_list)
-                if i==1
-                    %initialize the aggregate bdf
-                    bdf=bdf_list{i};
-                else
-                    %if our new bdf already has something in it, append to
-                    %the end of the new bdf
-                    bdf=concatenate_bdfs(  bdf,   bdf_list{i},    30,     0,   0, 0);%concatenate bdfs with no kinematics, no units and no force
-                end
-            end
-        end
-        bdf.meta.task='BC';
+        
     end
-    if ~isfield(bdf,'TT')
-        [bdf.TT,bdf.TT_hdr]=bc_trial_table4(bdf);
-    end
-    data_struct.session=session;
+    
 
     %% Do comparisons
-    COMPS = KS_p(session,0.0025);  % 'COMPS' might be a bit confusing. Just ask...
+    COMPS = KS_p(data_struct.session,0.0025);  % 'COMPS' might be a bit confusing. Just ask...
     data_struct.COMPS=COMPS;
 end
