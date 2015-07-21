@@ -30,7 +30,7 @@ function [h]=error_rate_aggregate(tt,tt_hdr)
     R_stim=sum(is_error_stim)/num_stim;
 
     CI_stim=binoinv([0.05 0.95],num_stim,R_stim);
-    e_lower(2)=R_stim-CI_stim(1)/num_stim;
+    e_lower(2)=R_stim+CI_stim(1)/num_stim;
     e_upper(2)=-R_stim+CI_stim(2)/num_stim;
     %compute the probability of observing this number of left reaches during
     %stim trials if the rate of left reaches is the same as in the nostim
@@ -59,7 +59,8 @@ function [h]=error_rate_aggregate(tt,tt_hdr)
     probs=[R_no_stim,R_stim];
     
     errorbar(err_ind,probs,e_lower,e_upper,'k')
-    
+    title(['\fontsize{14}error rate Stim vs No-stim\newline' ...
+        '\fontsize{10}error is 95% CI computed using matlabs binoinv function']) 
     disp(strcat('Probability our stim trials are drawn from the same distribution as the no stim trials based on error rate: ',num2str(P_dist)))
  
 end

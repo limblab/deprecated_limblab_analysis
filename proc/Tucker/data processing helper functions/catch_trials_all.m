@@ -19,7 +19,7 @@ function h=catch_trials_all(tt,tt_hdr,stimcodes,invert_amp)
     if(invert_amp)
         P_no_stim=1-P_no_stim;
     end
-    CI_no_stim=binoinv([0.05 0.95],length(is_left_reach_no_stim),P_no_stim)
+    CI_no_stim=binoinv([0.05 0.95],length(is_left_reach_no_stim),P_no_stim);
 
     h=figure;
     bar([P_no_stim, zeros(1,length(stimcodes))],'b');
@@ -69,6 +69,9 @@ function h=catch_trials_all(tt,tt_hdr,stimcodes,invert_amp)
     
     errorbar(err_ind,probs,e_lower,e_upper,'k')
     
+    title(['\fontsize{14}Catch trials: reaching rate to primary target\newline' ...
+        '\fontsize{10}error is 95% CI computed using matlabs binoinv function']) 
+    ylabel('proportion of reaches to the primary target')
     disp(strcat('Probability our stim catch trials are drawn from the same distribution as the no stim catch trials: ',num2str(P_dist)))
     
 end

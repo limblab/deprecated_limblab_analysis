@@ -67,6 +67,8 @@ function [h]=error_rate(tt,tt_hdr,stimcodes)
     
     errorbar(err_ind,probs,e_lower,e_upper,'k')
     
+    title(['\fontsize{14}error rate by stim condition\newline' ...
+        '\fontsize{10}error is 95% CI computed using matlabs binoinv function'])
     disp(strcat('Probability our stim trials are drawn from the same distribution as the no stim trials based on error rate: ',num2str(P_dist)))
  
 end
