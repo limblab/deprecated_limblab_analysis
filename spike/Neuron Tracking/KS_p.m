@@ -106,7 +106,6 @@ numpts_ts=length(ts_ISI);
 lda_proj=sort(unique(lda_proj));
 numpts_lda=length(lda_proj);
 for i = 1:num_days % Loop through days
-    fprintf('comparing day:%d',i)
     % Initialize
     COMPS{i}.chan = zeros(length(sort_inds{i}.inds),num_days,2);
     COMPS{i}.inds = zeros(length(sort_inds{i}.inds),num_days);
@@ -122,7 +121,8 @@ for i = 1:num_days % Loop through days
         
          
         for k = find(1:num_days ~= i) % Look at other days
-            fprintf('to day:%d \newline',k)
+            
+            fprintf('comparing day:%d to day:%d \n',i,k)
             % Find units on the same channel    
             same_chan = find(sort_inds{k}.ch_un(:,1) == chan);
             for m = 1:length(same_chan) % For all units on the same electrode
