@@ -58,7 +58,7 @@ D_wave.non = [];
 D_wave.put = [];
 num_units=length(sorted)-1;
 for i = 1:num_units % Take a neuron
-    fprintf('working on unit: %d out of: %d\n ',i,num_units)
+    fprintf('generating base comparison data for unit: %d out of: %d units\n ',i,num_units)
     for j = i+1:length(sorted) % Pair it with another 
         if IDS(j,1)~=IDS(i,1) % If they're not on the same electrode...
            
@@ -106,7 +106,7 @@ numpts_ts=length(ts_ISI);
 lda_proj=sort(unique(lda_proj));
 numpts_lda=length(lda_proj);
 for i = 1:num_days % Loop through days
-    
+    fprintf('comparing day:%d',i)
     % Initialize
     COMPS{i}.chan = zeros(length(sort_inds{i}.inds),num_days,2);
     COMPS{i}.inds = zeros(length(sort_inds{i}.inds),num_days);
@@ -122,6 +122,7 @@ for i = 1:num_days % Loop through days
         
          
         for k = find(1:num_days ~= i) % Look at other days
+            fprintf('to day:%d \newline',k)
             % Find units on the same channel    
             same_chan = find(sort_inds{k}.ch_un(:,1) == chan);
             for m = 1:length(same_chan) % For all units on the same electrode
