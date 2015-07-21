@@ -38,16 +38,26 @@ function [figure_list,data_struct]=get_neuron_matching(fpath,input_data)
                         %load the bdf from the current file:
                         disp(strcat('Working on: ',temppath))
                         load(temppath);%loads a variable named bdf from the file
+                        data_struct.full_session{ind}.bdf = bdf;
+                        bdf.pos=[];
+                        bdf.vel=[];
+                        bdf.acc=[];
+                        bdf.raw=[];                        
+                        bdf.force=[];
+                        bdf.words=[];
                         data_struct.session{ind}.bdf = bdf;
                         clear bdf
                         %get the mean waveshape for every unit and append to
                         %bdf.units
                         for j=1:length(data_struct.session{ind}.bdf.units)
+                            data_struct.full_session{ind}.bdf.units(j).wave=mean(data_struct.full_session{ind}.bdf.units(j).waveforms);
+                            data_struct.full_session{ind}.bdf.units(j).wave(2,:)=std(double(data_struct.full_session{ind}.bdf.units(j).waveforms));
                             data_struct.session{ind}.bdf.units(j).wave=mean(data_struct.session{ind}.bdf.units(j).waveforms);
                             data_struct.session{ind}.bdf.units(j).wave(2,:)=std(double(data_struct.session{ind}.bdf.units(j).waveforms));
                         end
                         %get the spiking distribution
-                        data_struct.session{i}.units=spiketrains(data_struct.session{ind}.bdf,1);
+                        data_struct.full_session{ind}.units=spiketrains(data_struct.session{ind}.bdf,1);
+                        data_struct.session{ind}.units=spiketrains(data_struct.session{ind}.bdf,1);
                         %put the bdf and the spiking distribution into our
                         %session variable:
                     catch temperr
@@ -62,10 +72,8 @@ function [figure_list,data_struct]=get_neuron_matching(fpath,input_data)
                 end
             end
         end
-        
     end
     
-
     %% Do comparisons
     COMPS = KS_p(data_struct.session,0.0025);  % 'COMPS' might be a bit confusing. Just ask...
     data_struct.COMPS=COMPS;
