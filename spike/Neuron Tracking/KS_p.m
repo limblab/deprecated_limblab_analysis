@@ -56,7 +56,9 @@ IDS = vertcat(UNITS(sorted).id);
 ts_ISI = [];
 D_wave.non = [];
 D_wave.put = [];
-for i = 1:length(sorted)-1 % Take a neuron
+num_units=length(sorted)-1;
+for i = 1:num_units % Take a neuron
+    fprintf('working on unit: %d out of: %d\n ',i,num_units)
     for j = i+1:length(sorted) % Pair it with another 
         if IDS(j,1)~=IDS(i,1) % If they're not on the same electrode...
            
@@ -66,7 +68,7 @@ for i = 1:length(sorted)-1 % Take a neuron
             [~,~,k] = kstest2(ISI{i},ISI{j});
             ts_ISI = [ts_ISI k];
     
-            fprintf('%d\n',length(ts_ISI));
+            %fprintf('%d\n',length(ts_ISI));
             
             % Take wave shape
             xA = WAVE{i}; 
@@ -99,7 +101,10 @@ lda_proj = D_wave.non*coeff(1,2).linear;
 
 %% Compare Units
 COMPS = cell(num_days,1);
-
+ts_ISI=sort(unique(ts_ISI));
+numpts_ts=length(ts_ISI);
+lda_proj=sort(unique(lda_proj));
+numpts_lda=length(lda_proj);
 for i = 1:num_days % Loop through days
     
     % Initialize
@@ -143,10 +148,9 @@ for i = 1:num_days % Loop through days
                 lda_dist = dist_w*coeff(1,2).linear;
                 
                 % Find p value for ISI using KS statistic
-                p_isi = interp1(sortrows(ts_ISI),1:length(ts_ISI),kSTAT)./length(ts_ISI);
+                p_isi = interp1(ts_ISI,1:numpts_ts,kSTAT)./numpts_ts;
                 % Find p value for wave shape using linear projection
-                p_wave = interp1(sortrows(lda_proj),1:length(lda_proj),...
-                    lda_dist,[],'extrap')./length(lda_proj);
+                p_wave = interp1(lda_proj,1:numpts_lda,lda_dist,[],'extrap')./numpts_lda;
             
                 % If the combined p value is within specified confidence level 
                 if p_isi*p_wave < conf
