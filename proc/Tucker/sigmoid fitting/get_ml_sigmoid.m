@@ -77,8 +77,8 @@ function [phat,varargout]=get_ml_sigmoid(data)
     logpdf=@(params) logpdf_sigmoid_fit2(data,params);
     
     %set up a multistart solver object:
-    phat_min=[0.5 0 0 0];
-    phat_max=[1 0.5 180 .5];
+    phat_min=[0 0 0 0];
+    phat_max=[1 1 180 .5];
     a=[1 1 0 0];
     b=1;
     %problem=createOptimProblem('fmincon','objective',logpdf,'x0',[.9 .1 90 .1],'Aineq',a,'bineq',b,'lb',phat_min,'ub',phat_max);
