@@ -74,19 +74,16 @@ end
 data_struct.aggregate_bdf=bdf;
 
  H=catch_trials_all(bdf.TT,bdf.TT_hdr,[0,1,2,3],1);
-    title('Catch trials: reaching rate to primary target') 
     set(H,'Name','Catch Trials')
     set(H,'Position',[100 100 1200 1200])
     figure_list(1)=H;
 
-[H]=error_rate(bdf.TT,bdf.TT_hdr,[0,1,2,3,4]);
-    title('error rate by stim condition') 
+[H]=error_rate(bdf.TT,bdf.TT_hdr,[0,1,2,3]);
     set(H,'Name','error rate by stim condition')
     set(H,'Position',[100 100 1200 1200])
     figure_list(length(figure_list)+1)=H;
 
 [H]=error_rate_aggregate(bdf.TT,bdf.TT_hdr);
-    title('error rate Stim vs No-stim') 
     set(H,'Name','error rate Stim vs No-stim')
     set(H,'Position',[100 100 1200 1200])
     figure_list(length(figure_list)+1)=H;
