@@ -7,7 +7,7 @@ function hitRate=LFP_phaseRandomDecode_BCperformance(out_struct,H,P,bestc,bestf,
 %
 %
 
-fpAssignScript
+fpAssignScript2
 fs=out_struct.raw.analog.adfreq(1);
 fptimes=1/fs:1/fs:size(fp,2)/fs;
 signal='vel';
