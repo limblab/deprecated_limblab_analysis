@@ -31,18 +31,20 @@ for p = 1:size(Phases,1)
         
         % Here is where you pick out the amplitudes at a
         % certain phase
-        AmpMatTemp = AmpMat;
-        AmpMatTemp(InPhase == 0) = [];
-        
-        %Randomly shuffling phases to check for errors in my
-        %analysis
-        %                 InPhase1D = squeeze(InPhase);
-        %                 InPhaseShift = [InPhase1D randsample(1:size(InPhase1D,1),size(InPhase1D,1))'];
-        %                 shiftPhase = sortrows(InPhaseShift,2);
-        %                 InPhase(1,1,:) = shiftPhase(:,1);
-        
-        p_i(p) = mean(abs(AmpMatTemp));
-        clear InPhase AmpMatTemp
+        for g = 1:size(AmpMat,1)
+            AmpMatTemp = AmpMat(g,:);
+            AmpMatTemp(InPhase(g,:) == 0) = [];
+            %Randomly shuffling phases to check for errors in my
+            %analysis
+            %                 InPhase1D = squeeze(InPhase);
+            %                 InPhaseShift = [InPhase1D randsample(1:size(InPhase1D,1),size(InPhase1D,1))'];
+            %                 shiftPhase = sortrows(InPhaseShift,2);
+            %                 InPhase(1,1,:) = shiftPhase(:,1);
+            
+            p_i(g,p) = mean(abs(AmpMatTemp));
+            clear AmpMatTemp
+        end
+        clear InPhase
     elseif p ==size(Phases,1)/2+2
         % Phase 5 and 6 correspond to 180 and -180 (taken care of
         % in previous step.
@@ -57,7 +59,9 @@ for p = 1:size(Phases,1)
             % Here is where you pick out the amplitudes at a
             % certain phase
             AmpMatTemp = AmpMat;
-            AmpMatTemp(InPhase == 0) = [];
+            for g = 1:size(AmpMat,1)
+                AmpMatTemp = AmpMat(g,:);
+                AmpMatTemp(InPhase(g,:) == 0) = [];
             
             %Randomly shuffling phases to check for errors in my
             %analysis
@@ -66,8 +70,10 @@ for p = 1:size(Phases,1)
             %                     shiftPhase = sortrows(InPhaseShift,2);
             %                     InPhase(1,1,:) = shiftPhase(:,1);
             
-            p_i(p) = mean(abs(AmpMatTemp));
-            clear InPhase AmpMatTemp
+                p_i(g,p) = mean(abs(AmpMatTemp));
+                clear AmpMatTemp
+            end
+            clear InPhase
         else % Lazy way of keeping phase index appropriate (since
             % we skip p =6 because it is the same step as p =5
             phaseLow= Phases(p,2) < PhaseMat ~=0;
@@ -77,18 +83,20 @@ for p = 1:size(Phases,1)
             
             % Here is where you pick out the amplitudes at a
             % certain phase
-            AmpMatTemp = AmpMat;
-            AmpMatTemp(InPhase == 0) = [];
-            
-            %Randomly shuffling phases to check for errors in my
-            %analysis (see if its an artifact of something else)
-            %                     InPhase1D = squeeze(InPhase);
-            %                     InPhaseShift = [InPhase1D randsample(1:size(InPhase1D,1),size(InPhase1D,1))'];
-            %                     shiftPhase = sortrows(InPhaseShift,2);
-            %                     InPhase(1,1,:) = shiftPhase(:,1);
-            
-            p_i(p-1) = mean(abs(AmpMatTemp));
-            clear InPhase AmpMatTemp
+            for g = 1:size(AmpMat,1)
+                AmpMatTemp = AmpMat(g,:);
+                AmpMatTemp(InPhase(g,:) == 0) = [];
+                %Randomly shuffling phases to check for errors in my
+                %analysis (see if its an artifact of something else)
+                %                     InPhase1D = squeeze(InPhase);
+                %                     InPhaseShift = [InPhase1D randsample(1:size(InPhase1D,1),size(InPhase1D,1))'];
+                %                     shiftPhase = sortrows(InPhaseShift,2);
+                %                     InPhase(1,1,:) = shiftPhase(:,1);
+                
+                p_i(g,p-1) = mean(abs(AmpMatTemp));
+                clear AmpMatTemp
+            end
+            clear InPhase
         end
         
     end

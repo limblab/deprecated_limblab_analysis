@@ -4,12 +4,12 @@
 % shuntedCh 
 
 % CorrelatePDsByCounts
-filelist= Chewie_handControlDays(:,1);
-datenames = Chewie_handControlDays(:,2);
-Controltype = 'spike';
-Signaltype = 'spike';
+filelist= Chewie_LFP1_tsNum;
+datenames = Chewie_LFP1_tsNum;
+Controltype = 'LFP1';
+Signaltype = 'LFP1';
 % LFP1, LFP2, AllLFP or Spike
-startind = 1;
+startind = 117;
 % Chewie LFP1 = 117
 % Mini LFP1 = 52
 

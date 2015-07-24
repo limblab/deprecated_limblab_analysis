@@ -245,6 +245,7 @@ if CalcWhat == 2 || CalcWhat == 3
     %Define freq bands
     delta=freqs<4;
     mu=((freqs>7) & (freqs<20));
+    gam0=(freqs>30)&(freqs<50);
     gam1=(freqs>70)&(freqs<115);
     gam2=(freqs>130)&(freqs<200);
     gam3=(freqs>200)&(freqs<300);
@@ -257,6 +258,7 @@ if CalcWhat == 2 || CalcWhat == 3
     if samprate>600
         PB(6,:,:)=mean(PA(gam3,:,:),1);
     end
+    PB(7,:,:)=mean(PA(gam0,:,:),1);
     % PB has dims freqs X chans X bins
     disp('4th part: calculate bandpower')
     toc

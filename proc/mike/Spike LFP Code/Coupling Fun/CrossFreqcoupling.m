@@ -27,53 +27,67 @@ pri = 1;
 fi =1;
 ind = 1;
 
-FileList = Jaco_Ch52_U20_GamX_SpikeY;
+numlags  = 10; % Number of lags used online
+Offlinelags = 1; % Number of lags to use offline
+numsides = 1;
+lambda   = 1;
+binsamprate = floor(1/binsize);
+numfp = 96;
+folds = 10;
+
+% FileList = Mini_Ch75_LowGamX_Gam2Y;
 bandstarts = [30, 130, 200];
 bandends   = [50, 200, 300];
 
-HC_I = [1:4];
-BC_1DG = [7:9];
-BC_1DSp = [15];
-BC_I = [5:9];
+% HC_I = [1:22];
+% BC_1DG = [23:25];
+% BC_1DSp = [26:28];
+BC_I = [25:26];
 
-LFPInds{1} = [52 6];
-SpikeInds{1} = [52 1];
-ControlCh = 1:96;
+%  LFPInds{1} = [73 6];% X control 
+% % LFPInds{1} = [17 6];% Y control
+% SpikeInds{1} = [42 1];
+ControlCh = 75;
+segment = 2;
+segInd = 1;
+
+clear FileNotRun
 %% Find file path, load file and start iterating through files
-for q = [HC_I(1):HC_I(end)]; % BC_I(1):BC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]% ] %
-    
-    if exist('fnam','var') == 0         
-            fnam{q} =  findBDFonCitadel(FileList{q,1})
-    elseif length(fnam) >= q
-        if isempty(fnam{q}) == 1
-            fnam{q} =  findBDFonCitadel(FileList{q,1})    
-        end
-    else
-        fnam{q} =  findBDFonCitadel(FileList{q,1}) 
-    end
-    
-    if length(fnam{q}) < 2
-        FilesNotRun{q,2} = 'File Not Found';
-        FilesNotRun{q,1} = fnam
-        continue
-    end
-    try
-        load(fnam{q})
-    catch exception
-        FilesNotRun{q,2} = exception;
-        FilesNotRun{q,1} = fnam
-        continue
-    end
-    if exist('out_struct','var') == 0
-        continue
-    end
+for q = 1 %[BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end) 
+%     
+%     if exist('fnam','var') == 0         
+%             fnam{q} =  findBDFonCitadel(FileList{q,1})
+%     elseif length(fnam) >= q
+%         if isempty(fnam{q}) == 1
+%             fnam{q} =  findBDFonCitadel(FileList{q,1})    
+%         end
+%     else
+%         fnam{q} =  findBDFonCitadel(FileList{q,1}) 
+%     end
+%     
+%     if length(fnam{q}) < 4
+%         FilesNotRun{q,2} = 'File Not Found';
+%         FilesNotRun{q,1} = fnam
+%         continue
+%     end
+%     
+%     try
+%         load(fnam{q})
+%     catch exception
+%         FilesNotRun{q,2} = exception;
+%         FilesNotRun{q,1} = fnam
+%         continue
+%     end
+%     if exist('out_struct','var') == 0
+%         continue
+%     end
     %% Declare input variables within loop that vary in each loop iteration:
     [sig, ~, ~, ~,~,~,~,~,~, analog_time_base] = SetPredictionsInputVar(out_struct);
  
     fpAssignScript2
     bdf = out_struct;
     Trials{1,q}.Targets = bdf.targets;
-    clear out_struct fpchans
+    clear fpchans
     
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
 
@@ -100,56 +114,7 @@ for q = [HC_I(1):HC_I(end)]; % BC_I(1):BC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(
         end
         clear b cells i ts t
     end
-    %% Pick out correct input signals and arrange into xOnline matrix
-%    [xOnline] = PickOutInputSignals(LFPInds,SpikeInds,ControlType,PB,x);
-    
-    %% Plot actual and reconstructed velocity
-    %     dir =['X';'Y'];
-    %     for i = 1:2
-    %         figure(i+12)
-    %         plot(y((size(H,1)):end,i+1),'r')
-    %         hold on
-    %         %% Check reconstructed velocity, make sure it matches online predictions
-    %         if ControlType{2}(i) == 2 % plot spike
-    %             xrecontmp = xOnline(:,i);
-    %
-    %             Yrecon(:,i) = (xrecontmp(10:end)*H(10,i)+xrecontmp(9:end-1)*H(9,i)+...
-    %                 xrecontmp(8:end-2)*H(8,i)+xrecontmp(7:end-3)*H(7,i)+xrecontmp(6:end-4)*H(6,i)...
-    %                 +xrecontmp(5:end-5)*H(5,i)+xrecontmp(4:end-6)*H(4,i)+xrecontmp(3:end-7)*H(3,i)...
-    %                 +xrecontmp(2:end-8)*H(2,i)+xrecontmp(1:end-9)*H(1,i))*SigGain(i);
-    %             r = corrcoef(y((size(H,1)):end-4,i+1),Yrecon(5:end,i))
-    %
-    %             plot(xOnline(:,i),'g')
-    %             plot(Yrecon,'b')   % this shortens spike input by 5
-    %             title('Spike Input (green) Spike Reconstructed(blue) Actual Predicted velocity (red)')
-    %             clear xrecontmp
-    %         else % plot LFP
-    %             xrecontmp = xOnline(:,i);
-    %
-    %             Yrecon(:,i) = (xrecontmp(10:end)*H(10,i)+xrecontmp(9:end-1)*H(9,i)+...
-    %                 xrecontmp(8:end-2)*H(8,i)+xrecontmp(7:end-3)*H(7,i)+xrecontmp(6:end-4)*H(6,i)...
-    %                 +xrecontmp(5:end-5)*H(5,i)+xrecontmp(4:end-6)*H(4,i)+xrecontmp(3:end-7)*H(3,i)...
-    %                 +xrecontmp(2:end-8)*H(2,i)+xrecontmp(1:end-9)*H(1,i));%*SigGain(i);
-    %             r = corrcoef(y((size(H,1))+1:end,i+1),Yrecon(1:end-1,i))
-    %
-    %             plot(xOnline(:,i),'g')
-    %             plot(Yrecon,'b')
-    %             title('LFP Input (green) LFP Reconstructed(blue) Actual Predicted velocity (red)')
-    %             clear xrecontmp
-    %         end
-    %     end
-    %
-    %     %% Parse and Separate Trials
-    %
-    %
-    %     rInputAvg(q) = cellfun(@mean,rtrialInput)
-    %     rSignalAvg(q) = cellfun(@mean,rtrialSig)
-    
-    %     figure(q)
-    %     plot(rtrialSig{q})
-    %
-    %     figure(q+5)
-    %     plot(rtrialInput{q})
+
     
     %% Calculate trial stats
     FirstTrialInds=find(bdf.words(:,2)==17);
@@ -163,62 +128,14 @@ for q = [HC_I(1):HC_I(end)]; % BC_I(1):BC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(
     
     Num.PercentSuccess_File(q) = (Num.Success_File(q)/Num.Trials_File(q))*100;
     clear FirstTrialInds AbortTrialInds SuccessTrialInds
+
     
-    data(q).fptimes = fptimes;
-    data(q).FPs = fp;
-    data(q).SpikeTimes = tsFPorder;
-    
-    % Robert's fpassign puts NaNs in the matrix and this throws everything
-    % off, remove them here.
-    fp(isnan(fp)==1)= 0;
-    
-    for i = 1:length(bandstarts)
-        [b,a]=butter(2,[bandstarts(i) bandends(i)]/(samprate/2));
-        TrialBP= filtfilt(b,a,fp');
-        BP_Vec = smooth(abs(hilbert(TrialBP)).^2,21,'moving');
-        try
-            BP(:,:,i) = reshape(BP_Vec,size(TrialBP,1),size(TrialBP,2));
-        catch
-            clear BP
-            BP(:,:,i) = reshape(BP_Vec,size(TrialBP,1),size(TrialBP,2));
-        end
-    end
-    
-    clear a b BP_Vec TrialBP
- %%   
-    for k = 1:size(fp,1) %ControlCh% 
-        FPstartTime = fptimes(1);
-        SpikedataToParse = tsFPorder{q,k};
-        tic
-        
-        try
-        [Trials{k,q}] = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikedataToParse);
-        Trials{k,q}.Targets = bdf.targets;
-%         [TrialsRawFP{k,q}] = parseTrials(bdf,fp(k,:)',FPstartTime,SpikedataToParse);
-        catch exception
-            FilesNotRun{q,2} = exception;
-            FilesNotRun{q,1} = fnam
-            continue
-        end
-%         if length(TrialsRawFP{k,q}.FPstart) < 30      
-%             FilesToCheck(ind) = q;
-%             ind = ind+1;
-%         end
-        
-        toc
-        clear FPdataToParse SpikedataToParse
-    end
-    clear k
-    
-    clear fp fptimes bdf tsFPorder BP i samprate smplerate
-    continue
-    
-    data1 = fp(LFPInds{1}(1),:)';
-    data2 = tsFPorder{SpikeInds{1}};
+    data1 = fp';
+    data2 = tsFPorder{:};
     
     numfolds = 20;
     
-    if 0
+    if 1
         %% Calculate theta-gamma PAC
         
         numfp = size(data1,2);
@@ -228,34 +145,37 @@ for q = [HC_I(1):HC_I(end)]; % BC_I(1):BC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(
         samprate = 1000;
         
         [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
-        tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
+%         tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
         
         for fold = 1:numfolds
             
-            data1Fold = data1((fold-1)*foldlength+1:(fold)*foldlength);
+            data1Fold = data1((fold-1)*foldlength+1:(fold)*foldlength,:);
             fpf=filtfilt(b0,a0,data1Fold);
        
             %Band Pass Filter Theta and hilbert transform
             [b_theta,a_theta]=butter(2,[4 8]/(samprate/2));
-            tfmat_theta(1,:,:)=reshape(hilbert(filtfilt(b_theta,a_theta,fpf)),1,numfp,size(fpf,1));
+            tfmat_theta=reshape(hilbert(filtfilt(b_theta,a_theta,fpf)),numfp,size(fpf,1));
             
             %Band Pass Filter Gamma 1 (30-100 Hz) and hilbert transform
             [b_gamma,a_gamma]=butter(2,[30 80]/(samprate/2));
-            tfmat_gamma(1,:,:)=reshape(hilbert(filtfilt(b_gamma,a_gamma,fpf)),1,numfp,size(fpf,1));
+            tfmat_gamma=reshape(hilbert(filtfilt(b_gamma,a_gamma,fpf)),numfp,size(fpf,1));
             
             %Band Pass Filter Gamma 2 (80-150 Hz) and hilbert transform
             [b_gamma2,a_gamma2]=butter(2,[80 150]/(samprate/2));
-            tfmat_gamma2(1,:,:)=reshape(hilbert(filtfilt(b_gamma2,a_gamma2,fpf)),1,numfp,size(fpf,1));
+            tfmat_gamma2=reshape(hilbert(filtfilt(b_gamma2,a_gamma2,fpf)),numfp,size(fpf,1));
             
             %Calculate Phase for Theta and Amp for Gammas
             PhaseMat_theta = angle(tfmat_theta);
             AmpMat_gamma = real(tfmat_gamma);
             AmpMat_gamma2 = real(tfmat_gamma2);
             
-            [p_i_ThetaGamma(fi,:)] = binAmpByPhase(PhaseMat_theta,AmpMat_gamma);
-            [p_i_ThetaGamma2(fi,:)] = binAmpByPhase(PhaseMat_theta,AmpMat_gamma2);
+            [p_i_ThetaGamma(fi,:,:)] = binAmpByPhase(PhaseMat_theta,AmpMat_gamma);
+            [p_i_ThetaGamma2(fi,:,:)] = binAmpByPhase(PhaseMat_theta,AmpMat_gamma2);
             
             fi = fi+1;
+            % **TO-DO**
+            % Shuffle folds to make surrogate MI values more like Tort
+            % methods.
             
             % Randomize Theta Phase and Bin Gamma Amplitude
             fpf_theta = filtfilt(b_theta,a_theta,fpf);%Bandpass filter theta
@@ -274,7 +194,7 @@ for q = [HC_I(1):HC_I(end)]; % BC_I(1):BC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(
         end
     end
     
-    if 1
+    if 0
         
         %% Calculate spike-field coherence
 

@@ -12,8 +12,8 @@ for i = 1:size(Data,2)
     end
 end
 
-figure
-imagesc(r_map)
+% figure
+% imagesc(r_map)
 title('Correlation Coefficient Map')
 xlabel('LFP Decoder Age')
 ylabel('LFP Decoder Age')
@@ -24,7 +24,7 @@ for i=1:size(Data,2)
 end
 
 if PlotOn == 1   
-    figure
+%     figure
     if iscell(DecoderAge)
         x = cell2mat(DecoderAge)';
     else
@@ -32,7 +32,7 @@ if PlotOn == 1
     end
     
     
-    plot(x, r_map_mean,'ko')
+%     plot(x, r_map_mean,'ko')
     xlabel('Decoder Age')
     ylabel('Mean Correlation Coefficient')
     title('Mean Corr Coeff Map')
@@ -50,7 +50,7 @@ if PlotOn == 1
     
     p = polyfit(x,r_map_mean,1);
     f = polyval(p,x);
-    plot(x,f,'k-')
+%     plot(x,f,'k-')
     ylim([0 1])
     
     [rho pval] = corr(x',r_map_mean')

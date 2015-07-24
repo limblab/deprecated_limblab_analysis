@@ -18,45 +18,45 @@ TestfullH = 0;
 TestRandH = 1;
 LoadFeatMat = 0;
 
-FileList = Chewie_LFP1_tsNum;
-DateFormNames = Chewie_LFP1_tsNum;
-featind = LFP1_featindBEST_Chewie;
-shuntedCh = Chewie_shuntedCh;
-DecoderStartDate = '09-01-2011';
+% FileList = Chewie_LFP1_tsNum;
+% DateFormNames = Chewie_LFP1_tsNum;
+% featind = LFP1_featindBEST_Chewie;
+% shuntedCh = Chewie_shuntedCh;
+% DecoderStartDate = '09-01-2011';
 
 %% take out weights and channel indices for zeroed and shunted channels
-if lfps == 1 && length(H) == length(original_H)
-    
-    [bestc bestf] = CalcCh_Feat_fromFeatInd(featind);
-    [C,sortInd]=sortrows([bestc' bestf']);
-    bestc = C(:,1);
-    bestf = C(:,2);
-    if LoadFeatMat == 1
-        [featindSorted,sortInd]=sortrows(featind');
-    end
-    if exist('badChannels','var')
-        AllChtoRemov = unique([badChannels; shuntedCh]);
-    else
-        AllChtoRemov = shuntedCh;
-    end
-    Bia = ismember(bestc, AllChtoRemov);
-    bestc = bestc(~Bia);
-    bestf = bestf(~Bia);
-    BadCind = find(Bia == 1);
-    bi = length(BadCind);
-    for i = 1:length(BadCind)
-        H(((BadCind(bi)-1)*10)+1:BadCind(bi)*10,:) = [];
-        bi = bi -1;
-    end
-    
-end
-
-Rand_I = randi([3 length(bestc)],120,2);
-Rand_I = unique(Rand_I,'rows','stable');
-Rand_I = Rand_I(Rand_I(:,1) ~= Rand_I(:,2),:);
-Rand_I = Rand_I(1:102,:);
-
-DecoderSVD
+% if lfps == 1 && length(H) == length(original_H)
+%     
+%     [bestc bestf] = CalcCh_Feat_fromFeatInd(featind);
+%     [C,sortInd]=sortrows([bestc' bestf']);
+%     bestc = C(:,1);
+%     bestf = C(:,2);
+%     if LoadFeatMat == 1
+%         [featindSorted,sortInd]=sortrows(featind');
+%     end
+%     if exist('badChannels','var')
+%         AllChtoRemov = unique([badChannels; shuntedCh]);
+%     else
+%         AllChtoRemov = shuntedCh;
+%     end
+%     Bia = ismember(bestc, AllChtoRemov);
+%     bestc = bestc(~Bia);
+%     bestf = bestf(~Bia);
+%     BadCind = find(Bia == 1);
+%     bi = length(BadCind);
+%     for i = 1:length(BadCind)
+%         H(((BadCind(bi)-1)*10)+1:BadCind(bi)*10,:) = [];
+%         bi = bi -1;
+%     end
+%     
+% end
+% 
+% Rand_I = randi([3 length(bestc)],120,2);
+% Rand_I = unique(Rand_I,'rows','stable');
+% Rand_I = Rand_I(Rand_I(:,1) ~= Rand_I(:,2),:);
+% Rand_I = Rand_I(1:102,:);
+% 
+% DecoderSVD
 
 for q = 1:length(FileList)
     %% Load file
@@ -126,7 +126,7 @@ for q = 1:length(FileList)
         y{q} = bdf.vel(:,2:3);
         y{q} = [interp1(bdf.vel(:,1), y{q}(:,1), t); interp1(bdf.vel(:,1), y{q}(:,2), t)]';
         
-        cells = unit_list(bdf);
+        cells{q} = unit_list(bdf);
         x = zeros(length(y{q}), length(V{1}));
         for i = 1:length(cells)
             if cells(i,1) ~= 0
@@ -140,8 +140,10 @@ for q = 1:length(FileList)
                 end
             end
         end
-        
-        
+    
+    [rOnlinemap{q},~, ~, ~, ~, ~] = ...
+        CorrCoeffMap(AllGam3,1,1:96)
+    continue    
         clear b cells i ts t
     end
     

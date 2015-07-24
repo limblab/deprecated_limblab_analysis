@@ -1,11 +1,9 @@
-Dates = {
-'3/02/2015',...
+DateNums = [735641]
 
-
-};
-
-for i = 1:length(Dates)
-    
-    superBatch('Jaco',Dates{i})
+for i = 1:length(DateNums)
+    for j = 1%:5
+        DateString = datestr(DateNums(i)+(j-1),'mm-dd-yy')
+        superBatch('Mini',DateString)
+    end
     
 end
