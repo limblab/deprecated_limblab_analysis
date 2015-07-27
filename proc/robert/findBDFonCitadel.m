@@ -107,8 +107,9 @@ else
     % revert to dialog, we couldn't automagically locate the
     % BDF.
     if ~suppressDialog
-        [FileName,PathName]=uigetfile('*.mat','select a bdf file');
-        pathToBDF=fullfile(PathName,FileName);
+        pathToBDF = '\';       
+%         [FileName,PathName]=uigetfile('*.mat','select a bdf file');
+%         pathToBDF=fullfile(PathName,FileName);
     else
         error('file not found: %s\n',nameIn)
     end

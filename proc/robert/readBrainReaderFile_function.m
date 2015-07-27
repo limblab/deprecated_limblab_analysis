@@ -9,6 +9,7 @@ end
 
 array=[];
 m=1;
+flagCount = 0;
 while ~feof(fid)
     tline=fgetl(fid);
     % if the startup tag is present, utilize it.  Otherwise, assume the
@@ -22,7 +23,10 @@ while ~feof(fid)
     if ~isempty(regexp(tline,'Plexon recording startup|Cerebus recording startup','once'))
         fprintf(1,'%s recording startup flag detected at line %d\n', ...
             regexp(tline,'Plexon|Cerebus','match','once'),m)
-        array=[];
+        flagCount = flagCount + 1;
+        if flagCount == 1
+            array=[];
+        end
     end
     numbers=sscanf(tline,'%f \t%f \t%f \t%f \t%f \t%f \t%f');
     if ~isempty(numbers)
