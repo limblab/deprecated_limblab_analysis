@@ -1,6 +1,5 @@
 function peak2peak = Analog_Trig_STA(datastructname)
-    addpath /..
-
+    
     out_struct = LoadDataStruct(datastructname,'bdf');
     
     if isempty(out_struct)

@@ -65,7 +65,7 @@ for tgt = 1:num_targets
         words_idx  =  binnedData.words(:,1) >= binnedData.trialtable(succ_idx(trial),1) & ...
                              binnedData.words(:,1) <= binnedData.trialtable(succ_idx(trial),8) ;
         
-        num_reentries(trial) = sum(binnedData.words(words_idx,2)==161)-1;
+        num_reentries(trial) = max(0,sum(binnedData.words(words_idx,2)==161)-1);
         
         %time2target
         time2target(trial) = binnedData.trialtable(succ_idx(trial),8) - binnedData.trialtable(succ_idx(trial),7);
@@ -73,13 +73,18 @@ for tgt = 1:num_targets
         %path
         binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),7),1,'last');
         binstop  = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),8),1,'last');
+
+%         % use this to make it only until the first entry
+%         firstentry_t = binnedData.words(binnedData.words(words_idx,2)==161,1);
+%         binstop = find(binnedData.timeframe<=firstentry_t,1,'last');
+        
         rawpath  = binnedData.cursorposbin(binstart:binstop,:);
       
         path_length(trial) = sum(sqrt(sum(diff(rawpath).^2,2)));
         
         numbins  = binstop-binstart;
         
-        if numbins<2
+        if ~numbins>2 || isempty(binstart) || isempty(binstop)
             %something is wrong, probably extra reward word in trialtable
             pause;
         end

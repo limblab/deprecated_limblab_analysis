@@ -1,4 +1,4 @@
-function [vaf,R2,preds,decoders,figh] = train_adapt_duration(train_data,test_data,train_duration,type,varargin)
+function [vaf,R2,mse,preds,decoders,figh] = train_adapt_duration(train_data,test_data,train_duration,type,varargin)
 
 if any(train_duration > train_data.timeframe(end)-train_data.timeframe(1)+1)
     error('training time exceed duration of data');
@@ -12,6 +12,7 @@ num_iter = length(train_duration);
 
 vaf      = nan(num_iter,num_out);
 R2       = nan(num_iter,num_out);
+mse      = nan(num_iter,1);
 preds    = nan(num_pts, num_out, num_iter);
 decoders = cell(num_iter,1);
 figh     = nan(num_iter,num_out);
@@ -40,14 +41,14 @@ for i = 1:num_iter
             % use normal adaptive decoder training
             params.mode = 'emg_cascade';
             decoders{i} = adapt_offline(temp_train_data,params);
-            [vaf(i,:),R2(i,:),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{decoders{i};E2F},params.mode,1,1,0,title_str);
+            [vaf(i,:),R2(i,:),mse(i),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{decoders{i};E2F},params.mode,1,1,0,title_str);
         case 'supervised'
             % use adaptive decoder with actual force
             params.mode = 'direct';
             params.adapt_params.type = 'supervised';
             N2F = adapt_offline(temp_train_data,params);
             decoders{i} = N2F;
-            [vaf(i,:),R2(i,:),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);
+            [vaf(i,:),R2(i,:),mse(i),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);
             
         case 'N2F_target'
             % use adaptive decoder with actual force
@@ -55,7 +56,7 @@ for i = 1:num_iter
             params.adapt_params.type = 'N2F_target';
             N2F = adapt_offline(temp_train_data,params);
             decoders{i} = N2F;
-            [vaf(i,:),R2(i,:),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);
+            [vaf(i,:),R2(i,:),mse(i),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);
             
         case 'optimal'
             % use optimal decoders
@@ -64,7 +65,7 @@ for i = 1:num_iter
             N2F.H = filMIMO4(temp_train_data.spikeratedata,temp_train_data.cursorposbin,params.n_lag,1,1);
             N2F.neuronIDs = temp_train_data.neuronIDs;
             decoders{i} = N2F;
-            [vaf(i,:),R2(i,:),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);
+            [vaf(i,:),R2(i,:),mse(i),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);
 %             preds(:,:,i) = predMIMOCE3(test_data.spikeratedata,H);
 %             R2(i,:)  = CalculateR2(preds(:,:,i),test_data.cursorposbin);
 %             vaf(i,:) = calc_vaf(preds(:,:,i),test_data.cursorposbin);
@@ -91,7 +92,7 @@ for i = 1:num_iter
             N2F.H = filMIMO4(spikes,force,numlags,1,1);
             N2F.neuronIDs = temp_train_data.neuronIDs;
             decoders{i} = N2F;
-            [vaf(i,:),R2(i,:),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);            
+            [vaf(i,:),R2(i,:),mse(i),preds(:,:,i),~,figh(i,:)] = plot_predsF(test_data,{N2F;[]},params.mode,1,1,0,title_str);            
         case 'emg'
             % use optimal decoders, predict EMGs
             H = filMIMO4(temp_train_data.spikeratedata,temp_train_data.emgdatabin,10,1,1);

@@ -1,4 +1,4 @@
-function [vaf,R2,predsF,predsE,figh] = plot_predsF(testdata,decoders,mode,varargin)
+function [vaf,R2,mse,predsF,predsE,figh] = plot_predsF(testdata,decoders,mode,varargin)
 % decoders = {N2E;E2F} or N2F
 
 plot_flag = true; emg_convolve = 1; emg_thresh = 0; title_str = ''; plot_EMGs = 0;
@@ -38,6 +38,9 @@ f_labels= {'Fx'; 'Fy'};
 % 
 % plot_data = [testdata.cursorposbin];
 % plot_labels= [testdata.cursorposlabels];
+
+% Mean Square Euclidian Error:
+mse = mean(sum((f_data-predsF).^2,2));
 
 % figure;
 num_figs = size(f_data,2);

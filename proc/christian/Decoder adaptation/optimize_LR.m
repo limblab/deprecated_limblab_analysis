@@ -1,9 +1,10 @@
 % function [vaf] = optimize_lambda(traindata,testdata,varargin)
 function [vaf,R2,decoders,preds,LR] = optimize_LR(E2F,train_data,optim_data,varargin)
 % % varargin = {}
-% LR     = [4e-6 2e-6 1e-6 5e-7 2.5e-7 1.25e-7 .625e-7];
+LR     = [4e-6 2e-6 1e-6 5e-7 2.5e-7 1.25e-7 .625e-7];
 delay  = 0.5;
-LR = 5e-7;
+delay  = [0 .1 .2 .3 .4 .45 .5 .55 .6 .65 .7 .8 .9 1];
+% LR = 5e-7;
 n_iter = length(LR);
 
 
@@ -36,10 +37,10 @@ for i = 1:n_iter
     fprintf('Training Iteration %d of %d\n',iter,n_iter);
     fprintf('Time Remaining ~ %.1f min\n',time_rem/60);
     
-    params.adapt_params.LR     = LR(i);
-    params.adapt_params.delay  = delay;
-%     params.adapt_params.LR     = LR;
-%     params.adapt_params.delay  = delay(i);
+%     params.adapt_params.LR     = LR(i);
+%     params.adapt_params.delay  = delay;    
+    params.adapt_params.LR     = LR;
+    params.adapt_params.delay  = delay(i);
 
     neuron_dec = adapt_offline(train_data,params);
     decoders{iter,1} = neuron_dec;
@@ -48,7 +49,7 @@ for i = 1:n_iter
         decoders{iter,2} = E2F;
     end
         
-    [vaf(iter,:),R2(iter,:),preds(:,:,iter)] = plot_predsF(optim_data,decoders(iter,:),params.mode,varargin{:});
+    [vaf(iter,:),R2(iter,:),mse,preds(:,:,iter)] = plot_predsF(optim_data,decoders(iter,:),params.mode,varargin{:});
 
     time_rem = (toc/iter)*(n_iter-iter);
     fprintf('VAF:\t%.2f\t%.2f\nR^2\t%.2f\t%.2f\n',vaf(iter,1),vaf(iter,2),R2(iter,1),R2(iter,2));
@@ -80,7 +81,7 @@ xlabel('Learning Rate');
 % legend('Fx','Fy','mean');
 % xlabel('Delay');
 
-title('Jango\_20140707')
+title(strrep(train_data.meta.filename,'_','\_'));
 
 % 
 % % Delay

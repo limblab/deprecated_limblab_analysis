@@ -35,23 +35,30 @@ for i = 1:num_files
     end
     
     spikes       = load([filepath filesep file_prefix '_spikes.txt']);
-    emg_preds    = load([filepath filesep file_prefix '_emgpreds.txt']);
+    if ~isempty(dir([filepath filesep file_prefix '_emgpreds.txt']))
+        emg_flag = true;
+        emg_preds    = load([filepath filesep file_prefix '_emgpreds.txt']);
+    else
+        emg_flag = false;
+    end
     cursor_preds = load([filepath filesep file_prefix '_curspreds.txt']);
     cursor_pos   = load([filepath filesep file_prefix '_cursorpos.txt']);
     params       = load([filepath filesep file_prefix '_params.mat']);
     
     %% Manually Align Cerebus and ascii recordings
-%      spikes = spikes(2:end, :);
-    new_tf = [ cursor_preds(2:end,1); cursor_preds(end,1)+0.05];
-    cursor_preds(:,1) = new_tf;
-    emg_preds(:,1) = new_tf;
-    cursor_pos(:,1)= new_tf;
+% %      spikes = spikes(2:end, :);
+%     new_tf = [ cursor_preds(2:end,1); cursor_preds(end,1)+0.05];
+%     cursor_preds(:,1) = new_tf;
+%     emg_preds(:,1) = new_tf;
+%     cursor_pos(:,1)= new_tf;
     
     %% reshape to match data
-    start_bin = find(emg_preds(:,1)>=bd{i}.timeframe(1),1,'first');
-    stop_bin  = find(emg_preds(:,1)<=bd{i}.timeframe(end),1,'last');
+    start_bin = find(cursor_pos(:,1)>=bd{i}.timeframe(1),1,'first');
+    stop_bin  = find(cursor_pos(:,1)<=bd{i}.timeframe(end),1,'last');
     
-    bd{i}.emg_preds    = interp1(emg_preds(start_bin:stop_bin,1),emg_preds(start_bin:stop_bin,2:end),bd{i}.timeframe,'linear','extrap');
+    if emg_flag
+        bd{i}.emg_preds    = interp1(emg_preds(start_bin:stop_bin,1),emg_preds(start_bin:stop_bin,2:end),bd{i}.timeframe,'linear','extrap');
+    end
     bd{i}.cursor_pos   = interp1(cursor_pos(start_bin:stop_bin,1),cursor_pos(start_bin:stop_bin,2:end),bd{i}.timeframe,'linear','extrap');
     bd{i}.cursor_preds = interp1(cursor_preds(start_bin:stop_bin,1),cursor_preds(start_bin:stop_bin,2:end),bd{i}.timeframe,'linear','extrap');
 
@@ -62,9 +69,11 @@ for i = 1:num_files
     bd{i}.online_spikes= interp1(spikes(start_bin:stop_bin,1),spikes(start_bin:stop_bin,2:end),bd{i}.timeframe,'linear','extrap');
     bd{i}.adapt_params = params;
     
-    % verify that cursor position is aligned
-    figure; plot(bd{i}.timeframe,bd{i}.cursor_pos(:,1));
-    hold on;plot(bd{i}.timeframe,bd{i}.cursorposbin(:,1),'--r');
+%     % verify that cursor position is aligned
+%     figure; plot(bd{i}.timeframe,bd{i}.cursor_pos(:,1));
+%     hold on;plot(bd{i}.timeframe,bd{i}.cursorposbin(:,1),'--r');
+%     legend('matlab preds','actual position'); title('Alignment check between matlab and cerebus');
+%     pause; close;
     %%
     
     struct_name = [file_prefix '_adapt_data'];
@@ -74,12 +83,10 @@ for i = 1:num_files
     % assignin('base',struct_name,eval(struct_name))
     assignin('base',struct_name,bd{i});
     
-    % varargout = {eval(struct_name),bd{i}};
-    varargout = bd(i);
-    
     eval([struct_name '= bd{i};']);
     save([filepath filesep struct_name '.mat'],struct_name);
     
 end
 
+varargout = bd;
     
