@@ -11,7 +11,7 @@ function [all_stats] = eval_online_adapt
 
 workspace = 'base';
     
-all_data = evalin(workspace,'who(''Jango__20150721_*'')');
+all_data = evalin(workspace,'who(''bd_*'')');
 
 %% adapt_data already loaded in workspace. Calculate Stats
 

@@ -1,4 +1,4 @@
-function plot_pos_and_tgts(out_struct)
+function plot_force_tgts(out_struct)
 
     out_struct = LoadDataStruct(out_struct,'bdf');
 

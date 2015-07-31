@@ -5,6 +5,7 @@ successes    = find(binnedData.trialtable(:,9)==double('R'));
 num_successes = length(successes);
 num_trials    = size(binnedData.trialtable,1);
 
+% for succ_per_min, only consider last minute if more than 30 sec
 duration = binnedData.timeframe(end)-binnedData.timeframe(1);
 num_mins = floor(duration/60);
 if mod(duration,60) > 30
@@ -20,8 +21,9 @@ end
 
 
 targets      = sort(unique(binnedData.trialtable(:,10)));
-num_targets   = length(targets);
+num_targets  = length(targets);
 target_stats = [];
+CT_emgs      = {};
 
 % target specific stats
 for tgt = 1:num_targets
@@ -34,6 +36,7 @@ for tgt = 1:num_targets
     path_length   = nan(num_succ,1);
     time2target   = nan(num_succ,1);
     normpath      = cell(num_succ,1);
+    OT_emgs       = cell(num_succ,1);
     
     %rewards per minute
     for i = 1:num_mins
@@ -70,23 +73,29 @@ for tgt = 1:num_targets
         %time2target
         time2target(trial) = binnedData.trialtable(succ_idx(trial),8) - binnedData.trialtable(succ_idx(trial),7);
         
-        %path
+        %emgs
+        
+        binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),1),1,'last');
+        binstop  = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),6),1,'last');
+        CT_emgs = [CT_emgs;{binnedData.emgdatabin(binstart:binstop,:)}];%#ok<AGROW>
+        
         binstart = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),7),1,'last');
         binstop  = find(binnedData.timeframe<=binnedData.trialtable(succ_idx(trial),8),1,'last');
-
 %         % use this to make it only until the first entry
 %         firstentry_t = binnedData.words(binnedData.words(words_idx,2)==161,1);
 %         binstop = find(binnedData.timeframe<=firstentry_t,1,'last');
+        OT_emgs{trial} = binnedData.emgdatabin(binstart:binstop,:);
         
-        rawpath  = binnedData.cursorposbin(binstart:binstop,:);
-      
+        %path
+        rawpath  = binnedData.cursorposbin(binstart:binstop,:);      
         path_length(trial) = sum(sqrt(sum(diff(rawpath).^2,2)));
         
         numbins  = binstop-binstart;
         
-        if ~numbins>2 || isempty(binstart) || isempty(binstop)
-            %something is wrong, probably extra reward word in trialtable
-            pause;
+        if  numbins<2 || isempty(binstart) || isempty(binstop)
+            disp('something is wrong, probably extra reward word in trialtable');
+            fprintf('for file : %s\n',binnedData.meta.filename);
+            fprintf('trial starting at %.2f sec\n',binnedData.trialtable(succ_idx(trial),1));
         end
         
         binpct   = 0:100/numbins:100;
@@ -101,7 +110,8 @@ for tgt = 1:num_targets
         {{ path_length}  ,'path_length'  },...
         {{ time2target}  ,'time2target'  },...
         {{ num_reentries},'num_reentries'},...
-        {{ normpath},'normpath'} ...
+        {{ normpath}     ,'normpath'     },...
+        {{ OT_emgs}         ,'emgs'         }...
         )];%#ok<AGROW> 
 end
 
@@ -111,12 +121,13 @@ succ_rate = num_successes/num_trials;
 pl_tot    = [];
 t2t_tot   = [];
 num_reent = [];
+norm_path = [];
 for i = 1:num_targets
     pl_tot    = [pl_tot;   target_stats.path_length{i}];%#ok<AGROW>
     t2t_tot   = [t2t_tot;  target_stats.time2target{i}];%#ok<AGROW>
     num_reent = [num_reent;target_stats.num_reentries{i}];%#ok<AGROW>
+    norm_path = [norm_path; target_stats.normpath{i}]; %#ok<AGROW>
 end
-norm_path = nan(size(pl_tot));
 
 target_stats = [target_stats; dataset(...
     {   0                   ,'ID'           },...
@@ -126,7 +137,8 @@ target_stats = [target_stats; dataset(...
     {   {pl_tot}            ,'path_length'  },...
     {   {t2t_tot}           ,'time2target'  },...
     {   {num_reent}         ,'num_reentries'},...
-    {   {norm_path}         ,'normpath'     } ...
+    {   {norm_path}         ,'normpath'     },...
+    {   {CT_emgs}           ,'emgs'         }...
     )];
 
 
