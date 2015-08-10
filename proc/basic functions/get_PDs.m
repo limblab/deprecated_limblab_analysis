@@ -279,7 +279,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         end
         output_data.electrode_behaviors=behaviors;
         if optionstruct.compute_vel_pds
-            output_data.electrode_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',10),'poisson');
+            output_data.electrode_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',100),'poisson');
             output_data.electrode_pd_table=get_pd_table(output_data.electrode_tuning_stats);
             %make a table that only has the best tuned electrodes:
             output_data.electrode_best_modulated_table=output_data.electrode_pd_table(output_data.electrode_pd_table.moddepth>median(output_data.electrode_pd_table.moddepth),:);
@@ -345,7 +345,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
                     '\fontsize{10} Amplitude normalized and log scaled for pretty picture.'])
         end
         if optionstruct.compute_force_pds
-            output_data.electrode_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',10),'poisson');
+            output_data.electrode_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',100),'poisson');
             output_data.electrode_force_pd_table=get_pd_table(output_data.electrode_force_tuning_stats);
             %make a table that only has the best tuned electrodes:
             output_data.electrode_best_modulated_force_table=output_data.electrode_force_pd_table(output_data.electrode_force_pd_table.moddepth>median(output_data.electrode_force_pd_table.moddepth),:);
