@@ -2,7 +2,7 @@ function bdf=postprocess_bdf(bdf,varargin)
     %makes a tdf from a bdf. tdf is the Tucker data format which extends
     %the bdf by appending the trial table as a main element, and adding the
     %firing rate to the unit sub elements
-    if length(varargin)>0
+    if ~isempty(varargin)
         opts=varargin{1};
         
     else
@@ -24,13 +24,15 @@ function bdf=postprocess_bdf(bdf,varargin)
                 [bdf.TT,bdf.TT_hdr]=bc_trial_table4(bdf);
             case 'WF'
                 [bdf.TT,bdf.TT_hdr]=wf_trial_table_hdr(bdf);
+            case 'CO'
+                [bdf.TT,bdf.TT_hdr]=co_trial_table_hdr(bdf);
             otherwise
                 error('make_tdf_function:UnidentifiedTask','The bdf.meta.task field is empty or contains an unrecognized task code')
         end
     end
     %
     %
-    if opts.do_firing_rate & isfield(bdf,'units')
+    if opts.do_firing_rate && isfield(bdf,'units')
         if isfield(opts,'binzise')
             ts=opts.binzise;
         else
