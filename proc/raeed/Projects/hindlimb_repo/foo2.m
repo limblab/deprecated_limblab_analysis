@@ -15,7 +15,7 @@ plotflag = false;
 %% First, set up our neurons
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % rng('default')
-% neurons = random('Normal', 0, 1, 100, 8);
+neurons = random('Normal', 0, 1, 10000, 8);
 
 % neurons(1,:) = [0 0 0 0 10 0 0 0];
 
