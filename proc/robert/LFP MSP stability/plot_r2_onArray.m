@@ -1,20 +1,21 @@
-function plot_r2_onArray(monkey_name,r2mat)
-% see also map_array_activity.m
+function plot_r2_onArray(monkey_name,r2Array)
 
 % Plot r2 values onto a square grid representative of actual electrode
 % position on the array.  If an electrode was not included, put a grey
-% placeholder in it's place (or a white one?)
-%               make it so that r2mat can be a vector, and feed in feature
-%               indices.
+% placeholder in it's place (or a white one?).
+
 
 % Inputs:
-%       monkey_name - name of monkey.  lower case.
+%       monkey_name   - name of monkey.  lower case.
 %    
-%       r2mat       - the performance array.  Doesn't have to be r2, but  
-%                     it should be a 96 x 96 matrix for a normal blackrock array.
+%       r2Array       - the performance array.  Doesn't have to be r2, but  
+%                       it should be a 96 x 96 matrix for a normal 
+%                       blackrock array.  The preprocessing steps are
+%                       responsible for getting the data into this format.
 %
 %
 
+% this code from map_array_activity.m
 pin_map   = [1  3  5  7  9  11 13 15 17 19 21 23 25 27 29 31 ... %bank 1
              2  4  6  8  10 12 14 16 18 20 22 24 26 28 30 32 ...
              33 35 37 39 41 43 45 47 49 51 53 55 57 59 61 63 ... %bank 2
@@ -58,20 +59,18 @@ map_matrix = reshape( sorted_list(:,1), 10, 10 )';
 %%%%%%%%%%%%%%%%%%%%%%
 
 arrayImg=zeros(10,10);
-for n=1:length(shuntR)
-    arrayImg(map_matrix==shuntR(n))=1;
-    arrayImg(map_matrix==shuntC(n))=1;
+for n=1:length(r2Array)
+    arrayImg(map_matrix==n)=r2Array(n);
 end
-arrayImg(map_matrix==0)=0.5;
+arrayImg(map_matrix==0)=NaN;
 
-figure, imagesc(arrayImg), colormap(gray)
-shuntedChannels=map_matrix(arrayImg>0.5);
+figure, imagesc(arrayImg)
 for n=1:10
     for k=1:10
         h=text(k,n,sprintf('%d',map_matrix(n,k)),'HorizontalAlignment','Center','VerticalAlignment','middle');
-        if arrayImg(n,k)==0
-            set(h,'Color','w')
-        end
+%         if arrayImg(n,k)==0
+%             set(h,'Color','w')
+%         end
     end
 end
 set(gca,'XTick',[],'YTick',[])
