@@ -30,6 +30,7 @@ function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
         end
     else
         bin_size=.050;%s
+        verbose=0;
     end
     num_bins=round((window(1)+window(2))/bin_size);
     bin_size=(window(1)+window(2))/num_bins;
@@ -64,8 +65,8 @@ function [H,bin_data]=make_PEH(bdf, event_times, window, unit, varargin)
     
     bin_data=hist(h_list,num_bins);
     timepoints=[-window(1):bin_size:window(2)-bin_size]+(bin_size/2);
-    H=figure;
-    bar(timepoints,bin_data,1);
+%     H=figure;
+    H=bar(timepoints,bin_data,1);
     %H is a handle to the bar-series object, not the plot, we need to get
     %the parent object handle
     bin_data=[bin_data;timepoints];
