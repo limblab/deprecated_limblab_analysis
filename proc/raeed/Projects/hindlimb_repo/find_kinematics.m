@@ -1,11 +1,11 @@
-function [joint_angles, muscle_lengths, scaled_lengths] = find_kinematics(base_leg,endpoint_positions, plotflag)
+function [joint_angles, muscle_lengths, scaled_lengths, segment_angles_unc] = find_kinematics(base_leg,endpoint_positions, plotflag)
 
 base_angles = [pi/4 -pi/4 pi/4];
 
 % matrix to transform hip-centric segment angles into joint angles (offset
 % by pi for knee and ankle), assuming row vector of segment angles
 joint_transform = [1 0 0; 1 -1 0; 0 -1 1]';
-num_positions = length(endpoint_positions);
+num_positions = size(endpoint_positions,2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Next, find angles coresponding to each endpoint position in normal case
@@ -19,12 +19,14 @@ x0 = base_angles';
 muscle_lengths_unc = [];
 joint_angles_unc = [];
 start_angles_con = [];
+segment_angles_unc = [];
 
-for i = 1:length(endpoint_positions)
+for i = 1:num_positions
     my_ep = endpoint_positions(:,i);
     angles = fmincon(@(x) elastic_joint_cost(x,base_angles), x0, [],[],[],[],[],[],@(x) endpoint_constraint(x,my_ep,base_leg), options);
     start_angles_con = [start_angles_con angles];
     joint_angles_unc = [joint_angles_unc; angles'*joint_transform];
+    segment_angles_unc = [segment_angles_unc; angles'];
     mp = get_legpts(base_leg,angles);
     
     % plot leg if needed
@@ -78,7 +80,7 @@ if(plotflag)
     figure;
 end
 
-for i = 1:length(endpoint_positions)
+for i = 1:num_positions
     my_ep = endpoint_positions(:,i);
 %     [x,val,flag] = fminsearch(@mycostcon, x0, options);
     angles = fmincon(@(x) elastic_joint_cost(x,base_angles), start_angles_con(:,i) , [0 1 -1;0 -1 1], [0; pi], [1 -1 0], knee_constraint_angle,[],[],@(x) endpoint_constraint(x,my_ep,base_leg), options);
