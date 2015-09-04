@@ -393,7 +393,7 @@ function RP = RP_create_struct(bdf,params)
         RP.bump_idx_table =[];
         RP.bump_idx_table_bmi =[];
     end
-%%
+
     if isfield(bdf,'units')
         units = unit_list(bdf,1);
         RP.firingrates_pert = zeros([size(RP.pert_idx_table) length(units)]); 
@@ -432,7 +432,10 @@ function RP = RP_create_struct(bdf,params)
             emg = filtfilt(b_lp,a_lp,emg);
 %             RP.emg(iEMG,:) = emg;
             RP.emg(iEMG,:) = emg;            
-            RP.emg_pert(:,:,iEMG) = emg(RP.pert_idx_table)/max(emg(RP.pert_idx_table(:)));
+            RP.emg_pert(:,:,iEMG) = emg(RP.pert_idx_table) - mean(mean(emg(RP.pert_idx_table(:,1:pert_offset))));
+            temp = RP.emg_pert(:,:,iEMG);
+            temp = prctile(temp(:),99);
+            RP.emg_pert(:,:,iEMG) = RP.emg_pert(:,:,iEMG)/temp;
             RP.emg_pert(RP.emg_pert<0) = 0;
             if ~isempty(RP.bump_idx_table)
                 RP.emg_bump(:,:,iEMG) = emg(RP.bump_idx_table)/max(emg(RP.bump_idx_table(:)));

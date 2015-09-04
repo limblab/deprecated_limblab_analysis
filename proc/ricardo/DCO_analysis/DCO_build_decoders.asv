@@ -1,8 +1,11 @@
 % % function params = DCO_build_decoders(data_struct,params)
-DCO = data_struct.DCO;
-bdf = data_struct.bdf;
+% DCO = data_struct.DCO;
+% bdf = data_struct.bdf;
 % 
 units = reshape([bdf.units.id],2,[])';
+if any(units(:,2))
+    error('This script only works with unsorted files')
+end
 
 BDF2BinArgs.binsize = 0.05;
 BDF2BinArgs.starttime = 1;
@@ -140,10 +143,6 @@ binnedData_all.emgdatabin = binnedData_all.emgdatabin(1:new_length,:);
 binnedData_all.spikeratedata = binnedData_all.spikeratedata(1:new_length,:);
 binnedData_all.forcedatabin = binnedData_all.forcedatabin(1:new_length,:);
 
-
-% if any(units(:,2))
-%     warning('Not building ')
-% end
 [filter_reciprocal, ~] = BuildModel(binnedData_reciprocal, DecoderOptions);
 [R2_rec, vaf_rec, mse_rec] = mfxval(binnedData_reciprocal, DecoderOptions);
 

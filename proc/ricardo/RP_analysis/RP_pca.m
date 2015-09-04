@@ -7,13 +7,12 @@ if isempty(RP.firingrates_pert)
     return
 end
 %% Movement during no bump trials
-binsize = 20;
+binsize = 1;
 
 clear condition_idx
 
-frequencies = 1:length(RP.perturbation_frequencies);
 % for iFrequency = 1:length(RP.perturbation_frequencies)
-for iFrequency = frequencies
+for iFrequency = 1:length(RP.perturbation_frequencies);
     for iDir = 1:length(RP.perturbation_directions)       
         if (iFrequency == 1 && iDir == 1)
             temp_fr = [];
@@ -21,18 +20,20 @@ for iFrequency = frequencies
             temp_y_pos = [];
             temp_x_force = [];
             temp_y_force = [];
+            temp_emg = [];
             previous_end_idx = 0;
         end
-        condition_idx{iFrequency,iDir} = RP.perturbation_frequencies_idx{iFrequency};
-        condition_idx{iFrequency,iDir} = intersect(condition_idx{iFrequency,iDir},union(RP.no_bump_trials,RP.late_bump));
-        condition_idx{iFrequency,iDir} = intersect(condition_idx{iFrequency,iDir},RP.perturbation_directions_idx{iDir});
-        condition_idx{iFrequency,iDir} = intersect(condition_idx{iFrequency,iDir},RP.reward_trials);
-        temp_fr = [temp_fr ; RP.firingrates_pert(condition_idx{iFrequency,iDir},:,:)];
-        temp_x_pos = [temp_x_pos; RP.pos_pert_x(condition_idx{iFrequency,iDir},:)];
-        temp_y_pos = [temp_y_pos; RP.pos_pert_y(condition_idx{iFrequency,iDir},:)];
-        temp_x_force = [temp_x_force; RP.force_pert_x(condition_idx{iFrequency,iDir},:)];
-        temp_y_force = [temp_y_force; RP.force_pert_y(condition_idx{iFrequency,iDir},:)];
-        condition_idx{iFrequency,iDir} = previous_end_idx+(1:length(condition_idx{iFrequency,iDir}));
+        condition_idx_original = RP.perturbation_frequencies_idx{iFrequency};
+        condition_idx_original = intersect(condition_idx_original,union(RP.no_bump_trials,RP.late_bump));
+        condition_idx_original = intersect(condition_idx_original,RP.perturbation_directions_idx{iDir});
+        condition_idx_original = intersect(condition_idx_original,RP.reward_trials);
+        temp_fr = [temp_fr ; RP.firingrates_pert(condition_idx_original,:,:)];
+        temp_x_pos = [temp_x_pos; RP.pos_pert_x(condition_idx_original,:)];
+        temp_y_pos = [temp_y_pos; RP.pos_pert_y(condition_idx_original,:)];
+        temp_x_force = [temp_x_force; RP.force_pert_x(condition_idx_original,:)];
+        temp_y_force = [temp_y_force; RP.force_pert_y(condition_idx_original,:)];
+        temp_emg = [temp_emg ; RP.emg_pert(condition_idx_original,:,:)];
+        condition_idx{iFrequency,iDir} = previous_end_idx+(1:length(condition_idx_original));
         previous_end_idx = condition_idx{iFrequency,iDir}(end);
     end
 end
@@ -41,6 +42,7 @@ y_pos_pert_binned = zeros(size(temp_x_pos,1),floor(size(temp_x_pos,2)/binsize));
 x_force_pert_binned = zeros(size(temp_x_force,1),floor(size(temp_x_force,2)/binsize));
 y_force_pert_binned = zeros(size(temp_x_force,1),floor(size(temp_x_force,2)/binsize));
 firing_rates_pert_binned = zeros(size(temp_fr,1),floor(size(temp_fr,2)/binsize),size(temp_fr,3));
+emg_pert_binned = zeros(size(temp_fr,1),floor(size(temp_fr,2)/binsize),size(RP.emg_pert,3));
 % firing_rates_pert_binned = zeros(size(temp_fr,1),floor(size(temp_fr,2)/binsize),size(temp_fr,3));
 for iTime = 1:size(firing_rates_pert_binned,2)
     firing_rates_pert_binned(:,iTime,:) = mean(temp_fr(:,(iTime-1)*binsize+(1:binsize),:),2);
@@ -49,71 +51,72 @@ for iTime = 1:size(firing_rates_pert_binned,2)
     x_force_pert_binned(:,iTime,:) = mean(temp_x_force(:,(iTime-1)*binsize+(1:binsize),:),2);
     y_force_pert_binned(:,iTime,:) = mean(temp_y_force(:,(iTime-1)*binsize+(1:binsize),:),2);    
     t_pert_binned(iTime) = mean(RP.t_pert((iTime-1)*binsize+(1:binsize)));
+    emg_pert_binned(:,iTime,:) = mean(temp_emg(:,(iTime-1)*binsize+(1:binsize),:),2);
 end
 
 temp = reshape(firing_rates_pert_binned,size(firing_rates_pert_binned,1)*size(firing_rates_pert_binned,2),[]);
 [coeff,score,latent,tsquared,explained] = pca(temp);
 score = reshape(score,size(firing_rates_pert_binned,1),size(firing_rates_pert_binned,2),[]);
 
-%
-params.fig_handles(end+1) = figure;
-set(params.fig_handles(end),'Name','PCA Movement animation')            
-h_pca = subplot(121);
-hold on
-h_pert = subplot(122);
-axis equal
-hold on
-x_limit_pca = [min(min(min(score(:,:,1)))) max(max(max(score(:,:,1))))];
-y_limit_pca = [min(min(min(score(:,:,2)))) max(max(max(score(:,:,2))))];
-z_limit_pca = [min(min(min(score(:,:,3)))) max(max(max(score(:,:,3))))];
-x_limit_pos = [min(min(min(x_pos_pert_binned(:,:)))) max(max(max(x_pos_pert_binned(:,:))))];
-y_limit_pos = [min(min(min(y_pos_pert_binned(:,:)))) max(max(max(y_pos_pert_binned(:,:))))];
-
-
-axis equal
-clear h_dots
-% for iFrequency = 1:length(RP.perturbation_frequencies_idx) 
-for iFrequency = frequencies
-    for iDir = 1:length(RP.perturbation_directions_idx)
-        h_dots_mean{iFrequency,iDir} = plot3(mean(score(condition_idx{iFrequency,iDir},1:2,1))',...
-            mean(score(condition_idx{iFrequency,iDir},1:2,2))',...
-            mean(score(condition_idx{iFrequency,iDir},1:2,3))','-','Color',RP.perturbation_frequency_colors(iFrequency,:),...
-            'Parent',h_pca);
-%     h_stars(iStiffness) = plot3(mean(score(:,1,1)),score(:,1,2),score(:,1,3),'.','Color',RP.stiffness_colors(iStiffness,:));
-        h_pos_mean{iFrequency,iDir} = plot(mean(x_pos_pert_binned(condition_idx{iFrequency,iDir},1)),...
-            mean(y_pos_pert_binned(condition_idx{iFrequency,iDir},1)),'-','Color',RP.perturbation_frequency_colors(iFrequency,:),...
-            'Parent',h_pert);
-    end
-end
-
-for iTime = 1:size(score,2)
-%     for iFrequency = 2
-%     for iFrequency = 1:length(RP.perturbation_frequencies_idx)
-    for iFrequency = frequencies    
-        for iDir = 1:length(RP.perturbation_directions_idx)
-%         for iDir = 1:1
-            for iTrial = 1:length(condition_idx{iFrequency,iDir})
-%                 set(h_dots{iStiffness}(iTrial),...
-%                     'XData',score(condition_idx{iStiffness,iBump}(iTrial),1:iTime,1)',...
-%                     'YData',score(condition_idx{iStiffness,iBump}(iTrial),1:iTime,2)',...
-%                     'ZData',score(condition_idx{iStiffness,iBump}(iTrial),1:iTime,3)');
-
-                set(h_dots_mean{iFrequency,iDir},...
-                    'XData',mean(score(condition_idx{iFrequency,iDir},1:iTime,1))',...
-                    'YData',mean(score(condition_idx{iFrequency,iDir},1:iTime,2))',...
-                    'ZData',mean(score(condition_idx{iFrequency,iDir},1:iTime,3))');
-                set(h_pos_mean{iFrequency,iDir},...
-                    'XData',mean(x_pos_pert_binned(condition_idx{iFrequency,iDir},1:iTime))',...
-                    'YData',mean(y_pos_pert_binned(condition_idx{iFrequency,iDir},1:iTime))');                    
-            end
-        end
-    end
-    set(h_pca,'XLim',x_limit_pca,'YLim',y_limit_pca,'ZLim',z_limit_pca);
-    set(h_pert,'XLim',x_limit_pos,'YLim',y_limit_pos);
-    title(['t = ' num2str(t_pert_binned(iTime)) ' s'])
-    pause(.05)
-    
-end
+ %%
+% params.fig_handles(end+1) = figure;
+% set(params.fig_handles(end),'Name','PCA Movement animation')            
+% h_pca = subplot(121);
+% hold on
+% h_pert = subplot(122);
+% axis equal
+% hold on
+% x_limit_pca = [min(min(min(score(:,:,1)))) max(max(max(score(:,:,1))))];
+% y_limit_pca = [min(min(min(score(:,:,2)))) max(max(max(score(:,:,2))))];
+% z_limit_pca = [min(min(min(score(:,:,3)))) max(max(max(score(:,:,3))))];
+% x_limit_pos = [min(min(min(x_pos_pert_binned(:,:)))) max(max(max(x_pos_pert_binned(:,:))))];
+% y_limit_pos = [min(min(min(y_pos_pert_binned(:,:)))) max(max(max(y_pos_pert_binned(:,:))))];
+% 
+% 
+% axis equal
+% clear h_dots
+% % for iFrequency = 1:length(RP.perturbation_frequencies_idx) 
+% for iFrequency = frequencies
+%     for iDir = 1:length(RP.perturbation_directions_idx)
+%         h_dots_mean{iFrequency,iDir} = plot3(mean(score(condition_idx{iFrequency,iDir},1:2,1))',...
+%             mean(score(condition_idx{iFrequency,iDir},1:2,2))',...
+%             mean(score(condition_idx{iFrequency,iDir},1:2,3))','-','Color',RP.perturbation_frequency_colors(iFrequency,:),...
+%             'Parent',h_pca);
+% %     h_stars(iStiffness) = plot3(mean(score(:,1,1)),score(:,1,2),score(:,1,3),'.','Color',RP.stiffness_colors(iStiffness,:));
+%         h_pos_mean{iFrequency,iDir} = plot(mean(x_pos_pert_binned(condition_idx{iFrequency,iDir},1)),...
+%             mean(y_pos_pert_binned(condition_idx{iFrequency,iDir},1)),'-','Color',RP.perturbation_frequency_colors(iFrequency,:),...
+%             'Parent',h_pert);
+%     end
+% end
+% 
+% for iTime = 1:20:size(score,2)
+% %     for iFrequency = 2
+% %     for iFrequency = 1:length(RP.perturbation_frequencies_idx)
+%     for iFrequency = frequencies    
+%         for iDir = 1:length(RP.perturbation_directions_idx)
+% %         for iDir = 1:1
+%             for iTrial = 1:length(condition_idx{iFrequency,iDir})
+% %                 set(h_dots{iStiffness}(iTrial),...
+% %                     'XData',score(condition_idx{iStiffness,iBump}(iTrial),1:iTime,1)',...
+% %                     'YData',score(condition_idx{iStiffness,iBump}(iTrial),1:iTime,2)',...
+% %                     'ZData',score(condition_idx{iStiffness,iBump}(iTrial),1:iTime,3)');
+% 
+%                 set(h_dots_mean{iFrequency,iDir},...
+%                     'XData',mean(score(condition_idx{iFrequency,iDir},1:iTime,1))',...
+%                     'YData',mean(score(condition_idx{iFrequency,iDir},1:iTime,2))',...
+%                     'ZData',mean(score(condition_idx{iFrequency,iDir},1:iTime,3))');
+%                 set(h_pos_mean{iFrequency,iDir},...
+%                     'XData',mean(x_pos_pert_binned(condition_idx{iFrequency,iDir},1:iTime))',...
+%                     'YData',mean(y_pos_pert_binned(condition_idx{iFrequency,iDir},1:iTime))');                    
+%             end
+%         end
+%     end
+%     set(h_pca,'XLim',x_limit_pca,'YLim',y_limit_pca,'ZLim',z_limit_pca);
+%     set(h_pert,'XLim',x_limit_pos,'YLim',y_limit_pos);
+%     title(['t = ' num2str(t_pert_binned(iTime)) ' s'])
+%     pause(.05)
+%     
+% end
 
 %% Individual PCAs
 params.fig_handles(end+1) = figure;
@@ -143,6 +146,47 @@ for iFrequency = 1:size(condition_idx,1)
 end
 xlabel('t (s)')
 
+%% Correlations between PCs and EMGs
+clear xcorr_mat
+for iFrequency = 1:size(condition_idx,1)
+    for iDir = 1:size(condition_idx,2)
+        condition_idx_temp = condition_idx{iFrequency,iDir};
+        iCondVec = [];
+        for iCond = 1:length(condition_idx_temp)
+            iCondVec(end+1) = iCond;
+            for iPC = 1:4
+                for iEMG = 1:size(emg_pert_binned,3)                    
+                    [xcorr_mat(condition_idx_temp(iCond),:,iPC,iEMG),lags] = xcorr(score(condition_idx_temp(iCond),:,iPC),emg_pert_binned(condition_idx_temp(iCond),:,iEMG),250,'coeff');
+                end
+            end
+        end
+    end
+end
+for iEMG = 1:size(emg_pert_binned,3)
+    params.fig_handles(end+1) = figure;
+    h_sub = [];
+    for iPC = 1:4
+        for iDir = 1:length(RP.perturbation_directions)  
+            h_sub(end+1) = subplot(2,4,(iDir-1)*4 + iPC);
+            hold on   
+            legend_str = {};
+            h_plot = [];
+            for iFreq = 1:length(RP.perturbation_frequencies)
+                plotted_var = xcorr_mat(condition_idx{iFreq,iDir},:,iPC,iEMG);
+                mean_var = mean(plotted_var);
+                std_var = std(plotted_var);
+                if ~any(isnan(mean_var))
+                    h_plot(end+1) = plot(lags,mean_var,'Color',RP.perturbation_frequency_colors(iFreq,:));
+                    errorarea(lags,mean_var,...
+                        std_var,RP.perturbation_frequency_colors(iFreq,:),.5);
+                    legend_str = [legend_str {[num2str(RP.perturbation_frequencies(iFreq))...
+                        ' Hz']}];
+                end
+            end
+        end
+    end
+end
+    
 
 %% Bump during late trials
 if ~isempty(RP.bump_trials)

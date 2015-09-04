@@ -29,7 +29,7 @@ DecoderOptions.Use_Thresh = 0;
 DecoderOptions.Use_EMGs = 0;
 DecoderOptions.Use_Ridge = 0;
 DecoderOptions.Use_SD = 0;
-DecoderOptions.foldlength = 30;
+DecoderOptions.foldlength = 60;
 
 % % Add co-contraction "EMG"
 % emg_idx = find(~cellfun(@isempty,strfind(bdf.emg.emgnames,'BRD')));

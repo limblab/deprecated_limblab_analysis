@@ -9,15 +9,17 @@ else
 end
 
 if ~isfield(RP,'BMI')
-    t_pert = RP.t_pert_bmi;
+    t_pert = RP.t_pert;
     pos_pert_x = RP.pos_pert_x;
     pos_pert_y = RP.pos_pert_y;
-    t_bump = RP.t_bump;
-    pos_bump_x = RP.pos_bump_x;
-    pos_bump_y = RP.pos_bump_y;
+    if isfield(RP,'t_bump')
+        t_bump = RP.t_bump;
+        pos_bump_x = RP.pos_bump_x;
+        pos_bump_y = RP.pos_bump_y;
+        force_bump_x = RP.force_bump_x;
+        force_bump_y = RP.force_bump_y;
+    end
     pos_pert_x_rot = RP.pos_pert_x_rot;
-    force_bump_x = RP.force_bump_x;
-    force_bump_y = RP.force_bump_y;
 else
     t_pert = RP.t_pert_bmi;
     pos_pert_x = RP.pos_pert_x_bmi;
@@ -226,7 +228,7 @@ if exist('t_bump')
                 ((force_bump_y(idx,:))'),...
                 'Color','b')
         end
-        title(['Handle force (early bump). Bump at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
+        title(['Handle force (early bump). Bump at ' num2str(RP.bump_directions(iDir)*180/pi) '^o'],...
             'Interpreter','tex')    
         xlabel('t (s)')
         ylabel('force (N)')
@@ -250,7 +252,7 @@ if exist('t_bump')
                 ((force_bump_y(idx,:))'),...
                 'Color','b')
         end
-        title(['Handle force (late bump). Bump at ' num2str(RP.perturbation_directions(iDir)*180/pi) '^o'],...
+        title(['Handle force (late bump). Bump at ' num2str(RP.bump_directions(iDir)*180/pi) '^o'],...
             'Interpreter','tex')    
         xlabel('t (s)')
         ylabel('force (N)')
