@@ -187,7 +187,9 @@ function out_struct = calc_from_raw(raw_struct, opts)
             if (isfield(out_struct, 'units') && ~isempty(out_struct.units))
                 for i=1:length(out_struct.units)
                     out_struct.units(i).ts=out_struct.units(i).ts( out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base) );
-                    out_struct.units(i).waveforms=out_struct.units(i).waveforms(out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base),:);
+                    if isfield(out_struct.units,'waveforms')
+                        out_struct.units(i).waveforms=out_struct.units(i).waveforms(out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base),:);
+                    end
                 end
             end
             if (isfield(out_struct, 'databursts') && ~isempty(out_struct.databursts))
