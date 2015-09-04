@@ -101,6 +101,8 @@ function DVMax_checker()
             ccm_in_charge_food = 0;
         end
         animalList(iMonkey).restricted = 0;
+        check_weight = 0;
+        
         if ccm_in_charge_water 
             animals_who_got_water{end+1} = animalList(iMonkey).animalName;
             disp([animalList(iMonkey).animalName ' was bottled by CCM.'])
@@ -145,6 +147,7 @@ function DVMax_checker()
             end
             
             if last_water_restriction_start < last_free_water_entry                 %% water restricted monkey
+                check_weight = 1;
                 animalList(iMonkey).restricted = 1;
                 last_water_entry_date = data{last_water_entry,2};
                 if floor(datenum(last_water_entry_date)) ~= datenum(date)                    
@@ -212,6 +215,7 @@ function DVMax_checker()
             end
             
             if last_food_restriction_start < last_free_food_entry                 %% food restricted monkey
+                check_weight = 1;
                 animalList(iMonkey).restricted = 1;
                 last_food_entry_date = data{last_food_entry,2};
                 if floor(datenum(last_food_entry_date)) ~= datenum(date)                    
@@ -240,16 +244,28 @@ function DVMax_checker()
     %             monkey_warning(animalList(iMonkey),'NoRecord')
                 animalList(iMonkey).fed_by = 'CCM';
             end       
-        end        
-    end
+        end   
+    
         
+    % Monkey weight warning
+    if check_weight        
+        if time < 18            
+            lastWeighing = (animalList(iMonkey).body_weight_date(1));
+            if datenum(date) - lastWeighing > 4 
+                disp(['Warning: ' animalList(iMonkey).animalName ' has not been weighed in ' num2str(datenum(date) - lastWeighing) ' day(s).'])
+                monkey_weight_warning(animalList(iMonkey),lastWeighing,testing);
+            end
+        end
+    end        
+   
     if time >= 18 %&& time < 23
         if (length(animals_who_got_water)==length(animalList) &&...
                 length(animals_who_got_food)==length(animalList))
             monkey_final_list(animalList,peopleList,testing)
         end
     end
-    
+    end
+        
     %% Body weight
     if time >= 18 && weekday(date) == 2   
         gf = figure;
@@ -549,4 +565,40 @@ function body_weight_email(animalList,peopleList,testing)
             pause(5)
         end
     end
+end
+
+function monkey_weight_warning(animal,lastWeighing,testing)
+    if testing
+        recepients = 'ricardort@gmail.com';        
+        subject = ['(this is a test) ' animal.animalName ' does not have a weight entry from the past 5 days.'];
+        message = {[animal.animalName ' (' animal.animalID ') has not been weighed since ' datestr(lastWeighing) '.'],...
+            'Sent from Matlab! This is a test.'};        
+        message_sent = 0;
+        while (~message_sent)
+            try
+                send_mail_message(recepients,subject,message)                
+                message_sent = 1;  
+            catch
+                message_sent
+                pause(5)
+            end
+        end
+    else
+        recepients{1} = animal.contactEmail;
+        if ~isempty(animal.secondInCharge)
+            recepients = {recepients{:},animal.secondarycontactEmail};
+        end
+        subject = [animal.animalName ' does not have a weight entry from the past 5 days.'];
+        message = {[animal.animalName ' (' animal.animalID ') has not been weighed since ' datestr(lastWeighing) '.'],...
+            'Sent from Matlab!'};          
+        message_sent = 0;
+        while (~message_sent)
+            try
+                send_mail_message(recepients,subject,message)                
+                message_sent = 1;  
+            catch
+                pause(5)
+            end
+        end
+    end           
 end

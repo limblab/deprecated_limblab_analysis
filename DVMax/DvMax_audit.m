@@ -198,8 +198,7 @@ function animalList=DvMax_audit(varargin)
         animalList(iMonkey).missed_weight=[];
 %         animalList(iMonkey).misplaced_weight=[];
         animalList(iMonkey).missed_food=[];
-        for idate=start_date:end_date
-            
+        for idate=start_date:end_date           
             
             prior_water_restriction=water_restriction_start(find(water_restriction_start<idate,1,'Last'));
             if isempty(prior_water_restriction)
