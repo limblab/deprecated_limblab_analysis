@@ -48,6 +48,9 @@ num_bins = size(BinnedData.timeframe,1);
 % default inputs is spike data
 %populate spike data for data units matching the filter units
 Inputs = zeros(num_bins,size(filter.neuronIDs,1));
+if ~isfield(BinnedData,'neuronIDs')
+    BinnedData.neuronIDs = spikeguide2neuronIDs(BinnedData.spikeguide);
+end
 [~,data_idx,filter_idx] = intersect(BinnedData.neuronIDs,filter.neuronIDs,'rows','stable');
 Inputs(:,filter_idx) = BinnedData.spikeratedata(:,data_idx);
 

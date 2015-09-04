@@ -62,7 +62,8 @@ if size(options.UseAllInputs,1)>1
     desiredInputs = get_desired_inputs(binnedData.spikeguide, neuronIDs);
 elseif options.UseAllInputs
 %        disp('Using all available inputs')
-    neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
+%     neuronIDs=spikeguide2neuronIDs(binnedData.spikeguide);
+    neuronIDs=binnedData.neuronIDs;
     desiredInputs=1:size(neuronIDs,1);
 else
     if ~exist('NeuronIDsFile','var')
@@ -142,7 +143,15 @@ else
 end
 
 
-general_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+% general_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+general_decoder.neuronIDs = neuronIDs;
+general_decoder.H = H;
+general_decoder.P = P;
+general_decoder.OutNames = OutNames;
+general_decoder.fillen = options.fillen;
+general_decoder.binsize = binsize;
+general_decoder.PC = PCoeffs;
+
 Models{1} = general_decoder;
 
 %% Now calculate a model for each State:
@@ -184,10 +193,24 @@ if options.Use_SD
         end
         
         if state == 1
-            posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+%             posture_decoder = struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+            posture_decoder.neuronIDs = neuronIDs;
+            posture_decoder.H = H;
+            posture_decoder.P = P;
+            posture_decoder.OutNames = OutNames;
+            posture_decoder.fillen = options.fillen;
+            posture_decoder.binsize = binsize;
+            posture_decoder.PC = PCoeffs;
             Models{2} = posture_decoder;
         elseif state == 2
-            movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+%             movement_decoder= struct('neuronIDs', neuronIDs, 'H', H, 'P', P,'outnames', OutNames,'fillen',options.fillen, 'binsize', binsize,'PC',PCoeffs);
+            movement_decoder.neuronIDs = neuronIDs;
+            movement_decoder.H = H;
+            movement_decoder.P = P;
+            movement_decoder.OutNames = OutNames;
+            movement_decoder.fillen = options.fillen;
+            movement_decoder.binsize = binsize;
+            movement_decoder.PC = PCoeffs;
             Models{3} = movement_decoder;
         end
     end

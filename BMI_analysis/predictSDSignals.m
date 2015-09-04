@@ -40,7 +40,7 @@ else
     fillen    = models.posture_decoder.fillen;
     numStates = 2;
     numOutputs= size(models.posture_decoder.H,2);
-    outnames = models.posture_decoder.outnames;
+    outnames = models.posture_decoder.OutNames;
     spikeguide = neuronIDs2spikeguide(models.posture_decoder.neuronIDs);
 end
 
