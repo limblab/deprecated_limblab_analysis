@@ -1,6 +1,6 @@
 % params.DCO_file_prefix = 'Chewie_2015-06-18_DCO_emg_emg_cartesian';
 % target_folder = ['D:\Chewie_8I2\' params.DCO_file_prefix '\CerebusData\'];
-params.DCO_file_prefix = 'Jaco_2015-09-04_DCO_emg_emg_cartesian';
+params.DCO_file_prefix = 'Jaco_2015-09-10_DCO_emg_emg_cartesian';
 target_folder = ['D:\Jaco_8I1\' params.DCO_file_prefix '\CerebusData\'];
 
 params.reprocess_data = 1;

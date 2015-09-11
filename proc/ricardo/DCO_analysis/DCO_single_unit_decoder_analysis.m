@@ -126,12 +126,11 @@ hold on
 %first plane
 surf(X,Y, - (n_1(1)/n_1(3)*X+n_1(2)/n_1(3)*Y-dot(n_1,p_1)/n_1(3)),'facecolor','red','facealpha',0.3);
 axis equal
-title('Normalized firing rates')
 xlabel([target_1_muscle ' target'])
 ylabel([target_3_muscle ' target'])
 zlabel([target_2_muscle ' target'])
-
-
+[b,bint,r,rint,stats] = regress(mean(mean_spikeratedata_ot_hold{2})',[mean(mean_spikeratedata_ot_hold{1})' mean(mean_spikeratedata_ot_hold{3})']);
+title(['Normalized firing rates. p = ' num2str(stats(3),2)])
 %% Neural channel correlations
 % 
 % for iUnit = 1:size(spikeratedata,2)
