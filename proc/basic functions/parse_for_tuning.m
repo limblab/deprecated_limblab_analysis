@@ -35,7 +35,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     %[outstruct]=parse_for_tuning(bdf,method,key,value...)
     % valid key-value pairs are:
     %   -('opts',options_struct), in this case the structure will contain 
-    %   optionsdetailing how parse_for_tuning will implement the selected 
+    %   options detailing how parse_for_tuning will implement the selected 
     %   method. Options not included in the options struct will be set to 
     %   default values, typically 0.
     %   -('use_FR', use_FR), a flag to indicate whether to to use firing 
@@ -104,11 +104,19 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     %written by Tucker Tomlinson Jan-8-2015
     
     %% sanity check BDF:
-        if ~isfield(bdf,'TT')
-            error('parse_for_tuning:NoTrialTableField','The BDF does not have the bdf.TT field containing the trial table')
+        if ~isfield(bdf,'TT') 
+            if ~strcmp(method,'continuous')
+                error('parse_for_tuning:NoTrialTableField','The BDF does not have the bdf.TT field containing the trial table')
+            else
+                warning('parse_for_tuning:NoTrialTableField','The BDF does not have the bdf.TT field containing the trial table')
+            end
         end
         if ~isfield(bdf,'TT_hdr')
-            error('parse_for_tuning:NoTrialTableHeaderField','The BDF does not have the bdf.TT_hdr field containing the trial table header')
+            if ~strcmp(method,'continuous')
+                error('parse_for_tuning:NoTrialTableHeaderField','The BDF does not have the bdf.TT_hdr field containing the trial table header')
+            else
+                warning('parse_for_tuning:NoTrialTableHeaderField','The BDF does not have the bdf.TT_hdr field containing the trial table header')
+            end
         end
         if ~isfield(bdf.units,'FR')
             error('parse_for_tuning:NoFiringRateField','The BDF does not have the bdf.units.FR field containing the firing rate')
@@ -121,6 +129,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     use_LFP=false;
     which_chans=[];
     which_bands=[];
+    only_good_data=0;
     for i=1:2:length(varargin)
         switch varargin{i}
             case 'opts'
@@ -135,6 +144,8 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 which_chans=varargin{i+1};
             case 'bands'
                 which_bands=varargin{i+1};
+            case 'only_good_data'
+                only_good_data=1;
             otherwise
                 error('Parse_for_tuning:UnrecognizedFlag',strcat('The ',num2str(i+2),'input is not a valid input'))
         end
@@ -188,7 +199,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
     else
         EMG=[pos(:,1),zeros(size(pos(:,2:end)))];
     end
-    if isfield(bdf,'good_kin_data')
+    if only_good_data
         good_data=bdf.good_kin_data;
     else
         good_data=ones(size(bdf.pos(:,1)));
@@ -283,6 +294,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
      
         % get sequence of target onsets, trial starts, and trial ends,
         % go-cues etc
+        if ~strcmp(method,'continuous')
             trial_starts=bdf.TT(:,bdf.TT_hdr.start_time);
             trial_ends=bdf.TT(:,bdf.TT_hdr.end_time);
             switch bdf.meta.task
@@ -321,6 +333,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
                     bump_times=[];
             end
+        end
     %% perform method specific selection of times of interest
         switch method
             case 'continuous'
