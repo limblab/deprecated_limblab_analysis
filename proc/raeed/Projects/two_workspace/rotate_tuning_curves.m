@@ -93,6 +93,8 @@ for i = 1:size(FR_PM,2)
     % Fit with optimization
     real_imag_scale = fminsearch(@(x) (find_ms_curve_dist(polar_DL_curve(:,i),(x(1)+1i*x(2))*polar_PM_curve(:,i)))^2,rand(2,1));
     complex_scale_factor(1,i) = real_imag_scale(1)+1i*real_imag_scale(2);
+    
+    disp(['Done with ' num2str(i)])
 end
 
 scale_factor = abs(complex_scale_factor);
@@ -140,7 +142,7 @@ for i = 1:size(FR_PM,2)
     legend('boxoff')
     title 'Unwrapped tuning curves'
     
-    saveas(fig,['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot' '.png'])
+%     saveas(fig,['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot' '.png'])
 end
 
 %% Plot binned speed
@@ -165,7 +167,7 @@ h=plot(tuning_DL.bins,binned_spd_DL);
 set(h,'linewidth',2,'color',[1 0 0])
 
 %% Plot summary
-array_break = 21;
+array_break_idx = find(unit_ids(:,1)>options.array_break,1,'first');
 
 frac_moddepth_PM = tuning_PM.frac_moddepth;
 frac_moddepth_DL = tuning_DL.frac_moddepth;
@@ -178,9 +180,9 @@ h=polar(0,max_rad);
 set(h,'color','w')
 hold on
 
-h=polar(repmat(rot_factor(1:array_break),2,1),[zeros(size(minfrac_moddepth(1:array_break)));minfrac_moddepth(1:array_break)]);
+h=polar(repmat(rot_factor(1:array_break_idx-1),2,1),[zeros(size(minfrac_moddepth(1:array_break_idx-1)));minfrac_moddepth(1:array_break_idx-1)]);
 set(h,'linewidth',2,'color',[0 0 1])
-h=polar(repmat(rot_factor(array_break+1:end),2,1),[zeros(size(minfrac_moddepth(array_break+1:end)));minfrac_moddepth(array_break+1:end)]);
+h=polar(repmat(rot_factor(array_break_idx:end),2,1),[zeros(size(minfrac_moddepth(array_break_idx:end)));minfrac_moddepth(array_break_idx:end)]);
 set(h,'linewidth',2,'color',[0 1 0])
 title({'Tuning curve rotations per area (Blue=3a, Green=2),', 'scaled by fractional modulation depth'})
 
@@ -188,6 +190,25 @@ saveas(fig,'total_transform_plot.png')
 
 output_data.scale_factor = scale_factor;
 output_data.rot_factor = rot_factor;
+
+%% hypothesis testing
+ % Check if change over each array is significantly different
+% from zero
+[hyp1,p1] = ttest(rot_factor(1:array_break_idx-1));
+[hyp2,p2] = ttest(rot_factor(array_break_idx:end));
+mean1 = mean(rot_factor(1:array_break_idx-1));
+mean2 = mean(rot_factor(array_break_idx:end));
+output_data.array_change_signif = [hyp1;hyp2];
+output_data.array_change_pval = [p1;p2];
+output_data.array_change_mean = [mean1;mean2];
+
+% Test if changes over arrays are different from each other
+[hyp,p] = ttest2(rot_factor(1:array_break_idx-1),rot_factor(array_break_idx:end),'Vartype','unequal');
+output_data.between_array_signif = hyp;
+output_data.between_array_pval = p;
+output_data.between_array_mean = mean1-mean2;
+
+output_data.num_units = [array_break_idx-1; length(rot_factor)-array_break_idx+1];
 
 end
 

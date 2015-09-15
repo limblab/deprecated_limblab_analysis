@@ -14,7 +14,10 @@ if(~isfield(options,'behaviors'))
     end
 
     %% prep bdf
-    bdf.meta.task = 'RW';
+    if ~isfield(bdf,'meta') || ~isfield(bdf.meta,'task')
+        % default to random walk
+        bdf.meta.task = 'RW';
+    end
 
     %add firing rate to the units fields of the bdf
     opts.binsize=0.05;
@@ -30,6 +33,7 @@ if(~isfield(options,'behaviors'))
     optionstruct.compute_force_pds=0;
     optionstruct.compute_dfdt_pds=0;
     optionstruct.compute_dfdtdt_pds=0;
+    which_units=1:length(bdf.units);
     if(isfield(options,'which_units'))
         which_units = options.which_units;
     elseif options.only_sorted

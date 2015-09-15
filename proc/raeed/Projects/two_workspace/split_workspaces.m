@@ -9,10 +9,12 @@ function [bdf_DL,bdf_PM,bdf] = split_workspaces(folder, options)
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if(~isfield(options,'bdf'))
-    if(folder(end)~=filesep)
-        folder = [folder filesep];
+    if(folder(end)==filesep)
+        folder = folder(1:end-1);
     end
-    bdf = get_nev_mat_data([folder options.prefix],options.labnum);
+    
+    NSx = cerebus2NEVNSx(folder,options.prefix);
+    bdf = get_nev_mat_data(NSx,options.labnum);
 else
     bdf = options.bdf;
 end
@@ -66,16 +68,27 @@ function [bdf_new,iStart,iStop] = extract_workspace(bdf,ind)
     new_vel = [];
     new_acc = [];
     new_force = [];
+    new_good_flag = [];
     for i=1:length(iStart)
-        new_pos = [new_pos;bdf.pos(iStart:iStop,:)];
-        new_vel = [new_vel;bdf.vel(iStart:iStop,:)];
-        new_acc = [new_acc;bdf.acc(iStart:iStop,:)];
-        new_force = [new_force;bdf.force(iStart:iStop,:)];
+        new_pos = [new_pos;bdf.pos(iStart(i):iStop(i),:)];
+        new_vel = [new_vel;bdf.vel(iStart(i):iStop(i),:)];
+        new_acc = [new_acc;bdf.acc(iStart(i):iStop(i),:)];
+        if(isfield(bdf,'force'))
+            new_force = [new_force;bdf.force(iStart(i):iStop(i),:)];
+        end
+        if(isfield(bdf,'good_kin_data'))
+            new_good_flag = [new_good_flag;bdf.good_kin_data(iStart(i):iStop(i),:)];
+        end
     end
     bdf_new.pos = new_pos;
     bdf_new.vel = new_vel;
     bdf_new.acc = new_acc;
-    bdf_new.force = new_force;
+    if(isfield(bdf,'force'))
+        bdf_new.force = new_force;
+    end
+    if(isfield(bdf,'good_kin_data'))
+        bdf_new.good_kin_data = new_good_flag;
+    end
     
     % get new spikes
     for uid = 1:length(bdf.units)
