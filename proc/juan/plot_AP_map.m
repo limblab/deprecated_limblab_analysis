@@ -1,74 +1,66 @@
 %
 % Plot the shape of the APs 'à la Blackrock'
 %
-%       varargout = function plot_AP_map( out_struct );
+%       varargout = function plot_AP_map( bdf_struct );
 %
-%       The function takes an out_struct (generated from a BDF) as input. 
+%       The function takes an bdf_struct (generated from a BDF) as input.
+%       If several bdf_structs are merged into an array of structs (with
+%       size 1-by-N), the function will plot the AP for each of them
+%       overimposed. 
 %       The function returns either a handle to the figure or nothing,
-%       depending of the number of arguments
+%       depending of the number of arguments.
+%       Note that the channels are not reorganized using an array mao.
 %
 %
-% Last edited by Juan Gallego - Dec 16, 2014
+% Last edited by Juan Gallego - Sep 16, 2015
 %
 
 
-function varargout = plot_AP_map( out_struct )
+function varargout = plot_AP_map( bdf_struct, varargin )
 
 
 % Define if the APs will be plotted in BW or color
-color_plot_yn           = 1;
+color_array             = ['k','r','b','g','m','c'];
 
-
+% Retrieve how many BDFs we want to plot
+nbr_bdfs                = numel(bdf_struct);
 
 
 % Create figure handle. The figure will be 
 AP_shapes_fig           = figure('units','normalized','outerposition',[0 0 1 1]);
 
-
-
-
 panel_ctr               = 2;
 
 
-for i = 1:length(out_struct.units)
+for i = 1:nbr_bdfs
     
-    
-    if length(out_struct.units) <= 96
-        
-        if color_plot_yn == 1
-        
-            colors_AP_plot  = colormap(jet(96));
-        end
-        
-        
-        if ( panel_ctr == 10 ) || ( panel_ctr == 91 )
-            
-            panel_ctr   = panel_ctr + 1;
-        end
-        
-        mean_AP         = mean(out_struct.units(i).waveforms);
-        std_AP          = std(double(out_struct.units(i).waveforms));
-        
-        subplot(10,10,panel_ctr),
-        %            plot(out_struct.units(i).waveforms','color',[.5 .5 .5]);
-        
-        if color_plot_yn == 0
-        
-            hold on, plot(mean_AP,'color','k','linewidth',1);
-            plot(mean_AP+std_AP,'color','k','linewidth',1,'linestyle','-.');
-            plot(mean_AP-std_AP,'color','k','linewidth',1,'linestyle','-.');
+    for ii = 1:length(bdf_struct(i).units)
+
+        if length(bdf_struct(i).units) <= 96
+
+            if ( panel_ctr == 10 ) || ( panel_ctr == 91 )
+
+                panel_ctr   = panel_ctr + 1;
+            end
+
+            mean_AP         = mean(bdf_struct(i).units(ii).waveforms);
+            std_AP          = std(double(bdf_struct(i).units(ii).waveforms));
+
+            subplot(10,10,panel_ctr),
+            %            plot(bdf_struct.units(i).waveforms','color',[.5 .5 .5]);
+
+            hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
+            plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+            plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+
+            panel_ctr       = panel_ctr + 1;
         else
-            
-            hold on, plot(mean_AP,'color',colors_AP_plot(i,:),'linewidth',1);
-            plot(mean_AP+std_AP,'color',colors_AP_plot(i,:),'linewidth',1,'linestyle','-.');
-            plot(mean_AP-std_AP,'color',colors_AP_plot(i,:),'linewidth',1,'linestyle','-.');
+
+            disp('ToDo');
         end
-        
-        panel_ctr       = panel_ctr + 1;
-    else
-        
-        disp('ToDo');
     end
+    
+    panel_ctr               = 2;
 end
 
 

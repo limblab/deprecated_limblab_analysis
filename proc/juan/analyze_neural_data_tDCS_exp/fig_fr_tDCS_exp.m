@@ -2,7 +2,7 @@
 % Function to plot the firing rate figures for analyze_tDCS_neural_data
 %
 % function fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, ...
-%                           neural_activity_post, fig_title, win_duration, varargin )
+%                           neural_activity_post, fig_title, sad_params, varargin )
 %
 %       The number of epochs for each 'block' (bsln, tDCS, post) can be
 %       passed as arguments 6-8
@@ -15,7 +15,7 @@
 %           varargin{4}:        'norm' or 'not'
 
 function fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, neural_activity_post, ...
-                            fig_title, win_duration, varargin )
+                            fig_title, sad_params, varargin )
 
 
 % Read or compute the number of 'epochs' (of duration win_duration) in each
@@ -77,6 +77,8 @@ else
     fr_ylabel                   = 'firing rate (Hz)';    
 end
 
+nbr_neurons                     = size(mean_fr_bsln,2);
+
 
 % 1. Mean firing rate vs. epoch number plot 
 
@@ -125,8 +127,12 @@ end
 % Set title, axes and format
 set(gca,'FontSize',14), xlabel('epoch nbr.'), set(gca,'TickDir','out')
 xlim([0 nbr_epochs+1]), ylabel(fr_ylabel)
-title([fig_title ' - epoch duration = ' num2str(win_duration) ' s'],'Interpreter','none')
-
+switch sad_params.behavior_data 
+    case 'word'
+        title([fig_title ' - word = ' num2str(hex2dec(sad_params.word_hex))],'Interpreter','none')        
+    otherwise
+        title([fig_title ' - epoch duration = ' num2str(sad_params.win_duration) ' s'],'Interpreter','none')        
+end
 
 
 % ------------------------
@@ -179,22 +185,22 @@ if ( nbr_epochs ~= nbr_points_bsln ) && ( nbr_points_bsln > 0 )
             grand_mean_fr_post+std_mean_fr_post,'-.b','linewidth',1 )
     end
     
-    % draw the markers
-    plot( 1:nbr_points_bsln, grand_mean_fr_bsln,'ok','markersize',12,'linewidth',2  )
-    plot( 1:nbr_points_bsln, grand_mean_fr_bsln+std_mean_fr_bsln,'ok','markersize',12,'linewidth',1  )
-    
-    if nbr_points_tDCS > 0
-        plot( nbr_points_bsln+1:nbr_points_bsln+nbr_points_tDCS, ...
-            grand_mean_fr_tDCS,'or','markersize',12,'linewidth',2 )
-        plot( nbr_points_bsln+1:nbr_points_bsln+nbr_points_tDCS, ...
-            grand_mean_fr_tDCS+std_mean_fr_tDCS,'or','markersize',12,'linewidth',1 )
-    end
-    if nbr_points_post > 0
-        plot( nbr_points_bsln+nbr_points_tDCS+1:nbr_points_bsln+nbr_points_tDCS+nbr_points_post, ...
-            grand_mean_fr_post,'ob','markersize',12,'linewidth',2 )
-        plot( nbr_points_bsln+nbr_points_tDCS+1:nbr_points_bsln+nbr_points_tDCS+nbr_points_post, ...
-            grand_mean_fr_post+std_mean_fr_post,'ob','markersize',12,'linewidth',1 )
-    end
+%     % draw the markers
+%     plot( 1:nbr_points_bsln, grand_mean_fr_bsln,'ok','markersize',12,'linewidth',2  )
+%     plot( 1:nbr_points_bsln, grand_mean_fr_bsln+std_mean_fr_bsln,'ok','markersize',12,'linewidth',1  )
+%     
+%     if nbr_points_tDCS > 0
+%         plot( nbr_points_bsln+1:nbr_points_bsln+nbr_points_tDCS, ...
+%             grand_mean_fr_tDCS,'or','markersize',12,'linewidth',2 )
+%         plot( nbr_points_bsln+1:nbr_points_bsln+nbr_points_tDCS, ...
+%             grand_mean_fr_tDCS+std_mean_fr_tDCS,'or','markersize',12,'linewidth',1 )
+%     end
+%     if nbr_points_post > 0
+%         plot( nbr_points_bsln+nbr_points_tDCS+1:nbr_points_bsln+nbr_points_tDCS+nbr_points_post, ...
+%             grand_mean_fr_post,'ob','markersize',12,'linewidth',2 )
+%         plot( nbr_points_bsln+nbr_points_tDCS+1:nbr_points_bsln+nbr_points_tDCS+nbr_points_post, ...
+%             grand_mean_fr_post+std_mean_fr_post,'ob','markersize',12,'linewidth',1 )
+%     end
     
 % For a 'control' experiment...
 else
@@ -205,13 +211,53 @@ end
 % Set title, axes and format
 set(gca,'FontSize',14), xlabel('epoch nbr.'), set(gca,'TickDir','out')
 xlim([0 nbr_epochs+1]), ylabel(['Grand mean ' fr_ylabel])
-title([fig_title ' - epoch duration = ' num2str(win_duration) ' s'],'Interpreter','none')
+switch sad_params.behavior_data 
+    case 'word'
+        title([fig_title ' - word = ' num2str(hex2dec(sad_params.word_hex))],'Interpreter','none')        
+    otherwise
+        title([fig_title ' - epoch duration = ' num2str(sad_params.win_duration) ' s'],'Interpreter','none')        
+end
 
 
 
 % ------------------------
-% 3. Plot that represents the relative change in firing rate
+% 3. Colored surface plot of the firing rate
 
+figure, hold on;
+if ( nbr_epochs ~= nbr_points_bsln ) && ( nbr_points_bsln > 0 )
+
+    aux_matrix_cp               = mean_fr_bsln';
+    
+    if nbr_points_tDCS > 0
+        aux_matrix_cp           = [aux_matrix_cp, mean_fr_tDCS'];
+    end
+    if nbr_points_post > 0
+        aux_matrix_cp           = [aux_matrix_cp, mean_fr_post'];
+    end
+    
+    imagesc(aux_matrix_cp), colormap(hot), colorbar
+    xlim([0.5 nbr_epochs+.5]), ylim([1 nbr_neurons]);
+    set(gca,'FontSize',14), set(gca,'TickDir','out')
+    xlabel('epoch nbr.'), ylabel('neuron')
+    title([fig_title ' ' fr_ylabel],'Interpreter','none')
+
+    % Add lines that separate blocks
+    plot([nbr_points_bsln+.5 nbr_points_bsln+.5],[1 nbr_neurons-.5],'w','linewidth',2)
+    plot([nbr_points_bsln+nbr_points_tDCS+.5 nbr_points_bsln+nbr_points_tDCS+.5],[1 nbr_neurons-.5],'w','linewidth',2)
+    
+    % And add text to these lines
+    if nbr_epochs ~= nbr_points_bsln
+        text(1.5,nbr_neurons-3,'baseline','color','w')
+    else
+        text(1.5,nbr_neurons-3,'control exp.','color','w')
+    end
+    if nbr_points_tDCS > 0
+        text(nbr_points_bsln+1,nbr_neurons-3,'tDCS on','color','w')
+    end
+    if nbr_points_post > 0
+        text(nbr_points_bsln+nbr_points_tDCS+1,nbr_neurons-3,'tDCS off','color','w')
+    end
+end
 
 
 
