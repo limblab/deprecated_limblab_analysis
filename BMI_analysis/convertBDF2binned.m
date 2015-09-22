@@ -385,6 +385,20 @@ if isfield(datastruct,'stim')
     end
 end
 
+%% State
+if isfield(datastruct,'state')
+    state = zeros(size(timeframe));
+    t = params.starttime;
+    t_idx = find(datastruct.state(:,1)==t);
+    datastruct_dt = round(1000*diff(datastruct.state(1:2,1)))/1000;
+    samples_per_bin = binWidth/datastruct_dt;
+    for iBin = 1:length(timeframe)-1
+        state(iBin) = mean(datastruct.state(t_idx:t_idx+samples_per_bin-1,2));
+        t_idx = t_idx+samples_per_bin;
+    end
+    state(end) = mean(datastruct.state(t_idx:t_idx+samples_per_bin-1,2));
+end
+
 %% Outputs
 binnedData = struct('timeframe',timeframe,...
                     'meta',datastruct.meta,...
@@ -405,6 +419,7 @@ binnedData = struct('timeframe',timeframe,...
                     'trialtable',tt,...
                     'trialtablelabels',{tt_labels},...
                     'stim',stim,...
-                    'stimT',stimT);        
+                    'stimT',stimT,...
+                    'state',state);        
         
 end
