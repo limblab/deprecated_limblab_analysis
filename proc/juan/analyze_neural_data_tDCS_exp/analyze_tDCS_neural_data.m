@@ -106,20 +106,20 @@ fig_title                   = file_name_4_metadata(1:last_pos_title(end)-1);
 
 % For the baseline trials
 if nbr_bsln_trials > 0
-    [neural_activity_bsln, binned_data_bsln]    = split_and_analyze_data( tDCS_exp_params.baseline_files, ...
+    [neural_activity_bsln, binned_data_bsln] = split_and_analyze_data( tDCS_exp_params.baseline_files, ...
                                 tDCS_exp_params.exp_folder, tDCS_exp_params.sad_params );
 end
 
 
 % For the tDCS trials
 if nbr_tDCS_trials > 0
-    [neural_activity_tDCS, binned_data_tDCS]   	= split_and_analyze_data( tDCS_exp_params.tDCS_files, ...
+    [neural_activity_tDCS, binned_data_tDCS] = split_and_analyze_data( tDCS_exp_params.tDCS_files, ...
                                 tDCS_exp_params.exp_folder, tDCS_exp_params.sad_params );
 end
 
 % For the post-tDCS trials
 if nbr_post_trials > 0
-    [neural_activity_post, binned_data_post]  	= split_and_analyze_data( tDCS_exp_params.post_tDCS_files, ...
+    [neural_activity_post, binned_data_post] = split_and_analyze_data( tDCS_exp_params.post_tDCS_files, ...
                                 tDCS_exp_params.exp_folder, tDCS_exp_params.sad_params );
 end
 
@@ -167,10 +167,10 @@ if nbr_bsln_trials > 0
     for i = 1:nbr_points_bsln
         switch tDCS_exp_params.sad_params.normalization
             case 'mean_only'
-                neural_activity_bsln.norm_firing_rate(i,:)      = neural_activity_bsln.mean_firing_rate(i,:) ...
+                neural_activity_bsln.norm_firing_rate(i,:) = neural_activity_bsln.mean_firing_rate(i,:) ...
                                                              ./neural_activity_bsln.mean_firing_rate_whole_bsln;
             case 'Z-score'
-                neural_activity_bsln.norm_firing_rate(i,:)      = ( neural_activity_bsln.mean_firing_rate(i,:) ...
+                neural_activity_bsln.norm_firing_rate(i,:) = ( neural_activity_bsln.mean_firing_rate(i,:) ...
                                                             - neural_activity_bsln.mean_firing_rate_whole_bsln )...
                                                             ./neural_activity_bsln.std_firing_rate_whole_bsln;
         end
@@ -182,10 +182,10 @@ if nbr_tDCS_trials > 0;
     for i = 1:nbr_points_tDCS
         switch tDCS_exp_params.sad_params.normalization
             case 'mean_only'
-                neural_activity_tDCS.norm_firing_rate(i,:)      = neural_activity_tDCS.mean_firing_rate(i,:) ...
+                neural_activity_tDCS.norm_firing_rate(i,:) = neural_activity_tDCS.mean_firing_rate(i,:) ...
                                                             ./neural_activity_bsln.mean_firing_rate_whole_bsln;
             case 'Z-score'
-                neural_activity_tDCS.norm_firing_rate(i,:)      = ( neural_activity_tDCS.mean_firing_rate(i,:) ...
+                neural_activity_tDCS.norm_firing_rate(i,:) = ( neural_activity_tDCS.mean_firing_rate(i,:) ...
                                                             - neural_activity_bsln.mean_firing_rate_whole_bsln )...
                                                             ./neural_activity_bsln.std_firing_rate_whole_bsln;
         end
@@ -197,10 +197,10 @@ if nbr_post_trials > 0;
     for i = 1:nbr_points_post
         switch tDCS_exp_params.sad_params.normalization
             case 'mean_only'
-                neural_activity_post.norm_firing_rate(i,:)      = neural_activity_post.mean_firing_rate(i,:) ...
+                neural_activity_post.norm_firing_rate(i,:) = neural_activity_post.mean_firing_rate(i,:) ...
                                                              ./neural_activity_bsln.mean_firing_rate_whole_bsln;
-            case 'Z_score'
-                neural_activity_post.norm_firing_rate(i,:)      = ( neural_activity_post.mean_firing_rate(i,:) ...
+            case 'Z-score'
+                neural_activity_post.norm_firing_rate(i,:) = ( neural_activity_post.mean_firing_rate(i,:) ...
                                                             - neural_activity_bsln.mean_firing_rate_whole_bsln )...
                                                             ./neural_activity_bsln.std_firing_rate_whole_bsln;
         end
@@ -212,86 +212,43 @@ end
 % 3. Calculate the relative changes in firing rate between blocks and see
 % if they are statistically significant
 
-% tDCS wrt to baseline
-neural_activity_tDCS.change_firing_rate                 = mean(neural_activity_tDCS.mean_firing_rate,1) ...
-                                                            - mean(neural_activity_bsln.mean_firing_rate,1);
-neural_activity_tDCS.change_norm_firing_rate            = mean(neural_activity_tDCS.norm_firing_rate,1) ...
-                                                            - mean(neural_activity_bsln.norm_firing_rate,1);
-                                                        
-neural_activity_tDCS.wilcox                             = signrank(mean(neural_activity_bsln.mean_firing_rate,1),...
-                                                            mean(neural_activity_tDCS.mean_firing_rate,1));
-neural_activity_tDCS.wilcox_norm                        = signrank(mean(neural_activity_bsln.norm_firing_rate,1),...
-                                                            mean(neural_activity_tDCS.norm_firing_rate,1));
 
-
-% post-tDCS wrt to tDCS
-neural_activity_post.change_firing_rate                 = mean(neural_activity_post.mean_firing_rate,1) ...
-                                                            - mean(neural_activity_tDCS.mean_firing_rate,1);
-neural_activity_post.change_norm_firing_rate            = mean(neural_activity_post.norm_firing_rate,1) ...
-                                                            - mean(neural_activity_tDCS.norm_firing_rate,1);
-
-neural_activity_post.wilcox                             = signrank(mean(neural_activity_tDCS.mean_firing_rate,1),...
-                                                            mean(neural_activity_post.mean_firing_rate,1));
-neural_activity_post.wilcox_norm                        = signrank(mean(neural_activity_tDCS.norm_firing_rate,1),...
-                                                            mean(neural_activity_post.norm_firing_rate,1));
-                                                      
-% post-tDCS wrt to baseline
-neural_activity_post.change_firing_rate_bsln            = mean(neural_activity_post.mean_firing_rate,1) ...
-                                                            - mean(neural_activity_bsln.mean_firing_rate,1);
-neural_activity_post.change_norm_firing_rate_bsln       = mean(neural_activity_post.norm_firing_rate,1) ...
-                                                            - mean(neural_activity_bsln.norm_firing_rate,1);
-
-neural_activity_post.wilcox_bsln                        = signrank(mean(neural_activity_post.mean_firing_rate,1),...
-                                                            mean(neural_activity_bsln.mean_firing_rate,1));
-neural_activity_post.wilcox_norm_bsln                   = signrank(mean(neural_activity_post.norm_firing_rate,1),...
-                                                            mean(neural_activity_bsln.norm_firing_rate,1));
+[neural_activity_bsln, neural_activity_tDCS, neural_activity_post] = ...
+    calc_stats_firing_rate_btw_blocks( neural_activity_bsln, neural_activity_tDCS, neural_activity_post );
 
                                                         
 % -------------------------------------------------------------------------
 % Plots
 
 % -> Plot the raw firing rate
-fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, neural_activity_post, fig_title, ...
+fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, neural_activity_post, ...
+    binned_data_bsln, binned_data_tDCS, binned_data_post, fig_title, ...
     tDCS_exp_params.sad_params, nbr_points_bsln, nbr_points_tDCS, nbr_points_post, 'not' );
 
 % -> Plot the normalized firing rate
-fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, neural_activity_post, fig_title, ...
-    tDCS_exp_params.sad_params.win_duration, nbr_points_bsln, nbr_points_tDCS, nbr_points_post, 'norm' );
+fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, neural_activity_post, ...
+    binned_data_bsln, binned_data_tDCS, binned_data_post, fig_title, ...
+    tDCS_exp_params.sad_params, nbr_points_bsln, nbr_points_tDCS, nbr_points_post, 'norm' );
 
 
 % Histograms showing the change in firing rate across blocks
 fig_fr_change_hist( neural_activity_tDCS.change_firing_rate, ...
-    [fig_title ' -- tDCS vs. baseline (P = ' num2str(neural_activity_tDCS.wilcox,3) ')'] )
+    [fig_title ' -- tDCS - baseline (P = ' num2str(neural_activity_tDCS.wilcox,3) ')'] )
 fig_fr_change_hist( neural_activity_post.change_firing_rate, ...
-    [fig_title ' -- post-tDCS vs. tDCS (P = ' num2str(neural_activity_post.wilcox,3) ')'] )
+    [fig_title ' -- post-tDCS - tDCS (P = ' num2str(neural_activity_post.wilcox,3) ')'] )
 fig_fr_change_hist( neural_activity_post.change_firing_rate_bsln, ...
-    [fig_title ' -- post-tDCS vs. baseline (P = ' num2str(neural_activity_post.wilcox_bsln,3) ')'] )
+    [fig_title ' -- post-tDCS - baseline (P = ' num2str(neural_activity_post.wilcox_bsln,3) ')'] )
 
 fig_fr_change_hist( neural_activity_tDCS.change_norm_firing_rate, ...
-    [fig_title ' -- tDCS vs. baseline (P = ' num2str(neural_activity_tDCS.wilcox_norm,3) ')'], 'norm' )
+    [fig_title ' -- tDCS - baseline (P = ' num2str(neural_activity_tDCS.wilcox_norm,3) ')'], 'norm' )
 fig_fr_change_hist( neural_activity_post.change_norm_firing_rate, ...
-    [fig_title ' -- post-tDCS vs. tDCS (P = ' num2str(neural_activity_post.wilcox_norm,3) ')'], 'norm' )
+    [fig_title ' -- post-tDCS - tDCS (P = ' num2str(neural_activity_post.wilcox_norm,3) ')'], 'norm' )
 fig_fr_change_hist( neural_activity_post.change_norm_firing_rate_bsln, ...
-    [fig_title ' -- post-tDCS vs. baseline (P = ' num2str(neural_activity_post.wilcox_norm_bsln,3) ')'], 'norm' )
+    [fig_title ' -- post-tDCS - baseline (P = ' num2str(neural_activity_post.wilcox_norm_bsln,3) ')'], 'norm' )
 
 
 % Behavior data
-figure,
-subplot(211), hold on
-plot(binned_data_bsln.timeframe,binned_data_bsln.cursorposbin(:,1),'k')
-plot(binned_data_bsln.timeframe(end)+binned_data_tDCS.timeframe,binned_data_tDCS.cursorposbin(:,1),'r')
-plot(binned_data_bsln.timeframe(end)+binned_data_tDCS.timeframe(end)+binned_data_post.timeframe,binned_data_post.cursorposbin(:,1),'b')
-set(gca,'FontSize',14), set(gca,'TickDir','out')
-xlim([0 binned_data_bsln.timeframe(end)+binned_data_tDCS.timeframe(end)+binned_data_post.timeframe(end)]), 
-ylabel('Cursor position X')
-subplot(212), hold on
-plot(binned_data_bsln.timeframe,binned_data_bsln.cursorposbin(:,2),'k')
-plot(binned_data_bsln.timeframe(end)+binned_data_tDCS.timeframe,binned_data_tDCS.cursorposbin(:,2),'r')
-plot(binned_data_bsln.timeframe(end)+binned_data_tDCS.timeframe(end)+binned_data_post.timeframe,binned_data_post.cursorposbin(:,2),'b')
-set(gca,'FontSize',14), set(gca,'TickDir','out')
-xlim([0 binned_data_bsln.timeframe(end)+binned_data_tDCS.timeframe(end)+binned_data_post.timeframe(end)]), 
-ylabel('Cursor position Y'), xlabel('time (s)')
-legend('baseline','tDCS on','tDCS off')
+plot_behavior_tDCS_exp( binned_data_bsln, binned_data_tDCS, binned_data_post, tDCS_exp_params.sad_params )
 
 
 % -------------------------------------------------------------------------

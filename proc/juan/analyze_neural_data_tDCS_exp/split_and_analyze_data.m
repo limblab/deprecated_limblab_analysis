@@ -40,22 +40,41 @@ for i = 1:nbr_files
     % ---------------------------------------------------------------------
     % load the binned data, or bin the data
     if nbr_files == 1
-       
-        nev_file_name   = file_names;
+        if strcmp(file_names(end-3:end),'nev')
+            my_file.name    = file_names;
+            my_file.type    = 'nev';
+        else
+            my_file.name    = file_names;
+            my_file.type    = 'mat';
+        end
     else
-        nev_file_name   = file_names{i};
+        if strcmp(file_names{1}(end-3:end),'nev')
+            my_file.name    = file_names{i};
+            my_file.type    = 'nev';
+        else
+            my_file.name    = file_names{i};
+            my_file.type    = 'mat';
+        end
     end
     
-    % check if there is a file with the binned data, otherwise bin it
-    cur_dir_files       = dir;
-    bin_file_name       = [nev_file_name(1:end-8) '_bin.mat'];
-        
-    if ~isempty( find( arrayfun( @(x) strncmp( x.name, bin_file_name, length(file_names) ), cur_dir_files ) , 1) )
-        load( bin_file_name );
-        binned_data = binnedData; clear binnedData;
-    else
-        
-        binned_data = convert2BDF2Binned( [folder_name filesep file_names] );
+    % Load the file. The way to do it, depends on the chosen file type
+    switch my_file.type
+        case 'mat'
+            load(file_names);
+            binned_data = binnedData; clear binnedData;
+        case 'nev'
+            % check if there is a file with the binned data, otherwise bin it
+            cur_dir_files   = dir;
+            bin_file_name   = [nev_file_name(1:end-8) '_bin.mat'];
+
+            if ~isempty( find( arrayfun( @(x) strncmp( x.name, bin_file_name, ...
+                    length(file_names) ), cur_dir_files ) , 1) )
+                load( bin_file_name );
+                binned_data = binnedData; clear binnedData;
+            else
+
+                binned_data = convert2BDF2Binned( [folder_name filesep file_names] );
+            end
     end
     
     % 'chop' the neural data to the chosen neurons
@@ -101,7 +120,8 @@ for i = 1:nbr_files
                         sad_params.thr_behavior*std(binned_data.cursorposbin);
             end
             
-            % find bins where cursor position is above the threshold
+            % find bins where rectified cursor position is above the
+            % threshold 
             pos_above_thr = [];
             for ii = 1:size(binned_data.cursorposbin,2)
                 pos_above_thr = [pos_above_thr; ...
@@ -127,7 +147,8 @@ for i = 1:nbr_files
                         sad_params.thr_behavior*std(binned_data.velocbin);
             end
                         
-            % find bins where cursor position is above the threshold
+            % find bins where rectify cursor velocity is above the
+            % threshold 
             pos_above_thr = [];
             for ii = 1:size(binned_data.cursorposbin,2)
                 pos_above_thr = [pos_above_thr; ...
@@ -147,23 +168,47 @@ for i = 1:nbr_files
             % take the window of data defined in 'sad_params.win_word'
             % ... but before check if some of the windows are out of
             % boundaries
-            word_bin( (word_bin-win_word_bins(1) ) < 0 ) = [];
-            word_bin( (word_bin+win_word_bins(2) ) > binned_data.timeframe(end)/bin_length ) = [];
             
-            bins_to_analyze = [];
-            for ii = 1:length(word_bin)
-                bins_to_analyze = [ bins_to_analyze, word_bin(ii) + (win_word_bins(1):win_word_bins(2)) ];
+            word_bin( (word_bin+win_word_bins(1) ) < 0 ) = [];
+            word_bin( (word_bin+win_word_bins(2) ) > binned_data.timeframe(end)/bin_length ) = [];
+            % Warn when two targets are too close (closer than the length
+            % of the specified window) 
+            if ~isempty( word_bin(diff(word_bin)<0) )
+                disp('warning two targets are too close!')
             end
             
-            if bins_to_analyze ~= size(unique(bins_to_analyze),2)
-                disp('warning two targets are too close!')
+            nbr_words = length(word_bin);
+            bins_per_word = abs(diff(win_word_bins))+1;
+            analysis_windows = zeros(nbr_words,bins_per_word);
+            for ii = 1:nbr_words
+                analysis_windows(ii,:) = word_bin(ii) + (win_word_bins(1):win_word_bins(2));
             end
             
             % create matrix with pos_above_threshold, to comply with the
             % rest of the code. This matrix will have all the bins that are
             % not in bins_to_analyze
             pos_above_thr = 1:numel(binned_data.timeframe);
-            pos_above_thr = pos_above_thr( find(~ismember(pos_above_thr,bins_to_analyze)) );
+            pos_above_thr = pos_above_thr( find(~ismember(pos_above_thr,analysis_windows)) );
+            
+            
+            % Store the firing rate of each neuron during each window...
+    
+            % retrieve number neural channels
+            nbr_neural_ch   = size(binned_data.spikeratedata,2);
+            
+            % preallocate matrices for storing the data and results
+            neural_activity.firing_rate_in_win = cell(nbr_neural_ch,1);
+            for ii = 1:nbr_neural_ch
+                neural_activity.firing_rate_in_win{ii} = zeros(nbr_words,bins_per_word);
+            end
+            for ii = 1:nbr_neural_ch
+                for iii = 1:nbr_words
+                    neural_activity.firing_rate_in_win{ii}(iii,:) = binned_data.spikeratedata(analysis_windows(iii,:),ii);
+                end
+            end
+            
+            % store analysis windows
+            neural_activity.analysis_windows        = analysis_windows;
     end
     
     % discard those bins in the relevant variables
@@ -175,7 +220,12 @@ for i = 1:nbr_files
         binned_data.cursorposbin(pos_above_thr,:)   = [];
         binned_data.velocbin(pos_above_thr,:)       = [];
         binned_data.accelbin(pos_above_thr,:)       = [];
+        binned_data.spikeratedata(pos_above_thr,:)  = [];
     end
+    
+    % store bin length and the analysis windows
+    binned_data.bin_length                          = bin_length;
+    
     
     % ToDo: see what to do with the words
     
@@ -192,13 +242,32 @@ for i = 1:nbr_files
     
     for ii = 1:nbr_win_this_trial
         first_sample    = (ii-1)*nbr_bins_per_win + 1;
-        last_sample     = ii*nbr_bins_per_win;
-
+        if ~strcmp(sad_params.behavior_data,'word')
+            last_sample = ii*nbr_bins_per_win;
+        else
+            last_sample = size(binned_data.spikeratedata,1);
+        end
+        
         neural_activity.mean_firing_rate(epoch_ctr,:) = mean( binned_data.spikeratedata(first_sample:last_sample,:) );
         neural_activity.std_firing_rate(epoch_ctr,:)  = std( binned_data.spikeratedata(first_sample:last_sample,:) );
         
         epoch_ctr       = epoch_ctr + 1;
     end
+    
+    
+    % 4. If looking at words, calculate the mean and SD firing rate for
+    % each channel across all occurrences of the word
+    if strcmp(sad_params.behavior_data,'word')
+        
+        neural_activity.mean_firing_rate_in_win = zeros(bins_per_word,nbr_neural_ch);
+        neural_activity.std_firing_rate_in_win = zeros(bins_per_word,nbr_neural_ch);
+        
+        for ii = 1:nbr_neural_ch
+            neural_activity.mean_firing_rate_in_win(:,ii) = mean(neural_activity.firing_rate_in_win{ii},1);
+            neural_activity.std_firing_rate_in_win(:,ii) = std(neural_activity.firing_rate_in_win{ii},1);
+        end
+    end
+    
     
     % Pool binned_data, to return it
     binned_data_pool(i) = binned_data; %#ok<NASGU>

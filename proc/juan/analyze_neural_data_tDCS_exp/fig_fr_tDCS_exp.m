@@ -15,7 +15,8 @@
 %           varargin{4}:        'norm' or 'not'
 
 function fig_fr_tDCS_exp( neural_activity_bsln, neural_activity_tDCS, neural_activity_post, ...
-                            fig_title, sad_params, varargin )
+                            binned_data_bsln, binned_data_tDCS, binned_data_post, fig_title, ...
+                            sad_params, varargin )
 
 
 % Read or compute the number of 'epochs' (of duration win_duration) in each
@@ -129,7 +130,7 @@ set(gca,'FontSize',14), xlabel('epoch nbr.'), set(gca,'TickDir','out')
 xlim([0 nbr_epochs+1]), ylabel(fr_ylabel)
 switch sad_params.behavior_data 
     case 'word'
-        title([fig_title ' - word = ' num2str(hex2dec(sad_params.word_hex))],'Interpreter','none')        
+        title([fig_title ' - word = ' num2str(hex2dec(num2str(sad_params.word_hex)))],'Interpreter','none')        
     otherwise
         title([fig_title ' - epoch duration = ' num2str(sad_params.win_duration) ' s'],'Interpreter','none')        
 end
@@ -213,7 +214,7 @@ set(gca,'FontSize',14), xlabel('epoch nbr.'), set(gca,'TickDir','out')
 xlim([0 nbr_epochs+1]), ylabel(['Grand mean ' fr_ylabel])
 switch sad_params.behavior_data 
     case 'word'
-        title([fig_title ' - word = ' num2str(hex2dec(sad_params.word_hex))],'Interpreter','none')        
+        title([fig_title ' - word = ' num2str(hex2dec(num2str(sad_params.word_hex)))],'Interpreter','none')        
     otherwise
         title([fig_title ' - epoch duration = ' num2str(sad_params.win_duration) ' s'],'Interpreter','none')        
 end
@@ -243,7 +244,8 @@ if ( nbr_epochs ~= nbr_points_bsln ) && ( nbr_points_bsln > 0 )
 
     % Add lines that separate blocks
     plot([nbr_points_bsln+.5 nbr_points_bsln+.5],[1 nbr_neurons-.5],'w','linewidth',2)
-    plot([nbr_points_bsln+nbr_points_tDCS+.5 nbr_points_bsln+nbr_points_tDCS+.5],[1 nbr_neurons-.5],'w','linewidth',2)
+    plot([nbr_points_bsln+nbr_points_tDCS+.5 nbr_points_bsln+nbr_points_tDCS+.5],....
+        [1 nbr_neurons-.5],'w','linewidth',2)
     
     % And add text to these lines
     if nbr_epochs ~= nbr_points_bsln
@@ -259,5 +261,72 @@ if ( nbr_epochs ~= nbr_points_bsln ) && ( nbr_points_bsln > 0 )
     end
 end
 
+
+
+% ------------------------
+% 4. If the behavior is a word, plot the mean+SD firing rate in the
+% specified window for each block 
+
+if strcmp(sad_params.behavior_data,'word')
+
+    % retrieve number of bins for each occurrence of the selected word, and
+    % the number of times that word occurred
+    bins_per_word           = size(neural_activity_bsln.analysis_windows,2);
+    num_words               = size(neural_activity_bsln.analysis_windows,1);
+
+    x_ax                    = linspace(sad_params.win_word(1),sad_params.win_word(2),bins_per_word);
+    
+    if ~strcmp(fr_ylabel(1:4),'norm')
+    
+        figure,hold on
+        if nbr_points_bsln > 0
+            plot(x_ax,mean(neural_activity_bsln.mean_firing_rate_in_win,2),'k','linewidth',2)
+            plot(x_ax,mean(neural_activity_bsln.mean_firing_rate_in_win,2) + ...
+                std(neural_activity_bsln.mean_firing_rate_in_win,0,2),'-.k','linewidth',1)
+        end
+        if nbr_points_tDCS > 0
+            plot(x_ax,mean(neural_activity_tDCS.mean_firing_rate_in_win,2),'r','linewidth',2)
+            plot(x_ax,mean(neural_activity_tDCS.mean_firing_rate_in_win,2) + ...
+                std(neural_activity_tDCS.mean_firing_rate_in_win,0,2),'-.r','linewidth',1)
+        end
+        if nbr_points_post > 0
+            plot(x_ax,mean(neural_activity_post.mean_firing_rate_in_win,2),'b','linewidth',2)
+            plot(x_ax,mean(neural_activity_post.mean_firing_rate_in_win,2) + ...
+                std(neural_activity_post.mean_firing_rate_in_win,0,2),'-.b','linewidth',1)
+        end
+        ylabel('firing rate (Hz)')    
+        set(gca,'FontSize',14), xlabel('time around word (ms)'), set(gca,'TickDir','out')
+        xlim([x_ax(1), x_ax(end)]),
+        title([fig_title ' - neural activity around word = ' num2str(hex2dec(num2str(sad_params.word_hex)))],...
+            'Interpreter','none')
+    else
+%         figure,hold on
+%         if nbr_points_bsln > 0
+%             plot(x_ax,mean(neural_activity_bsln.mean_firing_rate_in_win,2),'k','linewidth',2)
+%             plot(x_ax,mean(neural_activity_bsln.mean_firing_rate_in_win,2) + ...
+%                 std(neural_activity_bsln.mean_firing_rate_in_win,0,2),'-.k','linewidth',1)
+%         end
+%         if nbr_points_tDCS > 0
+%             switch sad_params.normalization
+%                 case 'mean_only'
+%                     plot(x_ax,mean(neural_activity_tDCS.mean_firing_rate_in_win,2)/,'r','linewidth',2)
+%                     plot(x_ax,mean(neural_activity_tDCS.mean_firing_rate_in_win,2) + ...
+%                         std(neural_activity_tDCS.mean_firing_rate_in_win,0,2),'-.r','linewidth',1)
+%                 case 'Z-score'
+%                     
+%             end
+%         end
+%         if nbr_points_post > 0
+%             plot(x_ax,mean(neural_activity_post.mean_firing_rate_in_win,2),'b','linewidth',2)
+%             plot(x_ax,mean(neural_activity_post.mean_firing_rate_in_win,2) + ...
+%                 std(neural_activity_post.mean_firing_rate_in_win,0,2),'-.b','linewidth',1)
+%         end
+%         ylabel('normalized firing rate (Hz)')
+%         set(gca,'FontSize',14), xlabel('time around word (ms)'), set(gca,'TickDir','out')
+%         xlim([x_ax(1), x_ax(end)]),
+%         title([fig_title ' - neural activity around word = ' num2str(hex2dec(num2str(sad_params.word_hex)))],...
+%             'Interpreter','none')
+    end
+end
 
 
