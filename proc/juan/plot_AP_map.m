@@ -54,6 +54,16 @@ for i = 1:nbr_bdfs
             plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
 
             panel_ctr       = panel_ctr + 1;
+            
+            if ii == 1
+                ylabel('ch 1');
+            elseif rem(ii-9,10) == 0
+                ylabel(['ch ' num2str(ii)])
+            end
+            
+            if ii >= 89
+                xlabel(['ch ' num2str(ii)])
+            end
         else
 
             disp('ToDo');
