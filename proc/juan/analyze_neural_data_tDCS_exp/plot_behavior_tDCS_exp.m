@@ -35,13 +35,14 @@ switch exp_params.behavior_data
         ylabel('Cursor velocity Y')
 end
         
-
-figure(fig_bhvr)
-subplot(211)
-set(gca,'FontSize',14), set(gca,'TickDir','out')
-xlim([0 binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe(end)]), 
-legend('baseline','tDCS on','tDCS off')
-subplot(212) 
-set(gca,'FontSize',14), set(gca,'TickDir','out')
-xlim([0 binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe(end)]), 
-xlabel('time (s)')
+if exist('fig_bhvr','var')
+    figure(fig_bhvr)
+    subplot(211)
+    set(gca,'FontSize',14), set(gca,'TickDir','out')
+    xlim([0 binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe(end)]), 
+    legend('baseline','tDCS on','tDCS off')
+    subplot(212) 
+    set(gca,'FontSize',14), set(gca,'TickDir','out')
+    xlim([0 binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe(end)]), 
+    xlabel('time (s)')
+end
