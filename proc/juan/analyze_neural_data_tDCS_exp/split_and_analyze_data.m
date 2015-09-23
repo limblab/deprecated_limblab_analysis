@@ -40,7 +40,7 @@ for i = 1:nbr_files
     % ---------------------------------------------------------------------
     % load the binned data, or bin the data
     if nbr_files == 1
-        if strcmp(file_names(end-3:end),'nev')
+        if strcmp(file_names(end-2:end),'nev')
             my_file.name    = file_names;
             my_file.type    = 'nev';
         else
@@ -48,7 +48,7 @@ for i = 1:nbr_files
             my_file.type    = 'mat';
         end
     else
-        if strcmp(file_names{1}(end-3:end),'nev')
+        if strcmp(file_names{1}(end-2:end),'nev')
             my_file.name    = file_names{i};
             my_file.type    = 'nev';
         else
@@ -60,20 +60,20 @@ for i = 1:nbr_files
     % Load the file. The way to do it, depends on the chosen file type
     switch my_file.type
         case 'mat'
-            load(file_names);
+            load(my_file.name);
             binned_data = binnedData; clear binnedData;
         case 'nev'
             % check if there is a file with the binned data, otherwise bin it
             cur_dir_files   = dir;
-            bin_file_name   = [nev_file_name(1:end-8) '_bin.mat'];
+            bin_file_name   = [my_file.name(1:end-8) '_bin.mat'];
 
             if ~isempty( find( arrayfun( @(x) strncmp( x.name, bin_file_name, ...
-                    length(file_names) ), cur_dir_files ) , 1) )
+                    length(my_file.name) ), cur_dir_files ) , 1) )
                 load( bin_file_name );
                 binned_data = binnedData; clear binnedData;
             else
 
-                binned_data = convert2BDF2Binned( [folder_name filesep file_names] );
+                binned_data = convert2BDF2Binned( [folder_name filesep my_file.name] );
             end
     end
     
