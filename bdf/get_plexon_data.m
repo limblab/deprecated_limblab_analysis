@@ -60,7 +60,6 @@ function out_struct = get_plexon_data(varargin)
 %     +-- BDF_INFO - contains information about the version of
 %                    get_plexon_data used to create the BDF
 
-% $Id$
 
     % make sure LaTeX is turned off and save the old state so we can turn
     % it back on at the end
@@ -68,16 +67,15 @@ function out_struct = get_plexon_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     % Initial setup
-    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1, 'labnum', 2,'spike',1);
-    
+    opts = struct('verbose', 0, 'progbar', 0, 'force', 1, 'kin', 1, 'eye', 1, 'labnum', 2,'spike',1,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'delete_raw',0);
+   
     if (nargin == 1)
         filename = varargin{1};
     else
         filename = varargin{1};
         for i = 2:nargin
             opt_str = char(varargin{i} + ...
-                (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case
-            
+                (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case            
             if strcmp(opt_str, 'verbose')
                 opts.verbose = 1;
             elseif strcmp(opt_str, 'progbar')
@@ -89,11 +87,16 @@ function out_struct = get_plexon_data(varargin)
             elseif strcmp(opt_str, 'nokin')
                 opts.kin = 0;
                 opts.force = 0;
-                warning('GetPlxData:InvalidOption','NoKin option not currently implemented');
-            elseif strcmp(opt_str, 'nospike')
-                opts.spike = 0;              
+            elseif strcmp(opt_str, 'rothandle')
+                opts.rothandle = varargin{i+1};
+            elseif strcmp(opt_str, 'ignore_jumps')
+                opts.ignore_jumps=1;
+            elseif strcmp(opt_str, 'ignore_filecat')
+                opts.ignore_filecat=1;
+            elseif strcmp(opt_str, 'delete_raw')
+                opts.delete_raw=1;
             elseif isnumeric(varargin{i})
-                opts.labnum=varargin{i};    %Allow entering of the lab number   
+                opts.labnum=varargin{i};    %Allow entering of the lab number               
             else 
                 error('Unrecognized option: %s', opt_str);
             end
@@ -129,22 +132,32 @@ function out_struct = get_plexon_data(varargin)
     
     out_struct.meta = struct('filename', OpenedFileName, 'datetime', ...
         DateTime,'duration', Duration, 'lab', opts.labnum, ...
-        'bdf_info', '$Id$');
-
+        'bdf_info', '$Id$', 'FileSepTime',[],'processed_with',[]);%file separation time set to empty vector assuming plexon files will all be single loads
+    if ispc
+        [~,hostname]=system('hostname');
+        hostname=strtrim(hostname);
+        username=strtrim(getenv('UserName'));
+    else
+        hostname=[];
+        username=[];
+    end
+    out_struct.meta.processed_with={'function','date','computer name','user name';'get_plexon_data',date,hostname,username};
     % Extract data from plxfile
     if opts.spike
-    out_struct.units = get_units_plx(filename, opts);
+        out_struct.units = get_units_plx(filename, opts);
     end
-    out_struct.raw = get_raw_plx(filename, opts);    
+    [out_struct.raw,out_struct.meta.jump_times]=get_raw_plx(filename, opts);    
     out_struct.keyboard_events = get_keyboard_plx(filename, opts);
+    
+    
     
 %% Clean up
     set(0, 'defaulttextinterpreter', defaulttextinterpreter);
 
 %% Extract data from the raw struct
     
-    out_struct = calc_from_raw(out_struct,opts);
-
+    %out_struct = calc_from_raw(out_struct,opts);
+    calc_from_raw_script
     if opts.verbose
         disp('Done')
     end

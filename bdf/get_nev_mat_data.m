@@ -93,7 +93,18 @@ function out_struct = get_nev_mat_data(varargin)
 
     out_struct.meta = struct('filename', NEVNSx.NEV.MetaTags.Filename, 'datetime', ...
         DateTime,'duration', NEVNSx.NEV.MetaTags.DataDurationSec, 'lab', opts.labnum, ...
-        'bdf_info', ['converted with get_nev_mat_data on ' date]);
+        'bdf_info', ['converted with get_nev_mat_data on ' date],'processed_with',[]);
+
+    if ispc
+        [~,hostname]=system('hostname');
+        hostname=strtrim(hostname);
+        username=strtrim(getenv('UserName'));
+    else
+        hostname=[];
+        username=[];
+    end
+    out_struct.meta.processed_with={'function','date','computer name','user name';'get_plexon_data',date,hostname,username};
+    
     if isfield(NEVNSx.MetaTags,'FileSepTime')
         out_struct.meta.FileSepTime=NEVNSx.MetaTags.FileSepTime;
     else

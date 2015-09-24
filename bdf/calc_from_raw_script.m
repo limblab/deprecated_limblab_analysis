@@ -8,7 +8,19 @@
     if opts.verbose==1
         disp('Reading continuous data...')
     end
-  
+    out_struct.meta.known_problems=[];
+    
+    if isfield(out_struct.meta,'processed_with')
+        if ispc
+            [~,hostname]=system('hostname');
+            hostname=strtrim(hostname);
+            username=strtrim(getenv('UserName'));
+        else
+            hostname=[];
+            username=[];
+        end
+        out_struct.meta.processed_with(end+1,:)={'calc_from_raw_script',date,hostname,username};
+    end
 %% Find task by start trial code
   
     center_out_task=0;
@@ -124,7 +136,7 @@
         % The start time of each channel.  Note that this NS library
         % function ns_GetTimeByIndex simply multiplies the index by the 
         % ADResolution... so it will always be zero.
-        out_struct.raw.fullbandwidth.ts(1:length(fullbandwidth_list)) = zeros(1,length(fullbandwidth_list));;
+        out_struct.raw.fullbandwidth.ts(1:length(fullbandwidth_list)) = zeros(1,length(fullbandwidth_list));
     end
 %% Position for robot and wrist flexion tasks
     if (robot_task && opts.kin)
@@ -226,7 +238,9 @@
         if (isfield(out_struct, 'units') && ~isempty(out_struct.units))
             for i=1:length(out_struct.units)
                 out_struct.units(i).ts=out_struct.units(i).ts( out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base) );
-                out_struct.units(i).waveforms=out_struct.units(i).waveforms(out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base),:);
+                if isfield(out_struct.units(1),'waveforms')
+                    out_struct.units(i).waveforms=out_struct.units(i).waveforms(out_struct.units(i).ts >= min(analog_time_base) & out_struct.units(i).ts <= max(analog_time_base),:);
+                end
             end
         end
         
@@ -313,7 +327,7 @@
                 disp('Aggregating data... get force')
             end
             % Check lab number for calibration parameters
-            if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection
+            if isfield(opts,'labnum') && opts.labnum==3 %If lab3 was used for data collection
                 % Check date of recording to see if it's before or after the
                 % change to force handle mounting.
                 if datenum(out_struct.meta.datetime) < datenum('5/27/2010')            
@@ -352,7 +366,26 @@
                     force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
                     Fy_invert = 1;
                 end
-            elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
+            elseif isfield(opts,'labnum') && opts.labnum==2 %if lab2 was used for data collection
+                warning('calc_from_raw_script:Lab2LoadCellCalibration','No one noted what the calibration for the Lab2 robot was, so this processing assumes the same parameters as the original LAB3 values. THE FORCE VALUES RESULTING FROM THIS ANALYSIS MAY BE WRONG!!!!!!!!!!!!!!')
+                if datenum(out_struct.meta.datetime) < datenum('5/27/2010')            
+                    fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
+                             -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
+                    rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
+                    force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+                    Fy_invert = -1; % old force setup was left hand coordnates.
+                elseif datenum(out_struct.meta.datetime) < datenum('6/28/2011')
+                    fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
+                            -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
+                    rotcal = [1 0; 0 1];                
+                    force_offsets = [-.73 .08 .21 -.23 .25 .44];
+                    Fy_invert = 1;
+                elseif opts.rothandle
+                    %included this section for consistency. Old Lab2 files 
+                    %would never have used a rotated handle
+                    error('calc_from_raw_script:Lab2RotHandle','the rotate handle option was never used in Lab2. If lab2 has been updated with a loadcell and you are using the handle in a rotated position you need to modify calc_from_raw_script to handle this')
+                end
+            elseif isfield(opts,'labnum') && opts.labnum==6 %If lab6 was used for data collection
                 if opts.rothandle
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
                     % \\citadel\limblab\Software\ATI FT\Calibration\Lab 6\FT16018.cal
@@ -638,23 +671,60 @@ end             %ending "if opts.eye"
             out_struct.targets.rotation = out_struct.targets.rotation(1:num_burst,:);
             out_struct.targets.corners  = out_struct.targets.corners(1:num_burst,:);
         elseif random_walk_task
-            num_targets = (burst_size - 18)/8;
-            out_struct.targets.centers = zeros(num_trials,2+2*num_targets);
-            for i=1:num_trials
-                if size(out_struct.databursts{i,2})~=burst_size
-                    warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+            %check what version of the databurst you are dealing with:
+            if out_struct.databursts{1,2}(2)==0
+                if datenum(out_struct.meta.datetime) < datenum('3/9/2009')    
+                    hdr_size=2;
+                    num_targets = (burst_size - hdr_size)/8;
+                    out_struct.targets.centers = zeros(num_trials,1+2*num_targets);
+                    for i=1:num_trials
+                        if size(out_struct.databursts{i,2})~=burst_size
+                            warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                        else
+                            try
+                                num_burst = num_burst+1;
+                                out_struct.targets.centers(num_burst,1)    =out_struct.databursts{i,1};
+                                out_struct.targets.centers(num_burst,2:end)=bytes2float(out_struct.databursts{i,2}(hdr_size+1:end));
+                            catch
+                                warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                            end
+                        end
+                    end
+                    out_struct.targets.centers = out_struct.targets.centers(1:num_burst,:);
                 else
-                    try
-                        num_burst = num_burst+1;
-                        out_struct.targets.centers(num_burst,1)    =out_struct.databursts{i,1};
-                        out_struct.targets.centers(num_burst,2)    =bytes2float(out_struct.databursts{i,2}(15:18));
-                        out_struct.targets.centers(num_burst,3:end)=bytes2float(out_struct.databursts{i,2}(19:end));
-                    catch
+                    warning('calc_from_raw_script:CorruptDataBurst',['Databurst formatting was changed at some point after 3/9/2009 '...
+                    'on experimental computers without commmitting changes to the code repository, and the number of targets in the '...
+                    'databurst does not always match the number of go cues. You MUST manually check that the databurst format '...
+                    'conforms to the expected format by checking that the number of target position x-y pairs matches the number '...
+                    'of go-cues in each trial'])
+                    out_struct.targets.centers =[];
+                    out_struct.meta.known_problems{end+1}='Possible malformed databurst (corrupt target positions)';
+                end
+            elseif out_struct.databursts{1,2}(2)==1
+                hdr_size=18;
+                num_targets = (burst_size - hdr_size)/8;
+                out_struct.targets.centers = zeros(num_trials,2+2*num_targets);
+                for i=1:num_trials
+                    if size(out_struct.databursts{i,2})~=burst_size
                         warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                    else
+                        try
+                            num_burst = num_burst+1;
+                            out_struct.targets.centers(num_burst,1)    =out_struct.databursts{i,1};
+                            out_struct.targets.centers(num_burst,2)    =bytes2float(out_struct.databursts{i,2}(15:18));
+                            out_struct.targets.centers(num_burst,3:end)=bytes2float(out_struct.databursts{i,2}(hdr_size+1:end));
+                        catch
+                            warning('calc_from_raw: Inconsistent Databurst at Time %.4f',out_struct.databursts{i,1});
+                        end
                     end
                 end
+                out_struct.targets.centers = out_struct.targets.centers(1:num_burst,:);
+            else
+                warning('calc_from_raw:BadDataBurstVersion','target parsing for the databurst version indicated in the first databurst is not implemented')
+                disp('Skipping out_struct.targets')
             end
-            out_struct.targets.centers = out_struct.targets.centers(1:num_burst,:);
+            
+            
         end
      end
     
@@ -664,31 +734,42 @@ end             %ending "if opts.eye"
     end
           
 %% generate masking vector for good data, using the concatenation times and jump times stored during loading of the bdf.
-    bad_times=[];
-    out_struct.good_kin_data=ones(size(out_struct.pos,1),1);
-    if isfield(opts,'ignore_jumps')
-        if ~opts.ignore_jumps
-            bad_times=reshape(out_struct.meta.jump_times,length(out_struct.meta.jump_times),1);
+    if opts.kin
+        bad_times=[];
+        out_struct.good_kin_data=ones(size(out_struct.pos,1),1);
+        if isfield(opts,'ignore_jumps')
+            if ~opts.ignore_jumps
+                bad_times=reshape(out_struct.meta.jump_times,length(out_struct.meta.jump_times),1);
+                if ~isempty(bad_times)
+                    out_struct.meta.known_problems{end+1}='Jumps in encoder output';
+                end
+            end
         end
-    end
-    if isfield(opts,'ignore_filecat')
-        if ~opts.ignore_filecat
-            bad_times=[bad_times;reshape(out_struct.meta.FileSepTime,numel(out_struct.meta.FileSepTime),1)];
+        if isfield(opts,'ignore_filecat')
+            if ~opts.ignore_filecat
+                bad_times=[bad_times;reshape(out_struct.meta.FileSepTime,numel(out_struct.meta.FileSepTime),1)];
+                if numel(out_struct.meta.FileSepTime)>1
+                    out_struct.meta.known_problems{end+1}='Jumps in kinetics due to file concatenation';
+                end
+            end
         end
-    end
-    if ~isempty(bad_times)
-        temp=bad_times>analog_time_base(1) & bad_times<analog_time_base(end);
-        bad_times=sort(bad_times(temp));
-        %convert times into indices:
-        bad_ind=(bad_times-analog_time_base(1))*adfreq;
-        %convert single indices into 1s range. note that adfreq is taken as
-        %shorthand for 1s*adfreq here 
-        %a direct indexing method is used instead of a for-loop for speed
-        bad_ind=repmat(bad_ind,1,round(adfreq));
-        range_mat=repmat(([1:round(adfreq)]-round(0.5*adfreq)),size(bad_ind,1),1);
-        bad_ind=reshape((bad_ind+range_mat)',numel(bad_ind),1); 
-        clear range_mat
-        %set indices corresponding to bad data equal to zero in out_struct.good_kin_data
-        out_struct.good_kin_data(round(bad_ind))=0;
-        clear bad_ind
+        if ~isempty(bad_times)
+            temp=bad_times>analog_time_base(1) & bad_times<analog_time_base(end);
+            bad_times=sort(bad_times(temp));
+            %convert times into indices:
+            bad_ind=(bad_times-analog_time_base(1))*adfreq;
+            %convert single indices into 1s range. note that adfreq is taken as
+            %shorthand for 1s*adfreq here 
+            %a direct indexing method is used instead of a for-loop for speed
+            bad_ind=repmat(bad_ind,1,round(adfreq));
+            range_mat=repmat(([1:round(adfreq)]-round(0.5*adfreq)),size(bad_ind,1),1);
+            bad_ind=reshape((bad_ind+range_mat)',numel(bad_ind),1); 
+            clear range_mat
+            bad_ind=round(bad_ind);
+            bad_ind=bad_ind(bad_ind<length(out_struct.good_kin_data));
+            %set indices corresponding to bad data equal to zero in out_struct.good_kin_data
+            out_struct.good_kin_data(bad_ind)=0;
+            out_struct.good_kin_data=logical(out_struct.good_kin_data);
+            clear bad_ind
+        end
     end

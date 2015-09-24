@@ -1,4 +1,4 @@
-function raw = get_raw_plx(filename, opts)
+function [raw, jump_times] = get_raw_plx(filename, opts)
 % GET_RAW_PLX extracts the units from the named plx file
 %   RAW = GET_RAW_PLX(FILENAME, VERBOSE) returns the bdf.raw 
 %       structure from the named plx file.  If a progress bar is desired
@@ -15,7 +15,7 @@ function raw = get_raw_plx(filename, opts)
     [tscounts, wfcounts, evcounts] = plx_info(filename,1); %#ok<SETNU>
     chans_with_data = sum(evcounts(300:427) > 0);
     [n, chan_list] = plx_adchan_names(filename); %#ok<SETNU>
-
+    [~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, Duration, ~] = plx_information(filename);
     chan_count = 1;
     if chans_with_data
         for i = 0:127             
@@ -61,13 +61,21 @@ function raw = get_raw_plx(filename, opts)
     if opts.verbose
         disp('Reading digital events...')
     end
-    try
+    if opts.kin
         [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
-        raw.enc = get_encoder([strobe_ts strobe_value]);
-    catch
-        er = lasterror;
-        disp(er.message);
+        if isfield(opts,'ignore_jumps') & opts.ignore_jumps
+            [raw.enc, jump_times] = get_encoder([strobe_ts, strobe_value],[0, Duration]);
+        else
+            [raw.enc, jump_times]= get_encoder([strobe_ts, strobe_value],[]);%empty array of file separation times. this function can be extended later to accept a list of separation times where the kinematic data will be discontinuous
+        end
     end
+%     try
+%         [n, strobe_ts, strobe_value] = plx_event_ts(filename, 257);
+%         raw.enc = get_encoder([strobe_ts strobe_value]);
+%     catch
+%         er = lasterror;
+%         disp(er.message);
+%     end
 
     % Get individual events
     for i = 3:10
@@ -75,7 +83,6 @@ function raw = get_raw_plx(filename, opts)
 %            progress = progress + .2/8;
 %            waitbar(progress, h, sprintf('Opening: %s\nget events', filename));
 %        end
-
         try
             [n, ts] = plx_event_ts(filename, i);
         catch
@@ -91,14 +98,22 @@ function raw = get_raw_plx(filename, opts)
         raw.nev2plx = 1; % flag for later
         
         strobe_value(strobe_value < 0) = strobe_value(strobe_value < 0) + 65536;
-        pos = mod(strobe_value,256) - mod(strobe_value,2);
-        pos = pos + bitget(strobe_value,9);
-        raw.enc = get_encoder([strobe_ts pos]);
-        
         words = strobe_value - mod(strobe_value,512);
         words = words / 256 + bitget(strobe_value(:,1),1);
         tmp_words = [strobe_ts, words];
         tmp_words = tmp_words( [false; diff(words)~=0] , : );
         raw.words = tmp_words(tmp_words(:,2) ~= 0, :);         
+        
+        if opts.kin
+            pos = mod(strobe_value,256) - mod(strobe_value,2);
+            pos = pos + bitget(strobe_value,9);
+            %raw.enc = get_encoder([strobe_ts pos]);
+            if opts.ignore_jumps
+                raw.enc = get_encoder([strobe_ts pos],[0, Duration]);
+            else
+                [raw.enc, jump_times]= get_encoder([strobe_ts pos],[]);%empty array of file separation times. this function can be extended later to accept a list of separation times where the kinematic data will be discontinuous
+            end
+        end
+
     end
 end
