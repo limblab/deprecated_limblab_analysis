@@ -127,6 +127,10 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
     data_list=fieldnames(data_struct);
     for i=1:length(data_list)
         temp=getfield(data_struct,data_list{i});
+        %if the object is a session summary, write a summary text file
+        if strcmp(data_list{i},'session_summary')
+            write_session_summary(data_struct.session_summary,strcat(target_directory,'\Output_data\','session_summary.txt'))
+        end
         if ischar(temp)%if the field is just a string like a list of file names
             fid=fopen(strcat(target_directory,'\Output_Data\',data_list{i},'.txt'),'w+');
             fprintf(fid,'%s',temp);
