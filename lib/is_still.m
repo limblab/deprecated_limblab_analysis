@@ -16,6 +16,14 @@ function [still,stats]=is_still(x,varargin)
     %   will be flagged as still. default is 1000 (1s for 1khz kinematic 
     %   data).
     
+    if ~isvector(x)
+        error('is_still:InputNotVector',['is_still is only vetted for single vectors and the input is a ',num2str(size(x,1)),'x',num2str(size(x,2)), ' matrix'])
+    end
+    if isrow(x)
+        x=reshape(x,numel(x),1);
+    end
+ 
+       
     tol=[];
     window=0; %will not pad the still range. Can be reset by supplemental inputs
     pts=1000; %will only accept still periods of 10 pts or more. can be reset by supplemental inputs
@@ -74,13 +82,13 @@ function [still,stats]=is_still(x,varargin)
     end
     %pad the end so the output is the same length as the input and the
     %still period shifts to compensate for the shifts associated with diff
-    still=[still(1),still];
+    still=[still(1);still];
     if nargout==2
         stats.still_range=[min(x(still)) max(x(still))];
         stats.still_mean=mean(x(still));
-        stats.still_stdev=stdev(x(still));
+        stats.still_stdev=std(x(still));
         stats.data_range=[min(x),max(x)];
-        stats.data_stdev=stdev(x);
+        stats.data_stdev=std(x);
         stats.tol=tol;
     end
 end
