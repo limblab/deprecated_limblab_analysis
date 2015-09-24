@@ -17,6 +17,7 @@ addpath([dir '/sigmoid fitting']);
 addpath([dir '/Spike_sorting']);
 addpath([dir '/Trial Table']);
 addpath([dir '/bar_with_error']);
+addpath([dir '/FastICA/FastICA_25']);
 %addpath([dir '/alternative periodics']);
 
 
@@ -38,6 +39,7 @@ addpath([dir '/lib/glm']);
 addpath(genpath([dir '/lib/NPMK 2.5.2.0']));
 addpath([dir '/mimo']);
 addpath([dir '/spike']);
+addpath([dir '/spike/Neuron Tracking']);
 addpath([dir '/bdf']);
 addpath([dir '/bdf/event_decoders']);
 addpath([dir '/bdf/lib_cb']);
