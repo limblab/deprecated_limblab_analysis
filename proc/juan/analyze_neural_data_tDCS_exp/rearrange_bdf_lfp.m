@@ -1,8 +1,8 @@
 %
-% Function to reorganize a BDF with LFP field. It creates a new field LFP
-% that follows the same structure as the force or EMG fields.
+% Function to reorganize a BDF that contains LFPs. It creates an LFP field
+% that follows the samestructure as the force or EMG fields.  
 %
-%   function BDF = rearrange_bdf_lfp( BDF_orig )
+%   BDF = REARRANGE_BDF_LFP( BDF_Orig )
 %
 
 function BDF = rearrange_bdf_lfp( BDF_orig )
