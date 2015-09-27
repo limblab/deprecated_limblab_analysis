@@ -397,6 +397,8 @@ if isfield(datastruct,'state')
         t_idx = t_idx+samples_per_bin;
     end
     state(end) = mean(datastruct.state(t_idx:t_idx+samples_per_bin-1,2));
+else
+    state = [];
 end
 
 %% Outputs
