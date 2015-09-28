@@ -34,8 +34,10 @@ BDF.lfp.lfpfreq     = BDF_orig.raw.analog.adfreq(1);
 % create a matrix that will contain the data
 BDF.lfp.data        = cell2mat(BDF_orig.raw.analog.data);
 % add a time column
-lfp_time            = 0:1/BDF.lfp.lfpfreq:(size(BDF.lfp.data)-1)/BDF.lfp.lfpfreq;
+% lfp_time            = single( 0:1/BDF.lfp.lfpfreq:(size(BDF.lfp.data,1)-1)/BDF.lfp.lfpfreq );
+lfp_time            = single( linspace(0,(size(BDF.lfp.data,1)-1)/BDF.lfp.lfpfreq,size(BDF.lfp.data,1)) );
 BDF.lfp.data        = [lfp_time', BDF.lfp.data];
+
 
 % clear the raw channels that contain the LFPs, since they are no longer
 % necessary
