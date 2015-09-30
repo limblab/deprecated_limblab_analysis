@@ -1,16 +1,15 @@
 % 
 % Function to compute the PSD of an array of LFP. 
 %
-%   LFP = PSD_LFP( lfp, win_size )  calculates the FFT of the array of LFPs
-%   "lfp" in a window of size "win_size" (ms). "lfp" is a struct that
-%   follows the usual BDF structure. "win_size" can be either a double or a
-%   2-D array (start and end window time). The FFT will be computed using
-%   XXXXXXXXXX 
+%   LFP = PSD_LFP( lfp, win_size )  calculates the power spectrum of the
+%   array of LFPs "lfp" in a window of size "win_size" (ms). "lfp" is a
+%   struct that follows the usual BDF structure. "win_size" can be either a
+%   double or a 2-D array (start and end window time). 
 %   LFP = PSD_LFP( lfp, win_size, win_end )  calculates the FFT of the
 %   array of LFPs "lfp" in a window of size "win_size" (ms). "lfp" is a
 %   struct that follows the usual BDF structure. "win_size" can be either a
 %   double or a 2-D array (start and end window time). "win_end" specifies
-%   the end of the window (s). The FFT will be computed using XXXXXXXXXX  
+%   the end of the window (s). 
 %
 
 
@@ -36,32 +35,64 @@ end
 nfft                = 2^nextpow2(psd_window);
 
 
-% compute the Welch periodogram ---the power, not the PSD (change 'power'
-% by 'psd' if you want the PSD)   
+% 1. Welch periodogram ---the power, not the PSD (change 'power' by 'psd'
+% if you want the PSD)    
 pxx                 = zeros(nfft/2+1,size(lfp.lfpnames,2));
 f                   = lfp.lfpfreq*(0:(nfft/2))/nfft;
 for i = 1:size(lfp.lfpnames,2)
     pxx(:,i)        = pwelch(lfp.data(:,i+1),psd_window,noverlap,nfft,lfp.lfpfreq,'power');
 end
 
+% calculate the mean and SD of the power spectra
+mean_pxx            = mean(pxx,2);
+std_pxx             = std(pxx,0,2);
+
+
+% 2. Spectrogram, in non-overlapping windows of length = window length
+t_spec              = linspace( psd_window/lfp.lfpfreq/2, ...
+    psd_window/lfp.lfpfreq/2+(size(win_end,1)-1)*psd_window/lfp.lfpfreq, size(win_end,1) );
+spec                = zeros(nfft/2+1,size(win_end,1),size(lfp.lfpnames,2));
+for i = 1:size(lfp.lfpnames,2)
+   spec(:,:,i)      = spectrogram(double(lfp.data(:,i+1)),psd_window,0,nfft,lfp.lfpfreq);
+end
+
+% calculate the mean and SD of the spectrogram across all channels
+mean_spec           = mean(spec,3);
+std_spec            = std(spec,0,3);
+
+
+
+% ------------------------------------------------------------------------
+% Plots
+
+% plot the power spectra, along with the mean and SD
 figure,hold on
-plot(f,10*log10(pxx),'color',[.7 .7 .7]), xlim([0 50])
-plot(f,10*log10(mean(pxx,2)),'b','linewidth',2), xlim([0 50])
-plot(f,10*log10(mean(pxx,2)+std(pxx,0,2)),'-.b','linewidth',2), xlim([0 50])
-plot(f,10*log10(mean(pxx,2)-std(pxx,0,2)),'-.b','linewidth',2), xlim([0 50])
+plot(f,10*log10(abs(pxx)),'color',[.7 .7 .7]), 
+plot(f,10*log10(abs(mean(pxx,2))),'b','linewidth',2), 
+plot(f,10*log10(abs(mean_pxx+std_pxx)),'-.b','linewidth',2)
+plot(f,10*log10(abs(mean_pxx-std_pxx)),'-.b','linewidth',2), xlim([0 80])
 xlabel('Frequency (Hz)'),ylabel('Power')
 
-
-% compute the spectrogram, in non-overlapping windows of length = window
-% length, to assess the time course of the LFP
-[spec, f_spec, t_spec] = spectrogram(double(lfp.data(:,2)),psd_window,0,nfft,lfp.lfpfreq);
-figure,mesh(t_spec,f_spec,10*log10(abs(spec))),
+% plot the mean spectrogram and the SD
+ylim2               = 80;
+figure,mesh(t_spec,f,10*log10(abs(mean_spec))),
 colorbar, 
-% CAMBIAR CAXIS caxis([min])
-view(2), xlim([0 t_spec(end)]), ylim([0 200])
+view(2), xlim([0 t_spec(end)]), ylim([0 ylim2])
 xlabel('Time (s)'),ylabel('Frequency (Hz)')
+
+cax1 = 10*log10(min(min(abs(mean_spec(1:find(f>ylim2,1),:)))));
+cax2 = 10*log10(max(max(abs(mean_spec(1:find(f>ylim2,1),:)))));
+caxis([cax1, cax2])
 
 
 % Return variables
-LFP.pxx             = pxx;
-LFP.f               = f;
+LFP.Pxx.data        = pxx;
+LFP.Pxx.f           = f';
+LFP.Pxx.mean        = mean_pxx;
+LFP.Pxx.std         = std_pxx;
+
+LFP.spec.data       = spec;
+LFP.spec.f          = f';
+LFP.spec.t          = t_spec;
+LFP.spec.mean       = mean_spec;
+LFP.spec.std        = std_spec;

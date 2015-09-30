@@ -310,10 +310,13 @@ for i = 1:nbr_files
             neural_activity.std_firing_rate_in_win(:,ii) = std(neural_activity.firing_rate_in_win{ii},1);
         end
         
-        % If want to look at the LFPs in the words, calculate the amplitude
-        % of the LFPs in each channel and the PSD
+        % 4b. If want to look at the LFPs, calculate the power spectrum and
+        % spectrogram, and the AMPLITUDE STUFFF ??
         if sad_params.lfp
-            psd_lfp( BDF.lfp, sad_params.win_word, word_t )
+            
+            neural_activity.lfp = psd_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
+            
+            neural_activity.lfp = ampl_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
         end
     end
     
