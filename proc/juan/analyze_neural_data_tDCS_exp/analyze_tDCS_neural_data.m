@@ -216,6 +216,13 @@ end
 [neural_activity_bsln, neural_activity_tDCS, neural_activity_post] = ...
     calc_stats_firing_rate_btw_blocks( neural_activity_bsln, neural_activity_tDCS, neural_activity_post );
 
+
+% -----------------
+% 4. Calculate changes in the LFPs across blocks
+
+
+
+
                                                         
 % -------------------------------------------------------------------------
 % Plots
