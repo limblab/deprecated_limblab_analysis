@@ -316,7 +316,7 @@ for i = 1:nbr_files
             
             neural_activity.lfp = psd_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
             
-            neural_activity.lfp = ampl_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
+%             neural_activity.lfp = ampl_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
         end
     end
     

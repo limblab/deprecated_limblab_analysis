@@ -18,7 +18,7 @@ atp.exp_folder          = '/Users/juangallego/Documents/NeuroPlast/Data/Jango/Ce
 % Define the parameters for binning the neural activity (and discarding
 % some blocks), in atp.sad_params
 
-% The data in each of the files will be split in windows of length
+% The daºta in each of the files will be split in windows of length
 % 'atp.sad_params.win_duration' (s)
 atp.sad_params.win_duration     = 300;
 
