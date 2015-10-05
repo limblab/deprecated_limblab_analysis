@@ -91,7 +91,11 @@ function animalList=DvMax_audit(varargin)
                         if ~isempty(kg)
                             car_return = min(car_return,kg);
                         end
-                        weight_in_entry = str2double(data{iEntry,end}(weight_pos_in_entry:car_return));
+                        temp_str = data{iEntry,end}(weight_pos_in_entry:car_return);
+                        if strfind(temp_str,'(')
+                            temp_str = temp_str(1:strfind(temp_str,'(')-2);
+                        end
+                        weight_in_entry = str2double(temp_str);
                         if ~isnan(weight_in_entry)
                             body_weight_in_water_entry = [body_weight_in_water_entry; floor(datenum(data(iEntry,2)))];
                         end
