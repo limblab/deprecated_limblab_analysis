@@ -29,7 +29,7 @@ rw_i   = strcmp(bd.trialtablelabels,'trial end time');
 res_i  = strcmp(bd.trialtablelabels,'Result(R,A,I,orN)');
 tid_i  = strcmp(bd.trialtablelabels,'tgt_id');
 
-tgt_list    = unique(bd.trialtable(:,tid_i)); %[ not, ct, ot]
+tgt_list    = unique(bd.trialtable(:,tid_i));
 n_tgt       = length(tgt_list);
 succ_trials = find(bd.trialtable(:,res_i)==double('R'));
 num_succ    = length(succ_trials);
@@ -47,7 +47,7 @@ it_t     = [bd.trialtable(succ_trials(1:end-1),rw_i)+ds ...
 
             
 center_i = false(n_bin,1);
-out_i    = false(n_bin,n_tgt+1);
+out_i    = false(n_bin,n_tgt);
 it_i     = false(n_bin,1);
 
 % Find bin indices for each epochs

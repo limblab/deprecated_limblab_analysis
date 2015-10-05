@@ -6,7 +6,7 @@ filename       = traindata.meta.filename;
 %default argin
 train_duration = [2.5 5 7.5 10 12.5 15 17.5 20];
 conditions     = {'optimal','optimal_target','normal'};
-save_path      = ['/Users/christianethier/Dropbox/adaptation/Results/TrainDuration_[opt-opt_tgt-norm]' filesep filename filesep];
+save_path      = ['/Users/christianethier/Dropbox/adaptation/Results/Temptests' filesep filename filesep];
 
 %overwrite argin
 if nargin >2 train_duration = varargin{1}; end

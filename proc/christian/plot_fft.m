@@ -25,7 +25,7 @@ f = fs/2*linspace(0,1,NFFT/2);
 
 % Plot single-sided amplitude spectrum.
 figure;
-plot(f,2*abs(Y(1:NFFT/2)),'k');
+plot(f,mag2db(2*abs(Y(1:NFFT/2))),'k');
 title('Single-Sided Amplitude Spectrum')
 xlabel('frequency (Hz)')
 ylabel('|Y(f)|')

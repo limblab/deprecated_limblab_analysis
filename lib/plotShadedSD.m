@@ -10,5 +10,5 @@ for i = 1:size(Y,2)
     yarea = [ytop; ybot(end:-1:1); ytop(1)];
     f = fill(xarea,yarea,[.5 .5 .5],'LineStyle','none','FaceAlpha',0.5);
 end
-hold on;    
-plot(X,Y,'--ko');
+% hold on;    
+% plot(X,Y,'--k');

@@ -3,7 +3,7 @@ function results = optimize_adapt_params(train_data,optim_data,opt_variable,vara
 
 switch opt_variable
     case 'delay'
-        if nargin > 4
+        if nargin > 3
             delay = varargin{1};
         else
             delay = [0 .2 .4 .5 .55 .6 .65 .7 1];
@@ -11,13 +11,13 @@ switch opt_variable
         n_iter = length(delay);
         LR = 5e-7; params.adapt_params.LR = LR;
     case 'LR'
-        if nargin > 4
+        if nargin > 3
             LR = varargin{1};
         else
             LR     = [4e-6 2e-6 1e-6 5e-7 2.5e-7 1.25e-7 .625e-7];
         end
         n_iter = length(LR);
-        delay = 0.5; params.adapt_params.delay = delay;
+        delay = 0.6; params.adapt_params.delay = delay;
 end
 
 test_ins   = optim_data.spikeratedata;

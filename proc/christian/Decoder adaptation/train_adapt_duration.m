@@ -6,6 +6,7 @@ end
 
 if nargin>4 params = varargin{1}; end
 num_iter = length(train_duration);
+train_duration = train_duration + train_data.timeframe(1);
 
 [num_pts,num_out]  = size(test_data.cursorposbin);
 % [num_pts,num_out]  = size(test_data.emgdatabin);
@@ -33,8 +34,15 @@ E2F = E2F_deRugy_PD(15);
 
 for i = 1:num_iter
     
-    [temp_train_data,~] = splitBinnedData(train_data,train_duration(i),train_data.timeframe(end));
     title_str = strrep(sprintf('%s - %s - %.1f min',train_data.meta.filename, type, train_duration(i)/60),'_','\_');
+    
+    if i==1
+        params.neuron_decoder = 'new_rand';
+        temp_train_data = cropBinnedData(train_data,train_data.timeframe(1),train_duration(i));
+    else
+        params.neuron_decoder = decoders{i-1};
+        temp_train_data = cropBinnedData(train_data,train_duration(i-1),train_duration(i));
+    end
     
     switch type
         case 'normal'

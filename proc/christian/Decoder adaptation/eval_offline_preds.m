@@ -52,8 +52,9 @@ for cond = 1:length(conditions)
     % plot mean square Euclidian error with train duration
     fh = figure;
     plotLM(train_duration,mse,'o-');
-    yrange = ylim;
-    ylim([0 yrange(2)]);
+%     yrange = ylim;
+%     ylim([0 yrange(2)]);
+    ylim([0 40]);
     xlim([0 max(train_duration)]);
     ylabel('msEe');xlabel('Time (min)');
     title(strrep([filename ' - ' conditions{cond}],'_','\_'));

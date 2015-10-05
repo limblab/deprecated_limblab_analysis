@@ -1,4 +1,4 @@
-function [all_stats] = eval_online_adapt
+function [all_stats] = eval_online_adapt(file_type_idx, varargin)
 
 % all_data is a matlab file containing structures of all the data files recorded during the adaptation process
 % it also contains an array named 'file_type_idx', describing the length of type of behavior during each of
@@ -9,23 +9,21 @@ function [all_stats] = eval_online_adapt
 % 3- Brain Control with decoder trained online during adaptive process
 % 4- Adaptive process (hand control and cursor assist)
 
-workspace = 'base';
-    
-all_data = evalin(workspace,'who(''bd_*'')');
+num_files = length(file_type_idx);
 
-%% adapt_data already loaded in workspace. Calculate Stats
+if nargin>1
+    all_stats = varargin{1};
+else
+    all_data = evalin('base','who(''bd_*'')');
+    all_stats = cell(num_files,2);
 
-num_files = length(all_data);
-
-all_stats = cell(num_files,2);
-
-for i = 1:num_files
-    all_stats{i,1} = all_data{i};
-    all_stats{i,2} = get_WF_stats(evalin(workspace,all_data{i}));
+    for i = 1:num_files
+        all_stats{i,1} = all_data{i};
+        all_stats{i,2} = get_WF_stats(evalin(workspace,all_data{i}));
+    end
 end
 
 %% plot performance for brain-control blocks:
-file_type_idx = evalin(workspace,'file_type_idx');
 HC_idx = find(file_type_idx ==1);
 BCoff_idx = find(file_type_idx ==2);
 BCadapt_idx = find(file_type_idx ==3);
@@ -34,23 +32,35 @@ Adapt_idx = find(file_type_idx ==4);
 succ_rate   = nan(num_files,1);
 succ_per_min= nan(num_files,1);
 succ_per_min_sd = nan(num_files,1);
+succ_per_min_se = nan(num_files,1);
 path_length = nan(num_files,1);
 time2target = nan(num_files,1);
 num_reentries = nan(num_files,1);
 path_length_sd = nan(num_files,1);
+path_length_se = nan(num_files,1);
 time2target_sd = nan(num_files,1);
+time2target_se = nan(num_files,1);
 num_reentries_sd = nan(num_files,1);
+num_reentries_se = nan(num_files,1);
 
 for i = 1:num_files
     succ_rate(i)        = all_stats{i,2}.succ_rate(9);
+    
     succ_per_min(i)     = mean(all_stats{i,2}.succ_per_min{9});
     succ_per_min_sd(i)  = std(all_stats{i,2}.succ_per_min{9});
+    succ_per_min_se(i)  = succ_per_min_sd(i)/sqrt(length((all_stats{i,2}.succ_per_min{9})));
+    
     path_length(i)      = mean(all_stats{i,2}.path_length{9});
     path_length_sd(i)   = std(all_stats{i,2}.path_length{9});
+    path_length_se(i)   = path_length_sd(i)/sqrt(length((all_stats{i,2}.path_length{9})));
+    
     time2target(i)      = mean(all_stats{i,2}.time2target{9});
     time2target_sd(i)   = std(all_stats{i,2}.time2target{9});
+    time2target_se(i)   = time2target_sd(i)/sqrt(length((all_stats{i,2}.time2target{9})));
+    
     num_reentries(i)    = mean(all_stats{i,2}.num_reentries{9});
     num_reentries_sd(i) = std(all_stats{i,2}.num_reentries{9});
+    num_reentries_se(i)   = num_reentries_sd(i)/sqrt(length((all_stats{i,2}.num_reentries{9})));
 end
 
 %% plot behavior metrics
@@ -62,7 +72,7 @@ xrange = 1:length([BCoff_idx BCadapt_idx]);
 
 % success rate
 figure; hold on; xlim([min(xrange)-1 max(xrange)+1]);
-plot(xlim, repmat(succ_rate(HC_idx),2,1),'-ko','markerfacecolor','k');
+plot(xlim, repmat(succ_rate(HC_idx),2,1),'-k','markerfacecolor','k');
 ylim([0 1]);
 plot(BCoff_xidx, succ_rate(BCoff_idx),'ro','markerfacecolor','r');
 plot(BCadapt_xidx, succ_rate(BCadapt_idx),'bo','markerfacecolor','b');
@@ -71,35 +81,35 @@ pretty_fig(gca);
 
 % success per min
 figure; hold on; xlim([min(xrange)-1 max(xrange)+1]);
-plotShadedSD(xlim,repmat(succ_per_min(HC_idx),2,1),repmat(succ_per_min_sd(HC_idx),2,1));
-errorbar(BCoff_xidx,succ_per_min(BCoff_idx),succ_per_min_sd(BCoff_idx),'ro','markerfacecolor','r');
-errorbar(BCadapt_xidx,succ_per_min(BCadapt_idx),succ_per_min_sd(BCadapt_idx),'bo','markerfacecolor','b');
-ylabel('rewards per minute'); legend('Hand Control SD','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
+plotShadedSD(xlim,repmat(succ_per_min(HC_idx),2,1),repmat(2*succ_per_min_se(HC_idx),2,1));
+errorbar(BCoff_xidx,succ_per_min(BCoff_idx),2*succ_per_min_se(BCoff_idx),'ro','markerfacecolor','r');
+errorbar(BCadapt_xidx,succ_per_min(BCadapt_idx),2*succ_per_min_se(BCadapt_idx),'bo','markerfacecolor','b');
+ylabel('rewards per minute'); legend('Hand Control 2*SE','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
 pretty_fig(gca); yrange = ylim; ylim([0 yrange(2)]);
 
 % path length
 figure; hold on; xlim([min(xrange)-1 max(xrange)+1]);
-plotShadedSD(xlim,repmat(path_length(HC_idx),2,1),repmat(path_length_sd(HC_idx),2,1));
-errorbar(BCoff_xidx,path_length(BCoff_idx),path_length_sd(BCoff_idx),'ro','markerfacecolor','r');
-errorbar(BCadapt_xidx,path_length(BCadapt_idx),path_length_sd(BCadapt_idx),'bo','markerfacecolor','b');
-ylabel('path length (cm)'); legend('Hand Control SD','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
+plotShadedSD(xlim,repmat(path_length(HC_idx),2,1),repmat(2*path_length_se(HC_idx),2,1));
+errorbar(BCoff_xidx,path_length(BCoff_idx),2*path_length_se(BCoff_idx),'ro','markerfacecolor','r');
+errorbar(BCadapt_xidx,path_length(BCadapt_idx),2*path_length_se(BCadapt_idx),'bo','markerfacecolor','b');
+ylabel('path length (cm)'); legend('Hand Control 2*SE','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
 pretty_fig(gca); yrange = ylim; ylim([0 yrange(2)]);
 
 % time2target
 figure; hold on; xlim([min(xrange)-1 max(xrange)+1]);
-plotShadedSD(xlim,repmat(time2target(HC_idx),2,1),repmat(time2target_sd(HC_idx),2,1));
-errorbar(BCoff_xidx,time2target(BCoff_idx),time2target_sd(BCoff_idx),'ro','markerfacecolor','r');
-errorbar(BCadapt_xidx,time2target(BCadapt_idx),time2target_sd(BCadapt_idx),'bo','markerfacecolor','b');
-ylabel('time to target (s)'); legend('Hand Control SD','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
+plotShadedSD(xlim,repmat(time2target(HC_idx),2,1),repmat(2*time2target_se(HC_idx),2,1));
+errorbar(BCoff_xidx,time2target(BCoff_idx),2*time2target_se(BCoff_idx),'ro','markerfacecolor','r');
+errorbar(BCadapt_xidx,time2target(BCadapt_idx),2*time2target_se(BCadapt_idx),'bo','markerfacecolor','b');
+ylabel('time to target (s)'); legend('Hand Control 2*SE','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
 pretty_fig(gca);  yrange = ylim; ylim([0 yrange(2)]);
 
 % num_reentries
 figure; hold on; xlim([min(xrange)-1 max(xrange)+1]);
-plotShadedSD(xlim,repmat(num_reentries(HC_idx),2,1),repmat(num_reentries_sd(HC_idx),2,1));
-errorbar(BCoff_xidx,num_reentries(BCoff_idx),num_reentries_sd(BCoff_idx),'ro','markerfacecolor','r');
-errorbar(BCadapt_xidx,num_reentries(BCadapt_idx),num_reentries_sd(BCadapt_idx),'bo','markerfacecolor','b');
-ylabel('number of re-entries per target'); legend('Hand Control SD','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
-pretty_fig(gca);
+plotShadedSD(xlim,repmat(num_reentries(HC_idx),2,1),repmat(2*num_reentries_se(HC_idx),2,1));
+errorbar(BCoff_xidx,num_reentries(BCoff_idx),2*num_reentries_se(BCoff_idx),'ro','markerfacecolor','r');
+errorbar(BCadapt_xidx,num_reentries(BCadapt_idx),2*num_reentries_se(BCadapt_idx),'bo','markerfacecolor','b');
+ylabel('number of re-entries per target'); legend('Hand Control 2*SE','Hand Control Mean', 'BC - calculated decoder','BC - adaptive decoder');
+pretty_fig(gca); yrange = ylim; ylim([0 yrange(2)]);
 
 %% eval pred accuracy during hand control trials (adapt_files):
 % 
