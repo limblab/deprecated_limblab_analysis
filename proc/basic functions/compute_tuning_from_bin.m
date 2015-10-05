@@ -14,6 +14,7 @@ function [neural_tuning,pd_table] = compute_tuning_from_bin(binnedData,covariate
 %   noise_mdl       : noise model. Either 'poisson',
 %
 %   neural_tuning   : structure with neural tuning stats
+%   pd_table        : array of PDs
 
 
 %% Check input validity
@@ -70,6 +71,7 @@ tuning_init = cell(num_units,1);
 neural_tuning = struct('weights',tuning_init,'weight_cov',tuning_init,'CI',tuning_init,'term_signif',tuning_init,'PD',tuning_init,'unit_id',tuning_init,'name',tuning_init);
 PD = struct('dir',[],'moddepth',[],'dir_CI',[],'moddepth_CI',[]);
 opt = statset('UseParallel','never');
+pd_table = nan(1,num_units);
 %% Bootstrap GLM function for each neuron
 tic
 for i = 1:num_units
@@ -106,9 +108,9 @@ for i = 1:num_units
         
     %PD
     % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,2),boot_coef(:,1));
+    boot_dirs = atan2(boot_coef(:,3),boot_coef(:,2));
     % recenter boot_dirs
-    mean_dir = atan2(weights(2),weights(1));
+    mean_dir = atan2(weights(3),weights(2));
     centered_boot_dirs = boot_dirs-mean_dir;
     while(sum(centered_boot_dirs<-pi))
         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
@@ -123,7 +125,7 @@ for i = 1:num_units
     PD.dir = mean_dir;
     PD.dir_CI = dir_CI;
     % bootstrap moddepth
-    boot_moddepth = sum(boot_coef.^2,2);
+    boot_moddepth = sum(boot_coef(:,2:3).^2,2);
     PD.moddepth = mean(boot_moddepth);
     PD.moddepth_CI = prctile(boot_moddepth,[2.5 97.5]);
         
@@ -135,4 +137,5 @@ for i = 1:num_units
     neural_tuning(i).PD         = PD;
     neural_tuning(i).unit_id    = binnedData.neuronIDs(i,:);
     
+    pd_table(i) = PD.dir;
 end
