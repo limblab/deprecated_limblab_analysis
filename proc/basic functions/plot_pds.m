@@ -11,8 +11,7 @@ figure_handles = [];
         ylabel('PD counts')
         title('Histogram of unit PDs')
         
-        %% polar plot of all pds, with radial length equal to scaled 
-        %modulation depth
+        %% polar plot of all pds, with radial length equal to scaled modulation depth
         
         %compute a scaling factor for the polar plots to use. Polar plots
         %will use a log function of moddepth so that the small modulation
