@@ -68,30 +68,6 @@ mean_spec           = mean(spec,3);
 std_spec            = std(spec,0,3);
 
 
-
-% ------------------------------------------------------------------------
-% Plots
-
-% plot the power spectra, along with the mean and SD
-figure,hold on
-plot(f,10*log10(abs(pxx)),'color',[.7 .7 .7]), 
-plot(f,10*log10(abs(mean(pxx,2))),'b','linewidth',2), 
-plot(f,10*log10(abs(mean_pxx+std_pxx)),'-.b','linewidth',2)
-plot(f,10*log10(abs(mean_pxx-std_pxx)),'-.b','linewidth',2), xlim([0 80])
-xlabel('Frequency (Hz)'),ylabel('Power')
-
-% plot the mean spectrogram and the SD
-ylim2               = 80;
-figure,mesh(t_spec,f,10*log10(abs(mean_spec))),
-colorbar, 
-view(2), xlim([0 t_spec(end)]), ylim([0 ylim2])
-xlabel('Time (s)'),ylabel('Frequency (Hz)')
-
-cax1 = 10*log10(min(min(abs(mean_spec(1:find(f>ylim2,1),:)))));
-cax2 = 10*log10(max(max(abs(mean_spec(1:find(f>ylim2,1),:)))));
-caxis([cax1, cax2])
-
-
 % Return variables
 LFP.Pxx.data        = pxx;
 LFP.Pxx.f           = f';
