@@ -263,6 +263,16 @@ if nbr_post_trials > 0
 end
 
 
+% LFP plots
+if nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  && nbr_post_trials > 0
+    fig_lfp_freq( neural_activity_bsln, neural_activity_tDCS, neural_activity_post )
+elseif nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  
+    fig_lfp_freq( neural_activity_bsln, neural_activity_tDCS )
+else
+    fig_lfp_freq( neural_activity_bsln )
+end
+
+
 % Behavior data
 plot_behavior_tDCS_exp( binned_data_bsln, binned_data_tDCS, binned_data_post, atp.sad_params )
 
