@@ -7,10 +7,11 @@ if nargin
 else
     [filename, datapath] = uigetfile( { '*.nev'}, 'Open Cerebus Data File' );
     cerebus_filename = fullfile(datapath,filename);
+    filename = filename(1:end-4); % remove the extension
 end
 
-BDF_filename = [filename(1:end-4) '_BDF.mat'];
-bin_filename = [filename(1:end-4) '_bin.mat'];
+BDF_filename = [filename '_BDF.mat'];
+bin_filename = [filename '_bin.mat'];
 
 if nargin >1
     use_default = varargin{1};

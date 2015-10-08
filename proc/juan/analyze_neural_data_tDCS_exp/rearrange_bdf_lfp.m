@@ -47,7 +47,14 @@ for i = 1:size(raw_ch,1)
 end
 
 % reorder the fields so it makes more sense
-BDF                 = orderfields(BDF,[1 2 3 4 5 10 6 7 8 9]);
+switch numel(fieldnames(BDF))
+    case 10 % EMG & Force
+        BDF         = orderfields(BDF,[1 2 3 4 5 10 6 7 8 9]);
+    case 9 % Only Force
+        BDF         = orderfields(BDF,[1 2 3 4 9 5 6 7 8]);
+    case 8 % None
+        BDF         = orderfields(BDF,[1 2 3 8 4 5 6 7]);
+end
 
 end
 

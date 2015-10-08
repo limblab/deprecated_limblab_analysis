@@ -212,10 +212,15 @@ end
 % 3. Calculate the relative changes in firing rate between blocks and see
 % if they are statistically significant
 
-
-[neural_activity_bsln, neural_activity_tDCS, neural_activity_post] = ...
-    calc_stats_firing_rate_btw_blocks( neural_activity_bsln, neural_activity_tDCS, neural_activity_post );
-
+if nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  && nbr_post_trials > 0
+    [neural_activity_bsln, neural_activity_tDCS, neural_activity_post] = ...
+        calc_stats_firing_rate_btw_blocks( neural_activity_bsln, neural_activity_tDCS, neural_activity_post );
+elseif nbr_post_trials == 0 && nbr_tDCS_trials == 0
+    
+elseif nbr_post_trials == 0 && nbr_tDCS_trials > 0
+    [neural_activity_bsln, neural_activity_tDCS] = ...
+        calc_stats_firing_rate_btw_blocks( neural_activity_bsln, neural_activity_tDCS, [] );
+end
 
 % -----------------
 % 4. Calculate changes in the LFPs across blocks
@@ -243,15 +248,19 @@ fig_fr_change_hist( neural_activity_tDCS.change_firing_rate, ...
     [fig_title ' -- tDCS - baseline (P = ' num2str(neural_activity_tDCS.wilcox,3) ')'] )
 fig_fr_change_hist( neural_activity_post.change_firing_rate, ...
     [fig_title ' -- post-tDCS - tDCS (P = ' num2str(neural_activity_post.wilcox,3) ')'] )
-fig_fr_change_hist( neural_activity_post.change_firing_rate_bsln, ...
-    [fig_title ' -- post-tDCS - baseline (P = ' num2str(neural_activity_post.wilcox_bsln,3) ')'] )
+if nbr_post_trials > 0
+    fig_fr_change_hist( neural_activity_post.change_firing_rate_bsln, ...
+        [fig_title ' -- post-tDCS - baseline (P = ' num2str(neural_activity_post.wilcox_bsln,3) ')'] )
+end
 
 fig_fr_change_hist( neural_activity_tDCS.change_norm_firing_rate, ...
     [fig_title ' -- tDCS - baseline (P = ' num2str(neural_activity_tDCS.wilcox_norm,3) ')'], 'norm' )
 fig_fr_change_hist( neural_activity_post.change_norm_firing_rate, ...
     [fig_title ' -- post-tDCS - tDCS (P = ' num2str(neural_activity_post.wilcox_norm,3) ')'], 'norm' )
-fig_fr_change_hist( neural_activity_post.change_norm_firing_rate_bsln, ...
-    [fig_title ' -- post-tDCS - baseline (P = ' num2str(neural_activity_post.wilcox_norm_bsln,3) ')'], 'norm' )
+if nbr_post_trials > 0
+    fig_fr_change_hist( neural_activity_post.change_norm_firing_rate_bsln, ...
+        [fig_title ' -- post-tDCS - baseline (P = ' num2str(neural_activity_post.wilcox_norm_bsln,3) ')'], 'norm' )
+end
 
 
 % Behavior data

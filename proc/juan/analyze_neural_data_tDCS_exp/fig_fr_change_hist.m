@@ -9,7 +9,7 @@ if nargin == 3
             hist_axis   = -100:2:100; % could be made a parameter
             xlbl        = 'frequency change (Hz)';
         case 'norm'
-            hist_axis   = -10:0.5:10;
+            hist_axis   = -10:0.2:10;
             xlbl        = 'norm. frequency change';
     end
 else

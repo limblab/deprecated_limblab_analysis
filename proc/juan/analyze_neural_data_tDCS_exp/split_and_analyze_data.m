@@ -154,7 +154,7 @@ for i = 1:nbr_files
             % find bins where rectify cursor velocity is above the
             % threshold
             pos_above_thr = [];
-            for ii = 1:size(binned_data.cursorposbin,2)
+            for ii = 1:size(binned_data.velocbin,2)
                 pos_above_thr = [pos_above_thr; ...
                     find( abs(binned_data.velocbin(:,ii)) > threshold(ii) )]; %#ok<AGROW>
             end
@@ -224,7 +224,7 @@ for i = 1:nbr_files
                 % take the window of data defined in 'sad_params.win_word'
                 word_sample_lfp( (word_sample_lfp+win_word_samples(1) ) < 0 ) = [];
                 word_sample_lfp( (word_sample_lfp+win_word_samples(2) ) > ...
-                    BDF.lfp.data(end,1)*1000 ) = [];
+                    BDF.lfp.data(end,1)*BDF.lfp.lfpfreq ) = []; %BDF.lfp.data(end,1)*1000 ) = [];
                 
                 % return an error if the number of words in the LFPs are
                 % different to the spikes
@@ -256,12 +256,16 @@ for i = 1:nbr_files
     if exist('pos_above_thr','var')
     
         binned_data.timeframe(pos_above_thr)        = [];
-        binned_data.emgdatabin(pos_above_thr,:)     = [];
-        binned_data.forcedatabin(pos_above_thr,:)   = [];
         binned_data.cursorposbin(pos_above_thr,:)   = [];
         binned_data.velocbin(pos_above_thr,:)       = [];
         binned_data.accelbin(pos_above_thr,:)       = [];
         binned_data.spikeratedata(pos_above_thr,:)  = [];
+        if ~isempty(binned_data.emgdatabin)
+            binned_data.emgdatabin(pos_above_thr,:) = [];
+        end
+        if ~isempty(binned_data.forcedatabin)
+            binned_data.forcedatabin(pos_above_thr,:)   = [];
+        end
         
         if sad_params.lfp
            BDF.lfp.data(pos_above_thr_lfp,:)        = []; 
@@ -316,7 +320,7 @@ for i = 1:nbr_files
             
             neural_activity.lfp = psd_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
             
-%             neural_activity.lfp = ampl_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
+%            neural_activity.lfp = ampl_lfp( BDF.lfp, sad_params.win_word, word_sample_lfp );
         end
     end
     

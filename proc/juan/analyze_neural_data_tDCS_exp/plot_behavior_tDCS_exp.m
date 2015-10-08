@@ -12,13 +12,16 @@ switch exp_params.behavior_data
         plot(binned_data_1.timeframe,binned_data_1.cursorposbin(:,1),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.cursorposbin(:,1),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.cursorposbin(:,1),'b')
-        ylabel('Cursor position X')
+        ylabel('Cursor position X','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
         
         subplot(212), hold on
         plot(binned_data_1.timeframe,binned_data_1.cursorposbin(:,2),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.cursorposbin(:,2),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.cursorposbin(:,2),'b')
-        ylabel('Cursor position Y')
+        ylabel('Cursor position Y','FontSize',14)
+        xlabel('Time (s)','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
         
     case 'vel' 
         fig_bhvr = figure;
@@ -26,13 +29,16 @@ switch exp_params.behavior_data
         plot(binned_data_1.timeframe,binned_data_1.velocbin(:,1),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.velocbin(:,1),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.velocbin(:,1),'b')
-        ylabel('Cursor velocity X')
+        ylabel('Cursor velocity X','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
         
         subplot(212), hold on
         plot(binned_data_1.timeframe,binned_data_1.velocbin(:,2),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.velocbin(:,2),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.velocbin(:,2),'b')       
-        ylabel('Cursor velocity Y')
+        ylabel('Cursor velocity Y','FontSize',14)
+        xlabel('Time (s)','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
         
     case 'word'
         
@@ -41,26 +47,32 @@ switch exp_params.behavior_data
         plot(binned_data_1.timeframe,binned_data_1.cursorposbin(:,1),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.cursorposbin(:,1),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.cursorposbin(:,1),'b')
-        ylabel('Cursor position X')
+        ylabel('Cursor position X','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
         
         subplot(212), hold on
         plot(binned_data_1.timeframe,binned_data_1.cursorposbin(:,2),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.cursorposbin(:,2),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.cursorposbin(:,2),'b')
-        ylabel('Cursor position Y')
+        ylabel('Cursor position Y','FontSize',14)
+        xlabel('Time (s)','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
         
         fig_bhvr2 = figure;
         subplot(211), hold on
         plot(binned_data_1.timeframe,binned_data_1.velocbin(:,1),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.velocbin(:,1),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.velocbin(:,1),'b')
-        ylabel('Cursor velocity X')
-        
+        ylabel('Cursor velocity X','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
+
         subplot(212), hold on
         plot(binned_data_1.timeframe,binned_data_1.velocbin(:,2),'k')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe,binned_data_2.velocbin(:,2),'r')
         plot(binned_data_1.timeframe(end)+binned_data_2.timeframe(end)+binned_data_3.timeframe,binned_data_3.velocbin(:,2),'b')       
-        ylabel('Cursor velocity Y')
+        ylabel('Cursor velocity Y','FontSize',14)
+        xlabel('Time (s)','FontSize',14)
+        set(gca,'FontSize',14), set(gca,'TickDir','out')
 end
       
 

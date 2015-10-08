@@ -30,7 +30,7 @@ if ~exist('win_end','var')
     psd_window      = 2*lfp.lfpfreq;                         % 2 s
 % ... if we are using words
 else
-    psd_window      = abs(diff(win_size))+1;
+    psd_window      = (abs(diff(win_size))+1)*lfp.lfpfreq/1000;
 end
 nfft                = 2^nextpow2(psd_window);
 
@@ -49,9 +49,16 @@ std_pxx             = std(pxx,0,2);
 
 
 % 2. Spectrogram, in non-overlapping windows of length = window length
+
+% WORKING AT FS = 1K
+% t_spec              = linspace( psd_window/lfp.lfpfreq/2, ...
+%     psd_window/lfp.lfpfreq/2+(size(win_end,1)-1)*psd_window/lfp.lfpfreq, size(win_end,1) );
+% spec                = zeros(nfft/2+1,size(win_end,1),size(lfp.lfpnames,2));
+
+% WORKING AT FS = 2K
 t_spec              = linspace( psd_window/lfp.lfpfreq/2, ...
-    psd_window/lfp.lfpfreq/2+(size(win_end,1)-1)*psd_window/lfp.lfpfreq, size(win_end,1) );
-spec                = zeros(nfft/2+1,size(win_end,1),size(lfp.lfpnames,2));
+    psd_window/lfp.lfpfreq/2+(size(win_end,1)-1)*psd_window/lfp.lfpfreq, floor(length(lfp.data(:,i+1))/psd_window) );
+spec                = zeros(nfft/2+1,floor(length(lfp.data(:,i+1))/psd_window),size(lfp.lfpnames,2));
 for i = 1:size(lfp.lfpnames,2)
    spec(:,:,i)      = spectrogram(double(lfp.data(:,i+1)),psd_window,0,nfft,lfp.lfpfreq);
 end
