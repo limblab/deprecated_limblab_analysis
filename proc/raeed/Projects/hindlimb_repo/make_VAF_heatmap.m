@@ -42,3 +42,13 @@ colorbar
 
 xlabel 'Cartesian R^2'
 ylabel 'Polar R^2'
+
+%% make pvalue plots
+subplot(411)
+hist(log(p_polar_unc))
+subplot(412)
+hist(log(p_polar_con))
+subplot(413)
+hist(log(p_cart_unc))
+subplot(414)
+hist(log(p_cart_con))

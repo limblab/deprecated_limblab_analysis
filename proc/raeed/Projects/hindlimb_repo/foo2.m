@@ -195,7 +195,81 @@ end
 %%
 sum(VAF_unc>0.4 & VAF_con>0.4)
 sum(VAF_unc>0.4 & VAF_con>0.4 & pVal_neuron'>0.01)/sum(VAF_unc>0.4 & VAF_con>0.4)
-acosd(median(cosdthetay(VAF_unc>0.4 & VAF_con>0.4)))
+acosd(median(cosdthetay(VAF_cart_unc>0.4 & VAF_cart_con>0.4)))
+figure; hist(cosdthetay(VAF_cart_unc>0.4 & VAF_cart_con>0.4),40)
+set(gca,'xlim',[0 1])
 figure; hist(abs(tStat_neuron(VAF_unc>0.4 & VAF_con>0.4)),20)
-% figure; hist(cosdthetay(VAF_unc>0.4 & VAF_con>0.4),40)
+figure; hist(pVal_neuron(VAF_unc>0.4 & VAF_con>0.4),20)
+
+%%
+sum(VAF_cart_unc>0.4 & VAF_cart_con>0.4 & pVal_neuron'>0.01)/sum(VAF_cart_unc>0.4 & VAF_cart_con>0.4)
+median(cosdthetay(VAF_cart_unc>0.4 & VAF_cart_con>0.4 & pVal_neuron'<0.01))
 % figure; plot_PD_distr(yupd,50)
+
+%% magnitude
+ycmag = sqrt(yc(3,:).^2+yc(2,:).^2);
+yumag = sqrt(yu(3,:).^2+yu(2,:).^2);
+sum(VAF_cart_unc>0.4 & VAF_cart_con>0.4)
+dmag = log(ycmag./yumag);
+figure;hist(dmag(VAF_cart_unc>0.4 & VAF_cart_con>0.4),40)
+median(dmag(VAF_cart_unc>0.4 & VAF_cart_con>0.4 & pVal_neuron'<0.01))
+
+%% bootstrap neurons
+for i=1:length(neurons)
+    ac = activity_con(i,:)';
+    au = activity_unc(i,:)';
+    
+    booted_con = bootstrp(100,@fit_cartesian,zerod_ep,ac);
+    booted_unc = bootstrp(100,@fit_cartesian,zerod_ep,au);
+    
+    % means
+    mean_coefs_con(i,:) = mean(booted_con);
+    mean_coefs_unc(i,:) = mean(booted_unc);
+%     CIs_con = prctile(booted_con,[2.5;97.5]);
+%     CIs_unc = prctile(booted_unc,[2.5;97.5]);
+    
+    % pds
+    pd_boot_con = atan2d(booted_con(:,3),booted_con(:,2));
+    pd_boot_unc = atan2d(booted_unc(:,3),booted_unc(:,2));
+    pd_mean_con = atan2d(mean_coefs_con(i,3),mean_coefs_con(i,2));
+    pd_mean_unc = atan2d(mean_coefs_unc(i,3),mean_coefs_unc(i,2));
+    pd_cent_con = pd_boot_con-pd_mean_con;
+    while(sum(pd_cent_con>180))
+        pd_cent_con(pd_cent_con>180) = pd_cent_con(pd_cent_con>180)-360;
+    end
+    while(sum(pd_cent_con<-180))
+        pd_cent_con(pd_cent_con<-180) = pd_cent_con(pd_cent_con<-180)+360;
+    end
+    pd_cent_unc = pd_boot_unc-pd_mean_unc;
+    while(sum(pd_cent_unc>180))
+        pd_cent_unc(pd_cent_unc>180) = pd_cent_unc(pd_cent_unc>180)-360;
+    end
+    while(sum(pd_cent_unc<-180))
+        pd_cent_unc(pd_cent_unc<-180) = pd_cent_unc(pd_cent_unc<-180)+360;
+    end
+    
+    pd_CI_cent_con(i,:) = prctile(pd_cent_con,[2.5 97.5]);
+    pd_CI_cent_unc(i,:) = prctile(pd_cent_unc,[2.5 97.5]);
+    
+    % check pd overlap between conditions
+    pd_overlap(i) = check_overlap(pd_CI_cent_unc(i,:),pd_CI_cent_con(i,:));
+    
+    % magnitudes
+    mag_boot_con = sum(booted_con(:,2:3).^2,2);
+    mag_boot_unc = sum(booted_unc(:,2:3).^2,2);
+%     mag_mean_con = mean(mag_boot_con);
+%     mag_mean_unc = mean(mag_boot_unc);
+    mag_CI_con(i,:) = prctile(mag_boot_con,[2.5 97.5]);
+    mag_CI_unc(i,:) = prctile(mag_boot_unc,[2.5 97.5]);
+    
+    mag_overlap(i) = check_overlap(mag_CI_unc(i,:),mag_CI_con(i,:));
+end
+
+%% get fit pvalues
+for i=1:length(neurons)
+    p_polar_con = coefTest(pol_fit_con{i});
+    p_polar_unc = coefTest(pol_fit_unc{i});
+    
+    p_cart_con = coefTest(cart_fit_con{i});
+    p_cart_unc = coefTest(cart_fit_unc{i});
+end
