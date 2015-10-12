@@ -5,34 +5,35 @@
 
 //Declare global variables
 
-RTC_DS1307 RTC; //Real time clock
+RTC_DS1307 RTC; //Initialize real time clock
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); //Motor shield with default I2C address
 Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2); //Stepper motor with 200 steps per revolution, to motor port 2 (M3 and M4)
 
-//timing
-unsigned long ms_prev = 0; 
-unsigned long ms_incr;
-int lastBlink1 = 0; //time since last blink for blinking LED for sensor 1 (since loop will interfere with timing)
-int lastBlink2 = 0; //time since last blink for LED for sensor 2
-int lastTreat = 1000; //time in ms since last treat was given to the monkey (start higher to eliminate first-time delay)
-int betweenTreats = 1000; //time in ms before monkey can start to earn another treat
-bool cycle = false; //determines whether the cycle indicator is high (true) or low (false)
+//timing variables (we need these to be global so we can keep track of time over several loops)
+unsigned long ms_prev = 0; //the time in ms from initialization of the program, saved from the previous loop
+unsigned long ms_incr; //the amount of time that passed while the program executed a loop
+int lastBlink1 = 0; //time since last blink of LED for sensor 1 
+int lastBlink2 = 0; //time since last blink of LED for sensor 2
+int lastTreat = 1000; //time in ms since last treat was given to the monkey (start at or above [betweenTreats] number to eliminate first-time delay)
+int betweenTreats = 1000; //time in ms before monkey can start to earn another treat after receiving one
+bool cycle = false; //determine whether the cycle indicator (to read time per cycle) is high (true) or low (false)
 int active = 0; //amount of time the monkey has been doing the task correctly
 int actTime = 5000; //amount of time the monkey has to do the task to get a treat
 
 //motor control
 int mot_ctr = 0; //current motor step
-int giving_treat = 0; //whether we are currently giving the treat (0 = no, 1 = yes)
+int giving_treat = 0; //whether we are currently giving a treat (0 = no, 1 = yes)
 
 //LEDs and LED state
 int goLED1 = 0; //status of "you can do the task" LED for the first sensor (0=LOW, 1=HIGH)
 int goLED2 = 0; //status of "you can do the task" LED for the second sensor
 
 //thresholds
-int th11 = 100; //threshold for device 1, sensor 1 
+int th11 = 100; //threshold for device 1, sensor 1 (how hard does the monkey have to squeeze)
 int th12 = 100; //threshold for device 1, sensor 2 
 int th21 = 100; //threshold for device 2, sensor 1 
 int th22 = 100; //threshold for device 2, sensor 2 
+int rand_threshold = 100; //% of times the monkey receives a treat TODO: include this!
 
 void setup() {
   //Initialize serial, communications, and real time clock
@@ -58,23 +59,21 @@ void setup() {
 }
 
 void loop() {
-
+  //Serial.println(analogRead( 4 ));
   
   //keep track of time per loop
-  //unsigned long ms_now = millis(); 
-  ms_incr = millis() - ms_prev; 
-  if(ms_incr<50){
-    Serial.print("delay-"); 
-    Serial.println(50-ms_incr); 
+  ms_incr = millis() - ms_prev; //get time since the last delay (not including delay)
+  if(ms_incr<50){ //delay the loop so that it consistently takes 50 ms (actually ends up 49-52 ms)
     delay(50-ms_incr);
   }
-  ms_incr = millis() - ms_prev;
-  ms_prev = millis(); 
-  Serial.print("cycle time: "); 
-  Serial.println(ms_incr); 
+  ms_incr = millis() - ms_prev; //get time since the last delay (including new delay)
+  ms_prev = millis(); //reset time for the next loop
+  //Serial.print("cycle time: "); 
+  //Serial.println(ms_incr); 
+  lastTreat += ms_incr; //add cycle time to time since last treat
 
   //Indicate the cycle time via a digital output
-  //switch digital out between high and low so we can read timing of cycle (every time it switches)
+  //switch digital out between high and low so we can read timing of cycle (it switches every time)
   if (cycle) {
     digitalWrite(8, HIGH);
     cycle = false;
@@ -84,25 +83,25 @@ void loop() {
     cycle = true;
   }
 
-  //TODO: move this to an if case when each respective led is actually blinking
-  
-  
-  lastTreat += ms_incr; //add cycle time to time since last treat
-
+  //turn the motor until it has finished dispensing a treat
   if (giving_treat) {
-    turnMotor(); //turn the motor until it has finished dispensing a treat
+    turnMotor();
   }
 
   //check whether the treat dispenser is in a refractory period or currently dispensing treat
   //if not, read all sensors, blink the correct lights, and pay attention to amount of time the sensors have been activated correctly
   if (canAttempt()){
-    //Serial.println("can attempt");
+
     //read the sensors 
     int sensor1_1 = analogRead( 0 );     // Read device 1 sensor 1 (in pin 0)
     int sensor1_2 = analogRead( 1 );     // Read device 1 sensor 2 (in pin 1)
-
     int sensor2_1 = analogRead( 2 );     // Read device 2 sensor 1 (in pin 2)
     int sensor2_2 = analogRead( 3 );     // Read device 2 sensor 2 (in pin 3)
+
+    Serial.print("Sensor 1: "); 
+    Serial.println(sensor2_1);
+    Serial.print("Sensor 2: ");
+    Serial.println(sensor2_2);
     
     //if both device 1 sensors are active, blink the LED for that device
     if ( sensor1_1>th11 && sensor1_2>th12 ){
@@ -131,11 +130,12 @@ void loop() {
       //count
       active += ms_incr; 
       if ( active >= actTime ) { //has held the gripper for as long as required
-        //give treat
-        //set a variable equal to 1 (true) so we know to keep turning the motor on subsequent iterations of the loop
-        giving_treat = 1; 
-        turnMotor(); 
-        //Serial.println("give treat"); 
+        if ( random(101) < rand_threshold ){ //the monkey receives a treat [rand_threshold] percent of the time
+          //give treat
+          //set a variable equal to 1 (true) so we know to keep turning the motor on subsequent iterations of the loop
+          giving_treat = 1; 
+          turnMotor(); 
+        }
         lastTreat = 0; //reset time since last treat
         active = 0; //reset the amount of time the monkey has been attempting the task
       }
