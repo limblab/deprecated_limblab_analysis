@@ -40,7 +40,8 @@ f_labels= {'Fx'; 'Fy'};
 % plot_labels= [testdata.cursorposlabels];
 
 % Mean Square Euclidian Error:
-mse = mean(sum((f_data-predsF).^2,2));
+% mse = mean(sum((f_data-predsF).^2,2));
+mse = mean((f_data - predsF).^2);
 
 % figure;
 num_figs = size(f_data,2);

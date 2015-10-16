@@ -6,7 +6,7 @@ filename       = traindata.meta.filename;
 %default argins
 train_duration = [2.5 5 7.5 10 12.5 15 17.5 20];
 conditions     = {'optimal','optimal_target','normal','supervised'};
-save_path      = ['/Users/christianethier/Dropbox/adaptation/Results/TrainDuration_[LR5e-7Delay600]_tmp' filesep filename filesep];
+save_path      = ['/Users/christianethier/Dropbox/adaptation/Results/FinalRun' filesep filename filesep];
 params         = [];
 
 %overwrite argins

@@ -66,7 +66,6 @@ train_duration = {td;td;td;td;td;td;tds;td;td;td};
 
 for i = 1:10
 
-    i = 4;
     res = eval_offline_preds(all_data.traindata{i},all_data.testdata{i},train_duration(i,:));
     decoder = eval([['results_' all_data.filename{i} '_normal'] '.decoders(end)']);
     decoder = [decoder;{E2F_deRugy_PD}];
@@ -162,6 +161,21 @@ end
     for i = 1:10
         all_vaf = [all_vaf; all_data.results_norm{i}.vaf(end,:)];
     end
+    
+    %% MSEx and MSEy
+    
+    for i = 1:10
+        act = all_data.testdata{i}.cursorposbin;
+        pred = all_data.predsF_norm{i};
+        MSExy = mean((act - pred).^2);
+        all_data.results_norm{i}.MSExy = MSExy;
+    end
+    
+    all_msexy = [];
+    for i = 1:10
+        all_msexy = [all_msexy; all_data.results_norm{i}.MSExy];
+    end
+    
     
 %%---------------------------------------------------------------------------------%%
 %% Plot EMG predictions vectors for each target along with optimal EMG patterns

@@ -67,7 +67,7 @@ for i = 1:n_emgs
     plotLM([0 H(i,1)],[0 H(i,2)],'o-');
 end
 
-legend(binnedData.emgguide{EMGvector},'Location','NorthEastOutside');
+legend(binnedData.emgguide(EMGvector),'Location','NorthEastOutside');
 axis square;
 mxy = ceil(max(max(H)));
 ylim([-mxy mxy]); xlim([-mxy mxy]);
