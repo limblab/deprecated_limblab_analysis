@@ -51,13 +51,20 @@ end
 
 % find velocities and directions
 armdata = behaviors.armdata;
-vel = armdata(strcmp('vel',{armdata.name})).data;
-dir = atan2(vel(:,2),vel(:,1));
-spd = sum(vel.^2,2);
+if(~isfield(options,'move_corr') || strcmp(options.move_corr,'vel'))
+    move_corr = armdata(strcmp('vel',{armdata.name})).data;
+else
+    move_corr = armdata(strcmp(options.move_corr,{armdata.name})).data;
+end
+dir = atan2(move_corr(:,2),move_corr(:,1));
+spd = sum(move_corr.^2,2);
 
 % bin directions
 dir_bins = round(dir/(pi/4))*(pi/4);
 dir_bins(dir_bins==-pi) = pi;
+
+% find baseline move_corr
+
 
 % average firing rates for directions
 bins = -3*pi/4:pi/4:pi;
@@ -69,6 +76,8 @@ for i = 1:length(bins)
     % normalize by bin size to get estimate of firing rate
     if(isfield(options,'binsize'))
         FR_in_bin = FR_in_bin/options.binsize;
+    else %default to 50 ms bins
+        FR_in_bin = FR_in_bin/0.05;
     end
     
     % Mean binned FR has normal-looking distribution (checked with
@@ -113,8 +122,10 @@ output_data.binned_FR = binned_FR;
 output_data.binned_stderr = binned_stderr;
 output_data.binned_CI_high = binned_CI_high;
 output_data.binned_CI_low = binned_CI_low;
-output_data.vel = vel;
+output_data.move = move_corr;
 output_data.dir_dins = dir_bins;
 output_data.unit_ids = behaviors.unit_ids;
 output_data.frac_moddepth = frac_moddepth;
 output_data.binned_spd = binned_spd;
+output_data.bdf = bdf;
+output_data.behaviors = behaviors;

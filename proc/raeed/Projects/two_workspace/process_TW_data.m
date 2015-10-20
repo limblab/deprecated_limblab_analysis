@@ -40,9 +40,9 @@ options.bdf_PM = bdf_PM;
 output_data_20141205 = run_data_processing(function_name,folder,options);
 
 %% rotate empirical tuning curves
-folder='Y:\Han_13B1\Processed\experiment_20141202_twoRW';
+folder='Y:\Han_13B1\Processed\experiment_20141211_twoRW';
 clear options
-options.prefix='Han_20141202';
+options.prefix='Han_20141211';
 options.only_sorted=1;
 function_name='rotate_tuning_curves';
 options.labnum=6;
