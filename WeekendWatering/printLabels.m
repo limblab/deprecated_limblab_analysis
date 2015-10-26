@@ -1,5 +1,6 @@
 WaterSheetFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\';
-WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2015-10-08.xlsx'];
+% WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky 2015-10-08.xlsx'];
+WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-Slutzky test.xlsx'];
 % WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-HPs.xlsx'];
 WeekendWateringFile = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
@@ -109,7 +110,11 @@ for iRoom = 1:num_rooms
                             excel_water_row = find(~cellfun(@isempty,excel_water_row));
                             if ~isempty(excel_water_row)
                                 range = strcat(water_col{1},num2str(excel_water_row));
-                                xlswrite(WeekendWateringFile,{''},3,range); 
+                                if strcmp(datatemp{iAnimal,2*iDate},'Free water')
+                                    xlswrite(WeekendWateringFile,{'CCM'},3,range);
+                                else
+                                    xlswrite(WeekendWateringFile,{''},3,range); 
+                                end
                             end
                         end
                     end            
