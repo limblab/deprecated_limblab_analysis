@@ -2,6 +2,8 @@ function animalList=DvMax_audit(varargin)
     % checks DvMax for missed water, food and weight entries. Prints out
     % uncommon entries.
     % animalList=DvMax_audit('startDate',datenum('1-Mar-2015'),'endDate',datenum('31-Mar-2015'))
+    % Animal audit spreadsheets located in
+    % "\\citadel\limblab\lab_folder\Lab-Wide Animal Info\Audits\"
     
     %% Add JDBC driver to path
     path_file = fopen('classpath.txt');
@@ -329,7 +331,7 @@ function animalList=DvMax_audit(varargin)
             'Nt6000','Rp1025','AC1700','IS','Sx2375','AC10','DS10',...
             'Tx1925','Ax1100','AC11','Tx1575','Tx1425','Tx1430','Sx1300',...
             'Dx1175','Nt9000','AC1275','AC1800','EP8700','EP9300','EP8600',...
-            'EP9400','EP1000','AC1325','Bx1260'});
+            'EP9400','EP1000','AC1325','Bx1260','Enrich001'});
         for iCode = 1:length(common_entries)
             this_audit_data(~cellfun(@isempty,strfind(lower(this_audit_data(:,3)),common_entries{iCode})),:) = [];
         end
