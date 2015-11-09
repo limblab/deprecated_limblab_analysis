@@ -4,6 +4,10 @@ currPath=pwd;
 
 if nargin==0
     pathName=uigetdir('','select a folder with .figs');
+    if isnumeric(pathName) && pathName==0
+        disp('cancelled.')
+        return
+    end
 else
     if exist(pathName,'file')~=7
         pathName=uigetdir(pathName,'select a folder with .figs');

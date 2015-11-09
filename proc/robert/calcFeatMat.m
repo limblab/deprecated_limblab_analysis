@@ -81,6 +81,7 @@ for i=1:numbins
         fprintf(1,'%.2f,',i/numbins)
     end
 end
+fprintf(1,'\n');
 % % clean up tfmat to account for cutting off the firstind bins
 % tfmat(:,:,(ishift+1:end))=[];
 % numbins=numbins-firstind+1;

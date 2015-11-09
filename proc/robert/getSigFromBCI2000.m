@@ -160,7 +160,7 @@ if ~isempty(regexp(SIGNALTOUSE,'CG','once'))
     % FOR POSITION THE FUNCTION EXPECTS A TIME VECTOR PREPENDED
     temp=cumsum(variances/sum(variances));
     cutoff90=find(temp >= 0.9,1,'first');
-    positionData=[rowBoat(1:size(cgz,2))/1000, CGscores(:,1:cutoff90)];
+    positionData=[rowBoat(1:size(cgz,2))/samprate, CGscores(:,1:cutoff90)];
     CG.coeff=CG.coeff(:,1:cutoff90);
     fprintf(1,'Using %d PCs, which together account for\n',cutoff90)
     fprintf(1,'%.1f%% of the total variance in the PC signal\n',100*temp(size(positionData,2)-1))
@@ -185,10 +185,43 @@ if ~isempty(regexp(SIGNALTOUSE,'CG','once'))
         % if any elements of VR.std are 0, change them to 1 for purposes of
         % division
         VR.std(VR.std==0)=1;
-        varargout{1}=VR;
         % there are no (out-of-range) artifacts in VR data, so it is
         % not necessary to implement the artifact removal code here as
         % it was for CG data.
+        
+        % to build CG->VR conversion factors, the relationship should be
+        % not between what the CG was and the VR WAS, but between what the
+        % CG was and what the VR SHOULD BE.  Always remember: VR data has
+        % "absolute correct" values, whereas CG data can change
+        % significantly from one person to another.  The challenge is to
+        % adjust the CG data so that it fills out the range of the VR.
+        % Therefore reading in the VR values from an actual recording is
+        % of limited usefulness for calibration purposes.  Instead, read in
+        % the VR target positions, which are established to be good.
+        VR.CGtoVRmatrix=parameters.CGtoVRmatrix.NumericValue;
+        load(['C:\Users\Apu\Desktop\BCI2000v3\trunk\parms\CAPS_VR_params\', ...
+            'saved arrays\VRtargets_07_2015.mat'],'VRtargets')
+        % if a CG channel was bad, how do we want to handle that?  Probably
+        % by setting the scaling factor to 0 for that channel, but that's
+        % still on the todo list.
+        
+        % for now, must kludge an index to get around the fact that palm
+        % arch is not included in CGtoVRmatrix
+        CG2VRinds=setdiff(CG.channelIndex,20);
+        for i=1:numel(CG2VRinds)
+            % key to CGtoVR matrix columns:
+            % offset range 'smudge' sign CGin
+            %
+            % make the offset signs track the CGsign column
+            VR.CGtoVRmatrix(i,1)=mean([min(CG.data(:,CG2VRinds(i))) ...
+                max(CG.data(:,CG2VRinds(i)))])*VR.CGtoVRmatrix(i,4);
+            VR.CGtoVRmatrix(i,2)=diff([min(VRtargets(CG2VRinds(i),:)) ...
+                max(VRtargets(CG2VRinds(i),:))])/ ...
+                diff([min(CG.data(:,CG2VRinds(i))) ...
+                max(CG.data(:,CG2VRinds(i)))]);                %#ok<NODEF>
+        end, clear i
+        
+        varargout{1}=VR;
     end
 end
 

@@ -23,11 +23,12 @@ clear PA Pmat
 
 SIGNALTOUSE='force';
 % SIGNALTOUSE='dfdt';
-SIGNALTOUSE='CG';
+% SIGNALTOUSE='CG';
 % FPIND is the index of all ECoG (fp) signals recorded in the signal array.
 %  Not to be confused with the index of fps to use for building the
 %  decoder (FPSTOUSE), which is always a game-time decision.
 FPIND=1:64;
+clear badChanF
 
 %%  4. find file(s)
 % if running this cell, must want a new file.  If you want to re-load the
@@ -85,71 +86,37 @@ samprate=parameters.SamplingRate.NumericValue;
 clear N loadDAT
 if ~isa(signal,'double'), signal=double(signal); end
 
+%% optional: bandpass raw data.  useful with g.tec signals that have a large offset
+[b,a]=butter(2,[0.1 500]/(samprate/2),'bandpass');
+signalFilt=filtfilt(b,a,signal(:,FPIND));
+signal(:,FPIND)=signalFilt;
+clear a b signalFilt
+
 %%  5.  get fp array from signal array
 % fp should be numfp X [numSamples].  Scale it by the value it will get in
 % BCI2000.  This, in anticipation of building a brain control decoder.
-signalRange=max(signal(:,FPIND),[],1)-min(signal(:,FPIND),[],1);
-signalRangeLowLogical=signalRange<(median(signalRange)-2*iqr(signalRange));
-if exist('badChanF','var') && ishandle(badChanF)
-    if ~isequal(get(badChanF,'WindowStyle'),'docked')
-        figureCenter(badChanF)
-    end
-    rangeThresh=median(get(findobj(badChanF,'LineStyle','--'),'ydata'));
-else
-    badChanF=figureCenter; % set(badChanF,'Position',[121 468 560 420])
-    plot(signalRange,'.','MarkerSize',36)
-    % for median range calculation, include everything except the zeros.
-    rangeThresh=median(signalRange(~signalRangeLowLogical))+ ...
-        2*iqr(signalRange(~signalRangeLowLogical));    % for TMSi
-    %   0.5*std(signalRange(~signalRangeLowLogical));   % for Blackrock (with 32 crap chans)
-end
-signalRangeHighLogical=signalRange > rangeThresh;
-signalRangeBadLogical=signalRangeLowLogical | signalRangeHighLogical;
-hold on
-plot(find(signalRangeBadLogical),signalRange(signalRangeBadLogical),'r.','MarkerSize',36)
-plot(get(gca,'Xlim'),[0 0]+rangeThresh,'k--','LineWidth',2)
-try
-    title(sprintf('%s\nRange of raw signals.\nBad channel estimate=red. %d good channels.', ...
-        FileName,nnz(~signalRangeBadLogical)),'Interpreter','none','FontSize',16)
-end
-set(gca,'box','off','FontSize',16), set(gcf,'Color',[0 0 0]+1)
-% also, plot a cut-down version of the raw fp signals.
-%  first, scale the signals so that they will appear 
-%  separated by a nice amount.
-fptimes=(1:size(signal,1))/samprate;
-fpCut=(signal(1:100:end,FPIND)')./mean(signalRange); 
-fpCutTimes=fptimes(1:100:end);
-% so as to scale nicely for plotting
-fpCutFig=figure; set(fpCutFig,'Units','normalized','OuterPosition',[0 0 1 1])
-fpCutAx=axes('Position',[0.0365    0.0297    0.9510    0.9636], ...
-    'XLim',[0 max(fpCutTimes)], ...
-    'Ylim',[0 max(FPIND)-min(FPIND)+2],'YTick',sort(FPIND-min(FPIND)+1));
-hold on
-maxStrLen=max(cellfun(@numel,parameters.ChannelNames.Value(FPIND)));
-for n=1:size(fpCut,1)
-    if ~isempty(intersect(n,find(signalRangeBadLogical)))
-        plot(fpCutTimes,n+fpCut(n,:),'r')
-    else
-        plot(fpCutTimes,n+fpCut(n,:))
-    end
-    YaxLabelStr{n}=sprintf(['%02d %',num2str(maxStrLen),'s'],...
-        n,parameters.ChannelNames.Value{FPIND(n)});
-end, clear n
-set(fpCutAx,'YTickLabel',YaxLabelStr)
-figure(badChanF)
+[badChanF,rangeThresh,signalRangeBadLogical,signalRangeLowLogical,fpCutFig,fpCutTimes,fpCut,maxStrLen,fptimes]=fpFromBCI2000(signal,FPIND,samprate,parameters);
+% if you want to re-do channel selection after the first CAR, use
+% [badChanF,rangeThresh,signalRangeBadLogical,signalRangeLowLogical,fpCutFig,fpCutTimes,fpCut,maxStrLen]=fpFromBCI2000(fp',FPIND,samprate,parameters);
 
 %% 6. Use signalRangeBadLogical to eliminate channels from FPSTOUSE.
 % If you don't agree with the auto-estimation, then change 
 % signalRangeBadLogical to be something that you think is better.
-if ~isa(signal,'double'), signal=double(signal); end
-% eliminate the implicit assumption that the FPIND block should start at 1.
-FPSTOUSE=FPIND-min(FPIND)+1;
-FPSTOUSE(signalRangeBadLogical)=[];
-fp=signal(:,FPIND)';
-fp=bsxfun(@times,fp,cellfun(@str2num,parameters.SourceChGain.Value(FPIND)));
-% to get something suitable for pasting into ECoGProjectAllFileInfo.m
-arrayList(FPSTOUSE)
-% arrayList(FPIND)
+try 
+    newRangeThresh=mean(get(findobj(badChanF,'Color','k','LineStyle','--'),'ydata'));
+    if abs(newRangeThresh-rangeThresh)/rangeThresh > 0.01
+        disp('Range threshold has changed.  Go back and re-run the previous cell')
+    else
+        if ~isa(signal,'double'), signal=double(signal); end
+        % eliminate the implicit assumption that the FPIND block should start at 1.
+        FPSTOUSE=FPIND-min(FPIND)+1;
+        FPSTOUSE(signalRangeBadLogical)=[];
+        fp=signal(:,FPIND)';
+        fp=bsxfun(@times,fp,cellfun(@str2num,parameters.SourceChGain.Value(FPIND)));
+        % to get something suitable for pasting into ECoGProjectAllFileInfo.m
+        arrayList(FPSTOUSE)
+    end
+end
 %% 7. CAR.  Include only good signals into the CAR, but apply to all signals
 %  (except channels zeroed out by the REFA)
 fp(~signalRangeLowLogical,:)=bsxfun(@minus,fp(~signalRangeLowLogical,:), ...
@@ -178,6 +145,7 @@ end, clear n
 if exist('fpCutAx','var')==1 && ishandle(fpCutAx)
     set(fpCutAx,'YTickLabel',YaxLabelStr)
 end
+clear newRangeThresh
 % % test the CAR, by re-plotting signalRange.  Compare to the original.
 % signalRange2=max(fp,[],2)-min(fp,[],2);
 % badChan2F=figureCenter; % set(badChanF,'Position',[121 468 560 420])
@@ -202,17 +170,20 @@ try                                                                         %#ok
     [sig,CG]=getSigFromBCI2000(signal,states,parameters,SIGNALTOUSE);
 disp('done')
 end
-
 if ~isempty(CG)
     CGrange=max(CG.data,[],1)-min(CG.data,[],1);
     CGcut=CG.data(1:100:end,:)./mean(CGrange);
     CGcutFig=figure; 
     set(CGcutFig,'Units','normalized','OuterPosition',[0 0 1 1])
     set(gca,'NextPlot','add','Position',[0.0374 0.1100 0.9272 0.8611])
+    if ~exist('fpCutTimes','var')
+        fptimes=(1:size(signal,1))/samprate;
+        fpCutTimes=fptimes(1:100:end);
+    end
     for n=1:size(CGcut,2)
-        plot(n+CGcut(:,n))
+        plot(fpCutTimes,n+CGcut(:,n))
     end, clear n
-    set(gca,'Xlim',[0 size(CGcut,1)],'Ylim',[0 size(CGcut,2)+1])
+    set(gca,'Xlim',[0 fpCutTimes(end)],'Ylim',[0 size(CGcut,2)+1])
 else
     if nnz(cellfun(@isempty, ...
             regexpi(parameters.SignalSourceFilterChain.Value(:,1), ...
@@ -247,14 +218,14 @@ plot(sig(:,1),smForce,'g','LineWidth',1.5)
 sig=[fptimes', smForce];
 %%  9c(i).  optional: look at the CG signal.
 figure, set(gcf,'Position',[69 75 864 578])
-plot3(sig(1:100:end,2),sig(1:100:end,3),sig(1:100:end,4),'.')
+plot3(sig(10000:100:end,2),sig(10000:100:end,3),sig(10000:100:end,4),'.')
 axis vis3d
 xlabel('PC1'), ylabel('PC2'), zlabel('PC3')
 %%  9c(ii).   or, in case there are 4 PCs
 figure, set(gcf,'Position',[69 75 864 578])
-plot3(sig(1:100:end,3),sig(1:100:end,4),sig(1:100:end,5),'.')
+plot3(sig(10000:100:end,2),sig(10000:100:end,3),sig(10000:100:end,5),'.')
 axis vis3d
-xlabel('PC2'), ylabel('PC3'), zlabel('PC4')
+xlabel('PC1'), ylabel('PC2'), zlabel('PC5')
 %%  10.  new school: pick channels to include/exclude based on cap map
 % FPSTOUSE=1:64; % just in case it comes in handy
 elNames=parameters.ChannelNames.Value(FPIND); % change FPIND to FPSTOUSE, to keep selections.
@@ -278,10 +249,10 @@ if exist('featMat','var') && exist ('sig','var')
                                  % it will be necessary to re-run cell 8.
     end
 end
-wsz=896;
-samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
+wsz=512;
+% samprate=parameters.SamplingRate.NumericValue; % 24414.0625/24 is the real TDT sample rate
 binsize=0.1; % TO CHANGE ANYTHING IN THIS CELL, MUST RE-RUN CELL 5, THEN COME BACK HERE.
-bandsToUse='1 2 3 4 5 6';
+bandsToUse='4 5 6';
 [featMat,sig]=calcFeatMat(fp,sig,wsz,samprate,binsize,bandsToUse);
 % featMat that comes out of here is unsorted!  needs feature
 % selection/ranking.
@@ -310,7 +281,7 @@ Use_Thresh=0; lambda=4;
 PolynomialOrder=3; numlags=10; numsides=1; folds=10; 
 smoothfeats=0; featShift=0;
 nfeat=floor(0.9*size(x,2));
-nfeat=108;
+% nfeat=108;
 binsamprate=1;  % this is to keep filMIMO from tacking on an unnecessary
                 % gain factor of binsamprate to the H weights.
 if nfeat > (size(x,1)*size(x,2))
@@ -436,6 +407,9 @@ end
 if exist('paramPathName','var')==0
     paramPathName='';
 end
+% TODO: allow passing in of channel names cell array, then within the file
+% we should put all those in the transmitChannelList, since that must be
+% explicitly stated in a brain control setting.
 [paramPathWritten,paramPathName]=writeBCI2000paramfile(paramPathName, ...
     bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats);
 fprintf(1,'wrote\n%s\n',paramPathWritten)
@@ -451,11 +425,22 @@ disp('calculating predictions for the file using selected H,P,bestc,bestf...')
 
 
 figure, plot(sig((size(sig,1)-size(ytnew,1)+1):end,1),ytnew*40.96+50*40.96)
-hold on, plot(sig((size(sig,1)-size(y_pred,1)+1):end,1),y_pred*40.96+50*40.96,'g')
+hold on, plot(sig((size(sig,1)-size(y_pred,1)+1):end,1),y_pred*40.96+50*40.96,'--')
 ylabel('cursor position units')
 title(sprintf('vaf for the file using this fold: %.4f\n',vaf))
 
-%%
+%% Use this only in the unusual situation where you want to re-pick bad
+%  channels AFTER doing a CAR.
+signalRange=max(fp(:,FPIND),[],1)-min(fp(:,FPIND),[],1);
+
+
+
+
+
+
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Second-tier code.  Works, but has been superseded by something        %
 % above this line.                                                      %

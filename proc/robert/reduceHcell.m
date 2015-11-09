@@ -2,6 +2,8 @@ function [H,P,bestc,bestf]=reduceHcell(H,vaf,P,bestc,bestf)
 
 % syntax [H,P,bestc,bestf]=reduceHcell(H,vaf,P,bestc,bestf);
 %
+% TODO: account for multi-column H
+
 
 if iscell(H)
     [val,ind]=max(vaf);

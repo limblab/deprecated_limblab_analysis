@@ -55,7 +55,7 @@ else
     assignin('base','ParamPathName',ParamPathName)
     error(['could not find the string\n',...
         'Filtering:LFPDecodingFilter matrix FreqBands\n', ...
-        'reminder: the params file might be from a brain control session!'])
+        'reminder: the params file must be from a brain control session!'])
 end
 
 % bestc, bestf

@@ -70,6 +70,8 @@ end
 % since r is an average, there is no need to reshape it; it will just be a
 % vector anyway.
 [sr,featind]=sort(r,'descend');
+featind(isnan(sr))=[];
+r(isnan(r))=[];
 assignin('base','R',r)
 [bestf,bestc]=ind2sub([length(featind)/length(fpind) length(fpind)], ...
     featind((1:nfeat)+featShift));
@@ -147,7 +149,9 @@ for i = 1:folds
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             else%if ~exist('P','var') || size(P,1)<z
                 %Find and apply polynomial if it hasn't been input already
+                ws=warning('off','all');
                 [P{i}(z,:)] = WienerNonlinearity(y_pred{i}(:,z), ytnew{i}(:,z), PolynomialOrder);
+                warning(ws)
             end
             y_pred{i}(:,z) = polyval(P{i}(z,:),y_pred{i}(:,z));
         end
