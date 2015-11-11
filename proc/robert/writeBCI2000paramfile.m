@@ -1,6 +1,6 @@
-function [ParamToWrite,ParamPathName]=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats)
+function [ParamToWrite,ParamPathName]=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats,parameters)
 
-% syntax [ParamToWrite,ParamPathName]=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats))
+% syntax [ParamToWrite,ParamPathName]=writeBCI2000paramfile(ParamPathName,bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats,parameters)
 %
 % reads in an existing BCI2000 parameter file, and adds in the
 % H,P,bestf,bestc data, so that we no longer have to mess around with
@@ -31,6 +31,9 @@ for n=1:(numel(cellData)-1)
     cellData{n}=[cellData{n},sprintf('\r\n')];
 end
 clear strData nCharPerLine
+
+% update storage based on name, folder, etc in input file
+% parameters
 
 % frequency bands to use
 sprintfStr_fbands='Filtering:LFPDecodingFilter matrix FreqBands';

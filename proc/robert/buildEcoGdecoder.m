@@ -411,7 +411,7 @@ end
 % we should put all those in the transmitChannelList, since that must be
 % explicitly stated in a brain control setting.
 [paramPathWritten,paramPathName]=writeBCI2000paramfile(paramPathName, ...
-    bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats);
+    bandsToUse,bestcf,H,P,numlags,wsz,smoothfeats,parameters);
 fprintf(1,'wrote\n%s\n',paramPathWritten)
 
 
