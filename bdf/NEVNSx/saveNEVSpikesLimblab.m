@@ -192,11 +192,14 @@ for ii = 1:length(NEV.ElectrodesInfo)
         fwrite(FID, zeros(2, 1), 'uint8');
     end
 end
-for ii = length(NEV.IOLabels):-1:1
-    fwrite(FID, 'DIGLABEL');
-    fwrite(FID, NEV.IOLabels{ii}(1:16), 'uint8');
-    fwrite(FID, ii - 1, 'uint8');
-    fwrite(FID, zeros(7, 1), 'uint8');
+
+if isfield(NEV, 'IOLabels')
+    for ii = length(NEV.IOLabels):-1:1
+        fwrite(FID, 'DIGLABEL');
+        fwrite(FID, NEV.IOLabels{ii}(1:16), 'uint8');
+        fwrite(FID, ii - 1, 'uint8');
+        fwrite(FID, zeros(7, 1), 'uint8');
+    end
 end
 
 if isfield(NEV, 'NSAS')

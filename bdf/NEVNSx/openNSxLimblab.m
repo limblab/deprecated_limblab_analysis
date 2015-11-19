@@ -392,6 +392,7 @@ if strcmpi(NSx.MetaTags.FileTypeID, 'NEURALSG')
     % Determining DataPoints
     f.BOData = f.EOexH;
     f.EOData = f.EOF;
+    NSx.MetaTags.Timestamp = 0; %%% HACK! MIGHT NOT WORK WITH EVERY DATA FILE
     NSx.MetaTags.DataPoints = (f.EOF-f.EOexH)/(ChannelCount*2);
 elseif strcmpi(NSx.MetaTags.FileTypeID, 'NEURALCD')
     segmentCount = 0;

@@ -57,8 +57,13 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
     fs = [0,1000,2000,10000,30000];
     for iNS = 2:5        
         for iFile = 1:length(eval(['NS' num2str(iNS) 'list']))
-            NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSx('read', [filepath filesep eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
-            num_zeros = fix((NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec(end)-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)/fs(iNS))*1000);
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSxLimblab('read', [filepath filesep eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
+            if ~isempty(NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec)
+                digital_file_length_sec = NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec(end);
+                num_zeros = fix((digital_file_length_sec-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)/fs(iNS))*1000);
+            else %no digital data was collected
+                num_zeros = 0; % no padding
+            end
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data = [zeros(size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,1),num_zeros) NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data];
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints + num_zeros;
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints/fs(iNS) + num_zeros/1000;
