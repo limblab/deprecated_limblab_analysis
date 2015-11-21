@@ -11,8 +11,12 @@ function BDF = rearrange_bdf_lfp( BDF_orig )
 BDF                 = BDF_orig;
 
 % remove some useless fields
-BDF.meta            = rmfield(BDF.meta,'FileSepTime');
-BDF                 = rmfield(BDF,'good_kin_data');
+if isfield(BDF.meta,'FileSepTime')
+    BDF.meta        = rmfield(BDF.meta,'FileSepTime');
+end
+if isfield(BDF,'good_kin_data')
+    BDF                 = rmfield(BDF,'good_kin_data');
+end
 
 % check that all the analog channels are LFPs
 if ~isempty( find( ~strncmp(BDF_orig.raw.analog.channels,'elec',4), 1 ) )
