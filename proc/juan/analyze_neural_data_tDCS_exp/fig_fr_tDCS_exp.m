@@ -173,6 +173,17 @@ if ( nbr_epochs ~= nbr_points_bsln ) && ( nbr_points_bsln > 0 )
                 grand_mean_fr_post,'b','linewidth',2 )
             plot( nbr_points_bsln+nbr_points_tDCS+1:nbr_epochs, ...
                 grand_mean_fr_post+std_mean_fr_post,'-.b','linewidth',1 )
+            
+            % draw the markers
+            plot( 1:nbr_points_bsln, grand_mean_fr_bsln,'ok','markersize',16, 'linewidth',2 )
+            if nbr_points_tDCS > 0
+                plot( nbr_points_bsln+1:nbr_points_bsln+nbr_points_tDCS, ...
+                    grand_mean_fr_tDCS,'or','markersize',16, 'linewidth',2 )
+            end
+            if nbr_points_post > 0
+                plot( nbr_points_bsln+nbr_points_tDCS+1:nbr_points_bsln+nbr_points_tDCS+nbr_points_post, ...
+                    grand_mean_fr_post,'ob','markersize',16, 'linewidth',2 )
+            end
         else
             plot( nbr_points_bsln+1:nbr_points_bsln+nbr_points_tDCS, ...
                 grand_mean_fr_tDCS,'r','linewidth',2 )
@@ -236,7 +247,7 @@ if ( nbr_epochs ~= nbr_points_bsln ) && ( nbr_points_bsln > 0 )
         aux_matrix_cp           = [aux_matrix_cp, mean_fr_post'];
     end
     
-    imagesc(aux_matrix_cp), colormap(hot), colorbar
+    imagesc(aux_matrix_cp), colormap(jet), colorbar
     xlim([0.5 nbr_epochs+.5]), ylim([1 nbr_neurons]);
     set(gca,'FontSize',14), set(gca,'TickDir','out')
     xlabel('epoch nbr.'), ylabel('neuron')
