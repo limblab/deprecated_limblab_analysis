@@ -15,16 +15,15 @@
 %       PLOT_AP_MAP( bdf_struct, array_map_file, plot_std ): array_map is
 %       the path to the map file provided by Blackrock 
 %       PLOT_AP_MAP( bdf_struct, ch_nbr, plot_std ): ch_nbr is an array
-%       that defines the channels that will be plotted.
+%       that defines the channels that will be (orderly) plotted.
 %
-% Last edited by Juan Gallego - Sep 16, 2015
+% Last edited by Juan Gallego - Nov 21, 2015
 %
 
 
 function varargout = plot_AP_map( bdf_struct, varargin )
 
-
-% parameters
+% get parameters
 if nargin == 2
     if islogical(varargin{1})
         plot_std        = varargin{1};
@@ -82,8 +81,6 @@ if exist('array_map_file','var')
    end      
 end
 
-
-
 % -------------------------------------------------------------------------
 % The plot itself
 
@@ -92,100 +89,42 @@ AP_shapes_fig           = figure('units','normalized','outerposition',[0 0 1 1])
 
 
 for i = 1:nbr_bdfs
-
+    % if no array_map file has been passed, the channels will be plotted in
+    % order
     if ~exist('array_map_file','var')
 
-        panel_ctr           = 2;
+        panel_ctr       = 2;
 
         for ii = 1:length(ch_nbrs)
-            if length(ch_nbrs) <= 36
 
-                mean_AP     = mean(bdf_struct(i).units(ii).waveforms);
-                std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
+            mean_AP     = mean(bdf_struct(i).units(ii).waveforms);
+            std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
 
-                subplot(6,6,panel_ctr-1),
-                if plot_std
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
-                    plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                    plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                else
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
-                end
-
-                panel_ctr   = panel_ctr + 1;
-
-                if ii == 1
-                    ylabel('ch 1');
-                elseif rem(ii-1,6) == 0
-                    ylabel(['ch ' num2str(ii)])
-                end
-
-                if ii >= 31
-                    xlabel(['ch ' num2str(ii)])
-                end
-
-            elseif length(ch_nbrs) <= 49
-
-                mean_AP     = mean(bdf_struct(i).units(ii).waveforms);
-                std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
-
-                subplot(7,7,panel_ctr-1),
-                if plot_std
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
-                    plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                    plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                else
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
-                end
-
-                panel_ctr   = panel_ctr + 1;
-
-                if ii == 1
-                    ylabel('ch 1');
-                elseif rem(ii-1,7) == 0
-                    ylabel(['ch ' num2str(ii)])
-                end
-
-                if ii >= 43
-                    xlabel(['ch ' num2str(ii)])
-                end
-
-            elseif length(ch_nbrs) <= 96
-
-                if ( panel_ctr == 10 ) || ( panel_ctr == 91 )
-
-                    panel_ctr   = panel_ctr + 1;
-                end
-
-                mean_AP     = mean(bdf_struct(i).units(ii).waveforms);
-                std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
-
-                subplot(10,10,panel_ctr),
-                if plot_std
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
-                    plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                    plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                else
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
-                end
-
-                panel_ctr   = panel_ctr + 1;
-
-                if ii == 1
-                    ylabel('ch 1');
-                elseif rem(ii-9,10) == 0
-                    ylabel(['ch ' num2str(ii)])
-                end
-
-                if ii >= 89
-                    xlabel(['ch ' num2str(ii)])
-                end
+            nbr_rc      = ceil(sqrt(length(ch_nbrs)));
+            
+            subplot(nbr_rc,nbr_rc,panel_ctr-1),
+            if plot_std
+                hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
+                plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+                plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
             else
-
-                disp('ToDo');
+                hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
             end
+            
+            panel_ctr   = panel_ctr + 1;
+            
+%             % add labels
+%             if ii == 1
+%                 ylabel('ch 1');
+%             elseif rem(ii-1,nbr_rc) == 0
+%                 ylabel(['ch ' num2str(ii)])
+%             end
+%             if ii >= (nbr_rc*(nbr_rc-1)+1)
+%                 xlabel(['ch ' num2str(ii)])
+%             end
         end
-    % if we have passed an array file    
+    %----------------------------------------------------------------------    
+    % if we passed an array file    
     else
         for ii = 1:length(ch_nbrs)
              
@@ -195,11 +134,11 @@ for i = 1:nbr_bdfs
             [row, col]  = find( bdf_struct(i).map==ii );
             subplot(10,10,col+(row-1)*10),
             if plot_std
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
-                    plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                    plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
-                else
-                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
+                hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
+                plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+                plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+            else
+                hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
             end
         end
     end
