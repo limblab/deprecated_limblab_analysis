@@ -15,8 +15,12 @@ if(~isfield(options,'behaviors'))
 
     %% prep bdf
     if ~isfield(bdf,'meta') || ~isfield(bdf.meta,'task')
-        % default to random walk
-        bdf.meta.task = 'RW';
+        if isfield(options,'task')
+            bdf.meta.task = options.task;
+        else
+            % default to random walk
+            bdf.meta.task = 'RW';
+        end
     end
 
     %add firing rate to the units fields of the bdf
@@ -44,7 +48,13 @@ if(~isfield(options,'behaviors'))
         which_units=ulist(temp);
     end
     optionstruct.data_offset=-.015;%negative shift shifts the kinetic data later to match neural data caused at the latency specified by the offset
-    behaviors = parse_for_tuning(bdf,'continuous','opts',optionstruct,'units',which_units);
+    
+    if(~isfield(options,'time_selection'))
+        time_selection = 'continuous';
+    else
+        time_selection = options.time_selection;
+    end
+    behaviors = parse_for_tuning(bdf,time_selection,'opts',optionstruct,'units',which_units);
 else
     behaviors = options.behaviors;
 end
@@ -57,18 +67,21 @@ else
     move_corr = armdata(strcmp(options.move_corr,{armdata.name})).data;
 end
 dir = atan2(move_corr(:,2),move_corr(:,1));
-spd = sum(move_corr.^2,2);
+spd = sqrt(sum(move_corr.^2,2));
 
 % bin directions
 dir_bins = round(dir/(pi/4))*(pi/4);
 dir_bins(dir_bins==-pi) = pi;
 
-% find baseline move_corr
+% find baseline move_corr...somehow
 
 
 % average firing rates for directions
 bins = -3*pi/4:pi/4:pi;
 bins = bins';
+
+full_binned_FR = [];
+groups = [];
 for i = 1:length(bins)
     FR_in_bin = behaviors.FR(dir_bins==bins(i),:);
     spd_in_bin = spd(dir_bins==bins(i));
@@ -85,9 +98,21 @@ for i = 1:length(bins)
     binned_FR(i,:) = mean(FR_in_bin); % mean firing rate
     binned_spd(i,:) = mean(spd_in_bin); % mean speed
     binned_stderr(i,:) = std(FR_in_bin)/sqrt(length(FR_in_bin)); % standard error
+    binned_spd_err(i,:) = std(spd_in_bin)/sqrt(length(spd_in_bin)); % standard error of speed
     tscore = tinv(0.975,length(FR_in_bin)-1); % t-score for 95% CI
     binned_CI_high(i,:) = binned_FR(i,:)+tscore*binned_stderr(i,:); %high CI
     binned_CI_low(i,:) = binned_FR(i,:)-tscore*binned_stderr(i,:); %low CI
+    binned_CI_high_spd(i,:) = binned_spd(i,:)+tscore*binned_spd_err(i,:); %high CI
+    binned_CI_low_spd(i,:) = binned_spd(i,:)-tscore*binned_spd_err(i,:); %low CI
+    
+    % for anova
+    full_binned_FR = [full_binned_FR; FR_in_bin];
+    groups = [groups; i*ones(size(FR_in_bin))];
+end
+
+% ANOVA
+for j=1:size(full_binned_FR,2)
+    pVal(j) = anova1(full_binned_FR(:,j),groups(:,j),'off');
 end
 
 % find tuning curve features
@@ -97,9 +122,21 @@ frac_moddepth = (max(binned_FR)-min(binned_FR))./mean(binned_FR);
 if isfield(options,'plot_curves')
     if options.plot_curves
         figure_handles = zeros(size(binned_FR,2),1);
+        
+        % plot speed curves
+        figure_handles(1) = figure('name','Binned Speed');
+        polar(repmat(bins,2,1),repmat(binned_spd,2,1))
+
+        % plot confidence intervals 
+        th_fill = [flipud(bins); bins(end); bins(end); bins];
+        r_fill = [flipud(binned_CI_high_spd); binned_CI_high_spd(end); binned_CI_low_spd(end); binned_CI_low_spd];
+        [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+        patch(x_fill,y_fill,[0 0 1],'facealpha',0.3,'edgealpha',0);
+        
+        % plot unit tuning curves
         unit_ids = behaviors.unit_ids;
         for i=1:length(figure_handles)
-            figure_handles(i) = figure('name',['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot']);
+            figure_handles(i+1) = figure('name',['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot']);
 
             % plot tuning curve
             polar(repmat(bins,2,1),repmat(binned_FR(:,i),2,1))
@@ -129,3 +166,4 @@ output_data.frac_moddepth = frac_moddepth;
 output_data.binned_spd = binned_spd;
 output_data.bdf = bdf;
 output_data.behaviors = behaviors;
+output_data.pVal = pVal;
