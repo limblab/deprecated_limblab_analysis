@@ -224,7 +224,10 @@ end
 
 % -----------------
 % 4. Calculate changes in the LFPs across blocks
-
+if nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  && nbr_post_trials > 0
+    [neural_activity_bsln, neural_activity_tDCS, neural_activity_post] = ...
+        calc_changes_lfp_btw_blocks( neural_activity_bsln, neural_activity_tDCS, neural_activity_post );
+end
 
 
 
@@ -264,12 +267,14 @@ end
 
 
 % LFP plots
-if nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  && nbr_post_trials > 0
-    fig_lfp_freq( neural_activity_bsln, neural_activity_tDCS, neural_activity_post )
-elseif nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  
-    fig_lfp_freq( neural_activity_bsln, neural_activity_tDCS )
-else
-    fig_lfp_freq( neural_activity_bsln )
+if atp.sad_params.lfp
+    if nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  && nbr_post_trials > 0
+        fig_lfp_freq( neural_activity_bsln, neural_activity_tDCS, neural_activity_post )
+    elseif nbr_bsln_trials > 0 && nbr_tDCS_trials > 0  
+        fig_lfp_freq( neural_activity_bsln, neural_activity_tDCS )
+    else
+        fig_lfp_freq( neural_activity_bsln )
+    end
 end
 
 
