@@ -317,13 +317,13 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     go_cues=target_onsets;
                     bump_times=[];
                 case 'CO'
-                    target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
+                    target_onsets=bdf.TT(:,bdf.TT_hdr.ot_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
-                    bump_times=[];
+                    bump_times=[bdf.TT(:,bdf.TT_hdr.bump_time) trial_ends];
                 case 'CO_bump'
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
-                    bump_times=bdf.TT(:,bdf.TT_hdr.bump_time)+bdf.TT(:,bdf.TT_hdr.bump_delay);
+                    bump_times=[bdf.TT(:,bdf.TT_hdr.bump_time)+bdf.TT(:,bdf.TT_hdr.bump_delay) bump_times+bdf.TT(:,bdf.TT_hdr.bump_dur)+2*+bdf.TT(:,bdf.TT_hdr.bump_ramp)];
                 case 'isometric'
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
@@ -482,6 +482,20 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 
                 T=[trial_starts,trial_ends];
                 outstruct=sample_between_timepoints(T);
+            case 'target moves'
+                %viable method_opts for the trials method:
+                %   -lags
+                %   -comptute_pos_pds
+                %   -comptute_vel_pds
+                %   -comptute_acc_pds
+                %   -comptute_force_pds
+                %   -comptute_dfdt_pds
+                %   -comptute_dfdtdt_pds
+                %   -data_offset
+                
+                T=[go_cues,trial_ends];
+                T=T(bdf.TT(:,bdf.TT_hdr.trial_result)==uint8('R'),:); % take only rewarded reaches
+                outstruct=sample_between_timepoints(T);
             case 'bumps'
                 %viable method_opts for the bumps method:
                 %   -lags
@@ -496,7 +510,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 if isempty(bump_times)
                     error('Parse_For_Tuning:NoBumps','The bumps method is not valid because the data set does not have bump times');
                 end
-                T=[bump_times,bump_times+bdf.TT(:,bdf.TT_hdr.bump_dur)+2*+bdf.TT(:,bdf.TT_hdr.bump_ramp)];
+                T=bump_times;
                 outstruct=sample_between_timepoints(T);
             otherwise
                  error('Parse_for_tuning:UnrecognizedMethod','The given method is not a valid parsing type')
