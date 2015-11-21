@@ -1,3 +1,12 @@
+%
+% Function that calculates pair-wise changes in firing rate (raw and
+% normalized), across up to three blocks of neural recordings. It also
+% performs a Wilcoxon signed rank comparison.
+%
+% function [neural_activity_1, neural_activity_2, neural_activity_3] = ...
+%    calc_stats_firing_rate_btw_blocks( neural_activity_1, neural_activity_2, neural_activity_3 )
+%
+%
 
 
 function [neural_activity_1, neural_activity_2, neural_activity_3] = ...
