@@ -118,7 +118,7 @@ for i = 1:nbr_files
             % create a vector with the threshold for each axis
             switch sad_params.thr_statistic
                 case 'none'
-                    threshold = sad_params.thr_behavior*ones(1,size(binned_data.cursorposbin,2));
+                    threshold = sad_params.thr_behavior*ones(1,size(binned_data.cursorposbin,1));
                 case 'std'
                     threshold = mean(binned_data.cursorposbin)+...
                         sad_params.thr_behavior*std(binned_data.cursorposbin);
@@ -127,9 +127,9 @@ for i = 1:nbr_files
             % find bins where rectified cursor position is above the
             % threshold
             pos_above_thr = [];
-            for ii = 1:size(binned_data.cursorposbin,2)
+            for ii = 1:size(binned_data.cursorposbin,1)
                 pos_above_thr = [pos_above_thr; ...
-                    find( abs(binned_data.cursorposbin(:,ii)) > threshold(ii) )]; %#ok<AGROW>
+                    find( abs(binned_data.cursorposbin(ii,:)) > threshold(ii) )]; %#ok<AGROW>
             end
             pos_above_thr = unique(pos_above_thr);
             
@@ -145,7 +145,7 @@ for i = 1:nbr_files
             % create a vector with the threshold for each axis
             switch sad_params.thr_statistic
                 case 'none'
-                    threshold = sad_params.thr_behavior*ones(1,size(binned_data.cursorposbin,2));
+                    threshold = sad_params.thr_behavior*ones(1,size(binned_data.cursorposbin,1));
                 case 'std'
                     threshold = mean(binned_data.velocbin)+...
                         sad_params.thr_behavior*std(binned_data.velocbin);
@@ -154,9 +154,9 @@ for i = 1:nbr_files
             % find bins where rectify cursor velocity is above the
             % threshold
             pos_above_thr = [];
-            for ii = 1:size(binned_data.velocbin,2)
+            for ii = 1:size(binned_data.velocbin,1)
                 pos_above_thr = [pos_above_thr; ...
-                    find( abs(binned_data.velocbin(:,ii)) > threshold(ii) )]; %#ok<AGROW>
+                    find( abs(binned_data.velocbin(ii,:)) > threshold(ii) )]; %#ok<AGROW>
             end
             pos_above_thr = unique(pos_above_thr);
             
