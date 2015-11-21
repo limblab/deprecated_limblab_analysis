@@ -76,7 +76,7 @@ if exist('array_map_file','var')
           bdf_struct(i).map  = get_array_mapping(array_map_file{i});
        end
    else
-       for i = nbr_bdfs
+       for i = 1:nbr_bdfs
           bdf_struct(i).map  = get_array_mapping(array_map_file);
        end
    end      
@@ -187,7 +187,21 @@ for i = 1:nbr_bdfs
         end
     % if we have passed an array file    
     else
-        
+        for ii = 1:length(ch_nbrs)
+             
+            mean_AP     = mean(bdf_struct(i).units(ii).waveforms);
+            std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
+            
+            [row, col]  = find( bdf_struct(i).map==ii );
+            subplot(10,10,col+(row-1)*10),
+            if plot_std
+                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
+                    plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+                    plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
+                else
+                    hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
+            end
+        end
     end
 end
 
