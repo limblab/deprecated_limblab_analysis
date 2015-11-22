@@ -19,6 +19,7 @@ function bdf=postprocess_bdf(bdf,varargin)
     if opts.do_trial_table
         switch bdf.meta.task
             case 'RW'
+%                 rw_trial_table_script;
                 [bdf.TT,bdf.TT_hdr]=rw_trial_table_hdr(bdf);
             case 'BC'
                 [bdf.TT,bdf.TT_hdr]=bc_trial_table4(bdf);
