@@ -495,7 +495,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 
                 T=[go_cues,trial_ends];
                 T=T(bdf.TT(:,bdf.TT_hdr.trial_result)==uint8('R'),:); % take only rewarded reaches
-                outstruct=sample_between_timepoints(T);
+                outstruct=sample_between_timepoints(T,timeseries);
             case 'bumps'
                 %viable method_opts for the bumps method:
                 %   -lags
@@ -511,7 +511,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     error('Parse_For_Tuning:NoBumps','The bumps method is not valid because the data set does not have bump times');
                 end
                 T=bump_times;
-                outstruct=sample_between_timepoints(T);
+                outstruct=sample_between_timepoints(T,timeseries);
             otherwise
                  error('Parse_for_tuning:UnrecognizedMethod','The given method is not a valid parsing type')
         end
