@@ -23,8 +23,13 @@ if(~isfield(options,'behaviors'))
         end
     end
 
-    %add firing rate to the units fields of the bdf
-    opts.binsize=0.05;
+    %binsize 50 ms default
+    if(isfield(options,'binsize'))
+        opts.binsize=options.binsize;
+    else %default to 50 ms bins
+        opts.binsize=0.05;
+    end
+    
     opts.offset=-.015;
     opts.do_trial_table=1;
     opts.do_firing_rate=1;
