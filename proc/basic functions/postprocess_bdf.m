@@ -45,7 +45,13 @@ function bdf=postprocess_bdf(bdf,varargin)
         else
             offset=0;
         end
-        pt = bdf.pos(:,1);
+        
+        % find a time vector
+        if isfield(bdf,'pos')
+            pt = bdf.pos(:,1);
+        elseif isfield(bdf,'analog')
+            pt = bdf.analog.ts';
+        end
         t = pt(1):ts:pt(end);
 
         for i=1:length(bdf.units)
