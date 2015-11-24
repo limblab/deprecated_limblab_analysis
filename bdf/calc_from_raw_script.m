@@ -478,7 +478,7 @@
                 out_struct.analog.ts = analog_time_base;
                 for c = 1:length(analog_channels)
                     %assign channel names
-                    out_struct.analog.channel(c) = out_struct.raw.analog.channels(c);
+                    out_struct.analog.channel(c) = out_struct.raw.analog.channels(analog_channels(c));
                     %get subsampled analog data
                     fs = out_struct.raw.analog.adfreq(analog_channels(c));
                     chan_time_base = 1/fs:1/fs:length(out_struct.raw.analog.data{analog_channels(c)})/fs;
@@ -525,6 +525,38 @@
                     end
                     out_struct.analog.data(:,c) = a_data;
                 end
+            end
+        end
+    else
+        if ~isempty(analog_list)
+            out_struct.analog.channel = NSx_info.NSx_labels(analog_list);
+            out_struct.analog.ts = analog_time_base;
+            for c = length(analog_list):-1:1
+                if NSx_info.NSx_sampling(analog_list(c))==1000
+                    a_data = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                elseif NSx_info.NSx_sampling(analog_list(c))==2000
+                    a_data = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                elseif NSx_info.NSx_sampling(analog_list(c))==10000
+                    a_data = single(NEVNSx.NS4.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                elseif NSx_info.NSx_sampling(analog_list(c))==30000
+                    a_data = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                end
+                % 6.5584993 is the ratio when comparing the output of 
+                % get_cerebus_data to the one from this script. It must come
+                % from the data type conversion that happens when pulling 
+                % analog data.
+                a_data = a_data/6.5584993;
+                step=1/NSx_info.NSx_sampling(analog_list(c));
+                chan_time_base = step:step:length(a_data)*step;
+                if NSx_info.NSx_sampling(analog_list(c))==max(NSx_info.NSx_sampling(analog_list))
+                   %we don't need to interpolate since this data was collected
+                   %with the same freq as analog_time_base:
+                   a_data=a_data(round(analog_time_base/step));
+                else
+                    %we need to interpolate to the analog_time_base
+                    a_data = interp1(chan_time_base, a_data, analog_time_base);
+                end
+                out_struct.analog.data(:,c) = a_data;
             end
         end
     end

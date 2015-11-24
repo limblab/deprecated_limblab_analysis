@@ -116,25 +116,54 @@ function out_struct = get_nev_mat_data(varargin)
     NSx_info.NSx_labels = {};
     NSx_info.NSx_sampling = [];
     NSx_info.NSx_idx = [];
+    
     if ~isempty(NEVNSx.NS2)
-        NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS2.ElectrodesInfo.Label}';
-        NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(1000,1,size(NEVNSx.NS2.ElectrodesInfo,2))];
-        NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS2.ElectrodesInfo,2)];
+        if strcmpi(NEVNSx.NS2.MetaTags.FileTypeID, 'NEURALSG') %%%% SOMEWHAT HACKY in case of older file version
+            labels = strcat(repmat({'analogNS2_'},NEVNSx.NS2.MetaTags.ChannelCount,1),strtrim(cellstr(num2str((1:NEVNSx.NS2.MetaTags.ChannelCount)'))))';
+            NSx_info.NSx_labels = [NSx_info.NSx_labels{:} labels]';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(1000,1,NEVNSx.NS2.MetaTags.ChannelCount)];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:NEVNSx.NS2.MetaTags.ChannelCount];
+        elseif strcmpi(NEVNSx.NS2.MetaTags.FileTypeID, 'NEURALCD') % newer file version
+            NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS2.ElectrodesInfo.Label}';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(1000,1,size(NEVNSx.NS2.ElectrodesInfo,2))];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS2.ElectrodesInfo,2)];
+        end
     end
     if ~isempty(NEVNSx.NS3)
-        NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS3.ElectrodesInfo.Label};
-        NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(2000,1,size(NEVNSx.NS3.ElectrodesInfo,2))];
-        NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS3.ElectrodesInfo,2)];
+        if strcmpi(NEVNSx.NS3.MetaTags.FileTypeID, 'NEURALSG')
+            labels = strcat(repmat({'analogNS3_'},NEVNSx.NS3.MetaTags.ChannelCount,1),strtrim(cellstr(num2str((1:NEVNSx.NS3.MetaTags.ChannelCount)'))))';
+            NSx_info.NSx_labels = [NSx_info.NSx_labels{:} labels]';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(2000,1,NEVNSx.NS3.MetaTags.ChannelCount)];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:NEVNSx.NS3.MetaTags.ChannelCount];
+        elseif strcmpi(NEVNSx.NS3.MetaTags.FileTypeID, 'NEURALCD')
+            NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS3.ElectrodesInfo.Label};
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(2000,1,size(NEVNSx.NS3.ElectrodesInfo,2))];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS3.ElectrodesInfo,2)];
+        end
     end
     if ~isempty(NEVNSx.NS4)
-        NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS4.ElectrodesInfo.Label}';
-        NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(10000,1,size(NEVNSx.NS4.ElectrodesInfo,2))];
-        NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS4.ElectrodesInfo,2)];
+        if strcmpi(NEVNSx.NS4.MetaTags.FileTypeID, 'NEURALSG')
+            labels = strcat(repmat({'analogNS4_'},NEVNSx.NS4.MetaTags.ChannelCount,1),strtrim(cellstr(num2str((1:NEVNSx.NS4.MetaTags.ChannelCount)'))))';
+            NSx_info.NSx_labels = [NSx_info.NSx_labels{:} labels]';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(10000,1,NEVNSx.NS4.MetaTags.ChannelCount)];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:NEVNSx.NS4.MetaTags.ChannelCount];
+        elseif strcmpi(NEVNSx.NS4.MetaTags.FileTypeID, 'NEURALCD')
+            NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS4.ElectrodesInfo.Label}';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(10000,1,size(NEVNSx.NS4.ElectrodesInfo,2))];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS4.ElectrodesInfo,2)];
+        end
     end
     if ~isempty(NEVNSx.NS5)
-        NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS5.ElectrodesInfo.Label}';
-        NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(30000,1,size(NEVNSx.NS5.ElectrodesInfo,2))];
-        NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS5.ElectrodesInfo,2)];
+        if strcmpi(NEVNSx.NS5.MetaTags.FileTypeID, 'NEURALSG')
+            labels = strcat(repmat({'analogNS5_'},NEVNSx.NS5.MetaTags.ChannelCount,1),strtrim(cellstr(num2str((1:NEVNSx.NS5.MetaTags.ChannelCount)'))))';
+            NSx_info.NSx_labels = [NSx_info.NSx_labels{:} labels]';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(30000,1,NEVNSx.NS5.MetaTags.ChannelCount)];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:NEVNSx.NS5.MetaTags.ChannelCount];
+        elseif strcmpi(NEVNSx.NS5.MetaTags.FileTypeID, 'NEURALCD')
+            NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS5.ElectrodesInfo.Label}';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(30000,1,size(NEVNSx.NS5.ElectrodesInfo,2))];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS5.ElectrodesInfo,2)];
+        end
     end
         
     NSx_info.NSx_labels = NSx_info.NSx_labels(~cellfun('isempty',NSx_info.NSx_labels));
@@ -144,9 +173,9 @@ function out_struct = get_nev_mat_data(varargin)
     emg_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'emg_')));
     force_list = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'force_')));
     fullbandwidth_list = find(NSx_info.NSx_sampling==30000);
-    analog_list = setxor(1:length(NSx_info.NSx_labels),emg_list);
-    analog_list = setxor(analog_list,force_list);    
-    analog_list = setxor(analog_list,fullbandwidth_list);
+    analog_list = setxor(1:length(NSx_info.NSx_labels),emg_list); % take out emgs channels
+    analog_list = setxor(analog_list,force_list); % take out force channels
+    analog_list = setxor(analog_list,fullbandwidth_list); % take out 30 kS/s channels
     
 %% The Units
     progress = 2/8;
@@ -181,7 +210,7 @@ function out_struct = get_nev_mat_data(varargin)
 
 %% The raw data analog data (other than emgs and full bandwidth data)
 
-    if ~isempty(analog_list) & ~opts.delete_raw
+    if ~isempty(analog_list) && ~opts.delete_raw
         progress = 3/8;
         if opts.verbose
             waitbar(progress,h,'Extracting Raw Analog Data');
@@ -220,7 +249,7 @@ function out_struct = get_nev_mat_data(varargin)
     end
     
 %% The full bandwidth data
-    if ~isempty(find(NSx_info.NSx_sampling==30000,1,'first')) & ~opts.delete_raw
+    if ~isempty(find(NSx_info.NSx_sampling==30000,1,'first')) && ~opts.delete_raw
         progress = 3/8;
         if opts.verbose
             waitbar(progress,h,'Extracting Full bandwidth Analog Data');
@@ -242,7 +271,7 @@ function out_struct = get_nev_mat_data(varargin)
         out_struct.raw.fullbandwidth.ts(1:length(fullbandwidth_list)) = {0};
     end
 %% The Emgs
-    if ~isempty(emg_list) & ~opts.delete_raw
+    if ~isempty(emg_list) && ~opts.delete_raw
         progress = 4/8;
         if opts.verbose
             waitbar(progress,h,'Extracting EMG Data');
