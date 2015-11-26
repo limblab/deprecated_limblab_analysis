@@ -54,6 +54,7 @@ function [figure_handles, output_data]=find_vibe_sensitivity(folder,options)
         h = figure('name',figure_title);
         figure_handles = [figure_handles h];
         
+        figure(1)
         plot(bdf.analog.ts',bdf.analog.data/max(abs(bdf.analog.data)),'-b');
         hold on
         
@@ -77,8 +78,54 @@ function [figure_handles, output_data]=find_vibe_sensitivity(folder,options)
             plot(FR_time,FR_data_conv_norm+i, 'g')
         end
       
+        % fft of stim and unit response
+        figure(2)
+        
+        data_length = length(bdf.analog.data);
+        Y1 = fft(bdf.analog.data)';
+
+        P2 = abs(Y1/data_length);
+        P1 = P2(1:data_length/2+1);
+        P1(2:end-1) = 2*P1(2:end-1);
+
+        f1 = 1000*(0:(data_length/2))/data_length;
+
+        plot(f1(3:end),P1(3:end)/max(abs(P1)),'k')
+        hold on
+        
+        for k=1:num_units
+           spike(:,1) = bdf.analog.ts;
+           spike(:,2) = 0;
+           unit_ts_rounded = round(bdf.units(which_units(k)).ts*1000)/1000;
+           
+
+            for m=1:length(unit_ts_rounded)
+               for n=1:length(spike)
+                  if(spike(n,1) == unit_ts_rounded(m))
+                     spike(n,2) = 1;
+                  else
+                  end
+               end
+            end
+           
+        
+        Y2 = fft(spike(:,2))';
+
+        P2 = abs(Y2/data_length);
+        P1 = P2(1:data_length/2+1);
+        P1(2:end-1) = 2*P1(2:end-1);
+
+        f2 = 1000*(0:(data_length/2))/data_length;
+
+        plot(f2(3:end),P1(3:end)/max(abs(P1))+k)
+        hold all
+        end
         
         
+        
+        
+        
+  
     catch MExc
         output_data.MExc = MExc;
         warning('Code did not fully execute. Check ''MExc'' in output data for more information.')
