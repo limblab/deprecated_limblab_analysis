@@ -31,13 +31,17 @@ if PlotOn == 1
         x = DecoderAge;
     end
     
-    
-%     plot(x, r_map_mean,'ko')
+    figure
+    plot(x, r_map_mean,'ko')
     xlabel('Decoder Age')
     ylabel('Mean Correlation Coefficient')
     title('Mean Corr Coeff Map')
     
-    Xticks = min(x):floor(range(x)/4):max(x)
+    ah = findobj(gca,'TickDirMode','auto')    
+    set(ah,'Box','off')
+    set(ah,'TickLength',[0,0])
+    
+    Xticks = [floor(min(x)/100)*100 ceil(max(x)/100)*100]
 % size(Xlabels,1)];
 %     Xticks = [Xticks' get(gca,'Xtick')]';
 %     Xticks = sort(Xticks)
@@ -50,7 +54,7 @@ if PlotOn == 1
     
     p = polyfit(x,r_map_mean,1);
     f = polyval(p,x);
-%     plot(x,f,'k-')
+    plot(x,f,'k-')
     ylim([0 1])
     
     [rho pval] = corr(x',r_map_mean')

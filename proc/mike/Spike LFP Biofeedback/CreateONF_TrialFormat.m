@@ -1,26 +1,5 @@
 % Create ONF Trial Format
 
-%function [AA_Coupling] = ampampcoupling(out_struct, LFPInds, SpikeInds, ControlType, H, SigGain)
-% bdf - plain old bdf
-%% Inputs
-% LFPinds{1} - [LFPchannel, freqind] - x direction
-% LFPinds{2} - [LFPchannel, freqind] - y direction
-% **Placement of ch and freq index in first or second cell only matters if
-% doing 2 feature LFP control otherwise put in first cell if doing
-% 1 spike/1 LFP feature control
-
-% ****Make sure to convert the spike channel to the corresponding LFP
-% channel!
-% Spikeinds{1} - [LFPchannel, unit] - x direction
-% Spikeinds{2} - [LFPchannel, unit] - y direction
-% **Placement of ch and unit index in first or second cell only matters if
-% doing 2 unit Spike control otherwise put in first cell if doing 1
-% spike/1 LFP feature control
-
-% ControlType{1} - {'Control Type'} - 'HC' or 'BC'
-% ControlType{2} - [ControlSignalX, ControlSignalY] - LFP ==1; Spike == 2
-% ex. [Spike, Spike] = [2, 2]; [LFP, Spike] = [1, 2]; [LFP, LFP] = [1, 1];
-
 %% Consider making these variables inputs to the function
 binsize = .05;
 wsz = 256;
@@ -29,7 +8,7 @@ pri = 1;
 fi =1;
 ind = 1;
 
-numlags  = 10; % Number of lags used online
+numlags  = 1; % Number of lags used online
 Offlinelags = 1; % Number of lags to use offline
 numsides = 1;
 lambda   = 1;
@@ -37,7 +16,7 @@ binsamprate = floor(1/binsize);
 numfp = 96;
 folds = 10;
 
-% FileList = Mini_U41_SpikeX_Ch73_Gam3Y; 
+% FileList = {Mini_Spike_LFPL_06092014006}; 
 bandstarts = [30, 130, 200];
 bandends   = [50, 200, 300];
 
@@ -46,21 +25,9 @@ bandends   = [50, 200, 300];
 % BC_1DSp = [26:28];
 % BC_I = [35:38];
 
-%  LFPInds{1} = [73 6];% X control 
-% % LFPInds{1} = [17 6];% Y control
-% SpikeInds{1} = [42 1];
-% ControlCh = 73;
-
-% Use these vars if you want to split up files in to segments
-segment = 1;
-whole = 1;
-WinLen = 300; % in seconds
-overlap = 60; % in sec
-segInd = 1;
-
 clear FileNotRun
 %% Find file path, load file and start iterating through files
-for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end) 
+for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]
     
     if exist('fnam','var') == 0         
             fnam{q} =  findBDFonCitadel(FileList{q,1})
@@ -100,7 +67,7 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
     
     [y, ~, t, numbins] = fpadjust(binsize, samplerate, fptimes, wsz, sig, fp, analog_time_base);
 
-    clear y numbins sig analog_time_base
+    clear y numbins
     tsFPorder = cell([q 96]);
     %% Bin and organize spikes
     if 1
@@ -121,7 +88,7 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
                 %             x(:,i) = zeros(length(y),1);
             end
         end
-        clear b cells i ts t
+        clear b cells i ts
     end
 
     %% Calculate trial stats
@@ -132,11 +99,12 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
     Num.Abort_File(q) = length(AbortTrialInds);
     
     SuccessTrialInds=find(bdf.words(:,2)==32);
-    Num.Success_File(q) = length(SuccessTrialInds);
-    
-    Num.PercentSuccess_File(q) = (Num.Success_File(q)/Num.Trials_File(q))*100;
+    TenMinInts = length(bdf.vel)/12000;
+    Num.Success_File(q) = length(SuccessTrialInds)/TenMinInts;
+        
+    Num.PercentSuccess_File(q) = (Num.Success_File(q)/(Num.Trials_File(q)-Num.Abort_File(q)))*100*TenMinInts;
     clear FirstTrialInds AbortTrialInds SuccessTrialInds
-    
+    continue
     data(q).fptimes = fptimes;
     data(q).FPs = fp;
     data(q).SpikeTimes = tsFPorder;
@@ -145,7 +113,15 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
     % off, remove them here.
     fp(isnan(fp)==1)= 0;
     
-    for i = 1:length(bandstarts)
+    if AdjustCorr == 1
+        [PB, ~, ~, ~, y, t] = MRScalcFeatMat(sig, 'vel', numfp, ...
+            binsize, folds, numlags,numsides,samplerate, fp,fptimes, ...
+            analog_time_base,fnam,256,[],[],[],[],bdf.words);
+        
+        clear analog_time_base sig
+    end
+    
+    for i = 1:length(bandstarts)                
         [b,a]=butter(2,[bandstarts(i) bandends(i)]/(samprate/2));
         TrialBP= filtfilt(b,a,fp');
         BP_Vec = smooth(abs(hilbert(TrialBP)).^2,21,'moving');
@@ -157,6 +133,7 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
         end
     end
     
+    
 %     AllGam3 = squeeze(BP(:,:,3));
 %     [rOnline.map,rOnline.map_mean, rOnline.rho, rOnline.pval, rOnline.f, rOnline.x] = ...
 %         CorrCoeffMap(AllGam3,1,1:96)
@@ -167,9 +144,9 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
     clear a b BP_Vec TrialBP
  %%    
         
-    for  k = ControlCh % 1:size(fp,1) %
+    for  k = in(ControlCh,[1 96]) % 1:size(fp,1) %
         FPstartTime = fptimes(1);
-        SpikeTimes = tsFPorder{q,k};
+        SpikeTimes = tsFPorder{q,k};        
         tic
         if segment == 1 
             
@@ -226,12 +203,133 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
             toc
             clear FPdataToParse segments BP_seg SpikeTimes_seg
         end
+        
+        if AdjustCorr == 1
+            if flag_SpHG == 1
+            % Binned spike counts (50 ms bins)
+            SpikeCounts = train2bins(SpikeTimes,t);
+            % Binned spike counts on fp timescale (1 ms)
+            SpikeTrain = train2bins(SpikeTimes,fptimes);
+            KernelSize = 20;
+            SpikeRate = train2cont(SpikeTrain,KernelSize);
+            end
+            if isempty(IncCorr) == 0
+                for Inc = 1:length(IncCorr)
+                    PB_temp = PB;
+                    if flag_LGHG == 1
+                        
+                        PB_temp(7,k,:) = squeeze( PB(7,k,:)- IncCorr(Inc) *PB(7,k,:) ) + IncCorr(Inc) * PB(5,k,:);
+                        PB_temp = squeeze(PB_temp([7 5],k,:))';
+                        
+                        BP_temp = BP;
+                        BP_temp(:,k,1) = ( BP(:,k,1)- IncCorr(Inc)*BP(:,k,1) ) + (IncCorr(Inc) * BP(:,k,2))';
+                    elseif flag_SpHG == 1
+%                         R_PB6 = range(PB(6,k,:));
+%                         R_Sp = range(SpikeRate);
+%                         ScaleF = R_PB6/R_Sp;
+                        PB_temp(6,k,:) = squeeze( PB(6,k,:)- IncCorr(Inc) *PB(6,k,:) ) + (IncCorr(Inc) * (SpikeCounts))';
+                        PB_temp = [squeeze(PB_temp(6,k,:)) SpikeCounts'];
+                        
+                        BP_temp = BP;
+                        BP_temp(:,k,3) = ( BP(:,k,3)- (IncCorr(Inc)*BP(:,k,3)) ) + (IncCorr(Inc) * SpikeRate)';
+                    end
+                   
+                    [ypred,x,ytnew] = predMIMO3(PB_temp,H_temp,numsides,1,y);
+                    % Cutoff first four points because predMIMO throws out
+                    % first 4 points when filters length == 10
+                    if length(t) > size(ypred,1)
+                        Lt = length(t);
+                        Lyp = size(ypred,1);
+                        t = t(Lt-Lyp+1:end);
+                    end
+
+                    % Online, there is a 60 second low pass filter to keep
+                    % the mean position around zero, also add the offset
+                    % the file started with (y(1,1))
+                    NewVelX = y(1,1) + ypred(:,1)- smooth(ypred(:,1),1200);  
+%                     scalef = mean(abs(y(:,1)))/mean(abs(NewVelX));
+%                     if scalef > 1
+%                     NewVelX = scalef * NewVelX;
+%                     end
+                    NewPosX = cumsum(NewVelX * diff(bdf.pos([1 2],1)));   
+                    NewPosX = NewPosX - smooth(NewPosX,1200);
+                    
+                    % Online, there is a 60 second low pass filter to keep
+                    % the mean velocity around zero, also add the offset
+                    % that the file started with
+                    NewVelY = y(1,2) + ypred(:,2); %- smooth(ypred(:,2),1200);                                        
+%                     scalef = mean(abs(y(:,2)))/mean(abs(NewVelY));
+%                     if scalef > 1
+%                         NewVelY = scalef * NewVelY;
+%                     end
+                    NewPosY = cumsum(NewVelY * diff(bdf.pos([1 2],1)));
+                    NewPosY = NewPosY - smooth(NewPosY,1200);
+                    
+                    CorrAdj_bdf{Inc,ACFInd}.vel = [t' NewVelX NewVelY];
+                    CorrAdj_bdf{Inc,ACFInd}.pos = [t' NewPosX NewPosY];
+                    CorrAdj_bdf{Inc,ACFInd}.words = bdf.words;
+                    CorrAdj_bdf{Inc,ACFInd}.targets = bdf.targets;
+                    CorrAdj_bdf{Inc,ACFInd}.meta = bdf.meta;
+                    CorrAdj_bdf{Inc,ACFInd}.databursts = bdf.databursts;
+                    CorrAdj_bdf{Inc,ACFInd}.CorrID = (sprintf('%d%s',IncCorr*100,'%_IncCorr'));                     
+                    
+                    Trials{Inc,ACFInd} = parseTrials(bdf,BP_temp(:,k,:),FPstartTime,SpikeTimes);
+                    Trials{Inc,ACFInd}.Targets = bdf.targets;
+                    clear PB_temp BP_temp x ytnew NewPosX NewPosY NewVelX NewVelY
+                end
+            end
+            startInd = length(IncCorr);
+            if isempty(DecCorr) == 0    
+                for Dec = 1:length(DecCorr)
+                    PB_temp = PB;
+                    if flag_LGHG == 1
+                        
+                        PB_temp(7,k,:) = squeeze( PB(7,k,1)- DecCorr(Dec) * PB(7,k,:) ) + DecCorr(Dec) * range(PB(7,k,:)) * randn([length(PB(7,k,:)) 1]);
+                        PB_temp = squeeze(PB_temp([7 5],k,:))';    
+                        
+                        BP_temp = BP;
+                        BP_temp(:,k,1) = (BP(:,k,1)- DecCorr(Dec) * BP(:,k,1)) + DecCorr(Dec) * range(BP(:,k,1)) * randn([length(BP(:,k,1)) 1]);
+                    elseif flag_SpHG == 1                        
+                        PB_temp(6,k,:) = squeeze( PB(6,k,1)- DecCorr(Dec) * PB(6,k,:) ) + DecCorr(Dec) * range(PB(6,k,:)) * randn([length(PB(6,k,:)) 1]);
+                        PB_temp = [squeeze(PB_temp(6,k,:)) SpikeCounts'];
+                        
+                        BP_temp = BP;
+                        BP_temp(:,k,3) = (BP(:,k,3)- DecCorr(Dec) * BP(:,k,3))  + DecCorr(Dec) * range(BP(:,k,3)) * randn([length(BP(:,k,3)) 1]);
+                    end
+                                   
+                    [ypred,x,ytnew] = predMIMO3(PB_temp,H_temp,numsides,1,y);
+                    
+                    NewVelX = y(1,1) + ypred(:,1) - smooth(ypred(:,1),1200);                         
+                    NewPosX = cumsum(NewVelX * diff(bdf.pos([1 2],1)));
+                    NewPosX = NewPosX - smooth(NewPosX,1200);
+                    
+                    NewVelY = y(1,2) + ypred(:,2) - smooth(ypred(:,2),1200); 
+                    NewPosY = cumsum(NewVelY * diff(bdf.pos([1 2],1)));
+                    NewPosY = NewPosY - smooth(NewPosY,1200);
+                    
+                    CorrAdj_bdf{startInd+ Dec,ACFInd}.pos = [t' NewPosX NewPosY];
+                    CorrAdj_bdf{startInd+ Dec,ACFInd}.words = bdf.words;
+                    CorrAdj_bdf{startInd+ Dec,ACFInd}.targets = bdf.targets;
+                    CorrAdj_bdf{startInd+ Dec,ACFInd}.meta = bdf.meta;
+                    CorrAdj_bdf{startInd+ Dec,ACFInd}.databursts = bdf.databursts;
+                    CorrAdj_bdf{startInd+ Dec,ACFInd}.CorrID = (sprintf('%d%s',DecCorr*100,'%_DecCorr'));
+                                        
+                    Trials{startInd+ Dec,ACFInd} = parseTrials(bdf,BP_temp(:,k,:),FPstartTime,SpikeTimes);
+                    Trials{startInd+ Dec,ACFInd}.Targets = bdf.targets;
+                    clear PB_temp x ytnew NewPosX NewPosY
+                end            
+            end
+            ACFInd = ACFInd + 1;
+            clear startInd PB
+        end
     end
+    
     if exist('bdf','var')
+        if length(ControlCh) < 2
         [sig, samplerate, ~, ~,~,~,~,~,~, analog_time_base] = SetPredictionsInputVar(bdf);
         words = bdf.words;
         
-        [PB, ~, ~, ~, y{q}, t] = MRScalcFeatMat(sig, 'vel', numfp, ...
+        [PB, ~, ~, ~, ~, ~] = MRScalcFeatMat(sig, 'vel', numfp, ...
             binsize, folds, numlags,numsides,samplerate, fp,fptimes, ...
             analog_time_base,fnam,256,[],[],[],[],words);
         
@@ -239,11 +337,12 @@ for q = [BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1
         Trials{ControlCh,q}.RangePB_G2 = mean(range(PB(5,ControlCh,:)));
         Trials{ControlCh,q}.RangePB_G0 = mean(range(PB(7,ControlCh,:)));
         Trials{ControlCh,q}.RangeSp = mean(range(train2bins(tsFPorder{q,ControlCh},t)));
-        clear PB analog_time_base sig words
+        clear PB BP analog_time_base sig words
+        end
     end
     clear k
     
-    clear fp fptimes bdf tsFPorder BP i samprate smplerate
+    clear fp fptimes tsFPorder BP i samprate smplerate
 
 end
 beep

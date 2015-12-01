@@ -32,7 +32,9 @@ GoIncompleteInds = GoInds(out_struct.words(GoInds + 1,2) == 35);
 SuccessTrialInds = find(out_struct.words(:,2)==32);
 Trial.SuccessTrialInds = SuccessTrialInds;
 FailTrialInds = find(out_struct.words(:,2)==34);
+Trial.FailTrialInds = FailTrialInds;
 IncompleteTrialInds = find(out_struct.words(:,2)==35);
+Trial.IncompleteTrialInds = IncompleteTrialInds;
 
 % remove last trial in case trial is cut off or short
 if isempty(FirstTrialInds) == 1
@@ -153,7 +155,7 @@ if exist('SuccessMovetimes','var')
             
             % Determine start index of FP trial segment to extract centered on
             % movement onset
-            TrialStartIndexFP(j) = round((SuccessMovetimes(t)-fpstarttime-1)/.001);
+            
             
             % Determine start index of FP trial segment to extract centered on
             % maximum velocity
@@ -260,6 +262,8 @@ if exist('SuccessMovetimes','var')
                 end
                 
                 %Correct the reward target ID and start time for this offset
+                % ** This logic could be smarter by using find in a clever
+                % way **
                 if  round(out_struct.words(SuccessTrialInds(i+offset)-2,2)) == 64 || ...
                         round(out_struct.words(SuccessTrialInds(i+offset)-2,2)) == 65 ||...
                         round(out_struct.words(SuccessTrialInds(i+offset)-2,2)) == 66 || ...
@@ -304,12 +308,13 @@ if exist('SuccessMovetimes','var')
             
             % Now extract those segments
             TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
+            TrialStartIndexFP(j) = round((TimeGo-fpstarttime)/.001);
             
             if TrialEndIndexFP(j) < length(fp)
                 for B = 1:size(fp,3)
                     Trial.FPstart{t,B} = fp(TrialStartIndexFP(j)-2000:TrialStartIndexFP(j)+2000,1,B);
 %                     Trial.FPMaxV{t,B} = fp(TrialMVIndexFP(j)-2000:TrialMVIndexFP(j)+2000,1,B);
-                    Trial.FPend{t,B} = fp(TrialEndIndexFP(j)-2000:TrialEndIndexFP(j),1,B);
+                    Trial.FPend{t,B} = fp(TrialStartIndexFP(j):TrialEndIndexFP(j)+2000,1,B);
                 end
             else
                 j = j+1;
@@ -320,9 +325,9 @@ if exist('SuccessMovetimes','var')
             end
             % In case there's no spikes at the end of this trial
             % MRS 2/7/14
-            StartTrial_SpikeTimes = ts((ts >= SuccessMovetimes(t)-2 & ts<=SuccessMovetimes(t)+2)) - (SuccessMovetimes(t));
+            StartTrial_SpikeTimes = ts((ts >= TimeGo-2 & ts<=TimeGo+2)) - (TimeGo);
 %             MaxVTrial_SpikeTimes = ts((ts >= MaxVelT(t)-2 & ts<=MaxVelT(t)+2)) - (MaxVelT(t));
-            EndTrial_SpikeTimes = ts((ts >= TimeEnd-2 & ts<=TimeEnd)) - (TimeEnd-2);
+            EndTrial_SpikeTimes = ts((ts >= TimeGo & ts<=TimeEnd+2)) - (TimeEnd);
             if isempty(EndTrial_SpikeTimes) == 0
                 Trial.tsstart(t).times = StartTrial_SpikeTimes;
 %                 Trial.tsMaxV(t).times = MaxVTrial_SpikeTimes;
@@ -600,12 +605,13 @@ if exist('IncompleteMovetimes','var')
             
             % Now extract those segments
             TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
+            TrialStartIndexFP(j) = round((TimeGo-fpstarttime)/.001);
             
             if TrialEndIndexFP(j) < length(fp)
                 for B = 1:size(fp,3)
                     Trial.Incomplete_FPstart{t,B} = fp(TrialStartIndexFP(j)-2000:TrialStartIndexFP(j)+2000,1,B);
 %                     Trial.Incomplete_FPMaxV{t,B} = fp(TrialMVIndexFP(j)-2000:TrialMVIndexFP(j)+2000,1,B);
-                    Trial.Incomplete_FPend{t,B} = fp(TrialEndIndexFP(j)-2000:TrialEndIndexFP(j),1,B);
+                    Trial.Incomplete_FPend{t,B} = fp(TrialStartIndexFP(j):TrialEndIndexFP(j)+2000,1,B);
                 end
             else
                 j = j+1;
@@ -616,9 +622,9 @@ if exist('IncompleteMovetimes','var')
             end
             % In case there's no spikes at the end of this trial
             % MRS 2/7/14
-            StartTrial_SpikeTimes = ts((ts >= IncompleteMovetimes(t)-2 & ts<=IncompleteMovetimes(t)+2)) - (IncompleteMovetimes(t));
+            StartTrial_SpikeTimes = ts((ts >= TimeGo-2 & ts<=TimeGo+2)) - (TimeGo);
 %             MaxVTrial_SpikeTimes = ts((ts >= MaxVelT(t)-2 & ts<=MaxVelT(t)+2)) - (MaxVelT(t));
-            EndTrial_SpikeTimes = ts((ts >= TimeEnd-2 & ts<=TimeEnd)) - (TimeEnd-2);
+            EndTrial_SpikeTimes = ts((ts >= TimeGo & ts<=TimeEnd+2)) - (TimeEnd);
             if isempty(EndTrial_SpikeTimes) == 0
                 Trial.Incomplete_tsstart(t).times = StartTrial_SpikeTimes;
 %                 Trial.Incomplete_tsMaxV(t).times = MaxVTrial_SpikeTimes;
@@ -839,12 +845,13 @@ if exist('FailMovetimes','var')
             
             % Now extract those segments
             TrialEndIndexFP(j) = round((TimeEnd-fpstarttime)/.001);
+            TrialStartIndexFP(j) = round((TimeGo-fpstarttime-1)/.001);
             
             if TrialEndIndexFP(j) < length(fp)
                 for B = 1:size(fp,3)
                     Trial.Fail_FPstart{t,B} = fp(TrialStartIndexFP(j)-2000:TrialStartIndexFP(j)+2000,1,B);
 %                     Trial.Fail_FPMaxV{t,B} = fp(TrialMVIndexFP(j)-2000:TrialMVIndexFP(j)+2000,1,B);
-                    Trial.Fail_FPend{t,B} = fp(TrialEndIndexFP(j)-2000:TrialEndIndexFP(j),1,B);
+                    Trial.Fail_FPend{t,B} = fp(TrialStartIndexFP(j):TrialEndIndexFP(j)+2000,1,B);
                 end
             else
                 j = j+1;
@@ -855,9 +862,9 @@ if exist('FailMovetimes','var')
             end
             % In case there's no spikes at the end of this trial
             % MRS 2/7/14
-            StartTrial_SpikeTimes = ts((ts >= FailMovetimes(t)-2 & ts<=FailMovetimes(t)+2)) - (FailMovetimes(t));
+            StartTrial_SpikeTimes = ts((ts >= TimeGo-2 & ts<=TimeGo+2)) - (TimeGo);
 %             MaxVTrial_SpikeTimes = ts((ts >= MaxVelT(t)-2 & ts<=MaxVelT(t)+2)) - (MaxVelT(t));
-            EndTrial_SpikeTimes = ts((ts >= TimeEnd-2 & ts<=TimeEnd)) - (TimeEnd-2);
+            EndTrial_SpikeTimes = ts((ts >= TimeGo & ts<=TimeEnd+2)) - (TimeEnd);
             if isempty(EndTrial_SpikeTimes) == 0
                 Trial.Fail_tsstart(t).times = StartTrial_SpikeTimes;
 %                 Trial.Fail_tsMaxV(t).times = MaxVTrial_SpikeTimes;

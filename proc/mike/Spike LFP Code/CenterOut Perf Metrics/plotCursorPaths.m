@@ -26,7 +26,7 @@ figure(3)
 CursorPathsByTrial = struct;
 clear MeanCursorPath CursorPathXY
 
-for j =  [BC_I(1):BC_I(end)] % HC_I(1):HC_I(end)
+for j = [BC_I(1:end)] % HC_I(1):HC_I(end)
     CursorPaths = [];
     if isfield(Trials{ControlCh,j},'Path_MO')
         %% This section is just for drawing the targets (still has some bugs)
@@ -186,53 +186,79 @@ for j =  [BC_I(1):BC_I(end)] % HC_I(1):HC_I(end)
             %             end
             
         else % Plot BC trjactories (one subplot at a time)
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ64')
+            if isfield(CursorPathsByTrial,'BC_Reward_Targ64') && isempty(CursorPathsByTrial.BC_Reward_Targ64{j}) == 0
+                % Since BC_Reward_Targ** is arranged by [xpos ypos] the
+                % number of trials = 1/2 the number of columns in each cell                
                 for i = 1: size(CursorPathsByTrial.BC_Reward_Targ64{j},2)/2
                     
                     figure(3)
                     subplot(Rows,4,k)
                     %                     plot(CursorPathsByTrial.BC_Reward{j,i}(:,1),CursorPathsByTrial.BC_Reward{j,i}(:,2))
-                    MeanCursorPath.Targ64(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ64{j}(:,1:2:end),2);
-                    MeanCursorPath.Targ64(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ64{j}(:,2:2:end),2);
-                    MeanCursorPath.Targ64_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ64{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ64{j}(:,1:2:end),2))
-                    MeanCursorPath.Targ64_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ64{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ64{j}(:,2:2:end),2))
-                    
+                    if size(CursorPathsByTrial.BC_Reward_Targ64{j},2) > 2
+                        MeanCursorPath.Targ64(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ64{j}(:,1:2:end),2);
+                        MeanCursorPath.Targ64(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ64{j}(:,2:2:end),2);
+                        MeanCursorPath.Targ64_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ64{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ64{j}(:,1:2:end),2));
+                        MeanCursorPath.Targ64_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ64{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ64{j}(:,2:2:end),2));
+                    else
+                        MeanCursorPath.Targ64(:,1) = CursorPathsByTrial.BC_Reward_Targ64{j}(:,1);
+                        MeanCursorPath.Targ64(:,2) = CursorPathsByTrial.BC_Reward_Targ64{j}(:,2);
+                        MeanCursorPath.Targ64_STE(:,1) = zeros(size(CursorPathsByTrial.BC_Reward_Targ64{j},1),1);
+                        MeanCursorPath.Targ64_STE(:,2) = zeros(size(CursorPathsByTrial.BC_Reward_Targ64{j},1),1);
+                    end
                     plot(CursorPathsByTrial.BC_Reward_Targ64{j}(:,(i-1)*2+1),CursorPathsByTrial.BC_Reward_Targ64{j}(:,i*2),'Color','g')
                     hold on
                 end
             end
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ65')
+            if isfield(CursorPathsByTrial,'BC_Reward_Targ65') && isempty(CursorPathsByTrial.BC_Reward_Targ65{j}) == 0
                 for i = 1:size(CursorPathsByTrial.BC_Reward_Targ65{j},2)/2
-                    MeanCursorPath.Targ65(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ65{j}(:,1:2:end),2);
-                    MeanCursorPath.Targ65(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ65{j}(:,2:2:end),2);
-                    MeanCursorPath.Targ65_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ65{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ65{j}(:,1:2:end),2))
-                    MeanCursorPath.Targ65_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ65{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ65{j}(:,2:2:end),2))
-                    
+                    if size(CursorPathsByTrial.BC_Reward_Targ65{j},2) > 2
+                        MeanCursorPath.Targ65(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ65{j}(:,1:2:end),2);
+                        MeanCursorPath.Targ65(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ65{j}(:,2:2:end),2);
+                        MeanCursorPath.Targ65_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ65{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ65{j}(:,1:2:end),2))
+                        MeanCursorPath.Targ65_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ65{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ65{j}(:,2:2:end),2))
+                    else
+                        MeanCursorPath.Targ65(:,1) = CursorPathsByTrial.BC_Reward_Targ65{j}(:,1);
+                        MeanCursorPath.Targ65(:,2) = CursorPathsByTrial.BC_Reward_Targ65{j}(:,2);
+                        MeanCursorPath.Targ65_STE(:,1) = zeros(size(CursorPathsByTrial.BC_Reward_Targ65{j},1),1);
+                        MeanCursorPath.Targ65_STE(:,2) = zeros(size(CursorPathsByTrial.BC_Reward_Targ65{j},1),1);
+                    end
                     plot(CursorPathsByTrial.BC_Reward_Targ65{j}(:,(i-1)*2+1),CursorPathsByTrial.BC_Reward_Targ65{j}(:,i*2),'Color','r')
                     hold on
                 end
             end
             
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ66')
+            if isfield(CursorPathsByTrial,'BC_Reward_Targ66') && isempty(CursorPathsByTrial.BC_Reward_Targ66{j}) == 0
                 for i = 1:size(CursorPathsByTrial.BC_Reward_Targ66{j},2)/2
-                    MeanCursorPath.Targ66(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ66{j}(:,1:2:end),2);
-                    MeanCursorPath.Targ66(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ66{j}(:,2:2:end),2);
-                    MeanCursorPath.Targ66_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ66{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ66{j}(:,1:2:end),2))
-                    MeanCursorPath.Targ66_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ66{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ66{j}(:,2:2:end),2))
-                    
+                    if size(CursorPathsByTrial.BC_Reward_Targ66{j},2) > 2
+                        MeanCursorPath.Targ66(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ66{j}(:,1:2:end),2);
+                        MeanCursorPath.Targ66(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ66{j}(:,2:2:end),2);
+                        MeanCursorPath.Targ66_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ66{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ66{j}(:,1:2:end),2))
+                        MeanCursorPath.Targ66_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ66{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ66{j}(:,2:2:end),2))
+                    else
+                        MeanCursorPath.Targ66(:,1) = CursorPathsByTrial.BC_Reward_Targ66{j}(:,1);
+                        MeanCursorPath.Targ66(:,2) = CursorPathsByTrial.BC_Reward_Targ66{j}(:,2);
+                        MeanCursorPath.Targ66_STE(:,1) = zeros(size(CursorPathsByTrial.BC_Reward_Targ66{j},1),1);
+                        MeanCursorPath.Targ66_STE(:,2) = zeros(size(CursorPathsByTrial.BC_Reward_Targ66{j},1),1);
+                    end
                     plot(CursorPathsByTrial.BC_Reward_Targ66{j}(:,(i-1)*2+1),CursorPathsByTrial.BC_Reward_Targ66{j}(:,i*2),'Color','y')
                     hold on
                 end
             end
             
             
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ67')
+            if isfield(CursorPathsByTrial,'BC_Reward_Targ67') && isempty(CursorPathsByTrial.BC_Reward_Targ67{j}) == 0
                 for i = 1:size(CursorPathsByTrial.BC_Reward_Targ67{j},2)/2
-                    MeanCursorPath.Targ67(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ67{j}(:,1:2:end),2);
-                    MeanCursorPath.Targ67(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ67{j}(:,2:2:end),2);
-                    MeanCursorPath.Targ67_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ67{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ67{j}(:,1:2:end),2))
-                    MeanCursorPath.Targ67_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ67{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ67{j}(:,2:2:end),2))
-                    
+                    if size(CursorPathsByTrial.BC_Reward_Targ67{j},2) > 2                        
+                        MeanCursorPath.Targ67(:,1) = mean(CursorPathsByTrial.BC_Reward_Targ67{j}(:,1:2:end),2);
+                        MeanCursorPath.Targ67(:,2) = mean(CursorPathsByTrial.BC_Reward_Targ67{j}(:,2:2:end),2);
+                        MeanCursorPath.Targ67_STE(:,1) = std(CursorPathsByTrial.BC_Reward_Targ67{j}(:,1:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ67{j}(:,1:2:end),2))
+                        MeanCursorPath.Targ67_STE(:,2) = std(CursorPathsByTrial.BC_Reward_Targ67{j}(:,2:2:end),0,2)./sqrt(size(CursorPathsByTrial.BC_Reward_Targ67{j}(:,2:2:end),2))
+                    else
+                        MeanCursorPath.Targ67(:,1) = CursorPathsByTrial.BC_Reward_Targ67{j}(:,1);
+                        MeanCursorPath.Targ67(:,2) = CursorPathsByTrial.BC_Reward_Targ67{j}(:,2);
+                        MeanCursorPath.Targ67_STE(:,1) = zeros(size(CursorPathsByTrial.BC_Reward_Targ67{j},1),1);
+                        MeanCursorPath.Targ67_STE(:,2) = zeros(size(CursorPathsByTrial.BC_Reward_Targ67{j},1),1);
+                    end
                     plot(CursorPathsByTrial.BC_Reward_Targ67{j}(:,(i-1)*2+1),CursorPathsByTrial.BC_Reward_Targ67{j}(:,i*2),'Color','m')
                     hold on
                 end
@@ -282,25 +308,25 @@ for j =  [BC_I(1):BC_I(end)] % HC_I(1):HC_I(end)
             set(ah,'Box','off')
             set(ah,'TickLength',[0,0])
             hold on
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ64')
+            if isfield(MeanCursorPath,'Targ64')
                 errorbarxy(MeanCursorPath.Targ64(:,1),MeanCursorPath.Targ64(:,2),...
                     MeanCursorPath.Targ64_STE(:,1), MeanCursorPath.Targ64_STE(:,2),...%lower error bounds
                     [],[],'k-','k') % Colors
                 hold on
             end
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ65')
+            if isfield(MeanCursorPath,'Targ65')
                 errorbarxy(MeanCursorPath.Targ65(:,1),MeanCursorPath.Targ65(:,2),...
                     MeanCursorPath.Targ65_STE(:,1), MeanCursorPath.Targ65_STE(:,2),...
                     [],[],'k-','k')
                 hold on
             end
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ66')
+            if isfield(MeanCursorPath,'Targ66')
                 errorbarxy(MeanCursorPath.Targ66(:,1),MeanCursorPath.Targ66(:,2),...
                     MeanCursorPath.Targ66_STE(:,1), MeanCursorPath.Targ66_STE(:,2),...%lower error bounds
                     [],[],'k-','k') % Colors
                 hold on
             end
-            if isfield(CursorPathsByTrial,'BC_Reward_Targ67')
+            if isfield(MeanCursorPath,'Targ67')
                 errorbarxy(MeanCursorPath.Targ67(:,1),MeanCursorPath.Targ67(:,2),...
                     MeanCursorPath.Targ67_STE(:,1), MeanCursorPath.Targ67_STE(:,2),...
                     [],[],'k-','k')

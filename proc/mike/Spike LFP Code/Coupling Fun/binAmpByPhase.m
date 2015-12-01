@@ -3,12 +3,13 @@ function [p_i] = binAmpByPhase(PhaseMat,AmpMat)
 % factors to consider
 % phase precision (Phase col 2,3), spike bin size
 
-Phases(:,1) = [0 : pi/8 : pi, -pi : pi/8 : -pi/4];
-Phases(:,2) = Phases(:,1) - (11.25 *(pi/180));
-Phases(:,3) = Phases(:,1) + (11.25 *(pi/180));
+Phases(:,1) = [0 : pi/8 : pi, -pi : pi/8 : -pi/4]; % Bin center (if
+% changing number of bins be sure to change bin bounds)
+Phases(:,2) = Phases(:,1) - (11.25 *(pi/180)); % Bin lower bound
+Phases(:,3) = Phases(:,1) + (11.25 *(pi/180)); % Bin upper bound
 
-fprintf('Phases being used are: \n')
-Phases * (180/pi)
+% fprintf('Phases being used are: \n')
+% Phases * (180/pi)
 
 for p = 1:size(Phases,1)
     if p == size(Phases,1)/2+1

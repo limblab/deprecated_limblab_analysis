@@ -194,6 +194,9 @@ if CalcWhat == 2 || CalcWhat == 3
     fpf =fp;
     clear fp
     itemp=1:numlags;
+    if numlags < 5
+        itemp = 1:6;
+    end
     firstind=find(bs*itemp>wsz,1,'first');
     for i=1:numbins
         ishift=i-firstind+1;
@@ -216,8 +219,8 @@ if CalcWhat == 2 || CalcWhat == 3
     numbins=numbins-firstind+1;
     
     % t=t(1:numbins-firstind+1);
-    t=t(1:numbins);
-    y(ishift+1:end,:)=[];
+    t=t(firstind:end);
+    y(1:firstind-1,:)=[];
     q(:,ishift+1:end)=[];
     clear fpf
     freqs=linspace(0,samprate/2,wsz/2+1);

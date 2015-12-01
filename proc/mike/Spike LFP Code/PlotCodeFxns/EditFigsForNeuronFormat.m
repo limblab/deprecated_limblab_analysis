@@ -38,14 +38,18 @@ set(ah,'TickLength',[0,0])
 
 figure(13)
 CYData{3,1} = 'Chewie Data';
-% h = findobj(gca,'Marker','o') % 'Color',[0 1 0]
-% CYData{1,1} = get(h,'YData')
-% CYData{2,1} = 'LMP LFP BC';
-% clear h
+h = findobj(gca,'Marker','o') % 'Color',[0 1 0]
+CXData{1,1} = get(h,'XData')
+CXData{2,1} = 'LMP LFP BC';
+clear h
 
 h = findobj(gca,'Color',[1 0 1],'Marker','o') %'Color',[1 0 1]
 CYData{1,2} = get(h,'YData')
 CYData{2,2} = 'LMP Sp BC';
+
+
+h = findobj(gca,'Color',[0 1 0],'Marker','o') %'Color',[1 0 1]
+CYData{1,1} = get(h,'YData')
 
 % figure(22)
 % % h = findobj(gca,'Marker','o') % 'Color',[0 1 0]

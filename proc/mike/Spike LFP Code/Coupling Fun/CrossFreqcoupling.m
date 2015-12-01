@@ -23,64 +23,53 @@
 binsize = .05;
 wsz = 256;
 samplerate = 1000;
-pri = 1;
 fi =1;
-ind = 1;
-
-numlags  = 10; % Number of lags used online
-Offlinelags = 1; % Number of lags to use offline
-numsides = 1;
-lambda   = 1;
-binsamprate = floor(1/binsize);
 numfp = 96;
-folds = 10;
 
-% FileList = Mini_Ch75_LowGamX_Gam2Y;
-bandstarts = [30, 130, 200];
-bandends   = [50, 200, 300];
+FileList = Mihili_TG_PAC_CO_VR;
 
 % HC_I = [1:22];
 % BC_1DG = [23:25];
 % BC_1DSp = [26:28];
-BC_I = [25:26];
+% BC_I = [33:52];
 
 %  LFPInds{1} = [73 6];% X control 
 % % LFPInds{1} = [17 6];% Y control
 % SpikeInds{1} = [42 1];
-ControlCh = 75;
-segment = 2;
-segInd = 1;
+% ControlCh = 66;
+% segment = 1;
+% segInd = 1;
 
 clear FileNotRun
 %% Find file path, load file and start iterating through files
-for q = 1 %[BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end) 
-%     
-%     if exist('fnam','var') == 0         
-%             fnam{q} =  findBDFonCitadel(FileList{q,1})
-%     elseif length(fnam) >= q
-%         if isempty(fnam{q}) == 1
-%             fnam{q} =  findBDFonCitadel(FileList{q,1})    
-%         end
-%     else
-%         fnam{q} =  findBDFonCitadel(FileList{q,1}) 
-%     end
-%     
-%     if length(fnam{q}) < 4
-%         FilesNotRun{q,2} = 'File Not Found';
-%         FilesNotRun{q,1} = fnam
-%         continue
-%     end
-%     
-%     try
-%         load(fnam{q})
-%     catch exception
-%         FilesNotRun{q,2} = exception;
-%         FilesNotRun{q,1} = fnam
-%         continue
-%     end
-%     if exist('out_struct','var') == 0
-%         continue
-%     end
+for q = 1:length(FileList) %[BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)
+    %
+    %     if exist('fnam','var') == 0
+    %             fnam{q} =  findBDFonCitadel(FileList{q,1})
+    %     elseif length(fnam) >= q
+    %         if isempty(fnam{q}) == 1
+    %             fnam{q} =  findBDFonCitadel(FileList{q,1})
+    %         end
+    %     else
+    fnam{q} =  FileList{q,1}
+    %     end
+    %
+    %     if length(fnam{q}) < 4
+    %         FilesNotRun{q,2} = 'File Not Found';
+    %         FilesNotRun{q,1} = fnam
+    %         continue
+    %     end
+    %
+    %     try
+    load(fnam{q})
+    %     catch exception
+    %         FilesNotRun{q,2} = exception;
+    %         FilesNotRun{q,1} = fnam
+    %         continue
+    %     end
+    %     if exist('out_struct','var') == 0
+    %         continue
+    %     end
     %% Declare input variables within loop that vary in each loop iteration:
     [sig, ~, ~, ~,~,~,~,~,~, analog_time_base] = SetPredictionsInputVar(out_struct);
  
@@ -119,7 +108,7 @@ for q = 1 %[BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DS
     %% Calculate trial stats
     FirstTrialInds=find(bdf.words(:,2)==17);
     Num.Trials_File(q) = length(FirstTrialInds);
-
+    
     AbortTrialInds=find(bdf.words(:,2)==33);
     Num.Abort_File(q) = length(AbortTrialInds);
     
@@ -128,72 +117,95 @@ for q = 1 %[BC_I(1):BC_I(end)]%] HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DS
     
     Num.PercentSuccess_File(q) = (Num.Success_File(q)/Num.Trials_File(q))*100;
     clear FirstTrialInds AbortTrialInds SuccessTrialInds
-
+    
     
     data1 = fp';
     data2 = tsFPorder{:};
     
-    numfolds = 20;
+    figure
+    plot(fp(:,1:1000:end)')
     
     if 1
         %% Calculate theta-gamma PAC
-        
         numfp = size(data1,2);
         filelength = size(data1,1);
-        
-        foldlength = floor(filelength/numfolds);     
-        samprate = 1000;
-        
-        [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
-%         tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
-        
-        for fold = 1:numfolds
             
-            data1Fold = data1((fold-1)*foldlength+1:(fold)*foldlength,:);
-            fpf=filtfilt(b0,a0,data1Fold);
-       
-            %Band Pass Filter Theta and hilbert transform
-            [b_theta,a_theta]=butter(2,[4 8]/(samprate/2));
-            tfmat_theta=reshape(hilbert(filtfilt(b_theta,a_theta,fpf)),numfp,size(fpf,1));
+        foldLengths = [30];
+%         foldLengthslist = [5:5:200];
+        foldnums = unique(floor(filelength./(foldLengths*1000)));
+%         foldnumslist = unique(floor(filelength./(foldLengthslist*1000)));
+        ifoldnum = 1;
+        for numfolds = in(foldnums,[1 foldnums(end)])                        
             
-            %Band Pass Filter Gamma 1 (30-100 Hz) and hilbert transform
-            [b_gamma,a_gamma]=butter(2,[30 80]/(samprate/2));
-            tfmat_gamma=reshape(hilbert(filtfilt(b_gamma,a_gamma,fpf)),numfp,size(fpf,1));
+            numfolds
+            foldlength = floor(filelength/numfolds);
+            samprate = 1000;
             
-            %Band Pass Filter Gamma 2 (80-150 Hz) and hilbert transform
-            [b_gamma2,a_gamma2]=butter(2,[80 150]/(samprate/2));
-            tfmat_gamma2=reshape(hilbert(filtfilt(b_gamma2,a_gamma2,fpf)),numfp,size(fpf,1));
+            [b0,a0]=butter(2,[58 62]/(samprate/2),'stop');
+            %         tfmat=zeros(1,numfp,size(fpf,1),'single'); %numfp
             
-            %Calculate Phase for Theta and Amp for Gammas
-            PhaseMat_theta = angle(tfmat_theta);
-            AmpMat_gamma = real(tfmat_gamma);
-            AmpMat_gamma2 = real(tfmat_gamma2);
-            
-            [p_i_ThetaGamma(fi,:,:)] = binAmpByPhase(PhaseMat_theta,AmpMat_gamma);
-            [p_i_ThetaGamma2(fi,:,:)] = binAmpByPhase(PhaseMat_theta,AmpMat_gamma2);
-            
-            fi = fi+1;
-            % **TO-DO**
-            % Shuffle folds to make surrogate MI values more like Tort
-            % methods.
-            
-            % Randomize Theta Phase and Bin Gamma Amplitude
-            fpf_theta = filtfilt(b_theta,a_theta,fpf);%Bandpass filter theta
-            u1=pharand(fpf_theta); %Randomize theta phase
-            tfmat_theta_RandPhase(1,:,:)=reshape(hilbert(u1),1,numfp,size(fpf,1));% Hilbert transform BPed theta
-            PhaseMat_theta_RandPhase = angle(tfmat_theta_RandPhase); %Get phase angle
-            [p_i_ThetaGamma_RandPhase(pri,:)] = binAmpByPhase(PhaseMat_theta_RandPhase,AmpMat_gamma);
-            [p_i_ThetaGamma2_RandPhase(pri,:)] = binAmpByPhase(PhaseMat_theta_RandPhase,AmpMat_gamma2);
-            pri = pri+1;
-            
-            % To-Do add other variables to be cleared 
-            clear a0 b0 fpf data1Fold PhaseMat_theta tfmat_theta tfmat_gamma AmpMat_gamma...
-                tfmat_gamma2 AmpMat_gamma2 u1 tfmat_theta_RandPhase PhaseMat_theta_RandPhase...
+            for fold = 1:numfolds
                 
-            
+                data1Fold = data1((fold-1)*foldlength+1:(fold)*foldlength,:);
+                fpf=filtfilt(b0,a0,data1Fold);
+                
+                %Band Pass Filter Theta and hilbert transform
+                [b_theta,a_theta]=butter(2,[4 8]/(samprate/2));
+                tfmat_theta=reshape(hilbert(filtfilt(b_theta,a_theta,fpf)),numfp,size(fpf,1));
+                
+                %Band Pass Filter Gamma 1 (30-100 Hz) and hilbert transform
+                [b_gamma,a_gamma]=butter(2,[30 80]/(samprate/2));
+                tfmat_gamma=reshape(hilbert(filtfilt(b_gamma,a_gamma,fpf)),numfp,size(fpf,1));
+                
+                %Band Pass Filter Gamma 2 (80-150 Hz) and hilbert transform
+                [b_gamma2,a_gamma2]=butter(2,[80 150]/(samprate/2));
+                tfmat_gamma2=reshape(hilbert(filtfilt(b_gamma2,a_gamma2,fpf)),numfp,size(fpf,1));
+                
+                %Calculate Phase for Theta and Amp for Gammas
+                PhaseMat_theta{fold} = angle(tfmat_theta);
+                AmpMat_gamma{fold} = real(tfmat_gamma);
+                AmpMat_gamma2{fold} = real(tfmat_gamma2);
+%                 
+%                 [p_i_ThetaGamma{fold,q}] = binAmpByPhase(PhaseMat_theta{fold},AmpMat_gamma{fold});
+%                 [p_i_ThetaGamma2{fold,q}] = binAmpByPhase(PhaseMat_theta{fold},AmpMat_gamma2{fold});
+                                
+                % **TO-DO**
+                % Shuffle folds to make surrogate MI values more like Tort
+                % methods.
+                
+                % Randomize Theta Phase and Bin Gamma Amplitude
+                %                 fpf_theta = filtfilt(b_theta,a_theta,fpf);%Bandpass filter theta
+                %             u1=pharand(fpf_theta); %Randomize theta phase
+                %                 tfmat_theta_RandPhase(1,:,:)=reshape(hilbert(u1),1,numfp,size(fpf,1));% Hilbert transform BPed theta
+                %                 PhaseMat_theta_RandPhase = angle(tfmat_theta); %Get phase angle
+                %                 for shift = 1:1000
+                
+                
+                % To-Do add other variables to be cleared
+                clear fpf data1Fold tfmat_theta tfmat_gamma...
+                    tfmat_gamma2 u1 tfmat_theta_RandPhase PhaseMat_theta_RandPhase...
+                    
+                
+            end
+            for fold = 1:numfolds
+                numRep = round(200/numfolds);
+%                 shifti = 1;
+                shiftFold = randi(numfolds,numRep,1);
+                for iShift = 1:numRep
+%                     PhaseMat_theta_RandPhase = circshift(PhaseMat_theta,iShift,2);
+                    [p_i_ThetaGamma_RandPhase{fold,q,iShift}] = binAmpByPhase(PhaseMat_theta{shiftFold(iShift)},AmpMat_gamma{fold});
+                    [p_i_ThetaGamma2_RandPhase{fold,q,iShift}] = binAmpByPhase(PhaseMat_theta{shiftFold(iShift)},AmpMat_gamma2{fold});
+%                     shifti = shifti + 1;
+                end
+%                 fi = fi+1;
+%                 ifoldnum = ifoldnum + 1;
+%                 fi = 1;
+                clear a0 b0
+            end
+            clear PhaseMat_theta AmpMat_gamma AmpMat_gamma2
         end
+        
     end
-    
     if 0
         
         %% Calculate spike-field coherence

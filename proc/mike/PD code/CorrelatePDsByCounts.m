@@ -4,12 +4,13 @@
 % shuntedCh 
 
 % CorrelatePDsByCounts
-filelist= Chewie_LFP1_tsNum;
-datenames = Chewie_LFP1_tsNum;
+filelist= Mini_handControlDays(1:end,1);
+datenames = Mini_handControlDays(1:end,2);
 Controltype = 'LFP1';
 Signaltype = 'LFP1';
 % LFP1, LFP2, AllLFP or Spike
-startind = 117;
+
+startind = 1;
 % Chewie LFP1 = 117
 % Mini LFP1 = 52
 
@@ -113,6 +114,15 @@ for i=startind:length(filelist)
                     continue
                 end
             end
+            
+            try
+                load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts.mat'],...
+                    'LFPcounts','LFP_counts','LMPcounts','LFPfilesLMP_PDs','LFPfiles_PDs')
+            catch
+                MissingFiles{i} = fnam;
+                MissingFilesListInd = [MissingFilesListInd i];
+                continue
+            end
         else         
             load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts'],...
             'LFPcounts','LFP_counts','LMPcounts')
@@ -208,8 +218,11 @@ if exist('All_LMP_counts','var')
 %     bestc_NoShunt = bestc_bychan(~Bia);
 %     bestf_NoShunt = bestf_bychan(~Bia);
     Lia = ismember(bestc_bychan,shuntedCh);
-    bestc_NoShunt = bestc_bychan(~Lia)
+    bestc_NoShunt = bestc_bychan(~Lia);
     bestf_NoShunt = bestf_bychan(~Lia);
+    bestc_byFeat = sortrows([bestc_NoShunt bestf_NoShunt],2);
+    bestf_byFeat = bestc_byFeat(:,2);
+    bestc_byFeat(:,2) = [];
     h = 1;
     l =1;
     mu = 1;
@@ -241,7 +254,7 @@ if exist('All_LMP_counts','var')
                 Gam3FeatsMDs(g3,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
                 g3 = g3+1;
             end
-        end; clear g h
+        end; clear g* h mu
         
         for g = 1:length(bestc_NoShunt)
             if bestf_NoShunt(g) == 1
@@ -255,9 +268,30 @@ if exist('All_LMP_counts','var')
                 OnlineFeats(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
 %                 OnlineFeats_CI_Range(:,l,:) = squeeze(All_Non_LMP_CI_Range(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
                 OnlineFeatsMDs(l,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
+
                 l = l+1;
             end
-        end; clear g h
+        end; clear g h l
+        l =1;
+        for g = 1:length(bestc_byFeat)
+            if bestf_byFeat(g) == 1
+                OnlineFeats_byFeat(:,l,:) = All_LMP_counts(:,bestc_byFeat(g),:);
+%                 OnlineFeats_byFeat_CI_Range(:,l,:) = All_LMP_CI_Range(:,bestc_byFeat(g),:);
+                OnlineFeats_byFeatMDs(l,:) = squeeze(All_LMP_MDs(bestc_byFeat(g),:));
+                bestc_Final(l) = bestc_byFeat(g);
+                bestf_Final(l) = bestf_byFeat(g);
+                l=l+1;
+            elseif bestf_byFeat(g) == 2
+                continue
+            else
+                OnlineFeats_byFeat(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_byFeat(g),bestf_byFeat(g)-1,:));
+%                 OnlineFeats_byFeat_CI_Range(:,l,:) = squeeze(All_Non_LMP_CI_Range(:,bestc_byFeat(g),bestf_byFeat(g)-1,:));
+                OnlineFeats_byFeatMDs(l,:) = All_Non_LMP_MDs(bestc_byFeat(g),:,bestf_byFeat(g)-1);
+                bestc_Final(l) = bestc_byFeat(g);
+                bestf_Final(l) = bestf_byFeat(g);
+                l = l+1;
+            end
+        end
     else
         for g = 1:length(bestc_NoShunt)
             if bestf_NoShunt(g) == 1
@@ -265,6 +299,7 @@ if exist('All_LMP_counts','var')
                 OnlineFeatsMDs(h,:) = squeeze(All_LMP_MDs(bestc_NoShunt(g),:));
                 h=h+1;
             elseif bestf_NoShunt(g) == 2
+
                 continue
             else
                 OnlineFeats(:,h,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
@@ -475,14 +510,35 @@ elseif NeuronSubset == 1
          close all
      end
      
-else
+elseif PDByBand == 0
+    if strcmpi(Controltype,'Spike')
+         All_Freq_counts_Vector = reshape(OnlineFeats,size(OnlineFeats,1)*size(OnlineFeats,2),size(OnlineFeats,3));
+         [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,startind:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
+ 
+         figure
+         imagesc(DayAvgDataX)
+         ylabel('Unit')
+         xlabel('Day')
+         caxis([0 20])
+    else
+        All_Freq_counts_Vector = reshape(OnlineFeats_byFeat,size(OnlineFeats_byFeat,1)*size(OnlineFeats_byFeat,2),size(OnlineFeats_byFeat,3));
+         [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,startind:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
     
-    All_Freq_counts_Vector = reshape(OnlineFeats,size(OnlineFeats,1)*size(OnlineFeats,2),size(OnlineFeats,3));
-    
-    [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,startind:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
+         figure
+         imagesc(DayAvgDataX)
+         ylabel('Feature')
+         xlabel('Day')
+         caxis([-100 100])
+         [uBands,uBandYticks,~]=unique(bestf_Final);
+         uBandYticks(2:end)= uBandYticks(2:end)*12 - 12;
+         allBands={'LMP','0-4','7-20','70-110','130-200','200-300'};         
+         set(gca,'YTick',uBandYticks,'YTickLabel',allBands(uBands))
+    end
+   
     
     [rOnline.map,rOnline.map_mean, rOnline.rho, rOnline.pval, rOnline.f, rOnline.x] = ...
         CorrCoeffMap(DayAvgDataX,1,DayNames(:,2))
+    return
 end
 
 plot(mean(r_mean_rand))
