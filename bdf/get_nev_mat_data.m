@@ -103,7 +103,7 @@ function out_struct = get_nev_mat_data(varargin)
         hostname=[];
         username=[];
     end
-    out_struct.meta.processed_with={'function','date','computer name','user name';'get_plexon_data',date,hostname,username};
+    out_struct.meta.processed_with={'function','date','computer name','user name';'get_nev_mat_data',date,hostname,username};
     
     if isfield(NEVNSx.MetaTags,'FileSepTime')
         out_struct.meta.FileSepTime=NEVNSx.MetaTags.FileSepTime;
@@ -184,7 +184,6 @@ function out_struct = get_nev_mat_data(varargin)
     end
     
     if ~isempty(unit_list)        
-       
         for i = size(unit_list,1):-1:1
             out_struct.units(i).id = unit_list(i,:);
             out_struct.units(i).ts = double(NEVNSx.NEV.Data.Spikes.TimeStamp(NEVNSx.NEV.Data.Spikes.Electrode==unit_list(i,1)...
