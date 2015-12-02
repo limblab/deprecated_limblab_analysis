@@ -7,8 +7,10 @@
 % sure that you create different bdfs for each task (unless you know
 % what you're doing.)
 
-file_path = 'D:\Chewie_8I2\Chewie_2015-05-05_DCO_emg_emg_cartesian\CerebusData\';
-file_prefix_all = 'Chewie_2015-05-05_DCO_emg_emg_cartesian_';
+file_prefix_all = 'Jaco_2015-09-16_DCO_emg_emg_cartesian_';
+file_path = ['D:\Jaco_8I1\' params.DCO_file_prefix '\CerebusData\'];
+% file_path = 'D:\Chewie_8I2\Chewie_2015-05-05_DCO_emg_emg_cartesian\CerebusData\';
+% file_prefix_all = 'Chewie_2015-05-05_DCO_emg_emg_cartesian_';
 % file_path = 'D:\Data\Mini_7H1\';
 % file_prefix_all = 'Mini_2013-11-22_UF_';
 % file_prefix_some = 'Kevin_2013-10-07_UF_001';

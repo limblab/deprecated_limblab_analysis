@@ -1,14 +1,16 @@
 % params.DCO_file_prefix = 'Chewie_2015-06-18_DCO_emg_emg_cartesian';
 % target_folder = ['D:\Chewie_8I2\' params.DCO_file_prefix '\CerebusData\'];
-params.DCO_file_prefix = 'Jaco_2015-09-10_DCO_emg_emg_cartesian';
+params.DCO_file_prefix = 'Jaco_2015-09-16_DCO_emg_emg_cartesian';
 target_folder = ['D:\Jaco_8I1\' params.DCO_file_prefix '\CerebusData\'];
 
-params.reprocess_data = 1;
+params.reprocess_data = 0;
 params.plot_behavior = 0;
 params.plot_units = 0;
-params.plot_emg = 0;
+params.plot_emg = 1;
 params.plot_raw_emg = 0;
 params.decode_arm = 0;
+params.build_decoders = 0;
+params.build_single_neuron_decoders = 1;
 params.make_movie = 0;
 params.movie_range = [10 250];
 params.num_lags = 10;

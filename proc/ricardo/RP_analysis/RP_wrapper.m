@@ -1,16 +1,16 @@
 % params.RP_file_prefix = 'Test_2015-06-09_RP_emg_hu';
 % target_folder = ['D:\Data\TestData\' params.RP_file_prefix];
-% params.RP_file_prefix = 'Chewie_2015-07-23_RP';
+% params.RP_file_prefix = 'Chewie_2015-06-17_RP_n2e2_hu';
 % target_folder = ['D:\Chewie_8I2\' params.RP_file_prefix '\CerebusData\'];
-params.RP_file_prefix = 'Jaco_2015-09-04_RP_n2e2_hu';
+params.RP_file_prefix = 'Jaco_2015-07-13_RP';
 target_folder = ['D:\Jaco_8I1\' params.RP_file_prefix '\CerebusData\'];
 
-params.reprocess_data = 1;
-params.plot_behavior = 1;
+params.reprocess_data = 0;
+params.plot_behavior = 0;
 params.plot_units = 0;
 params.plot_each_neuron = 0;
 params.plot_emg = 1;
-params.plot_predicted_emg = 1;
+params.plot_predicted_emg = 0;
 params.plot_raw_emg = 0;
 params.plot_pca = 0;
 

@@ -32,6 +32,31 @@ for iEMG = 1:size(RP.emg_pert,3)
                 emg_temp = RP.emg_pert(idx,:,iEMG);
                 idx = setxor(idx,idx(find(mean(emg_temp,2) > 3*std(emg_temp(:)))));
                 emg_temp = RP.emg_pert(idx,:,iEMG);
+                
+                Fs = 1/diff(RP.t_pert(1:2));                                
+                wo = RP.perturbation_frequencies(iFreq)/(Fs/2);  
+                bw = wo/2;
+                [b,a] = iirnotch(wo,bw);
+                emg_temp_filt = filtfilt(b,a,emg_temp')';
+                
+                pos_mean = mean(RP.pos_pert_x(idx,:)-repmat(RP.pos_pert_x(idx,t_zero),1,size(RP.pos_pert_x,2)));
+                pos_mean = pos_mean - mean(pos_mean);
+                emg_mean = mean(emg_temp);
+                emg_mean = emg_mean - mean(emg_mean);
+                L = length(pos_mean);
+                NFFT = 5000;
+                f = Fs/2*linspace(0,1,NFFT/2+1);
+                pos_fft = fft(pos_mean,NFFT)/L;
+                emg_fft = fft(emg_mean,NFFT)/L;
+                [~,f_idx] = min(abs(f-RP.perturbation_frequencies(iFreq)));
+                phase_lag(1) = angle(pos_fft(f_idx))-angle(emg_fft(f_idx));
+                phase_lag(2) = (angle(emg_fft(f_idx))+pi-angle(pos_fft(f_idx)));                
+                phase_lag(3) = (angle(emg_fft(f_idx))-pi-angle(pos_fft(f_idx)));
+                phase_lag = mod(phase_lag,2*pi)
+                phase_lag = min(phase_lag,2*pi-phase_lag)
+                time_lag = (phase_lag/(2*pi))*1/RP.perturbation_frequencies(iFreq);
+                
+                
                 mean_emg(iFreq,:) = mean(emg_temp);
                 std_emg(iFreq,:) = std(emg_temp);    
                 if iOutcome == 1
@@ -215,7 +240,6 @@ for iDir = 1:length(RP.perturbation_directions)
         '^o.'],'Interpreter','tex')
     set(params.fig_handles(end),'Name',['Difference brd-tri'])
     legend(h_plot,legend_str)
-    
 end
 
 set(h_sub,'YLim',[min(cellfun(@min,get(h_sub,'YLim'))) max(cellfun(@max,get(h_sub,'YLim')))])
@@ -358,7 +382,7 @@ for iDir = 1:length(RP.perturbation_directions)
                 idx = intersect(idx,RP.fail_trials);
             end
             %             idx = intersect(idx,RP.reward_trials);
-            emg_temp = abs(RP.emg_pert(idx,:,emg_idx(1)) - RP.emg_pert(idx,:,emg_idx(2)));
+            emg_temp = (RP.emg_pert(idx,:,emg_idx(1)) - RP.emg_pert(idx,:,emg_idx(2)));
             mean_emg = mean(emg_temp(:,RP.t_pert > 0),2);
             sem_emg = 1.96*std(emg_temp(:,RP.t_pert > 0),[],2);
             t_trials = RP.trial_table(idx,RP.table_columns.t_trial_start);
@@ -394,5 +418,4 @@ for iDir = 1:length(RP.perturbation_directions)
     legend(h_plot,legend_str)
     
 end
-
-set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
+set(h_sub,'YLim',[min(cellfun(@min,get(h_sub,'YLim'))) max(cellfun(@max,get(h_sub,'YLim')))])

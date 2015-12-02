@@ -44,4 +44,5 @@ function [fig_handles,data_struct] = RP_analysis(target_folder,params)
     end
     data_struct.params = params;
     fig_handles = params.fig_handles;
+    add_filename_to_figures(fig_handles,data_struct.bdf.meta.filename)
 end

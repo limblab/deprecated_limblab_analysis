@@ -55,6 +55,7 @@ function DCO = DCO_create_struct(bdf,params)
         DCO.target_locations = unique(DCO.trial_table(:,DCO.table_columns.outer_target_direction)); 
         DCO.direction_colors = hsv(length(DCO.target_locations));
         DCO.force_colors = copper(length(DCO.target_forces));
+        DCO.target_colors = [1 0 0; 1 .5 .25; 1 .75 .25];
 
         for iForces = 1:length(DCO.target_forces)
             DCO.target_forces_idx{iForces} = find(DCO.trial_table(:,DCO.table_columns.target_force)==DCO.target_forces(iForces));
@@ -178,6 +179,7 @@ function DCO = DCO_create_struct(bdf,params)
             DCO.emg(iEMG,:) = emg;            
             DCO.emg_mov(:,:,iEMG) = emg(DCO.mov_idx_table)/max([emg(DCO.mov_idx_table(:)); emg(DCO.hold_idx_table(:))]);
             DCO.emg_hold(:,:,iEMG) = emg(DCO.hold_idx_table)/max([emg(DCO.mov_idx_table(:)); emg(DCO.hold_idx_table(:))]);
+            
         end
     else
         DCO.emg = [];

@@ -56,7 +56,7 @@ for iEMG = 1:length(RP.BMI.emgnames)
         legend(h_plot,legend_str)
 
     end
-
+    set(h_sub,'XLim',[RP.t_pert_bmi(1) RP.t_pert_bmi(end)])
     set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
 %         h_axes = get(gcf,'Children');
 %         set(h_axes,'YLim',[0 max_y]);        
@@ -138,7 +138,7 @@ for iDir = 1:length(RP.perturbation_directions)
     legend(h_plot,legend_str)
     
 end
-
+set(h_sub,'XLim',[RP.t_pert_bmi(1) RP.t_pert_bmi(end)])
 set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
 
 %% Movement sum of antagonistic muscles separated by frequency
@@ -193,6 +193,7 @@ for iDir = 1:length(RP.perturbation_directions)
     set(params.fig_handles(end),'Name',['EMG sum'])
     legend(legend_str)    
 end
+set(h_sub,'XLim',[RP.t_pert_bmi(1) RP.t_pert_bmi(end)])
 set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
 
 %% Movement EMG difference separated by frequency
@@ -248,7 +249,7 @@ for iDir = 1:length(RP.perturbation_directions)
     legend(h_plot,legend_str)
     
 end
-
+set(h_sub,'XLim',[RP.t_pert_bmi(1) RP.t_pert_bmi(end)])
 set(h_sub,'YLim',[min(cellfun(@min,get(h_sub,'YLim'))) max(cellfun(@max,get(h_sub,'YLim')))])
 %% Channel correlation coefficients
 % correlation = zeros(size(RP.emg,1),size(RP.emg,1));
@@ -454,7 +455,7 @@ for iDir = 1:length(RP.perturbation_directions)
                 idx = intersect(idx,RP.fail_trials);
             end
             %             idx = intersect(idx,RP.reward_trials);
-            emg_temp = abs(RP.emg_pert_bmi(idx,:,2) - RP.emg_pert_bmi(idx,:,3));
+            emg_temp = (RP.emg_pert_bmi(idx,:,2) - RP.emg_pert_bmi(idx,:,3));
             mean_emg = mean(emg_temp(:,RP.t_pert_bmi > 0),2);
             sem_emg = 1.96*std(emg_temp(:,RP.t_pert_bmi > 0),[],2);
             t_trials = RP.trial_table(idx,RP.table_columns.t_trial_start);
@@ -491,5 +492,5 @@ for iDir = 1:length(RP.perturbation_directions)
     
 end
 
-set(h_sub,'YLim',[0 max(cellfun(@max,get(h_sub,'YLim')))])
+set(h_sub,'YLim',[min(cellfun(@min,get(h_sub,'YLim'))) max(cellfun(@max,get(h_sub,'YLim')))])
 

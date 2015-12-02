@@ -386,6 +386,7 @@ if isfield(datastruct,'stim')
 end
 
 %% State
+state = [];
 if isfield(datastruct,'state')
     state = zeros(size(timeframe));
     t = params.starttime;

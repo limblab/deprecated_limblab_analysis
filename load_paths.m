@@ -13,6 +13,7 @@ addpath([dir '/lib']);
 addpath([dir '/lib/ml']);
 addpath([dir '/lib/stats']);
 addpath([dir '/lib/bootstrapping']);
+addpath([dir '/lib/CircStat2012a']);
 addpath([dir '/lib/glm']);
 addpath(genpath([dir '/lib/NPMK 2.5.2.0']));
 addpath([dir '/mimo']);

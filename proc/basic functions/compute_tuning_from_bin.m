@@ -94,7 +94,7 @@ for i = 1:num_units
     coef_cov = cov(boot_coef);
     
     %get coefficient means
-    weights = mean(boot_coef);
+    weights = mean(boot_coef,1);
     
     %get 95% CIs for coefficients
     coef_CIs = prctile(boot_coef,[2.5 97.5]);
@@ -136,6 +136,7 @@ for i = 1:num_units
     neural_tuning(i).term_signif= term_signif;
     neural_tuning(i).PD         = PD;
     neural_tuning(i).unit_id    = binnedData.neuronIDs(i,:);
+    neural_tuning(i).boot_dirs  = boot_dirs;
     
     pd_table(i) = PD.dir;
 end

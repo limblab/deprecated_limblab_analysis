@@ -36,9 +36,13 @@ function [fig_handles,data_struct] = DCO_analysis(target_folder,params)
     if params.decode_arm
         [params,data_struct] = DCO_decode_arm(data_struct,params);
     end
+    if params.build_decoders
+        params = DCO_build_decoders(data_struct,params);
+    end
     if params.make_movie
         params = DCO_make_movie(data_struct,params);
     end
     data_struct.params = params;
     fig_handles = params.fig_handles;
+    add_filename_to_figures(fig_handles,data_struct.bdf.meta.filename)        
 end
