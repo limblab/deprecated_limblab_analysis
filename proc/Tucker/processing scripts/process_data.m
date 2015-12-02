@@ -1,6 +1,6 @@
 %script to set input data and execute data processing
 %% process psyhcometrics
-folderpath='E:\local_processing\chips\experiment_20150625_BD_192degPD';
+folderpath='E:\local processing\chips\experiment_20150805_BD_27degPD';
 function_name='quickscript_function_looped';
 input_data.matchstring='Chips';
 input_data.labnum=6;
@@ -18,8 +18,8 @@ input_data.matchstring='Kramer';
 folderpath='E:\local_processing\kramer\experiment_20130305_0322_BD_70degstim';
 run_data_processing(function_name,folderpath,input_data)
 %% process PDs
-folderpath='C:\Users\limblab\Documents\local_processing\experiment_20150223';
-input_data.filename='Chips_20150223_RW_tucker_001-01.nev';
+folderpath='E:\local processing\chips\experiment_20150804_RW_PD';
+input_data.filename='Chips_20150804_RW_Tucker_001.nev';
 input_data.matchstring='Chips';
 function_name='get_move_pds_function';
 input_data.labnum=6;
@@ -27,8 +27,8 @@ input_data.array_map_path='Y:\lab_folder\Animal-Miscellany\Chips_12H1\map_files\
 data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% process PDs using Raeed/Tucker functions
-folderpath='E:\local_processing\chips\experiment_20150624_RW_PD';
-input_data.prefix='Chips_20150624_RW_Tucker_001';
+folderpath='E:\local processing\chips\experiment_20150804_RW_PD';
+input_data.prefix='Chips_20150804_RW_Tucker_001';
 function_name='get_PDs';
 input_data.labnum=6;
 input_data.do_unit_pds=0;
@@ -61,14 +61,14 @@ folderpath='Z:\MrT_9I4\Processed\experiment_20141009_RW_file1';
 input_data.filename='MrT_RW_20141008_tucker_-4rms_001.nev - Shortcut.lnk';
 function_name='move_PDs';
 input_data.labnum=6;
-run_data_processing(function_name,folderpath,input_data)
+data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% get PDs from bump direction file
 folderpath='Z:\MrT_9I4\Processed\experiment_20140903_BD_PDAnalysis';
 function_name='BumpDirection_PDs';
 input_data.labnum=6;
 input_data.matchstring='MrT';
-run_data_processing(function_name,folderpath,input_data)
+data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% check for unit stability
 folderpath='C:\Users\limblab\Documents\local_processing\chips\20150220-27_unit_stability';
@@ -91,9 +91,28 @@ run_data_processing(function_name,folderpath,input_data)
 folderpath='Z:\Chips_12H1\processed\summary of stim directions';
 function_name='make_chips_polar_PD_summaries';
 input_data.monkey_name='C';
-run_data_processing(function_name,folderpath,input_data)
+data_struct = run_data_processing(function_name,folderpath,input_data);
 %% Track Neurons across days
-folderpath='Z:\Han_13B1\Processed\0_unit_stability_plasticity\0420_0612_firstweekwithoutstim_4weekswith45degstim\area2_a2';
+folderpath='E:\local processing\pedro\20100726_neuron_tracking';
 function_name='get_neuron_matching';
-input_data.matchstring='bdf';
-run_data_processing(function_name,folderpath,input_data)
+input_data.matchstring='Pedro';
+input_data.labnum=2;
+data_struct = run_data_processing(function_name,folderpath,input_data);
+%% export data for katsaggelos group
+folderpath='E:\local processing\pedro\20100726_export_data_for_Katsaggelos_Grp';
+function_name='export_for_katsaggelos';
+input_data.filename='stable_session.mat';
+data_struct = run_data_processing(function_name,folderpath,input_data);
+%% export single file data for katsaggelos group
+folderpath='E:\local processing\kramer\experiment_20130314_RW_Katsaggelos';
+function_name='dump_file_for_katsaggelos';
+input_data.filename='Kramer_RW_03142013_tucker_001-01.nev';
+input_data.only_sorted=1;
+input_data.labnum=3;
+input_data.task='RW';
+data_struct = run_data_processing(function_name,folderpath,input_data);
+%% test encoder skipping:
+
+folderpath='E:\local processing\test_skips';
+function_name='testEncoderSkips';
+data_struct=run_data_processing(function_name,folderpath);
