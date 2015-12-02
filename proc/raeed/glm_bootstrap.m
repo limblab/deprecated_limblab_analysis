@@ -10,7 +10,7 @@ function [pds, CI_low, CI_high, moddepth] = glm_bootstrap(varargin)
 %       above, but specifies bootrstrap repetitions and number of data
 %       samples used per repetition (Defaults are 100 and 1000
 %       respectively)
-
+%
 % $Id: glm_pds.m 1028 2012-12-05 18:26:49Z tucker $
 
 %% Set up arguments
