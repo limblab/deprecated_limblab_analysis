@@ -21,6 +21,18 @@ options.only_sorted=1;
 function_name='actpas_tuning';
 options.labnum=6;
 options.dual_array = false;
+options.task = 'CO';
+
+output_data=run_data_processing(function_name,folder,options);
+
+%% Get active/passive/RW tunings
+folder='C:\Users\rhc307\Documents\Data\experiment_20151117_actpas\';
+clear options
+options.prefix='Chips_20151117';
+options.only_sorted=1;
+function_name='compare_actpas_RW';
+options.labnum=6;
+options.dual_array = false;
 
 output_data=run_data_processing(function_name,folder,options);
 

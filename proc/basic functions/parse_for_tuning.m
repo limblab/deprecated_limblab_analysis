@@ -304,6 +304,9 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     target_onsets=reshape(target_onsets',(size(target_onsets,1)*size(target_onsets,2)),1);%make it a column vector
                     mask=target_onsets>1;%exclude reaches that weren't done (time is -1 in trial table)
                     target_onsets=target_onsets(mask);
+                    
+                    trial_times=[trial_starts,trial_ends];
+                    trial_times=trial_times(bdf.TT(:,bdf.TT_hdr.trial_result)==0,:); % only successful trials
 
                     go_cues=target_onsets;
                     bump_times=[];
@@ -314,21 +317,38 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     mask=target_onsets>1;%exclude reaches that weren't done (time is -1 in trial table)
                     target_onsets=target_onsets(mask);
 
+                    trial_times=[trial_starts,trial_ends];
                     go_cues=target_onsets;
                     bump_times=[];
                 case 'CO'
                     target_onsets=bdf.TT(:,bdf.TT_hdr.ot_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
+                    
+                    trial_times=[trial_starts,trial_ends];
+                    
+                    %find successful movement times
+                    move_trials = bdf.TT(:,bdf.TT_hdr.go_cue)~=-1 & bdf.TT(:,bdf.TT_hdr.trial_result)==uint8('R');
+                    move_times = [go_cues(move_trials) trial_ends(move_trials)];
+                    
+                    %find bump times
                     bump_times=[bdf.TT(:,bdf.TT_hdr.bump_time) trial_ends];
+                    bump_times(bump_times(:,1)==-1,:) = [];
+                    
+                    %clean up target onsets and go cues
+                    go_cues(go_cues==-1) = [];
+                    target_onsets(target_onsets==-1) = [];
                 case 'CO_bump'
+                    trial_times=[trial_starts,trial_ends];
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
                     bump_times=[bdf.TT(:,bdf.TT_hdr.bump_time)+bdf.TT(:,bdf.TT_hdr.bump_delay) bump_times+bdf.TT(:,bdf.TT_hdr.bump_dur)+2*+bdf.TT(:,bdf.TT_hdr.bump_ramp)];
                 case 'isometric'
+                    trial_times=[trial_starts,trial_ends];
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
                     bump_times=[];
                 case 'WF'
+                    trial_times=[trial_starts,trial_ends];
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);
                     go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
                     bump_times=[];
@@ -480,8 +500,8 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -comptute_dfdtdt_pds
                 %   -data_offset
                 
-                T=[trial_starts,trial_ends];
-                outstruct=sample_between_timepoints(T);
+                T=trial_times;
+                outstruct=sample_between_timepoints(T,timeseries);
             case 'target moves'
                 %viable method_opts for the trials method:
                 %   -lags
@@ -493,8 +513,7 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                 %   -comptute_dfdtdt_pds
                 %   -data_offset
                 
-                T=[go_cues,trial_ends];
-                T=T(bdf.TT(:,bdf.TT_hdr.trial_result)==uint8('R'),:); % take only rewarded reaches
+                T=move_times;
                 outstruct=sample_between_timepoints(T,timeseries);
             case 'bumps'
                 %viable method_opts for the bumps method:

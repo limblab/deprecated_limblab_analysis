@@ -1,32 +1,50 @@
-function [figure_handles, output_data] = actpas_tuning(folder, options)
+function [figure_handles, output_data] = compare_actpas_RW(folder, options)
 % ACTPAS_TUNING show tuning curves for active and passive movements
 
     try
         %% setup
         figure_handles=[];
-        if(~isfield(options,'bdf'))
+        if(~isfield(options,'bdf_COactpas'))
             if(folder(end)~=filesep)
                 folder = [folder filesep];
             end
-            bdf = get_nev_mat_data([folder options.prefix],options.labnum);
+            bdfCOactpas = get_nev_mat_data([folder options.prefix '_COactpas'],options.labnum);
         else
-            bdf = options.bdf;
+            bdfCOactpas = options.bdfCOactpas;
         end
+        bdfCOactpas.meta.task = 'CO';
+        
+        if(~isfield(options,'bdf_RW'))
+            if(folder(end)~=filesep)
+                folder = [folder filesep];
+            end
+            bdfRW = get_nev_mat_data([folder options.prefix '_RW'],options.labnum);
+        else
+            bdfRW = options.bdfRW;
+        end
+        bdfRW.meta.task = 'RW';
         
         %% get individual tuning curves
         bumpopts = options;
-        bumpopts.bdf = bdf;
+        bumpopts.bdf = bdfCOactpas;
         bumpopts.plot_curves = 0;
         bumpopts.binsize = 0.05;
         bumpopts.time_selection = 'bumps';
         [~,tuning_out_bumps] = get_tuning_curves(folder,bumpopts);
         
         moveopts = options;
-        moveopts.bdf = bdf;
+        moveopts.bdf = bdfCOactpas;
         moveopts.plot_curves = 0;
         moveopts.binsize = 0.05;
         moveopts.time_selection = 'target moves';
         [~,tuning_out_moves] = get_tuning_curves(folder,moveopts);
+        
+        RWopts = options;
+        RWopts.bdf = bdfRW;
+        RWopts.plot_curves = 0;
+        RWopts.binsize = 0.05;
+        RWopts.time_selection = 'trials';
+        [~,tuning_out_RW] = get_tuning_curves(folder,RWopts);
 
         %% figures
         if(options.dual_array)
@@ -54,7 +72,7 @@ function [figure_handles, output_data] = actpas_tuning(folder, options)
             set(h,'color','w')
             hold all
 
-            % DL workspace tuning curve
+            % active tuning curve
             h=polar(repmat(tuning_out_moves.bins,2,1),repmat(tuning_out_moves.binned_FR(:,i),2,1));
             set(h,'linewidth',2,'color',[1 0 0])
             th_fill = [flipud(tuning_out_moves.bins); tuning_out_moves.bins(end); tuning_out_moves.bins(end); tuning_out_moves.bins];
@@ -62,13 +80,22 @@ function [figure_handles, output_data] = actpas_tuning(folder, options)
             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
             patch(x_fill,y_fill,[1 0 0],'facealpha',0.3,'edgealpha',0);
 
-            % PM workspace tuning curve
+            % passive tuning curve
             h=polar(repmat(tuning_out_bumps.bins,2,1),repmat(tuning_out_bumps.binned_FR(:,i),2,1));
             set(h,'linewidth',2,'color',[0.6 0.5 0.7])
             th_fill = [flipud(tuning_out_bumps.bins); tuning_out_bumps.bins(end); tuning_out_bumps.bins(end); tuning_out_bumps.bins];
             r_fill = [flipud(tuning_out_bumps.binned_CI_high(:,i)); tuning_out_bumps.binned_CI_high(end,i); tuning_out_bumps.binned_CI_low(end,i); tuning_out_bumps.binned_CI_low(:,i)];
             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
             patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3,'edgealpha',0);
+            
+            % RW tuning curve
+            curve_color = [0 0 1];
+            h=polar(repmat(tuning_out_RW.bins,2,1),repmat(tuning_out_RW.binned_FR(:,i),2,1));
+            set(h,'linewidth',2,'color',curve_color)
+            th_fill = [flipud(tuning_out_RW.bins); tuning_out_RW.bins(end); tuning_out_RW.bins(end); tuning_out_RW.bins];
+            r_fill = [flipud(tuning_out_RW.binned_CI_high(:,i)); tuning_out_RW.binned_CI_high(end,i); tuning_out_RW.binned_CI_low(end,i); tuning_out_RW.binned_CI_low(:,i)];
+            [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+            patch(x_fill,y_fill,curve_color,'facealpha',0.3,'edgealpha',0);
             
             hold off
         end

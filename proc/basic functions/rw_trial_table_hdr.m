@@ -40,8 +40,7 @@ function [tt,tt_hdr] = rw_trial_table_hdr(bdf)
     %check DB version number and run appropriate parsing code. DB version 0
     %only has 2 words before target positions, while version 1 has 18.
     db_version=bdf.databursts{1,2}(2);
-    switch db_version
-        case 0
+    if db_version==0
             %check whether we can trust the databurst target information and
             %then either estimate the number of targets from the databurst, or
             %from the go cues:
@@ -102,7 +101,7 @@ function [tt,tt_hdr] = rw_trial_table_hdr(bdf)
             tt_hdr.go_cues                  =[ 4+max(tt(:,2)): 4+2*max(tt(:,2))-1];
             tt_hdr.end_time                 = 4+2*max(tt(:,2));
             tt_hdr.trial_result             = 4+2*max(tt(:,2))+1;
-        case 1
+    elseif db_version==1 || db_version==2 %HACK: DON'T KNOW WHAT'S DIFFERENT BETWEEN v1 AND v2
             num_targets = (bdf.databursts{1,2}(1)-18)/8;
             %tt= [-1 -1 -1 -1 -1 -1 NaN ... NaN -1 -1]
             tt = [(zeros(num_trials-1,6)-1)  NaN(num_trials-1,2*num_targets)  (zeros(num_trials-1,2)-1) ];
@@ -161,7 +160,7 @@ function [tt,tt_hdr] = rw_trial_table_hdr(bdf)
             tt_hdr.go_cues                  =[ 7+max(tt(:,2)): 7+2*max(tt(:,2))-1];
             tt_hdr.end_time                 = 7+2*max(tt(:,2));
             tt_hdr.trial_result             = 7+2*max(tt(:,2))+1;
-        otherwise
+    else
             error('rw_trial_table_hdr:BadDataburstVersion',['Trial table parsing not implemented for databursts with version: ', num2str(db_version)])
     end
 
