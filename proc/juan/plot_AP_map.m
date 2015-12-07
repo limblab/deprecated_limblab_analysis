@@ -131,9 +131,8 @@ for i = 1:nbr_bdfs
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
             end
             % Readjust the scale, if specified by the user
-            if exist('Vpp','var')
-                ylim([-Vpp/2 Vpp/2]);
-            end
+            if exist('Vpp','var'), ylim([-Vpp/2 Vpp/2]); end
+            
             panel_ctr   = panel_ctr + 1;
             
 %             % add labels
@@ -166,9 +165,7 @@ for i = 1:nbr_bdfs
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
             end
             % Readjust the scale, if specified by the user
-            if exist('Vpp','var')
-                ylim([-Vpp/2 Vpp/2]);
-            end
+            if exist('Vpp','var'), ylim([-Vpp/2 Vpp/2]); end
         end
     end
 end
