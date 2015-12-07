@@ -5,6 +5,8 @@
 %       Several bdf_structs can be merged into an array of structs. 
 %       The function returns either a handle to the figure.
 %
+%       PLOT_AP_MAP( bdf_struct ): plots the mean +/- SD waveform. Channels
+%           are ordered sequentially, not using an array map file
 %       PLOT_AP_MAP( bdf_struct, plot_std ): bool 'plot_std' defines
 %           whether the SD of the AP waveform will be plotted  
 %       PLOT_AP_MAP( bdf_struct, array_map_file): 'array_map' is the path
