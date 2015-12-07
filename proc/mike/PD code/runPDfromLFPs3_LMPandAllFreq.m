@@ -4,14 +4,17 @@ function [] = runPDfromLFPs3_LMPandAllFreq(filelist)
 % for multiple files
 % 4/17/14
 
+% filelist = Mini_LFP1_DaysNames;
 chinds=1:96;
 LMPbandstart=[];
 LMPbandend=[];
-bandstart=  [0, 7, 70, 130, 200];
-bandend=    [4, 20, 115, 200, 300];
+bandstart=  [0];
+bandend=    [4];
+
+bootstrapPDsCalc = 0; % Imaginary flag to calc bootstrap PDs or not (haven't implemented it yet)
 
 i = 1;
-lag= -0.10;
+lag= -0.256;
 binlen= 0.10;
 pval=0.05;
 
@@ -19,7 +22,7 @@ pval=0.05;
 %     for i=1:length(numlist)
 
 filewithpath=findBDFonCitadel(filelist{i});
-postfix='_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts';   %LFP control file
+postfix='_pdsallchanspos_bs-1wsz150mnpow_Delta_LFPcounts';   %LFP control file
 
 if strncmpi(filelist{i},'Mini',4)
     if length(filewithpath) == 58
@@ -48,7 +51,7 @@ end
 
 try
     tic
-    [LFPfilesPDs,bootstrapPDS,LFP_counts] = PDs_from_LFPs_MWSposlog2(fnam,chinds,bandstart,bandend,18,32,0,lag,binlen,pval);
+    [~,~,LFP_counts] = PDs_from_LFPs_MWSposlog2(fnam,chinds,bandstart,bandend,18,32,0,lag,binlen,pval);   
     toc
 catch exception
     filesThatDidNotRun{i,2} = exception;
@@ -56,9 +59,9 @@ catch exception
     return
 end
 
-tic
-[LMPfilesPDs,LMPbootstrapPDS,LMPcounts] = PDs_from_LFPs_MWSposlogLMP(fnam,chinds,LMPbandstart,LMPbandend,18,32,0,lag,binlen,pval);
-toc
+% tic
+% [LMPfilesPDs,LMPbootstrapPDS,LMPcounts] = PDs_from_LFPs_MWSposlogLMP(fnam,chinds,LMPbandstart,LMPbandend,18,32,0,lag,binlen,pval);
+% toc
 
 save(savename,'LFP*','LMP*','boot*');
 clear bdf *PD*
