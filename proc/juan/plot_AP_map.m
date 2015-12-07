@@ -1,23 +1,39 @@
 %
-% Plot the shape of the APs
+% Plot action potential waveforms of Utah array recordings
 %
 %       The function takes an bdf_struct (generated from a BDF) as input.
 %       Several bdf_structs can be merged into an array of structs. 
 %       The function returns either a handle to the figure.
-%       Note that the channels are not reorganized using an array map.
 %
-%       PLOT_AP_MAP( bdf_struct, plot_std ): plot_std defines whether the
-%       SD of the AP shape will be plotted 
-%       PLOT_AP_MAP( bdf_struct, array_map_file): array_map is the path to
-%       the map file provided by Blackrock  
-%       PLOT_AP_MAP( bdf_struct, ch_nbr ): ch_nbr is an array that defines
-%       the channels that will be plotted. 
-%       PLOT_AP_MAP( bdf_struct, array_map_file, plot_std ): array_map is
-%       the path to the map file provided by Blackrock 
-%       PLOT_AP_MAP( bdf_struct, ch_nbr, plot_std ): ch_nbr is an array
-%       that defines the channels that will be (orderly) plotted.
+%       PLOT_AP_MAP( bdf_struct, plot_std ): bool 'plot_std' defines
+%           whether the SD of the AP waveform will be plotted  
+%       PLOT_AP_MAP( bdf_struct, array_map_file): 'array_map' is the path
+%           to a Blacrock map file  
+%       PLOT_AP_MAP( bdf_struct, ch_nbr ): 'ch_nbr' is an array that
+%           defines the channels the user wants to plot. Use this to plot
+%           only a subset of channels      
+%       PLOT_AP_MAP( bdf_struct, array_map_file, plot_std ): 'array_map' is
+%           the path to the map file provided by Blackrock. Bool 'plot_std'
+%           defines whether the SD of the AP waveform will be plotted
+%       PLOT_AP_MAP( bdf_struct, ch_nbr, plot_std ): 'ch_nbr' is an array
+%           that defines the channels the user wants to plot. Bool
+%           'plot_std' defines whether the SD of the AP waveform will be
+%           plotted  
+%       PLOT_AP_MAP( bdf_struct, array_map_file, plot_std, Vpp ):
+%           'array_map' is the path to the map file provided by Blackrock.
+%           Bool 'plot_std' defines whether the SD of the AP waveform will
+%           be plotted. 'Vpp' is the peak-to-peak voltage (uV) --when not
+%           specified, matlab will automatically adjust the scale of each
+%           AP plot
+%       PLOT_AP_MAP( bdf_struct, ch_nbr, plot_std, Vpp ): 'ch_nbr' is an
+%           array that defines the channels that will be (orderly) plotted.
+%           Bool 'plot_std' defines whether the SD of the AP waveform will
+%           be plotted. 'Vpp' is the peak-to-peak voltage (uV) --when not
+%           specified, matlab will automatically adjust the scale of each
+%           AP plot
 %
-% Last edited by Juan Gallego - Nov 21, 2015
+%
+% Last edited by Juan Gallego - Dec 6, 2015
 %
 
 
@@ -32,13 +48,16 @@ if nargin == 2
     elseif ischar(varargin{1})
         array_map_file  = varargin{1};
     end
-elseif nargin == 3
+elseif nargin >= 3
     if isnumeric(varargin{1})
         ch_nbrs         = varargin{1};
-    elseif ischar(varargin{1})
+    elseif ischar(varargin{1}) || iscell(varargin{1})
         array_map_file  = varargin{1};
     end
     plot_std            = varargin{2};
+    if nargin == 4
+        Vpp             = varargin{3};
+    end
 end
 
 % set missing params to defaults
@@ -102,7 +121,8 @@ for i = 1:nbr_bdfs
 
             nbr_rc      = ceil(sqrt(length(ch_nbrs)));
             
-            subplot(nbr_rc,nbr_rc,panel_ctr-1),
+            % Plot the mean (or mean +/- SD waveform), depending on the options
+            subplot(nbr_rc,nbr_rc,panel_ctr-1);
             if plot_std
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
                 plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
@@ -110,7 +130,10 @@ for i = 1:nbr_bdfs
             else
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
             end
-            
+            % Readjust the scale, if specified by the user
+            if exist('Vpp','var')
+                ylim([-Vpp/2 Vpp/2]);
+            end
             panel_ctr   = panel_ctr + 1;
             
 %             % add labels
@@ -132,13 +155,19 @@ for i = 1:nbr_bdfs
             std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
             
             [row, col]  = find( bdf_struct(i).map==ii );
-            subplot(10,10,col+(row-1)*10),
+            
+            % Plot the mean (or mean +/- SD waveform), depending on the options
+            subplot(10,10,col+(row-1)*10);
             if plot_std
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',1);
                 plot(mean_AP+std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
                 plot(mean_AP-std_AP,'color',color_array(i),'linewidth',1,'linestyle','-.');
             else
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
+            end
+            % Readjust the scale, if specified by the user
+            if exist('Vpp','var')
+                ylim([-Vpp/2 Vpp/2]);
             end
         end
     end
