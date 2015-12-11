@@ -8,14 +8,14 @@ function [figures,data]=testEncoderSkips(folderPath)
     figures=[];
     foldercontents=dir(folderPath);
     fnames={foldercontents.name};%extracts just the names from the foldercontents
-    fileList={};
-    numPoints=[];
-    allSteps=[];
-    tSteps=[];
-    minSteps=[];
-    maxSteps=[];
-    stepHists=[];
-    bins=0:.005:.95;
+    data.fileList={};
+    data.numPoints=[];
+    data.allSteps=[];
+    data.tSteps=[];
+    data.minSteps=[];
+    data.maxSteps=[];
+    data.stepHists=[];
+    bins=0:.01:1.95;
     for i=1:length(foldercontents)
         if (length(fnames{i})>3)
             if exist(strcat(folderPath,fnames{i}),'file')~=2
@@ -24,15 +24,21 @@ function [figures,data]=testEncoderSkips(folderPath)
             temppath=follow_links(strcat(folderPath,fnames{i}));
             [~,fname,tempext]=fileparts(temppath);
             if strcmp(tempext,'.nev') 
-                fileList{end+1}=temppath;
+                data.fileList{end+1}=temppath;
                 try
                     disp(strcat('Working on: ',temppath))
-                    %if we haven't found a .mat file to match the .nev then make
-                    %one
                     NEV=openNEVLimblab('read', temppath,'nosave');
+                    disp('   opened NEV, clearing spikes to free up memory')
+                    NEV.Data.Spikes=[];
+                    disp('   reading event data')
                     event_ts = NEV.Data.SerialDigitalIO.TimeStampSec';       
                     event_data = double(NEV.Data.SerialDigitalIO.UnparsedData);
-                    
+                    DateTime = [int2str(NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEV.MetaTags.DateTimeRaw(1)) ...
+                    ' ' int2str(NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEV.MetaTags.DateTimeRaw(8))];
+                    duration=NEV.MetaTags.DataDurationSec;
+                    disp('   events loaded, clearing NEV')
+                    clear NEV
+                    disp('   computing encoder values from event strobes')
                     %clear off the beginning of the data if the timestamps
                     %reset:
                     dn = diff(event_ts);
@@ -51,9 +57,7 @@ function [figures,data]=testEncoderSkips(folderPath)
                     end
                     clear idx;
                     
-                    DateTime = [int2str(NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEV.MetaTags.DateTimeRaw(1)) ...
-                    ' ' int2str(NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEV.MetaTags.DateTimeRaw(8))];
-
+                    
                     %get encoder data from serial digital data:
                     if datenum(DateTime) - datenum('14-Jan-2011 14:00:00') < 0 
                         % The input cable for this time was bugged: Bits 0 and 8
@@ -69,38 +73,38 @@ function [figures,data]=testEncoderSkips(folderPath)
                     end   
 
                     %now that we have the encoder strobes, convert those to actual encoder values  
-                    enc = strb2enc(encStrobes,[0 NEV.MetaTags.DataDurationSec]);
-                    
-%                     %get our sig, figs for rounding based on the nominal sampling rate:
-%                     temp=mode(diff(enc(:,1)));
-%                     SF=0;
-%                     while temp<1
-%                         SF=SF+1;
-%                         temp=temp*10;
-%                     end
-%                     
-%                     %get our actual timesteps
-%                     tSteps=round(diff(enc(:,1)),SF);%the rounding allows jitter at ~ 10% of the sample frequency because SF is #sig figs+1 after the above while statement
+                    enc = strb2enc(encStrobes,[0 duration]);
+                    clear encStrobes
+                    disp('   computing timing and making histograms')
+
                     tSteps=diff(enc(:,1));
-                    allSteps=[allSteps;tSteps];
-                    numPoints(end+1)=numel(tSteps);
-                    minSteps(end+1)=min(tSteps);
-                    maxSteps(end+1)=max(tSteps);
+                    data.allSteps=[data.allSteps;tSteps];
+                    data.numPoints(end+1)=numel(tSteps);
+                    data.minSteps(end+1)=min(tSteps);
+                    data.maxSteps(end+1)=max(tSteps);
                     %tSteps=tSteps(tSteps>mode(tSteps));
                     
                     %get the breakdown of sample spacing for this specific
                     %file
-                    stepHists(end+1,:)=hist(tSteps,bins);
+                    data.stepHists(end+1,:)=hist(tSteps,bins);
                     %plot the histogram and set the figure properties
-                    figures(end+1)=figure;
-                    bar(bins,stepHists(end,:));
+                    h=figure;
+                    bar(bins,data.stepHists(end,:));
                     set(gca,'YScale','log')
-                    set(figures(end),'Name',['Hist_',fname])
-                    set(figures(end),'Position',[100 100 1200 1200])
+                    set(h,'Name',['Hist_',fname])
+                    set(h,'Position',[100 100 1200 1200])
                     title(['Histogram of lags between data points ',fname])
                     xlabel('latency between samples(s)')
                     ylabel('log count of number of points')
-                    
+                    %write figure out and close it so we don't have to keep all the figures
+                    %in active memory:
+                    fname(fname==' ')='_';%replace spaces in name for saving
+                        print('-dpdf',h,strcat(folderPath,'Raw_Figures\PDF\',fname,'.pdf'))
+                        print('-deps',h,strcat(folderPath,'Raw_Figures\EPS\',fname,'.eps'))
+                        print('-dpng',h,strcat(folderPath,'Raw_Figures\PNG\',fname,'.png'))
+                        saveas(h,strcat(folderPath,'Raw_Figures\FIG\',fname,'.fig'),'fig')
+                    close(h)
+                     
                 catch temperr
                     disp(strcat('Failed to process: ', temppath))
                     disp(temperr.identifier)
@@ -115,26 +119,19 @@ function [figures,data]=testEncoderSkips(folderPath)
     end
     %get histogram data for the whole data set:
     %file
-    allHist=hist(allSteps,bins);
+    bins=[0:.01:ceil(data.allSteps)];
+    data.allNumPoints=numel(data.allSteps); 
+    data.allHist=hist(data.allSteps,bins);
     %plot the histogram and set the figure properties
     figures(end+1)=figure;
-    bar(bins,allHist);
+    bar(bins,data.allHist);
     set(gca,'YScale','log')
     set(figures(end),'Name','Hist_All_Data')
     set(figures(end),'Position',[100 100 1200 1200])
     title(['Histogram of lags between data points for all data'])
     xlabel('latency between samples(s)')
     ylabel('log count of number of points')
-
-    %build our ourput data structure:
-    data.fileList=fileList;
-    data.stepHists=stepHists;
-    data.numPoints=numPoints;
-    data.allHist=allHist;
-    data.allNumPoints=numel(allSteps);
-    data.minSteps=minSteps;
-    data.maxSteps=maxSteps;
-    
+      
 end
 function varargout = strb2enc(strobed_events,varargin)
     if ~isempty(varargin)
