@@ -29,7 +29,7 @@ function [figure_handles, output_data]=find_vibe_sensitivity(folder,options)
         %% prep bdf
         %add firing rate to the units fields of the bdf
         opts.binsize=0.05;
-        opts.offset=-.015;
+%         opts.offset=-.015;
         opts.do_trial_table=0;
         opts.do_firing_rate=1;
         bdf=postprocess_bdf(bdf,opts);
