@@ -154,7 +154,7 @@ function functionlist=get_user_dependencies(fname)
     %returns a cell array with strings containing the functions that the
     %function fname depends on
     functionlist={};
-    command_list=depfun(fname,'-toponly','-quiet');
+    command_list=depfun_limblab(fname,'-toponly','-quiet');
     functionlist=command_list(1);
     for i=2:length(command_list)%skip the first element since that is the calling function
         if strfind(command_list{i},matlabroot)
