@@ -29,6 +29,7 @@ switch method,
             curT = ti(i);
             tau = curT - ts( find( ts >= curT-5*sigma & ts < curT+5*sigma) );
             rate(i) = sum( exp(-tau.^2/(2*sigma^2))/(sqrt(2*pi)*sigma) );
+
         end
     case 'triangle'
         disp('Triangle is not implemented yet');
