@@ -494,3 +494,80 @@ end
 
 set(h_sub,'YLim',[min(cellfun(@min,get(h_sub,'YLim'))) max(cellfun(@max,get(h_sub,'YLim')))])
 
+%% Co-contraction and difference summary
+params.fig_handles(end+1) = figure;
+h_sub = [];
+max_y = 0;
+for iDir = 1:length(RP.perturbation_directions)  
+
+    for iFreq = 1:length(RP.perturbation_frequencies)        
+        idx = intersect(RP.perturbation_directions_idx{iDir},RP.perturbation_frequencies_idx{iFreq});
+        idx = intersect(idx,RP.reward_trials);
+        
+        h_sub(end+1) = subplot(2,3,((iDir-1)*3)+1);
+        hold on
+        emg_sum(iFreq,:) = mean((RP.emg_pert_bmi(idx,:,emg_idx(1)) + RP.emg_pert_bmi(idx,:,emg_idx(2))));
+        emg_sum_mean = mean(emg_sum(iFreq,RP.t_pert_bmi > .5));
+        emg_sum_std = std(emg_sum(iFreq,RP.t_pert_bmi > .5));
+        emg_sum_sem = 1.96*emg_sum_std/sqrt(sum(RP.t_pert_bmi > .5));
+        bar(iFreq,emg_sum_mean,'FaceColor',RP.perturbation_frequency_colors(iFreq,:))
+        plot([iFreq iFreq],[emg_sum_mean emg_sum_mean+emg_sum_std],'-k')
+        if iFreq == 2
+            [h,p] = ttest2(emg_sum(1,:),emg_sum(2,:));
+            if iDir == 1
+                title({'EMG sum';'';['p = ' num2str(p)]})
+                set(gca,'XTickLabel',[])
+            else
+                title(['p = ' num2str(p)])
+                set(gca,'XTick',0:3)
+                set(gca,'XTickLabel',{'','Slow','Fast',''})
+            end
+        end      
+        
+        h_sub(end+1) = subplot(2,3,((iDir-1)*3)+2);
+        hold on
+        cocon_temp(iFreq,:) = mean(RP.emg_cocontraction_bmi_bi_tri(idx,:));        
+        cocon_mean = mean(cocon_temp(iFreq,RP.t_pert_bmi > .5));
+        cocon_std = std(cocon_temp(iFreq,RP.t_pert_bmi > .5));
+        cocon_sem = 1.96*cocon_std/sqrt(sum(RP.t_pert_bmi > .5));
+        bar(iFreq,cocon_mean,'FaceColor',RP.perturbation_frequency_colors(iFreq,:))
+        plot([iFreq iFreq],[cocon_mean cocon_mean+cocon_std],'-k')
+        if iFreq == 2
+            [h,p] = ttest2(cocon_temp(1,:),cocon_temp(2,:));        
+            if iDir == 1
+                title({'Co-contraction';'index';['p = ' num2str(p)]})
+                set(gca,'XTickLabel',[])
+            else
+                title(['p = ' num2str(p)])
+                set(gca,'XTick',0:3)
+                set(gca,'XTickLabel',{'','Slow','Fast',''})
+            end
+        end
+        
+        h_sub(end+1) = subplot(2,3,((iDir-1)*3)+3);
+        hold on
+        emg_diff(iFreq,:) = mean((RP.emg_pert_bmi(idx,:,emg_idx(1)) - RP.emg_pert_bmi(idx,:,emg_idx(2))));
+        emg_diff_mean = mean(emg_diff(iFreq,RP.t_pert_bmi > .5));
+        emg_diff_std = std(emg_diff(iFreq,RP.t_pert_bmi > .5));
+        emg_diff_sem = 1.96*emg_diff_std/sqrt(sum(RP.t_pert_bmi > .5));
+        bar(iFreq,emg_diff_mean,'FaceColor',RP.perturbation_frequency_colors(iFreq,:)) 
+        plot([iFreq iFreq],[emg_diff_mean emg_diff_mean+emg_diff_std],'-k')
+        if iFreq == 2
+            [h,p] = ttest2(emg_diff(1,:),emg_diff(2,:));
+            if iDir == 1
+                title({'EMG diff';'';['p = ' num2str(p)]})
+                set(gca,'XTickLabel',[])
+            else
+                title(['p = ' num2str(p)])
+                set(gca,'XTick',0:3)
+                set(gca,'XTickLabel',{'','Slow','Fast',''})
+            end
+        end
+    end    
+  
+end
+set(h_sub,'XLim',[0 3])
+set(h_sub([1 7]),'YLim',[0 max(max(cell2mat(get(h_sub([1 7]),'YLim'))))])
+set(h_sub([2 8]),'YLim',[0 max(max(cell2mat(get(h_sub([2 8]),'YLim'))))])
+temp = max(max(abs(cell2mat(get(h_sub([3 9]),'YLim')))));
+set(h_sub([3 9]),'YLim',[-temp temp])
