@@ -83,9 +83,13 @@ function DVMax_checker()
             body_weight_idx = cellfun(@strfind,data(body_weight_entries,5),repmat({'Weight: '},length(body_weight_entries),1),'UniformOutput',false);
             units_idx = cellfun(@strfind,data(body_weight_entries,5),repmat({'Units: '},length(body_weight_entries),1),'UniformOutput',false);
             units_idx_2 = cellfun(@strfind,data(body_weight_entries,5),repmat({'(kg)'},length(body_weight_entries),1),'UniformOutput',false);
+            units_idx_3 = cellfun(@strfind,data(body_weight_entries,5),repmat({'kg'},length(body_weight_entries),1),'UniformOutput',false);
             units_idx(cellfun(@isempty,units_idx)) = {inf};
             units_idx_2(cellfun(@isempty,units_idx_2)) = {inf};
+            units_idx_3(cellfun(@isempty,units_idx_3)) = {inf};
+            units_idx_3 = cellfun(@min,units_idx_3);
             units_idx = cellfun(@min,units_idx,units_idx_2);
+            units_idx = min(units_idx,units_idx_3);
             animalList(iMonkey).body_weight = [];
             animalList(iMonkey).body_weight_date = [];
             for iEntry = 1:length(body_weight_entries)
