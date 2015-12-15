@@ -104,6 +104,7 @@ function getWFTaskTable(cds,times)
     trialsTable.Properties.VariableDescriptions={'outer target onset time','go cue time','ID number of outer target','x-y pairs for upper left and lower right target corners','flag indicating if the trial was a catch trial','flag indicating if the trial was an adaptation trial'};
     trialsTable=[times,trialsTable];
     trialsTable.Properties.Description='Trial table for the WF task';
-    cds.setField('trials',trialsTable)
     
+    %cds.setField('trials',trialsTable)
+    set(cds,'trials',trialsTable)
 end

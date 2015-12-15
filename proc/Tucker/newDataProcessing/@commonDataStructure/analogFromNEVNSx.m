@@ -48,7 +48,7 @@ function analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             %get a time vector t for this sampling frequency
             t = ([0:length(a(:,1))-1]' / frequencies(i));
             %convert the matrix of data into a table:
-            analogData{i}=array2table([t,a],'VariableNames',[{'t'},NSxInfo.NSx_labels(analogList(subset))]);
+            analogData{i}=array2table([t,a],'VariableNames',[{'t'};NSxInfo.NSx_labels(analogList(subset))]);
             analogData{i}.Properties.VariableDescriptions=[{'time'},repmat({'analog data'},1,numel(subset))];
             analogData{i}.Properties.Description=['table of analog data with collection frequency of: ', num2str(frequencies(i))];
         end

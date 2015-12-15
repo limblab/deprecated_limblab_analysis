@@ -7,5 +7,5 @@ function addProblem(cds,problem)
     %cds.meta.knownProbelems property
     meta=cds.meta;
     meta.knownProblems(end+1)={problem};
-    cds.setField('meta',meta)
+    set(cds,'meta',meta)
 end

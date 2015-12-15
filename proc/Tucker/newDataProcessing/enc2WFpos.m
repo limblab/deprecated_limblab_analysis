@@ -7,6 +7,6 @@ function [pos]=enc2WFpos(cds)
 %the second column is 
     
     
-    [enc]=decimateData([cds.enc.t cds.enc.th1/1000 cds.enc.th2/1000],cds.kinFilterConfig);  
+    enc=decimateData([cds.enc.t cds.enc.th1/1000 cds.enc.th2/1000],cds.kinFilterConfig);  
     pos = array2table(enc,'VariableNames',{'t','x','y'});
 end

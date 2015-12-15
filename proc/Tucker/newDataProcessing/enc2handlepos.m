@@ -14,8 +14,7 @@ function pos=enc2handlepos(cds)
     enc(isnan(enc(:,3))) = enc(find(~isnan(enc(:,3)),1,'first'));
     
     enc=[enc(idx:end,1),enc(idx:end,2:3)*2*pi/18000];
-    [enc]=decimateData(enc,cds.kinFilterConfig);    
-    cds.setField('enc',array2table(enc,'VariableNames',{'t','th1','th2'}))
+    [enc]=decimateData(enc,cds.kinFilterConfig); 
     
     % convert encoder angles to x and y
     if cds.meta.lab==2 %If lab2 was used for data collection
@@ -36,9 +35,9 @@ function pos=enc2handlepos(cds)
         end
     else
         l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
-    end            
+    end 
 
-    x = - l1 * sin( cds.enc.th1 ) + l2 * cos( -cds.enc.th2 );
-    y = - l1 * cos( cds.enc.th1 ) - l2 * sin( -cds.enc.th2 );
-    pos=table(cds.enc(:,1),x,y,'VariableNames',{'t','x','y'});
+    x = - l1 * sin( enc(:,2) ) + l2 * cos( -enc(:,3) );
+    y = - l1 * cos( enc(:,2) ) - l2 * sin( -enc(:,3) );
+    pos=table(enc(:,1),x,y,'VariableNames',{'t','x','y'});
 end

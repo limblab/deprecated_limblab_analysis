@@ -34,10 +34,15 @@ function [opts]=getTask(cds,task,opts)
         if isfield(opts,'task') && ~isempty(task) && ~strcmp(opts.task,task)
             error('NEVNSD2cds:BadTask',['The start word codes in this file are not of a type consistent with the user specified task:',temptask] )
         end
-        if isempty(task) 
+        if ~isfield(opts,'task') || isempty(opts.task) 
             warning('getTask:NoTaskSet','cds.getTask was unable to identify the task of this data automatically. Please re-load the data and specify the task used so that trial data can be parsed correctly')
             if ~isfield(opts,'task')
-                task=cds.meta.task;%set it back to whatever is in the cds (default would be 'Unknown')
+                opts.task=cds.meta.task;%set it back to whatever is in the cds (default would be 'Unknown')
             end
+        else
+            meta=cds.meta;
+            meta.task=opts.task;
+            set(cds,'meta',meta)
+            cds.addOperation(mfilename('fullpath'))
         end
 end

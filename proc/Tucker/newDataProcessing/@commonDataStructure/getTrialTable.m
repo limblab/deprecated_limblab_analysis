@@ -51,6 +51,10 @@ function getTrialTable(cds)
     mask=stopTime~=-1;
     times=table([1:sum(mask)]',startTime(mask),stopTime(mask),trialResult(mask),'VariableNames',{'number','startTime','endTime','result'});
     
+    
+    %specific task table code will add operations, so add the operation
+    %for this file here, before we run the task specific code:
+    cds.addOperation(mfilename('fullpath'))
     if ~strcmpi(cds.meta.task,'Unknown')
         %try to get trial data specific to the task
         switch cds.meta.task
@@ -74,6 +78,7 @@ function getTrialTable(cds)
                 warning('getTrialTable:UnknownTask','The task for this data file was not set. Trial table will contain only trial start,stop and result')
         end
     else
-        cds.setField('trials',times)
+        %cds.setField('trials',times)
+        set(cds,'trials',times)
     end
 end
