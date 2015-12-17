@@ -44,7 +44,7 @@ end
 % Bit 1 of every encoder is most significant bit, bit 16 is least
 % significant.
 % Byte 1 = [clock encoder1(1:7)];
-% Byte 2 = [clock encoder1(8) encoder1(9:14)];
+% Byte 2 = [clock encoder1(8:14)];
 % Byte 3 = [clock encoder1(15:16) encoder2(1:5)];
 % Byte 4 = [clock encoder2(6:12)];
 % Byte 5 = [clock encoder2(13:16) 0 0 0];
@@ -96,8 +96,8 @@ elseif encoding_scheme == 1
     
     byteMat = [byteDec(ts_index) byteDec(ts_index+1) byteDec(ts_index+2) byteDec(ts_index+3) byteDec(ts_index+4)];
     
-    s_dec = (bitand(byteMat(:,1),127)*2 + bitshift(byteMat(:,2),-6))*2^8 + bitand(byteMat(:,2),63)*4 + bitshift(byteMat(:,3),-5);
-    e_dec = (bitand(byteMat(:,3),31)*8 + bitshift(byteMat(:,4),-4))*2^8 + bitand(byteMat(:,4),15)*16 + bitshift(byteMat(:,5),-3);
+    s_dec = (bitand(byteMat(:,1),127)*2 + bitshift(byteMat(:,2),-6))*2^8 + bitand(byteMat(:,2),63)*4 + bitshift(byteMat(:,3),-5) - 32765;
+    e_dec = (bitand(byteMat(:,3),31)*8 + bitshift(byteMat(:,4),-4))*2^8 + bitand(byteMat(:,4),15)*16 + bitshift(byteMat(:,5),-3) - 32765;
     
     encoder = [time_stamps(1:end-2) s_dec(1:end-2) e_dec(1:end-2)];
 end
