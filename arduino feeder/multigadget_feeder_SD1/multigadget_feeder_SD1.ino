@@ -45,7 +45,7 @@ int task_type1 = 0; //0 for force-sensitive resistor tasks, 1 for rotary potenti
 int task_type2 = 0; //sensor 2
 int sensor_1_act = 0; //0 for false, 1 for true (sensor active)
 int sensor_2_act = 0; 
-int reward_amount = 0; 
+int reward_amount = 30; //only matters for water
 
 /* variable setup on the SD card:
  *  TXT document named "setup.txt"
@@ -93,43 +93,43 @@ void setup() {
   digitalWrite(9, HIGH); //TODO: remove. always on. 
 
   //read initial conditions from SD card: allows us to switch out conditions without reuploading code
-  SD.begin(4);
-
-  //open file named s_file
-  File s_file = SD.open("setup.txt");
-
-  //if the file isn't over: read until \n
-  char temp[4]; //create a string 4 characters long
-  int i = 0; //var to iterate through string characters
-  int setup_variables[10]; //create an array to store setup variables
-  int j = 0; //var to iterate through setup var array
-
-  while (s_file.available()) { //until the end of the file
-    char next_char = s_file.read();
-    if (next_char != '\n') { //read the next character and put each combination of characters into a string
-      temp[i] = next_char;
-      i++;
+  if(SD.begin(4)){ //if the SD card is in there, do all of this - otherwise it will revert to default values
+    //open file named s_file
+    File s_file = SD.open("setup.txt");
+  
+    //if the file isn't over: read until \n
+    char temp[4]; //create a string 4 characters long
+    int i = 0; //var to iterate through string characters
+    int setup_variables[10]; //create an array to store setup variables
+    int j = 0; //var to iterate through setup var array
+  
+    while (s_file.available()) { //until the end of the file
+      char next_char = s_file.read();
+      if (next_char != '\n') { //read the next character and put each combination of characters into a string
+        temp[i] = next_char;
+        i++;
+      }
+      else { //because of this structure, the setup text file MUST END IN A NEWLINE CHARACTER (or it won't write the last variable)
+        setup_variables[j] = atoi(temp); //convert each string to an integer and add it to the variable array
+        j++;
+        memset(&temp[0], 0, sizeof(temp)); //clear the string array TODO check that this actually makes it null, not int 0
+        i = 0;
+      }
     }
-    else { //because of this structure, the setup text file MUST END IN A NEWLINE CHARACTER (or it won't write the last variable)
-      setup_variables[j] = atoi(temp); //convert each string to an integer and add it to the variable array
-      j++;
-      memset(&temp[0], 0, sizeof(temp)); //clear the string array TODO check that this actually makes it null, not int 0
-      i = 0;
-    }
+  
+    s_file.close();
+  
+    //hard-coded: which variables are assigned to which location in the array
+    th11 = setup_variables[0];
+    th12 = setup_variables[1];
+    th21 = setup_variables[2];
+    th22 = setup_variables[3];
+    rand_threshold = setup_variables[4];
+    reward_type = setup_variables[5];
+    task_type1 = setup_variables[6]; 
+    task_type2 = setup_variables[7];
+    reward_amount = setup_variables[8]; 
   }
-
-  s_file.close();
-
-  //hard-coded: which variables are assigned to which location in the array
-  th11 = setup_variables[0];
-  th12 = setup_variables[1];
-  th21 = setup_variables[2];
-  th22 = setup_variables[3];
-  rand_threshold = setup_variables[4];
-  reward_type = setup_variables[5];
-  task_type1 = setup_variables[6]; 
-  task_type2 = setup_variables[7];
-  reward_amount = setup_variables[8]; 
   
   delay(500);
 }
