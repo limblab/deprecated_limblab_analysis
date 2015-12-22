@@ -1,5 +1,5 @@
 function DVMax_checker()
-    testing = 0;    
+    testing = 1;    
     maintainer_email_address = 'ricardort@gmail.com';
     
     try
@@ -95,6 +95,9 @@ function DVMax_checker()
             for iEntry = 1:length(body_weight_entries)
                 if ~isempty(body_weight_idx{iEntry})
                     try
+                        if ~isempty(str2num(data{body_weight_entries(iEntry),5}(units_idx(iEntry)-2)))
+                            units_idx(iEntry) = units_idx(iEntry)+1;
+                        end
                         animalList(iMonkey).body_weight(end+1) = str2num(data{body_weight_entries(iEntry),5}(body_weight_idx{iEntry}+8 : units_idx(iEntry)-2));
                         animalList(iMonkey).body_weight_date(end+1) = floor(datenum(data{body_weight_entries(iEntry),2}));
                     end
