@@ -21,7 +21,7 @@ int sol_time = 0; //amount of time we've been dispensing water
 int betweenTreats = 1000; //time in ms before monkey can start to earn another treat after receiving one
 bool cycle = false; //determine whether the cycle indicator (to read time per cycle) is high (true) or low (false)
 int active = 0; //amount of time the monkey has been doing the task correctly
-int actTime = 5000; //amount of time the monkey has to do the task to get a treat
+int actTime = 500; //amount of time the monkey has to do the task to get a treat
 
 //Reward (motor and solenoid) control
 int mot_ctr = 0; //current motor step
@@ -59,6 +59,8 @@ int reward_amount = 30; //only matters for water
  *  task_type1 (0 for FSR, 1 for rotary) - first device
  *  task_type2 - second device
  *  TODO reward amount? mostly just for water? -- in ms of open solenoid
+ *  
+ *  MUST END IN A NEWLINE
  */
 
 /*pins used:
@@ -92,8 +94,9 @@ void setup() {
   pinMode(9, OUTPUT); //TODO: remove this once I've tested it with solenoid - an "always on" pin to check wiring.
   digitalWrite(9, HIGH); //TODO: remove. always on. 
 
+  
   //read initial conditions from SD card: allows us to switch out conditions without reuploading code
-  if(SD.begin(4)){ //if the SD card is in there, do all of this - otherwise it will revert to default values
+  if(SD.begin(4)){ //if the SD card is in there, do all of this - otherwise it will stay as default values
     //open file named s_file
     File s_file = SD.open("setup.txt");
   
@@ -145,14 +148,16 @@ void loop() {
   ms_prev = millis(); //reset time for the next loop
   //Serial.print("cycle time: ");
   //Serial.println(ms_incr);
-  if(reward_type = 1){
+
+  if(reward_type == 1){ 
     lastTreat += ms_incr; //add cycle time to time since last treat
   }
-  else if(reward_type = 0){
+  else if(reward_type == 0){
     if(giving_reward){
       sol_time += ms_incr; //add cycle time to time that the solenoid has been active
     }
   }
+
   //Indicate the cycle time via a digital output
   //switch digital out between high and low so we can read timing of cycle (it switches every time)
   if (cycle) {
@@ -169,7 +174,6 @@ void loop() {
     if (reward_type == 1){ turnMotor(); }
     else if (reward_type == 0){ giveWater(); }
   }
-
   //check whether the treat dispenser is in a refractory period or currently dispensing treat
   //if not, read all sensors, blink the correct lights, and pay attention to amount of time the sensors have been activated correctly
   if (canAttempt()) {
@@ -266,10 +270,11 @@ void loop() {
 // Function that turns the motor
 
 void turnMotor () {
+  Serial.println("Turning motor"); 
   // Turn the motor
   if ( mot_ctr < 30 ) { //The limiting number must be divisible by the number of steps or it stops after the first rotation
-    myMotor->step(1, FORWARD, DOUBLE);
-    mot_ctr  += 1;
+    myMotor->step(5, FORWARD, DOUBLE);
+    mot_ctr  += 5;
     digitalWrite( 5, HIGH ); // Turn on the LED that indicates that the motor is turning on
   }
 
@@ -288,16 +293,27 @@ void giveWater () {
   delay(5000); //TODO update this temporary solution (this just turns on the solenoid for 5 seconds but I'll need to write a different function to keep
   //track of how long it's been open and how long it needs to be)
   digitalWrite(solenoid_pin, LOW); 
-*/
+  */
+  Serial.println("giving water"); 
   if (sol_time > reward_amount){ //if the solenoid has been active for more time than the amount dictated, turn it off
+    Serial.print("solenoid is done, solenoid time: ");
+    Serial.println(sol_time); 
     digitalWrite(solenoid_pin, LOW); 
     digitalWrite(5, LOW); //turn off LED indicating whether we're giving a reward
     giving_reward = 0; //done giving the water
-    sol_time == 0;
+    sol_time = 0; //reset the solenoid time for the next round
+    Serial.print("solenoid reset, solenoid time: ");
+    Serial.println(sol_time); 
   }
   else if (sol_time == 0){ //if this is the first iteration of the loop for a specific instance giving a reward
+    Serial.print("Equal; sol_time "); 
+    Serial.println(sol_time); 
     digitalWrite(solenoid_pin, HIGH); 
     digitalWrite(5, HIGH); //turn on LED indicating that we're giving a reward
+  }
+  else{
+    Serial.print("sol_time "); 
+    Serial.println(sol_time); 
   }
   //while waiting for sol_time to reach reward_amount, nothing happens (LED and solenoid stay on by themselves)
 }
