@@ -90,7 +90,7 @@ void setup() {
 void loop() {
 
   delay(1000); 
-  myMotor->step(30, FORWARD, DOUBLE);
+  myMotor->step(102, FORWARD, DOUBLE);
 
 }
 
