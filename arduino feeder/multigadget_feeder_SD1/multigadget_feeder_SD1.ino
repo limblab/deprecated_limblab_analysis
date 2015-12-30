@@ -26,7 +26,7 @@ int actTime = 500; //amount of time the monkey has to do the task to get a treat
 //Reward (motor and solenoid) control
 int mot_ctr = 0; //current motor step
 int giving_reward = 0; //whether we are currently giving a treat (0 = no, 1 = yes)
-int solenoid_pin = 11; //TODO update this to whatever I want it to be forever and ever.
+int solenoid_pin = 9; //TODO update this to whatever I want it to be forever and ever.
 
 //LEDs and LED state
 int goLED1 = 0; //status of "you can do the task" LED for the first sensor (0=LOW, 1=HIGH)
@@ -46,6 +46,7 @@ int task_type2 = 0; //sensor 2
 int sensor_1_act = 0; //0 for false, 1 for true (sensor active)
 int sensor_2_act = 0; 
 int reward_amount = 30; //only matters for water
+int bimanual = 0; //0 for false (unimanual operation - only one device), 1 for true
 
 /* variable setup on the SD card:
  *  TXT document named "setup.txt"
@@ -58,7 +59,9 @@ int reward_amount = 30; //only matters for water
  *  reward_type (0 = water (solenoid), 1 = food (motor))
  *  task_type1 (0 for FSR, 1 for rotary) - first device
  *  task_type2 - second device
- *  TODO reward amount? mostly just for water? -- in ms of open solenoid
+ *  reward amount - only used for water rewards -- in ms of time the solenoid should be open
+ *  unimanual vs bimanual control - 0 for false (unimanual operation - only one device), 1 for true
+ *  amount of time between rewards, in ms
  *  
  *  MUST END IN A NEWLINE
  */
@@ -91,9 +94,6 @@ void setup() {
   pinMode(7, OUTPUT); //LED on device 2 (this turns on with a LOW signal)
   pinMode(8, OUTPUT); //indicator for cycle time
   pinMode(solenoid_pin, OUTPUT); //controls solenoid (if using)
-  pinMode(9, OUTPUT); //TODO: remove this once I've tested it with solenoid - an "always on" pin to check wiring.
-  digitalWrite(9, HIGH); //TODO: remove. always on. 
-
   
   //read initial conditions from SD card: allows us to switch out conditions without reuploading code
   if(SD.begin(4)){ //if the SD card is in there, do all of this - otherwise it will stay as default values
@@ -103,7 +103,7 @@ void setup() {
     //if the file isn't over: read until \n
     char temp[4]; //create a string 4 characters long
     int i = 0; //var to iterate through string characters
-    int setup_variables[10]; //create an array to store setup variables
+    int setup_variables[12]; //create an array to store setup variables
     int j = 0; //var to iterate through setup var array
   
     while (s_file.available()) { //until the end of the file
@@ -132,6 +132,8 @@ void setup() {
     task_type1 = setup_variables[6]; 
     task_type2 = setup_variables[7];
     reward_amount = setup_variables[8]; 
+    bimanual = setup_variables[9]; 
+    betweenTreats = setup_variables[10]; 
   }
   
   delay(500);
@@ -155,6 +157,7 @@ void loop() {
   else if(reward_type == 0){
     if(giving_reward){
       sol_time += ms_incr; //add cycle time to time that the solenoid has been active
+      lastTreat += ms_incr; //add cycle time to time since last reward
     }
   }
 
@@ -174,10 +177,10 @@ void loop() {
     if (reward_type == 1){ turnMotor(); }
     else if (reward_type == 0){ giveWater(); }
   }
+
   //check whether the treat dispenser is in a refractory period or currently dispensing treat
   //if not, read all sensors, blink the correct lights, and pay attention to amount of time the sensors have been activated correctly
   if (canAttempt()) {
-
     bool active_devices[2] = { false }; //initialize an array to track which tasks the monkey is doing correctly
     //defaults to false (0) for all values
 
@@ -211,28 +214,36 @@ void loop() {
    *  what values am I getting? how to hook this up to the existing pcb, if at all? 
    *  software reset - do that 
    */
-
-    if (task_type2 == 0) {
-      //task for second device is FSR: read both sensors
-      //read the sensors
-      int sensor2_1 = analogRead( 2 );     // Read device 2 sensor 1 (in pin 2)
-      int sensor2_2 = analogRead( 3 );     // Read device 2 sensor 2 (in pin 3)
-      
-      //if both device 2 sensors are active, blink the LED for that device
-      if ( sensor2_1 > th21 && sensor2_2 > th22 ) {
-        lastBlink2 += ms_incr;
-        blinkLED(7, goLED2, lastBlink2);
-        active_devices[1] = true; //indicates that the second device is being used correctly
+   
+    if (bimanual) { //if the task is two-handed, read the second sensor (otherwise, ignore it)
+      if (task_type2 == 0) {
+        //task for second device is FSR: read both sensors
+        //read the sensors
+        int sensor2_1 = analogRead( 2 );     // Read device 2 sensor 1 (in pin 2)
+        int sensor2_2 = analogRead( 3 );     // Read device 2 sensor 2 (in pin 3)
+        
+        //if both device 2 sensors are active, blink the LED for that device
+        if ( sensor2_1 > th21 && sensor2_2 > th22 ) {
+          lastBlink2 += ms_incr;
+          blinkLED(7, goLED2, lastBlink2);
+          active_devices[1] = true; //indicates that the second device is being used correctly
+        }
+        else if (goLED2 == 1) {
+          //turn on the device's LED so the monkey knows it can start
+          digitalWrite(7, LOW);
+          goLED2 = 0;
+        }
       }
-      else if (goLED2 == 1) {
-        //turn on the device's LED so the monkey knows it can start
-        digitalWrite(7, LOW);
-        goLED2 = 0;
-      }
-    }
-//TODO implement else case for rotary motion device 2
-
-//TODO test this (the if case has been changed to depend on the variable keeping track of activated devices)
+      //TODO implement else case for rotary motion device 2
+   }
+   
+   else{
+    active_devices[1] = true; //set the device you're not using to always true so that the monkey only
+    //has to activate one device for a reward
+   }
+   
+    //TODO test this (the if case has been changed to depend on the variable keeping track of activated devices)
+    //TODO add the unimanual control option
     //if all devices are activated correctly, start counting
     if ( active_devices[0] == true && active_devices[1] == true ) {
       //count
@@ -270,7 +281,6 @@ void loop() {
 // Function that turns the motor
 
 void turnMotor () {
-  Serial.println("Turning motor"); 
   // Turn the motor
   if ( mot_ctr < 30 ) { //The limiting number must be divisible by the number of steps or it stops after the first rotation
     myMotor->step(5, FORWARD, DOUBLE);
@@ -294,26 +304,15 @@ void giveWater () {
   //track of how long it's been open and how long it needs to be)
   digitalWrite(solenoid_pin, LOW); 
   */
-  Serial.println("giving water"); 
   if (sol_time > reward_amount){ //if the solenoid has been active for more time than the amount dictated, turn it off
-    Serial.print("solenoid is done, solenoid time: ");
-    Serial.println(sol_time); 
-    digitalWrite(solenoid_pin, LOW); 
+    digitalWrite(solenoid_pin, LOW); //turn off the solenoid
     digitalWrite(5, LOW); //turn off LED indicating whether we're giving a reward
     giving_reward = 0; //done giving the water
     sol_time = 0; //reset the solenoid time for the next round
-    Serial.print("solenoid reset, solenoid time: ");
-    Serial.println(sol_time); 
   }
   else if (sol_time == 0){ //if this is the first iteration of the loop for a specific instance giving a reward
-    Serial.print("Equal; sol_time "); 
-    Serial.println(sol_time); 
     digitalWrite(solenoid_pin, HIGH); 
     digitalWrite(5, HIGH); //turn on LED indicating that we're giving a reward
-  }
-  else{
-    Serial.print("sol_time "); 
-    Serial.println(sol_time); 
   }
   //while waiting for sol_time to reach reward_amount, nothing happens (LED and solenoid stay on by themselves)
 }
