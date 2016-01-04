@@ -31,10 +31,10 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     
     %now that we have the encoder strobes, convert those to actual encoder values    
     jumpTimes=[];
-    if opts.ignore_jumps
+    if opts.ignore_jumps || ~isfield(NEVNSx.MetaTags,'FileSepTime')
         enc = strobed2encoder(encStrobes,[0 cds.meta.duration]);
     else
-        [enc, jumpTimes]= strobed2encoder(encStrobes,cds.meta.fileSepTime);
+        [enc, jumpTimes]= strobed2encoder(encStrobes,NEVNSx.MetaTags.FileSepTime);
         if ~isempty(jumpTimes)
             %insert a 'known problem' entry
             cds.addProblem('encoder data contains jumps in encoder output. These have been corrected in software by offsetting the data after the jump')
@@ -45,7 +45,7 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     skips=[];
     %check whether the encoder signal is mangled and make a log of jumps in
     %the times:
-    temp=mode(diff(cds.enc.t));
+    temp=mode(diff(enc(:,1)));
     %get our sig, figs for rounding based on the nominal sampling rate:
     SF=0;
     while temp<1
@@ -69,7 +69,8 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         enc=[newtime',interp1(enc(:,1),enc(:,2:3),newtime)];
     end
     enc=array2table(enc,'VariableNames',{'t','th1','th2'});
-    cds.setField('enc',enc)
+    %cds.setField('enc',enc)
+    set(cds,'enc',enc)
     clear enc
     
     %convert encoders to position:
@@ -93,9 +94,9 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         %convert jump times to window using the pad range:
         jumpTimes=[jumpTimes-pad,jumpTimes+pad];
     end
-    if ~isempty(cds.meta.fileSepTime)
+    if isfield(NEVNSx.MetaTags,'FileSepTime') & ~isempty(NEVNSx.MetaTags.FileSepTime)
         %pad the file separation times and append to the jump times:
-        jumpTimes=[jumpTimes;[cds.meta.fileSepTime(:,1)-pad,cds.meta.fileSepTime(:,2)+pad]];
+        jumpTimes=[jumpTimes;[NEVNSx.MetaTags.FileSepTime(:,1)-pad,NEVNSx.MetaTags.FileSepTime(:,2)+pad]];
     end
     if ~isempty(skips)
         %pad the encoder skip times and append to the jump times:
@@ -109,7 +110,7 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     goodData=ones(size(pos(:,1)));
     temp=[];
     for i=1:size(jumpTimes,1)
-        range=[find(pos.t{:,:}>=jumpTimes(i,1),1,'first'),find( pos.t{:,:}<=jumpTimes(i,2),1,'last')];
+        range=[find(pos.t(:,:)>=jumpTimes(i,1),1,'first'),find( pos.t(:,:)<=jumpTimes(i,2),1,'last')];
         %if there are no points inside the window, as the case with
         %fileseparateions, the first point of range will be larger than the
         %second. Thus we use min and max to get the actual window for all
@@ -119,40 +120,41 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     if ~isempty(temp)
         goodData(temp)=0;
     end
-    %find still periods:
+    %find still periods, and build table of kinematics flags:
     still=is_still(sqrt(pos.x.^2+pos.y.^2));
-    %append the goodData flag vector, and still vector to pos
-    pos=[pos,table(still,goodData,'VariableNames',{'still','good'})];
+    dataFlags=table(pos.t,still,goodData,'VariableNames',{'t','still','good'});
+    dataFlags.Properties.VariableUnits={'s','bool','bool'};
+    dataFlags.Properties.VariableDescriptions={'time','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
+    dataFlags.Properties.Description='data flags indicating qualities of the data. Still indicates that the position from the encoder stream was not changing. good indicates the data is free of known problems such as encoder jumps or file concatenation artifacts';
+    set(cds,'dataFlags',dataFlags)
+    
     %configure labels on pos
-    pos.Properties.VariableUnits={'s','cm','cm','bool','bool'};
-    pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
+    pos.Properties.VariableUnits={'s','cm','cm'};
+    pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates'};
     pos.Properties.Description='For the robot this will be handle position, for other tasks this is whatever is fed into the encoder stream';
-    %cds.setField('pos',pos);
     set(cds,'pos',pos)
     clear pos
     %use cds.pos to compute vel:
     vx=gradient(cds.pos.x,1/cds.kinFilterConfig.SR);
     vy=gradient(cds.pos.y,1/cds.kinFilterConfig.SR);
-    vel=table(cds.pos.t,vx,vy,cds.pos.still,cds.pos.good,'VariableNames',{'t','vx','vy','still','good'});
+    vel=table(cds.pos.t,vx,vy,'VariableNames',{'t','vx','vy'});
     clear vx
     clear vy
-    vel.Properties.VariableUnits={'s','cm/s','cm/s','bool','bool'};
-    vel.Properties.VariableDescriptions={'time','x velocity in room coordinates. ','y velocity in room coordinates','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
+    vel.Properties.VariableUnits={'s','cm/s','cm/s'};
+    vel.Properties.VariableDescriptions={'time','x velocity in room coordinates. ','y velocity in room coordinates'};
     vel.Properties.Description='For the robot this will be handle velocity. For all tasks this is the derivitive of position';
-    %cds.setField('vel',vel)
     set(cds,'vel',vel)
     clear vel
+    %use cds.vel to compute acc:
     ax=gradient(cds.vel.vx,1/cds.kinFilterConfig.SR);
     ay=gradient(cds.vel.vy,1/cds.kinFilterConfig.SR);
-    acc=table(cds.pos.t,ax,ay,cds.pos.still,cds.pos.good,'VariableNames',{'t','ax','ay','still','good'});
+    acc=table(cds.pos.t,ax,ay,'VariableNames',{'t','ax','ay'});
     clear ax
     clear ay
-    acc.Properties.VariableUnits={'s','cm/s^2','cm/s^2','bool','bool'};
-    acc.Properties.VariableDescriptions={'time','x acceleration in room coordinates. ','y acceleration in room coordinates','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
+    acc.Properties.VariableUnits={'s','cm/s^2','cm/s^2'};
+    acc.Properties.VariableDescriptions={'time','x acceleration in room coordinates. ','y acceleration in room coordinates'};
     acc.Properties.Description='For the robot this will be handle acceleration. For all tasks this is the derivitive of velocity';
-    %cds.setField('acc',acc)
     set(cds,'acc',acc)
-    %clear acc
     
     cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig);
 end
