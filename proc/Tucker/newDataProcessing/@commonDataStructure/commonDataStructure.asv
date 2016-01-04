@@ -349,12 +349,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         %
         %static methods are methods that d not operate on an instance of
         %the class, but instead use only passed variables and functions to
-        %generate output. Non-static methods operate on a specific instance
-        %of the class. When defined non-static methods must take an
-        %instance of the class as the first variable. When called
-        %non-static methods are passed all the additional parameters, but
-        %not the class. The class instance is passed implicitly by calling
-        %the method from a class instance.
+        %generate output. Non
         
         %data loading functions:
         bdf2cds(cds,bdf)
