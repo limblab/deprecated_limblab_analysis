@@ -16,12 +16,12 @@ unsigned long ms_prev = 0; //the time in ms from initialization of the program, 
 unsigned long ms_incr; //the amount of time that passed while the program executed a loop
 int lastBlink1 = 0; //time since last blink of LED for sensor 1
 int lastBlink2 = 0; //time since last blink of LED for sensor 2
-int lastTreat = 1000; //time in ms since last treat was given to the monkey (start at or above [betweenTreats] number to eliminate first-time delay)
+int lastTreat = 2000; //time in ms since last treat was given to the monkey (start at or above [betweenTreats] number to eliminate first-time delay)
 int sol_time = 0; //amount of time we've been dispensing water
-int betweenTreats = 1000; //time in ms before monkey can start to earn another treat after receiving one
+int betweenTreats = 2000; //time in ms before monkey can start to earn another treat after receiving one
 bool cycle = false; //determine whether the cycle indicator (to read time per cycle) is high (true) or low (false)
 int active = 0; //amount of time the monkey has been doing the task correctly
-int actTime = 500; //amount of time the monkey has to do the task to get a treat
+int actTime = 3000; //amount of time the monkey has to do the task to get a treat
 
 //Reward (motor and solenoid) control
 int mot_ctr = 0; //current motor step
@@ -40,13 +40,12 @@ int th22 = 100; //threshold for device 2, sensor 2
 int rand_threshold = 100; //% of times the monkey receives a treat 
 
 //file management
-int reward_type = 1; //0 for water (solenoid), 1 for dry food (motor)
-int task_type1 = 0; //0 for force-sensitive resistor tasks, 1 for rotary potentiometer tasks - sensor 1
+int reward_type = 0; //0 for water (solenoid), 1 for dry food (motor)
+int task_type1 = 0; //0 for force-sensitive resistor tasks, 1 for rotary potentiometer tasks, 2 for not using - sensor 1
 int task_type2 = 0; //sensor 2
 int sensor_1_act = 0; //0 for false, 1 for true (sensor active)
 int sensor_2_act = 0; 
-int reward_amount = 30; //only matters for water
-int bimanual = 0; //0 for false (unimanual operation - only one device), 1 for true
+int reward_amount = 1000; //only matters for water
 
 /* variable setup on the SD card:
  *  TXT document named "setup.txt"
@@ -60,8 +59,7 @@ int bimanual = 0; //0 for false (unimanual operation - only one device), 1 for t
  *  task_type1 (0 for FSR, 1 for rotary) - first device
  *  task_type2 - second device
  *  reward amount - only used for water rewards -- in ms of time the solenoid should be open
- *  unimanual vs bimanual control - 0 for false (unimanual operation - only one device), 1 for true
- *  amount of time between rewards, in ms
+ *  between treats - amount of time between the rewards in ms
  *  
  *  MUST END IN A NEWLINE
  */
@@ -115,13 +113,17 @@ void setup() {
       else { //because of this structure, the setup text file MUST END IN A NEWLINE CHARACTER (or it won't write the last variable)
         setup_variables[j] = atoi(temp); //convert each string to an integer and add it to the variable array
         j++;
-        memset(&temp[0], 0, sizeof(temp)); //clear the string array TODO check that this actually makes it null, not int 0
+        memset(&temp[0], 0, sizeof(temp)); //clear the string array
         i = 0;
       }
     }
   
     s_file.close();
-  
+
+    for (int i=0; i<sizeof(setup_variables); i++){
+      Serial.println(setup_variables[i]); 
+    }
+    
     //hard-coded: which variables are assigned to which location in the array
     th11 = setup_variables[0];
     th12 = setup_variables[1];
@@ -132,14 +134,14 @@ void setup() {
     task_type1 = setup_variables[6]; 
     task_type2 = setup_variables[7];
     reward_amount = setup_variables[8]; 
-    bimanual = setup_variables[9]; 
-    betweenTreats = setup_variables[10]; 
+    betweenTreats = setup_variables[9]; 
   }
-  
+  Serial.println("exiting setup loop now"); 
   delay(500);
 }
 
 void loop() {
+  Serial.println("loop"); 
   
   //keep track of time per loop
   ms_incr = millis() - ms_prev; //get time since the last delay (not including delay)
@@ -157,8 +159,8 @@ void loop() {
   else if(reward_type == 0){
     if(giving_reward){
       sol_time += ms_incr; //add cycle time to time that the solenoid has been active
-      lastTreat += ms_incr; //add cycle time to time since last reward
     }
+    lastTreat += ms_incr; //add cycle time to time since last reward
   }
 
   //Indicate the cycle time via a digital output
@@ -181,6 +183,7 @@ void loop() {
   //check whether the treat dispenser is in a refractory period or currently dispensing treat
   //if not, read all sensors, blink the correct lights, and pay attention to amount of time the sensors have been activated correctly
   if (canAttempt()) {
+    //Serial.println("can attempt"); 
     bool active_devices[2] = { false }; //initialize an array to track which tasks the monkey is doing correctly
     //defaults to false (0) for all values
 
@@ -214,36 +217,41 @@ void loop() {
    *  what values am I getting? how to hook this up to the existing pcb, if at all? 
    *  software reset - do that 
    */
-   
-    if (bimanual) { //if the task is two-handed, read the second sensor (otherwise, ignore it)
-      if (task_type2 == 0) {
-        //task for second device is FSR: read both sensors
-        //read the sensors
-        int sensor2_1 = analogRead( 2 );     // Read device 2 sensor 1 (in pin 2)
-        int sensor2_2 = analogRead( 3 );     // Read device 2 sensor 2 (in pin 3)
-        
-        //if both device 2 sensors are active, blink the LED for that device
-        if ( sensor2_1 > th21 && sensor2_2 > th22 ) {
-          lastBlink2 += ms_incr;
-          blinkLED(7, goLED2, lastBlink2);
-          active_devices[1] = true; //indicates that the second device is being used correctly
-        }
-        else if (goLED2 == 1) {
-          //turn on the device's LED so the monkey knows it can start
-          digitalWrite(7, LOW);
-          goLED2 = 0;
-        }
-      }
-      //TODO implement else case for rotary motion device 2
+   else{ //task type is 2 - we're not using this sensor
+    active_devices[0] = true; //set the device you're not using to always true so that the monkey only
+    //has to activate one device for a reward
    }
    
-   else{
+   if (task_type2 == 0) {
+      //task for second device is FSR: read both sensors
+      //read the sensors
+      int sensor2_1 = analogRead( 2 );     // Read device 2 sensor 1 (in pin 2)
+      int sensor2_2 = analogRead( 3 );     // Read device 2 sensor 2 (in pin 3)
+      
+      //if both device 2 sensors are active, blink the LED for that device
+      if ( sensor2_1 > th21 && sensor2_2 > th22 ) {
+        lastBlink2 += ms_incr;
+        blinkLED(7, goLED2, lastBlink2);
+        active_devices[1] = true; //indicates that the second device is being used correctly
+      }
+      else if (goLED2 == 1) {
+        //turn on the device's LED so the monkey knows it can start
+        digitalWrite(7, LOW);
+        goLED2 = 0;
+      }
+   }
+    //TODO implement else case for rotary motion device 2
+
+   else if (task_type2 == 1) {
+      //task is rotary: read only the first sensor
+      //how is this going to work? compare to the last value? check if it has peaked? uhm. 
+    }
+   
+   else{ //task type is 2 - we're not using this sensor
     active_devices[1] = true; //set the device you're not using to always true so that the monkey only
     //has to activate one device for a reward
    }
    
-    //TODO test this (the if case has been changed to depend on the variable keeping track of activated devices)
-    //TODO add the unimanual control option
     //if all devices are activated correctly, start counting
     if ( active_devices[0] == true && active_devices[1] == true ) {
       //count
@@ -265,6 +273,7 @@ void loop() {
     }
   }
   else { //monkey can't attempt task and must wait
+    //Serial.println("wait"); 
     //turn off LEDs for both devices
     digitalWrite(6, HIGH); //High and low are switched
     digitalWrite(7, HIGH);
@@ -297,14 +306,10 @@ void turnMotor () {
 
 //TODO make and test Function that turns on solenoid to reward monkey
 void giveWater () {
+  //Serial.println("givewater"); 
   //turn on solenoid
-  /* TODO remove this section if the below section works
-  digitalWrite(solenoid_pin, HIGH); 
-  delay(5000); //TODO update this temporary solution (this just turns on the solenoid for 5 seconds but I'll need to write a different function to keep
-  //track of how long it's been open and how long it needs to be)
-  digitalWrite(solenoid_pin, LOW); 
-  */
   if (sol_time > reward_amount){ //if the solenoid has been active for more time than the amount dictated, turn it off
+    //Serial.println("done giving water"); 
     digitalWrite(solenoid_pin, LOW); //turn off the solenoid
     digitalWrite(5, LOW); //turn off LED indicating whether we're giving a reward
     giving_reward = 0; //done giving the water
@@ -339,6 +344,9 @@ void blinkLED(int ledPin, int &ledState, int &lastBlink) { //use references so w
 // Function that tests if the monkey can proceed
 // (has it been more than [betweenTreats] milliseconds since the last treat)
 bool canAttempt() {
+  //Serial.println("can attempt"); 
+  //Serial.print("last treat: ");
+  //Serial.println(lastTreat);  
   if (lastTreat >= betweenTreats) { //if time since last treat was dispensed is greater than the waiting period
     lastTreat = betweenTreats; //reset this value so it doesn't get obscenely high
     if (giving_reward == 0) {
@@ -352,9 +360,3 @@ bool canAttempt() {
     return false; //monkey can't attempt task yet
   }
 }
-
-
-
-
-
-
