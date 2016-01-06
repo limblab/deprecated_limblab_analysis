@@ -368,6 +368,10 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             metaFromNEVNSx(cds,NEVNSx,opts)
+        appendFile2cds(cds,folderPath,fileName,varargin)
+        appendNEVNSx2cds(cds,NEVNSx,varargin)
+        mergeFile2cds(cds,folderPath,fileName,varargin)
+        mergeNEVNSx2cds(cds,NEVNSx,varargin)
         %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
         writeSessionSummary(cds)
@@ -389,6 +393,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         refilterLFP(cds)
         bds=cds2bds(cds)
         sanitizeTimeWindows(cds)
+        
     end
 end
         

@@ -349,7 +349,12 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         %
         %static methods are methods that d not operate on an instance of
         %the class, but instead use only passed variables and functions to
-        %generate output. Non
+        %generate output. Non-static methods operate on a specific instance
+        %of the class. When defined non-static methods must take an
+        %instance of the class as the first variable. When called
+        %non-static methods are passed all the additional parameters, but
+        %not the class. The class instance is passed implicitly by calling
+        %the method from a class instance.
         
         %data loading functions:
         bdf2cds(cds,bdf)
@@ -363,6 +368,9 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             metaFromNEVNSx(cds,NEVNSx,opts)
+        appendFile2cds(cds,folderPath,fileName,varargin)
+        appendNEVNSx2cds(cds,NEVNSx,varargin)
+        mergeFile2cds()
         %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
         writeSessionSummary(cds)
@@ -384,6 +392,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         refilterLFP(cds)
         bds=cds2bds(cds)
         sanitizeTimeWindows(cds)
+        
     end
 end
         
