@@ -1,4 +1,5 @@
 trial_spikes = cell(length(trains),1);
+%
 spike_counts = zeros(length(trains),length(trials2));
 for i = 1:length(trials2)
     for j = 1:length(trains)
