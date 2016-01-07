@@ -35,14 +35,21 @@ kinect_times  = match_squarewave_main( bdf, led_vals, times, kinect_start_guess,
 
 rotation_known=0; %Whether the rotation matrix is already known (from another file from that day)
 
-%% 4a. Get handle information
+%% 4a. Get Translation and Rotation
 
-handle_pos = bdf.pos(:,2:3);
-handle_times = bdf.pos(:,1); %This should be the same as analog_ts
+if ~rotation_known
+    [ T,R ] = get_translation_rotation( bdf, all_medians );
+    %Save a file w/ T and R, so it can be used for other files from the
+    %same day
+else
+    %Else load a file that has T and R
+
+end
 
 
+%% 4b. Perform Translation and Rotation on the kinect data
 
-
+[ kinect_pos,kinect_pos2 ] = do_translation_rotation( all_medians, all_medians2, T, R );
 
 %% 5. Put Kinect data into bdf
 
