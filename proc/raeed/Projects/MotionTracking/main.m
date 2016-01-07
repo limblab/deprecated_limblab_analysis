@@ -35,22 +35,56 @@ kinect_times  = match_squarewave_main( bdf, led_vals, times, kinect_start_guess,
 
 rotation_known=0; %Whether the rotation matrix is already known (from another file from that day)
 
-%% 4a. Get Translation and Rotation
+%% 4a. Plot handle to determine some points to remove
+%We want to remove the time points when the monkey has thrown away the
+%handle, since then the hand won't be at the same position as the handle
+if ~rotation_known
+    figure; scatter(handle_pos_ds(:,1),handle_pos_ds(:,2))
+%Note- this plot can be removed if the limits (below) are always the same
+end
+%% 4b. Set limits of handle points
+%We'll remove times when the handle is outside these limits
+if ~rotation_known
+    x_lim_handle=[-10,10]; %x limits (min and max)
+    y_lim_handle=[-55,-35]; %y limits (min and max)
+end
+
+%% 4c. Get Translation and Rotation
 
 if ~rotation_known
-    [ T,R ] = get_translation_rotation( bdf, all_medians );
+    plot_flag=1;
+    [ R, Tpre, Tpost, times_good, pos_h, colors_xy ] = get_translation_rotation( bdf, all_medians, x_lim_handle, y_lim_handle, plot_flag );
     %Save a file w/ T and R, so it can be used for other files from the
     %same day
 else
     %Else load a file that has T and R
-
 end
 
 
 %% 4b. Perform Translation and Rotation on the kinect data
 
-[ kinect_pos,kinect_pos2 ] = do_translation_rotation( all_medians, all_medians2, T, R );
+plot_flag=1;
+[ kinect_pos,kinect_pos2 ] = do_translation_rotation( all_medians, all_medians2, R, Tpre, Tpost, plot_flag, times_good, pos_h, colors_xy );
 
-%% 5. Put Kinect data into bdf
+%% 5. FIND TIMES TO EXCLUDE (BECAUSE THE MONKEY THROUGH AWAY THE HANDLE)
 
-%% 6. Put Kinect motion tracking data into trc format
+%% 5a. Calculate the distances of the hand marker to the handle (and plot)
+%This can be used to determine times when the monkey has thrown away the
+%handle
+
+k=reshape(kinect_pos(3,:,:),[3,n_times]);
+h=handle_pos_ds;
+h(:,3)=0;
+
+err=NaN(1,n_times);
+for i=1:n_times    
+    err(i)=pdist2(k(:,i)',h(i,:));
+end
+
+figure; plot(err)
+
+%This can be used in combination w/ the z-force
+
+%% 6. PUT KINECT DATA INTO BDF
+
+%% 7. PUT KINECT MOTION TRACKING DATA INTO TRC FORMAT

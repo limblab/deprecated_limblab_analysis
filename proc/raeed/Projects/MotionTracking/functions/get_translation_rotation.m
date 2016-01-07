@@ -1,12 +1,27 @@
-function [ T,R ] = get_translation_rotation( bdf, all_medians )
-%UNTITLED5 Summary of this function goes here
-%   Detailed explanation goes here
+function [ R, Tpre, Tpost, times_good, pos_h, colors_xy ] = get_translation_rotation( bdf, all_medians, x_lim_handle, y_lim_handle, plot_flag )
+
+%This function finds the translation and rotation that are necessary for
+%converting the kinect markers into handle coordinates
+
+%Inputs:
+%bdf - cerebus file that contains handle information
+%all_medians - kinect marker locations
+%x_lim_handle, y_lim_handle - locations of handle to consider
+%plot_flag - whether to plot the results
+
+%Outputs:
+%R - rotation matrix (to rotate the kinect positions)
+%Tpre - translation of the kinect needed prior to rotation
+%Tpost - translation of the kinect needed after rotation (to put back in
+%handle coordinates)
+
+%Note that the output times_good, pos_h, colors_xy, are all just
+%used for making sure this works (via a plot). These can later be removed
 
 %% 4a. Get handle information
 
 handle_pos = bdf.pos(:,2:3);
 handle_times = bdf.pos(:,1); %This should be the same as analog_ts
-
 
 %% Get the handle times that correspond to the kinect times
 
@@ -26,16 +41,6 @@ end
 handle_times_ds=handle_times(handle_time_idxs); %These are the handle times that correspond to all the kinect times
 handle_pos_ds=handle_pos(handle_time_idxs,:); %The handle positions at all the kinect times
 
-%% Plot handle to determine some points to remove
-
-figure; scatter(handle_pos_ds(:,1),handle_pos_ds(:,2))
-%Note- this plot can be removed if the limits (below) are always the same
-
-%% Set limits of handle points
-%We'll remove times when the handle is outside these limits
-
-x_lim_handle=[-10,10]; %x limits (min and max)
-y_lim_handle=[-55,-35]; %y limits (min and max)
 
 %% Find time points that we need to remove (for several reasons)
 
@@ -62,9 +67,7 @@ times_good=~missing' & missing_smooth<.2 & ~kin_early' & ~kin_late'...
     & handle_pos_ds(:,1)>x_lim_handle(1) & handle_pos_ds(:,1)<x_lim_handle(2) & handle_pos_ds(:,2)>y_lim_handle(1) & handle_pos_ds(:,2)<y_lim_handle(2);
 
 %Get times and positions for the kinect and handle to be compared
-kinect_times_good=kinect_times(times_good); %Times that are good
 kin_pos_good=kin_pos(:,times_good);
-handle_times_ds_good=handle_times_ds(times_good);
 handle_pos_ds_good=handle_pos_ds(times_good,:);
 
 %% Align
@@ -85,47 +88,35 @@ pos_k=pos_k*100;
 pos_k_shift=pos_k-repmat(mean(pos_k),[size(pos_k,1),1]);
 pos_h_shift=pos_h-repmat(mean(pos_h),[size(pos_h,1),1]);
 
-%Find the rotation that 
+%Find the rotation that
 [ pos_k_shift_rotate, R, q, fmin ] = rotate_match_func2( pos_k_shift, pos_h_shift );
+
+Tpre=mean(pos_k); %The shift that was needed of the kinect positions prior to rotation
+Tpost=mean(pos_h); %The shift that is needed after rotation to put back into handle coordinates
+Tpost(3)=0; %Assume handle is at z=0
 
 %% Plot to make sure it worked
 
-%This section can be removed (or put inside an if statement) when we're confident
-
-%Make color map
-xVal=(pos_h(:,1)-min(pos_h(:,1)))/max(pos_h(:,1)-min(pos_h(:,1)));
-yVal=(pos_h(:,2)-min(pos_h(:,2)))/max(pos_h(:,2)-min(pos_h(:,2)));
-colors_xy = [.6*ones(size(xVal)),xVal,yVal];
-
-%Plot the kinect points that have been rotated (with coloring based on where
-%the handles initially were)
-figure; scatter3(pos_k_shift_rotate(:,1),pos_k_shift_rotate(:,2),pos_k_shift_rotate(:,3),[],colors_xy,'fill')
-title('Kinect')
-xlim([-15 15]);
-ylim([-15 15]);
-zlim([-15 15]);
-
-%Plot the handle points
-figure; scatter3(pos_h_shift(:,1),pos_h_shift(:,2),pos_h_shift(:,3),[],colors_xy,'fill')
-title('Handle')
-
-
-
-%% Calculate the distances of the hand marker to the handle (and plot)
-%This can be used to determine times when the monkey has thrown away the
-%handle
-
-k=reshape(kinect_pos(3,:,:),[3,n_times]);
-h=handle_pos_ds;
-h(:,3)=0;
-
-err=NaN(1,n_times);
-for i=1:n_times    
-    err(i)=pdist2(k(:,i)',h(i,:));
+if plot_flag
+    
+    %Make color map
+    xVal=(pos_h(:,1)-min(pos_h(:,1)))/max(pos_h(:,1)-min(pos_h(:,1)));
+    yVal=(pos_h(:,2)-min(pos_h(:,2)))/max(pos_h(:,2)-min(pos_h(:,2)));
+    colors_xy = [.6*ones(size(xVal)),xVal,yVal];
+    
+    %Plot the kinect points that have been rotated (with coloring based on where
+    %the handles initially were)
+    figure; scatter3(pos_k_shift_rotate(:,1),pos_k_shift_rotate(:,2),pos_k_shift_rotate(:,3),[],colors_xy,'fill')
+    title('Kinect')
+    xlim([-15 15]);
+    ylim([-15 15]);
+    zlim([-15 15]);
+    
+    %Plot the handle points
+    figure; scatter3(pos_h_shift(:,1),pos_h_shift(:,2),pos_h_shift(:,3),[],colors_xy,'fill')
+    title('Handle')
+    
 end
-
-figure; plot(err)
-
 
 end
 
