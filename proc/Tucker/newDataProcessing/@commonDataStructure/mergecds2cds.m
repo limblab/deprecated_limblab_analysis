@@ -77,11 +77,20 @@ function mergecds2cds(cds,cds2)
                     tstart2=cds2.(dataList{i}).t(1);
                     tend2=cds2.(dataList{i}).t(end);
                     dt2=cds.(dataList{i}).t(2)-tstart;
-                    
+                    %check our frequencies
                     if dt~=dt2
                         error('mergecds2cds:differentFrequency',['Field: ',dataList{i},' was collected at different frequencies in cds and cds2 and cannot be merged. Either re-load both data sets using the same filterspec, or refilter the data in one of the cds structures using decimation to get to the frequencies to match'])
                     end
-                    set(cds,find(cds.(dataList{i}).t>=max(tstart,tstart2),1,'first'),cds.(dataList{i})(find(cds.(dataList{i}).t>=max(tstart,tstart2),1,'first'):find(cds.(dataList{i}).t>=min(tend,tend2),1,'first'),:))
+                    %check if we have duplicate columns:
+                    for j=1:length(cds.(dataList{i}).Properties.VariableNames)
+                        if ~isempty(find(cell2mat({strcmp(cds2.dataList{i}.Properties.VariableNames,cds.dataList{i}.Properties.VariableNames{j})}),1,'first'))
+                            error('mergecds2cds:duplicateColumns',['the column label: ',cds.dataList{i}.Properties.VariableNames{j},' exists in the ',dataList{i},' field of both cds and cds2. All columns in the same field except time must have different labels in order to merge 2 cds structures'])
+                        end
+                    end
+                    mask=cell2mat({~strcmp(cds.dataList{i}.Properties.VariableNames,'t')});
+                    set(cds,dataList{i},...
+                        [cds.(dataList{i})(find(cds.(dataList{i}).t>=max(tstart,tstart2),1,'first'):find(cds.(dataList{i}).t>=min(tend,tend2),1,'first'),:),...
+                        cds2.(dataList{i})(find(cds2.(dataList{i}).t>=max(tstart,tstart2),1,'first'):find(cds2.(dataList{i}).t>=min(tend,tend2),1,'first'),(mask))])
                     
                 end
             end
