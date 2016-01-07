@@ -370,8 +370,10 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             metaFromNEVNSx(cds,NEVNSx,opts)
         appendFile2cds(cds,folderPath,fileName,varargin)
         appendNEVNSx2cds(cds,NEVNSx,varargin)
+        appendcds2cds(cds,cds2)
         mergeFile2cds(cds,folderPath,fileName,varargin)
         mergeNEVNSx2cds(cds,NEVNSx,varargin)
+        mergecds2cds(cds,cds2)
         %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
         writeSessionSummary(cds)

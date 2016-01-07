@@ -1,0 +1,94 @@
+function mergecds2cds(cds,cds2)
+    %this is a method function for the common_data_structure (cds) class, and
+    %should be located in a folder '@common_data_structure' with the class
+    %definition file and other method files
+    %
+    %mergecds2cds(cds,cds2)
+    %loops through data fields in cds2 and merges the data in each field
+    %with the data in the appropriate field of cds. The result will be that
+    %cds contains the original data from both cds and cds2. At present only
+    %the following fields are merged:
+    %pos
+    %vel
+    %acc
+    %force
+    %EMG
+    %LFP
+    %analog
+    %triggers
+    %units
+    %FR
+    %trials         note, trial data is assumed to exist on only one cerebus
+    %               and therefore cannot be merged in any useful sense.
+    %               Instead this function will look at cds and cds2 and use
+    %               whichever trials structure is not empty. If both contain
+    %               non-empty trials structures then a warning will be issued
+    %               and the structure from cds will be used
+    %words          note, words are assumed to exist on only one cerebus
+    %               and therefore cannot be merged in any useful sense.
+    %               Instead this function will look at cds and cds2 and use
+    %               whichever word structure is not empty. If both contain
+    %               non-empty word structures then a warning will be issued
+    %               and the structure from cds will be used
+    %
+    %
+    %mergecds2cds cannot handle multiple columns in the same structure
+    %having the same label. If cds and cds2 have duplicate column labels
+    %then mergecds2cds will fail with an warning. and move on to the next
+    %structure to merge
+    
+    %% merge units
+    
+    %% merge analog
+        for i=1:length(cds.analog)
+            for j=1:length(cds2.analog)
+                %if the frequency of cds.analog{i} is the same as
+                %cds2.analog{j}, then merge cds2.analog{j} into
+                %cds.analog{i}
+                if (cds.analog{i}.t(2)-cds.analog{i}.t(1))==(cds2.analog{j}.t(2)-cds2.analog{j}.t(1))
+                    
+                end
+            end
+        end
+    %% merge things that *should* exist in only one of the cds structures and we have no merge scheme for
+        dataList={'trials','words'};
+        for i=1:length(dataList)
+            incds=~isempty(cds.(dataList{i}));
+            incds2=~isempty(cds2.(dataList{i}));
+            
+            if incds && incds2
+                error('mergecds2dcs:fieldInBothSources',['the field: ',dataList{i},'is populated in both cds and cds2. This field should exist in only one of the cds strutures as we only collect digital data on one cerebus.'])
+            end
+            if incds2
+                set(cds,dataList{i},cds2.(dataList{i}))
+            end
+        end
+    %% merge everything that is a simple table
+        dataList={'pos','vel','acc','force','EMG','LFP','analog','triggers','units','FR'};
+        for i=1:length(dataList)
+            if ~isempty(cds2.(dataList{i}))
+                if isempty(cds.(dataList{i}))
+                    set(cds,dataList{i},cds2.(dataList{i}))
+                else 
+                    %we need to take care of time column which exists in both fields
+                    tstart=cds.(dataList{i}).t(1);
+                    tend=cds.(dataList{i}).t(end);
+                    dt=cds.(dataList{i}).t(2)-tstart;
+                    tstart2=cds2.(dataList{i}).t(1);
+                    tend2=cds2.(dataList{i}).t(end);
+                    dt2=cds.(dataList{i}).t(2)-tstart;
+                    
+                    if dt~=dt2
+                        error('mergecds2cds:differentFrequency',['Field: ',dataList{i},' was collected at different frequencies in cds and cds2 and cannot be merged. Either re-load both data sets using the same filterspec, or refilter the data in one of the cds structures using decimation to get to the frequencies to match'])
+                    end
+                    set(cds,find(cds.(dataList{i}).t>=max(tstart,tstart2),1,'first'),cds.(dataList{i})(find(cds.(dataList{i}).t>=max(tstart,tstart2),1,'first'):find(cds.(dataList{i}).t>=min(tend,tend2),1,'first'),:))
+                    
+                end
+            end
+        end
+        
+    %% log the merge operation
+        s.mergedMeta=cds2.meta;
+        s.merged
+        cds.addOperation(mfilename('fullpath'),cds2.meta)
+end
