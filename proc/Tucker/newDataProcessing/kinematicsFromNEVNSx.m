@@ -68,15 +68,28 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         newtime=enc(1,1):mode(diff(enc(:,1))):enc(end,1);
         enc=[newtime',interp1(enc(:,1),enc(:,2:3),newtime)];
     end
+    % account for mangled encoder timestamps (non-monotonic) and 1s lag
+    % before data collection
+    idx=skip_resets(enc(:,1));
+    if ~isempty(idx)
+        idx=max(idx,find(enc(:,1)>1,1,'first'));
+    else
+        idx=find(enc(:,1)>1,1,'first');
+    end
+    enc(isnan(enc(:,2))) = enc(find(~isnan(enc(:,2)),1,'first')); % when datafile started before encoders were zeroed. carried from old calc_from_raw
+    enc(isnan(enc(:,3))) = enc(find(~isnan(enc(:,3)),1,'first'));
+    
+    enc=[enc(idx:end,1),enc(idx:end,2:3)*2*pi/18000];
+    [enc]=decimateData(enc,cds.kinFilterConfig); 
     enc=array2table(enc,'VariableNames',{'t','th1','th2'});
     cds.setField('enc',enc)
     clear enc
     
     %convert encoders to position:
     if opts.robot
-        pos=enc2handlepos(cds);
+        cds.enc2handlepos(cds);
     else
-        pos=enc2WFpos(cds);
+        cds.enc2WFpos(cds);
         if ~isempty(skips)
             %insert a 'known problem' entry
             cds.addProblem('inconsistency in encoder timestamps: some data points appear to be missing and were reconstructed via interpolation')
@@ -106,10 +119,10 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     jumpTimes(jumpTimes>cds.enc.t(end))=cds.enc.t(end);
     
     %convert jump times to flag vector indicating when we have good data:
-    goodData=ones(size(pos(:,1)));
+    goodData=ones(size(cds.pos.t));
     temp=[];
     for i=1:size(jumpTimes,1)
-        range=[find(pos.t{:,:}>=jumpTimes(i,1),1,'first'),find( pos.t{:,:}<=jumpTimes(i,2),1,'last')];
+        range=[find(cds.pos.t{:,:}>=jumpTimes(i,1),1,'first'),find( cds.pos.t{:,:}<=jumpTimes(i,2),1,'last')];
         %if there are no points inside the window, as the case with
         %fileseparateions, the first point of range will be larger than the
         %second. Thus we use min and max to get the actual window for all
@@ -120,16 +133,14 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         goodData(temp)=0;
     end
     %find still periods:
-    still=is_still(sqrt(pos.x.^2+pos.y.^2));
-    %append the goodData flag vector, and still vector to pos
-    pos=[pos,table(still,goodData,'VariableNames',{'still','good'})];
-    %configure labels on pos
-    pos.Properties.VariableUnits={'s','cm','cm','bool','bool'};
-    pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
-    pos.Properties.Description='For the robot this will be handle position, for other tasks this is whatever is fed into the encoder stream';
-    %cds.setField('pos',pos);
-    set(cds,'pos',pos)
-    clear pos
+    still=is_still(sqrt(cds.pos.x.^2+cds.pos.y.^2));
+    %set up flag data in cds
+    dataFlags=table(still,goodData,'VariableNames',{'still','good'});
+    dataFlags.Properties.VariableUnits={'s','bool','bool'};
+    dataFlags.Properties.VariableDescriptions={'time','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
+    dataFlags.Properties.Description='flag variables giving statistics on kinematic data';
+    set(cds,'dataFlags',dataFlags)
+    clear dataFLags
     %use cds.pos to compute vel:
     vx=gradient(cds.pos.x,1/cds.kinFilterConfig.SR);
     vy=gradient(cds.pos.y,1/cds.kinFilterConfig.SR);

@@ -117,7 +117,14 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 end
             end
         end
-        
+        %set the cds.meta.datetime field so that parsing functions can run
+        %date specific code. The full meta field will be generated at the
+        %end so that statistics like # of trials can be compiled
+        meta=cds.meta;
+        dateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
+        ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
+        meta.dateTime=dateTime;
+        set(cds,'meta',meta)
     %% get the info of data we have to work with
         % Build catalogue of entities
         unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
@@ -202,12 +209,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         if strcmp(cds.meta.task,'Unknown') || isempty( cds.meta.task)
             warning('NEVNSx2cds:UnknownTask','The task for this file is not known, the trial data table may be inaccurate')
         end
-        %set the cds.meta.datetime field so that task table code can check
-        %run date range specific code:
-        meta=cds.meta;
-        dateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-        ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-        meta.datetime=dateTime;
+
         cds.getTrialTable
     %% Set metadata. Some metadata will already be set, but this should finish the job
         cds.metaFromNEVNSx(NEVNSx,opts)

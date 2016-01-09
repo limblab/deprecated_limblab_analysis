@@ -25,7 +25,7 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
 
     % Get calibration parameters based on lab number            
     if isfield(opts,'labnum') && opts.labnum>0
-        [fhcal,rotcal,Fy_invert]=getLabParams(opts.labnum,cds.meta.datetime,opts.rothandle);
+        [fhcal,rotcal,Fy_invert]=getLabParams(opts.labnum,cds.meta.dateTime,opts.rothandle);
     else
         error('handleForceFromRaw:LabNotSet','handleForceFromRaw needs the lab number in order to select the correct load cell calibration')
     end

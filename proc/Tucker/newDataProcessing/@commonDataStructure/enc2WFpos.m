@@ -1,4 +1,4 @@
-function [pos]=enc2WFpos(cds)
+function enc2WFpos(cds)
 %takes a timeseries of encoder data and converts it into a position signal
 %assuming the hardware was configured as in the WF setup. returns a table
 %with the base pos table, and a list of windows where data was missing. pos
@@ -9,4 +9,11 @@ function [pos]=enc2WFpos(cds)
     
     enc=decimateData([cds.enc.t cds.enc.th1/1000 cds.enc.th2/1000],cds.kinFilterConfig);  
     pos = array2table(enc,'VariableNames',{'t','x','y'});
+    %configure labels on pos
+    pos.Properties.VariableUnits={'s','cm','cm'};
+    pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates',};
+    pos.Properties.Description='Cursor position-scaled wrist torque';
+
+    set(cds,'pos',pos)
+    cds.addOperation(mfilename('fullpath'));
 end

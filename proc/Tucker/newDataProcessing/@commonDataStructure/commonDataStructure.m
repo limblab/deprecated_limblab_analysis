@@ -368,6 +368,8 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             metaFromNEVNSx(cds,NEVNSx,opts)
+            enc2handlepos(cds)
+            enc2WFpos(cds)
         appendFile2cds(cds,folderPath,fileName,varargin)
         appendNEVNSx2cds(cds,NEVNSx,varargin)
         appendcds2cds(cds,cds2)
