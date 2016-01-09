@@ -405,8 +405,9 @@
                     % force_offsets acquired empirically by recording static
                     % handle.
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
-                            0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
-                    rotcal = [1 0; 0 1];  
+                            0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508;...
+                            10.01343 0.36172 10.30551 0.39552 10.46860 0.38238]'./1000;
+                    rotcal = [1 0 0; 0 1 0; 0 0 1];  
                     force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPIRICALLY
                     Fy_invert = 1;
                 end
@@ -473,7 +474,7 @@
             end
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
-            out_struct.force(ia,2:3) = 0;
+            out_struct.force(ia,2:end) = 0;
            
         else
             warning('BDF:noForceSignal','No force handle signal found because calc_from_raw did not find 6 channels named ''ForceHandle*''');
