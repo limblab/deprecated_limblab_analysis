@@ -228,7 +228,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             end
         end
         function set.analog(cds,analog)
-            if ~isempty(analog) || (~iscell(analog) && ~isempty(analog))
+            if (~iscell(analog) && ~isempty(analog))
                 error('analog:badFormat','analog must be a cell array, with each cell containing a table of analog data collected at a single frequency')
             else
                 cds.analog=analog;
