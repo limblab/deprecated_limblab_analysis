@@ -1,4 +1,4 @@
-function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
+function NEVNSx = cerebus2NEVNSx(varargin)
 % cerebus2NEVNSx creates NEVNSx structure containing all Cerebus data in the
 %   filepath folder that matches the file_prefix string.  NEVNSx is a
 %   structure with NEV, NS2, NS3, NS4 and NS5 fields, each containing data
@@ -7,15 +7,46 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
 %   spike data has been sorted (indicated by '*-s.mat' suffix), sorted files
 %   will be loaded.   
 
+    %initial setup
+    opts=struct('loadanalog',1); %default to loading everything
+   
+    % Parse arguments
+    if (nargin<2)
+        error('cerebus2NEVNSx:too_few_arguments','cerebus2NEVNSx requires filepath and file_prefix as arguments');
+    elseif (nargin == 2)
+        filepath = varargin{1};
+        file_prefix = varargin{2};
+    else
+        filepath = varargin{1};
+        file_prefix = varargin{2};
+        for i = 3:nargin
+            opt_str = char(varargin{i} + ...
+                (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case            
+            if strcmp(opt_str, 'noanalog')
+                opts.loadanalog = 0;             
+            else 
+                error('Unrecognized option: %s', opt_str);
+            end
+        end
+    end
+
     NEVlist_sorted = dir([filepath filesep file_prefix '*-s.mat']);
     NEVlist_nodigital = dir([filepath filesep file_prefix '*-nodigital.nev']);
     NEVlist_nodigital_sorted = dir([filepath filesep file_prefix '*-nodigital-s.nev']);
     NEVlist_nospikes= dir([filepath filesep file_prefix '*-nospikes.mat']);
     NEVlist = dir([filepath filesep file_prefix '*.nev']);
-    NS2list = dir([filepath filesep file_prefix '*.ns2']);
-    NS3list = dir([filepath filesep file_prefix '*.ns3']);
-    NS4list = dir([filepath filesep file_prefix '*.ns4']);
-    NS5list = dir([filepath filesep file_prefix '*.ns5']);
+    
+    if(opts.loadanalog)
+        NS2list = dir([filepath filesep file_prefix '*.ns2']);
+        NS3list = dir([filepath filesep file_prefix '*.ns3']);
+        NS4list = dir([filepath filesep file_prefix '*.ns4']);
+        NS5list = dir([filepath filesep file_prefix '*.ns5']);
+    else
+        NS2list = [];
+        NS3list = [];
+        NS4list = [];
+        NS5list = [];
+    end
 
     NEVlist_sorted = NEVlist_sorted(cellfun('isempty',(regexp({NEVlist_sorted(:).name},'-spikes'))));
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-spikes'))));
