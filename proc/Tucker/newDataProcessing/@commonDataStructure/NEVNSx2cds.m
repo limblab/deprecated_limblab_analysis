@@ -23,7 +23,21 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
     %               processing
     %lab number:    an integer number designating the lab from the set 
     %               1,2,3,6
-    %
+    %'taskTASKNAME' specifies the task performed during data collection.
+    %               NEVNSx2cds looks for the first part of the argument to
+    %               match the string 'task' and then takes the remainder of
+    %               the string to be the task name. for example 'taskRW'
+    %               would result in the task being set to 'RW'
+    %'arrayARRAYNAME'   specifies the array used for data collection.
+    %               NEVNSx2cds looks for the first part of the argument to
+    %               match the string 'array' and then takes the remainder of
+    %               the string to be the array name. for example 'arrayM1'
+    %               would result in the task being set to 'M1'
+    %'monkeyMONKEYNAME' specifies the monkey that this data is from.
+    %               NEVNSx2cds looks for the first part of the argument to
+    %               match the string 'monkey' and then takes the remainder of
+    %               the string to be the monkey name. for example 'monkeyChips'
+    %               would result in the task being set to 'Chips'
     %example: cds.NEVNSx2cds(NEVNSx, 'rothandle', 3) 
     %imports the data from NEVNSx into the fields of cds, assuming the
     %robot handle was inverted, and the data came from lab3
