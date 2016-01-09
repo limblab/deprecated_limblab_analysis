@@ -6,8 +6,6 @@ function enc2WFpos(cds)
 %first column is the start of a window where there were missing points, and
 %the second column is 
     
-    
-    enc=decimateData([cds.enc.t cds.enc.th1/1000 cds.enc.th2/1000],cds.kinFilterConfig);  
     pos = array2table(enc,'VariableNames',{'t','x','y'});
     %configure labels on pos
     pos.Properties.VariableUnits={'s','cm','cm'};

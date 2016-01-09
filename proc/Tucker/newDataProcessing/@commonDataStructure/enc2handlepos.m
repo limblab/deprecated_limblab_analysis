@@ -25,7 +25,7 @@ function enc2handlepos(cds)
 
     x = - l1 * sin( cds.enc.th1 ) + l2 * cos( -cds.enc.th2 );
     y = - l1 * cos( cds.enc.th1 ) - l2 * sin( -cds.enc.th2 );
-    pos=table(cds.enc(:,1),x,y,'VariableNames',{'t','x','y'});
+    pos=table(cds.enc.t,x,y,'VariableNames',{'t','x','y'});
     %configure labels on pos
     pos.Properties.VariableUnits={'s','cm','cm'};
     pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates',};

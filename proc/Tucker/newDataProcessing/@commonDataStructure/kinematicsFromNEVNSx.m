@@ -68,8 +68,11 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         newtime=enc(1,1):mode(diff(enc(:,1))):enc(end,1);
         enc=[newtime',interp1(enc(:,1),enc(:,2:3),newtime)];
     end
+    enc=decimateData(enc,cds.kinFilterConfig);
+    %clip the first 1s because analog data won't start recording for 1s:
+    enc=enc(enc(:,1)>=1,:);
     enc=array2table(enc,'VariableNames',{'t','th1','th2'});
-    %cds.setField('enc',enc)
+    
     set(cds,'enc',enc)
     clear enc
     
@@ -107,10 +110,10 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     jumpTimes(jumpTimes>cds.enc.t(end))=cds.enc.t(end);
     
     %convert jump times to flag vector indicating when we have good data:
-    goodData=ones(size(cds.pos(:,1)));
+    goodData=ones(size(cds.pos,1),1);
     temp=[];
     for i=1:size(jumpTimes,1)
-        range=[find(cds.pos.t{:,1}>=jumpTimes(i,1),1,'first'),find( cds.pos.t{:,1}<=jumpTimes(i,2),1,'last')];
+        range=[find(cds.pos.t>=jumpTimes(i,1),1,'first'),find( cds.pos.t<=jumpTimes(i,2),1,'last')];
         %if there are no points inside the window, as the case with
         %fileseparateions, the first point of range will be larger than the
         %second. Thus we use min and max to get the actual window for all

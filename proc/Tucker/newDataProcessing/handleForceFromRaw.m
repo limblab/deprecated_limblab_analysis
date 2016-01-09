@@ -12,8 +12,8 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
     %variables will be automatically cleared, saving memory
         
     %calculate offsets for the load cell and remove them from the force:
-    if sum(cds.dataFlags.still{:,1}) > 100  % Only use still data if there are more than 100 movement free samples                
-        force_offsets = mean(raw_force(cds.dataFlags.still{:,1},:));
+    if sum(cds.dataFlags.still) > 100  % Only use still data if there are more than 100 movement free samples                
+        force_offsets = mean(raw_force(cds.dataFlags.still,:));
     else
         %issue warning
         warning('NEVNSx2cds:noStillTime','Could not find 100 points of still time to compute load cell offsets. Defaulting to mean of force data')
