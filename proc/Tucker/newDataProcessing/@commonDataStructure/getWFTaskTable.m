@@ -39,7 +39,7 @@ function getWFTaskTable(cds,times)
     catchFlag=-1*ones(numTrials,1);
     adaptFlag=-1*ones(numTrials,1);
     
-    for trial = 1:numel(numTrials)
+    for trial = 1:numTrials
 
         % Outer target
         idxOT = find(OTOnWords > times.startTime(trial) & OTOnWords < times.endTime(trial), 1, 'first');
