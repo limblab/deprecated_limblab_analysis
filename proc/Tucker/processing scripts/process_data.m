@@ -1,6 +1,6 @@
 %script to set input data and execute data processing
 %% process psyhcometrics
-folderpath='E:\local processing\chips\experiment_20160107_BD_290degPD';
+folderpath='E:\local processing\chips\experiment_20160107-09_290degPD';
 function_name='quickscript_function_looped';
 input_data.matchstring='Chips';
 input_data.labnum=6;
@@ -28,7 +28,7 @@ input_data.array_map_path='Y:\lab_folder\Animal-Miscellany\Chips_12H1\map_files\
 data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% process PDs using Raeed/Tucker functions
-folderpath='E:\local processing\chips\experiment_20160105_RW_PD';
+folderpath='E:\local processing\chips\experiment_20160110_RW_PD';
 input_data.prefix='Chips';
 function_name='get_PDs';
 input_data.labnum=6;
