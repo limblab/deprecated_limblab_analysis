@@ -54,7 +54,7 @@ function getWFTaskTable(cds,times)
         dbidx = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
         
         % Target location
-        targetLoc = cds.databursts.db{dbidx,2}(burst_size-15:end);
+        targetLoc = cds.databursts.db(dbidx,2)(burst_size-15:end);
         targetLoc = bytes2float(targetLoc, 'little')';
         
         % catch
