@@ -1,4 +1,4 @@
-function [ R, Tpre, Tpost, times_good, pos_h, colors_xy ] = get_translation_rotation( bdf, all_medians, x_lim_handle, y_lim_handle, plot_flag )
+function [ R, Tpre, Tpost, times_good, pos_h, colors_xy ] = get_translation_rotation( bdf, kinect_times, all_medians, x_lim_handle, y_lim_handle, plot_flag )
 
 %This function finds the translation and rotation that are necessary for
 %converting the kinect markers into handle coordinates
@@ -30,16 +30,18 @@ handle_times = bdf.pos(:,1); %This should be the same as analog_ts
 %changed it.
 
 n_times=size(all_medians,3); %Number of kinect time points
+% 
+% handle_time_idxs=zeros(length(n_times),1); %Initialize the handle time indexes
+% %For each kinect time, find the closest handle time. handle_time_idxs has
+% %the indexes of all the corresponding handle times.
+% for i=1:n_times
+%     [~,handle_time_idxs(i)]=min(abs(handle_times-kinect_times(i)));
+% end
+% 
+% handle_times_ds=handle_times(handle_time_idxs); %These are the handle times that correspond to all the kinect times
+% handle_pos_ds=handle_pos(handle_time_idxs,:); %The handle positions at all the kinect times
 
-handle_time_idxs=zeros(length(n_times),1); %Initialize the handle time indexes
-%For each kinect time, find the closest handle time. handle_time_idxs has
-%the indexes of all the corresponding handle times.
-for i=1:n_times
-    [~,handle_time_idxs(i)]=min(abs(handle_times-kinect_times(i)));
-end
-
-handle_times_ds=handle_times(handle_time_idxs); %These are the handle times that correspond to all the kinect times
-handle_pos_ds=handle_pos(handle_time_idxs,:); %The handle positions at all the kinect times
+handle_pos_ds = interp1(handle_times,handle_pos,kinect_times);
 
 
 %% Find time points that we need to remove (for several reasons)

@@ -43,6 +43,10 @@ end
 %using the gridsearch optimal parameters as the initial parameters
 [q,fval]=fmincon(@(x) rotate_func(x,temp_rec_pos_trans,true_pos_trans),init,[],[],[],[],[0 0 0],[2*pi 2*pi 2*pi]);
 
+% break out angles
+theta=q(1);
+psi=q(2);
+phi=q(3);
 
 %This is the best rotation matrix in cartesian coordinates
 R=[cos(theta)*cos(psi) cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi) sin(phi)*sin(psi)-cos(phi)*sin(theta)*cos(psi);...

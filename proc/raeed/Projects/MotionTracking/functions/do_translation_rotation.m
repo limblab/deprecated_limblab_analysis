@@ -32,6 +32,7 @@ all_medians2_v2=100*all_medians2_v2;
 
 %We need to shift the positions prior to rotation, as we did when finding
 %the optimal rotation. We do the same shift here.
+n_times = size(all_medians,3);
 shift_matrix=repmat(Tpre,[11,1,n_times]);
 all_medians_shift=all_medians_v2-shift_matrix;
 all_medians2_shift=all_medians2_v2-shift_matrix;

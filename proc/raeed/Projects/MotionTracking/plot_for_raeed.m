@@ -16,7 +16,7 @@ t = kinect_times;
 handle_pos = interp1(bdf.pos(:,1),bdf.pos(:,2:3),t);
 
 % vid=[];    
-for i=100:200
+for i=3500:4000
     scatter3(medians(:,1,i),medians(:,2,i),medians(:,3,i),200,plot_colors,'filled')
     
 %     pause;

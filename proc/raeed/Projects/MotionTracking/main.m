@@ -7,12 +7,12 @@
 
 %Output will be all the markers in handle coordinates, and in cerebus time
 %% 1. LOAD CEREBUS FILE
-folder = 'C:\Users\rhc307\Documents\Data\experiment_20151120_RW_003\';
-prefix = 'Chips_20151120_RW_003';
+folder = 'C:\Users\rhc307\Documents\Data\experiment_20151203_RWchaos_001\';
+prefix = 'Chips_20151203_RWchaos_001';
 bdf = get_nev_mat_data([folder prefix],6,'ignore_jumps');
 
 %% 2. LOAD MOTION TRACKING FILE
-load([folder 'ct_chips_CO_actpass_151117.mat'])
+load([folder 'markers_' prefix '.mat'])
 
 %Note - this folder may be different than the one w/ the cerebus file?
 
@@ -24,7 +24,7 @@ title('Kinect LED vals')
 
 %% 3b. Enter kinect start time estimate
 
-kinect_start_guess=7.6;
+kinect_start_guess=7;
 
 %% 3c. Align kinect led values with cerebus squarewave
 
@@ -39,7 +39,7 @@ rotation_known=0; %Whether the rotation matrix is already known (from another fi
 %We want to remove the time points when the monkey has thrown away the
 %handle, since then the hand won't be at the same position as the handle
 if ~rotation_known
-    figure; scatter(handle_pos_ds(:,1),handle_pos_ds(:,2))
+    figure; scatter(bdf.pos(1:10:end,2),bdf.pos(1:10:end,3))
 %Note- this plot can be removed if the limits (below) are always the same
 end
 %% 4b. Set limits of handle points
@@ -53,7 +53,7 @@ end
 
 if ~rotation_known
     plot_flag=1;
-    [ R, Tpre, Tpost, times_good, pos_h, colors_xy ] = get_translation_rotation( bdf, all_medians, x_lim_handle, y_lim_handle, plot_flag );
+    [ R, Tpre, Tpost, times_good, pos_h, colors_xy ] = get_translation_rotation( bdf, kinect_times, all_medians, x_lim_handle, y_lim_handle, plot_flag );
     %Save a file w/ T and R, so it can be used for other files from the
     %same day
     save([folder prefix '_kinect_rotation.mat'],'R','Tpre','Tpost')
@@ -74,8 +74,9 @@ plot_flag=1;
 %This can be used to determine times when the monkey has thrown away the
 %handle
 
+n_times = size(all_medians,3);
 k=reshape(kinect_pos(3,:,:),[3,n_times]);
-h=handle_pos_ds;
+h=bdf.pos(:,2:3);
 h(:,3)=0;
 
 err=NaN(1,n_times);
@@ -84,7 +85,7 @@ for i=1:n_times
 end
 
 figure; plot(err)
-
+figure; scatter3(kinect_pos(3,1,:),kinect_pos(3,2,:),kinect_pos(3,3,:))
 %This can be used in combination w/ the z-force
 
 %% 6. PUT KINECT DATA INTO OPENSIM COORDINATES
