@@ -48,7 +48,7 @@ first_time=1; %If this is the first file from a date, set equal to 1 (there are 
 %TIME INITIALIZATIONS
 start=1; %Time point we're starting at
 n=length(color1);
-finish=5000;%n; %Time point we're finishing at
+finish=n; %Time point we're finishing at
 n_times=finish-start+1; %Number of time points (frames)
 
 %MARKER NUMBER INITIALIZATIONS
@@ -2213,7 +2213,7 @@ all_medians2(:,:,start:finish)=temp2;
 
 
 %% save
-savefile=0;
+savefile=1;
 if savefile
     date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
     fname_save=[main_dir monkey '/Color_Tracking/' date '/Markers/markers_' monkey '_' date2 '_' exp '_' num];
