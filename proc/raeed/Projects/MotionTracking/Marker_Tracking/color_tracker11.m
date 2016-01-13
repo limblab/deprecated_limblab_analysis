@@ -7,6 +7,23 @@
 %comes first. For the subsequent sections, only unique aspects are
 %commented on in detail.
 
+
+%% Load ColorTracking File
+
+main_dir='/Users/jig289/Box Sync/Tracking_Data/';
+
+
+%File to load
+monkey='Chips';
+date='12-03-15'; %mo-day-yr
+exp='RWchaos';
+num='001';
+
+fname_load=ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']);
+load(deblank(fname_load));
+
+% load(ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']))
+
 %% Marker location reminder figure
 
 marker_demo_locs=[0 0; 1 1; 1 -1; 2 1; 2 -1;...
@@ -23,14 +40,15 @@ text(marker_demo_locs(:,1),marker_demo_locs(:,2),str)
 xlim([-5 15]);
 ylim([-5 15]);
 
-%% Initializations
+%% SET 0. Initializations
 
-first_time=0; %If this is the first file from a date, set equal to 1 (there are more initializations)
+
+first_time=1; %If this is the first file from a date, set equal to 1 (there are more initializations)
 
 %TIME INITIALIZATIONS
 start=1; %Time point we're starting at
 n=length(color1);
-finish=7000;%n; %Time point we're finishing at
+finish=5000;%n; %Time point we're finishing at
 n_times=finish-start+1; %Number of time points (frames)
 
 %MARKER NUMBER INITIALIZATIONS
@@ -46,14 +64,14 @@ green_hand_marker_ids=[1,5];
 marker_inits=NaN(11,3);
 marker_inits(1,:)=[.9,-.07,-.11];
 marker_inits(2,:)=[.9,-.04,-.11];
-marker_inits(3,:)=[.9,-.04,-.12];
+marker_inits(3,:)=[.9,-.05,-.12];
 marker_inits(4,:)=[.9,-.02,-.11];
 marker_inits(5,:)=[.9,-.02,-.13];
 marker_inits(6,:)=[1,.16,-.15];
 marker_inits(7,:)=[1,.15,-.09];
 marker_inits(8,:)=[1,.15,-.03];
 marker_inits(9,:)=[1,.15,.02];
-marker_inits(10,:)=[1,.06,-.15];
+marker_inits(10,:)=[1,.15,-.13];
 
 %I plot z,x,y (instead of x,y,z), so I input z,x,y above. Here, switch to x,y,z
 marker_inits_temp=marker_inits;
@@ -73,6 +91,14 @@ dists2=NaN(1,n_times);
 dists3=NaN(1,n_times);
 dists4=NaN(1,n_times);
 dists5=NaN(1,n_times);
+
+%Load all of the settings if it's not the first file 
+if ~first_time
+    date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
+    fname_load_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
+    load(fname_load_settings);
+end
+
 %% Plotting Initializations
 
 figure;
@@ -223,15 +249,23 @@ if first_time %If this is not the first file from a date, we don't need to run t
     figure; plot(dists); 
     hold on;
     plot(dists2)
-    
+    legend('7-10','7-9')
 end
-%% SET Red Elbow/Arm to Blue Arm Distance
+%% SET 1: Red Elbow/Arm to Blue Arm Distance
 
-%The blue values in the above plot should be below this value (the red elbow should always be within this distance of the blue arm)
-red_elbow_dist_from_blue=.05;
-
-%All values in above plot should be below this value (Maximum distance from a red arm point to the blue)
-red_blue_arm_dist_max=.08;
+if first_time
+    
+    str1='1A. Input red_elbow_dist_from_blue \n';
+    str2='The blue values in the above plot should be below this value (the red elbow should always be within this distance of the blue arm)\n';
+    str3='Value is generally ~ .05 \n';    
+    red_elbow_dist_from_blue=input([str1 str2 str3]);
+    
+    str1='1B. Input red_blue_arm_dist_max \n';
+    str2='%All values in above plot should be below this value (Maximum distance from a red arm point to the blue)\n';
+    str3='Value is generally ~ .08 \n';   
+    red_blue_arm_dist_max=input([str1 str2 str3]);
+        
+end
 %% Red Arm (Redo)
 %Note that this is different from the previous version of "Red Arm" because
 %now there are constraints involving distance from the blue arm marker
@@ -381,9 +415,16 @@ if first_time %If this is not the first file from a date, we don't need to plot 
     legend('7-10','8-10','7-8')
     
 end
-%% SET red arm points to remove (based on distance from blue arm point)
+%% SET 2. red arm points to remove (based on distance from blue arm point)
 
-red_arm_thresh=.05; %Threshold between blue and yellow in above plot
+if first_time
+    
+    str1='2. Input red_arm_thresh \n';
+    str2='Threshold between blue and yellow in above plot\n';
+    str3='Value is generally ~ .05 \n';    
+    red_arm_thresh=input([str1 str2 str3]);
+
+end
 
 %% Remove some red arm points 
 %Could also try to switch?
@@ -424,11 +465,10 @@ end
 if first_time   
     figure; plot(angle)   
 end
-%% SET red elbow points to remove (based on angle)
+%% SET 3. red elbow points to remove (based on angle)
 
 % red_elbow_angle_thresh=2.55;
 red_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle below this will have marker 10 removed
-
 %% Remove red elbow points (based on angle)
 
 rmv10=angle<red_elbow_angle_thresh;
@@ -498,7 +538,6 @@ end
 all_medians(marker_ids,:,:)=medians;
 all_medians2(marker_ids,:,:)=medians2;
 
-
 %% Plot green elbow angle relative to arm (based on angle)
 
 %This calculates (and plots) the angle made by points 7,8,6
@@ -529,11 +568,10 @@ end
 if first_time   
     figure; plot(angle)   
 end
-%% Set green elbow points to remove (based on angle)
+%% SET 4. green elbow points to remove (based on angle)
 
 % green_elbow_angle_thresh=2.55;
 green_elbow_angle_thresh=nanmean(angle)-3*nanstd(angle); %Frames with an angle below this will have marker 6 removed
-
 %% Remove green elbow points
 
 rmv6=angle<green_elbow_angle_thresh;
@@ -761,14 +799,31 @@ if first_time
     plot(dists5,'g');
     
 end
-%% Set hand distance limits from red elbow
+%% SET 5. hand distance limits from red elbow
 
-green_hand_dists_elbow=[.17,.26];  %Lower and upper limits of distances of the green hand markers to the red elbow marker)
-red_hand_dists_elbow=[.17,.24]; %Lower and upper limits of distances of the red hand markers to the red elbow marker)
-blue_hand_dists_elbow=[.19, .23]; %Lower and upper limits of distances of the blue hand markers to the red elbow marker)
-
-green_separator=.21; %Distance that separates the green hand points
-
+if first_time
+    
+    str1='5A. Input green_hand_dists_elbow \n';
+    str2='Lower and upper limits of distances of the green hand markers to the red elbow marker\n';
+    str3='Value is generally ~ [.17,.26] \n';    
+    green_hand_dists_elbow=input([str1 str2 str3]);
+    
+    str1='5B. Input red_hand_dists_elbow \n';
+    str2='Lower and upper limits of distances of the red hand markers to the red elbow marker\n';
+    str3='Value is generally ~ [.17,.24] \n';    
+    red_hand_dists_elbow=input([str1 str2 str3]);
+    
+    str1='5C. Input blue_hand_dists_elbow \n';
+    str2='Lower and upper limits of distances of the blue hand markers to the red elbow marker\n';
+    str3='Value is generally ~ [.19,.23] \n';    
+    blue_hand_dists_elbow=input([str1 str2 str3]);
+    
+    str1='5D. Input green_separator \n';
+    str2='Distance that separates the green hand points\n';
+    str3='Value is generally ~ .21 \n';    
+    green_separator=input([str1 str2 str3]);
+    
+end
 %% Plot hand distances from blue arm
 %Plots the distances of every hand marker to to blue arm marker in order
 %to determine what distances are allowed (for rerunning the hand marker
@@ -786,24 +841,38 @@ if first_time
     end
     
     %Plot
-    figure;
-    plot(dists1,'g-x');
-    figure;
+    figure; %Blue
     plot(dists2,'b-x');
-    figure;
+    figure; %Red
     plot(dists3,'r-x');
-    figure;
+    hold on;
     plot(dists4,'m-x');
-    figure;
+    figure; %Green
+    plot(dists1,'g-x');
+    hold on;
     plot(dists5,'c-x');
     
 end
-%% Set hand distance limits from blue arm
+%% SET 6. hand distance limits from blue arm
 
-green_hand_dists_bluearm=[.16,.29]; %Lower and upper limits of distances of the green hand markers (green and cyan above) to the blue arm marker
-red_hand_dists_bluearm=[.16,.28]; %Lower and upper limits of distances of the red hand markers (red and magenta above) to the blue arm marker
-blue_hand_dists_bluearm=[.18, .28]; %Lower and upper limits of distances of the blue hand markers (blue above) to the blue arm marker
-
+if first_time
+    
+    str1='6A. Input green_hand_dists_bluearm \n';
+    str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the blue arm marker\n';
+    str3='Value is generally ~ [.16,.29] \n';    
+    green_hand_dists_bluearm=input([str1 str2 str3]);
+    
+    str1='6B. Input red_hand_dists_bluearm \n';
+    str2='Lower and upper limits of distances of the red hand markers (red and magenta above) to the blue arm marker\n';
+    str3='Value is generally ~ [.16,.28] \n';    
+    red_hand_dists_bluearm=input([str1 str2 str3]);
+    
+    str1='6C. Input blue_hand_dists_bluearm \n';
+    str2='Lower and upper limits of distances of the blue hand markers (blue above) to the blue arm marker\n';
+    str3='Value is generally ~ [.18,.28] \n';    
+    blue_hand_dists_bluearm=input([str1 str2 str3]);
+    
+end
 %% Plot hand distances from red arm
 %Plots the distances of every hand marker to to red arm marker in order
 %to determine what distances are allowed (for rerunning the hand marker
@@ -819,24 +888,39 @@ if first_time
         dists5(i)=pdist2(all_medians(8,:,i),all_medians(5,:,i));
     end
     %Plot
-    figure;
-    plot(dists1,'g-x');
-    figure;
+    figure; %Blue
     plot(dists2,'b-x');
-    figure;
+    figure; %Red
     plot(dists3,'r-x');
-    figure;
+    hold on;
     plot(dists4,'m-x');
-    figure;
+    figure; %Green
+    plot(dists1,'g-x');
+    hold on;
     plot(dists5,'c-x');
     
 end
-%% Set hand distance limits from red arm
+%% SET 7. hand distance limits from red arm
 
-green_hand_dists_redarm=[.15,.37]; %Lower and upper limits of distances of the green hand markers (green and cyan above) to the red arm marker
-red_hand_dists_redarm=[.15,.35]; %Lower and upper limits of distances of the red hand markers (red and magenta above) to the red arm marker
-blue_hand_dists_redarm=[.18, .35]; %Lower and upper limits of distances of the blue hand marker (blue above) to the red arm marker
-
+if first_time
+    
+    str1='7A. Input green_hand_dists_redarm \n';
+    str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the red arm marker\n';
+    str3='Value is generally ~ [.15,.35] \n';    
+    green_hand_dists_redarm=input([str1 str2 str3]);
+    
+    str1='7B. Input red_hand_dists_redarm \n';
+    str2='Lower and upper limits of distances of the red hand markers (red and magenta above) to the red arm marker\n';
+    str3='Value is generally ~ [.15,.34] \n';    
+    red_hand_dists_redarm=input([str1 str2 str3]);
+    
+    str1='7C. Input blue_hand_dists_redarm \n';
+    str2='Lower and upper limits of distances of the blue hand markers (blue above) to the red arm marker\n';
+    str3='Value is generally ~ [.18,.35] \n';    
+    blue_hand_dists_redarm=input([str1 str2 str3]);
+    
+    
+end
 %% Plot hand distances from each other
 %Plots the distances of the red hand markers to each other and the green
 %hand markers to each other, in order to determine what distances are
@@ -851,13 +935,23 @@ if first_time
     %Plot
     figure; plot(dists1,'g'); hold on;
     plot(dists2,'r');
+    legend('5-1','3-4')
+end
+%% SET 8. minimum hand distances from each other
+
+if first_time
+    
+    str1='8A. Input red_dist_min \n';
+    str2='Minimum distance allowed between red hand markers (red above)\n';
+    str3='Value is generally ~ .02 \n';    
+    red_dist_min=input([str1 str2 str3]);
+    
+    str1='8B. Input green_dist_min \n';
+    str2='Minimum distance allowed between green hand markers (green above)\n';
+    str3='Value is generally ~ .03 \n';    
+    green_dist_min=input([str1 str2 str3]);
     
 end
-%% Set minimum hand distances from each other
-
-red_dist_min=.02; %Minimum distance allowed between red hand markers (red above)
-green_dist_min=.03; %Minimum distance allowed between green hand markers (green above)
-
 %% Red Hand (Redo)
 
 %Initializations
@@ -1273,7 +1367,7 @@ for i=start:finish
     
     
     %2. Cluster and assign
-    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 );
+    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 );
     
     
     %Update how many frames markers have been missing
@@ -1395,7 +1489,7 @@ plot(dists3,'r-x');
 plot(dists4,'m-x');
 plot(dists5,'c-x');
 
-%% Determine red hand point 3 to remove (based on having a larger distance to the elbow than point 1)
+%% SET 9. Determine red hand point 3 to remove (based on having a larger distance to the elbow than point 1)
 
 wdw=20; %Time window for plots below
 
@@ -1403,6 +1497,12 @@ wdw=20; %Time window for plots below
 %greater than the distance from the elbow to point 1 (which shouldn't
 %happen)
 idxs=find(dists3>dists1); 
+
+%Initialize points to be removed
+rmv3_cell=cell(1,length(idxs));
+rmv1_cell=cell(1,length(idxs));
+switch1_cell=cell(1,length(idxs));
+
 %Look at a time window around each of these points to determine what point
 %to remove (which is specified in the next section).
 for i=1:length(idxs)
@@ -1413,20 +1513,20 @@ for i=1:length(idxs)
         plot(idxs(i)-wdw:idxs(i)+wdw,dists2(idxs(i)-wdw:idxs(i)+wdw),'b-x');
         plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
         plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
-        
+        plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');        
         title(num2str(idxs(i)));
         
+        rmv3_cell{i}=input('9. Times to remove hand point 3 (red) \n');
+        rmv1_cell{i}=input('9. Times to remove hand point 1 (green) \n');
+        switch1_cell{i}=input('9. Times to switch markers 1 and 5 (green and cyan) \n');
     end
 end
 
-%12/3 RWChaos1
+%% Set red hand point 3 and green hand point 1 to remove (and green switch), based on above section
 
-%% SET red hand point 3 and green hand point 1 to remove (and green switch), based on above section
-
-rmv3=[]; %Times to remove of red hand point 3
-rmv1=[3246]; %Times to remove of green hand point 1
-switch1=[]; %Times of green to switch (switching markers 1 and 5)
+rmv3=[rmv3_cell{:}];  %Times to remove of red hand point 3
+rmv1=[rmv1_cell{:}];  %Times to remove of green hand point 1
+switch1=[switch1_cell{:}]; %Times to switch markers 1 and 5 (green and cyan)
 
 %% Remove and switch (based on above section)
 
@@ -1442,16 +1542,19 @@ all_medians2(1,:,switch1)=all_medians2(5,:,switch1);
 all_medians(5,:,switch1)=temp;
 all_medians2(5,:,switch1)=temp2;
 
-
-%% Determine blue hand point 2 to remove (based on having a larger distance to the elbow than point 1)
+%% SET 10. Determine blue hand point 2 to remove (based on having a larger distance to the elbow than point 1)
 
 wdw=20; %Time window for plots below
 
 %Find times (idxs) where the distance from the elbow to point 2 are
 %greater than the distance from the elbow to point 1 (which shouldn't
 %happen)
-
 idxs=find(dists2>dists1);
+
+%Initialize points to be removed
+rmv2_cell=cell(1,length(idxs));
+rmv1_cell=cell(1,length(idxs));
+
 %Look at a time window around each of these points to determine what point
 %to remove (which is specified in the next section).
 for i=1:length(idxs)
@@ -1466,19 +1569,22 @@ for i=1:length(idxs)
         
         title(num2str(idxs(i)));
         
+        rmv2_cell{i}=input('10. Times to remove hand point 2 (blue) \n');
+        rmv1_cell{i}=input('10. Times to remove hand point 1 (green) \n');
     end
 end
 
-%% SET blue hand point 2 and green hand point 1 to remove, based on above section
+%% Set blue hand point 2 and green hand point 1 to remove, based on above section
 
-rmv2=[]; %Times to remove of blue hand point 2
-rmv1=[]; %Times to remove of green hand point 1
+%When blue is greater than green in above plot
+
+rmv2=[rmv2_cell{:}]; %Times to remove of blue hand point 2
+rmv1=[rmv1_cell{:}]; %Times to remove of green hand point 1
 
 all_medians(2,:,rmv2)=NaN;
 all_medians(1,:,rmv1)=NaN;
 
-
-%% Determine red hand points to remove (based on having similar distance from elbow)
+%% SET 11. Determine red hand points to remove (based on having similar distance from elbow)
 
 %Calculate distances of red hand markers 3 and 4, and the red elbow
 for i=1:n_times    
@@ -1492,6 +1598,12 @@ wdw=20; %Time window for plots below
 %Find times when marker 3 and marker 4 are a similar distance to the elbow
 %marker (which is a problem)
 idxs=find(abs(dists3-dists4)<.01);
+
+%Initialize points to be removed
+red_test_cell=cell(1,length(idxs));
+pink_test_cell=cell(1,length(idxs));
+
+
 %Plot those times
 for i=1:length(idxs)
     figure;
@@ -1503,12 +1615,16 @@ for i=1:length(idxs)
     plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
     
     title(num2str(idxs(i)));
+    
+    red_test_cell{i}=input('11. Times pink is in red area \n');
+    pink_test_cell{i}=input('11. Times red is in pink area \n');
+    
 end
 
 %% Set times when red hand points should be removed (based on having similar distance from elbow)
 
-red_test=[]; %Pink is in red area
-pink_test=[4688 4689 4681 3092 3029 ]; %Red is in pink area
+red_test=[red_test_cell{:}]; %Pink is in red area
+pink_test=[pink_test_cell{:}]; %Red is in pink area
 
 %% Determine which red hand point (3 or 4) to remove, at the above times
 
@@ -1565,7 +1681,6 @@ end
 % plot(dists3,'r-x');
 % plot(dists4,'m-x');
 % plot(dists5,'c-x');
-
 
 %% Switch red hand points when one is missing (the assignment was wrong)
 
@@ -1707,7 +1822,7 @@ all_medians2(3,:,switch34)=all_medians2(4,:,switch34);
 all_medians(4,:,switch34)=temp;
 all_medians2(4,:,switch34)=temp2;
 
-%% Plot questionable ones
+%% SET 12. Plot questionable ones
 
 %Above, we switched the red markers when we were sure about it. That is
 %when going forward and backward through time, both agreed that the markers
@@ -1726,6 +1841,10 @@ wdw=20; %Time window for plots below
 %Find times when the markers should be switched according to forward time
 %or backward time (see previous section), but not both.
 idxs=find((change_forward & ~change_backward) | (~change_forward & change_backward));
+
+%Initialize points to switch
+switch34_cell=cell(1,length(idxs));
+
 %Plot those times
 for i=1:length(idxs)
     figure;
@@ -1737,11 +1856,13 @@ for i=1:length(idxs)
     plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
     title(num2str(idxs(i)));
     
+    switch34_cell{i}=input('12. Time points to switch (red and pink) \n');
+    
 end
 
-%% SET more red hand markers to switch (the questionable ones from above)
+%% Set more red hand markers to switch (the questionable ones from above)
 
-switch34=[]; %The time points to switch
+switch34=[switch34_cell{:}]; %The time points to switch
 temp=all_medians(3,:,switch34);
 temp2=all_medians(3,:,switch34);
 all_medians(3,:,switch34)=all_medians(4,:,switch34);
@@ -1749,14 +1870,18 @@ all_medians2(3,:,switch34)=all_medians2(4,:,switch34);
 all_medians(4,:,switch34)=temp;
 all_medians2(4,:,switch34)=temp2;
 
-%% Determine green hand points to remove (based on having similar distance from elbow)
-
+%% SET 13. Determine green hand points to remove (based on having similar distance from elbow)
 
 wdw=20; %Time window for plots below
 
 %Find times when marker 1 and marker 5 are a similar distance to the elbow
 %marker (which is a problem)
 idxs=find(abs(dists1-dists5)<.01);
+
+%Initialize points to be removed
+green_test_cell=cell(1,length(idxs));
+cyan_test_cell=cell(1,length(idxs));
+
 %Plot those times
 for i=1:length(idxs)
     figure;
@@ -1768,12 +1893,15 @@ for i=1:length(idxs)
     plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
     
     title(num2str(idxs(i)));
+    
+    green_test_cell{i}=input('13. Times cyan is in green area \n');
+    cyan_test_cell{i}=input('13. Times green is in cyan area \n');
 end
 
 %% Set green hand points to remove
 
-green_test=[1559 1560 3086]; %Cyan is in green area
-cyan_test=[]; %Green is in cyan area
+green_test=[green_test_cell{:}]; %Cyan is in green area
+cyan_test=[cyan_test_cell{:}]; %Green is in cyan area
 
 %% Determine which green hand point (1 or 5) to remove, at the above times
 
@@ -1830,24 +1958,38 @@ end
 
 %Plot
 if first_time
-    figure;
-    plot(dists1,'g-x');
-    figure;
+    figure; %Blue
     plot(dists2,'b-x');
-    figure;
+    figure; %Red
     plot(dists3,'r-x');
-    figure;
+    hold on;
     plot(dists4,'m-x');
-    figure;
+    figure; %Green
+    plot(dists1,'g-x');
+    hold on;
     plot(dists5,'c-x');
 end
-%% SET hand distance limits from the shoulder
 
-%Lower and upper
-red_keep=[.15 .45]; %Lower and upper limits of distances of the red hand markers to the green shoulder marker)
-green_keep=[.15 .45]; %Lower and upper limits of distances of the green hand markers to the green shoulder marker)
-blue_keep=[.15 .45]; %Lower and upper limits of distances of the blue hand markers to the green shoulder marker)
+%% SET 14. hand distance limits from the shoulder
 
+if first_time
+    
+    str1='14A. Input green_keep \n';
+    str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the green shoulder marker\n';
+    str3='Value is generally ~ [.15,.45] \n';    
+    green_keep=input([str1 str2 str3]);
+    
+    str1='14B. Input red_keep \n';
+    str2='Lower and upper limits of distances of the red hand markers (red and magenta above) to the green shoulder marker\n';
+    str3='Value is generally ~ [.15,.45] \n';    
+    red_keep=input([str1 str2 str3]);
+    
+    str1='14C. Input blue_keep \n';
+    str2='Lower and upper limits of distances of the blue hand markers (blue above) to the green shoulder marker\n';
+    str3='Value is generally ~ [.15,.45] \n';    
+    blue_keep=input([str1 str2 str3]);
+    
+end
 %% Remove hand points (because they're too close or far from shoulder)
 
 rmv1=dists1<green_keep(1) | dists1>green_keep(2);
@@ -1871,7 +2013,7 @@ for i=1:n_times
     dists5(i)=pdist2(all_medians(10,:,i),all_medians(5,:,i));
 end
 
-%% Check whether elbow-5 distance is greater than elbow-3 distance
+%% SET 15. Check whether elbow-5 distance is greater than elbow-3 distance
 %Which it shouldn't be
 
 wdw=20; %Time window for plots below
@@ -1879,6 +2021,11 @@ wdw=20; %Time window for plots below
 %Find times when marker 5 has a greater distance to the elbow
 %than marker 3 (which is a problem)
 idxs=find(dists5>dists3);
+
+%Initialize points to be removed
+rmv3_cell=cell(1,length(idxs));
+rmv5_cell=cell(1,length(idxs));
+
 %Plot those times
 for i=1:length(idxs)
     if idxs(i)+wdw<=n_times & idxs(i)-wdw>0
@@ -1889,19 +2036,25 @@ for i=1:length(idxs)
         plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
         plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
         plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
+        
+        title(num2str(idxs(i)));
+        
+        rmv3_cell{i}=input('15. Times to remove hand point 3 (red) \n');
+        rmv5_cell{i}=input('15. Times to remove hand point 5 (cyan) \n');
     end
 end
 
 %% Set marker 3 or 5 to remove based on above
 
-rmv3=[]; %Remove red marker 3
-rmv5=[]; %Remove green marker 1
+%If cyan greater than red
+
+rmv3=[rmv3_cell{:}]; %Times to remove marker of red hand point 3
+rmv5=[rmv5_cell{:}]; %Times to remove marker of green hand point 5
 
 all_medians(3,:,rmv3)=NaN;
 all_medians(5,:,rmv5)=NaN;
 
-
-%% Check whether elbow-4 distance is greater than elbow-2 distance
+%% SET 16. Check whether elbow-4 distance is greater than elbow-2 distance
 %Which it shouldn't be
 
 wdw=20; %Time window for plots below
@@ -1909,6 +2062,12 @@ wdw=20; %Time window for plots below
 %Find times when marker 4 has a greater distance to the elbow
 %than marker2 (which is a problem)
 idxs=find(dists4>dists2);
+
+%Initialize points to be removed
+rmv2_cell=cell(1,length(idxs));
+rmv4_cell=cell(1,length(idxs));
+
+
 %Plot those times
 for i=1:length(idxs)
     if idxs(i)+wdw<=n_times & idxs(i)-wdw>0
@@ -1919,17 +2078,22 @@ for i=1:length(idxs)
         plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
         plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
         plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
+        title(num2str(idxs(i)));
+        
+        rmv2_cell{i}=input('16. Times to remove hand point 2 (blue) \n');
+        rmv4_cell{i}=input('16. Times to remove hand point 4 (magenta) \n');
     end
 end
 
-%% Set points to remove
+%% Set marker 2 or 4 to remove based on above
 
-rmv2=[]; %Remove blue marker 2
-rmv4=[]; %Remove red marker 4
+%If magenta greater than blue
+
+rmv2=[rmv2_cell{:}]; %Times to remove marker of blue hand point 2
+rmv4=[rmv4_cell{:}]; %Times to remove marker of red hand point 4
 
 all_medians(2,:,rmv2)=NaN;
 all_medians(4,:,rmv4)=NaN;
-
 
 
 %% Update all_medians2 to deal with removals
@@ -1948,7 +2112,6 @@ for j=1:10 %Loop through markers
     end
 end
 
-
 %% Make matrices line up correctly with start time
 
 %Make the final matrices begin at time 1 instead of time "start."
@@ -1961,9 +2124,6 @@ all_medians2=NaN(11,3,finish);
 
 all_medians(:,:,start:finish)=temp;
 all_medians2(:,:,start:finish)=temp2;
-
-
-
 
 
 
@@ -2055,5 +2215,16 @@ all_medians2(:,:,start:finish)=temp2;
 %% save
 savefile=0;
 if savefile
-    save('tracking_chips_RW003_20151120.mat','all_medians','all_medians2','led_vals','times');
+    date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
+    fname_save=[main_dir monkey '/Color_Tracking/' date '/Markers/markers_' monkey '_' date2 '_' exp '_' num];
+    save(fname_save,'all_medians','all_medians2','led_vals','times');
+    
+    if first_time
+        fname_save_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
+        save(fname_save_settings,'red_elbow_dist_from_blue','red_blue_arm_dist_max','red_arm_thresh',...
+        'green_hand_dists_elbow','red_hand_dists_elbow','blue_hand_dists_elbow','green_separator',...
+        'green_hand_dists_bluearm','red_hand_dists_bluearm','blue_hand_dists_bluearm',...
+        'green_hand_dists_redarm', 'red_hand_dists_redarm', 'blue_hand_dists_redarm',...
+        'red_dist_min','green_dist_min','red_keep','green_keep','blue_keep');     
+    end
 end

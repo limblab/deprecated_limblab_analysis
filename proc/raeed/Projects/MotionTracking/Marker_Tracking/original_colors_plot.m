@@ -42,5 +42,5 @@ for i=1
     ylim(xlims)
     zlim(ylims)
 %     pause(.03)
-    pause;
+%     pause;
 end
