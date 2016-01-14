@@ -2126,6 +2126,27 @@ all_medians(:,:,start:finish)=temp;
 all_medians2(:,:,start:finish)=temp2;
 
 
+%% Get smoothed time points
+
+all_medians_smooth=NaN(size(all_medians));
+for i=1:10
+    for j=1:3
+        temp=reshape(all_medians(i,j,:),[1,size(all_medians,3)]);
+        temp2=medfilt1nan(temp,5);
+%     all_medians_smooth(i,j,:)
+    end
+end
+
+
+%If either 2 ahead or 2 behind is NaN, just use window of 3 instead of 5??
+
+%In general, only fill in if >=3/5 are there.
+
+%If current is NaN, only fill in if other 4 aren't NaN ??
+
+%If current is NaN, only fill in if surrounding ones aren't NaN
+
+
 
 
 
