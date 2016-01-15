@@ -16,11 +16,11 @@ function getCOTaskTable(cds,times)
     bumpCodes = cds.words.word(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5))';
 
     word_ot_on = hex2dec('40');
-    otOnTimes = cds.words.ts( bitand(hex2dec('f0'),cds.words.word) == word_ot_on, 1);
-    otOnCodes = cds.words.word( bitand(hex2dec('f0'),cds.words.word) == word_ot_on, 2);
+    otOnTimes = cds.words.ts( bitand(hex2dec('f0'),cds.words.word) == word_ot_on);
+    otOnCodes = cds.words.word( bitand(hex2dec('f0'),cds.words.word) == word_ot_on);
     
     wordGo = hex2dec('31');
-    goCues = cds.words.ts(cds.words.word == wordGo, 1);
+    goCues = cds.words.ts(cds.words.word == wordGo);
     
     %preallocate our trial variables:
     numTrials=numel(times.number);
