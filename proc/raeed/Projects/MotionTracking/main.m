@@ -68,6 +68,16 @@ end
 plot_flag=1;
 [ kinect_pos,kinect_pos2 ] = do_translation_rotation( all_medians, all_medians2, R, Tpre, Tpost, plot_flag, times_good, pos_h, colors_xy );
 
+%% 5. SMOOTH OUT MARKERS
+
+kinect_pos_smooth=NaN(size(kinect_pos));
+for i=1:10
+    for j=1:3
+        temp=reshape(kinect_pos(i,j,:),[1,size(kinect_pos,3)]);
+        kinect_pos_smooth(i,j,:)=medfilt1nan(temp,5);
+    end
+end
+
 %% 5. FIND TIMES TO EXCLUDE (BECAUSE THE MONKEY THREW AWAY THE HANDLE)
 
 %% 5a. Calculate the distances of the hand marker to the handle (and plot)
@@ -75,7 +85,7 @@ plot_flag=1;
 %handle
 
 n_times = size(all_medians,3);
-k=reshape(kinect_pos(3,:,:),[3,n_times]);
+k=reshape(kinect_pos_smooth(3,:,:),[3,n_times]);
 h=bdf.pos(:,2:3);
 h(:,3)=0;
 
@@ -85,7 +95,7 @@ for i=1:n_times
 end
 
 figure; plot(err)
-figure; scatter3(kinect_pos(3,1,:),kinect_pos(3,2,:),kinect_pos(3,3,:))
+figure; scatter3(kinect_pos_smooth(3,1,:),kinect_pos_smooth(3,2,:),kinect_pos_smooth(3,3,:))
 %This can be used in combination w/ the z-force
 
 %% 6. PUT KINECT DATA INTO OPENSIM COORDINATES
@@ -96,7 +106,7 @@ figure; scatter3(kinect_pos(3,1,:),kinect_pos(3,2,:),kinect_pos(3,3,:))
 % Origin at shoulder joint center (marker 9), x is towards screen, y is up, z is to right
 
 % extract and clean up shoulder jc data
-shoulder_pos = squeeze(kinect_pos(9,:,:))';
+shoulder_pos = squeeze(kinect_pos_smooth(9,:,:))';
 marker_loss_points = find(diff(isnan(shoulder_pos(:,1)))>0);
 marker_reappear_points = find(diff(isnan(shoulder_pos(:,1)))<0);
 if length(marker_loss_points)>length(marker_reappear_points)
@@ -121,7 +131,7 @@ end
 % Recenter all markers on shoulder position
 rep_shoulder_pos = repmat(shoulder_pos,[1 1 11]);
 rep_shoulder_pos = permute(rep_shoulder_pos,[3 2 1]);
-kinect_pos_recenter = kinect_pos-rep_shoulder_pos;
+kinect_pos_recenter = kinect_pos_smooth-rep_shoulder_pos;
 
 % switch axes of coordinate frame
 % x->z, y->x, z->y
