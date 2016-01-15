@@ -97,10 +97,10 @@ h(:,3)=0;
 
 err=NaN(1,n_times);
 for i=1:n_times    
-    err(i)=pdist2(k(:,i)',h(i,:));
+    err(i)=pdist2(k(1:2,i)',h(i,1:2));
 end
 
-figure; plot(err)
+figure; plot(kinect_times,err)
 figure; scatter3(kinect_pos_smooth(3,1,:),kinect_pos_smooth(3,2,:),kinect_pos_smooth(3,3,:))
 %This can be used in combination w/ the z-force
 
@@ -160,6 +160,16 @@ clear marker_reappear
 clear num_lost
 clear shoulder_pos
 
+%% 7. FIND BAD HAND FRAMES
+
+% throw away all frames that have 1 or fewer hand markers
+good_frame = true(size(kinect_pos_smooth,3),1);
+for i=1:length(good_frame)
+    if sum(isnan(kinect_pos_smooth(1:5,1,i)))>3
+        good_frame(i) = false;
+    end
+end
+
 %% 7. PUT KINECT DATA INTO BDF
 
 %% 8. PUT KINECT MOTION TRACKING DATA INTO TRC FORMAT
@@ -192,16 +202,18 @@ fprintf(fid,'\n\n');
 % write out data
 for j=1:num_frames
     frame_idx = j-1+start_idx;
-    fprintf(fid,'%d\t%f\t',[j kinect_times(frame_idx)]);
-    marker_pos = kinect_pos_opensim(1:num_markers,:,frame_idx);
-    for i = 1:num_markers
-        if isnan(marker_pos(i,1))
-            fprintf(fid,'\t\t\t');
-        else
-            fprintf(fid,'%f\t%f\t%f\t',marker_pos(i,:));
+    if(good_frame(frame_idx))
+        fprintf(fid,'%d\t%f\t',[j kinect_times(frame_idx)]);
+        marker_pos = kinect_pos_opensim(1:num_markers,:,frame_idx);
+        for i = 1:num_markers
+            if isnan(marker_pos(i,1))
+                fprintf(fid,'\t\t\t');
+            else
+                fprintf(fid,'%f\t%f\t%f\t',marker_pos(i,:));
+            end
         end
+        fprintf(fid,'\n');
     end
-    fprintf(fid,'\n');
 end
 
 % close file
