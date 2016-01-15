@@ -9,12 +9,19 @@ function [ kinect_pos,kinect_pos2 ] = do_translation_rotation( all_medians, all_
 %handle coordinates)
 
 %Outputs:
-%kinect_pos and kinect_pos2 - the kinect marker locations in handle coordinates
+%kinect_pos - the kinect marker locations in handle coordinates
 %kinect_pos has NaNs for missing markers and kinect_pos2 has the last known
 %position for previous markers
 
 %Note that the inputs plot_flag, times_good, pos_h, colors_xy, are all just
 %used for making sure this works (via a plot). These can later be removed
+
+%% Deal with number of inputs
+
+if nargin<9 %The final parameters are only for plotting
+    plot_flag=0;
+end
+
 
 %% Put all kinect positions in handle coordinates
 
