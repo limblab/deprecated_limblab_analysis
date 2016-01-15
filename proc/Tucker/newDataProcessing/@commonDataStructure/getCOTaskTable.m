@@ -28,7 +28,6 @@ function getCOTaskTable(cds,times)
     tgtList=-1*ones(numTrials,1);
     bumpTimeList=-1*ones(numTrials,1);
     bumpList=-1*ones(numTrials,1);
-    bumpPhaseList=-1*ones(numTrials,1);
     bumpDirList=-1*ones(numTrials,1);
     goCueList=-1*ones(numTrials,1);
     tgtCornerList=-1*ones(numTrials,4);
@@ -72,13 +71,13 @@ function getCOTaskTable(cds,times)
 
         % Classify bump phasing
         if bumpTimeList(trial) == -1
-            bumpPhaseList(trial) = 'none';
+            bumpPhaseList(trial) = {'none'};
         elseif tgtOnTimeList(trial) == -1
-            bumpPhaseList(trial) = 'Hold';
+            bumpPhaseList(trial) = {'Hold'};
         elseif bumpTimeList(trial) > goCueList(trial) + .002
-            bumpPhaseList(trial) = 'Move';
+            bumpPhaseList(trial) = {'Move'};
         else
-            bumpPhaseList(trial) = 'Delay';
+            bumpPhaseList(trial) = {'Delay'};
         end
     end
     
