@@ -3,20 +3,24 @@ function getCOTaskTable(cds,times)
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files
     %
-
+    %computes the trial variables for the CO task and composes the trial
+    %table in the cds using the task variables and the generic trial times
+    %passed in from the calling function. This is intended to be called by 
+    %the getTrialTable method of the cds class, rather than directly by a
+    %user
     
     %get our word timing for changes in the state machine:
     % Isolate the individual word timestamps
     bumpWordBase = hex2dec('50');
-    bumpTimes = words(words(:,2) >= (bumpWordBase) & words(:,2) <= (bumpWordBase+5), 1)';
-    bumpCodes = words(words(:,2) >= (bumpWordBase) & words(:,2) <= (bumpWordBase+5), 2)';
+    bumpTimes = cds.words.ts(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5), 1)';
+    bumpCodes = cds.words.word(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5), 2)';
 
     word_ot_on = hex2dec('40');
-    otOnTimes = words( bitand(hex2dec('f0'),words(:,2)) == word_ot_on, 1);
-    otOnCodes = words( bitand(hex2dec('f0'),words(:,2)) == word_ot_on, 2);
+    otOnTimes = cds.words.ts( bitand(hex2dec('f0'),cds.words.word) == word_ot_on, 1);
+    otOnCodes = cds.words.word( bitand(hex2dec('f0'),cds.words.word) == word_ot_on, 2);
     
     wordGo = hex2dec('31');
-    goCues = words(words(:,2) == wordGo, 1);
+    goCues = cds.words.ts(cds.words.word == wordGo, 1);
     
     %preallocate our trial variables:
     numTrials=numel(times.number);
