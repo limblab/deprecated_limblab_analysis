@@ -65,9 +65,15 @@ end
 
 %% 4d. Perform Translation and Rotation on the kinect data
 
-plot_flag=1;
-[ kinect_pos,kinect_pos2 ] = do_translation_rotation( all_medians, all_medians2, R, Tpre, Tpost, plot_flag, times_good, pos_h, colors_xy );
+if ~rotation_known
+    plot_flag=1;
+    [ kinect_pos ] = do_translation_rotation( all_medians, R, Tpre, Tpost, plot_flag, times_good, pos_h, colors_xy );
+end
 
+if rotation_known
+    [ kinect_pos ] = do_translation_rotation( all_medians, R, Tpre, Tpost);
+end
+    
 %% 5. SMOOTH OUT MARKERS
 
 kinect_pos_smooth=NaN(size(kinect_pos));
