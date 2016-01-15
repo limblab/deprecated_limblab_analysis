@@ -83,7 +83,7 @@ function getCOTaskTable(cds,times)
     
     %convert target lists into angle:
     tgtCtrList=[tgtCornerList(:,1)+tgtCornerList(:,3),tgtCornerList(:,2)+tgtCornerList(:,4)]/2;
-    tgtDirList=atan2(tgtCtrList(2)./tgtCtrList(1));
+    tgtDirList=atan2(tgtCtrList(:,2),tgtCtrList(:,1));
     %use target info to get angles for bumps based on the 
     bumps=unique(bumpList);
     for b=1:length(bumps)
@@ -91,7 +91,7 @@ function getCOTaskTable(cds,times)
     end
     
     %build table:
-    trialsTable=table(tgtOnTimeList,goCueList,tgtList,tgtCornerList,tgtDirList,tgtCtrList,bumpTimeList,bumpList,bumpPhaseList,bumpDirList,...
+    trialsTable=table(tgtOnTimeList,goCueList,tgtList,tgtCornerList,tgtDirList,tgtCtrList,bumpTimeList,bumpList,bumpPhaseList',bumpDirList,...
                     'VariableNames',{'tgtOnTime','goCue','tgtID','tgtCorners','tgtDir','tgtCtr','bumpTime','bumpID','bumpPhase','bumpDir'});
     
     trialsTable.Properties.VariableUnits={'s','s','int','cm, cm, cm, cm','rad','cm, cm','s','int','char','deg'};
