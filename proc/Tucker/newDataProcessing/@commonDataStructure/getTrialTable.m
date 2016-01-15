@@ -61,7 +61,7 @@ function getTrialTable(cds)
             case 'RW' %Labs standard random walk task for the robot
                 cds.getRWTaskTable(times);
             case 'CO' %labs standard center out task for the robot
-                cds.getCOTrialTable(times);
+                cds.getCOTaskTable(times);
             case 'WF' %wrist flexion task
                 cds.getWFTaskTable(times);
             case 'multi_gadget'
