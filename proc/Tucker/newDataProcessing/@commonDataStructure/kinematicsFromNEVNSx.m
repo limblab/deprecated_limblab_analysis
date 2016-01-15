@@ -28,7 +28,11 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         % low byte (bits 8-1).
         encStrobes = [event_ts, bitand(hex2dec('00FF'),event_data)];
     end   
-    
+    if isempty(encStrobes)
+        warning('kinematicsFromNEVNSx:noEncoderData','Found no encoder data, returning without populating cds.pos,cds.vel or cds.acc. Some additional processing relies on kinematics and may fail.');
+        disp('load data using the noKin flag to suppress this warning')
+        return
+    end
     %now that we have the encoder strobes, convert those to actual encoder values    
     jumpTimes=[];
     if opts.ignore_jumps || ~isfield(NEVNSx.MetaTags,'FileSepTime')
