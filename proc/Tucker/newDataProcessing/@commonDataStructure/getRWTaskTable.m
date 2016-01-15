@@ -44,22 +44,24 @@ function getRWTaskTable(cds,times)
         end
         %now that we have the expected number of targets, get the trial
         %data
-        goCueList=-1*ones(numTrials,numTgt);
-        goCodeList=-1*ones(numTrials,numTgt);
+        goCueList=nan(numTrials,numTgt);
+        goCodeList=nan(numTrials,numTgt);
         numTgts=numTgt*ones(numTrials,1);
-        numAttempted=-1*ones(numTrials,1);
+        numAttempted=nan(numTrials,1);
         for trial = 1:numTrials-1
             % Go cues
             idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial));
 
             %get the codes and times for the go cues
-            goCue = -1*ones(1,numTgt);
-            goCode= -1*ones(1,numTgt);
+            goCue = nan(1,numTgt);
+            goCode= nan(1,numTgt);
             if isempty(idxGo)
                 tgtsAttempted = 0;
             else
                 tgtsAttempted = length(idxGo);
-                goCue(1:tgtsAttempted) = goCues(idxGo);
+            end
+            if tgtsAttempted>0
+                goCue(1:tgtsAttempted)=goCues(idxGo);
                 goCode(1:tgtsAttempted)= goCodes(idxGo);
             end
 
@@ -86,13 +88,13 @@ function getRWTaskTable(cds,times)
         hdr_size=18;
         numTgt = (cds.databursts.db(1)-18)/8;
 
-        goCueList=      -1*ones(numTrials,numTgt);
-        goCodeList=     -1*ones(numTrials,numTgt);
+        goCueList=      nan(numTrials,numTgt);
+        goCodeList=     nan(numTrials,numTgt);
         numTgts=        numTgt*ones(numTrials,1);
-        numAttempted=   -1*ones(numTrials,1);
-        xOffsets=       -1*ones(numTrials,1); 
-        yOffsets=       -1*ones(numTrials,1);
-        tgtSizes=       -1*ones(numTrials,1);
+        numAttempted=   nan(numTrials,1);
+        xOffsets=       nan(numTrials,1); 
+        yOffsets=       nan(numTrials,1);
+        tgtSizes=       nan(numTrials,1);
         for trial = 1:numel(times.startTime)
             if (cds.databursts.db(trial,1)-18)/8 ~= numTgt
                 %catch weird/corrupt databursts with different numbers of targets
@@ -105,13 +107,15 @@ function getRWTaskTable(cds,times)
             idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial));
 
             %get the codes and times for the go cues
-            goCue = -1*ones(1,numTgt);
-            goCode= -1*ones(1,numTgt);
+            goCue = nan(1,numTgt);
+            goCode= nan(1,numTgt);
             if isempty(idxGo)
                 tgtsAttempted = 0;
             else
                 tgtsAttempted = length(idxGo);
-                goCue(1:tgtsAttempted) = goCues(idxGo);
+            end
+            if tgtsAttempted>0
+                goCue(1:tgtsAttempted)=goCues(idxGo);
                 goCode(1:tgtsAttempted)= goCodes(idxGo);
             end
 

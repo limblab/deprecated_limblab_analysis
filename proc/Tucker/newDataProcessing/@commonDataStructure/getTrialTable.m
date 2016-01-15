@@ -41,14 +41,14 @@ function getTrialTable(cds)
             trial_end_idx = find(endTime > startTime(ind) & endTime < next_trial_start, 1, 'first');
         end
         if isempty(trial_end_idx)
-            stopTime(ind) = -1;
+            stopTime(ind) = nan;
             trialResult(ind) = {'-'};
         else
             stopTime(ind) = endTime(trial_end_idx);
             trialResult(ind) = {resultCodes(mod(endCodes(trial_end_idx),32)+1)}; %0 is reward, 1 is abort, 2 is fail, and 3 is incomplete (incomplete should never happen)
         end
     end
-    mask=stopTime~=-1;
+    mask=~isnan(stopTime);
     times=table([1:sum(mask)]',startTime(mask),stopTime(mask),trialResult(mask),'VariableNames',{'number','startTime','endTime','result'});
     
     

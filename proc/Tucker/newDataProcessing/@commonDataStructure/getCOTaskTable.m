@@ -24,13 +24,13 @@ function getCOTaskTable(cds,times)
     
     %preallocate our trial variables:
     numTrials=numel(times.number);
-    tgtOnTimeList=-1*ones(numTrials,1);
-    tgtList=-1*ones(numTrials,1);
-    bumpTimeList=-1*ones(numTrials,1);
-    bumpList=-1*ones(numTrials,1);
-    bumpDirList=-1*ones(numTrials,1);
-    goCueList=-1*ones(numTrials,1);
-    tgtCornerList=-1*ones(numTrials,4);
+    tgtOnTimeList=nan(numTrials,1);
+    tgtList=nan(numTrials,1);
+    bumpTimeList=nan(numTrials,1);
+    bumpList=nan(numTrials,1);
+    bumpDirList=nan(numTrials,1);
+    goCueList=nan(numTrials,1);
+    tgtCornerList=nan(numTrials,4);
     % loop thorugh our trials and build our list vectors:
     for trial = 1:numTrials
         %find the current databurst:
@@ -54,8 +54,8 @@ function getCOTaskTable(cds,times)
         % Bump code and time
         idxBump = find(bumpTimes > times.startTime(trial) & bumpTimes < times.endTime(trial), 1, 'first');
         if isempty(idxBump)
-            bumpTimeList(trial) = -1;
-            bumpList(trial) = -1;
+            bumpTimeList(trial) = nan;
+            bumpList(trial) = nan;
         else
             bumpTimeList(trial) = bumpTimes(idxBump);
             bumpList(trial) = bitand(hex2dec('0f'),bumpCodes(idxBump));
@@ -64,15 +64,15 @@ function getCOTaskTable(cds,times)
         % Go cue
         idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial), 1, 'first');
         if isempty(idxGo)
-            goCueList(trial) = -1;
+            goCueList(trial) = nan;
         else
             goCueList(trial) = goCues(idxGo);
         end
 
         % Classify bump phasing
-        if bumpTimeList(trial) == -1
+        if isnan(bumpTimeList(trial)) 
             bumpPhaseList(trial) = {'none'};
-        elseif tgtOnTimeList(trial) == -1
+        elseif isnan(tgtOnTimeList(trial))
             bumpPhaseList(trial) = {'Hold'};
         elseif bumpTimeList(trial) > goCueList(trial) + .002
             bumpPhaseList(trial) = {'Move'};

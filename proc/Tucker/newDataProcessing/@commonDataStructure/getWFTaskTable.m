@@ -30,22 +30,22 @@ function getWFTaskTable(cds,times)
     burst_size = size(cds.databursts.db,2);
     numTrials=numel(times.number);
     
-    targetCorners=-1*ones(numTrials,4);
-    targetCenters=-1*ones(numTrials,2);
-    OTTimeList=-1*ones(numTrials,1);
-    OTDirList=-1*ones(numTrials,1);
-    goTime=-1*ones(numTrials,1);
-    targetID=-1*ones(numTrials,1);
-    catchFlag=-1*ones(numTrials,1);
-    adaptFlag=-1*ones(numTrials,1);
+    targetCorners=nan(numTrials,4);
+    targetCenters=nan(numTrials,2);
+    OTTimeList=nan(numTrials,1);
+    OTDirList=nan(numTrials,1);
+    goTime=nan(numTrials,1);
+    targetID=nan(numTrials,1);
+    catchFlag=nan(numTrials,1);
+    adaptFlag=nan(numTrials,1);
     
     for trial = 1:numTrials
 
         % Outer target
         idxOT = find(OTOnWords > times.startTime(trial) & OTOnWords < times.endTime(trial), 1, 'first');
         if isempty(idxOT)
-            OTTime = -1;
-            OTDir = -1;
+            OTTime = nan;
+            OTDir = nan;
         else
             OTTime = OTOnWords(idxOT);
             OTDir = bitand(hex2dec('0f'), OTOnCodes(idxOT));
@@ -69,7 +69,7 @@ function getWFTaskTable(cds,times)
         idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial), 1, 'first');
         if isempty(idxGo)
             if isempty(idxCatch)
-                goCue = -1;
+                goCue = nan;
             else
                 goCue = catchWords(idxCatch);
             end
