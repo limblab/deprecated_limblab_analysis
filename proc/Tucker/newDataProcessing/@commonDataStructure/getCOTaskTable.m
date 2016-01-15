@@ -32,7 +32,6 @@ function getCOTaskTable(cds,times)
     bumpDirList=-1*ones(numTrials,1);
     goCueList=-1*ones(numTrials,1);
     tgtCornerList=-1*ones(numTrials,4);
-    tgtCtrList=-1*ones(numTrials,2);
     % loop thorugh our trials and build our list vectors:
     for trial = 1:numTrials
         %find the current databurst:
