@@ -41,7 +41,7 @@ function getCOTaskTable(cds,times)
         end
         
         % Outer target
-        idxOT = find(otOnTimes > start_time & otOnTimes < stop_time, 1, 'first');
+        idxOT = find(otOnTimes > times.startTime(trial) & otOnTimes < times.endTime(trial), 1, 'first');
         if isempty(idxOT)
             tgtOnTimeList(trial) = nan;
             tgtList(trial) = nan;
@@ -53,7 +53,7 @@ function getCOTaskTable(cds,times)
         end
         
         % Bump code and time
-        idxBump = find(bumpTimes > start_time & bumpTimes < stop_time, 1, 'first');
+        idxBump = find(bumpTimes > times.startTime(trial) & bumpTimes < times.endTime(trial), 1, 'first');
         if isempty(idxBump)
             bumpTimeList(trial) = -1;
             bumpList(trial) = -1;
@@ -63,7 +63,7 @@ function getCOTaskTable(cds,times)
         end
         
         % Go cue
-        idxGo = find(goCues > start_time & goCues < stop_time, 1, 'first');
+        idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial), 1, 'first');
         if isempty(idxGo)
             goCueList(trial) = -1;
         else
