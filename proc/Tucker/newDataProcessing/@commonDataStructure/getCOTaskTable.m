@@ -12,8 +12,8 @@ function getCOTaskTable(cds,times)
     %get our word timing for changes in the state machine:
     % Isolate the individual word timestamps
     bumpWordBase = hex2dec('50');
-    bumpTimes = cds.words.ts(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5), 1)';
-    bumpCodes = cds.words.word(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5), 2)';
+    bumpTimes = cds.words.ts(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5))';
+    bumpCodes = cds.words.word(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5))';
 
     word_ot_on = hex2dec('40');
     otOnTimes = cds.words.ts( bitand(hex2dec('f0'),cds.words.word) == word_ot_on, 1);
