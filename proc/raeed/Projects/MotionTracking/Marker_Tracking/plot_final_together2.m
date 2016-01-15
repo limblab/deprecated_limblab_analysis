@@ -1,13 +1,13 @@
 %% Set things
 markers=1:10;
-pause_manually=0;
-plot_original=1;
-start=1;
-finish=10;
+pause_manually=1;
+plot_original=0;
+start=4300;
+finish=4500;
 
 %% Plot
 
-medians=all_medians; %Renamed (to make compatible with my previous plotting script)
+medians=all_medians_smooth; %Renamed (to make compatible with my previous plotting script)
 
 %Set plotting limits as minimums and maximums
 xlims=[min(min(medians(markers,1,:))) max(max(medians(markers,1,:)))];
@@ -23,7 +23,7 @@ zlim(ylims)
 
 %Colors of each marker
 plot_colors_all=[1 0 0; 0 1 0; 0 0 1; 1 1 0; 0 1 1; 1 0 1; 0 0 0; 1 .5 0; .5 0 1; 0 1 .5; 0 0 0];
-plot_colors=plot_colors(markers,:);
+plot_colors=plot_colors_all(markers,:);
 
 
 for i=start:finish %Loop through time
@@ -49,7 +49,7 @@ for i=start:finish %Loop through time
     end
     
     %Plot Markers
-    scatter3(medians(:,3,i),medians(:,1,i),medians(:,2,i),200,plot_colors,'filled')
+    scatter3(medians(markers,3,i),medians(markers,1,i),medians(markers,2,i),200,plot_colors,'filled')
     hold off
     
     title(i); %Give time as title
