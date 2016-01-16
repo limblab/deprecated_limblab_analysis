@@ -6,15 +6,15 @@ function enc2handlepos(cds)
     if cds.meta.lab==2 %If lab2 was used for data collection
         l1=24.0; l2=23.5;
     elseif cds.meta.lab==3 %If lab3 was used for data collection
-        if datenum(out_struct.meta.datetime) < datenum('10/05/2012')
+        if datenum(cds.meta.dateTime) < datenum('10/05/2012')
             l1=24.75; l2=23.6;
-        elseif datenum(out_struct.meta.datetime) < datenum('17-Jul-2013')
+        elseif datenum(cds.meta.dateTime) < datenum('17-Jul-2013')
           l1 = 24.765; l2 = 24.13;
         else
             l1 = 24.765; l2 = 23.8125;
         end
     elseif cds.meta.lab==6 %If lab6 was used for data collection
-        if datenum(cds.meta.datetime) < datenum('01-Jan-2015')
+        if datenum(cds.meta.dateTime) < datenum('01-Jan-2015')
             l1=27; l2=36.8;
         else
             l1=46.8; l2=45;
