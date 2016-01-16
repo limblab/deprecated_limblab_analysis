@@ -38,17 +38,35 @@ function mergecds2cds(cds,cds2)
     %structure to merge
     
     %% merge units
-    
-    %% merge analog
-        for i=1:length(cds.analog)
-            for j=1:length(cds2.analog)
-                %if the frequency of cds.analog{i} is the same as
-                %cds2.analog{j}, then merge cds2.analog{j} into
-                %cds.analog{i}
-                if (cds.analog{i}.t(2)-cds.analog{i}.t(1))==(cds2.analog{j}.t(2)-cds2.analog{j}.t(1))
-                    
-                end
+        if isempty(cds.units)
+            set(cds,'units',cds2.units)
+        elseif ~isempty(cds2.units)
+            %sanity check that the arrays have different labels
+            if strcmp(cds.units(1).array,cds2.units(1).array)
+                error('mergecds2cds:sameArrayName','Both structures you are merging have the same array name, which will result in duplicate entries in the units field. Re-load one of the data files using a different array name to avoid this problem')
             end
+            set(cds,'units',[cds.units,cds2.units])
+        end
+    %% merge analog
+        if isempty(cds.analog)
+            set(cds,'analog',cds2.analog)
+        elseif ~isempty(cds2.analog)
+            toMerge=1:length(cds2.analog);
+            for i=1:length(cds.analog)
+                for j=1:length(cds2.analog)
+                    %if the frequency of cds.analog{i} is the same as
+                    %cds2.analog{j}, then merge cds2.analog{j} into
+                    %cds.analog{i}
+                    if (cds.analog{i}.t(2)-cds.analog{i}.t(1))==(cds2.analog{j}.t(2)-cds2.analog{j}.t(1))
+                        toMerge(j)=-1;
+                        analog{i}=[cds.analog{i},cds2.analog{j}(:,2:end)];
+                    end
+                end
+
+            end
+            analog=[analog,cds2.analog(toMerge(toMerge>0))];
+            set(cds,'analog',analog)
+            clear analog
         end
     %% merge things that *should* exist in only one of the cds structures and we have no merge scheme for
         dataList={'trials','words'};
@@ -64,7 +82,7 @@ function mergecds2cds(cds,cds2)
             end
         end
     %% merge everything that is a simple table
-        dataList={'pos','vel','acc','force','EMG','LFP','analog','triggers','units','FR'};
+        dataList={'pos','vel','acc','force','EMG','LFP','analog','triggers','FR'};
         for i=1:length(dataList)
             if ~isempty(cds2.(dataList{i}))
                 if isempty(cds.(dataList{i}))
@@ -97,7 +115,5 @@ function mergecds2cds(cds,cds2)
         end
         
     %% log the merge operation
-        s.mergedMeta=cds2.meta;
-        s.merged
         cds.addOperation(mfilename('fullpath'),cds2.meta)
 end

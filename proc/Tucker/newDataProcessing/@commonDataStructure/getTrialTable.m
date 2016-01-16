@@ -29,7 +29,7 @@ function getTrialTable(cds)
     endCodes =  cds.words.word( bitand(hex2dec('f0'), cds.words.word) == wordEnd);
     
     %preallocate with -1
-    stopTime=-1*ones(size(startTime));
+    stopTime=nan(size(startTime));
     trialResult=cell(size(stopTime));
     resultCodes='RAFI';
     for ind = 1:numTrials-1
