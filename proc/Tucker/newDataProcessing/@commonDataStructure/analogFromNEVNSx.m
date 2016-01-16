@@ -3,7 +3,7 @@ function analogFromNEVNSx(cds,NEVNSx,NSxInfo)
 %array of the cds. Does not return anything
     %establish lists for force, emg, lfp
     forceList = [find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'force_'))),...
-                find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'ForceHandle')))];
+                find(~cellfun('isempty',strfind(NSxInfo.NSx_labels,'ForceHandle')))];
     lfpList=find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'chan')));
     emgList=find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'emg_')));
     %get lists of the analog data for each frequency & remove those we have already handled

@@ -8,6 +8,7 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
     handleforce=[];
     %forces for wf and other tasks that use force_ to denote force channels
     forceCols = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'force_')));
+    labels=[];
     if ~isempty(forceCols)
         [loadCellData,t]=getFilteredAnalogMat(NEVNSx,NSx_info,cds.kinFilterConfig,forceCols);
         %build our table of force data:
@@ -48,8 +49,8 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
     end
     %write temp into the cds
     forces=[table(t(t>=1),'VariableNames',{'t'}),handleforce,force];
-    if ~isempty(force)
-        forces.Properties.VariableUnits=[{'s'} repmat({'N'},1,size(handleforce,2)+numel(labels))];
+    if ~isempty(forces)
+        forces.Properties.VariableUnits=[{'s'} repmat({'N'},1,size(handleforce,2)+size(force,2))];
         forces.Properties.Description='a table containing force data. First column is time, all other columns will be forces. If possible forces in x and y are identified and labeled fx and fy';
     else
         forces=cell2table(cell(0,3),'VariableNames',{'t','fx','fy'});
