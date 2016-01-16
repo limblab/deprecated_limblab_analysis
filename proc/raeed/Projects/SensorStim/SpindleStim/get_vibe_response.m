@@ -1,4 +1,4 @@
-function [vibe_avg] = get_vibe_response(units,vibe_trace,which_units)
+function [vibe_avg,checkfig_h] = get_vibe_response(units,vibe_trace,which_units)
 % GET_VIBE_RESPONSE finds average firing rates of neurons during vibration
 % and baseline. BEST USED WITH CONSTANT FREQUENCY VIBRATION
 %   Inputs:
@@ -30,6 +30,14 @@ off_time = sum(~vibe_on)/samp_rate;
 if(length(vibe_onset)>length(vibe_offset) || isempty(vibe_onset))
     error('get_vibe_response:bad_vibe_trace','Vibration trace is irregular; verify signal')
 end
+
+% plot sanity check
+checkfig_h = figure;
+plot(vibe_trace(:,1),vibe_trace(:,2),'-k')
+hold on
+ylim = get(gca,'ylim');
+plot(repmat(vibe_onset',2,1),repmat(ylim',1,length(vibe_onset)),'--b')
+plot(repmat(vibe_offset',2,1),repmat(ylim',1,length(vibe_offset)),'--r')
 
 % loop through units
 vibe_avg = struct('id',{},'on_avg',{},'off_avg',{}); % should make this table instead of struct

@@ -37,12 +37,13 @@ kinect_times=times+shift;
 %% Plot the resulting squarewave match (to make sure it was correct)
 
 if plot_flag
+    kinect_times_temp=kinect_times;
     
     %Remove kinect times from when the handle wasn't recorded
-    kin_early=kinect_times<1; %Find the kinect times from before the handle was recorded
-    kin_late=kinect_times>analog_ts(length(analog_ts)); %Find the kinect times from after the handle was recorded
-    kinect_times(kin_early | kin_late)=[];
-    n_times=length(kinect_times); %Number of kinect time points
+    kin_early=kinect_times_temp<1; %Find the kinect times from before the handle was recorded
+    kin_late=kinect_times_temp>analog_ts(length(analog_ts)); %Find the kinect times from after the handle was recorded
+    kinect_times_temp(kin_early | kin_late)=[];
+    n_times=length(kinect_times_temp); %Number of kinect time points
     
     %Remove led vals from times when the handle wasn't recorded
     led_vals_trim=led_vals_scale;
@@ -50,7 +51,7 @@ if plot_flag
     
     %Get the indexes (for the cerebus times) that match with the kinect times (in the below sections)
     
-    combined_times=[kinect_times analog_ts']; %Vector with times from both cerebus and kinect
+    combined_times=[kinect_times_temp analog_ts']; %Vector with times from both cerebus and kinect
     [~,idx]=sort(combined_times); %Sort the times
     [~,idx_rev]=sort(idx); %idx_rev says what place each time was in the sorted combined vector
     a=idx_rev(1:n_times)-1; %Get the sorted location of each of the kinect times (the values from 1:n_times) in the combined vector.
@@ -67,7 +68,7 @@ if plot_flag
     V=KinectSquare(handle_time_idxs);
     
     %Plot kinect values in red and cerebus values in blue
-    figure; plot(kinect_times,led_vals_trim,'r');
+    figure; plot(kinect_times_temp,led_vals_trim,'r');
     hold on;
     plot(analog_ts,KinectSquare);
     legend('Kinect','Cerebus')
