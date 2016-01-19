@@ -33,7 +33,7 @@ kinect_times  = match_squarewave_main( bdf, led_vals, times, kinect_start_guess,
 
 %% 4. PUT KINECT MARKER LOCATIONS IN HANDLE COORDINATES
 
-rotation_known=0; %Whether the rotation matrix is already known (from another file from that day)
+rotation_known=1; %Whether the rotation matrix is already known (from another file from that day)
 
 %% 4a. Plot handle to determine some points to remove
 %We want to remove the time points when the monkey has thrown away the
@@ -91,13 +91,13 @@ end
 %handle
 
 n_times = size(all_medians,3);
-k=reshape(kinect_pos_smooth(3,:,:),[3,n_times]);
-h=bdf.pos(:,2:3);
+k=reshape(kinect_pos(3,:,:),[3,n_times]);
+h=interp1(bdf.pos(:,1),bdf.pos(:,2:3),kinect_times);
 h(:,3)=0;
 
 err=NaN(1,n_times);
 for i=1:n_times    
-    err(i)=pdist2(k(1:2,i)',h(i,1:2));
+    err(i)=pdist2(k(:,i)',h(i,:));
 end
 
 figure; plot(kinect_times,err)

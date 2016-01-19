@@ -1,4 +1,4 @@
-medians=kinect_pos;
+medians=kinect_pos_smooth;
 
 xlims=[min(min(medians(:,1,:))) max(max(medians(:,1,:)))];
 ylims=[min(min(medians(:,2,:))) max(max(medians(:,2,:)))];
@@ -17,7 +17,7 @@ handle_pos = interp1(bdf.pos(:,1),bdf.pos(:,2:3),t);
 
 % vid=[];    
 for i=3500:4000
-    scatter3(medians(:,1,i),medians(:,2,i),medians(:,3,i),200,plot_colors,'filled')
+    scatter3(medians(:,1,i),medians(:,2,i),medians(:,3,i),20,plot_colors,'filled')
     
 %     pause;
     title(t(i))
@@ -27,7 +27,8 @@ for i=3500:4000
     plot3(handle_pos(start_ind:i,1),handle_pos(start_ind:i,2),zeros(i-start_ind+1,1),'-b')
     hold off
     
-    view([58.1250 36.9294])
+%     view([58.1250 36.9294])
+    view([0 90])
     xlim(xlims)
     ylim(ylims)
     zlim(zlims)
