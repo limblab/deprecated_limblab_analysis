@@ -743,7 +743,7 @@ end             %ending "if opts.eye"
                     out_struct.targets.centers =[];
                     out_struct.meta.known_problems{end+1}='Possible malformed databurst (corrupt target positions)';
                 end
-            elseif out_struct.databursts{1,2}(2)==1
+            elseif out_struct.databursts{1,2}(2)==1 || out_struct.databursts{1,2}(2)==2 %HACK: DON'T KNOW WHAT'S DIFFERENT BETWEEN v1 AND v2
                 hdr_size=18;
                 num_targets = (burst_size - hdr_size)/8;
                 out_struct.targets.centers = zeros(num_trials,2+2*num_targets);
