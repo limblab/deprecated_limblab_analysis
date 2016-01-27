@@ -394,9 +394,10 @@
                     % handle.
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
                             0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
-                    rotcal = [-1 0; 0 1];  
+                    rotcal = [-1 0; 0 1];  % HANDLE IS SLIGHTLY ROTATED, SO THIS IS WRONG
                     force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPRICALLY
                     Fy_invert = 1;
+                    error('calc_from_raw_script:Lab6RotHandle','Upside down handle rotation matrix has not been calculated yet. Figure out actual rotation matrix and modify calc_from_raw_script')
                 else
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
                     % \\citadel\limblab\Software\ATI FT\Calibration\Lab 6\FT16018.cal
@@ -456,7 +457,17 @@
             if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection            
                 out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
                 out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
-            elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection         
+            elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
+                % Four problems fixed in one line:
+                % 1) Load cell x axis is rotated pi/8 off of robot forearm
+                % axis
+                % 2) Robot arm encoder zero has elbow angle in the global y
+                % axis
+                % 3) Robot elbow and shoulder encoders are swapped with
+                % respect to other labs
+                % 4) Robot is left arm instead of right, unlike other labs
+                handle_rotation_angle = -(th_1_adj+13*pi/8);
+                
                 out_struct.force(:,1) = temp(:,1).*cos(-th_1_adj)' - temp(:,2).*sin(th_1_adj)';
                 out_struct.force(:,2) = temp(:,1).*sin(th_1_adj)' + temp(:,2).*cos(th_1_adj)';
             end
@@ -732,7 +743,7 @@ end             %ending "if opts.eye"
                     out_struct.targets.centers =[];
                     out_struct.meta.known_problems{end+1}='Possible malformed databurst (corrupt target positions)';
                 end
-            elseif out_struct.databursts{1,2}(2)==1
+            elseif out_struct.databursts{1,2}(2)==1 || out_struct.databursts{1,2}(2)==2 %HACK: DON'T KNOW WHAT'S DIFFERENT BETWEEN v1 AND v2
                 hdr_size=18;
                 num_targets = (burst_size - hdr_size)/8;
                 out_struct.targets.centers = zeros(num_trials,2+2*num_targets);

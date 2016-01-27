@@ -48,21 +48,10 @@ function addOperation(cds,operation,varargin)
         hostname=strtrim(hostname);
     
     %get git log information for the specified operation file
-        [~,fname,~]=fileparts(operation);
-        gitLog=getGitLog(scriptName);
-        %get the commit hash from the gitLog
-        gitHash=[];
-        if ~isempty(gitLog) %if we found a git repo for this script
-            for i=1:length(gitLog)
-                if strfind(gitLog{i},'commit ')
-                    gitHash=gitLog{i}(8:end);
-                    break
-                end
-            end
-        end
-        if isempty(gitHash)
-            gitHash='Not in git repo';
-        end
+        [gitLog, fileLog]=getGitLog(operation);
     %append the current data to the cds.meta.processedWith field
-        cds.meta.processedWith=[cds.meta.processedWith;{fname,date,hostname,username,gitHash,opData}];
+        [~,fname,~]=fileparts(operation);
+        meta=cds.meta;
+        meta.processedWith=[meta.processedWith;{fname,date,hostname,username,gitLog,fileLog,opData}];
+        set(cds,'meta',meta)
 end

@@ -9,12 +9,11 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
     %
     %There is no particular reason this needs to be a function, but it 
     %cleans up the main code to move it to this sub-function, and local
-    %variables will be automatically cleared saving memory
+    %variables will be automatically cleared, saving memory
         
     %calculate offsets for the load cell and remove them from the force:
-    still=is_still(sqrt(cds.pos.x.^2+cds.pos.y.^2));
-    if sum(still) > 100  % Only use still data if there are more than 100 movement free samples                
-        force_offsets = mean(raw_force(still,:));
+    if sum(cds.dataFlags.still) > 100  % Only use still data if there are more than 100 movement free samples                
+        force_offsets = mean(raw_force(cds.dataFlags.still,:));
     else
         %issue warning
         warning('NEVNSx2cds:noStillTime','Could not find 100 points of still time to compute load cell offsets. Defaulting to mean of force data')
@@ -24,8 +23,8 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
     end
 
     % Get calibration parameters based on lab number            
-    if isfield(opts,'labnum') 
-        [fhcal,rotcal,Fy_invert]=getLabParams(opts.labnum,cds.meta.datetime,opts.rothandle);
+    if isfield(opts,'labnum') && opts.labnum>0
+        [fhcal,rotcal,Fy_invert]=getLabParams(opts.labnum,cds.meta.dateTime,opts.rothandle);
     else
         error('handleForceFromRaw:LabNotSet','handleForceFromRaw needs the lab number in order to select the correct load cell calibration')
     end
@@ -43,7 +42,7 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
                 raw_force(:,1).*sin(cds.enc.th2) + raw_force(:,2).*cos(cds.enc.th2),...
                 'VariableNames',{'fx','fy'});
         elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection         
-            handleForce=table( raw_force(:,1).*cos(-cds.enc.th1) - raw_force(:,2).*sin(cds.enc(:,2)),...
+            handleForce=table( raw_force(:,1).*cos(-cds.enc.th1) - raw_force(:,2).*sin(cds.enc.th1),...
                 raw_force(:,1).*sin(cds.enc.th1) + raw_force(:,2).*cos(cds.enc.th1),...
                 'VariableNames',{'fx','fy'});
         end

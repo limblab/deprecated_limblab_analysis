@@ -29,7 +29,7 @@ function getTrialTable(cds)
     endCodes =  cds.words.word( bitand(hex2dec('f0'), cds.words.word) == wordEnd);
     
     %preallocate with -1
-    stopTime=-1*ones(size(startTime));
+    stopTime=nan(size(startTime));
     trialResult=cell(size(stopTime));
     resultCodes='RAFI';
     for ind = 1:numTrials-1
@@ -41,23 +41,27 @@ function getTrialTable(cds)
             trial_end_idx = find(endTime > startTime(ind) & endTime < next_trial_start, 1, 'first');
         end
         if isempty(trial_end_idx)
-            stopTime(ind) = -1;
+            stopTime(ind) = nan;
             trialResult(ind) = {'-'};
         else
             stopTime(ind) = endTime(trial_end_idx);
             trialResult(ind) = {resultCodes(mod(endCodes(trial_end_idx),32)+1)}; %0 is reward, 1 is abort, 2 is fail, and 3 is incomplete (incomplete should never happen)
         end
     end
-    mask=stopTime~=-1;
+    mask=~isnan(stopTime);
     times=table([1:sum(mask)]',startTime(mask),stopTime(mask),trialResult(mask),'VariableNames',{'number','startTime','endTime','result'});
     
+    
+    %specific task table code will add operations, so add the operation
+    %for this file here, before we run the task specific code:
+    cds.addOperation(mfilename('fullpath'))
     if ~strcmpi(cds.meta.task,'Unknown')
         %try to get trial data specific to the task
         switch cds.meta.task
             case 'RW' %Labs standard random walk task for the robot
                 cds.getRWTaskTable(times);
             case 'CO' %labs standard center out task for the robot
-                
+                cds.getCOTaskTable(times);
             case 'WF' %wrist flexion task
                 cds.getWFTaskTable(times);
             case 'multi_gadget'
@@ -74,6 +78,7 @@ function getTrialTable(cds)
                 warning('getTrialTable:UnknownTask','The task for this data file was not set. Trial table will contain only trial start,stop and result')
         end
     else
-        cds.setField('trials',times)
+        %cds.setField('trials',times)
+        set(cds,'trials',times)
     end
 end

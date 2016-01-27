@@ -51,12 +51,12 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
     if ~isempty(force)
         forces.Properties.VariableUnits=[{'s'} repmat({'N'},1,size(handleforce,2)+numel(labels))];
         forces.Properties.Description='a table containing force data. First column is time, all other columns will be forces. If possible forces in x and y are identified and labeled fx and fy';
-        cds.setField('force', forces)
     else
         forces=cell2table(cell(0,3),'VariableNames',{'t','fx','fy'});
         forces.Properties.VariableUnits=[{'s'} repmat({'N'},1,size(handleforce,2)+size(force,2))];
         forces.Properties.Description='an empty table. No force data was found in the data source';
-        cds.setField('force', forces)
     end
+    %cds.setField('force', forces)
+    set(cds,'force',forces)
     cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig)
 end

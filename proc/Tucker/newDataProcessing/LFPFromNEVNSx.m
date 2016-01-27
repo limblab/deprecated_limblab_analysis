@@ -26,7 +26,9 @@ function LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
         lfp.Properties.VariableUnits={'s',repmat({'mV'},1,numel(lfpList))};
         lfp.Properties.VariableDescriptions={'time',repmat({'LFP in mV'},1,numel(lfpList))};
         lfp.Properties.Description='Filtered LFP in raw collection voltage. Voltage scale is presumed to be mV';
-        cds.setField('LFP',lfp)
+        %cds.setField('LFP',lfp)
+        set(cds,'LFP',lfp)
+        cds.addOperation(mfilename('fullpath'))
     end
-    cds.addOperation(mfilename('fullpath'))    
+        
 end

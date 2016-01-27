@@ -52,10 +52,11 @@ function analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogData{i}.Properties.VariableDescriptions=[{'time'},repmat({'analog data'},1,numel(subset))];
             analogData{i}.Properties.Description=['table of analog data with collection frequency of: ', num2str(frequencies(i))];
         end
-        %push the cell array of analog data tables into the cds:
-        cds.setField('analog',analogData)
     else
-        cds.setField('analog',{})
+        analogData={};
     end
+    %push the cell array of analog data tables into the cds:
+    %cds.setField('analog',analogData)
+    set(cds,'analog',analogData)
     cds.addOperation(mfilename('fullpath'))
 end

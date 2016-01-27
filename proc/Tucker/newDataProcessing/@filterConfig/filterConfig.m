@@ -54,11 +54,8 @@ classdef filterConfig < matlab.mixin.SetGet%handle
             
             %check that SR is of the appropriate type:
             if ischar(SR) || ~isreal(SR) || numel(SR)~=1 || SR<=0
-                error('poles:BadPoleValue','Poles must be an real value greater than or equal to 0')
+                error('SR:BadSRValue','SR must be an real value greater than or equal to 0')
             else
-                if SR>8
-                    warning('poles:LargePoleValue',['The specified pole value of: ',num2str(SR),' is fairly large. Consider whether a smaller pole value will work'])
-                end
                 FC.SR=SR;
             end
         end

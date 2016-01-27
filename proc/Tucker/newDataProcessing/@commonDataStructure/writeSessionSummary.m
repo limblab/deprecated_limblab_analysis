@@ -1,4 +1,4 @@
-function write_session_summary(cds) 
+function writeSessionSummary(cds) 
     %this is a method function for the common_data_structure (cds) class, and
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files

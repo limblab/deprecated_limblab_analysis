@@ -1,6 +1,6 @@
 function eventsFromNEVNSx(cds,NEVNSx)
-    %takes a cds handle and an NEVNSx structure and populates the words and
-    %databursts fields of the NEVNSx
+    %takes a cds handle and an NEVNSx structure and returns the words and
+    %databursts fields to populate those fields of the cds
     if ~isempty(NEVNSx.NEV.Data.SerialDigitalIO.TimeStamp)  
         event_data = double(NEVNSx.NEV.Data.SerialDigitalIO.UnparsedData);
         event_ts = NEVNSx.NEV.Data.SerialDigitalIO.TimeStampSec';       
@@ -46,14 +46,14 @@ function eventsFromNEVNSx(cds,NEVNSx)
         words.Properties.VariableUnits={'s','int'};
         words.Properties.VariableDescriptions={'timestamp of word in seconds','word value'};
         words.Properties.Description='list of all words captured during data collection';
-        cds.setField('words',words) 
-        clear words
+        %cds.setField('words',words) 
+        set(cds,'words',words)
         databursts=table(databursts(:,1),cell2mat(databursts(:,2)),'VariableNames',{'ts','db'});
         databursts.Properties.VariableUnits={'s','int'};
         databursts.Properties.VariableDescriptions={'timestamp of databurst in seconds','row vector containing databurst'};
         databursts.Properties.Description='list of all databursts captured during data collection';           
-        cds.setField('databursts',databursts);
-        clear databursts
+        %cds.setField('databursts',databursts);
+        set(cds,'databursts',databursts)
     end
     cds.addOperation(mfilename('fullpath'))
 end
