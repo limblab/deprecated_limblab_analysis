@@ -1,4 +1,4 @@
-function some_output = test_stim()
+function some_output = test_stim_multi()
 
 %first, define a serial channel
 disp('define a serial channel');
@@ -9,8 +9,8 @@ disp('define inputs');
 prefix = 'p'; %p - program, r - run, h - halt
 chList = 1; %which channels do I want to stimulate?
 mode = 'static_pulses'; %can I do an array with different values here for different channels?
-amp = 1; % in mA
-pw = .2; % in ms
+amp = [1,2]; % in mA
+pw = [.2,.3]; % in ms
 freq = 30; % in Hz
 pulses = 1; %how many happen? not sure ???
 time2run = 0; %this is never used ???
