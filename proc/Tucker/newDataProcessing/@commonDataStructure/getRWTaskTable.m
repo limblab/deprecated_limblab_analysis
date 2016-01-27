@@ -85,7 +85,7 @@ function getRWTaskTable(cds,times)
         trials.Properties.VariableDescriptions={'go cue time','code of the go cue','number of targets','number of targets attempted'};
 
     elseif db_version==1 || db_version==2
-        hdr_size=18;
+        hdrSize=18;
         numTgt = (cds.databursts.db(1)-18)/8;
 
         goCueList=      nan(numTrials,numTgt);
@@ -122,12 +122,12 @@ function getRWTaskTable(cds,times)
             %identify trials with corrupt end codes that might end up with extra
             %targets
             if length(idxGo) > numTgt
-                warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, skipping trial:%d',start_time,trial);
+                warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, skipping trial:%d',times.startTime(trial),trial);
                 corruptDB=1;
                 continue;
             end
             %find target centers
-            ctr=bytes2float(cds.databursts.db(trial,hdr_size+1:end));
+            ctr=bytes2float(cds.databursts.db(trial,hdrSize+1:end));
             % Offsets, target size
             xOffset = bytes2float(cds.databursts.db(trial,7:10));
             yOffset = bytes2float(cds.databursts.db(trial,11:14));

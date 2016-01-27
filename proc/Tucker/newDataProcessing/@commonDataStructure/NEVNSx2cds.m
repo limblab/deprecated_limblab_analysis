@@ -12,11 +12,11 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
     %'nokin'        ignores any kinematic or kinetic data
     %'rothandle'    assumes the handle was flipped upside down, and
     %               converts force signals appropriately
-    %'ignore_jumps' does not flag jumps in encoder output when converting
+    %'ignoreJumps' does not flag jumps in encoder output when converting
     %               encoder data to position. Useful for Lab1 where the
     %               encoder stream is used to process force, not angle
     %               steps. 
-    %'ignore_filecat'   Ignores the join time between two files. Normally
+    %'ignoreFilecat'   Ignores the join time between two files. Normally
     %               the join time is flagged and included in the list of
     %               bad kinematic times so that artifacts associated with
     %               the kinematic discontinuity can be avoided in further

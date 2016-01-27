@@ -28,8 +28,8 @@ input_data.array_map_path='Y:\lab_folder\Animal-Miscellany\Chips_12H1\map_files\
 data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% process PDs using Raeed/Tucker functions
-folderpath='E:\local processing\chips\experiment_20160110_RW_PD';
-input_data.prefix='Chips';
+folderpath='E:\local processing\chips\experiment_20160125_RW_PD';
+input_data.prefix='Chips_20160125_RW_tucker_001-01';
 function_name='get_PDs';
 input_data.labnum=6;
 input_data.do_unit_pds=0;
