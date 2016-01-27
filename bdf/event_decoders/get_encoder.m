@@ -71,7 +71,8 @@ jump_times=encoder(temp_indices,1);
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
         if mask(temp_indices(i))
-            encoder(temp_indices(i)+1:end,2) = encoder(temp_indices(i)+1:end,2)-(encoder(temp_indices(i)+1,2)-encoder(temp_indices(i),2));
+            encoder(temp_indices(i),:) = [];
+            mask(temp_indices(i)) = [];
         end
     end
     data_jumps=length(temp_indices);
@@ -83,7 +84,8 @@ jump_times=[jump_times;encoder(temp_indices,1)];
 if ~isempty(temp_indices)
     for i=length(temp_indices):-1:1
         if mask(temp_indices(i))
-            encoder(temp_indices(i)+1:end,3) = encoder(temp_indices(i)+1:end,3)-(encoder(temp_indices(i)+1,3)-encoder(temp_indices(i),3));
+            encoder(temp_indices(i),:) = [];
+            mask(temp_indices(i)) = [];
         end
     end
     data_jumps=data_jumps+length(temp_indices);
