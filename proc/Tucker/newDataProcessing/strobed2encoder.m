@@ -72,8 +72,8 @@ if encoding_scheme == 0
 
     if (length(ts_index)-2>=1)
         encoder(:,1) = time_stamps(1:end-2);
-        encoder(:,2) = strobed_events(ts_index(1:end-2),2) + strobed_events(ts_index(1:end-2)+1,2)*2^8 - 32765;
-        encoder(:,3) = strobed_events(ts_index(1:end-2)+2,2) + strobed_events(ts_index(1:end-2)+3,2)*2^8 - 32765;
+        encoder(:,2) = (strobed_events(ts_index(1:end-2),2) + strobed_events(ts_index(1:end-2)+1,2)*2^8 - 32765)* 2 * pi / 18000;
+        encoder(:,3) = (strobed_events(ts_index(1:end-2)+2,2) + strobed_events(ts_index(1:end-2)+3,2)*2^8 - 32765)* 2 * pi / 18000;
     end
 elseif encoding_scheme == 1
     % Get rid of repeated numbers
@@ -96,7 +96,7 @@ elseif encoding_scheme == 1
     s_dec = (bitand(byteMat(:,1),127)*2 + bitshift(byteMat(:,2),-6))*2^8 + bitand(byteMat(:,2),63)*4 + bitshift(byteMat(:,3),-5) - 32765;
     e_dec = (bitand(byteMat(:,3),31)*8 + bitshift(byteMat(:,4),-4))*2^8 + bitand(byteMat(:,4),15)*16 + bitshift(byteMat(:,5),-3) - 32765;
     
-    encoder = [time_stamps(1:end-2) s_dec(1:end-2) e_dec(1:end-2)];
+    encoder = [time_stamps(1:end-2) s_dec(1:end-2)* 2 * pi / 18000 e_dec(1:end-2)* 2 * pi / 18000];
 end
 %make mask vector to use as flag for ignoring timepoints
 mask=ones(size(time_stamps));

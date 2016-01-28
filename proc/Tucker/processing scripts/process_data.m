@@ -1,12 +1,12 @@
 %script to set input data and execute data processing
 %% process psyhcometrics
-folderpath='E:\local processing\chips\experiement_20160111_BD_290degPD';
+folderpath='E:\local processing\chips\experiment_20160111-12_BD_290degPD';
 function_name='quickscript_function_looped';
 input_data.matchstring='Chips';
 input_data.labnum=6;
 input_data.stimcodes=[0 1 2 3];
 input_data.num_stim_cases=4;
-input_data.currents=[1500 3000 4500 6000];
+input_data.currents=[5000 1000 1500 2000];
 input_data.current_units='pA';
 run_data_processing(function_name,folderpath,input_data)
 %% batch of psychometrics:

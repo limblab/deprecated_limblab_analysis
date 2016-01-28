@@ -191,7 +191,18 @@
 
         th_1_adj(isnan(th_1_adj)) = th_1_adj(find(~isnan(th_1_adj),1,'first')); % when datafile started before encoders were zeroed.
         th_2_adj(isnan(th_2_adj)) = th_2_adj(find(~isnan(th_2_adj),1,'first'));
-
+        % filter angles:
+        padTime=5;
+        pad=repmat(th_1_adj(1),1,padTime*adfreq);%build a pad to extend the data so we can avoid step artifacts at the beginning and end of the data
+        winLen=2*length(pad)+length(th_1_adj);%compute the length of the padded data series so we can make a window function with a smooth transition across the pads
+        tw=tukeywin(winLen,2*padTime*adfreq/winLen);%use a tukey window function to go from 0 to 1 in the pad region
+        [b, a] = butter(4, 2*15/adfreq);%we will use filtfilt, so this is effectively an 8 pole spec (4poles run twice). 15hz cutoff (butter(poles,cutoff) takes cutoff=Fc/(0.5*SR)=2*Fc/SR as cutoff definition)
+        th_1_adj=filtfilt(b,a,[pad,th_1_adj,pad].*tw'); %apply tukey window and filter padded data
+        th_1_adj=th_1_adj(length(pad)+1:end-length(pad));%remove pads
+        pad=repmat(th_2_adj(1),1,5*adfreq);%re-build the pad for the second encoder data
+        th_2_adj=filtfilt(b,a,[pad,th_2_adj,pad].*tw');%apply tukey window and filter padded data
+        th_2_adj=th_2_adj(length(pad)+1:end-length(pad));%remove pads from second encoder data
+        
         % convert encoder angles to x and y
         if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
             l1=24.0; l2=23.5;
@@ -217,16 +228,11 @@
         y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
 
         % get derivatives
-        [b, a] = butter(8, 100/adfreq);
         dx = gradient(x,1/adfreq);
-        dx = filtfilt(b,a,dx);
         dy = gradient(y,1/adfreq);
-        dy = filtfilt(b,a,dy);
 
         ddx = gradient(dx,1/adfreq);
-        ddx = filtfilt(b,a,ddx);
         ddy = gradient(dy,1/adfreq);
-        ddy = filtfilt(b,a,ddy);
 
         % write into structure
         out_struct.pos = [analog_time_base'   x'   y'];
