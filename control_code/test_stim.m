@@ -9,8 +9,8 @@ disp('define inputs');
 prefix = 'p'; %p - program, r - run, h - halt
 chList = 1; %which channels do I want to stimulate?
 mode = 'static_pulses'; %can I do an array with different values here for different channels?
-amp = 1; % in mA
-pw = .2; % in ms
+amp = 4; % in mA
+pw = .5; % in ms
 freq = 30; % in Hz
 pulses = 1; %how many happen? not sure ???
 time2run = 0; %this is never used ???
@@ -28,9 +28,10 @@ fclose(s); pause(0.001);
 
 %tell the stimulator to actually use the info we gave it earlier
 
-for i=0:100 %stimulate a certain number of times -- could I control this just by changing the number of pulses? 
+for i = 1:100 %stimulate a certain number of times -- could I control this just by changing the number of pulses? 
 fopen(s); 
-strOUT2 = fns_stim_prog('r', 0); %check with line 165 of stimrec
+strOUT2 = fns_stim_prog('r', chList-1); %check with line 165 of stimrec
+disp('beep');
 fwrite(s,strOUT2);
 fclose(s);
 pause(0.1)
