@@ -138,6 +138,7 @@ while ~isempty(find(temp_indices,1,'first')) && ctr<5
                 find( (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100) & mask(1:end-3))];
     ctr=ctr+1;
 end
+
 if data_jumps
     warning('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. These jumps were deleted in get_encoder. kinematic signals are interpolated around jumps')
     disp(['Found',num2str(data_jumps),' step offsets in the data'])
