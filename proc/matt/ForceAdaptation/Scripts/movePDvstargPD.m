@@ -6,87 +6,40 @@ clc
 close all;
 
 % load each file and get cell classifications
-root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-% root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
+root_dir = 'F:\';
 
-allFiles = {'MrT','2013-08-19','FF','CO'; ...   % S x
-    'MrT','2013-08-20','FF','RT'; ...   % S x
-    'MrT','2013-08-21','FF','CO'; ...   % S x - AD is split in two so use second but don't exclude trials
-    'MrT','2013-08-22','FF','RT'; ...   % S x
-    'MrT','2013-08-23','FF','CO'; ...   % S x
-    'MrT','2013-08-30','FF','RT'; ...   % S x
-    'MrT','2013-09-03','VR','CO'; ...   % S x
-    'MrT','2013-09-04','VR','RT'; ...   % S x
-    'MrT','2013-09-05','VR','CO'; ...   % S x
-    'MrT','2013-09-06','VR','RT'; ...   % S x
-    'MrT','2013-09-09','VR','CO'; ...   % S x
-    'MrT','2013-09-10','VR','RT'; ...   % S x
-    'Mihili','2014-01-14','VR','RT'; ...    %1  S(M-P)
-    'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
-    'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
-    'Mihili','2014-02-03','FF','CO'; ...    %4  S(M-P)
-    'Mihili','2014-02-14','FF','RT'; ...    %5  S(M-P)
-    'Mihili','2014-02-17','FF','CO'; ...    %6  S(M-P)
-    'Mihili','2014-02-18','FF','CO'; ...    %7  S(M-P) - Did both perturbations
-    %'Mihili','2014-02-18-VR','VR','CO'; ... %8  S(M-P) - Did both perturbations
-    'Mihili','2014-02-21','FF','RT'; ...    %9  S(M-P)
-    'Mihili','2014-02-24','FF','RT'; ...    %10 S(M-P) - Did both perturbations
-    %'Mihili','2014-02-24-VR','VR','RT'; ... %11 S(M-P) - Did both perturbations
-    'Mihili','2014-03-03','VR','CO'; ...    %12 S(M-P)
-    'Mihili','2014-03-04','VR','CO'; ...    %13 S(M-P)
-    'Mihili','2014-03-06','VR','CO'; ...    %14 S(M-P)
-    'Mihili','2014-03-07','FF','CO'; ...   % 15
-    'Chewie','2013-10-03','VR','CO'; ... %16  S ?
-    'Chewie','2013-10-09','VR','RT'; ... %17  S x
-    'Chewie','2013-10-10','VR','RT'; ... %18  S ?
-    'Chewie','2013-10-11','VR','RT'; ... %19  S x
-    'Chewie','2013-10-22','FF','CO'; ... %20  S ?
-    'Chewie','2013-10-23','FF','CO'; ... %21  S ?
-    'Chewie','2013-10-28','FF','RT'; ... %22  S x
-    'Chewie','2013-10-29','FF','RT'; ... %23  S x
-    'Chewie','2013-10-31','FF','CO'; ... %24  S ?
-    'Chewie','2013-11-01','FF','CO'; ... %25 S ?
-    'Chewie','2013-12-03','FF','CO'; ... %26 S
-    'Chewie','2013-12-04','FF','CO'; ... %27 S
-    'Chewie','2013-12-09','FF','RT'; ... %28 S
-    'Chewie','2013-12-10','FF','RT'; ... %29 S
-    'Chewie','2013-12-12','VR','RT'; ... %30 S
-    'Chewie','2013-12-13','VR','RT'; ... %31 S
-    'Chewie','2013-12-17','FF','RT'; ... %32 S
-    'Chewie','2013-12-18','FF','RT'; ... %33 S
-    'Chewie','2013-12-19','VR','CO'; ... %34 S
-    'Chewie','2013-12-20','VR','CO'};    %35 S
+dataSummary;
 
 useArray = 'M1';
-classifierBlocks = 1:14;
+classifierBlocks = 1:12;
 
 switch lower(useArray)
     case 'm1'
-        allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'Chewie'),:);
+        sessionList = sessionList(strcmpi(sessionList(:,1),'Mihili') | strcmpi(sessionList(:,1),'Chewie'),:);
     case 'pmd'
-        allFiles = allFiles(strcmpi(allFiles(:,1),'Mihili') | strcmpi(allFiles(:,1),'MrT'),:);
+        sessionList = sessionList(strcmpi(sessionList(:,1),'Mihili') | strcmpi(sessionList(:,1),'MrT'),:);
 end
 
 % monkeys = unique(allFiles(:,1));
 monkeys = {'all'};
+doAbs = true;
 
 numBL = 1;
 numAD = 10;
-numWO = 3;
-
+numWO = 1;
 
 for iMonkey = 1:length(monkeys)
     if strcmpi(monkeys{iMonkey},'all')
-        doFiles = allFiles(strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
+        doFiles = sessionList(strcmpi(sessionList(:,3),'FF') & strcmpi(sessionList(:,4),'CO'),:);
     else
-        doFiles = allFiles(strcmpi(allFiles(:,1),monkeys{iMonkey}) & strcmpi(allFiles(:,3),'FF') & strcmpi(allFiles(:,4),'CO'),:);
+        doFiles = sessionList(strcmpi(sessionList(:,1),monkeys{iMonkey}) & strcmpi(sessionList(:,3),'FF') & strcmpi(sessionList(:,4),'CO'),:);
     end
     
     anovaVals = [];
     
     for i = 1:length(classifierBlocks)
         % load first tuning
-        paramSetName = 'movementFine';
+        paramSetName = 'moveFine';
         tuneMethod = 'regression';
         tuneWindow = 'onpeak';
         
@@ -94,10 +47,10 @@ for iMonkey = 1:length(monkeys)
         movePDs = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
             % load data
-            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
+            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
             
             sg = t(classifierBlocks(i)).sg;
-            tunedCells = sg(all(c.istuned,2),:);
+            tunedCells = sg(all(c(end).istuned,2),:);
             
             [~,idx] = intersect(sg, tunedCells,'rows');
             
@@ -107,17 +60,17 @@ for iMonkey = 1:length(monkeys)
             moveSGs{iFile} = sg;
         end
         
-        paramSetName = 'target_fine';
+        paramSetName = 'targFine';
         tuneMethod = 'regression';
-        tuneWindow = 'full';
+        tuneWindow = 'onpeak';
         
         targSGs = cell(size(doFiles,1),1);
         targPDs = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
+            [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
             
             sg = t(classifierBlocks(i)).sg;
-            tunedCells = sg(all(c.istuned,2),:);
+            tunedCells = sg(all(c(end).istuned,2),:);
             
             [~,idx] = intersect(sg, tunedCells,'rows');
             
@@ -158,7 +111,7 @@ for iMonkey = 1:length(monkeys)
         %     plot([-180 180],[-180 180],'b--','LineWidth',1);
         
         %% compute some sort of "difference index"
-        dpd = angleDiff(pds(:,1),pds(:,2),false,true);
+        dpd = angleDiff(pds(:,1),pds(:,2),false,~doAbs);
         diffInd(i,:) = [mean(dpd) std(dpd)./sqrt(length(dpd))];
         
         % not during BL or WO
@@ -172,8 +125,8 @@ for iMonkey = 1:length(monkeys)
     % fit a line to the diffInds
     [b,~,~,~,stats] = regress(diffInd(numBL+1:numBL+numAD,1),[ones(numAD,1) (1:numAD)']);
     p = anovan(anovaVals(:,1),anovaVals(:,2));
-    ymin = 22;
-    ymax = 42;
+    ymin = 0;
+    ymax = 11;
     
     figure;
     hold all;

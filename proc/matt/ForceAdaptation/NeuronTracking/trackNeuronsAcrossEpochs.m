@@ -21,6 +21,8 @@ function tracking = trackNeuronsAcrossEpochs(params)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+procDirName = 'Processed';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -29,20 +31,26 @@ useDate = params.exp.date;
 taskType = params.exp.task;
 adaptType = params.exp.adaptation_type;
 monkey = params.exp.monkey;
+epochs = params.exp.epochs;
 
-dataPath = fullfile(root_dir,useDate);
+dataPath = fullfile(root_dir,procDirName,useDate);
+
+if ~iscell(epochs)
+    epochs = {epochs};
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Loading data to track neurons...')
-bl = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'BL');
-ad = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'AD');
-wo = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'WO');
+data = cell(1,length(epochs));
+for iEpoch = 1:length(epochs)
+    data{iEpoch} = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],epochs{iEpoch});
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 saveFile = fullfile(dataPath,[taskType '_' adaptType '_tracking_' useDate '.mat']);
 
-tracking = trackNeurons(params,bl,ad,wo);
+tracking = trackNeurons(params,data);
 
 % save the new file with classification info
 disp(['Saving data to ' saveFile]);

@@ -45,9 +45,6 @@ mt = data.movement_table;
 centers = data.movement_centers;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-t = data.cont.t;
-vel = data.cont.vel;
-
 total_trials = length(centers);
 num_removed = 0;
 
@@ -145,12 +142,12 @@ if blockTrials
         
         % Now, filter based on speed (slow or fast?) if needed
         % [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
-        if strcmpi(paramSetName,'speedSlow') || strcmpi(paramSetName,'speedFast')
+        if strcmpi(paramSetName,'speedSlow') || strcmpi(paramSetName,'speedFast')           
             meanVels = zeros(size(mt,1),1);
             for iMove = 1:size(mt,1)
                 % get time indices for this movement
-                idx = t > mt(iMove,4) & t < (mt(iMove,5));
-                v = sqrt(vel(idx,1).^2 + vel(idx,2).^2);
+                idx = data.cont.t > mt(iMove,4) & data.cont.t < (mt(iMove,5));
+                v = sqrt(data.cont.vel(idx,1).^2 + data.cont.vel(idx,2).^2);
                 meanVels(iMove) = rms(v);
             end
             

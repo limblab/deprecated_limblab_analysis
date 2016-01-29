@@ -64,6 +64,8 @@ for i = 1:2:length(varargin)
             doScale = varargin{i+1};
         case 'handle'
             fh = varargin{i+1};
+        case 'flipcw'
+            flipCW = varargin{i+1};
     end
 end
 
@@ -79,8 +81,8 @@ switch lower(useMetric)
         end
     case 'angle_error'
         metricName = 'errors';
-        ymin = -15;
-        ymax = 5;
+        ymin = -60;
+        ymax = 60;
     case 'time_to_target'
         metricName = 'time_to_target';
         ymin = 0;
@@ -97,8 +99,20 @@ minMC = zeros(1,size(useDate,1));
 maxMC = zeros(1,size(useDate,1));
 dateMC = cell(1,size(useDate,1));
 numMoves = zeros(size(useDate,1),length(epochs));
+pertDir = zeros(1,size(useDate,1));
 for iDate = 1:size(useDate,1)
     adaptation = loadResults(root_dir,useDate(iDate,:),'adaptation');
+    
+    % get direction of perturbation to flip the clockwise ones to align
+        if flipCW
+            % gotta hack it
+            dataPath = fullfile(root_dir,useDate{iDate,1},'Processed',useDate{iDate,2});
+            expParamFile = fullfile(dataPath,[useDate{iDate,2} '_experiment_parameters.dat']);
+            adaptation.BL.params.exp = parseExpParams(expParamFile);
+            pertDir(iDate) = adaptation.BL.params.exp.angle_dir;
+        else
+            pertDir(iDate) = 1;
+        end
         
     allMC = [];
     for iEpoch = 1:length(epochs)
@@ -108,7 +122,7 @@ for iDate = 1:size(useDate,1)
         
         if strcmpi(useMetric,'angle_error')
             %mC = abs(mC);
-            mC = mC.*(180/pi);
+            mC = pertDir(iDate).*mC.*(180/pi);
         end
         
         % low pass filter to smooth out traces

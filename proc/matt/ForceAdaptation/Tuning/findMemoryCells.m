@@ -27,6 +27,8 @@ function findMemoryCells(params,arrays)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+procDirName = 'Processed';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,7 +64,7 @@ for iMethod = 1:length(tuneMethods)
                 useArray = arrays{iArray};
                 disp(['Using ' useArray '...']);
                 
-                tuningFile = fullfile(root_dir,useDate,[useArray '_tuning'],[taskType '_' adaptType '_' paramSetName '_' tuneMethods{iMethod} '_' tuneWindows{iWindow} '_' useDate '.mat']);
+                tuningFile = fullfile(root_dir,procDirName,useDate,[useArray '_tuning'],[taskType '_' adaptType '_' paramSetName '_' tuneMethods{iMethod} '_' tuneWindows{iWindow} '_' useDate '.mat']);
                 
                 t = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'tuning',[],useArray,paramSetName,tuneMethods{iMethod},tuneWindows{iWindow});
                 

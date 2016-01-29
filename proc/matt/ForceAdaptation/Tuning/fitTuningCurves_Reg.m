@@ -16,7 +16,7 @@ tuningStatTest = params.tuning.tuningStatTest;
 %% Get data
 sg = data.(useArray).sg;
 
-[fr,theta,mt,force,vel] = getFR(data,params,useArray,tuningPeriod);
+[fr,theta,mt,force_rms,vel,force] = getFR(data,params,useArray,tuningPeriod);
 
 % Do bootstrapping with regression
 switch lower(tuningStatTest)
@@ -33,9 +33,9 @@ for iBlock = 1:length(fr)
     disp(['%% Block ' num2str(iBlock) ' of ' num2str(length(fr)) '...']);
     
     if ~includeSpeed
-        [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves(fr{iBlock},theta{iBlock},statTestParams,'doplots',doPlots);
+        [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves(fr{iBlock},theta{iBlock},statTestParams,'doplots',doPlots);
     else
-        [tcs,cbs,rs,boot_pds,boot_mds] = regressTuningCurves_Moran(fr{iBlock},theta{iBlock},vel{iBlock},statTestParams,'doplots',doPlots);
+        [tcs,cbs,rs,boot_pds,boot_mds,boot_bos] = regressTuningCurves_Moran(fr{iBlock},theta{iBlock},vel{iBlock},statTestParams,'doplots',doPlots);
     end
     
     pds = tcs(:,3);
@@ -51,13 +51,15 @@ for iBlock = 1:length(fr)
     
     out(iBlock).boot_pds = boot_pds;
     out(iBlock).boot_mds = boot_mds;
+    out(iBlock).boot_bos = boot_bos;
     out(iBlock).r_squared = rs;
     
     out(iBlock).sg = sg;
     out(iBlock).fr = fr{iBlock};
     out(iBlock).theta = theta{iBlock};
     out(iBlock).mt = mt{iBlock};
-    out(iBlock).forces = force{iBlock};
+    out(iBlock).forces = force_rms{iBlock};
+    out(iBlock).force_mean = force{iBlock};
     out(iBlock).vels = vel{iBlock};
     out(iBlock).params = params;
     

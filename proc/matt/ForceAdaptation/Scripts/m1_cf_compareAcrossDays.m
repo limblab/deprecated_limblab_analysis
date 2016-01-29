@@ -2,11 +2,10 @@ clear;
 clc;
 close all;
 
-root_dir = 'C:\Users\Matt Perich\Desktop\lab\data\';
-% rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\m1_cf_paper_results\';
+root_dir = 'F:\';
 
 rewriteFiles = false;
-
+flipClockwisePerts = true;
 
 monkeys = {'Mihili','Chewie'};
 useArray = 'M1';
@@ -20,10 +19,6 @@ paramSetName = 'movement';
 tuneMethod = 'regression';
 tuneWindow = 'onpeak';
 
-% paramSetName = 'target';
-% tuneMethod = 'regression';
-% tunePeriod = 'full';
-
 ff_color = [0.2 0.25 0.95];
 vr_color = [0.95 0.25 0.2];
 
@@ -31,17 +26,17 @@ dataSummary;
 
 %%
 if ~doMD
-    xmin = -180;
-    xmax = 180;
-    ymin = -180;
-    ymax = 180;
+    xmin = -30;
+    xmax = 120;
+    ymin = -30;
+    ymax = 120;
     ylab = 'Change in PD on FF Session 1';
 else
     if doMDNorm
-        xmin = -1;
-        xmax = 1;
-        ymin = -1;
-        ymax = 1;
+        xmin = -1.1;
+        xmax = 1.1;
+        ymin = -1.1;
+        ymax = 1.1;
         ylab = 'Change in Normalized DOT on FF Session 1';
     else
         xmin = -70;
@@ -53,32 +48,26 @@ else
 end
 
 cellCount = 0;
+monkeyFiles = cell(1,length(monkeys));
 for iMonkey = 1:length(monkeys)
     monkey = monkeys{iMonkey};
     
     switch monkey
         case 'MrT'
-            dateInds = 1:12;
-            dataDir = 'Z:\MrT_9I4\Matt';
-            goodDates = mrt_data(dateInds,2);
+            doFiles = sessionList(strcmpi(sessionList(:,1),'MrT'),:);
         case 'Chewie'
-            dateInds = [2,3,4,7,8,13,14,15,16,17,18,19,20];
-            dataDir = 'Z:\Chewie_8I2\Matt';
-            goodDates = chewie_data(dateInds,2);
+            doFiles = sessionList(strcmpi(sessionList(:,1),'Chewie') & strcmpi(sessionList(:,3),'FF'),:);
         case 'Mihili'
-            dateInds = 1:15;
-            dataDir = 'Z:\Mihili_12A3\Matt';
-            goodDates = mihili_data(dateInds,2);
+            doFiles = sessionList(strcmpi(sessionList(:,1),'Mihili') & strcmpi(sessionList(:,3),'FF'),:);
         otherwise
             error('Monkey not recognized');
     end
     
+    monkeyFiles{iMonkey} = doFiles;
+    baseDir = fullfile(root_dir,monkey,'Processed');
     
-    
-    baseDir = fullfile(root_dir,monkey);
-    
-    for i = 1:size(goodDates,1)
-        paramFiles{i} = fullfile(root_dir,monkey,goodDates{i},[goodDates{i} '_experiment_parameters.dat']);
+    for i = 1:size(doFiles,1)
+        paramFiles{i} = fullfile(root_dir,monkey,'Processed',doFiles{i},[doFiles{i} '_experiment_parameters.dat']);
     end
     
     %% load the tracking
@@ -93,24 +82,22 @@ for iMonkey = 1:length(monkeys)
     
     clear tuneInfo;
     
-    for iDay = 1:length(tracking.(useArray))
+    pertDir = zeros(1,length(tracking.(useArray)));
+    for iFile = 1:length(tracking.(useArray))
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Load some of the experimental parameters
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        params = parseExpParams(paramFiles{iDay});
-        useDate = params.date;
-        arrays = params.arrays;
-        monkey = params.monkey;
-        taskType = params.task;
-        adaptType = params.adaptation_type;
-        clear params;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        dataPath = fullfile(baseDir,useDate);
+        dataPath = fullfile(baseDir,doFiles{iFile,2});
         
         % load the class data
-        [t,c] = loadResults(root_dir,{monkey,useDate,adaptType,taskType},'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+        
+        if flipClockwisePerts
+            % gotta hack it
+            expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            pertDir(iFile) = t(1).params.exp.angle_dir;
+        else
+            pertDir(iFile) = 1;
+        end
         
         % get the classes for the current cell
         sg = c.sg;
@@ -146,7 +133,7 @@ for iMonkey = 1:length(monkeys)
                 ind = t_wo.sg(:,1)==e & t_wo.sg(:,2)==u;
                 pd_wo = t_wo.pds(ind,:);
                 
-                getDPDs(unit) = angleDiff(pd_bl(1),pd_ad(1),true,true);
+                getDPDs(unit) = pertDir(iFile).*angleDiff(pd_bl(1),pd_ad(1),true,true);
             else
                 plotMult = 1;
                 
@@ -179,13 +166,13 @@ for iMonkey = 1:length(monkeys)
         getDPDs(badInds) = [];
         getCIs(badInds,:) = [];
         
-        tuneInfo(iDay).sg = sg;
-        tuneInfo(iDay).class = c.classes(:,1);
-        tuneInfo(iDay).adapt = adaptType;
-        tuneInfo(iDay).task = taskType;
-        tuneInfo(iDay).dpd = getDPDs;
-        tuneInfo(iDay).pds = getPDs;
-        tuneInfo(iDay).cis = getCIs;
+        tuneInfo(iFile).sg = sg;
+        tuneInfo(iFile).class = c.classes(:,1);
+        tuneInfo(iFile).adapt = doFiles{iFile,3};
+        tuneInfo(iFile).task = doFiles{iFile,4};
+        tuneInfo(iFile).dpd = getDPDs;
+        tuneInfo(iFile).pds = getPDs;
+        tuneInfo(iFile).cis = getCIs;
     end
     
     
@@ -195,13 +182,13 @@ for iMonkey = 1:length(monkeys)
     % get all of the neurons that are new for that day
     
     
-    for iDay = 1:length(tracking.(useArray))
-        chan = tracking.(useArray){iDay}.chan;
+    for iFile = 1:length(tracking.(useArray))
+        chan = tracking.(useArray){iFile}.chan;
         
         for unit = 1:size(chan,1)
             n = chan(unit,:);
             %check if that cell has matched any previous day
-            if any(n(1:iDay-1) > 0)
+            if any(n(1:iFile-1) > 0)
                 % ignore cell because it was found in previous days
             else
                 cellCount = cellCount + 1;
@@ -209,7 +196,7 @@ for iMonkey = 1:length(monkeys)
                 % get cell data
                 count = 0;
                 clear class adapt task dpd pds
-                for iDay2 = iDay:length(tracking.(useArray))
+                for iDay2 = iFile:length(tracking.(useArray))
                     if n(iDay2)~=0
                         e = floor(n(iDay2));
                         u = round( (n(iDay2) - floor(n(iDay2))) * 10 );
@@ -235,7 +222,7 @@ end
 
 %% Now compile pd changes and plot Day 1 vs Day 2
 pert = 'FF';
-dayLim = 80; % how many days can be separated by
+dayLim = 2000; % how many days can be separated by
 figure;
 hold all;
 
@@ -246,18 +233,18 @@ for unit = 1:length(allCells)
     idx = find(strcmpi(allCells(unit).adapt,pert) & strcmpi(allCells(unit).task,'CO'));
     if length(idx) > 1
         % get change in PD for each day to plot against each other
-        for iDay = 1:length(idx)-1
+        for iFile = 1:length(idx)-1
             % eliminate dates that are too far removed from the present
             % if ~strcmpi(allCells(unit).task(idx(iDay)), allCells(unit).task(idx(iDay+1)))
-            if allCells(unit).days(idx(iDay+1))-allCells(unit).days(idx(iDay)) <= dayLim
-                allPDs = [allPDs; allCells(unit).dpd(idx(iDay)) allCells(unit).dpd(idx(iDay+1))];
+            if allCells(unit).days(idx(iFile+1))-allCells(unit).days(idx(iFile)) <= dayLim
+                allPDs = [allPDs; allCells(unit).dpd(idx(iFile)) allCells(unit).dpd(idx(iFile+1))];
                 
                 % now, see if force PD is different on the two days
-                out = compareTuningParameter('pd',{allCells(unit).cis(idx(iDay),:), allCells(unit).cis(idx(iDay+1),:)},[1 1],{'diff',0.95,1000});
+                out = compareTuningParameter('pd',{allCells(unit).cis(idx(iFile),:), allCells(unit).cis(idx(iFile+1),:)},[1 1],{'diff',0.95,1000});
                 isdiff = [isdiff; out.elec1.unit1(1,2)];
                 
-                disp([allCells(unit).task(idx(iDay)) allCells(unit).task(idx(iDay+1))]);
-                if iDay > 1
+                disp([allCells(unit).task(idx(iFile)) allCells(unit).task(idx(iFile+1))]);
+                if iFile > 1
                     markz = [markz; 1];
                 else
                     markz = [markz; 0];
@@ -285,18 +272,18 @@ for unit = 1:length(allCells)
     idx = find(strcmpi(allCells(unit).adapt,pert) & strcmpi(allCells(unit).task,'RT'));
     if length(idx) > 1
         % get change in PD for each day to plot against each other
-        for iDay = 1:length(idx)-1
+        for iFile = 1:length(idx)-1
             % eliminate dates that are too far removed from the present
             % if ~strcmpi(allCells(unit).task(idx(iDay)), allCells(unit).task(idx(iDay+1)))
-            if allCells(unit).days(idx(iDay+1))-allCells(unit).days(idx(iDay)) <= dayLim
-                allPDs = [allPDs; allCells(unit).dpd(idx(iDay)) allCells(unit).dpd(idx(iDay+1))];
-                disp([allCells(unit).task(idx(iDay)) allCells(unit).task(idx(iDay+1))]);
+            if allCells(unit).days(idx(iFile+1))-allCells(unit).days(idx(iFile)) <= dayLim
+                allPDs = [allPDs; allCells(unit).dpd(idx(iFile)) allCells(unit).dpd(idx(iFile+1))];
+                disp([allCells(unit).task(idx(iFile)) allCells(unit).task(idx(iFile+1))]);
                 
                 % now, see if force PD is different on the two days
-                out = compareTuningParameter('pd',{allCells(unit).cis(idx(iDay),:), allCells(unit).cis(idx(iDay+1),:)},[1 1],{'diff',0.95,1000});
+                out = compareTuningParameter('pd',{allCells(unit).cis(idx(iFile),:), allCells(unit).cis(idx(iFile+1),:)},[1 1],{'diff',0.95,1000});
                 isdiff = [isdiff; out.elec1.unit1(1,2)];
                 
-                if iDay > 1
+                if iFile > 1
                     markz = [markz; 1];
                 else
                     markz = [markz; 0];
@@ -307,6 +294,10 @@ for unit = 1:length(allCells)
         end
     end
 end
+
+plot([-180,180],[-180,180],'k','LineWidth',2);
+plot([0 0],[-180 180],'k--','LineWidth',1);
+plot([-180 180],[0 0],'k--','LineWidth',1);
 
 allPDs = allPDs.*plotMult;
 for unit = 1:size(allPDs,1)
@@ -320,64 +311,84 @@ end
 keepPDs = [keepPDs; allPDs];
 
 % plot(allPDs(:,1),allPDs(:,2),'o','LineWidth',3);
-plot([-180,180],[-180,180],'k--');
 set(gca,'XLim',[xmin,xmax],'YLim',[ymin,ymax],'TickDir','out','FontSize',14);
 box off;
 ylabel('Change in PD on FF Session 2','FontSize',14);
 xlabel('Change in PD on FF Session 1','FontSize',14);
 
-%% Plot
-sdict.Mihili = find(strcmpi(mihili_data(:,3),pert));
-sdict.Chewie = find(strcmpi(chewie_data(:,3),pert));
+%% Plot database representation
+% sort cells by monkey and then by order of first appearance
 
-figure;
-hold all;
 count = 0;
 for unit = 1:length(allCells)
     idx = find(strcmpi(allCells(unit).adapt,pert));
     if length(idx) > 1
-        l = sdict.(allCells(unit).monkey);
+        
+        monkIdx = strcmpi(monkeys,allCells(unit).monkey);
+        
+        l = find(strcmpi(monkeyFiles{monkIdx}(:,3),pert));
         count = count + 1;
+        getVals = [];
+        getPDs = [];
+        getTasks = [];
         for j = 1:length(idx)
             val = find(l==allCells(unit).days(idx(j)));
             bl = allCells(unit).pds(idx(j),1);
-            color_line([val,val+1],[count,count],bl.*180/pi)
-            %plot([val,val+1],[count,count],'k','LineWidth',3);
+            % compile things for sorting and organizing
+            getVals = [getVals, val];
+            getPDs = [getPDs, bl.*180/pi];
+            getTasks = [getTasks, allCells(unit).task(j)];
         end
+        
+        cellDB(count).sessionIDs = getVals;
+        cellDB(count).monkey = allCells(unit).monkey;
+        cellDB(count).pds = getPDs;
+        clear getVals getPDs;
     end
 end
-colormap(hsv);
-% colormap([abs(sin(0:0.1:pi))', zeros(size(0:0.1:pi,2),1), abs(sin(0:0.1:pi))']);
-colorbar;
 
-% now, for each monkey, add lines showing what task
-V = axis;
-l = sdict.Mihili;
-idx = find(strcmpi(mihili_data(:,3),'FF') & strcmpi(mihili_data(:,4),'CO'));
-for j = 1:length(idx)
-    val = find(l==idx(j));
-    plot([val,val+1],[V(3)-1,V(3)-1],'b','LineWidth',6);
-end
-idx = find(strcmpi(mihili_data(:,3),'FF') & strcmpi(mihili_data(:,4),'RT'));
-for j = 1:length(idx)
-    val = find(l==idx(j));
-    plot([val,val+1],[V(3)-1,V(3)-1],'r','LineWidth',6);
-end
 
-l = sdict.Chewie;
-idx = find(strcmpi(chewie_data(:,3),'FF') & strcmpi(chewie_data(:,4),'CO'));
-for j = 1:length(idx)
-    val = find(l==idx(j));
-    plot([val,val+1],[V(4)+1,V(4)+1],'b','LineWidth',6);
+figure;
+for iMonkey = 1:length(monkeys)
+    doFiles = monkeyFiles{iMonkey};
+    
+    subplot(length(monkeys),1,iMonkey);
+    hold all;
+    
+    idx = find(cellfun(@(x) strcmpi(x,monkeys{iMonkey}),{cellDB.monkey}));
+    [~,I] = sort(cellfun(@(x) min(x),{cellDB(idx).sessionIDs}));
+    
+    idx = idx(I);
+    for unit = 1:length(idx)
+        temp = cellDB(idx(unit));
+        for i = 1:length(temp.sessionIDs)
+            %             color_line([temp.sessionIDs(i),temp.sessionIDs(i)+1],[unit,unit],temp.pds(i),'LineWidth',3)
+            patch([temp.sessionIDs(i),temp.sessionIDs(i)+1,temp.sessionIDs(i)+1,temp.sessionIDs(i)],[unit-1,unit-1,unit,unit],temp.pds(i));
+        end
+    end
+    
+    colormap(hsv);
+    % colormap([abs(sin(0:0.1:pi))', zeros(size(0:0.1:pi,2),1), abs(sin(0:0.1:pi))']);
+    colorbar;
+    
+    axis('tight');
+    V = axis;
+    idx = find(strcmpi(doFiles(:,4),'CO'));
+    for j = 1:length(idx)
+        %         plot([idx(j),idx(j)+1],[V(4)+1,V(4)+1],'b','LineWidth',6);
+        patch([idx(j),idx(j)+1,idx(j)+1,idx(j)],[V(4)+1,V(4)+1,V(4)+2,V(4)+2],'b');
+    end
+    idx = find(strcmpi(doFiles(:,4),'RT'));
+    for j = 1:length(idx)
+        %         plot([idx(j),idx(j)+1],[V(4)+1,V(4)+1],'r','LineWidth',6);
+        patch([idx(j),idx(j)+1,idx(j)+1,idx(j)],[V(4)+1,V(4)+1,V(4)+2,V(4)+2],'r');
+    end
+    
+    set(gca,'Box','off','TickDir','out','FontSize',14);
+    axis('tight');
+    box off;
+    xlabel('CF Sessions','FontSize',14);
+    ylabel('Units');
+    
+    title(monkeys{iMonkey},'FontSize',16);
 end
-idx = find(strcmpi(chewie_data(:,3),'FF') & strcmpi(chewie_data(:,4),'RT'));
-for j = 1:length(idx)
-    val = find(l==idx(j));
-    plot([val,val+1],[V(4)+1,V(4)+1],'r','LineWidth',6);
-end
-
-set(gca,'TickDir','out','FontSize',14);
-box off;
-xlabel('CF Sessions','FontSize',14);
-ylabel('Units');
-

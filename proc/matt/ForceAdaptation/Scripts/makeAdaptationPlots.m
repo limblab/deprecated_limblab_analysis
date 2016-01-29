@@ -10,23 +10,23 @@ fileInds(excludeFiles) = 0;
 doFiles = allFiles(fileInds,:);
 metric = 'angle_error';
 
-fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'b','r','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false);
+fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'b','r','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'flipcw',flipClockwisePerts);
 
 fileInds = strcmpi(allFiles(:,1),'Chewie') & strcmpi(allFiles(:,4),'CO');
 fileInds(excludeFiles) = 0;
 doFiles = allFiles(fileInds,:);
 
-fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir);
+fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir,'flipcw',flipClockwisePerts);
 
 fileInds = strcmpi(allFiles(:,1),'Mihili') & strcmpi(allFiles(:,4),'RT');
 fileInds(excludeFiles) = 0;
 doFiles = allFiles(fileInds,:);
 metric = 'curvature';
 
-fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'b','r','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false);
+fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'b','r','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'flipcw',flipClockwisePerts);
 
 fileInds = strcmpi(allFiles(:,1),'Chewie') & strcmpi(allFiles(:,4),'RT');
 fileInds(excludeFiles) = 0;
 doFiles = allFiles(fileInds,:);
 
-fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir);
+fh=plotAdaptationOverTime('dir',root_dir,'dates',doFiles,'metric',metric,'colors',{'r','b','g','m','k','c','y','b','r','g','m','k','c','y','b','r','g','m','k','c','y'},'filter',false,'savepath',save_dir,'flipcw',flipClockwisePerts);
