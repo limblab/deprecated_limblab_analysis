@@ -26,11 +26,16 @@ function status = processSpikesForSorting(file_path,file_prefix)
         save([file_path file_prefix '-digital'],'NEVdigital');
         
         % Save spikes only data
+        disp('Saving merged NEV')
         saveNEVSpikesLimblab(NEVNSx_all.NEV, file_path, [file_prefix '-spikes.nev'])
         
         % Save metatags for unmerging
+        disp('Saving metatags')
         MetaTags = NEVNSx_all.MetaTags;
         save([file_path file_prefix '-spikes-metatags'],'MetaTags')
+        
+        % done
+        disp('Merged.')
         status = 'merged spikes';
     else
         % Un-merge
