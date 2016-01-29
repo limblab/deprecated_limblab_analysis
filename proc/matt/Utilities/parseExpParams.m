@@ -19,9 +19,9 @@ while dontstop
                 % check to see what each entry is
                 getTypes = zeros(size(vals));
                 for iVal = 1:length(vals)
-                    % remove any decimals, since they aren't digits and
+                    % remove any decimals or negatives, since they aren't digits and
                     % then check to see if all are numbers
-                    getTypes(iVal) = all(isstrprop(strrep(vals{iVal},'.',''),'digit'));
+                    getTypes(iVal) = all(isstrprop(strrep(vals{iVal},'.',''),'digit'));% | all(isstrprop(strrep(vals{iVal},'-',''),'digit'));
                 end
                 
                 if all(getTypes)

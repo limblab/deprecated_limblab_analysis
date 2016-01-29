@@ -19,13 +19,13 @@ if ~doMD
 else
     if doMDNorm
         if doAbs
-           ymin = 0;
-        ymax = 1.5;
-        binSize = 0.05; 
+            ymin = 0;
+            ymax = 1.5;
+            binSize = 0.05;
         else
-        ymin = -1.5;
-        ymax = 1.5;
-        binSize = 0.1;
+            ymin = -1.5;
+            ymax = 1.5;
+            binSize = 0.1;
         end
         x_lab = 'Normalized MD Change (Hz) ';
     else
@@ -39,10 +39,22 @@ end
 %% Get the classification for each day for slow cells
 paramSetName = 'speedSlow';
 
+pertDir = zeros(1,size(doFiles,1));
 cellPDs = cell(size(doFiles,1),1);
 cellSG = cell(size(doFiles,1),1);
 for iFile = 1:size(doFiles,1)
     [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+    
+        % get direction of perturbation to flip the clockwise ones to align
+        if flipClockwisePerts && ~doAbs
+            % gotta hack it
+            dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
+            expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            pertDir(iFile) = t(1).params.exp.angle_dir;
+        else
+            pertDir(iFile) = 1;
+        end
     
     classifierBlocks = c.params.classes.classifierBlocks;
     
@@ -83,8 +95,8 @@ for iFile = 1:size(doFiles,1)
     pds = cellPDs{iFile};
     sg = cellSG{iFile};
     if ~doMD
-        slow_dpd_ad = [slow_dpd_ad; angleDiff(pds{1},pds{2},true,true).*(180/pi)];
-        slow_dpd_wo = [slow_dpd_wo; angleDiff(pds{1},pds{3},true,true).*(180/pi)];
+        slow_dpd_ad = [slow_dpd_ad; pertDir(iFile)*angleDiff(pds{1},pds{2},true,true).*(180/pi)];
+        slow_dpd_wo = [slow_dpd_wo; pertDir(iFile)*angleDiff(pds{1},pds{3},true,true).*(180/pi)];
     else
         if doMDNorm
             slow_dpd_ad = [slow_dpd_ad; (pds{2}-pds{1})./pds{1}];
@@ -100,10 +112,22 @@ end
 %% Get the classification for each day for fast cells
 paramSetName = 'speedFast';
 
+pertDir = zeros(1,size(doFiles,1));
 cellPDs = cell(size(doFiles,1),1);
 cellSG = cell(size(doFiles,1),1);
 for iFile = 1:size(doFiles,1)
     [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+    
+        % get direction of perturbation to flip the clockwise ones to align
+        if flipClockwisePerts && ~doAbs
+            % gotta hack it
+            dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
+            expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            pertDir(iFile) = t(1).params.exp.angle_dir;
+        else
+            pertDir(iFile) = 1;
+        end
     
     tunedCells = c.tuned_cells;
     
@@ -142,8 +166,8 @@ for iFile = 1:size(doFiles,1)
     pds = cellPDs{iFile};
     sg = cellSG{iFile};
     if ~doMD
-        fast_dpd_ad = [fast_dpd_ad; angleDiff(pds{1},pds{2},true,true).*(180/pi)];
-        fast_dpd_wo = [fast_dpd_wo; angleDiff(pds{1},pds{3},true,true).*(180/pi)];
+        fast_dpd_ad = [fast_dpd_ad; pertDir(iFile)*angleDiff(pds{1},pds{2},true,true).*(180/pi)];
+        fast_dpd_wo = [fast_dpd_wo; pertDir(iFile)*angleDiff(pds{1},pds{3},true,true).*(180/pi)];
     else
         if doMDNorm
             fast_dpd_ad = [fast_dpd_ad; (pds{2}-pds{1})./pds{1}];
@@ -205,16 +229,16 @@ ylabel('Count','FontSize',14);
 %   fast_dpd_wo = fast_dpd_wo(fast_idx);
 %    slow_dpd_ad = slow_dpd_ad(slow_idx);
 %   slow_dpd_wo = slow_dpd_wo(slow_idx);
-%   
+%
 %   binSize = 0.01;
 %   histBins = (0+binSize/2):binSize:(0.5-binSize/2);
-% 
+%
 % fh = figure;
 % hold all;
-% 
+%
 % % histograms of BL->AD for FF and VR
 % [f,x]=hist(fast_dpd_ad-slow_dpd_ad,histBins);
 % % plot(x,100.*f/sum(f),'r','LineWidth',2);
 % bar(x,100.*f/sum(f));
-%   
-  
+%
+

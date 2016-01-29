@@ -9,7 +9,7 @@
 %   This is all mediated with the toCompare struct.
 
 plotColors = {'b','r','m','g'};
-errScale = 1; %scale the error by this value (2 is average of epochs)
+errScale = 2; %scale the error by this value (2 is average of epochs)
 widthThreshMult = 0.5; % factor multiplied by STD
 
 %% Hardcode define axis information for plots
@@ -97,16 +97,33 @@ for iRes = 1:length(sComp.titles)
     %     cellFRs = cell(size(doFiles,1),1);
     %     cellR2s = cell(size(doFiles,1),1);
     count = 0;
+    
+    % pick what files to do for this title
+    useFiles = doFiles(strcmpi(doFiles(:,4),sComp.titles{iRes}),:);
+    
+    pertDir = zeros(1,size(useFiles,1));
     allWidths = [];
-    for iFile = 1:size(doFiles,1)
+    for iFile = 1:size(useFiles,1)
         % load tuning and class info
-        [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+        [t,c] = loadResults(root_dir,useFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         
-        classifierBlocks = c.params.classes.classifierBlocks;
+        % get direction of perturbation to flip the clockwise ones to align
+        % get direction of perturbation to flip the clockwise ones to align
+        if flipClockwisePerts
+            % gotta hack it
+            dataPath = fullfile(root_dir,useFiles{iFile,1},'Processed',useFiles{iFile,2});
+            expParamFile = fullfile(dataPath,[useFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            pertDir(iFile) = t(1).params.exp.angle_dir;
+        else
+            pertDir(iFile) = 1;
+        end
+        
+        classifierBlocks = c(1).params.classes.classifierBlocks;
         
         if doWidthSeparation
             % load baseline data to get waveforms
-            data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
+            data = loadResults(root_dir,useFiles(iFile,:),'data',[],'BL');
             
             units = data.(useArray).units;
             fileWidths = zeros(length(units),1);
@@ -149,7 +166,7 @@ for iRes = 1:length(sComp.titles)
     % find all metric differences
     dPDs=[]; dMDs=[]; dBOs=[]; dFRs=[]; dVEs=cell(1,size(cellVEs,2));
     errPDs=[]; errMDs=[]; errBOs=[]; errFRs=[]; errVEs=cell(1,size(cellVEs,2));
-    for iFile = 1:size(doFiles,1)
+    for iFile = 1:size(useFiles,1)
         % get baseline values
         pds = cellPDs(iFile,:);
         pd_bl = pds{1};
@@ -179,7 +196,7 @@ for iRes = 1:length(sComp.titles)
         for iBlock = 1:size(cellPDs,2)
             pd_temp = pds{iBlock};
             errpd(:,iBlock) = angleDiff(pd_temp(:,3),pd_temp(:,2),true,false).*(180/pi)./errScale;
-            dpd(:,iBlock) = angleDiff(pd_bl(:,1),pd_temp(:,1),true,true).*(180/pi);
+            dpd(:,iBlock) = pertDir(iFile)*angleDiff(pd_bl(:,1),pd_temp(:,1),true,true).*(180/pi);
         end
         dPDs = [dPDs; dpd];
         errPDs = [errPDs; errpd];
@@ -222,10 +239,6 @@ for iRes = 1:length(sComp.titles)
         end
         
         clear dpd dmd dbo dfr errpd errmd errbo errfr errvel dvel;
-    end
-    
-    for iBlock = 1:size(cellVEs,2)
-        
     end
     
     if sComp.doAbs

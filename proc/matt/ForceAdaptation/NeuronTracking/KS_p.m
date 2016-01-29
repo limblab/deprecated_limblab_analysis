@@ -133,7 +133,11 @@ for i = 1:num_days % Loop through days
         % find units struct index for current unit
         idx = find(cellfun(@(x) all(x==[chan unit]),{data{i}.units.id}));
         
+        try
         ISI_1 = diff(data{i}.units(idx).ts);
+        catch
+            keyboard
+        end
         ISI_1 = ISI_1(ISI_1 < 1);
         WAVE_1 = mean(data{i}.units(idx).wf,2);
         

@@ -10,18 +10,22 @@ doAbs = slidingParams.doAbs; % take absolute of difference between epochs
 doMD = slidingParams.doMD; % take absolute of difference between epochs
 doMDNorm = slidingParams.doMDNorm; % whether to normalize by baseline modulation depth
 metric = slidingParams.metric;
+plotClasses = slidingParams.plotClasses;
+
+% how many blocks to expect
+numBlocks = 8;
 
 colors = {'k','b','r'};
 doCirc = false;
 
-metricInfo.PD.ymin = 0;
+metricInfo.PD.ymin = 10;
 metricInfo.PD.ymax = 120;
 metricInfo.PD.binSize = 10;
 metricInfo.PD.label = 'PD Change (Deg) ';
 
 if doMDNorm
     metricInfo.MD.ymin = 0;
-    metricInfo.MD.ymax = 1.1;
+    metricInfo.MD.ymax = 1;
     metricInfo.MD.binSize = 0.2;
     metricInfo.MD.label = 'Normalized MD Change (Hz) ';
 else
@@ -46,8 +50,8 @@ if useVel
     ymin_f = 10;
     ymax_f = 28;
 else
-    ymin_f = 0;
-    ymax_f = 2.8;
+    ymin_f = -0.3;
+    ymax_f = 3;
 end
 
 if doMD
@@ -93,11 +97,14 @@ for iMonkey = 1:length(monkeys)
     if useMasterTuned
         masterTunedSG = cell(size(doFiles,1),1);
         masterTuned = cell(size(doFiles,1),1);
+        masterTunedClasses = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+            c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,'movement','regression','onpeak');
             
             masterTunedSG{iFile} = c.tuned_cells;
             masterTuned{iFile} = all(c.istuned(:,whichTuned),2);
+            
+            masterTunedClasses{iFile} = c.classes(masterTuned{iFile},2);
         end
     end
     
@@ -106,10 +113,20 @@ for iMonkey = 1:length(monkeys)
     meanForce = cell(size(doFiles,1),3);
     meanVel = cell(size(doFiles,1),3);
     
-    numBlocks = 15;
-    
+    pertDir = zeros(1,size(doFiles,1));
     for iFile = 1:size(doFiles,1)
         [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+        
+        % get direction of perturbation to flip the clockwise ones to align
+        if flipClockwisePerts && ~doAbs
+            % gotta hack it
+            dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
+            expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            pertDir(iFile) = t(1).params.exp.angle_dir;
+        else
+            pertDir(iFile) = 1;
+        end
         
         classifierBlocks = t(1).params.classes.classifierBlocks;
         
@@ -153,11 +170,23 @@ for iMonkey = 1:length(monkeys)
                 
                 if useMasterTuned
                     tunedCells = masterTunedSG{iFile};
+                    tunedClasses = masterTunedClasses{iFile};
                 else
                     if doWidthSeparation
                         tunedCells = sg(all(c(iWin).istuned(:,whichTuned),2) & wfTypes,:);
+                        % first column is PD, second column is MD
+                        if doMD
+                            tunedClasses = c(iWin).classes(all(c(iWin).istuned(:,whichTuned) & wfTypes,2),2);
+                        else
+                            tunedClasses = c(iWin).classes(all(c(iWin).istuned(:,whichTuned) & wfTypes,2),1);
+                        end
                     else
                         tunedCells = sg(all(c(iWin).istuned(:,whichTuned),2),:);
+                        if doMD
+                            tunedClasses = c(iWin).classes(all(c(iWin).istuned(:,whichTuned),2),2);
+                        else
+                            tunedClasses = c(iWin).classes(all(c(iWin).istuned(:,whichTuned),2),1);
+                        end
                     end
                 end
                 
@@ -166,19 +195,21 @@ for iMonkey = 1:length(monkeys)
                 inds = find(idx);
                 
                 for i=1:length(inds)
-                    if ~doMD
-                        if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
+                    if ismember(tunedClasses(i),plotClasses)
+                        if ~doMD
+                            if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
+                            else
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
+                            end
                         else
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).pds(inds(i),1);
-                        end
-                    else
-                        if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
-                        else
-                            neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
+                            if ~isfield(neurons,[ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ])
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds = NaN(1,size(classifierBlocks,1));
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
+                            else
+                                neurons.([ 'e' num2str(sg(inds(i),1)) 'u' num2str(sg(inds(i),2)) ]).pds(iWin) = t(classifierBlocks(iWin,iBlock)).mds(inds(i),1);
+                            end
                         end
                     end
                 end
@@ -223,8 +254,8 @@ for iMonkey = 1:length(monkeys)
             bl_ad = zeros(size(bl_pds));
             bl_wo = zeros(size(bl_pds));
             for unit = 1:size(bl_pds,1)
-                bl_ad(unit,:) = angleDiff(bl_pds(unit,:),ad_pds(unit,:),true,~doAbs);
-                bl_wo(unit,:) = angleDiff(bl_pds(unit,:),wo_pds(unit,:),true,~doAbs);
+                bl_ad(unit,:) = pertDir(iFile)*angleDiff(bl_pds(unit,:),ad_pds(unit,:),true,~doAbs);
+                bl_wo(unit,:) = pertDir(iFile)*angleDiff(bl_pds(unit,:),wo_pds(unit,:),true,~doAbs);
             end
             
             dPDs{iFile,1} = bl_ad;
@@ -343,12 +374,12 @@ for iMonkey = 1:length(monkeys)
     [b,bint,~,~,stats] = regress(alldPDs,[ones(length(allForce),1) allForce]);
     stats
     plot(allForce,(b(1)+b(2)*allForce).*plotMult,'r');
-    set(gca,'YLim',[-40,120],'TickDir','out','FontSize',14);
+    set(gca,'YLim',[0,110],'TickDir','out','FontSize',14);
     xlabel('Force','FontSize',14);
     if iMonkey == 1
         ylabel('Mean dPD','FontSize',14);
     end
-    title(['p = ' num2str(stats(3))],'FontSize',14);
+    title(['p = ' num2str(stats(3)) ' r2=' num2str(stats(1))],'FontSize',14);
     
     allMonkeydPDs{iMonkey} = alldPDs;
     allMonkeyForce{iMonkey} = allForce;

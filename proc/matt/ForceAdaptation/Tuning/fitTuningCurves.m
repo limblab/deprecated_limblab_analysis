@@ -39,6 +39,7 @@ function fitTuningCurves(params,arrays)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+procDirName = 'Processed';
 doPlots = false;
 
 if nargin < 3
@@ -61,7 +62,12 @@ tuningPeriods = params.tuning.tuningPeriods;
 tuningMethods = params.tuning.tuningMethods;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dataPath = fullfile(root_dir,useDate);
+dataPath = fullfile(root_dir,procDirName,useDate);
+
+% parsing gets weird if there's only one epoch
+if ~iscell(epochs)
+    epochs = {epochs};
+end
 
 %%
 % load all of the data into memory

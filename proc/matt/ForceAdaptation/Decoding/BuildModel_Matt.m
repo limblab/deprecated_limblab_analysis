@@ -108,6 +108,7 @@ function [filter, varargout]=BuildModel_Matt(binnedData, options)
         Inputs = binnedData.emgdatabin;
         input_type = 'EMG';
     elseif options.numPCs
+        disp('Using PCs...')
         Inputs = binnedData.spikeratedata(:,desiredInputs);
         [PCoeffs,Inputs] = princomp(zscore(Inputs));
         Inputs = Inputs(:,1:options.numPCs);

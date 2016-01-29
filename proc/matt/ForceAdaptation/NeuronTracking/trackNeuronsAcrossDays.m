@@ -19,9 +19,15 @@ function tracking = trackNeuronsAcrossDays(paramFiles,baseDir,criteria,saveData)
 %   - This function will automatically write the struct to a file, too
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
+%
+% !!!!!!!!!!!!!!!
+% WARNING: Hard coded right now for M1. Discards PMd if it exists.
+% !!!!!!!!!!!!!!!
 
 % for now, just use washout period from each day
 %   this is longer in time than baseline but doesn't have motor noise like adaptation
+
+root_dir = criteria.root_dir;
 
 allData = cell(1,length(paramFiles));
 
@@ -32,16 +38,24 @@ for iFile = 1:length(paramFiles)
     % Load some of the experimental parameters
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params = parseExpParams(expParamFile);
-    useDate = params.date{1};
-    taskType = params.task{1};
-    adaptType = params.adaptation_type{1};
-    arrays = params.arrays;
+
+    monkey = params.monkey;
+    useDate = params.date;
+    taskType = params.task;
+    adaptType = params.adaptation_type;
     clear params
     
-    dataPath = fullfile(baseDir,useDate);
-    
     disp(['Loading data for ' useDate  '...'])
-    data = load(fullfile(dataPath,[taskType '_' adaptType '_BL_' useDate '.mat']));
+    data = loadResults(root_dir,{monkey, useDate, adaptType, taskType},'data',[],'BL');
+    
+    % strip away the useless stuff
+    data = rmfield(data,'cont');
+    data = rmfield(data,'movement_centers');
+    data = rmfield(data,'movement_table');
+    data = rmfield(data,'trial_table');
+    if isfield(data,'PMd')
+        data = rmfield(data,'PMd');
+    end
     
     % compile data into cell array
     allData{iFile} = data;
@@ -50,7 +64,7 @@ end
 
 saveFile = fullfile(baseDir,'multiday_tracking.mat');
 
-tracking = trackNeurons(criteria,{'M1'},allData);
+tracking = trackNeurons(criteria,allData);
 
 if saveData
     % save the new file with classification info

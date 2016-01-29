@@ -30,6 +30,7 @@ function load_success = makeDataStruct(params, fileType, convertNEVFiles)
 
 % highest channel to expect
 maxChannel = 96;
+procDirName = 'Processed';
 
 if nargin < 3
     convertNEVFiles = true;
@@ -58,6 +59,10 @@ adaptType = params.exp.adaptation_type;
 epochs = params.exp.epochs;
 rotationAngle = params.exp.rotation_angle;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if ~iscell(epochs)
+    epochs = {epochs};
+end
 
 % parse the date parts from useDate
 y = useDate(1:4);
@@ -128,7 +133,7 @@ if load_success
         outName = [task '_' adaptType '_' currEpoch '_' useDate '.mat'];
         
         bdfPath = fullfile(dataDir,bdfArray,'BDFStructs',useDate);
-        outPath = fullfile(outDir,useDate);
+        outPath = fullfile(outDir,procDirName,useDate);
         bdfFile = fullfile(bdfPath,bdfName);
         outFile = fullfile(outPath,outName);
         
@@ -293,8 +298,6 @@ if load_success
                                     u(unitCount).misi = misi;
                                     u(unitCount).mfr = mfr;
                                     u(unitCount).offline_sorter_channel = channel;
-                                    
-                                    
                                 end
                             end
                         end
@@ -338,7 +341,8 @@ if load_success
                     % for now, hard code to be 96 channels
                     uelecs = uelecs(uelecs <= 96);
                     
-                    unitCount = 0;
+                    
+                    unitCount = 0; clear u;
                     sg = [];
                     for channel = 1:length(uelecs)
                         

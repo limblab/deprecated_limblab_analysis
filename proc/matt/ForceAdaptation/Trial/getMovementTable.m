@@ -1,5 +1,6 @@
 function [mt,targcent] = getMovementTable(tt,task)
 % [ target angle, on_time, go cue, move_time, peak_time, end_time, ]
+co_reward_value = 82;
 
 switch task
     case 'CO'
@@ -13,6 +14,11 @@ switch task
         %    11: Peak speed time
         %    12: Movement end time
         %    13: Trial End time
+        %    14: Trial result
+        
+        % only get successful trials
+        tt = tt(tt(:,14)==co_reward_value,:);
+        
         mt = -1*ones(size(tt,1),6);
         targcent = -1*ones(size(tt,1),2);
         for iTrial = 1:size(tt,1)

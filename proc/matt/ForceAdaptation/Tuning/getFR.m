@@ -1,4 +1,4 @@
-function [outFR, outTheta, blockMT, outForce, outVel] = getFR(data,params,useArray,tuningPeriod)
+function [outFR, outTheta, blockMT, outForce_rms, outVel, outForce] = getFR(data,params,useArray,tuningPeriod)
 % finds firing rates for each movement based on the windows identified in
 % the data struct. returns firing rate matrix (each unit against trial
 % number) and direction of each movement
@@ -37,7 +37,9 @@ end
 outFR = cell(1,numBlocks);
 outTheta = cell(1,numBlocks);
 outForce = cell(1,numBlocks);
+outForce_rms = cell(1,numBlocks);
 outVel = cell(1,numBlocks);
+outAcc = cell(1,numBlocks);
 
 for iBlock = 1:numBlocks
     mt = blockMT{iBlock};
@@ -75,6 +77,10 @@ for iBlock = 1:numBlocks
             useWin(trial,:) = [mt(trial,3)-movementTime, mt(trial,3)];
         elseif strcmpi(tuningPeriod,'aftgo') % window after go cue
             useWin(trial,:) = [mt(trial,3), mt(trial,3)+movementTime];
+        elseif strcmpi(tuningPeriod,'gomove') % window from go cue to movement onset
+            useWin(trial,:) = [mt(trial,3), mt(trial,4)];
+        elseif strcmpi(tuningPeriod,'go') %window surrounding go
+            useWin(trial,:) = [mt(trial,3) - 2*movementTime/3, mt(trial,3) + movementTime/3];
         end
         
         for unit = 1:size(sg,1)
@@ -140,11 +146,13 @@ for iBlock = 1:numBlocks
     % get mean force and velocity in that window
     if isfield(data.cont,'force') && ~isempty(data.cont.force)
         force = zeros(size(mt,1),2);
+        force_rms = zeros(size(mt,1),2);
         vel = zeros(size(mt,1),2);
         for trial = 1:size(mt,1)
             idx = data.cont.t > useWin(trial,1) & data.cont.t <= useWin(trial,2);
             useForce = data.cont.force(idx,:);
-            force(trial,:) = rms(useForce,1);
+            force(trial,:) = mean(useForce,1);
+            force_rms(trial,:) = rms(useForce,1);
             
             % THIS IS A SHIFT
             %                 disp(' ');
@@ -158,6 +166,7 @@ for iBlock = 1:numBlocks
         end
     else
         force = [];
+        force_rms = [];
         vel = [];
     end
     clear t usePos movedir;
@@ -171,6 +180,7 @@ for iBlock = 1:numBlocks
     outFR{iBlock} = fr;
     outTheta{iBlock} = theta;
     outForce{iBlock} = force;
+    outForce_rms{iBlock} = force_rms;
     outVel{iBlock} = vel;
 end
 

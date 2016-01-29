@@ -8,7 +8,7 @@ clear;
 clc;
 close all;
 
-rootDir = 'C:\Users\Matt Perich\Desktop\lab\data\';
+rootDir = 'F:\';
 saveData = true;
 rewriteFiles = false;
 

@@ -11,7 +11,7 @@ params.paramSetName = '';   % name for this parameter set. Blank by default, to 
 params.useUnsorted = false; % include unsorted waveforms?
 params.MonkeyID = 0;        % ID for animal-specific parameters. Default to 0, set later. 1=MrT, 2=Chewie, 3=Mihili
 
-params.useTasks = {'CO','RT','FF','VR'};       % some analysis methods only work on specific tasks (ie CO or RT, FF or VR)
+params.useTasks = {'CO','RT','FF','VR','CS'};       % some analysis methods only work on specific tasks (ie CO or RT, FF or VR)
 
 %% showing behavioral adaptation
 params.behavior.adaptationMetrics = {'angle_error', 'time_to_target', 'curvature'};
@@ -77,12 +77,13 @@ params.tracking.criteria = {'wf','isi'}; % what to use for cell tracking. Will u
 
 %% unit exclusion criteria
 params.units.isiThreshold = 1.7;      % threshold for excluding multi-unit activity based on ISI (in milliseconds)
-params.units.isiPercent = 0.19;       % maximum percentage of ISI that is below threshold to be considered
-params.units.waveformSNR = 3;         % minimum SNR for waveforms of well-tuned cells
+params.units.m1_isiPercent = 0.19;       % maximum percentage of ISI that is below threshold to be considered
+params.units.pmd_isiPercent = 0.8;       % maximum percentage of ISI that is below threshold to be considered
+params.units.waveformSNR = 4;         % minimum SNR for waveforms of well-tuned cells
 params.units.m1_minFR = 3;            % minimum average firing rate for well-tuned cells
 params.units.pmd_minFR = 1;           % minimum average firing rate for well-tuned cells
 params.units.m1_r2Min = 0.5;          % the 95% confidence intervals for bootstrapped R2 must be above this number
-params.units.pmd_r2Min = 0.1;         % the 95% confidence intervals for bootstrapped R2 must be above this number
+params.units.pmd_r2Min = 0.2;         % the 95% confidence intervals for bootstrapped R2 must be above this number
 params.units.ciSignificance = 0.6981; % maximum width of PD confidence interval to be "well-tuned"
 
 %% report generation
