@@ -228,7 +228,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             end
         end
         function set.analog(cds,analog)
-            if ~isempty(analog) || (~iscell(analog) && ~isempty(analog))
+            if (~iscell(analog) && ~isempty(analog))
                 error('analog:badFormat','analog must be a cell array, with each cell containing a table of analog data collected at a single frequency')
             else
                 cds.analog=analog;
@@ -368,6 +368,14 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             metaFromNEVNSx(cds,NEVNSx,opts)
+            enc2handlepos(cds)
+            enc2WFpos(cds)
+        appendFile2cds(cds,folderPath,fileName,varargin)
+        appendNEVNSx2cds(cds,NEVNSx,varargin)
+        appendcds2cds(cds,cds2)
+        mergeFile2cds(cds,folderPath,fileName,varargin)
+        mergeNEVNSx2cds(cds,NEVNSx,varargin)
+        mergecds2cds(cds,cds2)
         %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
         writeSessionSummary(cds)
@@ -389,6 +397,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         refilterLFP(cds)
         bds=cds2bds(cds)
         sanitizeTimeWindows(cds)
+        
     end
 end
         

@@ -44,22 +44,24 @@ function getRWTaskTable(cds,times)
         end
         %now that we have the expected number of targets, get the trial
         %data
-        goCueList=-1*ones(numTrials,numTgt);
-        goCodeList=-1*ones(numTrials,numTgt);
+        goCueList=nan(numTrials,numTgt);
+        goCodeList=nan(numTrials,numTgt);
         numTgts=numTgt*ones(numTrials,1);
-        numAttempted=-1*ones(numTrials,1);
+        numAttempted=nan(numTrials,1);
         for trial = 1:numTrials-1
             % Go cues
             idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial));
 
             %get the codes and times for the go cues
-            goCue = -1*ones(1,numTgt);
-            goCode= -1*ones(1,numTgt);
+            goCue = nan(1,numTgt);
+            goCode= nan(1,numTgt);
             if isempty(idxGo)
                 tgtsAttempted = 0;
             else
                 tgtsAttempted = length(idxGo);
-                goCue(1:tgtsAttempted) = goCues(idxGo);
+            end
+            if tgtsAttempted>0
+                goCue(1:tgtsAttempted)=goCues(idxGo);
                 goCode(1:tgtsAttempted)= goCodes(idxGo);
             end
 
@@ -83,16 +85,16 @@ function getRWTaskTable(cds,times)
         trials.Properties.VariableDescriptions={'go cue time','code of the go cue','number of targets','number of targets attempted'};
 
     elseif db_version==1 || db_version==2
-        hdr_size=18;
+        hdrSize=18;
         numTgt = (cds.databursts.db(1)-18)/8;
 
-        goCueList=      -1*ones(numTrials,numTgt);
-        goCodeList=     -1*ones(numTrials,numTgt);
+        goCueList=      nan(numTrials,numTgt);
+        goCodeList=     nan(numTrials,numTgt);
         numTgts=        numTgt*ones(numTrials,1);
-        numAttempted=   -1*ones(numTrials,1);
-        xOffsets=       -1*ones(numTrials,1); 
-        yOffsets=       -1*ones(numTrials,1);
-        tgtSizes=       -1*ones(numTrials,1);
+        numAttempted=   nan(numTrials,1);
+        xOffsets=       nan(numTrials,1); 
+        yOffsets=       nan(numTrials,1);
+        tgtSizes=       nan(numTrials,1);
         for trial = 1:numel(times.startTime)
             if (cds.databursts.db(trial,1)-18)/8 ~= numTgt
                 %catch weird/corrupt databursts with different numbers of targets
@@ -105,25 +107,27 @@ function getRWTaskTable(cds,times)
             idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial));
 
             %get the codes and times for the go cues
-            goCue = -1*ones(1,numTgt);
-            goCode= -1*ones(1,numTgt);
+            goCue = nan(1,numTgt);
+            goCode= nan(1,numTgt);
             if isempty(idxGo)
                 tgtsAttempted = 0;
             else
                 tgtsAttempted = length(idxGo);
-                goCue(1:tgtsAttempted) = goCues(idxGo);
+            end
+            if tgtsAttempted>0
+                goCue(1:tgtsAttempted)=goCues(idxGo);
                 goCode(1:tgtsAttempted)= goCodes(idxGo);
             end
 
             %identify trials with corrupt end codes that might end up with extra
             %targets
             if length(idxGo) > numTgt
-                warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, skipping trial:%d',start_time,trial);
+                warning('rw_trial_table: Inconsistent number of targets @ t = %.3f, skipping trial:%d',times.startTime(trial),trial);
                 corruptDB=1;
                 continue;
             end
             %find target centers
-            ctr=bytes2float(cds.databursts.db(trial,hdr_size+1:end));
+            ctr=bytes2float(cds.databursts.db(trial,hdrSize+1:end));
             % Offsets, target size
             xOffset = bytes2float(cds.databursts.db(trial,7:10));
             yOffset = bytes2float(cds.databursts.db(trial,11:14));

@@ -117,33 +117,34 @@ if ~isempty(ignore_windows)
     mask(temp)=0;
 end
 
-%fix steps in encoder 1
-temp_indices = find( (diff(encoder(:,2))>50 | diff(encoder(:,2))<-50) & mask(1:end-3));
+%fix steps in encoders
+temp_indices = [find( (diff(encoder(:,2))>100 | diff(encoder(:,2))<-100) & mask(1:end-3)) ;...
+                find( (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100) & mask(1:end-3))];
 data_jumps=0;
 jump_times=encoder(temp_indices,1);
-if ~isempty(temp_indices)
-    for i=length(temp_indices):-1:1
-        if mask(temp_indices(i))
-            encoder(temp_indices(i)+1:end,2) = encoder(temp_indices(i)+1:end,2)-(encoder(temp_indices(i)+1,2)-encoder(temp_indices(i),2));
+ctr=0;
+while ~isempty(find(temp_indices,1,'first')) && ctr<5
+    if ~isempty(temp_indices)
+        for i=length(temp_indices):-1:1
+            if mask(temp_indices(i))
+                encoder(temp_indices(i),:) =[];
+                mask(i)=[];
+            end
         end
+        data_jumps=data_jumps+length(temp_indices);
     end
-    data_jumps=length(temp_indices);
+    %check to see if we still have large jumps:
+    temp_indices = [find( (diff(encoder(:,2))>100 | diff(encoder(:,2))<-100) & mask(1:end-3)) ;...
+                find( (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100) & mask(1:end-3))];
+    ctr=ctr+1;
 end
 
-%fix steps in encoder 2
-temp_indices = find( (diff(encoder(:,3))>50 | diff(encoder(:,3))<-50) & mask(1:end-3));
-jump_times=[jump_times;encoder(temp_indices,1)];
-if ~isempty(temp_indices)
-    for i=length(temp_indices):-1:1
-        if mask(temp_indices(i))
-            encoder(temp_indices(i)+1:end,3) = encoder(temp_indices(i)+1:end,3)-(encoder(temp_indices(i)+1,3)-encoder(temp_indices(i),3));
-        end
-    end
-    data_jumps=data_jumps+length(temp_indices);
-end
 if data_jumps
-    warning('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. These jumps were removed in get_encoder')
+    warning('get_encoder:corruptEncoderSignal','The encoder data contains large jumps. These jumps were deleted in get_encoder. kinematic signals are interpolated around jumps')
     disp(['Found',num2str(data_jumps),' step offsets in the data'])
+    if ctr==5
+        warning('get_encoder:uncorrectedJumps','get_encoder was not able to compensate for all jumps. The data series still contains some steps in encoder output. This may be the result of time gaps, rather than corrputed encoder data')
+    end
     if ~isempty(ignore_windows)
         disp('Steps associated with some time points such as file concatination times may have been ignored')
     end

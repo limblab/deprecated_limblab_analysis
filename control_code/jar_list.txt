@@ -1,0 +1,4 @@
+blaise.jar
+bayesphys.jar
+trove.jar
+colt-free.jar

@@ -1,12 +1,12 @@
 %script to set input data and execute data processing
 %% process psyhcometrics
-folderpath='E:\local processing\chips\experiment_20151221_BD_219degPD';
+folderpath='E:\local processing\chips\experiment_20160111-12_BD_290degPD';
 function_name='quickscript_function_looped';
 input_data.matchstring='Chips';
 input_data.labnum=6;
 input_data.stimcodes=[0 1 2 3];
 input_data.num_stim_cases=4;
-input_data.currents=[1500 3000 4500 6000];
+input_data.currents=[5000 1000 1500 2000];
 input_data.current_units='pA';
 run_data_processing(function_name,folderpath,input_data)
 %% batch of psychometrics:
@@ -19,8 +19,8 @@ input_data.matchstring='Kramer';
 folderpath='E:\local_processing\kramer\experiment_20130305_0322_BD_70degstim';
 run_data_processing(function_name,folderpath,input_data)
 %% process PDs
-folderpath='E:\local processing\chips\experiment_20150804_RW_PD';
-input_data.filename='Chips_20150804_RW_Tucker_001.nev';
+folderpath='E:\local processing\chips\experiment_20160105_RW_PD';
+input_data.filename='Chips_20160105_RW_tucker_001.nev';
 input_data.matchstring='Chips';
 function_name='get_move_pds_function';
 input_data.labnum=6;
@@ -28,8 +28,8 @@ input_data.array_map_path='Y:\lab_folder\Animal-Miscellany\Chips_12H1\map_files\
 data_struct = run_data_processing(function_name,folderpath,input_data);
 
 %% process PDs using Raeed/Tucker functions
-folderpath='E:\local processing\chips\experiment_20151218_RW_PD';
-input_data.prefix='Chips_20151218_RW_tucker_002';
+folderpath='E:\local processing\chips\experiment_20160125_RW_PD';
+input_data.prefix='Chips_20160125_RW_tucker_001-01';
 function_name='get_PDs';
 input_data.labnum=6;
 input_data.do_unit_pds=0;

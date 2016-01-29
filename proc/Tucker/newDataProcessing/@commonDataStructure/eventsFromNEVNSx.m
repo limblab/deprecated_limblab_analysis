@@ -48,7 +48,7 @@ function eventsFromNEVNSx(cds,NEVNSx)
         words.Properties.Description='list of all words captured during data collection';
         %cds.setField('words',words) 
         set(cds,'words',words)
-        databursts=table(databursts(:,1),cell2mat(databursts(:,2)),'VariableNames',{'ts','db'});
+        databursts=table(cell2mat(databursts(:,1)),cell2mat(databursts(:,2:end)),'VariableNames',{'ts','db'});
         databursts.Properties.VariableUnits={'s','int'};
         databursts.Properties.VariableDescriptions={'timestamp of databurst in seconds','row vector containing databurst'};
         databursts.Properties.Description='list of all databursts captured during data collection';           

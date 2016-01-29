@@ -69,11 +69,12 @@ if(isfield(bootstrap_params,'UseParallel'))
         end
     end
 else
-    if(verLessThan('distcomp','6.3'))
-        opt = statset('UseParallel','never');
+    if(license('test', 'Distri_Computing_Toolbox'))
+        if(verLessThan('distcomp','6.3'))
+            opt = statset('UseParallel','never');
+        end
     else
-        opt = statset('UseParallel',false);
-    end
+    opt = statset('UseParallel',false);
 end
 
 %% Bootstrap GLM function for each neuron

@@ -28,7 +28,11 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         % low byte (bits 8-1).
         encStrobes = [event_ts, bitand(hex2dec('00FF'),event_data)];
     end   
-    
+    if isempty(encStrobes)
+        warning('kinematicsFromNEVNSx:noEncoderData','Found no encoder data, returning without populating cds.pos,cds.vel or cds.acc. Some additional processing relies on kinematics and may fail.');
+        disp('load data using the noKin flag to suppress this warning')
+        return
+    end
     %now that we have the encoder strobes, convert those to actual encoder values    
     jumpTimes=[];
     if opts.ignore_jumps || ~isfield(NEVNSx.MetaTags,'FileSepTime')
@@ -68,16 +72,19 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         newtime=enc(1,1):mode(diff(enc(:,1))):enc(end,1);
         enc=[newtime',interp1(enc(:,1),enc(:,2:3),newtime)];
     end
+    enc=decimateData(enc,cds.kinFilterConfig);
+    %clip the first 1s because analog data won't start recording for 1s:
+    enc=enc(enc(:,1)>=1,:);
     enc=array2table(enc,'VariableNames',{'t','th1','th2'});
-    %cds.setField('enc',enc)
+    
     set(cds,'enc',enc)
     clear enc
     
     %convert encoders to position:
     if opts.robot
-        pos=enc2handlepos(cds);
+        enc2handlepos(cds);
     else
-        pos=enc2WFpos(cds);
+        enc2WFpos(cds);
         if ~isempty(skips)
             %insert a 'known problem' entry
             cds.addProblem('inconsistency in encoder timestamps: some data points appear to be missing and were reconstructed via interpolation')
@@ -107,10 +114,10 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     jumpTimes(jumpTimes>cds.enc.t(end))=cds.enc.t(end);
     
     %convert jump times to flag vector indicating when we have good data:
-    goodData=ones(size(pos(:,1)));
+    goodData=ones(size(cds.pos,1),1);
     temp=[];
     for i=1:size(jumpTimes,1)
-        range=[find(pos.t(:,:)>=jumpTimes(i,1),1,'first'),find( pos.t(:,:)<=jumpTimes(i,2),1,'last')];
+        range=[find(cds.pos.t>=jumpTimes(i,1),1,'first'),find( cds.pos.t<=jumpTimes(i,2),1,'last')];
         %if there are no points inside the window, as the case with
         %fileseparateions, the first point of range will be larger than the
         %second. Thus we use min and max to get the actual window for all
@@ -121,19 +128,13 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         goodData(temp)=0;
     end
     %find still periods, and build table of kinematics flags:
-    still=is_still(sqrt(pos.x.^2+pos.y.^2));
-    dataFlags=table(pos.t,still,goodData,'VariableNames',{'t','still','good'});
+    still=is_still(sqrt(cds.pos.x.^2+cds.pos.y.^2));
+    dataFlags=table(cds.pos.t,still,goodData,'VariableNames',{'t','still','good'});
     dataFlags.Properties.VariableUnits={'s','bool','bool'};
     dataFlags.Properties.VariableDescriptions={'time','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
     dataFlags.Properties.Description='data flags indicating qualities of the data. Still indicates that the position from the encoder stream was not changing. good indicates the data is free of known problems such as encoder jumps or file concatenation artifacts';
     set(cds,'dataFlags',dataFlags)
     
-    %configure labels on pos
-    pos.Properties.VariableUnits={'s','cm','cm'};
-    pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates'};
-    pos.Properties.Description='For the robot this will be handle position, for other tasks this is whatever is fed into the encoder stream';
-    set(cds,'pos',pos)
-    clear pos
     %use cds.pos to compute vel:
     vx=gradient(cds.pos.x,1/cds.kinFilterConfig.SR);
     vy=gradient(cds.pos.y,1/cds.kinFilterConfig.SR);

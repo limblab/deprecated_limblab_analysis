@@ -12,18 +12,32 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
     %'nokin'        ignores any kinematic or kinetic data
     %'rothandle'    assumes the handle was flipped upside down, and
     %               converts force signals appropriately
-    %'ignore_jumps' does not flag jumps in encoder output when converting
+    %'ignoreJumps' does not flag jumps in encoder output when converting
     %               encoder data to position. Useful for Lab1 where the
     %               encoder stream is used to process force, not angle
     %               steps. 
-    %'ignore_filecat'   Ignores the join time between two files. Normally
+    %'ignoreFilecat'   Ignores the join time between two files. Normally
     %               the join time is flagged and included in the list of
     %               bad kinematic times so that artifacts associated with
     %               the kinematic discontinuity can be avoided in further
     %               processing
     %lab number:    an integer number designating the lab from the set 
     %               1,2,3,6
-    %
+    %'taskTASKNAME' specifies the task performed during data collection.
+    %               NEVNSx2cds looks for the first part of the argument to
+    %               match the string 'task' and then takes the remainder of
+    %               the string to be the task name. for example 'taskRW'
+    %               would result in the task being set to 'RW'
+    %'arrayARRAYNAME'   specifies the array used for data collection.
+    %               NEVNSx2cds looks for the first part of the argument to
+    %               match the string 'array' and then takes the remainder of
+    %               the string to be the array name. for example 'arrayM1'
+    %               would result in the task being set to 'M1'
+    %'monkeyMONKEYNAME' specifies the monkey that this data is from.
+    %               NEVNSx2cds looks for the first part of the argument to
+    %               match the string 'monkey' and then takes the remainder of
+    %               the string to be the monkey name. for example 'monkeyChips'
+    %               would result in the task being set to 'Chips'
     %example: cds.NEVNSx2cds(NEVNSx, 'rothandle', 3) 
     %imports the data from NEVNSx into the fields of cds, assuming the
     %robot handle was inverted, and the data came from lab3
@@ -103,7 +117,14 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 end
             end
         end
-        
+        %set the cds.meta.datetime field so that parsing functions can run
+        %date specific code. The full meta field will be generated at the
+        %end so that statistics like # of trials can be compiled
+        meta=cds.meta;
+        dateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
+        ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
+        meta.dateTime=dateTime;
+        set(cds,'meta',meta)
     %% get the info of data we have to work with
         % Build catalogue of entities
         unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
@@ -188,12 +209,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         if strcmp(cds.meta.task,'Unknown') || isempty( cds.meta.task)
             warning('NEVNSx2cds:UnknownTask','The task for this file is not known, the trial data table may be inaccurate')
         end
-        %set the cds.meta.datetime field so that task table code can check
-        %run date range specific code:
-        meta=cds.meta;
-        dateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-        ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-        meta.datetime=dateTime;
+
         cds.getTrialTable
     %% Set metadata. Some metadata will already be set, but this should finish the job
         cds.metaFromNEVNSx(NEVNSx,opts)

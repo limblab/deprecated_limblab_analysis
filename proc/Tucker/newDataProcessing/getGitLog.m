@@ -35,9 +35,12 @@ function varargout=getGitLog(path,varargin)
                     fileLogStruct.date=fileLog{i}(8:end);
                 end
             end
+            varargout{2}=fileLogStruct;
+        else
+            varargout{2}='not in git';
         end
         
-        varargout{2}=fileLogStruct;
+        
     end
     if ~isempty( fileLogString)
         %if our file is in a git repo, find the home directory for the git repo

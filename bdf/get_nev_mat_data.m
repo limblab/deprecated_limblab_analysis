@@ -25,7 +25,7 @@ function out_struct = get_nev_mat_data(varargin)
     set(0, 'defaulttextinterpreter', 'none');
     
     %initial setup
-    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0,'ignore_jumps',1,'ignore_filecat',0,'delete_raw',0); %default to lab 1, no force, no eye
+    opts=struct('verbose',0,'progbar',0,'force',1,'kin',1,'labnum',1,'eye',0,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'delete_raw',0); %default to lab 1, no force, no eye
    
     % Parse arguments
     if (nargin == 1)
