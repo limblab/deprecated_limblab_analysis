@@ -118,8 +118,8 @@ for i = 1:nbr_bdfs
 
         for ii = 1:length(ch_nbrs)
 
-            mean_AP     = mean(bdf_struct(i).units(ii).waveforms);
-            std_AP      = std(double(bdf_struct(i).units(ii).waveforms));
+            mean_AP     = mean(bdf_struct(i).units(ch_nbrs(ii)).waveforms);
+            std_AP      = std(double(bdf_struct(i).units(ch_nbrs(ii)).waveforms));
 
             nbr_rc      = ceil(sqrt(length(ch_nbrs)));
             
@@ -132,6 +132,7 @@ for i = 1:nbr_bdfs
             else
                 hold on, plot(mean_AP,'color',color_array(i),'linewidth',2);
             end
+            title(['ch #' num2str(ch_nbrs(ii))])
             % Readjust the scale, if specified by the user
             if exist('Vpp','var'), ylim([-Vpp/2 Vpp/2]); end
             
