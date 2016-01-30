@@ -15,7 +15,7 @@ if isfield(BDF.meta,'FileSepTime')
     BDF.meta        = rmfield(BDF.meta,'FileSepTime');
 end
 if isfield(BDF,'good_kin_data')
-    BDF                 = rmfield(BDF,'good_kin_data');
+    BDF             = rmfield(BDF,'good_kin_data');
 end
 
 % check that all the analog channels are LFPs
