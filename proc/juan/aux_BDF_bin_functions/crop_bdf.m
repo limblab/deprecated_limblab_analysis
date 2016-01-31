@@ -121,21 +121,18 @@ for i = 1:nbr_bdfs
     % DATABURSTS
     for ii = 1:length(bdf_array(i).databursts)
         if bdf_array(i).databursts{ii,1} > t_i
-    indx_i = ii; break; end, end
+    indx_i = ii-1; break; end, end
 
-    for ii = 1:indx_i
-        bdf_array(i).databursts{ii,1}   = [];
-        bdf_array(i).databursts{ii,2}   = [];
+    if indx_i > 0 % will not do if all databursts happened after t_i
+        bdf_array(i).databursts(1:indx_i,:) = [];
     end
 
     for ii = 1:length(bdf_array(i).databursts)
-        if bdf_array(i).databursts{ii,1} > t_f
+        if bdf_array(i).databursts{ii,1}(1) > t_f
     indx_f = ii; break; end, end
     
-    if exist('indx_f','var') % in case no databurst falls after t_f
-        for ii = indx_f:length(bdf_array(i).databursts)
-            bdf_array(i).databursts{ii,1}   = [];
-        end
+    if exist('indx_f','var') % if no databurst falls after t_f
+        bdf_array(i).databursts(indx_f:end,:) = [];
     end
     clear indx*;
     
