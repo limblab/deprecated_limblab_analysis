@@ -65,9 +65,11 @@ end
 for i = 1:nbr_bdfs
     
     % in META, update duration and add t_i and t_f in FileSepTime
-    bdf_array(i).meta.duration   = t_f - t_i;
+    bdf_array(i).meta.duration  = t_f - t_i;
     bdf_array(i).meta.FileSepTime(1) = t_i;
     bdf_array(i).meta.FileSepTime(2) = t_f;
+    bdf_array(i).meta.bdf_info  = [bdf_array(i).meta.bdf_info, ...
+                            '. Cropped with crop_bdf on ' datestr(now,1)];
 
     % UNITS
     for ii = 1:length(bdf_array(i).units)
