@@ -11,7 +11,7 @@ s = serial('COM1','BaudRate',115200);
 disp('define inputs'); 
 %prefix = 'p'; %p - program, r - run, h - halt
 chList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; %which channels do I want to stimulate?
-mode = 'static_train'; %can I do an array with different values here for different channels?
+mode = 'static_pulses'; %can I do an array with different values here for different channels?
 amp = [1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2]; % in mA
 pw = [.2,.3,.2,.3,.2,.3,.2,.3,.2,.3,.2,.3,.2,.3,.2,.3]; % in ms
 freq = 30; % in Hz - all channels must have the same frequency
@@ -39,14 +39,20 @@ disp('send string to stimulator');
 
 %tell the stimulator to actually use the info we gave it earlier
 
-%for i=0:100 %stimulate a certain number of times -- could I control this just by changing the number of pulses? 
+%timing TODO - CHECK THIS
+tic
+while toc<60 %for 60 seconds
+    
+disp(toc)
+%pause(ms/1000)--eventually use this to do 30 Hz/33ms between each.
 fopen(s); 
 strOUT2 = fns_stim_prog('r', chList-1); %check with line 165 of stimrec
 fwrite(s,strOUT2);
 fclose(s);
-pause(0.1)
+pause(0.1); %this was in the original - will it get hung up if I don't wait? 
+disp(toc)
 
-%end
+end
 
 %all done!
 some_output = 0; 
