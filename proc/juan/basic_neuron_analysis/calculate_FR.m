@@ -84,6 +84,7 @@ end
 % -------------
 % do some basic stats store some metadata
 if nbr_bdfs > 1
+    % return a cell of binned_FR structs, if there are multiple BDFs
     for i = 1:nbr_bdfs
         binned_FR{i}.meta.filename  = bdf(i).meta.filename;
         binned_FR{i}.meta.datetime  = bdf(i).meta.datetime;
@@ -103,6 +104,7 @@ if nbr_bdfs > 1
         binned_FR{i}.std_FR         = std(binned_FR{i}.binned_FR(:,2:end)/bin_width,0,1);
     end
 else
+    % return a single binned_FR struct
     binned_FR.meta.filename         = bdf.meta.filename;
     binned_FR.meta.datetime         = bdf.meta.datetime;
     
@@ -117,6 +119,6 @@ else
             binned_FR.kernel.gauss_SD =  gauss_SD;
     end
     
-    binned_FR.mean_FR   = mean(binned_FR.binned_FR(:,2:end),1);
-    binned_FR.std_FR    = std(binned_FR.binned_FR(:,2:end),0,1);
+    binned_FR.mean_FR               = mean(binned_FR.binned_FR(:,2:end)/bin_width,1);
+    binned_FR.std_FR                = std(binned_FR.binned_FR(:,2:end)/bin_width,0,1);
 end
