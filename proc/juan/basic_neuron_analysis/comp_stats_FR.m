@@ -151,7 +151,7 @@ if show_plots
     confusion_pop_act_h      = confusion_pop_act_h + confusion_pop_act_h';
     
     % plot
-    figure('units','normalized','outerposition',[0 1/2 1 1/2]),
+    figure('units','normalized','outerposition',[0 1/3 1 2/3]),
     subplot(121),imagesc(confusion_pop_act),
     colorbar, caxis([0 1])
     set(gca,'TickDir','out'),set(gca,'FontSize',14)
