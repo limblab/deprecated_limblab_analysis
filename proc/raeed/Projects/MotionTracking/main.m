@@ -7,11 +7,11 @@
 
 %Output will be all the markers in handle coordinates, and in cerebus time
 %% 1. LOAD CEREBUS FILE
-folder = 'C:\Users\rhc307\Documents\Data\experiment_20151203_RWchaos_001\';
-prefix = 'Chips_20151203_RWchaos_001';
-bdf = get_nev_mat_data([folder prefix],6,'ignore_jumps');
+folder = 'C:\Users\rhc307\Documents\Data\experiment_20151201_COactpas_001\';
+prefix = 'Chips_20151201_COactpas_001';
+bdf = get_nev_mat_data([folder prefix],6);
 
-bdf.meta.task = 'RW';
+bdf.meta.task = 'CO';
 opts.binsize=0.05;
 opts.offset=-.015;
 opts.do_trial_table=1;
@@ -31,7 +31,7 @@ title('Kinect LED vals')
 
 %% 3b. Enter kinect start time estimate
 
-kinect_start_guess=7;
+kinect_start_guess=6;
 
 %% 3c. Align kinect led values with cerebus squarewave
 
@@ -45,7 +45,7 @@ clear times
 
 %% 4. PUT KINECT MARKER LOCATIONS IN HANDLE COORDINATES
 
-rotation_known=1; %Whether the rotation matrix is already known (from another file from that day)
+rotation_known=0; %Whether the rotation matrix is already known (from another file from that day)
 
 %% 4a. Plot handle to determine some points to remove
 %We want to remove the time points when the monkey has thrown away the
@@ -54,14 +54,14 @@ if ~rotation_known
     figure; scatter(bdf.pos(1:10:end,2),bdf.pos(1:10:end,3))
 %Note- this plot can be removed if the limits (below) are always the same
 end
-% 4b. Set limits of handle points
+%% 4b. Set limits of handle points
 %We'll remove times when the handle is outside these limits
 if ~rotation_known
     x_lim_handle=[-10,10]; %x limits (min and max)
     y_lim_handle=[-55,-35]; %y limits (min and max)
 end
 
-% 4c. Get Translation and Rotation
+%% 4c. Get Translation and Rotation
 
 if ~rotation_known
     plot_flag=1;
@@ -75,7 +75,7 @@ else
 end
 
 
-% 4d. Perform Translation and Rotation on the kinect data
+%% 4d. Perform Translation and Rotation on the kinect data
 
 if ~rotation_known
     plot_flag=1;
@@ -140,11 +140,12 @@ clear k
 shoulder_pos = squeeze(kinect_pos_smooth(9,:,:))';
 marker_loss_points = find(diff(isnan(shoulder_pos(:,1)))>0);
 marker_reappear_points = find(diff(isnan(shoulder_pos(:,1)))<0);
-if length(marker_loss_points)>length(marker_reappear_points)
+if length(marker_loss_points)>length(marker_reappear_points) || marker_loss_points(end)>marker_reappear_points(end)
     %Means that a marker was lost but never found again at end of file
     %append last index
     marker_reappear_points(end+1) = length(shoulder_pos);
-elseif length(marker_loss_points)<length(marker_reappear_points)
+end
+if length(marker_loss_points)<length(marker_reappear_points) || marker_loss_points(1)>marker_reappear_points(1)
     %Means that a marker was lost to start
     %Dont know what to do here other than throw a warning and toss first
     %reappearance
@@ -174,29 +175,39 @@ kinect_pos_opensim = kinect_pos_recenter(:,[2 3 1],:);
 % change from cm to meters
 kinect_pos_opensim = kinect_pos_opensim/100;
 
-% extract target data (ONLY FOR RANDOM WALK TASKS!!)
-target_on_off = bdf.TT(:,[bdf.TT_hdr.go_cues bdf.TT_hdr.end_time]);
-% target_on = reshape(target_on',length(target_on(:)),1); % reshape into column vector
-% target_off = bdf.TT(:,bdf.TT_hdr.end_time);
-target_pos_on = bdf.targets.centers(:,3:end);
-% target_pos_on = reshape(target_pos_on',2,4*length(target_pos_on))';
-% target_pos_on = [target_pos_on zeros(length(target_pos_on),1)]; %add z axis
-num_targets = bdf.TT(:,bdf.TT_hdr.num_targets);
-num_attempted = bdf.TT(:,bdf.TT_hdr.num_targets_attempted);
-xy_offset = [bdf.TT(:,bdf.TT_hdr.x_offset) bdf.TT(:,bdf.TT_hdr.y_offset)];
-
-% expand target data to framerate
-% prefill with NaNs
-target_pos = NaN(length(kinect_times),3);
-% loop through trials
-for i=1:length(target_on_off)
-    for j=1:num_attempted(i) % cycle through targets in trial
-        % find position offset
-        on_time = target_on_off(i,j);
-        next_time = target_on_off(i,j+find(target_on_off(i,j+1:end)~=-1,1)); % find next target time that hasn't been aborted in this trial
-        target_in_frame = kinect_times>on_time & kinect_times<next_time; % find frame times that are in this target
-        target_pos(target_in_frame,:) = repmat([target_pos_on(i,2*j-1:2*j)-xy_offset(i,:) 0],sum(target_in_frame),1); % extract target for this time, replicate it for number of frames, and place in new target array
+%% extract target data (ONLY FOR RANDOM WALK TASKS!!)
+if(strcmp(bdf.meta.task,'RW'))
+    target_on_off = bdf.TT(:,[bdf.TT_hdr.go_cues bdf.TT_hdr.end_time]);
+    % target_on = reshape(target_on',length(target_on(:)),1); % reshape into column vector
+    % target_off = bdf.TT(:,bdf.TT_hdr.end_time);
+    target_pos_on = bdf.targets.centers(:,3:end);
+    % target_pos_on = reshape(target_pos_on',2,4*length(target_pos_on))';
+    % target_pos_on = [target_pos_on zeros(length(target_pos_on),1)]; %add z axis
+%     num_targets = bdf.TT(:,bdf.TT_hdr.num_targets);
+    num_attempted = bdf.TT(:,bdf.TT_hdr.num_targets_attempted);
+    xy_offset = [bdf.TT(:,bdf.TT_hdr.x_offset) bdf.TT(:,bdf.TT_hdr.y_offset)];
+    
+    % expand target data to framerate
+    % prefill with NaNs
+    target_pos = NaN(length(kinect_times),3);
+    % loop through trials
+    for i=1:length(target_on_off)
+        for j=1:num_attempted(i) % cycle through targets in trial
+            % find position offset
+            on_time = target_on_off(i,j);
+            next_time = target_on_off(i,j+find(target_on_off(i,j+1:end)~=-1,1)); % find next target time that hasn't been aborted in this trial
+            target_in_frame = kinect_times>on_time & kinect_times<next_time; % find frame times that are in this target
+            target_pos(target_in_frame,:) = repmat([target_pos_on(i,2*j-1:2*j)-xy_offset(i,:) 0],sum(target_in_frame),1); % extract target for this time, replicate it for number of frames, and place in new target array
+        end
     end
+    
+elseif(strcmp(bdf.meta.task,'CO'))
+    target_on_off = bdf.TT(:,[bdf.TT_hdr.ot_time bdf.TT_hdr.end_time]);
+    target_pos_on = [mean(bdf.targets.corners(:,[2 4]),2) mean(bdf.targets.corners(:,[3 5]),2)]; % calculate target centers
+    
+    % FILL THIS IN LATER
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    target_pos = NaN(length(kinect_times),3);
 end
 
 % Recenter targets on shoulder position
@@ -216,7 +227,7 @@ handle_pos=interp1(bdf.pos(:,1),handle_pos,kinect_times);
 recenter_handle = handle_pos-shoulder_pos;
 handle_opensim =  recenter_handle(:,[2 3 1])/100;
 
-% clear variables for space
+%% clear variables for space
 clear kinect_pos_recenter
 clear rep_shoulder_pos
 clear rep_coord
