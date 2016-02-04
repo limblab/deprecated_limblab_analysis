@@ -60,13 +60,13 @@ for i = 1:length(bdf)
         xlabel('component nbr.','FontSize',14)
     end
 end
-clear w scores_emg eigen
+clear w scores_emg eigen rows_plot cols_plot
 
 %% ------------------------
 % 3. Relationship between "neural components" and "muscle components"
 
 % BDF to look at
-bdf_nbr                 = 1;
+bdf_nbr                 = 2;
 
 % neural components (PCAs) to look at
 neural_comp             = [1, 2];
@@ -111,19 +111,30 @@ int_xcorr               = 30; % the interval for the xcorr will be -int_xcorr bi
 % set different colors for each neural comp
 colors_xcorr            = winter(length(neural_comp));
 % set different symbols for each muscle comp
-linestyles_xcorr           = {'-','-.','-x'};
-linestyles_xcorr           = linestyles_xcorr(1:length(muscle_comp)); % crop
+linestyles_xcorr        = {'-','-.','-x'};
+linestyles_xcorr        = linestyles_xcorr(1:length(muscle_comp)); % crop
+
+rows_plot               = length(neural_comp);
+cols_plot               = length(muscle_comp);
 
 figure,
-for i = 1:length(neural_comp)
-    for j = 1:length(muscle_comp)
+for i = 1:rows_plot
+    for j = 1:cols_plot
         [xcorr_npca_mpca(:,i,j), lags_npca_mpca] = xcorr(dim_red_FR{bdf_nbr}.scores(:,neural_comp(i)), ...
             scores_emg(:,muscle_comp(j)), int_xcorr);
-        subplot(length(neural_comp),length(muscle_comp),(i-1)*length(neural_comp)+j),
+        
+        subplot(rows_plot,cols_plot,(i-1)*length(neural_comp)+j),
         plot(lags_npca_mpca,xcorr_npca_mpca(:,i,j),'LineWidth',2,'color',colors_xcorr(i,:),...
             'LineStyle',linestyles_xcorr{j})
         set(gca,'TickDir','out'),set(gca,'FontSize',14),grid on
         legend(['neural PC ' num2str(i) ' muscle PC ' num2str(muscle_comp)])
+        
+        if j == 1
+            ylabel('cross-correlation','FontSize',14)
+        end
+        if i == rows_plot
+            xlabel('time (s)','FontSize',14)
+        end
     end
 end
 
@@ -163,5 +174,6 @@ for i = 1:length(neural_comp),
 end
 legend(legend_neural)
 xlim(t_lims)
+xlabel('time (s)')
 
 
