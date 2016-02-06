@@ -118,8 +118,8 @@ if ~isempty(ignore_windows)
 end
 
 %fix steps in encoders
-temp_indices = [find( (diff(encoder(:,2))>100 | diff(encoder(:,2))<-100) & mask(1:end-3)) ;...
-                find( (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100) & mask(1:end-3))];
+temp_indices = find( ((diff(encoder(:,2))>100 | diff(encoder(:,2))<-100) | ...
+                (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100)) & mask(1:end-3) );
 data_jumps=0;
 jump_times=encoder(temp_indices,1);
 ctr=0;
@@ -128,14 +128,14 @@ while ~isempty(find(temp_indices,1,'first')) && ctr<5
         for i=length(temp_indices):-1:1
             if mask(temp_indices(i))
                 encoder(temp_indices(i),:) =[];
-                mask(i)=[];
+                mask(temp_indices(i))=[];
             end
         end
         data_jumps=data_jumps+length(temp_indices);
     end
     %check to see if we still have large jumps:
-    temp_indices = [find( (diff(encoder(:,2))>100 | diff(encoder(:,2))<-100) & mask(1:end-3)) ;...
-                find( (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100) & mask(1:end-3))];
+    temp_indices = find( ((diff(encoder(:,2))>100 | diff(encoder(:,2))<-100) | ...
+                (diff(encoder(:,3))>100 | diff(encoder(:,3))<-100)) & mask(1:end-3) );
     ctr=ctr+1;
 end
 
