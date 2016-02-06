@@ -74,7 +74,8 @@ else
             opt = statset('UseParallel','never');
         end
     else
-    opt = statset('UseParallel',false);
+        opt = statset('UseParallel',false);
+    end
 end
 
 %% Bootstrap GLM function for each neuron
