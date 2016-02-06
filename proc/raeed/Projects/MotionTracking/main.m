@@ -7,11 +7,11 @@
 
 %Output will be all the markers in handle coordinates, and in cerebus time
 %% 1. LOAD CEREBUS FILE
-folder = 'C:\Users\rhc307\Documents\Data\experiment_20151201_COactpas_001\';
-prefix = 'Chips_20151201_COactpas_001';
-bdf = get_nev_mat_data([folder prefix],6);
+folder = 'C:\Users\rhc307\Documents\Data\Biostamp test\';
+prefix = 'Kinect_accel_handle_test_001';
+bdf = get_nev_mat_data([folder prefix],3);
 
-bdf.meta.task = 'CO';
+bdf.meta.task = 'RW';
 opts.binsize=0.05;
 opts.offset=-.015;
 opts.do_trial_table=1;
