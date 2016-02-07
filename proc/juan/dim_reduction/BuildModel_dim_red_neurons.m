@@ -114,9 +114,8 @@ function [filter, varargout]=BuildModel_dim_red_neurons(binnedData, options)
         input_type = 'EMG';
         decoder_type = 'E';
     elseif options.numPCs
-        Inputs = binnedData.spikeratedata(:,desiredInputs);
-        [PCoeffs,Inputs] = princomp(zscore(Inputs));
-        Inputs = Inputs(:,1:options.numPCs);
+        Inputs = binnedData.pca_transf_spikerate; % considered all PCA transformed channels and inputs
+        Inputs = Inputs(:,1:options.numPCs); % and take the first numPC components
         input_type = 'princomp';
         decoder_type = 'PC';
     else
@@ -240,7 +239,7 @@ function [filter, varargout]=BuildModel_dim_red_neurons(binnedData, options)
                     'decoder_type',decoder_type);
 
     if options.numPCs
-        filter.PC = PCoeffs(:,1:options.numPCs);
+        filter.PC = 1:options.numPCs;
     end
     
     if nargout > 1
