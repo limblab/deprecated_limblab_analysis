@@ -163,6 +163,7 @@ if show_plots
     set(gca,'TickDir','out'),set(gca,'FontSize',14)
     set(gca,'Xtick',1:nbr_bdfs,'XTickLabel',labels)
     set(gca,'Ytick',1:nbr_bdfs,'YTickLabel',labels)
+    % set(gcf,'Colormap',gray)
     title(['result hypothesis testing (H = 0, medians are equal at alpha: ' num2str(alpha) ')'])
 
 end
