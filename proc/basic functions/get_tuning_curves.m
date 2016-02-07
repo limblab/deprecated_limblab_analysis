@@ -62,6 +62,7 @@ if(~isfield(options,'behaviors'))
     behaviors = parse_for_tuning(bdf,time_selection,'opts',optionstruct,'units',which_units);
 else
     behaviors = options.behaviors;
+    bdf = [];
 end
 
 % find velocities and directions
