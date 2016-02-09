@@ -213,6 +213,10 @@ for i = 1:nbr_bdfs
     % concatenate databursts
     conc_bdf.databursts = [conc_bdf.databursts; bdf_array(i).databursts];
     
+    % concatenate targets
+    conc_bdf.targets.corners    = [conc_bdf.targets.corners; bdf_array(i).targets.corners];
+    conc_bdf.targets.rotation   = [conc_bdf.targets.rotation; bdf_array(i).targets.rotation];
+    
     % concatenate good_kin_data
     conc_bdf.good_kin_data = [conc_bdf.good_kin_data; bdf_array(i).good_kin_data];
     
@@ -225,4 +229,4 @@ for i = 1:length(raw_field_names)
 end
 
 % reorder the fields as in an original BDFs
-conc_bdf                = orderfields(conc_bdf,[9 1 10 2 3 4 5 6 7 8 ]);
+conc_bdf                = orderfields(conc_bdf,[9 1 10 2 3 4 5 6 7 8]);
