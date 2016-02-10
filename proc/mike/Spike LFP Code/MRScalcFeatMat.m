@@ -190,7 +190,7 @@ if CalcWhat == 2 || CalcWhat == 3
     tfmat=zeros(wsz,numfp,numbins,'single');
     %% Notch filter for 60 Hz noise
     [b,a]=butter(2,[58 62]/(samprate/2),'stop');
-    fpf=filtfilt(b,a,fp')';  %fpf is channels X samples
+    fp=filtfilt(b,a,fp')';  %fpf is channels X samples
     fpf =fp;
     clear fp
     itemp=1:numlags;

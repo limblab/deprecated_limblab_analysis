@@ -1,5 +1,5 @@
 function [n_para, n_perp, H_para_AllLag, H_perp_AllLag, H_para_Allalpha, ...
-    H_perp_Allalpha, varargout] = ...
+    H_perp_Allalpha, H_perp_3_4, varargout] = ...
     buildSVDprojdecoders(x, V, y, numlags, numsides, lambda, binsamprate, ...
     varargin)
 
@@ -71,6 +71,7 @@ end
 %% Now build and test decoders on all lags
 n_para_all = reshape(n_para(:,:,1:2),size(n_para,1),size(n_para,2)*2);
 n_perp_all = reshape(n_perp,size(n_perp,1),size(n_perp,2)*size(n_perp,3));
+n_perp_3_4 = reshape(n_perp(:,:,1:2),size(n_perp,1),size(n_perp,2)*size(n_perp(:,:,1:2),3));
 
 if exist('n_para','var') == 0
     return
@@ -79,6 +80,8 @@ elseif exist('TestRandH','var') == 0
     [H_para_AllLag(:,:,2),v,mcc] = FILMIMO3_tik(n_para(:,:,2), y, numlags, numsides,lambda,binsamprate);
     [H_para_AllLag(:,:,3),v,mcc] = FILMIMO3_tik(n_para(:,:,1)+n_para(:,:,2), y, numlags, numsides,lambda,binsamprate);
     [H_para_AllLag(:,:,4),v,mcc] = FILMIMO3_tik(n_para(:,:,1)-n_para(:,:,2), y, numlags, numsides,lambda,binsamprate);
+    
+    [H_perp_3_4,v,mcc] = FILMIMO3_tik(n_perp_3_4, y, numlags, numsides,lambda,binsamprate);
     for ai = 1:size(n_perp,3)
         [H_perp_AllLag(:,:,ai),v,mcc] = FILMIMO3_tik(n_perp(:,:,ai), y, numlags, numsides,lambda,binsamprate);
     end

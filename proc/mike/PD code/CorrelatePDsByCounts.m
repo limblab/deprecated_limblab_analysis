@@ -4,14 +4,15 @@
 % shuntedCh 
 
 % CorrelatePDsByCounts
-filelist= Mini_LFP1_DaysNames;
-datenames = Mini_LFP1_datenames;
+filelist= Chewie_LFP1_tsNum;
+datenames = Chewie_LFP1_tsNum;
 Controltype = 'LFP1';
 Signaltype = 'LFP1';
 % LFP1, LFP2, AllLFP or Spike
 
-startind = 52;
-% Chewie LFP1 = 117
+startind = 1;
+% Chewie LFP1 = 117 ([117:267 288:end] - Cut out May files because of loose
+% connector
 % Mini LFP1 = 52
 
 PDByBand = 0; % Plot PD SI by band
@@ -21,7 +22,7 @@ NeuronSubset = 0 % Look at SI by neuron subsets (need to load R2 performances)
 % stability.
 numSim = 50;
 
-MissingFilesList = filelist;
+MissingFilesList = filelist(startind:end,:);
 MissingFilesListInd = [];
 
 if strcmpi(filelist{1}(1:4),'Mini') 
@@ -100,38 +101,166 @@ for i=startind:length(filelist)
             'spike_counts','spikePDs')
         elseif strcmpi(Controltype,'lfp1') && strcmpi(filelist{1}(1:4),'Chew') || strcmpi(Signaltype,'AllLFP') && strcmpi(filelist{1}(1:4),'Chew')
             try
-            load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos.mat'],...             
-            'LFPcounts','LMPcounts','LFPfilesLMP_PDs','LFPfilesPDs')
-%              '_pdsallchanspos_bs-1wsz100mnpowlogAllFreqcos.mat'],... % Chewie's Non-LMP PD file extension 
-%              _pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos'],...              
+                load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos.mat'],...
+                    'LFPcounts','LMPcounts','LFPfilesLMP_PDs','LFPfilesPDs')
+                load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts.mat'],...
+                        'LFPcounts','LFP_counts','LMPcounts','LFPfilesLMP_PDs','LFPfiles_PDs')  
+                %              '_pdsallchanspos_bs-1wsz100mnpowlogAllFreqcos.mat'],... % Chewie's Non-LMP PD file extension
+                %              _pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos'],...
+                
+                try
+                    load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_Delta_LFPcounts.mat'],...
+                        'LFPcounts','LFP_counts')
+                end
+                if exist('LFPcounts','var')
+                    AllFreqLFPcounts = LFPcounts;
+                    clear LFPcounts
+                elseif exist('LFP_counts','var')
+                    AllFreqLFPcounts = LFP_counts;
+                    clear LFP_counts
+                end
+                        
+                if exist('LFPcounts','var')
+                    DeltaCounts = LFPcounts;
+                    if size(AllFreqLFPcounts,2) == 5
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                    else
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                    end
+                    LFPcounts(:,2) = DeltaCounts;
+                elseif exist('LFP_counts','var')
+                    DeltaCounts = LFP_counts;
+                    if size(AllFreqLFPcounts,2) == 5
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                    else
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                    end
+                    LFPcounts(:,2) = DeltaCounts;
+                    clear LFP_counts
+                end
             catch 
                 try
+                    
                     load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts.mat'],...
                         'LFPcounts','LFP_counts','LMPcounts','LFPfilesLMP_PDs','LFPfiles_PDs')
+                    try
+                        load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpowlogLMP_and_AllFreqcos.mat'],...
+                    'LFPcounts','LMPcounts','LFPfilesLMP_PDs','LFPfilesPDs')
+                    end
+                    
+                    if exist('LFPcounts','var')
+                        AllFreqLFPcounts = LFPcounts;
+                        clear LFPcounts
+                    elseif exist('LFP_counts','var')
+                        AllFreqLFPcounts = LFP_counts;
+                        clear LFP_counts
+                    end
+                        
+                    load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_Delta_LFPcounts.mat'],...
+                        'LFPcounts','LFP_counts')
+                
+                    if exist('LFPcounts','var')
+                        DeltaCounts = LFPcounts;
+                        if size(AllFreqLFPcounts,2) == 5
+                            LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                        else
+                            LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                        end
+                        LFPcounts(:,2) = DeltaCounts;
+                    elseif exist('LFP_counts','var')
+                        DeltaCounts = LFP_counts;
+                        if size(AllFreqLFPcounts,2) == 5
+                            LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                        else
+                            LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                        end
+                        LFPcounts(:,2) = DeltaCounts;
+                        clear LFP_counts
+                    end
                 catch  
-                    MissingFiles{i} = fnam;
-                    MissingFilesListInd = [MissingFilesListInd i];
-                    continue
+                    try
+                        load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts'],...
+                            'LFPcounts','LFP_counts','LMPcounts')
+                        if exist('LFPcounts','var')
+                            AllFreqLFPcounts = LFPcounts;
+                            clear LFPcounts
+                        elseif exist('LFP_counts','var')
+                            AllFreqLFPcounts = LFP_counts;
+                            clear LFP_counts
+                        end
+                        load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_Delta_LFPcounts.mat'],...
+                            'LFPcounts','LFP_counts')
+                
+                        if exist('LFPcounts','var')
+                            DeltaCounts = LFPcounts;
+                            if size(AllFreqLFPcounts,2) == 5
+                                LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                            else
+                                LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                            end
+                            LFPcounts(:,2) = DeltaCounts;
+                        elseif exist('LFP_counts','var')
+                            DeltaCounts = LFP_counts;
+                            if size(AllFreqLFPcounts,2) == 5
+                                LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                            else
+                                LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                            end
+                            LFPcounts(:,2) = DeltaCounts;
+                            clear LFP_counts
+                        end
+%                     catch
+%                         MissingFiles{i} = fnam;
+%                         MissingFilesListInd = [MissingFilesListInd i];
+%                         continue
+                    end
                 end
             end
-            
-            try
-                load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts.mat'],...
-                    'LFPcounts','LFP_counts','LMPcounts','LFPfilesLMP_PDs','LFPfiles_PDs')
-            catch
-                MissingFiles{i} = fnam;
-                MissingFilesListInd = [MissingFilesListInd i];
-                continue
-            end
-        else         
+        else
             load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts'],...
-            'LFPcounts','LFP_counts','LMPcounts')
+                'LFPcounts','LFP_counts','LMPcounts')
+            
+            if exist('LFPcounts','var')
+                AllFreqLFPcounts = LFPcounts;
+                clear LFPcounts
+            elseif exist('LFP_counts','var')
+                AllFreqLFPcounts = LFP_counts;
+                clear LFP_counts
+            end
+            if strcmpi(filelist{1}(1:4),'Mini')
+                try
+                    load([fnam(1:end-4),'_pdsallchanspos_bs-1wsz150mnpow_Delta_LFPcounts.mat'],...
+                        'LFPcounts','LFP_counts')
+                end
+                if exist('LFPcounts','var')
+                    DeltaCounts = LFPcounts;
+                    if size(AllFreqLFPcounts,2) == 5
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                    else 
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                    end
+                    LFPcounts(:,2) = DeltaCounts;
+                elseif exist('LFP_counts','var')
+                    DeltaCounts = LFP_counts;
+                    if size(AllFreqLFPcounts,2) == 5
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts;
+                    else 
+                        LFPcounts(:,[1 3:6]) = AllFreqLFPcounts(:,[1 3:6]);
+                    end
+                    LFPcounts(:,2) = DeltaCounts;
+                    clear LFP_counts
+                end
+                
+            end
         end
 
-    catch
-        MissingFiles{i} = fnam
-        MissingFilesListInd = [MissingFilesListInd i];
-        
+%     catch exception
+%         MissingFiles{i} = fnam
+%         MissingFilesListInd = [MissingFilesListInd i];
+%         
+%         continue
+    end
+    if exist('LMPcounts','var') == 0 || exist('LFPcounts','var') == 0
         continue
     end
     if exist('LFPfilesPDs','var') & ~exist('LMPcounts','var')
@@ -162,7 +291,7 @@ for i=startind:length(filelist)
         for j = 1:size(LFPcounts,1)
             for k = 1:size(LFPcounts,2)   
                 
-                All_Non_LMP_counts(:,j,k,i) = cellfun(@mean,LFPcounts{j,k});                
+                All_Non_LMP_counts(:,j,k,i) = cellfun(@nanmean,LFPcounts{j,k});                
                 All_Non_LMP_MDs(j,i,k) = range(All_Non_LMP_counts(:,j,k,i));
                 
             end
@@ -228,33 +357,37 @@ if exist('All_LMP_counts','var')
     mu = 1;
     g1 = 1;
     g2 = 1;
-    g3 = 1;    
+    g3 = 1; 
+    del = 1;
     if strcmpi(Signaltype,'AllLFP') || strcmpi(Signaltype,'LFP1') 
-        for g = 1:length(bestc_NoShunt)
-            if bestf_NoShunt(g) == 1
-                LMPFeats(:,h,:) = All_LMP_counts(:,bestc_NoShunt(g),:);
-                LMPFeatsMDs(h,:) = All_LMP_MDs(bestc_NoShunt(g),:);
-                h=h+1;
-            elseif bestf_NoShunt(g) == 2
-                continue
-            elseif bestf_NoShunt(g) == 3
-                MuFeats(:,mu,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                MuFeatsMDs(mu,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
-                mu = mu+1;
-            elseif bestf_NoShunt(g) == 4
-                Gam1Feats(:,g1,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                Gam1FeatsMDs(g1,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
-                g1 = g1+1;
-            elseif bestf_NoShunt(g) == 5
-                Gam2Feats(:,g2,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                Gam2FeatsMDs(g2,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
-                g2 = g2+1;
-            elseif bestf_NoShunt(g) == 6
-                Gam3Feats(:,g3,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                Gam3FeatsMDs(g3,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
-                g3 = g3+1;
-            end
-        end; clear g* h mu
+%         for g = 1:length(bestc_NoShunt)
+%             if bestf_NoShunt(g) == 1
+%                 LMPFeats(:,h,:) = All_LMP_counts(:,bestc_NoShunt(g),:);
+%                 LMPFeatsMDs(h,:) = All_LMP_MDs(bestc_NoShunt(g),:);
+%                 h=h+1;
+%             elseif bestf_NoShunt(g) == 2
+%                 DeltaFeats(:,del,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
+%                 DeltaFeatsMDs(del,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
+%                 del = del+1;
+%          
+%             elseif bestf_NoShunt(g) == 3
+%                 MuFeats(:,mu,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
+%                 MuFeatsMDs(mu,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
+%                 mu = mu+1;
+%             elseif bestf_NoShunt(g) == 4
+%                 Gam1Feats(:,g1,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
+%                 Gam1FeatsMDs(g1,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
+%                 g1 = g1+1;
+%             elseif bestf_NoShunt(g) == 5
+%                 Gam2Feats(:,g2,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
+%                 Gam2FeatsMDs(g2,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
+%                 g2 = g2+1;
+%             elseif bestf_NoShunt(g) == 6
+%                 Gam3Feats(:,g3,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
+%                 Gam3FeatsMDs(g3,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
+%                 g3 = g3+1;
+%             end
+%         end; clear g* h mu del
         
         for g = 1:length(bestc_NoShunt)
             if bestf_NoShunt(g) == 1
@@ -262,12 +395,10 @@ if exist('All_LMP_counts','var')
 %                 OnlineFeats_CI_Range(:,l,:) = All_LMP_CI_Range(:,bestc_NoShunt(g),:);
                 OnlineFeatsMDs(l,:) = squeeze(All_LMP_MDs(bestc_NoShunt(g),:));
                 l=l+1;
-            elseif bestf_NoShunt(g) == 2
-                continue
             else
-                OnlineFeats(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
+                OnlineFeats(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
 %                 OnlineFeats_CI_Range(:,l,:) = squeeze(All_Non_LMP_CI_Range(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                OnlineFeatsMDs(l,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
+                OnlineFeatsMDs(l,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
 
                 l = l+1;
             end
@@ -281,12 +412,10 @@ if exist('All_LMP_counts','var')
                 bestc_Final(l) = bestc_byFeat(g);
                 bestf_Final(l) = bestf_byFeat(g);
                 l=l+1;
-            elseif bestf_byFeat(g) == 2
-                continue
             else
-                OnlineFeats_byFeat(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_byFeat(g),bestf_byFeat(g)-1,:));
+                OnlineFeats_byFeat(:,l,:) = squeeze(All_Non_LMP_counts(:,bestc_byFeat(g),bestf_byFeat(g),:));
 %                 OnlineFeats_byFeat_CI_Range(:,l,:) = squeeze(All_Non_LMP_CI_Range(:,bestc_byFeat(g),bestf_byFeat(g)-1,:));
-                OnlineFeats_byFeatMDs(l,:) = All_Non_LMP_MDs(bestc_byFeat(g),:,bestf_byFeat(g)-1);
+                OnlineFeats_byFeatMDs(l,:) = All_Non_LMP_MDs(bestc_byFeat(g),:,bestf_byFeat(g));
                 bestc_Final(l) = bestc_byFeat(g);
                 bestf_Final(l) = bestf_byFeat(g);
                 l = l+1;
@@ -298,15 +427,12 @@ if exist('All_LMP_counts','var')
                 OnlineFeats(:,h,:) = All_LMP_counts(:,bestc_NoShunt(g),:);
                 OnlineFeatsMDs(h,:) = squeeze(All_LMP_MDs(bestc_NoShunt(g),:));
                 h=h+1;
-            elseif bestf_NoShunt(g) == 2
-
-                continue
             else
-                OnlineFeats(:,h,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g)-1,:));
-                OnlineFeatsMDs(h,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g)-1);
+                OnlineFeats(:,h,:) = squeeze(All_Non_LMP_counts(:,bestc_NoShunt(g),bestf_NoShunt(g),:));
+                OnlineFeatsMDs(h,:) = All_Non_LMP_MDs(bestc_NoShunt(g),:,bestf_NoShunt(g));
                 h = h+1;
             end
-        end; clear g h
+        end; clear g h l
     
         AllfeatInds = 1:576;
         OfflineFeatInds = setdiff(AllfeatInds,featindBEST);
@@ -521,16 +647,19 @@ elseif PDByBand == 0
          xlabel('Day')
          caxis([0 20])
     else
-        All_Freq_counts_Vector = reshape(OnlineFeats_byFeat,size(OnlineFeats_byFeat,1)*size(OnlineFeats_byFeat,2),size(OnlineFeats_byFeat,3));
-         [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,startind:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList(startind:end,1), MissingFilesDateList(startind:end,2));
+        All_Freq_counts_Vector = reshape(OnlineFeats_byFeat(:,:,[117:267 288:end]),size(OnlineFeats_byFeat,1)*size(OnlineFeats_byFeat,2),size(OnlineFeats_byFeat(:,:,[117:267 288:end]),3));
+         [DayAvgDataX,~,DayNames] = DayAverage(All_Freq_counts_Vector(:,startind:end), All_Freq_counts_Vector(:,startind:end), MissingFilesList([117:267 288:end],1), MissingFilesDateList([117:267 288:end],2));
     
          figure
          imagesc(DayAvgDataX)
+         ah = findobj(gca,'TickDirMode','auto')
+         set(ah,'Box','off')
+         set(ah,'TickLength',[0,0])
          ylabel('Feature')
          xlabel('Day')
          caxis([-100 100])
          [uBands,uBandYticks,~]=unique(bestf_Final);
-         uBandYticks(2:end)= uBandYticks(2:end)*12 - 12;
+         uBandYticks(1:end)= uBandYticks(1:end)*12 - 12 +1;
          allBands={'LMP','0-4','7-20','70-110','130-200','200-300'};         
          set(gca,'YTick',uBandYticks,'YTickLabel',allBands(uBands))
     end
@@ -538,6 +667,9 @@ elseif PDByBand == 0
     
     [rOnline.map,rOnline.map_mean, rOnline.rho, rOnline.pval, rOnline.f, rOnline.x] = ...
         CorrCoeffMap(DayAvgDataX,1,DayNames(:,2))
+    ah = findobj(gca,'TickDirMode','auto')
+    set(ah,'Box','off')
+    set(ah,'TickLength',[0,0])
     return
 end
 

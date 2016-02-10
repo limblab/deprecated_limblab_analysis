@@ -14,7 +14,7 @@ function [] = plotCursorPaths(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG, Trial
 HC_timeIndex_MO = [1750:2250]; % Movement onset
 HC_timeIndex_Reward = [1400:1900]; % Before reward
 BC_timeIndex_MO = [35:45];
-BC_timeIndex_Reward = [9:38];
+BC_timeIndex_Reward = [29:38];
 
 k = 1;
 if segment == 0
@@ -22,6 +22,7 @@ if segment == 0
 else
     Rows = ceil((nnz(~cellfun(@isempty,Trials(ControlCh,BC_I(1):BC_I(end))))+1)/4);
 end
+Rows=1;
 figure(3)
 CursorPathsByTrial = struct;
 clear MeanCursorPath CursorPathXY
@@ -61,7 +62,7 @@ for j = [BC_I(1:end)] % HC_I(1):HC_I(end)
         for i = 1:size(TC,1)
             h = fill([TC(i,1),TC(i,1),TC(i,3),TC(i,3)],[TC(i,2),TC(i,4),TC(i,4),TC(i,2)],'r');
             
-            set(h,'FaceAlpha',.3)
+%             set(h,'FaceAlpha',.3)
             xlim([-15 15])
             ylim([-15 15])
         end
@@ -344,9 +345,9 @@ for j = [BC_I(1:end)] % HC_I(1):HC_I(end)
                 for i = 1:size(TC,1)
                     h = fill([TC(i,1),TC(i,1),TC(i,3),TC(i,3)],[TC(i,2),TC(i,4),TC(i,4),TC(i,2)],'r');
                     
-                    set(h,'FaceAlpha',.3)
-                    xlim([min(min(TC))-1 max(max(TC))+1])
-                    ylim([min(min(TC))-1 max(max(TC))+1])
+%                     set(h,'FaceAlpha',.3)
+                    xlim([-15 15])
+                    ylim([-15 15])
                 end
                 if j ==1
                     xlabel('X cursor position')

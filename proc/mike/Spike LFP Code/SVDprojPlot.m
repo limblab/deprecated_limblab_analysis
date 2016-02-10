@@ -1,17 +1,26 @@
 % plot SVD projection results
 [FileList, DateNames] = CalcDecoderAge(DateFormNames, DecoderStartDate)
 [R2_para_X R2_para_Y DayNames] = DayAverage(R2_para_All(:,:,1), R2_para_All(:,:,2), FileList(:,1), FileList(:,2));
-[R2_perp_X R2_perp_Y DayNames] = DayAverage(R2_perp_All(:,:,1), R2_perp_All(:,:,2), FileList(:,1), FileList(:,2));
+[R2_perp_X R2_perp_Y DayNames] = DayAverage(R2_perp_All(:,startind:end,1), R2_perp_All(:,startind:end,2), FileList(startind:end,1), FileList(startind:end,2));
+
+YFigData = get(gco,'YData')
+Lia = ismember(nanmean(R2_perp_Y),YFigData)
+DayNames(Lia)
+
+startind = 162;
+[R2_perp_X R2_perp_Y DayNames] = DayAverage(R2_perp_3_4(:,startind:end,1), R2_perp_3_4(:,startind:end,2), FileList(startind:end,1), FileList(startind:end,2));
+CV_perp_3_4 = nanmean(nanstd(R2_perp_Y))/nanmean(nanmean(R2_perp_Y))
+plot(nanmean(R2_perp_Y(:,Lia)),'g')
 
 figure
-plot(nanmean(R2_para_Y))
+plot(nanmean(R2_para_Y(:,Lia)))
 hold on;
 plot(nanmean(R2_perp_Y),'r')
 title('Y-Vel R^2 using Alphas as separate inputs')
 xlabel('Files')
 ylabel('R^2')
 
-CV_para_all = std(nanmean(R2_para_Y))/mean(nanmean(R2_para_Y))
+CV_para_all = std(nanmean(R2_para_Y(:,Lia)))/mean(nanmean(R2_para_Y(:,Lia)))
 CV_perp_all = std(nanmean(R2_perp_Y))/mean(nanmean(R2_perp_Y))
 
 legend(['Alpha 1:2 (Fano Factor = ',num2str(FF_para_all),')'],['Alpha 3:n (Fano Factor = ',num2str(FF_perp_all),')'])

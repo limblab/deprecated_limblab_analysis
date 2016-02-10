@@ -28,21 +28,25 @@ meanR3MSP=[meanR3MSPmat get(findobj(meanR3fig,'Marker','o'),'ydata')'];
 figure(compositeFig)
 meanR3axInCompFig=axes('Position',[0.6 0.05 0.4/1.15 0.9]);
 set(plot(meanR3MSP(:,1),meanR3MSP(:,2),'mo'), ...
-    'Parent',meanR3axInCompFig)
+    'Parent',meanR3axInCompFig,'MarkerSize',12)
 set(meanR3axInCompFig,'Xlim',[0 max(meanR3MSP(:,1))],'Ylim',[0 1],'TickLength',[0 0], ...
     'XTick',[],'YTick',[],'box','off')
 
 set(meanR3axInCompFig,'NextPlot','Add')
 meanR3fig=open(['L:\Mike_PD_Data\Chewie PD figs\HC\Chewie_HC_LFP1Direct_FinalDecoder_AllFreqLFPcounts_Non-normalized_CorrelationMap_Summary_LineFit_NoShunts.fig']);
 meanR3LFP=get(findobj(meanR3fig,'Marker','o'),'xdata');
-meanR3LFPmat = meanR3LFP{2,1}';
+meanR3LFPmat = meanR3LFP';
 meanR3LFPmat(:,1) = meanR3LFPmat(:,1) - meanR3LFPmat(1,1);
 meanR3LFP=[meanR3LFP; get(findobj(meanR3fig,'Marker','o'),'ydata')];
-meanR3LFPmat = [meanR3LFPmat meanR3LFP{4,1}'];
+meanR3LFPmat = [meanR3LFPmat meanR3LFP'];
 
-set(plot(meanR3LFPmat(:,1),meanR3LFPmat(:,2),'go'), ...
-    'Parent',meanR3axInCompFig)
+set(plot(meanR3LFPmat(:,1),meanR3LFPmat(:,3),'go'), ...
+    'Parent',meanR3axInCompFig,'MarkerSize',12)
 set(meanR3axInCompFig,'Xlim',[0 max(meanR3LFPmat(:,1))],'Ylim',[0 1],'TickLength',[0 0], ...
     'XTick',[],'YTick',[],'box','off')
 
-set(1,'Position',get(2,'Position'),'Units')
+% set(1,'Position',get(2,'Position'),'Units')
+LFPmean = mean(meanR3LFPmat(:,3))
+LFPstd = std(meanR3LFPmat(:,3))
+
+[h p ] = ttest2(meanR3LFPmat(:,3),meanR3MSP(:,2))

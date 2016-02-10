@@ -2,7 +2,7 @@ function [] = plotPathLength(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG,...
     Trials, AvgCorr, FileList, segment, monkey_name)
 % Calculates path length based on Trials structure created in
 % script 'CrossFreqCoupling'
-
+dayAvg = 0;
 % Input
 % HC_I - index for hand control files
 % BC_I - index for brain control files
@@ -213,39 +213,58 @@ for i = BC_I(1):BC_I(end)%2:size(Trials,2)
 end
 
 %% PL vs corr
-meanPL_byDayMAT = cellfun(@nanmean,meanPL_byDay);
-stdPL_byDayMAT  = cellfun(@nanstd,meanPL_byDay)./sqrt(cellfun(@length,meanPL_byDay));
-if iscell(AvgCorr_byDay{1,1})
-    AvgCorr_byDayMAT = zeros(length(meanPL_byDayMAT),1)
-    STDCorr_byDayMAT = zeros(length(meanPL_byDayMAT),1)
+if dayAvg == 1
+    meanPL_byDayMAT = cellfun(@nanmean,meanPL_byDay);
+    stdPL_byDayMAT  = cellfun(@nanstd,meanPL_byDay)./sqrt(cellfun(@length,meanPL_byDay));
+    if iscell(AvgCorr_byDay{1,1})
+        AvgCorr_byDayMAT = zeros(length(meanPL_byDayMAT),1)
+        STDCorr_byDayMAT = zeros(length(meanPL_byDayMAT),1)
+    else
+        AvgCorr_byDayMAT = cellfun(@nanmean,AvgCorr_byDay);
+        STDCorr_byDayMAT = cellfun(@nanstd,AvgCorr_byDay);
+    end
+    di = di - nnz(isnan(meanPL_byDayMAT(1:di)))
+    meanPL_byDayMAT(isnan(meanPL_byDayMAT(1:di))) = [];
+    stdPL_byDayMAT(isnan(stdPL_byDayMAT(1:di))) = [];
+    AvgCorr_byDayMAT(isnan(AvgCorr_byDayMAT(1:di))) = [];
+    STDCorr_byDayMAT(isnan(STDCorr_byDayMAT(1:di))) = [];
+    
+    figure
+    h = plot(1:di, meanPL_byDayMAT(1:di),'o-',...
+        1:di, meanPL_byDayMAT(1:di)+stdPL_byDayMAT(1:di),'b--',...
+        1:di, meanPL_byDayMAT(1:di)-stdPL_byDayMAT(1:di),'b--')
+    set(h(1),'MarkerSize',15.0)
+    set(h(1),'LineWidth',4.0)
+    set(h(2),'LineWidth',2.0)
+    set(h(3),'LineWidth',2.0)
+    ylim([0 10])
+    set(gca,'Ytick',[0,5,10],'YTicklabel',{'0','5','10'})
+    title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
+    xlabel('Session')
+    ylabel('Path Length')
 else
-    AvgCorr_byDayMAT = cellfun(@nanmean,AvgCorr_byDay);
-    STDCorr_byDayMAT = cellfun(@nanstd,AvgCorr_byDay);
+    di = sum(cellfun(@length,meanPL_byDay));
+    PL_byFile = meanPL(BC_I(1):BC_I(end));
+    stePL_byFile  = stePL(BC_I(1):BC_I(end));
+    
+    figure
+    h = plot(1:di, PL_byFile','o-',...
+        1:di, (PL_byFile+stePL_byFile)','b--',...
+        1:di, (PL_byFile-stePL_byFile)','b--')
+    set(h(1),'MarkerSize',15.0)
+    set(h(1),'LineWidth',4.0)
+    set(h(2),'LineWidth',2.0)
+    set(h(3),'LineWidth',2.0)
+    ylim([0 10])
+    set(gca,'Ytick',[0,5,10],'YTicklabel',{'0','5','10'})
+    title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
+    xlabel('Session')
+    ylabel('Path Length')
 end
-di = di - nnz(isnan(meanPL_byDayMAT(1:di)))
-meanPL_byDayMAT(isnan(meanPL_byDayMAT(1:di))) = [];
-stdPL_byDayMAT(isnan(stdPL_byDayMAT(1:di))) = [];
-AvgCorr_byDayMAT(isnan(AvgCorr_byDayMAT(1:di))) = [];
-STDCorr_byDayMAT(isnan(STDCorr_byDayMAT(1:di))) = [];
-
-figure
-h = plot(1:di, meanPL_byDayMAT(1:di),'o-',...
-    1:di, meanPL_byDayMAT(1:di)+stdPL_byDayMAT(1:di),'b--',...
-    1:di, meanPL_byDayMAT(1:di)-stdPL_byDayMAT(1:di),'b--')
-set(h(1),'MarkerSize',15.0)
-set(h(1),'LineWidth',4.0)
-set(h(2),'LineWidth',2.0)
-set(h(3),'LineWidth',2.0)
-ylim([0 10])
-set(gca,'Ytick',[0,5,10],'YTicklabel',{'0','5','10'})
-title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
-xlabel('Session')
-ylabel('Path Length')
-
 %% PL by day fig
 % figure
 % hold on
-% [hAx,hLine1,hLine2] = plot(1:di, meanPL_byDayMAT(1:di)) %,1:di, AvgCorr_byDayMAT(1:di))
+% [hAx,hLine1,hLine2] = plotyy(1:di, meanPL_byDayMAT(1:di)) %,1:di, AvgCorr_byDayMAT(1:di))
 % set(hLine1,'Marker','o')
 % set(hLine1,'MarkerSize',15.0)
 % set(hLine2,'Marker','x')

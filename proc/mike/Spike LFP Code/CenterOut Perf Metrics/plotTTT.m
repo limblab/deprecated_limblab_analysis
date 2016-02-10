@@ -1,7 +1,7 @@
 function [meanTTT, steTTT] = plotTTT(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG, ...
     Trials, AvgCorr, FileList, segment, ~, WinLen, overlap, monkey_name,Num)
 % Caclulate time to target for center out task
-
+DayAvg = 0;
 
 % Input
 % HC_I - index for hand control files
@@ -162,32 +162,78 @@ end
 
 
 %% TTT vs correlation
-meanTTT_byDayMAT = cellfun(@nanmean,meanTTT_byDay);
-stdTTT_byDayMAT  = cellfun(@nanstd,meanTTT_byDay)./sqrt(cellfun(@length,meanTTT_byDay));
-if iscell(AvgCorr_byDay{1,1})
-    AvgCorr_byDayMAT = zeros(length(meanTTT_byDayMAT),1)
-    STDCorr_byDayMAT = zeros(length(meanTTT_byDayMAT),1)
+if DayAvg == 1
+    meanTTT_byDayMAT = cellfun(@nanmean,meanTTT_byDay);
+    stdTTT_byDayMAT  = cellfun(@nanstd,meanTTT_byDay)./sqrt(cellfun(@length,meanTTT_byDay));
+    if iscell(AvgCorr_byDay{1,1})
+        AvgCorr_byDayMAT = zeros(length(meanTTT_byDayMAT),1)
+        STDCorr_byDayMAT = zeros(length(meanTTT_byDayMAT),1)
+    else
+        AvgCorr_byDayMAT = cellfun(@nanmean,AvgCorr_byDay);
+        STDCorr_byDayMAT = cellfun(@nanstd,AvgCorr_byDay);
+    end
+    PercentSuccess_byDayMAT = cellfun(@nanmean,PercentSuccess_byDay);
+    PercentSuccessSTD_byDayMAT = cellfun(@nanstd,PercentSuccess_byDay)./sqrt(cellfun(@length,PercentSuccess_byDay));
+    NumSuccess_byDayMAT = cellfun(@nanmean,NumSuccess_byDay);
+    NumSuccessSTD_byDayMAT = cellfun(@nanstd, NumSuccess_byDay)./sqrt(cellfun(@length,NumSuccess_byDay));
+    
+    % uppLim = max(AvgCorr_byDayMAT(1:di)+STDCorr_byDayMAT(1:di));
+    % lowLim = min(AvgCorr_byDayMAT(1:di)-STDCorr_byDayMAT(1:di));
+    
+    di = di - nnz(isnan(meanTTT_byDayMAT(1:di)))
+    meanTTT_byDayMAT(isnan(meanTTT_byDayMAT(1:di))) = [];
+    stdTTT_byDayMAT(isnan(stdTTT_byDayMAT(1:di))) = [];
+    AvgCorr_byDayMAT(isnan(AvgCorr_byDayMAT(1:di))) = [];
+    STDCorr_byDayMAT(isnan(STDCorr_byDayMAT(1:di))) = [];
+    PercentSuccess_byDayMAT(isnan(PercentSuccess_byDayMAT(1:di))) = [];
+    PercentSuccessSTD_byDayMAT(isnan(PercentSuccessSTD_byDayMAT(1:di))) = [];
+    NumSuccess_byDayMAT(isnan(NumSuccess_byDayMAT(1:di))) = [];
+    NumSuccessSTD_byDayMAT(isnan(NumSuccessSTD_byDayMAT(1:di))) = [];
 else
-    AvgCorr_byDayMAT = cellfun(@nanmean,AvgCorr_byDay);
-    STDCorr_byDayMAT = cellfun(@nanstd,AvgCorr_byDay);
+    di = sum(cellfun(@length,meanTTT_byDay));
+    TTT_byFile = meanTTT(BC_I(1):BC_I(end));
+    steTTT_byFile  = steTTT(BC_I(1):BC_I(end));
+    
+    PercentSuccess_byFile = cell2mat(PercentSuccess_byDay');
+    NumSuccess_byFile = cell2mat(NumSuccess_byDay');
+   
+    
+    figure
+    h = plot(1:di, TTT_byFile,'o-',...
+        1:di, TTT_byFile+steTTT_byFile,'b--',...
+        1:di, TTT_byFile-steTTT_byFile,'b--')
+    set(h(1),'MarkerSize',15.0)
+    set(h(1),'LineWidth',4.0)
+    set(h(2),'LineWidth',2.0)
+    set(h(3),'LineWidth',2.0)
+    ylim([0 15])
+    set(gca,'Ytick',[0,5,10,15],'YTicklabel',{'0','5','10','15'})
+    title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
+    xlabel('Session')
+    ylabel('TTT')
+    
+    figure
+    h = plot(1:di, PercentSuccess_byFile(1:di),'o-')
+    set(h(1),'MarkerSize',15.0)
+    set(h(1),'LineWidth',4.0)
+    ylim([0 100])
+    set(gca,'Ytick',[0,50,100],'YTicklabel',{'0','50','100'})
+    title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
+    xlabel('Session')
+    ylabel('Percent Success')
+    
+    figure
+    h = plot(1:di, NumSuccess_byFile(1:di),'o-')
+    set(h(1),'MarkerSize',15.0)
+    set(h(1),'LineWidth',4.0)
+    ylim([0 100])
+    set(gca,'Ytick',[0,30,60,90],'YTicklabel',{'0','30','60','90'})
+    title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
+    xlabel('Session')
+    ylabel('Number of Successes')
+    return
 end
-PercentSuccess_byDayMAT = cellfun(@nanmean,PercentSuccess_byDay);
-PercentSuccessSTD_byDayMAT = cellfun(@nanstd,PercentSuccess_byDay)./sqrt(cellfun(@length,PercentSuccess_byDay));
-NumSuccess_byDayMAT = cellfun(@nanmean,NumSuccess_byDay);
-NumSuccessSTD_byDayMAT = cellfun(@nanstd, NumSuccess_byDay)./sqrt(cellfun(@length,NumSuccess_byDay));
 
-% uppLim = max(AvgCorr_byDayMAT(1:di)+STDCorr_byDayMAT(1:di));
-% lowLim = min(AvgCorr_byDayMAT(1:di)-STDCorr_byDayMAT(1:di));
-
-di = di - nnz(isnan(meanTTT_byDayMAT(1:di)))
-meanTTT_byDayMAT(isnan(meanTTT_byDayMAT(1:di))) = [];
-stdTTT_byDayMAT(isnan(stdTTT_byDayMAT(1:di))) = [];
-AvgCorr_byDayMAT(isnan(AvgCorr_byDayMAT(1:di))) = [];
-STDCorr_byDayMAT(isnan(STDCorr_byDayMAT(1:di))) = [];
-PercentSuccess_byDayMAT(isnan(PercentSuccess_byDayMAT(1:di))) = [];
-PercentSuccessSTD_byDayMAT(isnan(PercentSuccessSTD_byDayMAT(1:di))) = [];
-NumSuccess_byDayMAT(isnan(NumSuccess_byDayMAT(1:di))) = [];
-NumSuccessSTD_byDayMAT(isnan(NumSuccessSTD_byDayMAT(1:di))) = [];
 %% TTT, %Succ, #Succ with error bars
 figure
 
@@ -226,8 +272,8 @@ set(h(1),'MarkerSize',15.0)
 set(h(1),'LineWidth',4.0)
 set(h(2),'LineWidth',2.0)
 set(h(3),'LineWidth',2.0)
-ylim([0 60])
-set(gca,'Ytick',[0,30,60],'YTicklabel',{'0','30','60'})
+ylim([0 100])
+set(gca,'Ytick',[0,30,60,90],'YTicklabel',{'0','30','60','90'})
 title([sprintf('%s',monkey_name),' Ch ',sprintf('%d',ControlCh)])
 xlabel('Session')
 ylabel('Number of Successes')

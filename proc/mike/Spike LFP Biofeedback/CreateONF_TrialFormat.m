@@ -1,33 +1,8 @@
 % Create ONF Trial Format
 
-%% Consider making these variables inputs to the function
-binsize = .05;
-wsz = 256;
-samplerate = 1000;
-pri = 1;
-fi =1;
-ind = 1;
-
-numlags  = 1; % Number of lags used online
-Offlinelags = 1; % Number of lags to use offline
-numsides = 1;
-lambda   = 1;
-binsamprate = floor(1/binsize);
-numfp = 96;
-folds = 10;
-
-% FileList = {Mini_Spike_LFPL_06092014006}; 
-bandstarts = [30, 130, 200];
-bandends   = [50, 200, 300];
-
-% HC_I = [1:22];
-% BC_1DG = [23:25];
-% BC_1DSp = [26:28];
-% BC_I = [35:38];
-
 clear FileNotRun
 %% Find file path, load file and start iterating through files
-for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]
+for q =  [BC_I(1):BC_I(end)] % HC_I(1):HC_I(end)  BC_1DG(1):BC_1DG(end) BC_1DSp(1):BC_1DSp(end)]
     
     if exist('fnam','var') == 0         
             fnam{q} =  findBDFonCitadel(FileList{q,1})
@@ -103,8 +78,8 @@ for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1
     Num.Success_File(q) = length(SuccessTrialInds)/TenMinInts;
         
     Num.PercentSuccess_File(q) = (Num.Success_File(q)/(Num.Trials_File(q)-Num.Abort_File(q)))*100*TenMinInts;
-    clear FirstTrialInds AbortTrialInds SuccessTrialInds
-    continue
+%     clear FirstTrialInds AbortTrialInds SuccessTrialInds
+%     continue
     data(q).fptimes = fptimes;
     data(q).FPs = fp;
     data(q).SpikeTimes = tsFPorder;
@@ -112,6 +87,8 @@ for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1
     % Robert's fpassign puts NaNs in the matrix and this throws everything
     % off, remove them here.
     fp(isnan(fp)==1)= 0;
+    [b,a]=butter(2,[58 62]/(samprate/2),'stop');
+    fpf=filtfilt(b,a,fp')';
     
     if AdjustCorr == 1
         [PB, ~, ~, ~, y, t] = MRScalcFeatMat(sig, 'vel', numfp, ...
@@ -125,11 +102,15 @@ for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1
         [b,a]=butter(2,[bandstarts(i) bandends(i)]/(samprate/2));
         TrialBP= filtfilt(b,a,fp');
         BP_Vec = smooth(abs(hilbert(TrialBP)).^2,21,'moving');
+        Phase_Vec = angle((hilbert(TrialBP)));
         try
             BP(:,:,i) = reshape(BP_Vec,size(TrialBP,1),size(TrialBP,2));
+            BPh(:,:,i) = reshape(Phase_Vec,size(TrialBP,1),size(TrialBP,2));            
         catch
             clear BP
             BP(:,:,i) = reshape(BP_Vec,size(TrialBP,1),size(TrialBP,2));
+            BPh(:,:,i) = reshape(Phase_Vec,size(TrialBP,1),size(TrialBP,2));
+            
         end
     end
     
@@ -141,7 +122,7 @@ for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1
 %     subplot(7,4,q)
 %     imagesc(rOnline.map)
 
-    clear a b BP_Vec TrialBP
+    clear a b BP_Vec PhaseVec TrialBP
  %%    
         
     for  k = in(ControlCh,[1 96]) % 1:size(fp,1) %
@@ -189,9 +170,13 @@ for q =  [BC_I(1):BC_I(end)]% [HC_I(1):HC_I(end) BC_1DG(1):BC_1DG(end) BC_1DSp(1
         
         if whole == 1 
             try
-                Trials{k,q} = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikeTimes);
-                Trials{k,q}.Targets = bdf.targets;
-                %         [TrialsRawFP{k,q}] = parseTrials(bdf,fp(k,:)',FPstartTime,SpikedataToParse);
+                if PhasorOn == 0
+                    Trials{k,q} = parseTrials(bdf,BP(:,k,:),FPstartTime,SpikeTimes);
+                    Trials{k,q}.Targets = bdf.targets;
+                else
+                    Trials{k,q} = parseTrials(bdf,BPh(:,k,:),FPstartTime,SpikeTimes);
+                    TrialsRawFP{k,q} = parseTrials(bdf,fpf(k,:)',FPstartTime,SpikeTimes);                   
+                end
             catch exception
                 FilesNotRun{q,2} = exception;
                 FilesNotRun{q,1} = fnam

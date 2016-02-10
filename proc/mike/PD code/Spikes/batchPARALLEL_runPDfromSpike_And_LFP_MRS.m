@@ -1,9 +1,9 @@
-filelist = [Mini_LFP1_DaysNames];
+filelist = [Chewie_handControlDays(38:40,:)];
 LFP = 1;
 Spike = 0;
 
 if LFP == 1
-    postfix='_pdsallchanspos_bs-1wsz150mnpow_AllFreq_LFPcounts';
+    postfix='_pdsallchanspos_bs-1wsz150mnpow__LFPcounts';
 else
     postfix='spikePDs_allchans_bs-1cos';
 end

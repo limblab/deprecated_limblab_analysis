@@ -4,12 +4,12 @@ function [] = runPDfromLFPs3_LMPandAllFreq(filelist)
 % for multiple files
 % 4/17/14
 
-% filelist = Mini_LFP1_DaysNames;
+% filelist = Chewie_handControlDays(35:37,:);
 chinds=1:96;
 LMPbandstart=[];
 LMPbandend=[];
-bandstart=  [0];
-bandend=    [4];
+bandstart =  [0];
+bandend =    [4];
 
 bootstrapPDsCalc = 0; % Imaginary flag to calc bootstrap PDs or not (haven't implemented it yet)
 

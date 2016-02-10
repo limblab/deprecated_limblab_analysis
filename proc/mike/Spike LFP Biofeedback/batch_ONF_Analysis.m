@@ -1,11 +1,25 @@
 %% ONF Physiology and Kinematics Analysis
-monkey_name = 'Chewie';
-FileList = Chewie_U10_SpikeX_Gam3Y_Ch42;
-% HC_I = [1:21];
-% BC_1DG = [23:25];
-% BC_1DSp = [26:28];
-BC_I = [1:73];
-ControlCh = 42;
+monkey_name = 'Mini';
+FileList = {'Mini_Spike_LFPL_05012013003'};
+
+%% File Index for each type of file
+HC_I = [1];
+BC_1DG = [1];
+BC_1DSp = [1];
+BC_I = [1];
+ControlCh = 91;
+
+%% Use these vars for phase locking index calc
+% If you want to calculate Phase locking index
+PhasorOn = 1;
+
+% 1 If you want to calculate PLI on parsed trials
+% 0 if you want to calculate PLI on whole file
+Parsed = 1;
+
+% 1 If you want to calculate LG PLI
+% 0 if you want to calculate 200-300 Hz PLI
+LG_Phase = 0;
 
 %% Use these vars if you want to split up files in to segments
 segment = 0;
@@ -30,8 +44,31 @@ ACFInd =  1; % using this to properly index files in AdjustCorr_bdf struct
 % H_temp(:,1) = H(:,1) * 4;
 % H_temp(:,2) = H(:,2) * 40;
 
+%% Variable for processing fps (CreateONF_TrialFormat)
+binsize = .05;
+wsz = 256;
+samplerate = 1000;
+pri = 1;
+fi =1;
+ind = 1;
+
+numlags  = 1; % Number of lags used online
+Offlinelags = 1; % Number of lags to use offline
+numsides = 1;
+lambda   = 1;
+binsamprate = floor(1/binsize);
+numfp = 96;
+folds = 10;
+
+bandstarts = [30, 130, 200];
+bandends   = [50, 200, 300];
+
 %% Create the ONF trial format that parses all of the data
-CreateONF_TrialFormat
+if PhasorOn == 1 && Parsed == 0
+    Calc_PLI_by_wholeFileFP
+else
+    CreateONF_TrialFormat
+end
 % Rename Trials and AvgCorr variables here if doing multiple types of
 % data segmentation
 % Trials = [];
@@ -54,15 +91,23 @@ if RunSim == 1
         end
     end
 end
-%% Calculate correlations among signals of interest
-[AvgCorr, Exceptions] = BinAndOrganizeSpikesAndFPsByTrial(Trials, ControlCh, HC_I, BC_I,...
-    BC_1DG, BC_1DSp, flag_SpHG, flag_LGHG, monkey_name, AdjustCorr, IncCorr, DecCorr, iters)
-%% Aggregate and plot time to targets
-[meanTTT steTTT] = plotTTT(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG,...
-    Trials, AvgCorr, FileList, segment, whole, WinLen, overlap, monkey_name,Num)
-%% Plot cursor paths
-plotCursorPaths(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG, Trials,...
-    meanTTT, steTTT, segment) 
-%% Calculate and plot cursor paths
-plotPathLength(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG, Trials, AvgCorr,...
-    FileList, segment, monkey_name)
+%% Calculate Phase locking index
+if PhasorOn == 1
+    [PLI] = Calc_PLI_by_FP(FileList, Trials, TrialsRawFP, ControlCh, numfp,...
+        HC_I, BC_I, BC_1DG, BC_1DSp, flag_SpHG, flag_LGHG, LG_Phase, monkey_name)
+else
+    %% Calculate correlations among signals of interest
+    [AvgCorr, Exceptions] = BinAndOrganizeSpikesAndFPsByTrial(Trials, ControlCh, HC_I, BC_I,...
+        BC_1DG, BC_1DSp, flag_SpHG, flag_LGHG, monkey_name, AdjustCorr, IncCorr, DecCorr, iters)
+    %% Aggregate and plot time to targets
+    [meanTTT steTTT] = plotTTT(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG,...
+        Trials, AvgCorr, FileList, segment, whole, WinLen, overlap, monkey_name,Num)
+    %% Plot cursor paths
+    plotCursorPaths(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG, Trials,...
+        meanTTT, steTTT, segment)
+    %% Calculate and plot cursor paths
+    plotPathLength(HC_I, BC_I, ControlCh, flag_SpHG, flag_LGHG, Trials, AvgCorr,...
+        FileList, segment, monkey_name)
+    
+    snapnow;
+end
