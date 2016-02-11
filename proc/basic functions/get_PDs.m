@@ -92,7 +92,11 @@ function [figure_handles, output_data]=get_PDs(folder,options)
     else
         optionstruct.data_offset=0;%negative shift shifts the kinetic data later to match neural data caused at the latency specified by the offset
     end
-    
+    if isfield(options,'parse_type')
+        parse_type=options.parse_type;
+    else
+        parse_type='continuous';
+    end
     which_units=1:length(bdf.units);
     if isfield(options, 'only_sorted')
         if options.only_sorted
@@ -108,7 +112,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
     if options.do_unit_pds
         %get the timepoints of interest from the bdf and compose them into
         %a structure to use with compute tuning
-        behaviors = parse_for_tuning(bdf,'continuous','opts',optionstruct,'units',which_units);
+        behaviors = parse_for_tuning(bdf,parse_type,'opts',optionstruct,'units',which_units);
         output_data.unit_behaviors=behaviors;
         if optionstruct.compute_vel_pds
             output_data.unit_tuning_stats = compute_tuning(behaviors,[1 1 0 0 0 0 0],struct('num_rep',100),'poisson');
@@ -275,7 +279,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
         else
             %if we didn't parse the arm behavior for the single units, then
             %we need to compute it and the firing rate matrix now
-            behaviors = parse_for_tuning(multiunit_bdf,'continuous','opts',optionstruct);
+            behaviors = parse_for_tuning(multiunit_bdf,parse_type,'opts',optionstruct);
         end
         output_data.electrode_behaviors=behaviors;
         if optionstruct.compute_vel_pds
