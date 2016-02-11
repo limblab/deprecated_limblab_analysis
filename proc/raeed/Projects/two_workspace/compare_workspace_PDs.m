@@ -1,5 +1,5 @@
 function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
-    try
+%     try
         figure_handles=[];
 
     %     matfilelist=dir([folder filesep options.prefix '*.mat']);
@@ -421,8 +421,8 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
             output_data.num_changed = sum(sig_change);
             output_data.num_units = length(sig_change);
         end
-    catch MExc
-        output_data.MExc = MExc;
-        warning('Code did not fully execute. Check ''MExc'' in output data for more information.')
-    end
+%     catch MExc
+%         output_data.MExc = MExc;
+%         warning('Code did not fully execute. Check ''MExc'' in output data for more information.')
+%     end
 end
