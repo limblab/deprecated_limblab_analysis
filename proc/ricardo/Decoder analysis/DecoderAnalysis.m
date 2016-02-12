@@ -1,7 +1,7 @@
-target_folder = ['D:\Jaco_8I1\Jaco_2016-02-10_RW_viscous_load_1\'];
-params.file_prefix = 'Jaco_2016-02-10_RW_viscous_load_001';
+target_folder = ['C:\Users\trr684\Documents\Data\Jaco_2016-02-10_RW_no_load\'];
+params.file_prefix = 'Jaco_2016-02-10_RW_no_load_001';
 
-new_fs_vector = [500,1000,2000,10000];
+new_fs_vector = [500,1000,2000];
 
 for fs_idx = 1:length(new_fs_vector)
     new_fs = new_fs_vector(fs_idx);
@@ -78,7 +78,7 @@ for fs_idx = 1:length(new_fs_vector)
         NEVNSx_new.NEV.Data.Spikes.Waveform = uint16([]);
         NEVNSx_new.NEV.Data.Spikes.WaveformUnit = 'raw';
         for iElec = 1:length(electrodes)
-            [iThres iElec]
+            [fs_idx iThres iElec]
             raw_data_10k = double(NEVNSx.NS4.Data(iElec,:));
             raw_data_10k = filtfilt(b_high,a_high,raw_data_10k);
             %             temp_raw_data = raw_data_2k(iElec,:);
@@ -112,14 +112,14 @@ for fs_idx = 1:length(new_fs_vector)
             end
             
         end
-        save([target_folder '\' params.file_prefix '-NEVNSx_' num2str(new_fs) '_new_' num2str(threshold_vector(iThres))],'NEVNSx_new','-v7.3');
+        save([target_folder '\' params.file_prefix '-NEVNSx_' num2str(new_fs) '_new_' num2str(threshold_vector(iThres))],'NEVNSx_new','-v7.3');    
     end
     
-    figure; plot(threshold_vector,corr_coef_mat(num_spikes>NEVNSx.NS4.MetaTags.DataDurationSec,:)')
+    hf = figure; plot(threshold_vector,corr_coef_mat(num_spikes>NEVNSx.NS4.MetaTags.DataDurationSec,:)')
     xlabel('threshold (stds)')
     ylabel('R')
     title({'Crosscorrelation between firing rates at 30kHz and';'rate of threshold crossings at 2kHz'})
-    
+    saveas(hf,[target_folder 'Crosscorrelations ' num2str(new_fs) ' Hz'],'fig')
     
     %%
     NEVNSx_temp.NEV = NEVNSx.NEV;
@@ -134,7 +134,7 @@ for fs_idx = 1:length(new_fs_vector)
     %%
     bdf_units = [];
     for iThres = 1:length(threshold_vector)
-        iThres
+        [fs_idx iThres]
         load([target_folder params.file_prefix '-NEVNSx_' num2str(new_fs) '_new_' num2str(threshold_vector(iThres))])
         NEVNSx_temp.NEV.Data.Spikes = NEVNSx_new.NEV.Data.Spikes;
         bdf_temp = get_nev_mat_data(NEVNSx_temp,3);
@@ -168,7 +168,7 @@ for fs_idx = 1:length(new_fs_vector)
         load([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs)])
     end
     
-    figure;
+    hf = figure;
     hold on
     errorbar(-.2,mean(VAF_spikes(2:end,1)),std(VAF_spikes(2:end,1)),'b')
     errorbar(.2,mean(VAF_spikes(2:end,2)),std(VAF_spikes(2:end,2)),'r')
@@ -183,6 +183,7 @@ for fs_idx = 1:length(new_fs_vector)
     title(['Vel VAF as a function of threshold. Fs = ' num2str(new_fs)])
     legend('X vel','Y vel')
     ylim([0 1])
+    saveas(hf,[target_folder 'VAF Vel ' num2str(new_fs) ' Hz'],'fig')
     
     if ~exist([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs) '.mat'],'file')
         if ~isempty(binnedData.emgdatabin)
@@ -214,7 +215,7 @@ for fs_idx = 1:length(new_fs_vector)
         load([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs)])
     end
     
-    figure;
+    hf = figure;
     hold on
     errorbar(-.2,mean(VAF_spikes(2:end,1)),std(VAF_spikes(2:end,1)),'b')
     errorbar(.2,mean(VAF_spikes(2:end,2)),std(VAF_spikes(2:end,2)),'r')
@@ -229,4 +230,5 @@ for fs_idx = 1:length(new_fs_vector)
     title(['EMG VAF as a function of threshold. Fs = ' num2str(new_fs)])
     legend(emg_labels)
     ylim([0 1])
+    saveas(hf,[target_folder 'VAF EMG ' num2str(new_fs) ' Hz'],'fig')
 end
