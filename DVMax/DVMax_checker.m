@@ -23,7 +23,7 @@ function DVMax_checker()
             javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
         end
 
-        MonkeyWaterLocation = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
+        MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
         water_codes = {'EP8500','EP9000','EP2000','AC1091'};
         free_water_codes = {'EP9200 ','AC1093'};
         water_restriction_start_codes = {'EP9100','AC1092'};
