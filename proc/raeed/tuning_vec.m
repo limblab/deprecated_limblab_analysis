@@ -9,3 +9,4 @@ end
 
 %take out unsorted and invalidated units and untuned units
 tuned_single = tuning_vec(tuning_vec(:,2)~=255 & tuning_vec(:,2)~=0 & tuning_vec(:,3),:);
+%

@@ -51,20 +51,25 @@ function [figure_handles, output_data]=rotate_tuning_curves(folder,options)
 
 
 % set up PM tuning curve function
-options_PM.only_sorted=1;
-options_PM.labnum=6;
+options_PM = options;
 options_PM.plot_curves=0;
-options_PM.bdf = options.bdf_PM;
+if isfield(options,'bdf_PM')
+    options_PM.bdf = options.bdf_PM;
+    options_PM = rmfield(options_PM,'bdf_PM');
+end
+    
 % behaviors_PM = parse_for_tuning(options.bdf_PM,'continuous','opts',optionstruct,'units',which_units);
 % options_PM.behaviors = behaviors_PM;
 
 [~,tuning_PM] = get_tuning_curves(folder,options_PM);
 
 % set up DL tuning curve function
-options_DL.only_sorted = 1;
-options_DL.labnum=6;
+options_DL = options;
 options_DL.plot_curves=0;
-options_DL.bdf = options.bdf_DL;
+if isfield(options,'bdf_DL')
+    options_DL.bdf = options.bdf_DL;
+    options_DL = rmfield(options_DL,'bdf_DL');
+end
 % behaviors_DL = parse_for_tuning(options.bdf_DL,'continuous','opts',optionstruct_DL,'units',which_units_DL);
 % options_DL.behaviors = behaviors_DL;
 
