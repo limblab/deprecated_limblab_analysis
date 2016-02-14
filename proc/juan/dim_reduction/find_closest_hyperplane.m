@@ -1,6 +1,6 @@
 %
 % Find the eigenvectors in task 2 that are most similar (smallest angle) to
-% the eigenvectors in task 1 (orig).
+% certain eigenvectors in task 1 (orig).
 %
 %   function [angle, dim_min_angle] = find_closest_hyperplane( eigenv_orig, ...
 %                                       eigenv_2, dims_hyper_in_orig )
@@ -11,7 +11,8 @@
 %   eigenv_2                : matrix with the eigenvectors you want to
 %                               match (find smallest angle)
 %   dims_hyper_in_orig      : the dimensions in the original space you want
-%                               to match 
+%                               to match (scalar or matrix). Do 'all' for
+%                               all the eigenvectors
 %
 % Outputs:
 %   angle                   : the angle (rad) between the most similar
@@ -23,14 +24,23 @@
 function [angle, dim_min_angle] = find_closest_hyperplane( eigenv_orig, eigenv_2, dims_hyper_in_orig )
 
 
-nbr_dims_orig           = size(eigenv_orig,1);
-nbr_dims_hyper_in_orig  = length(dims_hyper_in_orig);
+% read inputs
+if ischar(dims_hyper_in_orig)
+    if strcmp(dims_hyper_in_orig,'all')
+        nbr_dims_hyper_in_orig = size(eigenv_orig,1);
+        dims_hyper_in_orig  = 1:nbr_dims_hyper_in_orig;
+    end
+else
+    nbr_dims_hyper_in_orig  = length(dims_hyper_in_orig);
+end
 
-% preallocate matrix for angles
+nbr_dims_orig       = size(eigenv_orig,1);
+
+
+% preallocate matrices
 all_angles              = zeros(nbr_dims_orig,nbr_dims_hyper_in_orig);
 dim_min_angle           = zeros(1,nbr_dims_hyper_in_orig);
 angle                   = zeros(1,nbr_dims_hyper_in_orig);
-
 
 % do for each of the eigenv_orig
 for i = 1:nbr_dims_hyper_in_orig
