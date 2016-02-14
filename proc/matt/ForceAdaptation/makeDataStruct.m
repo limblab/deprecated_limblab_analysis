@@ -87,12 +87,7 @@ for iArray = 1:length(arrays)
                 cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
                 cerFile = fullfile(cerPath,cerName);
                 if ~exist(cerFile,'file') % probably not sorted, so do this
-                    cerName = [monkey '_' arrays{iArray} '_' task '_' adaptType '_BL_' m d y '.nev'];
-                    cerPath = fullfile(dataDir,arrays{iArray},'CerebusData',useDate);
-                    cerFile = fullfile(cerPath,cerName);
-                    if ~exist(cerFile,'file') % probably not sorted, so do this
-                        load_success = 0;
-                    end
+                    load_success = 0;
                 end
             end
         case 'nevnsx'
@@ -218,12 +213,7 @@ if load_success
                         cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
                         cerFile = fullfile(cerPath,cerName);
                         if ~exist(cerFile,'file') % probably not sorted, so do this
-                            cerName = [monkey '_' currArray '_' task '_' adaptType '_' currEpoch '_' m d y '.nev'];
-                            cerPath = fullfile(dataDir,currArray,'CerebusData',useDate);
-                            cerFile = fullfile(cerPath,cerName);
-                            if ~exist(cerFile,'file') % probably not sorted, so do this
-                                load_success = 0;
-                            end
+                            load_success = 0;
                         end
                     end
                     

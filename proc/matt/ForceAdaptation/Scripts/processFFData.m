@@ -19,7 +19,7 @@ paramSetNames = {'movement'};
 
 % exclude these analysis steps
 % processing options
-doDataStruct        = 1;
+doDataStruct        = 0;
 doAdaptation        = 0;
 doTracking          = 0;
 % tuning options
@@ -57,7 +57,7 @@ for iMonkey = 1:length(monkeys)
             chewie_data = sessionList(strcmpi(sessionList(:,1),'Chewie'),:);
             params = setParamValues(params,'MonkeyID',2,'dataDir','F:\Chewie');
             goodDates = chewie_data(:,2);
-            
+
         case 'Mihili'
             arrays = {'M1','PMd'};
             
@@ -65,7 +65,7 @@ for iMonkey = 1:length(monkeys)
             params = setParamValues(params,'MonkeyID',3,'dataDir','F:\Mihili');
             goodDates = mihili_data(:,2);
             
-        case 'Jaco'
+            case 'Jaco'
             arrays = {'M1'};
             
             jaco_data = sessionList(strcmpi(sessionList(:,1),'Jaco'),:);
@@ -95,7 +95,7 @@ for iMonkey = 1:length(monkeys)
         
         % load experiment parameters from text file
         params.exp = parseExpParams(expParamFile);
-        
+
         params.useUnsorted = true;
         if doDataStruct
             disp('');
@@ -143,32 +143,34 @@ for iMonkey = 1:length(monkeys)
             
             % some analyses I won't want to do on every type of task
             if ismember(params.exp.task,params.useTasks) && ismember(params.exp.adaptation_type,params.useTasks)
-                if doTuning
-                    disp('');
-                    disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-                    disp('%%%  Fit Tuning Curves %%%')
-                    disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-                    % calculate tuning curves
-                    fitTuningCurves(params,arrays);
+                if ~params.useUnsorted
+                    if doTuning
+                        disp('');
+                        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                        disp('%%%  Fit Tuning Curves %%%')
+                        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                        % calculate tuning curves
+                        fitTuningCurves(params,arrays);
+                    end
+                    
+                    if doClassification
+                        disp('');
+                        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                        disp('%%% Classifying Cells  %%%')
+                        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
+                        % Look for memory cells
+                        findMemoryCells(params,arrays);
+                    end
                 end
                 
-                if doClassification
+                if doReport
                     disp('');
                     disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-                    disp('%%% Classifying Cells  %%%')
+                    disp('%%% Generating Report  %%%')
                     disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-                    % Look for memory cells
-                    findMemoryCells(params,arrays);
+                    % make an HTML document detailing it all
+                    [~] = makeSummaryReport(params);
                 end
-            end
-            
-            if doReport
-                disp('');
-                disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-                disp('%%% Generating Report  %%%')
-                disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
-                % make an HTML document detailing it all
-                [~] = makeSummaryReport(params);
             end
         end
         

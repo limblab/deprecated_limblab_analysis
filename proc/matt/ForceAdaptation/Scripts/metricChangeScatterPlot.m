@@ -257,14 +257,11 @@ for iAxis = 1:length(axisNames)
     classes = [];
     r2s = [];
     widths = [];
-    all_pds = [];
     for iFile = 1:size(doFiles,1)
         pds = cellPDs{iFile};
         mds = cellMDs{iFile};
         bos = cellBOs{iFile};
         frs = cellFRs{iFile};
-        
-        all_pds = [all_pds; pds{1}];
         
         pd_bl = [pd_bl; pds{1}.*(180/pi)];
         pd_ad = [pd_ad; pds{2}.*(180/pi)];

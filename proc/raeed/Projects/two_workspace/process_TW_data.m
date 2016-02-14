@@ -7,9 +7,6 @@ function_name='compare_workspace_PDs';
 options.labnum=6;
 options.dual_array = 0;
 
-options.bdf_DL = bdfpost_DL;
-options.bdf_PM = bdfpost_PM;
-
 dbstop if error
 output_data_20151202 = run_data_processing(function_name,folder,options);
 dbclear if error

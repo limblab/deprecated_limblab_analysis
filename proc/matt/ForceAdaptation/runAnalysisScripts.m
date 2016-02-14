@@ -18,15 +18,15 @@ close all;
 %   8: Cell classification summary
 %   9: trial number
 %  10: PD change periods for SfN
-whichScript = 1;
+whichScript = 7;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Now a bunch of parameters and necessary info
 root_dir = 'F:\';
 
 useArray = 'M1'; % Monkey sessions are filtered by array
-useMonkeys = {'Chewie','Mihili'};
-usePerts = {'FF'}; % which perturbations
+useMonkeys = {'Chewie'};
+usePerts = {'VR'}; % which perturbations
 useTasks = {'CO'}; % CO/RT here.
 useControl = false;
 epochs = {'BL','AD','WO'};

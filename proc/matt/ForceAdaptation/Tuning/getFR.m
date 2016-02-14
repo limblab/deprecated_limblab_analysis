@@ -63,8 +63,6 @@ for iBlock = 1:numBlocks
             useWin(trial,:) = [mt(trial,4)-timeDelay, mt(trial,6)-holdTime];
         elseif strcmpi(tuningPeriod,'onpeak') % use from onset to peak
             useWin(trial,:) = [mt(trial,4), mt(trial,5)];
-        elseif strcmpi(tuningPeriod,'peakend') % use from peak to end
-            useWin(trial,:) = [mt(trial,5), mt(trial,6)-holdTime];
         elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
             useWin(trial,:) = [mt(trial,5)-movementTime, mt(trial,5)];
         elseif strcmpi(tuningPeriod,'time') % sliding time windows over reaches

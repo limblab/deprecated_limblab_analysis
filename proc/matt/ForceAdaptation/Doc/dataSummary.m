@@ -10,12 +10,8 @@
 % ?: consider considering re-sorting...
 
 sessionList = { ...
-%     'Jaco','2016-01-27','CS','CO'; ...
-%     'Jaco','2016-01-28','CS','CO'; ...
-%     'Jaco','2016-01-29','CS','CO'; ...
-%     'Jaco','2016-02-02','CS','CO'; ...
-%     'Jaco','2016-02-03','CS','CO'; ...
-%     'Jaco','2016-02-04','CS','CO'; ...
+    'Jaco','2016-01-27','CS','CO'; ...
+    'Jaco','2016-01-28','CS','CO'; ...
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Mr T
 %     'MrT','2013-08-19','FF','CO'; ...   %1  S(P)
@@ -40,14 +36,14 @@ sessionList = { ...
 % % % %     'Chewie','2013-10-09','VR','RT'; ... %2  S(M) x
 % % % %     'Chewie','2013-10-10','VR','RT'; ... %3  S(M) ?
 % % % %     'Chewie','2013-10-11','VR','RT'; ... %4  S(M) x
-    'Chewie','2013-10-22','FF','CO'; ... %5  S(M) ?
-    'Chewie','2013-10-23','FF','CO'; ... %6  S(M) ?
+%     'Chewie','2013-10-22','FF','CO'; ... %5  S(M) ?
+%     'Chewie','2013-10-23','FF','CO'; ... %6  S(M) ?
 % % % %     'Chewie','2013-10-28','FF','RT'; ... %7  S(M) x
 % % % %     'Chewie','2013-10-29','FF','RT'; ... %8  S(M) x
-    'Chewie','2013-10-31','FF','CO'; ... %9  S(M) ?
-    'Chewie','2013-11-01','FF','CO'; ... %10 S(M) ?
-    'Chewie','2013-12-03','FF','CO'; ... %11 S(M)
-    'Chewie','2013-12-04','FF','CO'; ... %12 S(M)
+%     'Chewie','2013-10-31','FF','CO'; ... %9  S(M) ?
+%     'Chewie','2013-11-01','FF','CO'; ... %10 S(M) ?
+%     'Chewie','2013-12-03','FF','CO'; ... %11 S(M)
+%     'Chewie','2013-12-04','FF','CO'; ... %12 S(M)
 % % % %     'Chewie','2013-12-09','FF','RT'; ... %13 S(M)
 % % % %     'Chewie','2013-12-10','FF','RT'; ... %14 S(M)
 % % % %     'Chewie','2013-12-12','VR','RT'; ... %15 S(M)
@@ -96,8 +92,8 @@ sessionList = { ...
 % % %     'Mihili','2014-01-15','VR','RT'; ...    %2  S(M-P)
 % % %     'Mihili','2014-01-16','VR','RT'; ...    %3  S(M-P)
 % % %     'Mihili','2014-02-14','FF','RT'; ...    %5  S(M-P)
-    'Mihili','2014-02-17','FF','CO'; ...    %6  S(M-P)
-    'Mihili','2014-02-18','FF','CO'; ...    %7  S(M-P) - Did both perturbations
+%     'Mihili','2014-02-17','FF','CO'; ...    %6  S(M-P)
+%     'Mihili','2014-02-18','FF','CO'; ...    %7  S(M-P) - Did both perturbations
 % % %     % 'Mihili','2014-02-18-VR','VR','CO'; ... %8  S(M-P) - Did both perturbations
 % % %     'Mihili','2014-02-21','FF','RT'; ...    %9  S(M-P)
 % % %     'Mihili','2014-02-24','FF','RT'; ...    %10 S(M-P) - Did both perturbations
@@ -105,17 +101,17 @@ sessionList = { ...
 % %     'Mihili','2014-03-03','VR','CO'; ...    %12 S(M-P)
 % %     'Mihili','2014-03-04','VR','CO'; ...    %13 S(M-P)
 % %     'Mihili','2014-03-06','VR','CO'; ...    %14 S(M-P)
-    'Mihili','2014-03-07','FF','CO'; ...    %15 S(M-P)
+%     'Mihili','2014-03-07','FF','CO'; ...    %15 S(M-P)
 % % %     'Mihili','2014-06-26','CS','CO'; ...    %16 S(M-)
 % % %     'Mihili','2014-06-27','CS','CO'; ...    %17 S(M-)
 % % %     'Mihili','2014-09-29','CS','CO'; ...    %18 S(M-)
 % % %     'Mihili','2014-12-03','CS','CO'; ...    %19 S(M-)
 % % %     'Mihili','2015-05-11','CS','CO'; ...    %21 S(M-P)
 % % %     'Mihili','2015-05-12','CS','CO'; ...    %22 S(M-P)
-    'Mihili','2015-06-10','FF','CO'; ...    %23 S(M-P) - SHORT WASHOUT
-    'Mihili','2015-06-11','FF','CO'; ...    %24 S(M-P) - SHORT WASHOUT
-    'Mihili','2015-06-15','FF','CO'; ...    %26 S(M-P) - SOMETHING SEEMED WEIRD IN PMd POPULATION BUT M1 IS GOOD... LOOK INTO THIS, MATT
-    'Mihili','2015-06-16','FF','CO'; ...    %27 S(M-P)
+%     'Mihili','2015-06-10','FF','CO'; ...    %23 S(M-P) - SHORT WASHOUT
+%     'Mihili','2015-06-11','FF','CO'; ...    %24 S(M-P) - SHORT WASHOUT
+%     'Mihili','2015-06-15','FF','CO'; ...    %26 S(M-P) - SOMETHING SEEMED WEIRD IN PMd POPULATION BUT M1 IS GOOD... LOOK INTO THIS, MATT
+%     'Mihili','2015-06-16','FF','CO'; ...    %27 S(M-P)
 % %     'Mihili','2015-06-23','VR','CO'; ...    %29 S(M-P)
 % %     'Mihili','2015-06-25','VR','CO'; ...    %30 S(M-P)
 % %     'Mihili','2015-06-26','VR','CO'; ...    %31 S(M-P)

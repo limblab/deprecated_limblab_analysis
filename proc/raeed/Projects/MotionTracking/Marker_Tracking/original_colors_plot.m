@@ -16,7 +16,7 @@ zlim(ylims)
 set(gca,'NextPlot','replacechildren');
 
 
-for i=2500:3000 %536
+for i=1
     temp=color1{i};
     x=temp(1:end/3);
     y=temp(end/3+1:2*end/3);
@@ -42,5 +42,5 @@ for i=2500:3000 %536
     ylim(xlims)
     zlim(ylims)
 %     pause(.03)
-    pause;
+%     pause;
 end
