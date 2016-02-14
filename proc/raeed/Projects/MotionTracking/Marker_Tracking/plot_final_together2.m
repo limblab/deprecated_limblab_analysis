@@ -1,13 +1,20 @@
+%% Align
+
+all_medians_aligned=NaN(11,3,finish);
+
+all_medians_aligned(:,:,start:finish)=all_medians;
+
+
 %% Set things
-markers=1:10;
+markers=1:11;
 pause_manually=1;
-plot_original=0;
-start=4300;
-finish=4500;
+plot_original=1;
+start_frame=11789+start-1;
+finish=n;
 
 %% Plot
 
-medians=all_medians_smooth; %Renamed (to make compatible with my previous plotting script)
+medians=all_medians_aligned; %Renamed (to make compatible with my previous plotting script)
 
 %Set plotting limits as minimums and maximums
 xlims=[min(min(medians(markers,1,:))) max(max(medians(markers,1,:)))];
@@ -26,7 +33,7 @@ plot_colors_all=[1 0 0; 0 1 0; 0 0 1; 1 1 0; 0 1 1; 1 0 1; 0 0 0; 1 .5 0; .5 0 1
 plot_colors=plot_colors_all(markers,:);
 
 
-for i=start:finish %Loop through time
+for i=start_frame:finish %Loop through time
     
     %Plot Original Points
     if plot_original
