@@ -54,6 +54,9 @@ elseif nargin == 6
     if length(bdf) ~= length(dim_red_FR),error('dim_red_FR has wrong size'),end
 end
 
+% check dimensions are consistent
+if length(bdf) ~= length(labels),error('labels has wrong size'),end
+
 
 % create matrix with selected neural channels
 nbr_bdfs                = length(bdf);
