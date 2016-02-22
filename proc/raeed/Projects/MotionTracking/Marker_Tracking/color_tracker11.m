@@ -15,9 +15,9 @@ main_dir='/Users/jig289/Box Sync/Tracking_Data/';
 
 %File to load
 monkey='Chips';
-date='12-03-15'; %mo-day-yr
-exp='RWchaos';
-num='001';
+date='12-10-15'; %mo-day-yr
+exp='RW_PM';
+num='002';
 
 fname_load=ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']);
 load(deblank(fname_load));
@@ -43,10 +43,17 @@ ylim([-5 15]);
 %% SET 0. Initializations
 
 
-first_time=1; %If this is the first file from a date, set equal to 1 (there are more initializations)
+first_time=0; %If this is the first file from a date, set equal to 1 (there are more initializations)
+
+%Load all of the settings if it's not the first file 
+if ~first_time
+    date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
+    fname_load_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
+    load(fname_load_settings);
+end
 
 %TIME INITIALIZATIONS
-start=1; %Time point we're starting at
+start=536; %Time point we're starting at
 n=length(color1);
 finish=n; %Time point we're finishing at
 n_times=finish-start+1; %Number of time points (frames)
@@ -62,16 +69,16 @@ green_hand_marker_ids=[1,5];
 
 %MARKER LOCATION INITIALIZATIONS
 marker_inits=NaN(11,3);
-marker_inits(1,:)=[.9,-.07,-.11];
-marker_inits(2,:)=[.9,-.04,-.11];
-marker_inits(3,:)=[.9,-.05,-.12];
-marker_inits(4,:)=[.9,-.02,-.11];
-marker_inits(5,:)=[.9,-.02,-.13];
-marker_inits(6,:)=[1,.16,-.15];
-marker_inits(7,:)=[1,.15,-.09];
-marker_inits(8,:)=[1,.15,-.03];
-marker_inits(9,:)=[1,.15,.02];
-marker_inits(10,:)=[1,.15,-.13];
+marker_inits(1,:)=[.9,-.06,-.15];
+marker_inits(2,:)=[.9,-.04,-.15];
+marker_inits(3,:)=[.9,-.05,-.16];
+marker_inits(4,:)=[.9,-.03,-.14];
+marker_inits(5,:)=[.9,-.02,-.16];
+marker_inits(6,:)=[1,.17,-.16];
+marker_inits(7,:)=[1,.16,-.11];
+marker_inits(8,:)=[1,.15,-.06];
+marker_inits(9,:)=[1,.15,0.0];
+marker_inits(10,:)=[1,.15,-.15];
 
 %I plot z,x,y (instead of x,y,z), so I input z,x,y above. Here, switch to x,y,z
 marker_inits_temp=marker_inits;
@@ -91,13 +98,6 @@ dists2=NaN(1,n_times);
 dists3=NaN(1,n_times);
 dists4=NaN(1,n_times);
 dists5=NaN(1,n_times);
-
-%Load all of the settings if it's not the first file 
-if ~first_time
-    date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
-    fname_load_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
-    load(fname_load_settings);
-end
 
 %% Plotting Initializations
 
@@ -266,6 +266,7 @@ if first_time
     red_blue_arm_dist_max=input([str1 str2 str3]);
         
 end
+
 %% Red Arm (Redo)
 %Note that this is different from the previous version of "Red Arm" because
 %now there are constraints involving distance from the blue arm marker
@@ -419,23 +420,54 @@ end
 
 if first_time
     
-    str1='2. Input red_arm_thresh \n';
-    str2='Threshold between blue and yellow in above plot\n';
+    str1='2a. Input red_arm_thresh1 \n';
+    str2='Blue should be below this in above plot\n';
     str3='Value is generally ~ .05 \n';    
-    red_arm_thresh=input([str1 str2 str3]);
+    red_arm_thresh1=input([str1 str2 str3]);
+    
+    str1='2b. Input red_arm_thresh2 \n';
+    str2='Yellow should be above this in above plot\n';
+    str3='Value is generally ~ .05 \n';    
+    red_arm_thresh2=input([str1 str2 str3]);
+    
 
 end
 
 %% Remove some red arm points 
 %Could also try to switch?
 
+if exist('red_arm_thresh','var') %for some files I converted early on
+    red_arm_thresh1=red_arm_thresh;
+    red_arm_thresh2=red_arm_thresh;
+end
+
 %Remove marker 10
-rmv10=dists>red_arm_thresh;
+rmv10=dists>red_arm_thresh1;
 all_medians(10,:,rmv10)=NaN;
 
 %Remove marker 8
-rmv8=dists3<red_arm_thresh;
+rmv8=dists3<red_arm_thresh2;
 all_medians(8,:,rmv8)=NaN;
+
+
+%% Plot distances from red arm points to green shoulder
+
+% for i=1:n_times
+%     dists(i)=pdist2(all_medians(10,:,i),all_medians(9,:,i)); %Distance between markers 7 and 10 (blue arm and red elbow)
+% %     dists2(i)=pdist2(all_medians(10,:,i),all_medians(8,:,i)); %Distance between markers 8 and 10 (red arm and red elbow)
+%     dists3(i)=pdist2(all_medians(8,:,i),all_medians(9,:,i)); %Distance between markers 7 and 8 (blue arm and red arm)
+% end
+% 
+% 
+% if first_time %If this is not the first file from a date, we don't need to plot this.
+%     
+%     figure; plot(dists); 
+%     hold on;
+% %     plot(dists2)
+%     plot(dists3)
+%     legend('9-10','9-8')
+%     
+% end
 
 %% Plot red elbow angle relative to arm (based on angle)
 
@@ -2229,10 +2261,10 @@ if savefile
     
     if first_time
         fname_save_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
-        save(fname_save_settings,'red_elbow_dist_from_blue','red_blue_arm_dist_max','red_arm_thresh',...
+        save(fname_save_settings,'red_elbow_dist_from_blue','red_blue_arm_dist_max','red_arm_thresh1','red_arm_thresh2',...
         'green_hand_dists_elbow','red_hand_dists_elbow','blue_hand_dists_elbow','green_separator',...
         'green_hand_dists_bluearm','red_hand_dists_bluearm','blue_hand_dists_bluearm',...
         'green_hand_dists_redarm', 'red_hand_dists_redarm', 'blue_hand_dists_redarm',...
-        'red_dist_min','green_dist_min','red_keep','green_keep','blue_keep');     
+        'red_dist_min','green_dist_min','red_keep','green_keep','blue_keep','marker_inits');     
     end
 end
