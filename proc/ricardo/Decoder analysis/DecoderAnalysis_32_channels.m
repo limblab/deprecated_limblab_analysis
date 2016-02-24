@@ -1,9 +1,10 @@
-target_folder = ['C:\Users\trr684\Documents\Data\Jaco_2016-02-10_RW_viscous_load_2\'];
-params.file_prefix = 'Jaco_2016-02-10_RW_viscous_load_002';
+target_folder = ['C:\Users\trr684\Documents\Data\Jaco_2016-02-10_RW_no_load\'];
+params.file_prefix = 'Jaco_2016-02-10_RW_no_load_001';
 
 new_fs_vector = [500,1000,2000];
+clear channel_subset;
 
-for fs_idx = 1:length(new_fs_vector)
+for fs_idx = 2:length(new_fs_vector)
     new_fs = new_fs_vector(fs_idx);
     
     params.delete_raw = 1;
@@ -26,13 +27,26 @@ for fs_idx = 1:length(new_fs_vector)
     end
     
     %% Remove electrodes that don't match across data files
-    electrodes = intersect(unique(NEVNSx.NEV.Data.Spikes.Electrode),unique([NEVNSx.NS4.ElectrodesInfo.ElectrodeID]));
-    rm_nev_electrodes = setxor(electrodes,unique(NEVNSx.NEV.Data.Spikes.Electrode));
-    rm_ns4_electrodes = setxor(electrodes,unique([NEVNSx.NS4.ElectrodesInfo.ElectrodeID]));
+    nev_elec = unique(NEVNSx.NEV.Data.Spikes.Electrode);
+    ns4_elec_id = [NEVNSx.NS4.ElectrodesInfo.ElectrodeID];
+    
+    electrodes = intersect(nev_elec,ns4_elec_id);
+    rm_nev_electrodes = setxor(electrodes,nev_elec);
+    rm_ns4_electrodes = setxor(electrodes,ns4_elec_id);
+        
+    if ~exist('channel_subset','var')
+        channel_subset = randperm(length(electrodes));
+        channel_subset = sort(channel_subset(1:32));                
+    end
+    rm_electrodes = setxor(electrodes,electrodes(channel_subset));
+    electrodes = electrodes(channel_subset);
+    
+    rm_nev_electrodes = sort([rm_nev_electrodes(:);rm_electrodes(:)]);
+    rm_ns4_electrodes = sort([rm_ns4_electrodes(:);rm_electrodes(:)]);
     
     rm_idx = [];
     for iElec = 1:length(rm_nev_electrodes)
-        rm_idx = [rm_idx; find(NEVNSx.NEV.Data.Spikes.Electrode == rm_nev_electrodes(iElec))];
+        rm_idx = [rm_idx find(NEVNSx.NEV.Data.Spikes.Electrode == rm_nev_electrodes(iElec))];
     end
     NEVNSx.NEV.Data.Spikes.Electrode(rm_idx) = [];
     NEVNSx.NEV.Data.Spikes.TimeStamp(rm_idx) = [];
@@ -40,9 +54,9 @@ for fs_idx = 1:length(new_fs_vector)
     NEVNSx.NEV.Data.Spikes.Waveform(:,rm_idx) = [];
     nev_elec = unique(NEVNSx.NEV.Data.Spikes.Electrode);
     
-    NEVNSx.NS4.Data(rm_ns4_electrodes,:) = [];
-    NEVNSx.NS4.ElectrodesInfo(rm_ns4_electrodes) = [];
-    NEVNSx.NS4.MetaTags.ChannelID(rm_ns4_electrodes) = [];
+    NEVNSx.NS4.Data(ns4_elec_id(rm_ns4_electrodes),:) = [];
+    NEVNSx.NS4.ElectrodesInfo(ns4_elec_id(rm_ns4_electrodes)) = [];
+    NEVNSx.NS4.MetaTags.ChannelID(ns4_elec_id(rm_ns4_electrodes)) = [];
     NEVNSx.NS4.MetaTags.ChannelCount = size(NEVNSx.NS4.Data,1);
     
     % Find thresholds for each channel
@@ -112,14 +126,14 @@ for fs_idx = 1:length(new_fs_vector)
             end
             
         end
-        save([target_folder '\' params.file_prefix '-NEVNSx_' num2str(new_fs) '_new_' num2str(threshold_vector(iThres))],'NEVNSx_new','-v7.3');    
+        save([target_folder '\' params.file_prefix '-NEVNSx_' num2str(new_fs) '_new_' num2str(threshold_vector(iThres)) '_32chan'],'NEVNSx_new','-v7.3');    
     end
     
     hf = figure; plot(threshold_vector,corr_coef_mat(num_spikes>NEVNSx.NS4.MetaTags.DataDurationSec,:)')
     xlabel('threshold (stds)')
     ylabel('R')
     title({'Crosscorrelation between firing rates at 30kHz and';'rate of threshold crossings at 2kHz'})
-    saveas(hf,[target_folder 'Crosscorrelations ' num2str(new_fs) ' Hz'],'fig')
+    saveas(hf,[target_folder 'Crosscorrelations ' num2str(new_fs) ' Hz 32chan'],'fig')
     
     %%
     NEVNSx_temp.NEV = NEVNSx.NEV;
@@ -140,10 +154,10 @@ for fs_idx = 1:length(new_fs_vector)
         bdf_temp = get_nev_mat_data(NEVNSx_temp,3);
         bdf_units{iThres} = bdf_temp.units;
     end
-    save([target_folder params.file_prefix '-bdfs_' num2str(new_fs)],'bdf_0','bdf_units','-v7.3')
+    save([target_folder params.file_prefix '-bdfs_' num2str(new_fs) '_32chan'],'bdf_0','bdf_units','-v7.3')
     
     %%
-    if ~exist([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs) '.mat'],'file')
+    if ~exist([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs) '_32chan.mat'],'file')
         options = struct('binsize',0.05,'starttime',1,'stoptime',0,'FindStates',false,'Unsorted',true);
         mfxval_options = struct('fillen',.5,'PredVeloc',1,'PredEMGs',0);
         
@@ -162,10 +176,10 @@ for fs_idx = 1:length(new_fs_vector)
             binnedData.spikeratedata(:,rm_idx) = [];
             [R2{iThres}, VAF{iThres}, MSE{iThres}] = mfxval(binnedData,mfxval_options);
         end
-        save([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs)],'VAF','VAF_spikes','R2','R2_spikes',...
+        save([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs) '_32chan'],'VAF','VAF_spikes','R2','R2_spikes',...
             'MSE','MSE_spikes','threshold_vector')
     else
-        load([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs)])
+        load([target_folder params.file_prefix '-VAFs_vel_' num2str(new_fs) '_32chan'])
     end
     
     hf = figure;
@@ -183,9 +197,9 @@ for fs_idx = 1:length(new_fs_vector)
     title(['Vel VAF as a function of threshold. Fs = ' num2str(new_fs)])
     legend('X vel','Y vel')
     ylim([0 1])
-    saveas(hf,[target_folder 'VAF Vel ' num2str(new_fs) ' Hz'],'fig')
+    saveas(hf,[target_folder 'VAF Vel ' num2str(new_fs) ' Hz 32chan'],'fig')
     
-    if ~exist([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs) '.mat'],'file')
+    if ~exist([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs) '_32chan.mat'],'file')
         if ~isempty(binnedData.emgdatabin)
             options = struct('binsize',0.05,'starttime',1,'stoptime',0,'FindStates',false,'Unsorted',true);
             mfxval_options = struct('fillen',.5,'PredVeloc',0,'PredEMGs',1);
@@ -206,13 +220,13 @@ for fs_idx = 1:length(new_fs_vector)
                 [R2{iThres}, VAF{iThres}, MSE{iThres}] = mfxval(binnedData,mfxval_options);
             end
             emg_labels = binnedData.emgguide;
-            save([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs)],'VAF','VAF_spikes','R2','R2_spikes',...
+            save([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs) '_32chan'],'VAF','VAF_spikes','R2','R2_spikes',...
                 'MSE','MSE_spikes','threshold_vector','emg_labels')
         else
             return
         end
     else
-        load([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs)])
+        load([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs) '_32chan'])
     end
     
     hf = figure;
@@ -230,5 +244,5 @@ for fs_idx = 1:length(new_fs_vector)
     title(['EMG VAF as a function of threshold. Fs = ' num2str(new_fs)])
     legend(emg_labels)
     ylim([0 1])
-    saveas(hf,[target_folder 'VAF EMG ' num2str(new_fs) ' Hz'],'fig')
+    saveas(hf,[target_folder 'VAF EMG ' num2str(new_fs) ' Hz 32chan'],'fig')
 end

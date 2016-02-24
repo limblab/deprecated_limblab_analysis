@@ -139,10 +139,17 @@ for i = 1:num_units
         armdata_terms_partial = armdata_terms;
         armdata_terms_partial(covar_ctr) = [];
         armdata_mat_partial = [armdata_terms_partial.data];
-        partial_tuning = bootfunc(armdata_mat_partial,behaviors.FR(:,i));
-        log_LR = 2*(whole_tuning.LogLikelihood-partial_tuning.LogLikelihood);
-        df_partial = whole_tuning.NumCoefficients-partial_tuning.NumCoefficients;
-        neural_tuning(i,covar_ctr).term_pval = 1-chi2cdf(log_LR,df_partial);        
+        if(~isempty(armdata_mat_partial))
+            partial_tuning = bootfunc(armdata_mat_partial,behaviors.FR(:,i));
+            log_LR = 2*(whole_tuning.LogLikelihood-partial_tuning.LogLikelihood);
+            df_partial = whole_tuning.NumCoefficients-partial_tuning.NumCoefficients;
+            neural_tuning(i,covar_ctr).term_pval = 1-chi2cdf(log_LR,df_partial);
+        else
+%             partial_tuning = bootfunc(armdata_mat_partial,behaviors.FR(:,i));
+%             log_LR = 2*(whole_tuning.LogLikelihood-partial_tuning.LogLikelihood);
+%             df_partial = whole_tuning.NumCoefficients-partial_tuning.NumCoefficients;
+            neural_tuning(i,covar_ctr).term_pval = NaN;
+        end
         
         %PD
         if(armdata_terms(covar_ctr).doPD)
