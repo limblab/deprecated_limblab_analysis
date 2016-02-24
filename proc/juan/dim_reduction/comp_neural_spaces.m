@@ -91,7 +91,7 @@ if ~exist('smoothed_FR','var')
                                         gauss_SD, gauss_width ); %#ok<AGROW>
         end
         dim_red_FR{i}       = dim_reduction( smoothed_FR{i}, 'pca', ...
-                                        discard_neurons, false ); %#ok<AGROW>
+                                        discard_neurons, true, false ); %#ok<AGROW>
     end
 end
 
