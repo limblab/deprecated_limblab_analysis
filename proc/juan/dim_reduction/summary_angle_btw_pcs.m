@@ -42,7 +42,6 @@ nbr_spaces                  = length(dim_red_FR);
 
 if isscalar(eigenvectors)
     nbr_eigenvectors        = eigenvectors;
-    clear eigenvectors;
 elseif ismatrix(eigenvectors)
    % check that the dimensions are right
     if size(eigenvectors,2) ~= nbr_spaces
