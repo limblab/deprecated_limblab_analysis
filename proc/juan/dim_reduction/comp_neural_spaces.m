@@ -54,6 +54,9 @@ elseif nargin == 6
     if length(bdf) ~= length(dim_red_FR),error('dim_red_FR has wrong size'),end
 end
 
+% check dimensions are consistent
+if length(bdf) ~= length(labels),error('labels has wrong size'),end
+
 
 % create matrix with selected neural channels
 nbr_bdfs                = length(bdf);
@@ -88,7 +91,7 @@ if ~exist('smoothed_FR','var')
                                         gauss_SD, gauss_width ); %#ok<AGROW>
         end
         dim_red_FR{i}       = dim_reduction( smoothed_FR{i}, 'pca', ...
-                                        discard_neurons, false ); %#ok<AGROW>
+                                        discard_neurons, true, false ); %#ok<AGROW>
     end
 end
 

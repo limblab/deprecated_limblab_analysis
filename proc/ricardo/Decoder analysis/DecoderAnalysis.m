@@ -1,5 +1,5 @@
-target_folder = ['C:\Users\trr684\Documents\Data\Jaco_2016-02-10_RW_viscous_load_2\'];
-params.file_prefix = 'Jaco_2016-02-10_RW_viscous_load_002';
+target_folder = ['D:\Jaco_8I1\Jaco_2016-02-10_RW_viscous_load_1\'];
+params.file_prefix = 'Jaco_2016-02-10_RW_viscous_load_001';
 
 new_fs_vector = [500,1000,2000];
 
@@ -185,6 +185,23 @@ for fs_idx = 1:length(new_fs_vector)
     ylim([0 1])
     saveas(hf,[target_folder 'VAF Vel ' num2str(new_fs) ' Hz'],'fig')
     
+    hf = figure;
+    hold on
+    errorbar(-.2,mean(R2_spikes(2:end,1)),std(R2_spikes(2:end,1)),'b')
+    errorbar(.2,mean(R2_spikes(2:end,2)),std(R2_spikes(2:end,2)),'r')
+    
+    for iThres = 1:length(threshold_vector)
+        errorbar(threshold_vector(iThres)-.2,mean(R2{iThres}(2:end,1)),std(R2{iThres}(2:end,1)),'b')
+        errorbar(threshold_vector(iThres)+.2,mean(R2{iThres}(2:end,2)),std(R2{iThres}(2:end,2)),'r')
+    end
+    
+    xlabel('Threshold (stds)')
+    ylabel('R2')
+    title(['Vel R2 as a function of threshold. Fs = ' num2str(new_fs)])
+    legend('X vel','Y vel')
+    ylim([0 1])
+    saveas(hf,[target_folder 'R2 Vel ' num2str(new_fs) ' Hz'],'fig')
+    
     if ~exist([target_folder params.file_prefix '-VAFs_EMG_' num2str(new_fs) '.mat'],'file')
         if ~isempty(binnedData.emgdatabin)
             options = struct('binsize',0.05,'starttime',1,'stoptime',0,'FindStates',false,'Unsorted',true);
@@ -231,4 +248,21 @@ for fs_idx = 1:length(new_fs_vector)
     legend(emg_labels)
     ylim([0 1])
     saveas(hf,[target_folder 'VAF EMG ' num2str(new_fs) ' Hz'],'fig')
+    
+    hf = figure;
+    hold on
+    errorbar(-.2,mean(R2_spikes(2:end,1)),std(R2_spikes(2:end,1)),'b')
+    errorbar(.2,mean(R2_spikes(2:end,2)),std(R2_spikes(2:end,2)),'r')
+    
+    for iThres = 1:length(threshold_vector)
+        errorbar(threshold_vector(iThres)-.2,mean(R2{iThres}(2:end,1)),std(R2{iThres}(2:end,1)),'b')
+        errorbar(threshold_vector(iThres)+.2,mean(R2{iThres}(2:end,2)),std(R2{iThres}(2:end,2)),'r')
+    end
+    
+    xlabel('Threshold (stds)')
+    ylabel('R2')
+    title(['EMG R2 as a function of threshold. Fs = ' num2str(new_fs)])
+    legend(emg_labels)
+    ylim([0 1])
+    saveas(hf,[target_folder 'R2 EMG ' num2str(new_fs) ' Hz'],'fig')
 end
