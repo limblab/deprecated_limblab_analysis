@@ -1,7 +1,7 @@
 function [figure_handles, output_data] = actpas_tuning(folder, options)
 % ACTPAS_TUNING show tuning curves for active and passive movements
 
-    try
+%     try
         %% setup
         figure_handles=[];
         if(~isfield(options,'bdf'))
@@ -73,8 +73,12 @@ function [figure_handles, output_data] = actpas_tuning(folder, options)
             hold off
         end
         
-    catch MExc
-        output_data.MExc = MExc;
-        warning('Code did not fully execute. Check ''MExc'' in output data for more information.')
-    end
+        % assign output data
+        output_data.tuning_out_bumps = tuning_out_bumps;
+        output_data.tuning_out_moves = tuning_out_moves;
+        
+%     catch MExc
+%         output_data.MExc = MExc;
+%         warning('Code did not fully execute. Check ''MExc'' in output data for more information.')
+%     end
 end
