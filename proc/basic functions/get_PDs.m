@@ -107,7 +107,9 @@ function [figure_handles, output_data]=get_PDs(folder,options)
             which_units=which_units(temp);
         end
     end
-    
+    if isfield(options, 'data_window')
+        optionstruct.data_window=options.data_window;
+    end
     %% if we are doing unit pds, generate the parsed behavioral data
     if options.do_unit_pds
         %get the timepoints of interest from the bdf and compose them into
@@ -185,7 +187,7 @@ function [figure_handles, output_data]=get_PDs(folder,options)
                     '\fontsize{10}Amplitude normalized and log scaled for pretty picture.'])
         end
         if optionstruct.compute_force_pds
-            output_data.unit_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',100),'poisson');
+            output_data.unit_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 1 0 0],struct('num_rep',100),'poisson');
             output_data.unit_force_pd_table=get_pd_table(output_data.unit_force_tuning_stats,'force');
 
             %make a table that only has the best tuned units:
@@ -349,8 +351,8 @@ function [figure_handles, output_data]=get_PDs(folder,options)
                     '\fontsize{10} Amplitude normalized and log scaled for pretty picture.'])
         end
         if optionstruct.compute_force_pds
-            output_data.electrode_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 0 0 0],struct('num_rep',100),'poisson');
-            output_data.electrode_force_pd_table=get_pd_table(output_data.electrode_force_tuning_stats);
+            output_data.electrode_force_tuning_stats = compute_tuning(behaviors,[0 0 0 1 1 0 0],struct('num_rep',100),'poisson');
+            output_data.electrode_force_pd_table=get_pd_table(output_data.electrode_force_tuning_stats,'force');
             %make a table that only has the best tuned electrodes:
             output_data.electrode_best_modulated_force_table=output_data.electrode_force_pd_table(output_data.electrode_force_pd_table.moddepth>median(output_data.electrode_force_pd_table.moddepth),:);
 
