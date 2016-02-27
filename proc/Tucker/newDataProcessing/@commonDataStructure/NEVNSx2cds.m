@@ -49,7 +49,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         set(0, 'defaulttextinterpreter', 'none');
 
         %initial setup
-        opts=struct('force',1,'kin',1,'analog',1,'lfp',1,'emg',1,'triggers',1,'labnum',-1,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'robot',0); 
+        opts=struct('force',1,'kin',1,'analog',1,'lfp',1,'emg',1,'triggers',1,'labNum',-1,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'robot',0); 
 
         % Parse arguments
         if ~isempty(varargin)
@@ -81,7 +81,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 elseif ischar(opt_str) && length(opt_str)>5 && strcmp(opt_str(1:6),'monkey')
                     opts.monkey=opt_str(7:end);
                 elseif isnumeric(varargin{i})
-                    opts.labnum=varargin{i};    %Allow entering of the lab number               
+                    opts.labNum=varargin{i};    %Allow entering of the lab number               
                 else 
                     error('Unrecognized option: %s', opt_str);
                 end
@@ -97,7 +97,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
             flag=1;
             warning('NEVNSx2cds:arrayNotSet','No array label was passed as an input variable.')
         end
-        if opts.labnum==-1
+        if opts.labNum==-1
             flag=1;
             warning('NEVNSx2cds:labNotSet','The lab number where this data was collected was not passed as an input variable')
         end
@@ -117,14 +117,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 end
             end
         end
-        %set the cds.meta.datetime field so that parsing functions can run
-        %date specific code. The full meta field will be generated at the
-        %end so that statistics like # of trials can be compiled
-        meta=cds.meta;
-        dateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-        ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-        meta.dateTime=dateTime;
-        set(cds,'meta',meta)
+        %
     %% get the info of data we have to work with
         % Build catalogue of entities
         unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
@@ -162,21 +155,29 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
             end
         end
     %% Events: 
-        %do this first since the task check requires the words to already be processed, and task is required to work on kinematics and force
-        cds.eventsFromNEVNSx(NEVNSx)
-    %% if a task was not passed in, set task varable
-        if ~exist('task','var')%if no task label was passed into the function call
-            if strcmp(cds.meta.task,'Unknown')
-                task=[];
-            else 
-                task=cds.meta.task;
+        %if events are already in the cds, then we keep them and ignore any
+        %new words in the NEVNSx. Otherwise we load the events from the
+        %NEVNSx, followed by the task
+        if isempty(cds.words)
+            %do this first since the task check requires the words to already be processed, and task is required to work on kinematics and force
+            cds.eventsFromNEVNSx(NEVNSx)
+            % if a task was not passed in, set task varable
+            if ~exist('task','var')%if no task label was passed into the function call
+                if strcmp(cds.meta.task,'Unknown')
+                    task=[];
+                else 
+                    task=cds.meta.task;
+                end
             end
+            [opts]=cds.getTask(task,opts);
         end
-        [opts]=cds.getTask(task,opts);
         
     %% the kinematics
         %convert event info into encoder steps:
         if opts.kin 
+            if isempty(cds.words)
+                error('NEVNSx2cds:noWordsLoaded','Words have not been loaded into the cds yet. This means there was no encoder data in this NEVNSx, and no prior file was loaded that contained that data. If encoder data is in a different file, load that file to include kinematics, and use the noKin flag when loading this file')
+            end
             cds.kinematicsFromNEVNSx(NEVNSx,opts)
         end
 
@@ -194,7 +195,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         end
     %% LFP. any collection channel that comes in with the name chan* will be treated as LFP
         if opts.lfp
-            cds.LFPFromNEVNSx(NEVNSx,NSxInfo)
+            cds.lfpFromNEVNSx(NEVNSx,NSxInfo)
         end
     %% Triggers
         %get list of triggers
@@ -206,12 +207,15 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
             cds.analogFromNEVNSx(NEVNSx,NSxInfo)
         end
     %% trial data
-        if strcmp(cds.meta.task,'Unknown') || isempty( cds.meta.task)
-            warning('NEVNSx2cds:UnknownTask','The task for this file is not known, the trial data table may be inaccurate')
+        %if we have databursts and we don't have a trial table yet, compute
+        %the trial data, otherwise skip it
+        if (~isempty(cds.databursts) && isempty(cds.trials))
+            if strcmp(cds.meta.task,'Unknown') || isempty( cds.meta.task)
+                warning('NEVNSx2cds:UnknownTask','The task for this file is not known, the trial data table may be inaccurate')
+            end
+            cds.getTrialTable
         end
-
-        cds.getTrialTable
     %% Set metadata. Some metadata will already be set, but this should finish the job
-        cds.metaFromNEVNSx(NEVNSx,opts)
+%        cds.metaFromNEVNSx(NEVNSx,opts)
         
 end

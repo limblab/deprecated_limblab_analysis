@@ -1,9 +1,9 @@
-function LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
+function lfpFromNEVNSx(cds,NEVNSx,NSxInfo)
     %takes a handle to a cds object and an NEVNSx structure, and populates
     %the LFP field of the cds
     
     %get list of channels that have LFP data:
-    lfpList=find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'chan')));
+    lfpList=find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'elec')));
     if ~isempty(lfpList)
         %get list of frequencies at which 
         frequencies=unique(NSxInfo.NSx_sampling(lfpList));
@@ -28,7 +28,11 @@ function LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
             lfp.Properties.VariableDescriptions={'time',repmat({'LFP in mV'},1,numel(lfpList))};
             lfp.Properties.Description='Filtered LFP in raw collection voltage. Voltage scale is presumed to be mV';
             %cds.setField('LFP',lfp)
-            set(cds,'LFP',lfp)
+            if isempty(cds.LFP)
+                set(cds,'LFP',lfp)
+            else
+                cds.mergeTable('LFP',lfp)
+            end
             cds.addOperation(mfilename('fullpath'))
         end
     end    

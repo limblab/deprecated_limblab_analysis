@@ -11,7 +11,10 @@ function enc2WFpos(cds)
     pos.Properties.VariableUnits={'s','cm','cm'};
     pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates',};
     pos.Properties.Description='Cursor position-scaled wrist torque';
-
-    set(cds,'pos',pos)
+    if isempty(cds.pos)
+        set(cds,'pos',pos)
+    else
+        cds.mergeTable('pos',pos)
+    end
     cds.addOperation(mfilename('fullpath'));
 end

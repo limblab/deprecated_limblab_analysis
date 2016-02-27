@@ -370,6 +370,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             metaFromNEVNSx(cds,NEVNSx,opts)
             enc2handlepos(cds)
             enc2WFpos(cds)
+            mergeTable(cds,fieldName,mergeData)
         appendFile2cds(cds,folderPath,fileName,varargin)
         appendNEVNSx2cds(cds,NEVNSx,varargin)
         appendcds2cds(cds,cds2)
