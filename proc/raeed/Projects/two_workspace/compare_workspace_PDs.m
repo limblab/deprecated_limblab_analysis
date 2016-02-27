@@ -133,7 +133,7 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
         output_data.unit_tuning_stats_DL_bimodal = compute_tuning(behaviors_DL_bimodal,model_terms_full,struct('num_rep',100,'UseParallel',false),'poisson');
         output_data.unit_tuning_stats_PM_bimodal = compute_tuning(behaviors_PM_bimodal,model_terms_full,struct('num_rep',100,'UseParallel',false),'poisson');
         
-        % Get PD tables
+        %% Get PD tables
         output_data.unit_pd_table_DL=sortrows(get_pd_table(output_data.unit_tuning_stats_DL_bimodal),[1 2]);
         output_data.unit_pd_table_PM=sortrows(get_pd_table(output_data.unit_tuning_stats_PM_bimodal),[1 2]);
         output_data.unit_pd_table_full=sortrows(get_pd_table(output_data.unit_tuning_stats_full),[1 2]);
@@ -153,8 +153,14 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
         output_data.unit_pd_table_PM_bimodal = unit_pd_table_PM_bimodal;
         
         %make a table that only has the best tuned units:
-        output_data.unit_best_modulated_table_DL=output_data.unit_pd_table_DL(abs(diff(output_data.unit_pd_table_DL.dir_CI,1,2))<pi/4,:);
-        output_data.unit_best_modulated_table_PM=output_data.unit_pd_table_PM(abs(diff(output_data.unit_pd_table_PM.dir_CI,1,2))<pi/4,:);
+        DL_CI_width = diff(output_data.unit_pd_table_DL.dir_CI,1,2); % get CI widths
+        PM_CI_width = diff(output_data.unit_pd_table_PM.dir_CI,1,2);
+        DL_CI_width(DL_CI_width<0) = DL_CI_width(DL_CI_width<0)+2*pi;
+        PM_CI_width(PM_CI_width<0) = PM_CI_width(PM_CI_width<0)+2*pi;
+%         DL_CI_width = min(DL_CI_width,2*pi-DL_CI_width); % in case we get larger slice of circle instead of smaller slice
+%         PM_CI_width = min(PM_CI_width,2*pi-PM_CI_width);
+        output_data.unit_best_modulated_table_DL=output_data.unit_pd_table_DL(DL_CI_width<pi/4,:);
+        output_data.unit_best_modulated_table_PM=output_data.unit_pd_table_PM(PM_CI_width<pi/4,:);
         [~,best_combined_idx_DL,best_combined_idx_PM] = intersect(double(output_data.unit_best_modulated_table_DL(:,1:2)),double(output_data.unit_best_modulated_table_PM(:,1:2)),'rows');
         output_data.unit_best_combined_table_DL = output_data.unit_best_modulated_table_DL(best_combined_idx_DL,:);
         output_data.unit_best_combined_table_PM = output_data.unit_best_modulated_table_PM(best_combined_idx_PM,:);
@@ -251,49 +257,50 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
                 '\fontsize{10}Amplitude normalized and log scaled'])
 
 
-        %Plot PD change diagram
+        %%% Plot PD change diagram
+        % map CI width (range: (0,pi))to whiteness values between 0 and 1
+        DL_white = DL_CI_width/pi;
+        PM_white = PM_CI_width/pi;
+        change_white = max(DL_white,PM_white);
+
+        change_white(change_white>1/4)=1;
+        change_table = array2table([unit_pd_table_DL.channel unit_pd_table_DL.unit angs_PM(1,:)' angs_DL(1,:)' change_white],'VariableNames',{'chan','unit','angs_PM','angs_DL','change_white'});
+        change_table = sortrows(change_table,'change_white','descend');
+
         h=figure('name','unit_polar_PD_differences');
         figure_handles=[figure_handles h];
         %plot circles
         h=polar(linspace(-pi,pi,1000),ones(1,1000));
-        set(h,'linewidth',1,'color',[0.5 0.5 0.5])
+        set(h,'linewidth',2,'color',[1 0 0])
         hold all
         h=polar(linspace(-pi,pi,1000),0.5*ones(1,1000));
-        set(h,'linewidth',1,'color',[0.5 0.5 0.5])
-        %plot desaturated changes
-        if(options.dual_array)
-            %assumes table is sorted by channel and then unit
-            array_break_idx = find(unit_pd_table_DL.channel>array_break,1,'first');
-        else
-            array_break_idx=inf;
-        end
-        for unit_ctr = 1:length(unit_pd_table_DL.dir)
-            if(unit_ctr<array_break_idx)
-                h=polar(linspace(angs_PM(1,unit_ctr),angs_DL(1,unit_ctr),2),linspace(0.5,1,2));
-                set(h,'linewidth',2,'color',[0.8 0.8 1])
+        set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+
+        % plot changes with whiteness dependent on CI width
+        for unit_ctr = 1:height(change_table)
+            if(options.dual_array)
+                if(change_table.chan(unit_ctr)<=array_break)
+                    h=polar(linspace(change_table.angs_PM(unit_ctr),change_table.angs_DL(unit_ctr),2),linspace(0.5,1,2));
+                    set(h,'linewidth',2,'color',[change_table.change_white(unit_ctr) change_table.change_white(unit_ctr) 1])
+                else
+                    h=polar(linspace(change_table.angs_PM(unit_ctr),change_table.angs_DL(unit_ctr),2),linspace(0.5,1,2));
+                    set(h,'linewidth',2,'color',[change_table.change_white(unit_ctr) 1 change_table.change_white(unit_ctr)])
+                end
             else
-                h=polar(linspace(angs_PM(1,unit_ctr),angs_DL(1,unit_ctr),2),linspace(0.5,1,2));
-                set(h,'linewidth',2,'color',[0.8 1 0.8])
+                h=polar(linspace(change_table.angs_PM(unit_ctr),change_table.angs_DL(unit_ctr),2),linspace(0.5,1,2));
+                set(h,'linewidth',2,'color',change_table.change_white(unit_ctr)*[1 1 1])
             end
         end
-        %plot best modulated changes
-        angs_best_comb_PM=[unit_best_combined_table_PM.dir unit_best_combined_table_PM.dir]';
-        angs_best_comb_DL=[unit_best_combined_table_DL.dir unit_best_combined_table_DL.dir]';
-        if(options.dual_array)
-            %assumes table is sorted by channel and then unit
-            array_break_idx = find(unit_best_combined_table_DL.channel>array_break,1,'first');
-        else
-            array_break_idx=inf;
-        end
-        for unit_ctr = 1:length(unit_best_combined_table_DL.dir)
-            if(unit_ctr<array_break_idx)
-                h=polar(linspace(angs_best_comb_PM(1,unit_ctr),angs_best_comb_DL(1,unit_ctr),2),linspace(0.5,1,2));
-                set(h,'linewidth',2,'color',[0 0 1])
-            else
-                h=polar(linspace(angs_best_comb_PM(1,unit_ctr),angs_best_comb_DL(1,unit_ctr),2),linspace(0.5,1,2));
-                set(h,'linewidth',2,'color',[0 1 0])
-            end
-        end
+        %plot circles again
+        h=polar(linspace(-pi,pi,1000),ones(1,1000));
+        set(h,'linewidth',2,'color',[1 0 0])
+        hold all
+        h=polar(linspace(-pi,pi,1000),0.5*ones(1,1000));
+        set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+
+        set(findall(gcf, 'String','  0.2','-or','String','  0.4','-or','String','  0.6','-or','String','  0.8',...
+                '-or','String','  1') ,'String', ' '); % remove a bunch of labels from the polar plot; radial and tangential
+
         title('Plot of PD changes')
 
         % Plot all tuning curves
@@ -348,12 +355,12 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
             r_fill = [rad_DL rad_DL rad_DL 0];
             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
             patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
-            h=polar(angs_DL_bimodal(:,i),rad_DL*[0;1]/2);
-            set(h,'linewidth',2,'color',[1 0 0])
-            th_fill = [dir_CI_DL_bimodal(i,2) angs_DL_bimodal(1,i) dir_CI_DL_bimodal(i,1) 0];
-            r_fill = [rad_DL rad_DL rad_DL 0]/2;
-            [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-            patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
+%             h=polar(angs_DL_bimodal(:,i),rad_DL*[0;1]/2);
+%             set(h,'linewidth',2,'color',[1 0 0])
+%             th_fill = [dir_CI_DL_bimodal(i,2) angs_DL_bimodal(1,i) dir_CI_DL_bimodal(i,1) 0];
+%             r_fill = [rad_DL rad_DL rad_DL 0]/2;
+%             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%             patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
 
             % PM workspace tuning curve
             h=polar(repmat(tuning_out_PM.bins,2,1),repmat(tuning_out_PM.binned_FR(:,i),2,1));
@@ -370,18 +377,20 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
             r_fill = [rad_PM rad_PM rad_PM 0];
             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
             patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
-            h=polar(angs_PM_bimodal(:,i),rad_PM*[0;1]/2);
-            set(h,'linewidth',2,'color',[0.6 0.5 0.7])
-            th_fill = [dir_CI_PM_bimodal(i,2) angs_PM_bimodal(1,i) dir_CI_PM_bimodal(i,1) 0];
-            r_fill = [rad_PM rad_PM rad_PM 0]/2;
-            [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-            patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
+%             h=polar(angs_PM_bimodal(:,i),rad_PM*[0;1]/2);
+%             set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+%             th_fill = [dir_CI_PM_bimodal(i,2) angs_PM_bimodal(1,i) dir_CI_PM_bimodal(i,1) 0];
+%             r_fill = [rad_PM rad_PM rad_PM 0]/2;
+%             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%             patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
             hold off
         end
 
         %% Statistics on PD changes
         % only look at best tuned units
         % find how many significantly change PD (non-overlapping CI)
+        angs_best_comb_PM=[unit_best_combined_table_PM.dir unit_best_combined_table_PM.dir]';
+        angs_best_comb_DL=[unit_best_combined_table_DL.dir unit_best_combined_table_DL.dir]';
         dir_CI_DL = unit_best_combined_table_DL.dir_CI;
         dir_CI_PM = unit_best_combined_table_PM.dir_CI;
         sig_change = ~( (dir_CI_DL(:,1)>dir_CI_PM(:,1) & dir_CI_DL(:,1)<dir_CI_PM(:,2)) | (dir_CI_DL(:,2)>dir_CI_PM(:,1) & dir_CI_DL(:,2)<dir_CI_PM(:,2)) );

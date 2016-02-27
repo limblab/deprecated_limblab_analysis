@@ -61,7 +61,7 @@ if iscell(dim_red_FR)
     end
 end
 
-% -----------
+% -------------------------------------------------------------------------
 % Bin the EMG, if necessary
 
 if iscell(dim_red_FR)
@@ -112,7 +112,7 @@ else
 end
 
 
-% -----------
+% -------------------------------------------------------------------------
 % Do some more EMG preprocessing
 switch emg_preproc
     case 'sum'
@@ -132,7 +132,7 @@ switch emg_preproc
 end
     
 
-% -----------
+% -------------------------------------------------------------------------
 % Evaluate the relationship between PCA 
 
 

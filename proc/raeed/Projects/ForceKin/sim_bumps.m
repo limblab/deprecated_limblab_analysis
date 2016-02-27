@@ -40,22 +40,32 @@ shape2_mdl = @(cp, targ) repmat(cp(:,1),1,ntarg) + ...
     repmat(cp(:,3),1,ntarg).*cos( outer_minus(targ(1,:), cp(:,5)) ) + ...
     repmat(cp(:,4),1,ntarg).*cos( outer_minus(targ(1,:), cp(:,2)) ).*cos( outer_minus(targ(2,:), cp(:,5)) );
 
-mdls = { aligned_pd_mdl, independent_pd_mdl, PK_pd_mdl, power_mdl, shape1_mdl, shape2_mdl };
-mdl_names = { 'Aligned', 'Unaligned','PK', 'Power', 'CP Aligned', 'CP Unaligned' };
+shape3_mdl = @(cp, targ) repmat(cp(:,1),1,ntarg) + ...
+    repmat(cp(:,3),1,ntarg).*cos( outer_minus(targ(1,:), cp(:,2)) ) + ...
+    repmat(cp(:,3),1,ntarg).*cos( outer_minus(targ(1,:), cp(:,2)) ) + ...
+    repmat(cp(:,7),1,ntarg).*cos( outer_minus(targ(1,:), cp(:,2)) ).*cos( outer_minus(targ(2,:), cp(:,2)) );
+
+mdls = { aligned_pd_mdl, independent_pd_mdl, PK_pd_mdl, power_mdl, shape1_mdl, shape2_mdl, shape3_mdl };
+mdl_names = { 'Aligned', 'Unaligned','PK', 'Power', 'CP Aligned', 'CP Unaligned', 'CP Aligned, 10%' };
 
 %% Simulate
 % Generate cell parameters
-% format is: [baseline pd vel_amp force_amp alt_pd PK_load_PD]
+% format is: [baseline pd vel_amp force_amp alt_pd PK_load_PD CP_amp_10_percent]
 cell_params = [ 20+5*randn(ncell,1) , ...
                 2*pi*rand(ncell,1)  , ... 
                 10*rand(ncell,1)    , ...
-                5*rand(ncell,1)     , ...
+                10*rand(ncell,1)     , ...
                 2*pi*rand(ncell,1)  ];
             
 % add load PD that is offset from velocity PD according to Prud'homme and
 % Kalaska
 PK_load_PD = mod(cell_params(:,2)+pi/3*randn(ncell,1),2*pi);
 cell_params = [cell_params PK_load_PD];
+
+% add cell param for cosine product only present in 10% of cells
+CP_amp_10_percent = 20*rand(ncell,1);
+CP_amp_10_percent(floor(ncell/10):end) =zeros(length(floor(ncell/10):length(CP_amp_10_percent)),1);
+cell_params = [cell_params CP_amp_10_percent];
 
 for mdl = 1:length(mdls)
     % Get average firing rates for all cells in all targets
