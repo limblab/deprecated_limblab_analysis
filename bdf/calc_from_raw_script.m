@@ -278,9 +278,9 @@
 %% Robot_task:Force Handle and Analog Signals
     if robot_task && opts.force 
         if ( ~isempty(out_struct.raw.analog.channels))
-            force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) );
+            force_channels = find( strncmpi(out_struct.raw.analog.channels, 'ForceHandle', 11) );
         elseif(isfield(opts,'delete_raw') && opts.delete_raw && exist('NEVNSx','var') )
-            force_channels = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'ForceHandle')));
+            force_channels = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'forcehandle')));
         end
         if (exist('force_channels','var') && length(force_channels)==6)
             raw_force = zeros(length(analog_time_base), 6);
@@ -288,18 +288,19 @@
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
                 if ( ~isempty(out_struct.raw.analog))
-                    achan_index = find(strcmp(out_struct.raw.analog.channels, channame));
-                    if isempty(achan_index)
-                        warning('calc_from_raw:ChannelNotFound',['Could not find a force channel named: ', channame, '. Continuing leaving force for that column empty'])
-                        a_data = [];
-                    elseif length(achan_index)>1
-                        warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
-                        a_data = [];
-                    else
+%                     achan_index = find(strcmp(out_struct.raw.analog.channels, channame));
+%                     if isempty(achan_index)
+%                         warning('calc_from_raw:ChannelNotFound',['Could not find a force channel named: ', channame, '. Continuing leaving force for that column empty'])
+%                         a_data = [];
+%                     elseif length(achan_index)>1
+%                         warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
+%                         a_data = [];
+%                     else
+                        achan_index=force_channels(c);
                         a = out_struct.raw.analog.data{achan_index};
                         t = (0:length(a)-1)' / out_struct.raw.analog.adfreq(achan_index) + out_struct.raw.analog.ts{achan_index}(1);
                         a_data = [t a];
-                    end
+                    %end
                 else %we know that if out_struct.raw.analog is empty an NEVNSx structure exists, otherwise the force_channels vector would be empty
                     achan_index=find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),['ForceHandle',num2str(c)])));
                     if isempty(achan_index)
