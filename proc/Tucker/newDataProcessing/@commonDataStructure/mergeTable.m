@@ -20,18 +20,18 @@ function mergeTable(cds,fieldName,mergeData)
     dt=cds.(fieldName).t(2)-tstart;
     tstart2=mergeData.t(1);
     tend2=mergeData.t(end);
-    dt2=cds.(fieldName).t(2)-tstart;
+    dt2=mergeData.t(2)-tstart2;
     %check our frequencies
     if dt~=dt2
         error('mergeTable:differentFrequency',['Field: ',fieldName,' was collected at different frequencies in the cds and the new data and cannot be merged. Either re-load both data sets using the same filterspec, or refilter the data in one of the cds structures using decimation to get to the frequencies to match'])
     end
     %check if we have duplicate columns:
     for j=1:length(cds.(fieldName).Properties.VariableNames)
-        if ~isempty(find(cell2mat({strcmp(mergeData.Properties.VariableNames,cds.fieldName.Properties.VariableNames{j})}),1,'first'))
-            error('mergeTable:duplicateColumns',['the column label: ',cds.fieldName.Properties.VariableNames{j},' exists in the ',fieldName,' field of both cds and new data. All columns in the cds and new data except time must have different labels in order to merge'])
+        if ~strcmp(cds.(fieldName).Properties.VariableNames{j},'t') && ~isempty(find(cell2mat({strcmp(mergeData.Properties.VariableNames,cds.(fieldName).Properties.VariableNames{j})}),1,'first'))
+            error('mergeTable:duplicateColumns',['the column label: ',cds.(fieldName).Properties.VariableNames{j},' exists in the ',fieldName,' field of both cds and new data. All columns in the cds and new data except time must have different labels in order to merge'])
         end
     end
-    mask=cell2mat({~strcmp(cds.fieldName.Properties.VariableNames,'t')});
+    mask=cell2mat({~strcmp(cds.(fieldName).Properties.VariableNames,'t')});
     set(cds,fieldName,...
         [cds.(fieldName)(find(cds.(fieldName).t>=max(tstart,tstart2),1,'first'):find(cds.(fieldName).t>=min(tend,tend2),1,'first'),:),...
         mergeData(find(mergeData.t>=max(tstart,tstart2),1,'first'):find(mergeData.t>=min(tend,tend2),1,'first'),(mask))])

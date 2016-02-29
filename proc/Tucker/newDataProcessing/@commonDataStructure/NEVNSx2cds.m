@@ -49,7 +49,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         set(0, 'defaulttextinterpreter', 'none');
 
         %initial setup
-        opts=struct('force',1,'kin',1,'analog',1,'lfp',1,'emg',1,'triggers',1,'labNum',-1,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'robot',0); 
+        opts=struct('force',1,'kin',1,'analog',1,'lfp',1,'emg',1,'triggers',1,'labNum',-1,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'robot',0,'task','Unknown'); 
 
         % Parse arguments
         if ~isempty(varargin)
@@ -75,7 +75,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 elseif strcmp(opt_str, 'ignoreFilecat')
                     opts.ignore_filecat=1;
                 elseif ischar(opt_str) && length(opt_str)>4 && strcmp(opt_str(1:4),'task')
-                    task=opt_str(5:end);
+                    opts.task=opt_str(5:end);
                 elseif ischar(opt_str) && length(opt_str)>5 && strcmp(opt_str(1:5),'array')
                     opts.array=opt_str(6:end);
                 elseif ischar(opt_str) && length(opt_str)>5 && strcmp(opt_str(1:6),'monkey')
@@ -89,7 +89,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         end
         %check the options and throw warnings if some things aren't set:
         flag=0;
-        if ~exist('task','var')
+        if strcmp(opts.task,'Unknown')
             flag=1;
             warning('NEVNSx2cds:taskNotSet','No task was passed as an input variable. Further processing can attempt to automatically identify the task, but success is not garaunteed')
         end
@@ -117,7 +117,15 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 end
             end
         end
-        %
+        %set the robot flag if we are using one of the robot labs:
+        if opts.labNum == 2 || opts.labNum == 3 || opts.LabNum ==6
+            opts.robot=1;
+        end
+        %get the date of the file so processing that depends on when the
+        %file was collected has something to work with
+        opts.dateTime= [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
+            ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
+        opts.duration= NEVNSx.NEV.MetaTags.DataDurationSec;
     %% get the info of data we have to work with
         % Build catalogue of entities
         unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
@@ -154,22 +162,19 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 NSxInfo.NSx_labels(find(~cellfun('isempty',strfind(NSxInfo.NSx_labels,cds.aliasList{i,1}))))=cds.aliasList(i,2);
             end
         end
+        
     %% Events: 
         %if events are already in the cds, then we keep them and ignore any
         %new words in the NEVNSx. Otherwise we load the events from the
         %NEVNSx, followed by the task
         if isempty(cds.words)
             %do this first since the task check requires the words to already be processed, and task is required to work on kinematics and force
-            cds.eventsFromNEVNSx(NEVNSx)
+            cds.eventsFromNEVNSx(NEVNSx,opts)
             % if a task was not passed in, set task varable
-            if ~exist('task','var')%if no task label was passed into the function call
-                if strcmp(cds.meta.task,'Unknown')
-                    task=[];
-                else 
-                    task=cds.meta.task;
-                end
+            if strcmp(opts.task,'Unknown')%if no task label was passed into the function call try to get one automatically
+                opts=cds.getTask(task,opts);
             end
-            [opts]=cds.getTask(task,opts);
+            
         end
         
     %% the kinematics
@@ -210,12 +215,12 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         %if we have databursts and we don't have a trial table yet, compute
         %the trial data, otherwise skip it
         if (~isempty(cds.databursts) && isempty(cds.trials))
-            if strcmp(cds.meta.task,'Unknown') || isempty( cds.meta.task)
+            if strcmp(opts.task,'Unknown') 
                 warning('NEVNSx2cds:UnknownTask','The task for this file is not known, the trial data table may be inaccurate')
             end
-            cds.getTrialTable
+            cds.getTrialTable(opts)
         end
     %% Set metadata. Some metadata will already be set, but this should finish the job
-%        cds.metaFromNEVNSx(NEVNSx,opts)
+        cds.metaFromNEVNSx(NEVNSx,opts)
         
 end

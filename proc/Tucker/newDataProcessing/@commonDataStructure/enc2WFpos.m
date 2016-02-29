@@ -6,15 +6,17 @@ function enc2WFpos(cds)
 %first column is the start of a window where there were missing points, and
 %the second column is 
     
-    pos = array2table(enc,'VariableNames',{'t','x','y'});
+    pos = array2table(cds.enc,'VariableNames',{'t','x','y'});
     %configure labels on pos
     pos.Properties.VariableUnits={'s','cm','cm'};
     pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates',};
     pos.Properties.Description='Cursor position-scaled wrist torque';
-    if isempty(cds.pos)
-        set(cds,'pos',pos)
-    else
-        cds.mergeTable('pos',pos)
+    if ~isempty(pos)
+        if isempty(cds.pos)
+            set(cds,'pos',pos)
+        else
+            cds.mergeTable('pos',pos)
+        end
+        cds.addOperation(mfilename('fullpath'));
     end
-    cds.addOperation(mfilename('fullpath'));
 end

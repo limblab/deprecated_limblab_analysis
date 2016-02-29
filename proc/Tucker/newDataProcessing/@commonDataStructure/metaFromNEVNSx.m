@@ -13,7 +13,7 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
     if cds.meta.cdsVersion==0
         % source/data info
         meta.cdsVersion=cds.meta.cdsVersion;
-        meta.rawFilename=NEVNSx.NEV.MetaTags.Filename;
+        meta.rawFileName=NEVNSx.NEV.MetaTags.Filename;
         meta.dataSource='NEVNSx';
         meta.array=opts.array;
 
@@ -21,9 +21,7 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
         meta.processedWith=cds.meta.processedWith;
 
         %timing
-        dateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-            ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-        meta.dateTime=dateTime;
+        meta.dateTime=opts.dateTime;
         meta.duration=NEVNSx.NEV.MetaTags.DataDurationSec;
         if isfield(NEVNSx.MetaTags,'FileSepTime')
             meta.fileSepTime=NEVNSx.MetaTags.FileSepTime;
@@ -35,7 +33,7 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
 
         % source/data info
         meta.cdsVersion=[meta.cdsVersion;cds.meta.cdsVersion];
-        meta.rawFilename=[meta.rawFilename;NEVNSx.NEV.MetaTags.Filename];
+        meta.rawFileName=[meta.rawFileName;NEVNSx.NEV.MetaTags.Filename];
         meta.dataSource=[meta.dataSource;'NEVNSx'];
         
         meta.array=opts.array;
@@ -54,16 +52,22 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
             meta.fileSepTime=[];
         end
     end
-    %% things that don'd depend on whether cds.meta already had info in it
-    if ~isfield(meta,task)
-        if isempty(find(meta.lab==opts.labNum,1))
+    %% things that don't depend on whether cds.meta already had info in it
+    if (~strcmp(cds.meta.task,'Unknown') && ~strcmp(cds.meta.array,'Unknown') && ~strcmp(cds.meta.monkey,'Unknown') && ~strcmp(cds.meta.rawFileName,'Unknown'))%if the meta field was already populated
+        if isempty(find(cds.meta.lab==opts.labNum,1))
             error('metaFromNEVNSx:differentLabs','data was merged from different labs. This suggests an error in file selection or input labeling')
+        else
+            meta.lab=cds.meta.lab;
         end
-        if isempty(find(strcmp(meta.task,opts.task),1))
+        if isempty(find(strcmp(cds.meta.task,opts.task),1))
             error('metaFromNEVNSx:differentTasks','data was merged from different tasks. This suggests an error in file selection or input labeling')
+        else
+            meta.task=cds.meta.task;
         end
-        if isempty(find(strcmp(meta.task,opts.task),1))
-            error('metaFromNEVNSx:differentTasks','data was merged from different tasks. This suggests an error in file selection or input labeling')
+        if isempty(find(strcmp(cds.meta.monkey,opts.monkey),1))
+            error('metaFromNEVNSx:differentMonkeys','data was merged from different monkeys. This suggests an error in file selection or input labeling')
+        else
+            meta.monkey=cds.meta.monkey;
         end
     else
         meta.task=opts.task;
@@ -72,8 +76,8 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
     end
     
     %data info:
-    meta.includedData.EMG=~isempty(cds.EMG);
-    meta.includedData.LFP=~isempty(cds.LFP);
+    meta.includedData.emg=~isempty(cds.emg);
+    meta.includedData.lfp=~isempty(cds.lfp);
     meta.includedData.kinematics=~isempty(cds.pos);
     meta.includedData.force=~isempty(cds.force);
     meta.includedData.analog=~isempty(cds.analog);

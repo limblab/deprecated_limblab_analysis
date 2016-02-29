@@ -34,10 +34,12 @@ function enc2handlepos(cds,dateTime,lab)
     pos.Properties.VariableUnits={'s','cm','cm'};
     pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates',};
     pos.Properties.Description='Robot Handle position';
-    if isempty(cds.pos)
-        set(cds,'pos',pos)
-    else
-        cds.mergeTable('pos',pos)
+    if ~isempty(pos)
+        if isempty(cds.pos)
+            set(cds,'pos',pos)
+        else
+            cds.mergeTable('pos',pos)
+        end
+        cds.addOperation(mfilename('fullpath'));
     end
-    cds.addOperation(mfilename('fullpath'));
 end

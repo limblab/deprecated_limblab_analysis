@@ -1,4 +1,4 @@
-function eventsFromNEVNSx(cds,NEVNSx)
+function eventsFromNEVNSx(cds,NEVNSx,opts)
     %takes a cds handle and an NEVNSx structure and returns the words and
     %databursts fields to populate those fields of the cds
     if ~isempty(NEVNSx.NEV.Data.SerialDigitalIO.TimeStamp)  
@@ -14,10 +14,7 @@ function eventsFromNEVNSx(cds,NEVNSx)
 
         % Check if file was recorded before the digital input cable was
         % switched.
-        DateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-        ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-
-        if datenum(DateTime) - datenum('14-Jan-2011 14:00:00') < 0 
+        if datenum(opts.dateTime) - datenum('14-Jan-2011 14:00:00') < 0 
             % The input cable for this was bugged: Bits 0 and 8
             % are swapped.  The WORD is mostly on the high byte (bits
             % 15-9,0) and the ENCODER is mostly on the

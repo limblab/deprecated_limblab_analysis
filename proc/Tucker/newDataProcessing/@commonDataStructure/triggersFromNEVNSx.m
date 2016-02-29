@@ -37,7 +37,7 @@ function triggersFromNEVNSx(cds,NEVNSx,NSxInfo)
         %cds.setField('EMG',emg)
         if isempty(cds.triggers)
             set(cds,'triggers',triggers);
-        else
+        elseif ~isempty(triggers)
             cds.mergeTable('triggers',triggers)
         end
         cds.addOperation(mfilename('fullpath'))

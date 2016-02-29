@@ -58,10 +58,12 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
         forces.Properties.Description='an empty table. No force data was found in the data source';
     end
     
-    if isempty(cds.force)
-        set(cds,'force',forces)
-    else
-        cds.mergeTable('force',forces)
+    if ~isempty(force)
+        if isempty(cds.force)
+            set(cds,'force',forces)
+        else
+            cds.mergeTable('force',forces)
+        end
+        cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig)
     end
-    cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig)
 end
