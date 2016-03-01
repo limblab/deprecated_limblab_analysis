@@ -1,5 +1,6 @@
 %% process Chips two workspace data
-folder='F:\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
+% folder='F:\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
+folder = 'C:\Users\rhc307\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
 clear options
 options.prefix='Chips_20151202_RW';
 options.only_sorted=1;

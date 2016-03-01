@@ -12,11 +12,8 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     end
     clear idx;
 
-    DateTime = [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-    ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-
     %get encoder data from serial digital data:
-    if datenum(DateTime) - datenum('14-Jan-2011 14:00:00') < 0 
+    if datenum(opts.dateTime) - datenum('14-Jan-2011 14:00:00') < 0 
         % The input cable for this time was bugged: Bits 0 and 8
         % are swapped.  The WORD is mostly on the high byte (bits
         % 15-9,0) and the ENCODER is mostly on the
@@ -36,7 +33,7 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     %now that we have the encoder strobes, convert those to actual encoder values    
     jumpTimes=[];
     if opts.ignore_jumps || ~isfield(NEVNSx.MetaTags,'FileSepTime')
-        enc = strobed2encoder(encStrobes,[0 cds.meta.duration]);
+        enc = strobed2encoder(encStrobes,[0 opts.duration]);
     else
         [enc, jumpTimes]= strobed2encoder(encStrobes,NEVNSx.MetaTags.FileSepTime);
         if ~isempty(jumpTimes)
@@ -82,13 +79,13 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     
     %convert encoders to position:
     if opts.robot
-        enc2handlepos(cds);
+        cds.enc2handlepos(opts.dateTime,opts.labNum);
     else
-        enc2WFpos(cds);
-        if ~isempty(skips)
-            %insert a 'known problem' entry
-            cds.addProblem('inconsistency in encoder timestamps: some data points appear to be missing and were reconstructed via interpolation')
-        end
+        cds.enc2WFpos();
+    end
+    %check for data skips and insert a 'known problem' entry if they exist:
+    if ~isempty(skips)
+        cds.addProblem('inconsistency in encoder timestamps: some data points appear to be missing and were reconstructed via interpolation')
     end
     
     %handle inconsistencies and make a vector that flags when the data was
@@ -127,14 +124,21 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     if ~isempty(temp)
         goodData(temp)=0;
     end
+    
     %find still periods, and build table of kinematics flags:
     still=is_still(sqrt(cds.pos.x.^2+cds.pos.y.^2));
     dataFlags=table(cds.pos.t,still,goodData,'VariableNames',{'t','still','good'});
     dataFlags.Properties.VariableUnits={'s','bool','bool'};
     dataFlags.Properties.VariableDescriptions={'time','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
     dataFlags.Properties.Description='data flags indicating qualities of the data. Still indicates that the position from the encoder stream was not changing. good indicates the data is free of known problems such as encoder jumps or file concatenation artifacts';
-    set(cds,'dataFlags',dataFlags)
-    
+    if ~isempty(dataFlags)
+        if isempty(cds.dataFlags)
+            set(cds,'dataFlags',dataFlags)
+        else
+            cds.mergeTable('dataFlags',dataFlags)
+        end
+        clear dataFlags
+    end
     %use cds.pos to compute vel:
     vx=gradient(cds.pos.x,1/cds.kinFilterConfig.SR);
     vy=gradient(cds.pos.y,1/cds.kinFilterConfig.SR);
@@ -144,8 +148,14 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     vel.Properties.VariableUnits={'s','cm/s','cm/s'};
     vel.Properties.VariableDescriptions={'time','x velocity in room coordinates. ','y velocity in room coordinates'};
     vel.Properties.Description='For the robot this will be handle velocity. For all tasks this is the derivitive of position';
-    set(cds,'vel',vel)
-    clear vel
+    if ~isempty(vel)
+        if isempty(cds.vel)
+            set(cds,'vel',vel)
+        else
+            cds.mergeTable('vel',dataFlags)
+        end
+        clear vel
+    end
     %use cds.vel to compute acc:
     ax=gradient(cds.vel.vx,1/cds.kinFilterConfig.SR);
     ay=gradient(cds.vel.vy,1/cds.kinFilterConfig.SR);
@@ -155,7 +165,12 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     acc.Properties.VariableUnits={'s','cm/s^2','cm/s^2'};
     acc.Properties.VariableDescriptions={'time','x acceleration in room coordinates. ','y acceleration in room coordinates'};
     acc.Properties.Description='For the robot this will be handle acceleration. For all tasks this is the derivitive of velocity';
-    set(cds,'acc',acc)
-    
-    cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig);
+    if ~isempty(acc)
+        if isempty(cds.acc)
+            set(cds,'acc',acc)
+        else
+            cds.mergeTable('acc',acc)
+        end
+        cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig);
+    end
 end

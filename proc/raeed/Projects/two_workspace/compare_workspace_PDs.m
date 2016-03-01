@@ -355,12 +355,12 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
             r_fill = [rad_DL rad_DL rad_DL 0];
             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
             patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
-            h=polar(angs_DL_bimodal(:,i),rad_DL*[0;1]/2);
-            set(h,'linewidth',2,'color',[1 0 0])
-            th_fill = [dir_CI_DL_bimodal(i,2) angs_DL_bimodal(1,i) dir_CI_DL_bimodal(i,1) 0];
-            r_fill = [rad_DL rad_DL rad_DL 0]/2;
-            [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-            patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
+%             h=polar(angs_DL_bimodal(:,i),rad_DL*[0;1]/2);
+%             set(h,'linewidth',2,'color',[1 0 0])
+%             th_fill = [dir_CI_DL_bimodal(i,2) angs_DL_bimodal(1,i) dir_CI_DL_bimodal(i,1) 0];
+%             r_fill = [rad_DL rad_DL rad_DL 0]/2;
+%             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%             patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
 
             % PM workspace tuning curve
             h=polar(repmat(tuning_out_PM.bins,2,1),repmat(tuning_out_PM.binned_FR(:,i),2,1));
@@ -377,18 +377,20 @@ function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
             r_fill = [rad_PM rad_PM rad_PM 0];
             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
             patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
-            h=polar(angs_PM_bimodal(:,i),rad_PM*[0;1]/2);
-            set(h,'linewidth',2,'color',[0.6 0.5 0.7])
-            th_fill = [dir_CI_PM_bimodal(i,2) angs_PM_bimodal(1,i) dir_CI_PM_bimodal(i,1) 0];
-            r_fill = [rad_PM rad_PM rad_PM 0]/2;
-            [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-            patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
+%             h=polar(angs_PM_bimodal(:,i),rad_PM*[0;1]/2);
+%             set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+%             th_fill = [dir_CI_PM_bimodal(i,2) angs_PM_bimodal(1,i) dir_CI_PM_bimodal(i,1) 0];
+%             r_fill = [rad_PM rad_PM rad_PM 0]/2;
+%             [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%             patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
             hold off
         end
 
         %% Statistics on PD changes
         % only look at best tuned units
         % find how many significantly change PD (non-overlapping CI)
+        angs_best_comb_PM=[unit_best_combined_table_PM.dir unit_best_combined_table_PM.dir]';
+        angs_best_comb_DL=[unit_best_combined_table_DL.dir unit_best_combined_table_DL.dir]';
         dir_CI_DL = unit_best_combined_table_DL.dir_CI;
         dir_CI_PM = unit_best_combined_table_PM.dir_CI;
         sig_change = ~( (dir_CI_DL(:,1)>dir_CI_PM(:,1) & dir_CI_DL(:,1)<dir_CI_PM(:,2)) | (dir_CI_DL(:,2)>dir_CI_PM(:,1) & dir_CI_DL(:,2)<dir_CI_PM(:,2)) );

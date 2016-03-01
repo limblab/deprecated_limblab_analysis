@@ -14,7 +14,7 @@ options.bdf = bdf;
 output_data=run_data_processing(function_name,folder,options);
 
 %% Get active/passive tunings
-folder='C:\Users\rhc307\Documents\Data\experiment_20151117_actpas\';
+folder='C:\Users\rhc307\Documents\Data\Chips\experiment_20151117_actpas\';
 clear options
 options.prefix='Chips_20151117_COactpas';
 options.only_sorted=1;
@@ -23,7 +23,9 @@ options.labnum=6;
 options.dual_array = false;
 options.task = 'CO';
 
+dbstop if error
 output_data=run_data_processing(function_name,folder,options);
+dbclear if error
 
 %% Get active/passive/RW tunings
 folder='C:\Users\rhc307\Documents\Data\experiment_20151117_actpas\';
