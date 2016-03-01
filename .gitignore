@@ -56,6 +56,11 @@ Thumbs.db
 *.doc
 *.docx
 
+# Video formats
+*.avi
+*.mp4
+*.mov
+
 # Data files
 *.nev
 *.ns2
