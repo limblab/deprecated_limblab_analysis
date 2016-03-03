@@ -13,3 +13,4 @@
 *.pdf -crlf -diff -merge
 *.jpg -crlf -diff -merge
 *.png -crlf -diff -merge
+*.jar -crlf -diff -merge
