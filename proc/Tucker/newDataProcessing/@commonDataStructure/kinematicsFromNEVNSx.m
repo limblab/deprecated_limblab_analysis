@@ -79,9 +79,9 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     
     %convert encoders to position:
     if opts.robot
-        cds.enc2handlepos(opts.dateTime,opts.labNum);
+        pos=cds.enc2handlepos(opts.dateTime,opts.labNum);
     else
-        cds.enc2WFpos();
+        pos=cds.enc2WFpos();
     end
     %check for data skips and insert a 'known problem' entry if they exist:
     if ~isempty(skips)
@@ -98,7 +98,7 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         %convert jump times to window using the pad range:
         jumpTimes=[jumpTimes-pad,jumpTimes+pad];
     end
-    if isfield(NEVNSx.MetaTags,'FileSepTime') & ~isempty(NEVNSx.MetaTags.FileSepTime)
+    if isfield(NEVNSx.MetaTags,'FileSepTime') && ~isempty(NEVNSx.MetaTags.FileSepTime)
         %pad the file separation times and append to the jump times:
         jumpTimes=[jumpTimes;[NEVNSx.MetaTags.FileSepTime(:,1)-pad,NEVNSx.MetaTags.FileSepTime(:,2)+pad]];
     end
@@ -127,49 +127,30 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     
     %find still periods, and build table of kinematics flags:
     still=is_still(sqrt(cds.pos.x.^2+cds.pos.y.^2));
-    dataFlags=table(cds.pos.t,still,goodData,'VariableNames',{'t','still','good'});
-    dataFlags.Properties.VariableUnits={'s','bool','bool'};
-    dataFlags.Properties.VariableDescriptions={'time','Flag indicating whether the cursor was still','Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)'};
-    dataFlags.Properties.Description='data flags indicating qualities of the data. Still indicates that the position from the encoder stream was not changing. good indicates the data is free of known problems such as encoder jumps or file concatenation artifacts';
-    if ~isempty(dataFlags)
-        if isempty(cds.dataFlags)
-            set(cds,'dataFlags',dataFlags)
-        else
-            cds.mergeTable('dataFlags',dataFlags)
-        end
-        clear dataFlags
-    end
+    
     %use cds.pos to compute vel:
     vx=gradient(cds.pos.x,1/cds.kinFilterConfig.SR);
     vy=gradient(cds.pos.y,1/cds.kinFilterConfig.SR);
-    vel=table(cds.pos.t,vx,vy,'VariableNames',{'t','vx','vy'});
-    clear vx
-    clear vy
-    vel.Properties.VariableUnits={'s','cm/s','cm/s'};
-    vel.Properties.VariableDescriptions={'time','x velocity in room coordinates. ','y velocity in room coordinates'};
-    vel.Properties.Description='For the robot this will be handle velocity. For all tasks this is the derivitive of position';
-    if ~isempty(vel)
-        if isempty(cds.vel)
-            set(cds,'vel',vel)
-        else
-            cds.mergeTable('vel',dataFlags)
-        end
-        clear vel
-    end
+    
     %use cds.vel to compute acc:
     ax=gradient(cds.vel.vx,1/cds.kinFilterConfig.SR);
     ay=gradient(cds.vel.vy,1/cds.kinFilterConfig.SR);
-    acc=table(cds.pos.t,ax,ay,'VariableNames',{'t','ax','ay'});
-    clear ax
-    clear ay
-    acc.Properties.VariableUnits={'s','cm/s^2','cm/s^2'};
-    acc.Properties.VariableDescriptions={'time','x acceleration in room coordinates. ','y acceleration in room coordinates'};
-    acc.Properties.Description='For the robot this will be handle acceleration. For all tasks this is the derivitive of velocity';
+    
+    kin=table(cds.enc.t,still,goodData,pos(:,1),pos(:,2),vx,vy,ax,ay, ...
+                'VariableNames',{'t','still','good','x','y','vx','vy','ax','ay'});
+    kin.Properties.VariableUnits={'s','bool','bool','cm','cm','cm/s','cm/s','cm/s^2','cm/s^2'};
+    kin.Properties.VariableDescriptions={ 'time in seconds' ,'Flag indicating whether the cursor was still',...
+                                    'Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)',...
+                                    'x position in room coordinates. ','y position in room coordinates',...
+                                    'x velocity in room coordinates. ','y velocity in room coordinates',...
+                                    'x acceleration in room coordinates. ','y acceleration in room coordinates'};
+    kin.Properites.Description={'Kinematic signals. These are computed from the encoder data, and include position, velocity, acceleration, and flags indicating data quality'};
+    
     if ~isempty(acc)
-        if isempty(cds.acc)
-            set(cds,'acc',acc)
+        if isempty(cds.kin)
+            set(cds,'kin',kin)
         else
-            cds.mergeTable('acc',acc)
+            cds.mergeTable('kin',kin)
         end
         cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig);
     end
