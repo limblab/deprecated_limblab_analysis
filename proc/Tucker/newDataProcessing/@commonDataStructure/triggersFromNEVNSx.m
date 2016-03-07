@@ -35,7 +35,11 @@ function triggersFromNEVNSx(cds,NEVNSx,NSxInfo)
         triggers.Properties.VariableDescriptions=[{'time'},repmat({'trigger voltage'},1,length(triggerNames)-1)];
         triggers.Properties.Description='Unfiltered trigger voltage.';
         %cds.setField('EMG',emg)
-        set(cds,'triggers',triggers);
+        if isempty(cds.triggers)
+            set(cds,'triggers',triggers);
+        elseif ~isempty(triggers)
+            cds.mergeTable('triggers',triggers)
+        end
         cds.addOperation(mfilename('fullpath'))
     end
     

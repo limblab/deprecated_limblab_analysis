@@ -23,8 +23,8 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
     end
 
     % Get calibration parameters based on lab number            
-    if isfield(opts,'labnum') && opts.labnum>0
-        [fhcal,rotcal,Fy_invert]=getLabParams(opts.labnum,cds.meta.dateTime,opts.rothandle);
+    if isfield(opts,'labNum') && opts.labNum>0
+        [fhcal,rotcal,Fy_invert]=getLabParams(opts.labNum,opts.dateTime,opts.rothandle);
     else
         error('handleForceFromRaw:LabNotSet','handleForceFromRaw needs the lab number in order to select the correct load cell calibration')
     end
@@ -37,17 +37,17 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
     %rotate load cell data into room coordinates using robot arm
     %angle
     if size(raw_force,2)==2
-        if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection  
+        if isfield(opts,'labNum')&& opts.labNum==3 %If lab3 was used for data collection  
             handleForce=table( raw_force(:,1).*cos(-cds.enc.th2) - raw_force(:,2).*sin(cds.enc.th2),...
                 raw_force(:,1).*sin(cds.enc.th2) + raw_force(:,2).*cos(cds.enc.th2),...
                 'VariableNames',{'fx','fy'});
-        elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection         
+        elseif isfield(opts,'labNum')&& opts.labNum==6 %If lab6 was used for data collection         
             handleForce=table( raw_force(:,1).*cos(-cds.enc.th1) - raw_force(:,2).*sin(cds.enc.th1),...
                 raw_force(:,1).*sin(cds.enc.th1) + raw_force(:,2).*cos(cds.enc.th1),...
                 'VariableNames',{'fx','fy'});
         end
     elseif size(raw_force,2)==6
-        if isfield(opts,'labnum')&& opts.labnum==3 %If lab3 was used for data collection  
+        if isfield(opts,'labNum')&& opts.labNum==3 %If lab3 was used for data collection  
             handleForce=table( raw_force(:,1).*cos(-cds.enc.th2) - raw_force(:,2).*sin(cds.enc.th2),...
                 raw_force(:,1).*sin(cds.enc.th2) + raw_force(:,2).*cos(cds.enc.th2),...
                 raw_force(:,3),...
@@ -55,7 +55,7 @@ function handleForce=handleForceFromRaw(cds,raw_force,opts)
                 raw_force(:,4).*sin(cds.enc.th2) + raw_force(:,5).*cos(cds.enc.th2),...
                 raw_force(:,6),...
                 'VariableNames',{'fx','fy','fz','mx','my','mz'});
-        elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection         
+        elseif isfield(opts,'labNum')&& opts.labNum==6 %If lab6 was used for data collection         
             handleForce=table( raw_force(:,1).*cos(-cds.enc.th1) - raw_force(:,2).*sin(cds.enc.th1),...
                 raw_force(:,1).*sin(cds.enc.th1) + raw_force(:,2).*cos(cds.enc.th1),...
                 raw_force(:,3),...

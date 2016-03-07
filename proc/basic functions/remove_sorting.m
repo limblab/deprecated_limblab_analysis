@@ -19,7 +19,7 @@ function bdf_nosort=remove_sorting(bdf)
         %find all the units
         unit_list=[];
         for j=1:length(bdf.units)
-            if bdf.units(1,j).id(1)==channel_list(i)
+            if bdf.units(1,j).id(1)==channel_list(i) && bdf.units(1,j).id(2)~=255
                 unit_list=[unit_list j];
             elseif bdf.units(1,j).id(1)>channel_list(i)
                 continue
@@ -34,5 +34,9 @@ function bdf_nosort=remove_sorting(bdf)
         bdf_nosort.units(1,i).ts=sort(bdf_nosort.units(1,i).ts);
     end
     
-    
+    for i=length(bdf.units):-1:1
+        if isempty(bdf.units(i).ts)
+            bdf.units(i)=[];
+        end
+    end
 end

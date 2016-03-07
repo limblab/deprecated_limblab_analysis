@@ -10,15 +10,18 @@ fnames={foldercontents.name};%extracts just the names from the foldercontents
 for i=1:length(foldercontents)
     if (length(fnames{i})>3)
         if (strcmp(fnames{i}((length(fnames{i})-3):end),'.nev') & ~isempty(strfind(fnames{i},matchstring)))
-            resave_name=strcat( fnames{i}(1:(length(fnames{i})-4)),'_NODIGITAL', '.nev');
-            if isempty(strmatch( resave_name,fnames))
+            save_name_nodigital=strcat( fnames{i}(1:(length(fnames{i})-4)),'_NODIGITAL', '.nev');
+            save_name_nospikes=strcat( fnames{i}(1:(length(fnames{i})-4)),'_NOSPIKES', '.nev');
+            if isempty(strmatch( save_name_nodigital,fnames))
                 %if we haven't found a _NODIGITAL.nev file to match the .nev then make
                 %one
                 try
                     disp(strcat('Working on: ',folderpath, fnames{i}))
                     NEV=openNEV('read', [folderpath, fnames{i}],'nosave','nomat','report');
-                    disp(strcat('Saving: ',resave_name))
-                    saveNEVOnlySpikes2(NEV,[folderpath,resave_name])
+                    disp(strcat('Saving: ',save_name_nodigital))
+                    saveNEVOnlySpikes2(NEV,[folderpath,save_name_nodigital])
+                    disp(strcat('Saving: ',save_name_nospikes))
+                    saveNEVOnlyDigital(NEV,[folderpath,save_name_nospikes])
                     clear NEV
                 catch temperr
                     disp(strcat('Failed to process: ', folderpath,fnames{i}))

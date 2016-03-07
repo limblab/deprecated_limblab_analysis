@@ -12,9 +12,9 @@ disp('define inputs');
 %prefix = 'p'; %p - program, r - run, h - halt
 chList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]; %which channels do I want to stimulate?
 mode = 'static_pulses'; %can I do an array with different values here for different channels?
-amp = [1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2]; % in mA
-pw = [.2,.3,.2,.3,.2,.3,.2,.3,.2,.3,.2,.3,.2,.3,.2,.3]; % in ms
-freq = 30; % in Hz - all channels must have the same frequency
+amp = [4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3]; % in mA
+pw = [.2,.4,.4,.4,.4,.2,.2,.2,.2,.4,.4,.4,.4,.2,.2,.2]; % in ms
+freq = 40; % in Hz - all channels must have the same frequency
 pulses = 10; %number of pulses in a train; range = 0-65000
 time2run = 0; %this is never used WHAT???
 stim_tip = .4; % interphase time in ms (what does that mean???)
@@ -38,21 +38,26 @@ disp('send string to stimulator');
 
 
 %tell the stimulator to actually use the info we gave it earlier
+ 
 
-%timing TODO - CHECK THIS
-tic
-while toc<60 %for 60 seconds
-    
-disp(toc)
-%pause(ms/1000)--eventually use this to do 30 Hz/33ms between each.
-fopen(s); 
-strOUT2 = fns_stim_prog('r', chList-1); %check with line 165 of stimrec
-fwrite(s,strOUT2);
-fclose(s);
-pause(0.1); %this was in the original - will it get hung up if I don't wait? 
-disp(toc)
+%what to send: alternate "flexors" and "extensors" (ie take a break after
+%each train) - so do 10 pulses @ 40 hz = .25s of stimulation. Then pause
+%for .25s to simulate the alternation between phases. Do 10 cycles of this
+%(10 "steps"). Then wait 30s to let some charge diffuse. Repeat this whole
+%thing 50 times to simulate one session of stimulation. Check wires, repeat
+%session until everything is breaking down. 
 
+for i=1:50 %one session - should take about 30 min
+    for j=1:10 %10 steps
+        fopen(s); 
+        strOUT2 = fns_stim_prog('r', chList-1); %run 10-pulse train
+        fwrite(s,strOUT2);
+        fclose(s);
+        pause(.5); %pause .25 to let the stim run and .25 for alternating
+    end
+    pause(30); %let the charge diffuse
 end
+
 
 %all done!
 some_output = 0; 

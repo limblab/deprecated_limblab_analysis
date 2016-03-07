@@ -5,7 +5,7 @@ function [figure_handles,output_data] = plot_PD_change(folder,options)
 %     output_data.unit_tuning_stats_full = options.unit_tuning_stats_full;
 %     output_data.unit_tuning_stats_DL_bimodal = options.unit_tuning_stats_bimodal;
 %     output_data.unit_tuning_stats_PM_bimodal = options.unit_tuning_stats_bimodal;
-output_data.unit_tuning_stats_DL = unit_tuning_stats_DL;
+    output_data.unit_tuning_stats_DL = unit_tuning_stats_DL;
     output_data.unit_tuning_stats_PM =  unit_tuning_stats_PM;
     output_data.unit_tuning_stats_full = unit_tuning_stats_full;
     output_data.unit_tuning_stats_DL_bimodal = unit_tuning_stats_DL_bimodal;
@@ -155,7 +155,7 @@ output_data.unit_tuning_stats_DL = unit_tuning_stats_DL;
     set(h,'linewidth',2,'color',[0.6 0.5 0.7])
 
     % plot changes with alpha dependent on CI width
-    for unit_ctr = 1:height(change_table)
+    for unit_ctr = 46%1:height(change_table)
         if(options.dual_array)
             if(change_table.chan(unit_ctr)<=array_break)
                 h=polar(linspace(change_table.angs_PM(unit_ctr),change_table.angs_DL(unit_ctr),2),linspace(0.5,1,2));
@@ -165,8 +165,9 @@ output_data.unit_tuning_stats_DL = unit_tuning_stats_DL;
                 set(h,'linewidth',2,'color',[change_table.change_white(unit_ctr) 1 change_table.change_white(unit_ctr)])
             end
         else
+            alpha = 1-change_table.change_white(unit_ctr);
             h=polar(linspace(change_table.angs_PM(unit_ctr),change_table.angs_DL(unit_ctr),2),linspace(0.5,1,2));
-            set(h,'linewidth',2,'color',change_table.change_white(unit_ctr)*[1 1 1])
+            set(h,'linewidth',2,'color',alpha*[0.1 0.6 1] +  (1-alpha)*[1 1 1])
         end
     end
     %plot circles again
