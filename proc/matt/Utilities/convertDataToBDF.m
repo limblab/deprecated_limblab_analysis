@@ -57,8 +57,9 @@ end
 % set defaults
 rewriteFiles = 0; % By default, don't rewrite files
 hasKin = 1; % by default, assume there is encoder data
-bdfFolderName = ''; %name of folder to put BDFs in
-dataFolderName = '';
+bdfFolderName = 'BDFStructs'; %name of folder to put BDFs in
+dataFolderName = 'CerebusData';
+use_nevnsx = 0;
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'rewrite'
@@ -69,6 +70,8 @@ for i=1:2:length(varargin)
             bdfFolderName = varargin{i+1};
         case 'datafolder'
             dataFolderName = varargin{i+1};
+        case 'nevnsx'
+            use_nevnsx = varargin{i+1};
     end
 end
 %%%%%
@@ -94,7 +97,11 @@ for iFolder = 1:length(convertFolders)
     files = {files.name};
     % We only want the .nev or .plx files
     [~,~,fileExts] = cellfun(@(x) fileparts(x),files,'UniformOutput',false);
-    fileInds = strcmpi(fileExts,'.nev') | strcmpi(fileExts,'.plx');
+    if use_nevnsx
+        fileInds = strcmpi(fileExts,'.mat');
+    else
+        fileInds = strcmpi(fileExts,'.nev') | strcmpi(fileExts,'.plx');
+    end
     files = files(fileInds);
     
     % Loop along the .nev files found
@@ -110,7 +117,7 @@ for iFolder = 1:length(convertFolders)
         BDF_FullFileName = fullfile(dirBDF,BDF_FileName);
         
         % Check if the file has already been converted...
-        if ~exist(BDF_FullFileName,'file') || rewriteFiles
+        if ~strcmpi(CB_FullFileName(end-12:end),'-metatags.mat') && (~exist(BDF_FullFileName,'file') || rewriteFiles)
             disp(['Converting data file ' CB_FileName '...']);
             switch lower(fileExt)
                 case '.nev'
@@ -127,6 +134,9 @@ for iFolder = 1:length(convertFolders)
                     else
                         out_struct = get_plexon_data(CB_FullFileName,'verbose','nokin');
                     end
+                case '.mat'
+                    load(CB_FullFileName);
+                    out_struct = get_nev_mat_data(CB_FullFileName);
             end
             
             disp('Done.');
