@@ -49,18 +49,30 @@ elseif nargin == 6
     smoothed_FR         = varargin{1};
     dim_red_FR          = varargin{2};
     
-    % check dimensions are consistent
-    if length(bdf) ~= length(smoothed_FR),error('smoothed_FR has wrong size'),end
-    if length(bdf) ~= length(dim_red_FR),error('dim_red_FR has wrong size'),end
+    % check that dimensions are consistent
+    if ~isempty(bdf)
+        if length(bdf) ~= length(smoothed_FR),error('smoothed_FR has wrong size'),end
+        if length(bdf) ~= length(dim_red_FR),error('dim_red_FR has wrong size'),end
+    else
+        if length(dim_red_FR) ~= length(smoothed_FR),error('smoothed_FR or dim_red_FR has wrong size'),end
+    end
 end
 
 % check dimensions are consistent
-if length(bdf) ~= length(labels),error('labels has wrong size'),end
+if ~isempty(bdf)
+    if length(bdf) ~= length(labels),error('labels has wrong size'),end
+else
+    if length(dim_red_FR) ~= length(labels),error('labels has wrong size'),end
+end
 
 
 % create matrix with selected neural channels
-nbr_bdfs                = length(bdf);
-discard_neurons         = setdiff(1:96, neural_chs);
+if ~isempty(bdf)
+    nbr_bdfs            = length(bdf);
+    discard_neurons     = setdiff(1:length(bdf(1).units), neural_chs);
+else
+    nbr_bdfs            = length(dim_red_FR);
+end
 
 
 % retrieve input parameter eigenvectors
@@ -91,7 +103,7 @@ if ~exist('smoothed_FR','var')
                                         gauss_SD, gauss_width ); %#ok<AGROW>
         end
         dim_red_FR{i}       = dim_reduction( smoothed_FR{i}, 'pca', ...
-                                        discard_neurons, true, false ); %#ok<AGROW>
+                                        discard_neurons ); %#ok<AGROW>
     end
 end
 
@@ -103,6 +115,8 @@ if nbr_eigenvectors < 20
     nbr_comps_max      = 20;
 elseif nbr_eigenvectors < 30
     nbr_comps_max      = 30;
+elseif nbr_eigenvectors < 40
+    nbr_comps_max      = 40;
 else
     nbr_comps_max      = length(dim_red_FR{1}.eigen);
 end
