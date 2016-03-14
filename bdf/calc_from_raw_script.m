@@ -217,8 +217,10 @@
         elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
             if datenum(out_struct.meta.datetime) < datenum('01-Jan-2015')
                 l1=27; l2=36.8;
-            else
+            elseif datenum(out_struct.meta.datetime < datenum('07-Mar-2016')
                 l1=46.8; l2=45;
+            else
+                l1=24; l2=27; % MIGHT BE SWITCHED, CHECK ON THIS AND DELETE COMMENT WHEN FIXED
             end
         else
             l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
@@ -393,7 +395,7 @@
                     error('calc_from_raw_script:Lab2RotHandle','the rotate handle option was never used in Lab2. If lab2 has been updated with a loadcell and you are using the handle in a rotated position you need to modify calc_from_raw_script to handle this')
                 end
             elseif isfield(opts,'labnum') && opts.labnum==6 %If lab6 was used for data collection
-                if opts.rothandle
+                if opts.rothandle % DEPRECATED
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
                     % \\citadel\limblab\Software\ATI FT\Calibration\Lab 6\FT16018.cal
                     % fhcal = [Fx;Fy]./[scaleX;scaleY]
@@ -403,7 +405,7 @@
                             0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
                     rotcal = [-1 0; 0 1];  % HANDLE IS SLIGHTLY ROTATED, SO THIS IS WRONG
                     force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPRICALLY
-                    Fy_invert = 1;
+                    Fy_invert = -1;
                     error('calc_from_raw_script:Lab6RotHandle','Upside down handle rotation matrix has not been calculated yet. Figure out actual rotation matrix and modify calc_from_raw_script')
                 else
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
@@ -414,7 +416,16 @@
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
                             0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508;...
                             10.01343 0.36172 10.30551 0.39552 10.46860 0.38238]'./1000;
-                    rotcal = [1 0 0; 0 1 0; 0 0 1];  
+                    if datenum(out_struct.meta.datetime < datenum('07-Mar-2016')
+                        rotcal = eye(3);
+                    else
+                        % rotation of the load cell to match forearm frame
+                        % (load cell is upside down and slightly rotated)
+                        theta_off = atan2(3,27); %angle offset of load cell to forearm frame
+                        rotcal = [cos(theta_off) sin(theta_off) 0;...
+                                  sin(theta_off) -cos(theta_off) 0;...
+                                  0              0              -1]'; 
+                    end
                     force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPIRICALLY
                     Fy_invert = 1;
                 end
