@@ -217,7 +217,7 @@
         elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
             if datenum(out_struct.meta.datetime) < datenum('01-Jan-2015')
                 l1=27; l2=36.8;
-            elseif datenum(out_struct.meta.datetime < datenum('07-Mar-2016')
+            elseif datenum(out_struct.meta.datetime < datenum('07-Mar-2016'))
                 l1=46.8; l2=45;
             else
                 l1=24; l2=27; % MIGHT BE SWITCHED, CHECK ON THIS AND DELETE COMMENT WHEN FIXED
@@ -416,7 +416,7 @@
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
                             0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508;...
                             10.01343 0.36172 10.30551 0.39552 10.46860 0.38238]'./1000;
-                    if datenum(out_struct.meta.datetime < datenum('07-Mar-2016')
+                    if datenum(out_struct.meta.datetime < datenum('07-Mar-2016'))
                         rotcal = eye(3);
                     else
                         % rotation of the load cell to match forearm frame
