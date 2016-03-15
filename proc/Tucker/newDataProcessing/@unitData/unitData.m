@@ -1,7 +1,7 @@
 classdef unitData < matlab.mixin.SetGet
     properties(SetAccess = public)
     end
-    properties (Access = private)
+    properties (Access = protected)
         data%main data table
     end
     methods (Static = true)
@@ -19,7 +19,7 @@ classdef unitData < matlab.mixin.SetGet
             f4=@(x) isempty(find(strcmp('wave',x.Properties.VariableNames),1));
             
             if isempty(data) 
-                units.units=data;
+                units.data=data;
             elseif ~isstruct(data)
                 error('unitData:badFormat','Units must be a struct')
             elseif ~isfield(data,'chan') ||  ~isnumeric([data(:).chan])
@@ -83,6 +83,37 @@ classdef unitData < matlab.mixin.SetGet
                 end
             end
             
+        end
+        function appendUnits(units,data,offset)
+            %accepts the units field from a cds and appends the data onto
+            %the current units structure. appendUnits uses the value in
+            %offset to time shift all the spikes of the new 
+            
+            %if units is empty, simply fill it
+            if isempty(units.data)
+                set(units,'data',data)
+            else
+                %sanity checks:
+                %do we have the same arrays?
+                diffArrays=setDiff({units.data.array},{data.array});
+                if ~isempty(diffArrays)
+                    error('appendUnits:differentArrays',['this unitData has the following array(s): ',strjoin(unique({units.data.array}),','), ' while the new units structure has the following array(s): ',strjoin(unique({data.array}),',')])
+                end
+                
+                %do we have the same unit set?
+                diffUnits=setdiff([cell2mat({units.data.chan}),cell2mat({units.data.ID})],[cell2mat({data.chan}),cell2mat({data.ID})]);
+                if ~isempty(diffUnits)
+                    warning('appendUnits:differentUnits',['the new units field has ',num2str(numel(diffUnits)),'different units from the units in this unitData structure'])                
+                end
+                %is offset larger than the biggest value in the original
+                %data?
+                if max(cellfun(max,{units.data.spikes.t}))>offset
+                    error('appendUnits:inadequateOffset','The offset for timestamps must be larger than the maximum timestamp in the existing data. Suggest using the duration of existing timeseries data like kinematics to estimate an offset.');
+                end
+                %ok we passed the sanity checks, now update the time of all
+                %the spikes by adding offset, and append data to units
+                
+            end
         end
     end
 end

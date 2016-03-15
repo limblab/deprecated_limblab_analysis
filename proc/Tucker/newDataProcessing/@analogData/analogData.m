@@ -1,15 +1,13 @@
 classdef analogData < matlab.mixin.SetGet
     properties(SetAccess = public)
-        analogFilterConfig%filterconfig
     end
-    properties (Access = private)
+    properties (SetAccess = private, GetAccess = public)
         data%main data table
     end
     methods (Static = true)
         %constructor
         function analog=analogData()
-            set(analog,'analogFilterConfig',filterConfig('poles',8,'cutoff',25,'SR',100));%a high pass butterworth 8poles filter
-            analog.data=cell(0,0);
+            analog.data={timeSeriesData()};
         end
     end
     methods
@@ -18,20 +16,17 @@ classdef analogData < matlab.mixin.SetGet
             if (~iscell(data) && ~isempty(data))
                 error('analog:badFormat','analog must be a cell array, with each cell containing a table of analog data collected at a single frequency')
             else
+                for i=1:length(data)
+                    %check that each cell contains an object of the dataTable type
+                    if ~isa(data{i},'timeSeriesData')
+                        error('analogData:NotATimeSeries',['all cells in data must contain objects of the dataTable class. cell: ',num2str(i),' contains an object of the: ',class(data{i}),' type'])
+                    end
+                end
                 analog.data=data;
             end
         end
     end
     methods (Static = false)
         %general methods
-        function refilter(analog,cellNum)
-            data=analog.data{cellNum};
-            data=decimateData(data{:,:},fd.fdFilterConfig);
-            data=array2table(data,'VariableNames',fd.data.Properties.VariableNames);
-            data.Properties.VariableUnits=fd.data.Properties.VariableUnits;
-            data.Properties.VariableDescriptions=fd.data.Properties.VariableDescriptions;
-            data.Properties.Description=fd.data.Properties.Description;
-            analog.data{cellNum}=data;
-        end
     end
 end

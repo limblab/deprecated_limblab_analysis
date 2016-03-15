@@ -146,7 +146,11 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 NSxInfo.NSx_labels(~cellfun('isempty',strfind(NSxInfo.NSx_labels,cds.aliasList{i,1})))=cds.aliasList(i,2);
             end
         end
-        
+        % check that we don't have a data stream using the reserved name
+        % 'good'
+        if ~isempty(find(~cellfun('isempty',strcmp(NSxInfo.NSx_labels,'good')),1));
+            error('NEVNSx2cds:goodIsAReservedName','the cds and experiment code uses the label good as a flag for kinematic data, and treats this label specially when refiltering. This label is reserved to avoid unintended behaviro when refiltering other data sreams. Please use the alias function to re-name the good channel of input data')
+        end
     %% Events: 
         %if events are already in the cds, then we keep them and ignore any
         %new words in the NEVNSx. Otherwise we load the events from the
@@ -201,5 +205,8 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         end
     %% Set metadata. Some metadata will already be set, but this should finish the job
         cds.metaFromNEVNSx(NEVNSx,opts)
-        
+    %% write metadata to database
+        %cds.upload2DB
+    %% save to fsmres if possible
+        %cds.save2fsmres()
 end

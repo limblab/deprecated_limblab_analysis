@@ -76,27 +76,45 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
     end
     
     %data info:
-    meta.includedData.emg=~isempty(cds.emg);
-    meta.includedData.lfp=~isempty(cds.lfp);
-    meta.includedData.kinematics=~isempty(cds.pos);
-    meta.includedData.force=~isempty(cds.force);
-    meta.includedData.analog=~isempty(cds.analog);
-    meta.includedData.units=~isempty(cds.units);
-    meta.includedData.triggers=~isempty(cds.triggers);
+    meta.hasEmg=~isempty(cds.emg);
+    meta.hasLfp=~isempty(cds.lfp);
+    meta.hasKinematics=~isempty(cds.pos);
+    meta.hasForce=~isempty(cds.force);
+    meta.hasAnalog=~isempty(cds.analog);
+    meta.hasUnits=~isempty(cds.units);
+    meta.hasTriggers=~isempty(cds.triggers);
     
     meta.percentStill=sum(cds.dataFlags.still)/size(cds.dataFlags.still,1);
     meta.stillTime=meta.percentStill*meta.duration;
     meta.dataWindow=[0 meta.duration];
+    %find the real data Window:
+    if meta.hasEmg
+        meta.dataWindow=[max(dataWindow(1),cds.emg.t(1)),min(dataWindow(2),cds.emg.t(end))];
+    end
+    if meta.hasLfp
+        meta.dataWindow=[max(dataWindow(1),cds.lfp.t(1)),min(dataWindow(2),cds.lfp.t(end))];
+    end
+    if meta.hasKinematics
+        meta.dataWindow=[max(dataWindow(1),cds.kinematics.t(1)),min(dataWindow(2),cds.kinematics.t(end))];
+    end
+    if meta.hasForce
+        meta.dataWindow=[max(dataWindow(1),cds.force.t(1)),min(dataWindow(2),cds.force.t(end))];
+    end
+    if meta.hasAnalog
+        for j=1:length(cds.analog)
+            meta.dataWindow=[max(dataWindow(1),cds.analog{j}.t(1)),min(dataWindow(2),cds.analog{j}.t(end))];
+        end
+    end
     
-    meta.trials.num=size(cds.trials,1);
-    meta.trials.reward=numel(find(strcmpi(cds.trials.result,'R')));
-    meta.trials.abort=numel(find(strcmpi(cds.trials.result,'A')));
-    meta.trials.fail=numel(find(strcmpi(cds.trials.result,'F')));
-    meta.trials.incomplete=numel(find(strcmpi(cds.trials.result,'I')));
+    meta.numTrials=size(cds.trials,1);
+    meta.numReward=numel(find(strcmpi(cds.trials.result,'R')));
+    meta.numAbort=numel(find(strcmpi(cds.trials.result,'A')));
+    meta.numFail=numel(find(strcmpi(cds.trials.result,'F')));
+    meta.numIncomplete=numel(find(strcmpi(cds.trials.result,'I')));
     
+    meta.aliasList=cds.aliasList;
     
     set(cds,'meta',meta)
     %cds.setField('meta',meta)
     cds.addOperation(mfilename('fullpath'))
-    %% session summary
 end

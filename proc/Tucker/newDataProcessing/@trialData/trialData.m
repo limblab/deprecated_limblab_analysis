@@ -1,4 +1,6 @@
 classdef trialData < matlab.mixin.SetGet
+    %note trialData is not a member of the dataTable superclass because it
+    %is not a timeseries.
     properties(SetAccess = public)
     end
     properties (Access = private)
@@ -7,7 +9,6 @@ classdef trialData < matlab.mixin.SetGet
     methods (Static = true)
         %constructor
         function trials=trialData()
-            trials.data=cell(0,0);
         end
     end
     methods

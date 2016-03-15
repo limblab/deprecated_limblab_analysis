@@ -1,10 +1,9 @@
 classdef commonDataStructure < matlab.mixin.SetGet%handle
-    properties (Access = public)%anybody can read/write/whatever to these
+    properties (Access = public )%anybody can read/write/whatever to these
         kinFilterConfig
     end
     properties (SetAccess = private)%anybody can read these, but only class methods can write to them
         meta
-        enc
         kin
         force
         lfp
@@ -13,13 +12,15 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         triggers
         units
         trials
-        words
-        databursts
-        aliasList
     end
     properties (Transient = true)
-        %scratch space for user data. Not saved with the common_data_structure
-        scratch
+        %Not saved with the common_data_structure. used to store transient
+        %data
+        scratch %scratch space for user data. 
+        enc
+        words
+        databursts
+        aliasList%allows user to set aliases for incoming data streams in order to process correctly. 
     end
     methods (Static = true)
         function cds=commonDataStructure(varargin)
@@ -244,12 +245,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 error('meta:BadknownProblemsFormat','The knownProblems field must contain a cell array, where each cell contains a string ')
             elseif ~isfield(meta,'processedWith') || ~iscell(meta.processedWith)
                 error('meta:BadprocessedWithFormat','the processedWith field must be a cell array with each row containing cells that describe the processing functions')
-            elseif ~isfield(meta,'includedData') || ~isfield(meta.includedData,'emg') ...
-                    || ~isfield(meta.includedData,'lfp') || ~isfield(meta.includedData,'kinematics')...
-                    || ~isfield(meta.includedData,'force') || ~isfield(meta.includedData,'analog')...
-                    || ~isfield(meta.includedData,'units') || ~isfield(meta.includedData,'triggers')
-                error('meta:BadincludedDataFormat','the includedData field must be a structure with the following fields: EMG, LFP, kinematics, force, analog, units, triggers')
-            elseif ~isfield(meta,'duration') || ~isnumeric(meta.duration)
+           elseif ~isfield(meta,'duration') || ~isnumeric(meta.duration)
                 error('meta:BaddurationFormat','the duration field must be numeric, and contain the duration of the data file in seconds')
             elseif ~isfield(meta,'dateTime') || ~ischar(meta.dateTime)
                 error('meta:BaddateTimeFormat','Date time must be a string containing the date at which the raw data was collected')
@@ -259,15 +255,34 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 error('meta:BadpercentStillFormat','the percentStill field must be a fractional value indicating the percentage of the file where the cursor was still')
             elseif ~isfield(meta,'stillTime') || ~isnumeric(meta.stillTime)
                 error('meta:BadFormat','the stillTime field must contain a numeric variable with the number of seconds where the curstor was still')
-            elseif ~isfield(meta,'trials') || ~isfield(meta.trials,'num')...
-                    ||~isfield(meta.trials,'reward') || ~isnumeric(meta.trials.reward)...
-                    ||~isfield(meta.trials,'abort') || ~isnumeric(meta.trials.abort)...
-                    || ~isfield(meta.trials,'fail') || ~isnumeric(meta.trials.fail) ...
-                    || ~isfield(meta.trials,'incomplete') || ~isnumeric(meta.trials.incomplete)
-                error('meta:BadtrialsFormat','the trials field must be a struct with the following fields: num, reward, abort, fail, incomplete. Each field must contain an integer number of trials')
+            elseif ~isfield(meta.trials,'numTrials') || ~isnumeric(meta.numTrials)...
+                    ||~isfield(meta,'numReward') || ~isnumeric(meta.numReward)...
+                    ||~isfield(meta,'numAbort') || ~isnumeric(meta.numAbort)...
+                    || ~isfield(meta,'numFail') || ~isnumeric(meta.numFail) ...
+                    || ~isfield(meta,'numIncomplete') || ~isnumeric(meta.numIncomplete)
+                error('meta:BadtrialsFormat','meta must have the following fields: numTrials, numReward, numAbort, numFail, numIncomplete. Each field must contain an integer number of trials')
+      
             elseif ~isfield(meta,'dataWindow') || ~isnumeric(meta.dataWindow) ...
                     || numel(meta.dataWindow)~=2 
                 error('meta:baddataWindowFormat','the dataWindow field must be a 2 element numeric vector')
+            elseif ~isfield(meta,'hasLfp')
+                error('meta:NoHasLfp','meta must include a hasLfp field with a boolean flag')
+            elseif ~isfield(meta,'hasEmg')
+                error('meta:NoHasEmg','meta must include a hasEmg field with a boolean flag')
+            elseif ~isfield(meta,'hasForce')
+                error('meta:NoHasForce','meta must include a hasForce field with a boolean flag')
+            elseif ~isfield(meta,'hasAnalog')
+                error('meta:NoHasAnlog','meta must include a hasAnalog field with a boolean flag')
+            elseif ~isfield(meta,'hasUnits')
+                error('meta:NoHasUnits','meta must include a hasUnits field with a boolean flag')
+            elseif ~isfield(meta,'hasTriggers')
+                error('meta:NoHasTriggers','meta must include a hasTriggers field with a boolean flag')
+            elseif ~isfield(meta,'hasTrials')
+                error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
+            elseif ~isfield(meta,'hasChaoticLoad')
+                error('meta:NoHasChaoticLoad','meta must include a hasChaoticLoad field with a boolean flag')
+            elseif ~isfield(meta,'hasBumps')
+                error('meta:NoHasBumps','meta must include a hasBumps field with a boolean flag')
             else
                 cds.meta=meta;
             end
