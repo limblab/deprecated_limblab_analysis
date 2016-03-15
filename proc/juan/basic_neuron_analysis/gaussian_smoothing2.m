@@ -125,6 +125,10 @@ end
 % return binned data
 if nargout == 2
     % store transformation method
+    rtw                 = size(binned_data.meta.processed_with,1);
+    binned_data.meta.processed_with{rtw,1} = ['gaussian_smoothing w.' transform 'transform'];
+    binned_data.meta.processed_with{rtw,2} = datestr(now,'dd-mmm-yyyy');
+    
     binned_data.spiketransfmethod = transform;
     % add Gaussian Kernel info?
     % add smoothed data
