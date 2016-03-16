@@ -117,6 +117,18 @@ function out_struct = get_nev_mat_data(varargin)
     NSx_info.NSx_sampling = [];
     NSx_info.NSx_idx = [];
     
+    if ~isempty(NEVNSx.NS1)
+        if strcmpi(NEVNSx.NS1.MetaTags.FileTypeID, 'NEURALSG') %%%% SOMEWHAT HACKY in case of older file version
+            labels = strcat(repmat({'analogNS1_'},NEVNSx.NS1.MetaTags.ChannelCount,1),strtrim(cellstr(num2str((1:NEVNSx.NS1.MetaTags.ChannelCount)'))))';
+            NSx_info.NSx_labels = [NSx_info.NSx_labels{:} labels]';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(500,1,NEVNSx.NS1.MetaTags.ChannelCount)];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:NEVNSx.NS1.MetaTags.ChannelCount];
+        elseif strcmpi(NEVNSx.NS1.MetaTags.FileTypeID, 'NEURALCD') % newer file version
+            NSx_info.NSx_labels = {NSx_info.NSx_labels{:} NEVNSx.NS1.ElectrodesInfo.Label}';
+            NSx_info.NSx_sampling = [NSx_info.NSx_sampling repmat(500,1,size(NEVNSx.NS1.ElectrodesInfo,2))];
+            NSx_info.NSx_idx = [NSx_info.NSx_idx 1:size(NEVNSx.NS1.ElectrodesInfo,2)];
+        end
+    end
     if ~isempty(NEVNSx.NS2)
         if strcmpi(NEVNSx.NS2.MetaTags.FileTypeID, 'NEURALSG') %%%% SOMEWHAT HACKY in case of older file version
             labels = strcat(repmat({'analogNS2_'},NEVNSx.NS2.MetaTags.ChannelCount,1),strtrim(cellstr(num2str((1:NEVNSx.NS2.MetaTags.ChannelCount)'))))';
@@ -219,7 +231,9 @@ function out_struct = get_nev_mat_data(varargin)
         out_struct.raw.analog.adfreq = NSx_info.NSx_sampling(analog_list);
         
         for i = length(analog_list):-1:1
-            if NSx_info.NSx_sampling(analog_list(i))==1000
+            if NSx_info.NSx_sampling(analog_list(i))==500
+                out_struct.raw.analog.data{i} = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(i)),:))';
+            elseif NSx_info.NSx_sampling(analog_list(i))==1000
                 out_struct.raw.analog.data{i} = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(i)),:))';
             elseif NSx_info.NSx_sampling(analog_list(i))==2000
                 out_struct.raw.analog.data{i} = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(i)),:))';
@@ -286,7 +300,9 @@ function out_struct = get_nev_mat_data(varargin)
         out_struct.emg.emgfreq = unique(out_struct.emg.emgfreq);
 
         for i = length(emg_list):-1:1
-            if NSx_info.NSx_sampling(emg_list(i))==1000
+            if NSx_info.NSx_sampling(emg_list(i))==500
+                out_struct.emg.data(:,i+1) = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
+            elseif NSx_info.NSx_sampling(emg_list(i))==1000
                 out_struct.emg.data(:,i+1) = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
             elseif NSx_info.NSx_sampling(emg_list(i))==2000
                 out_struct.emg.data(:,i+1) = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(emg_list(i)),:))/6.5584993;
@@ -318,7 +334,9 @@ function out_struct = get_nev_mat_data(varargin)
         out_struct.force.forcefreq = unique(out_struct.force.forcefreq);
 
         for i = length(force_list):-1:1
-            if NSx_info.NSx_sampling(force_list(i))==1000
+            if NSx_info.NSx_sampling(force_list(i))==500
+                out_struct.force.data(:,i+1) = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(force_list(i)),:));
+            elseif NSx_info.NSx_sampling(force_list(i))==1000
                 out_struct.force.data(:,i+1) = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(force_list(i)),:));
             elseif NSx_info.NSx_sampling(force_list(i))==2000
                 out_struct.force.data(:,i+1) = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(force_list(i)),:));

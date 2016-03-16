@@ -104,7 +104,9 @@
         last_analog_time=inf;
 
         for i = length(analog_list):-1:1
-            if NSx_info.NSx_sampling(analog_list(i))==1000
+            if NSx_info.NSx_sampling(analog_list(i))==500
+                last_analog_time = min(length(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(i)),:))/500,last_analog_time);
+            elseif NSx_info.NSx_sampling(analog_list(i))==1000
                 last_analog_time = min(length(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(i)),:))/1000,last_analog_time);
             elseif NSx_info.NSx_sampling(analog_list(i))==2000
                 last_analog_time = min(length(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(i)),:))/2000,last_analog_time);
@@ -217,10 +219,10 @@
         elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
             if datenum(out_struct.meta.datetime) < datenum('01-Jan-2015')
                 l1=27; l2=36.8;
-            elseif datenum(out_struct.meta.datetime < datenum('07-Mar-2016'))
+            elseif datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
                 l1=46.8; l2=45;
             else
-                l1=24; l2=27; % MIGHT BE SWITCHED, CHECK ON THIS AND DELETE COMMENT WHEN FIXED
+                l1=24; l2=27;
             end
         else
             l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
@@ -312,7 +314,9 @@
                         warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
                         a_data = [];
                     else
-                        if NSx_info.NSx_sampling(achan_index)==1000
+                        if NSx_info.NSx_sampling(achan_index)==500
+                            a = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(achan_index),:))';
+                        elseif NSx_info.NSx_sampling(achan_index)==1000
                             a = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(achan_index),:))';
                         elseif NSx_info.NSx_sampling(achan_index)==2000
                             a = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(achan_index),:))';
@@ -416,15 +420,15 @@
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
                             0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508;...
                             10.01343 0.36172 10.30551 0.39552 10.46860 0.38238]'./1000;
-                    if datenum(out_struct.meta.datetime < datenum('07-Mar-2016'))
+                    if datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
                         rotcal = eye(3);
                     else
                         % rotation of the load cell to match forearm frame
                         % (load cell is upside down and slightly rotated)
                         theta_off = atan2(3,27); %angle offset of load cell to forearm frame
-                        rotcal = [cos(theta_off) sin(theta_off) 0;...
-                                  sin(theta_off) -cos(theta_off) 0;...
-                                  0              0              -1]'; 
+                        rotcal = [-cos(theta_off) -sin(theta_off) 0;...
+                                  -sin(theta_off) cos(theta_off)  0;...
+                                  0               0               1]'; 
                     end
                     force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPIRICALLY
                     Fy_invert = 1;
@@ -477,18 +481,23 @@
                 out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
                 out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
             elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
-                % Four problems fixed in one line:
-                % 1) Load cell x axis is rotated pi/8 off of robot forearm
-                % axis
-                % 2) Robot arm encoder zero has elbow angle in the global y
-                % axis
-                % 3) Robot elbow and shoulder encoders are swapped with
-                % respect to other labs
-                % 4) Robot is left arm instead of right, unlike other labs
-                handle_rotation_angle = -(th_1_adj+13*pi/8);
-                
-                out_struct.force(:,1) = temp(:,1).*cos(-th_1_adj)' - temp(:,2).*sin(th_1_adj)';
-                out_struct.force(:,2) = temp(:,1).*sin(th_1_adj)' + temp(:,2).*cos(th_1_adj)';
+                if datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
+                    % Four problems fixed in one line:
+                    % 1) Load cell x axis is rotated pi/8 off of robot forearm
+                    % axis
+                    % 2) Robot arm encoder zero has elbow angle in the global y
+                    % axis
+                    % 3) Robot elbow and shoulder encoders are swapped with
+                    % respect to other labs
+                    % 4) Robot is left arm instead of right, unlike other labs
+                    handle_rotation_angle = -(th_1_adj+13*pi/8);
+
+                    out_struct.force(:,1) = temp(:,1).*cos(-th_1_adj)' - temp(:,2).*sin(th_1_adj)';
+                    out_struct.force(:,2) = temp(:,1).*sin(th_1_adj)' + temp(:,2).*cos(th_1_adj)';
+                else
+                    out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
+                    out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
+                end
             end
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
@@ -529,7 +538,9 @@
                 out_struct.analog.channel = NSx_info.NSx_labels(analog_list);
                 out_struct.analog.ts = analog_time_base;
                 for c = length(analog_list):-1:1
-                    if NSx_info.NSx_sampling(analog_list(c))==1000
+                    if NSx_info.NSx_sampling(analog_list(c))==500
+                        a_data = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                    elseif NSx_info.NSx_sampling(analog_list(c))==1000
                         a_data = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(c)),:))';
                     elseif NSx_info.NSx_sampling(analog_list(c))==2000
                         a_data = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(c)),:))';
@@ -562,7 +573,9 @@
             out_struct.analog.channel = NSx_info.NSx_labels(analog_list);
             out_struct.analog.ts = analog_time_base;
             for c = length(analog_list):-1:1
-                if NSx_info.NSx_sampling(analog_list(c))==1000
+                if NSx_info.NSx_sampling(analog_list(c))==500
+                    a_data = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                elseif NSx_info.NSx_sampling(analog_list(c))==1000
                     a_data = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(c)),:))';
                 elseif NSx_info.NSx_sampling(analog_list(c))==2000
                     a_data = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(c)),:))';
@@ -612,7 +625,9 @@ if opts.eye
             if isempty(achan_index)
                 analog_data = [];
             else
-                if NSx_info.NSx_sampling(analog_list(i))==1000
+                if NSx_info.NSx_sampling(analog_list(i))==500
+                    a = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(achan_index),:))';
+                elseif NSx_info.NSx_sampling(analog_list(i))==1000
                     a = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(achan_index),:))';
                 elseif NSx_info.NSx_sampling(analog_list(i))==2000
                     a = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(achan_index),:))';
@@ -634,7 +649,9 @@ if opts.eye
             if isempty(achan_index)
                 analog_data = [];
             else
-                if NSx_info.NSx_sampling(analog_list(i))==1000
+                if NSx_info.NSx_sampling(analog_list(i))==500
+                    a = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(achan_index),:))';
+                elseif NSx_info.NSx_sampling(analog_list(i))==1000
                     a = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(achan_index),:))';
                 elseif NSx_info.NSx_sampling(analog_list(i))==2000
                     a = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(achan_index),:))';
