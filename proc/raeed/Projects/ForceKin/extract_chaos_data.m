@@ -37,8 +37,8 @@ for uid = 1:size(fr,2)
             dx = 2*pi*offsetx;
             dy = 2*pi*offsety;
             for i = 1:length(thf)
-                gx = gx + fr(i,uid) * exp( -sqrt((thf(i)-xx-dx).^2 + (thv(i)-yy-dy).^2) / 2 / sig.^2 );
-                gp = gp + exp( -sqrt((thf(i)-xx-dx).^2 + (thv(i)-yy-dy).^2) / 2 / sig.^2 );
+                gx = gx + fr(i,uid) * exp( -sqrt((thf(i)-force_dir-dx).^2 + (thv(i)-vel_dir-dy).^2) / 2 / sig.^2 );
+                gp = gp + exp( -sqrt((thf(i)-force_dir-dx).^2 + (thv(i)-vel_dir-dy).^2) / 2 / sig.^2 );
             end
         end
     end
@@ -55,6 +55,7 @@ for uid = 1:size(fr,2)
 %         force_map(:,i) = repmat(mean(fr(selector,uid)),size(force_dir,1),1);
         force_map(:,i) = repmat(mean(full_map(:,i)),size(force_dir,1),1);
     end
+    force_map = force_map-mean(mean(force_map));
     
     for i = 1:size(vel_dir,1)
 %         vel_center = vel_dir(i,1);
@@ -63,6 +64,7 @@ for uid = 1:size(fr,2)
 %         vel_map(i,:) = repmat(mean(fr(selector,uid)),1,size(vel_dir,2));
         vel_map(i,:) = repmat(mean(full_map(i,:)),1,size(vel_dir,2));
     end
+    vel_map = vel_map-mean(mean(vel_map));
     
 %     vel_PD = atan2(sin(vel_dir(:,1)')*vel_map(:,1)/sum(vel_map(:,1)),cos(vel_dir(:,1)')*vel_map(:,1)/sum(vel_map(:,1)));
 %     force_PD = atan2(sin(force_dir(1,:))*force_map(1,:)'/sum(force_map(1,:)),cos(force_dir(1,:))*force_map(1,:)'/sum(force_map(1,:)));
@@ -90,8 +92,8 @@ for uid = 1:size(fr,2)
 %         end
 %     end
     
-    resid_map = full_map - vel_map - force_map;
-    resid_map_total = resid_map_total+resid_map/mean(mean(resid_map));
+    resid_map = full_map - vel_map - force_map - mean(mean(full_map));
+%     resid_map_total = resid_map_total+resid_map/mean(mean(resid_map));
 %     figure; plot3(thf, thv, fr(:,uid), 'k.');
 %     hold on;
 %     mesh(xx,yy,srf);
@@ -103,11 +105,15 @@ for uid = 1:size(fr,2)
     figure
     subplot(221)
     imagesc(full_map,clim)
+    colorbar
     subplot(222)
-    imagesc(vel_map,clim)
+%     imagesc(vel_map,clim)
+    imagesc(vel_map)
     colorbar
     subplot(223)
-    imagesc(force_map,clim)
+%     imagesc(force_map,clim)
+    imagesc(force_map)
+    colorbar
     subplot(224)
     imagesc(resid_map)
     colorbar
@@ -117,6 +123,6 @@ for uid = 1:size(fr,2)
 
 end % foreach unit
 
-figure
-imagesc(resid_map_total)
-colormap jet
+% figure
+% imagesc(resid_map_total)
+% colormap jet
