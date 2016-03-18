@@ -2,14 +2,14 @@
 % Crop BDFs between certain specific times t_i and t_f
 %
 %   function cropped_bdf = crop_bdf( bdf_array )
-% 
+%
 % Input (optional):
 %   bdf_array               : array of BDFs
 %   (t_i)                   : initial time for cropping (s)
 %   t_f                     : final time for cropping (s). If passing an
 %                               array of BDFs and set to 'min', it will
 %                               crop all the BDFs to the minimum common
-%                               duration 
+%                               duration
 %
 % Output:
 %   cropped_bdf             : cropped BDFs
@@ -28,7 +28,7 @@ if nargin == 2
     % in this case the specified time is the desired end of the BDFs
     if isnumeric(varargin{1})
         t_f             = varargin{1};
-    % or the minimum common duration
+        % or the minimum common duration
     elseif ischar(varargin{1})
         if strcmp(varargin{1},'min')
             t_f         = min(arrayfun(@(x)x.meta.duration, bdf_array));
@@ -49,14 +49,14 @@ end
 % ------------------
 % Some checks
 % check that t_i < t_f
-if t_i > t_f 
-    error('t_i cannot be < t_f'); 
+if t_i > t_f
+    error('t_i cannot be < t_f');
 end;
 % check that the duration of each BDF is equal or longer that t_f
 for i = 1:nbr_bdfs
-   if bdf_array(i).meta.duration < t_f
-       error(['duration of BDF(' num2str(t_f) ') < t_f']); 
-   end
+    if bdf_array(i).meta.duration < t_f
+        error(['duration of BDF(' num2str(t_f) ') < t_f']);
+    end
 end
 
 
@@ -69,22 +69,22 @@ for i = 1:nbr_bdfs
     bdf_array(i).meta.FileSepTime(1) = t_i;
     bdf_array(i).meta.FileSepTime(2) = t_f;
     bdf_array(i).meta.bdf_info  = [bdf_array(i).meta.bdf_info, ...
-                            '. Cropped with crop_bdf on ' datestr(now,1)];
-
+        '. Cropped with crop_bdf on ' datestr(now,1)];
+    
     % UNITS
     for ii = 1:length(bdf_array(i).units)
-       % crop the beginning
-       indx_i           = find(bdf_array(i).units(ii).ts<t_i);
-       bdf_array(i).units(ii).ts(indx_i) = [];
-       bdf_array(i).units(ii).waveforms(indx_i,:) = [];
-       bdf_array(i).units(ii).ts = bdf_array(i).units(ii).ts - t_i;
-       % crop the end
-       indx_f           = find(bdf_array(i).units(ii).ts>=(t_f-t_i));
-       bdf_array(i).units(ii).ts(indx_f) = [];
-       bdf_array(i).units(ii).waveforms(indx_f,:) = [];
+        % crop the beginning
+        indx_i           = find(bdf_array(i).units(ii).ts<t_i);
+        bdf_array(i).units(ii).ts(indx_i) = [];
+        bdf_array(i).units(ii).waveforms(indx_i,:) = [];
+        bdf_array(i).units(ii).ts = bdf_array(i).units(ii).ts - t_i;
+        % crop the end
+        indx_f           = find(bdf_array(i).units(ii).ts>=(t_f-t_i));
+        bdf_array(i).units(ii).ts(indx_f) = [];
+        bdf_array(i).units(ii).waveforms(indx_f,:) = [];
     end
     clear indx*;
-
+    
     % RAW
     % -- the current version ignores raw analog data
     % words
@@ -96,7 +96,7 @@ for i = 1:nbr_bdfs
     indx_f               = find(bdf_array(i).raw.words(:,1)>(t_f-t_i),1,'first');
     bdf_array(i).raw.words(indx_f:end,:)    = [];
     clear indx*;
-
+    
     % encoder data
     indx_i               = find(bdf_array(i).raw.enc(:,1)<t_i);
     if ~isempty(indx_i)
@@ -106,27 +106,42 @@ for i = 1:nbr_bdfs
     indx_f               = find(bdf_array(i).raw.enc(:,1)>(t_f-t_i),1,'first');
     bdf_array(i).raw.enc(indx_f:end,:)      = [];
     clear indx*;
-
+    
     % EMG
-    indx_i               = find(bdf_array(i).emg.data(:,1)<t_i);
-    if ~isempty(indx_i)
-        bdf_array(i).emg.data(indx_i,:)     = [];
-        bdf_array(i).emg.data(:,1)          = bdf_array(i).emg.data(:,1) - t_i;
+    if isfield(bdf_array(i),'emg')
+        indx_i               = find(bdf_array(i).emg.data(:,1)<t_i);
+        if ~isempty(indx_i)
+            bdf_array(i).emg.data(indx_i,:)     = [];
+            bdf_array(i).emg.data(:,1)          = bdf_array(i).emg.data(:,1) - t_i;
+        end
+        indx_f               = find(bdf_array(i).emg.data(:,1)>(t_f-t_i),1,'first');
+        bdf_array(i).emg.data(indx_f:end,:)     = [];
+        clear indx*;
     end
-    indx_f               = find(bdf_array(i).emg.data(:,1)>(t_f-t_i),1,'first');
-    bdf_array(i).emg.data(indx_f:end,:)     = [];
-    clear indx*;
-
+    
     % FORCE
-    indx_i               = find(bdf_array(i).force.data(:,1)<t_i);
-    if ~isempty(indx_i)
-        bdf_array(i).force.data(indx_i,:)   = [];
-        bdf_array(i).force.data(:,1)        = bdf_array(i).force.data(:,1) - t_i;
+    if isfield(bdf_array(i),'force')
+        if bdf_array(i).meta.lab == 1 % lab 1
+            indx_i               = find(bdf_array(i).force.data(:,1)<t_i);
+            if ~isempty(indx_i)
+                bdf_array(i).force.data(indx_i,:)   = [];
+                bdf_array(i).force.data(:,1)        = bdf_array(i).force.data(:,1) - t_i;
+            end
+            indx_f               = find(bdf_array(i).force.data(:,1)>(t_f-t_i),1,'first');
+            bdf_array(i).force.data(indx_f:end,:)   = [];
+            clear indx*;
+        else % everyone else
+            indx_i               = find(bdf_array(i).force(:,1)<t_i);
+            if ~isempty(indx_i)
+                bdf_array(i).force(indx_i,:)   = [];
+                bdf_array(i).force(:,1)        = bdf_array(i).force(:,1) - t_i;
+            end
+            indx_f               = find(bdf_array(i).force(:,1)>(t_f-t_i),1,'first');
+            bdf_array(i).force(indx_f:end,:)   = [];
+            clear indx*;
+        end
     end
-    indx_f               = find(bdf_array(i).force.data(:,1)>(t_f-t_i),1,'first');
-    bdf_array(i).force.data(indx_f:end,:)   = [];
-    clear indx*;
-
+    
     % WORDS
     indx_i               = find(bdf_array(i).words(:,1)<t_i);
     if ~isempty(indx_i)
@@ -136,11 +151,11 @@ for i = 1:nbr_bdfs
     indx_f               = find(bdf_array(i).words(:,1)>(t_f-t_i),1,'first');
     bdf_array(i).words(indx_f:end,:)        = [];
     clear indx*;
-
+    
     % DATABURSTS
     for ii = 1:length(bdf_array(i).databursts)
         if bdf_array(i).databursts{ii,1} > t_i
-            indx_i = ii-1; break; 
+            indx_i = ii-1; break;
         end
     end
     if indx_i > 0 % will not do if all databursts happened after t_i
@@ -149,10 +164,10 @@ for i = 1:nbr_bdfs
             bdf_array(i).databursts{ii,1} = cell2mat(bdf_array(i).databursts(ii,1)) - t_i;
         end
     end
-
+    
     for ii = 1:length(bdf_array(i).databursts)
         if bdf_array(i).databursts{ii,1}(1) > (t_f-t_i)
-            indx_f = ii; break; 
+            indx_f = ii; break;
         end
     end
     if exist('indx_f','var') % if no databurst falls after t_f
@@ -171,18 +186,29 @@ for i = 1:nbr_bdfs
     clear indx*;
     
     % TARGETS
-    indx_i               = find(bdf_array(i).targets.corners(:,1)<t_i);
-    if ~isempty(indx_i)
-        bdf_array(i).targets.corners(indx_i,:)  = [];
-        bdf_array(i).targets.corners(:,1)       = bdf_array(i).targets.corners(:,1) - t_i;
-        bdf_array(i).targets.rotation(indx_i,:) = [];
-        bdf_array(i).targets.rotation(:,1)      = bdf_array(i).targets.rotation(:,1) - t_i;
+    if bdf_array(i).meta.lab == 1
+        indx_i               = find(bdf_array(i).targets.corners(:,1)<t_i);
+        if ~isempty(indx_i)
+            bdf_array(i).targets.corners(indx_i,:)  = [];
+            bdf_array(i).targets.corners(:,1)       = bdf_array(i).targets.corners(:,1) - t_i;
+            bdf_array(i).targets.rotation(indx_i,:) = [];
+            bdf_array(i).targets.rotation(:,1)      = bdf_array(i).targets.rotation(:,1) - t_i;
+        end
+        indx_f               = find(bdf_array(i).targets.corners(:,1)>(t_f-t_i),1,'first');
+        bdf_array(i).targets.corners(indx_f:end,:)  = [];
+        bdf_array(i).targets.rotation(indx_f:end,:) = [];
+        clear indx*;
+    elseif bdf_array(i).meta.lab == 3
+        indx_i               = find(bdf_array(i).targets.centers(:,1)<t_i);
+        if ~isempty(indx_i)
+            bdf_array(i).targets.centers(indx_i,:)  = [];
+            bdf_array(i).targets.centers(:,1)       = bdf_array(i).targets.centers(:,1) - t_i;
+        end
+        indx_f               = find(bdf_array(i).targets.centers(:,1)>(t_f-t_i),1,'first');
+        bdf_array(i).targets.centers(indx_f:end,:)  = [];
+        clear indx*;
     end
-    indx_f               = find(bdf_array(i).targets.corners(:,1)>(t_f-t_i),1,'first');
-    bdf_array(i).targets.corners(indx_f:end,:)  = [];
-    bdf_array(i).targets.rotation(indx_f:end,:) = [];
-    clear indx*;
-   
+    
     % GOOD_KINETIC_DATA
     % ToDo
 end

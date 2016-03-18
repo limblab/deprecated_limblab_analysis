@@ -1,4 +1,4 @@
-function enc2handlepos(cds,dateTime,lab)
+function pos=enc2handlepos(cds,dateTime,lab)
     %this is a method function for the common_data_structure (cds) class, and
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files
@@ -27,19 +27,6 @@ function enc2handlepos(cds,dateTime,lab)
         l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
     end 
 
-    x = - l1 * sin( cds.enc.th1 ) + l2 * cos( -cds.enc.th2 );
-    y = - l1 * cos( cds.enc.th1 ) - l2 * sin( -cds.enc.th2 );
-    pos=table(cds.enc.t,x,y,'VariableNames',{'t','x','y'});
-    %configure labels on pos
-    pos.Properties.VariableUnits={'s','cm','cm'};
-    pos.Properties.VariableDescriptions={'time','x position in room coordinates. ','y position in room coordinates',};
-    pos.Properties.Description='Robot Handle position';
-    if ~isempty(pos)
-        if isempty(cds.pos)
-            set(cds,'pos',pos)
-        else
-            cds.mergeTable('pos',pos)
-        end
-        cds.addOperation(mfilename('fullpath'));
-    end
+    %pos=[x,y]
+    pos=[(- l1 * sin( cds.enc.th1 ) + l2 * cos( -cds.enc.th2 )),  (- l1 * cos( cds.enc.th1 ) - l2 * sin( -cds.enc.th2 ))];
 end

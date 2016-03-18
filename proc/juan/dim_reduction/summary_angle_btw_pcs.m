@@ -12,10 +12,18 @@
 %           t_axis          : time axis for scores
 %           chs             : neural channels included in the analysis
 %       eigenvectors        : nbr. of eigenvectors (dims.) that will be
-%                               used in the analysis [scalar], or
-%                             N-D array with the eigenvectors that define
-%                             the hyperplane that will be analyzed for each
-%                             task (fields in dim_red_FR)
+%                               used in the analysis [scalar], OR N-D array
+%                               with the eigenvectors that define the
+%                               hyperplane that will be analyzed for each
+%                               task (fields in dim_red_FR), OR cell array
+%                               with size nbr-of-BDFs -by-
+%                               nbr-of-BDFs, with each element being an
+%                               array of size N-by-2. N is the eigenvectors
+%                               that will define the hyperplanes that will
+%                               be compared in space 1 and 2 (first and
+%                               second cols respectively). 
+%                               -~> Can be computed with
+%                               find_closest_hyperplane_all.m
 %       labels:             : cell array with labels for each trial
 %       (show_plots)        : [false] show plot that compares the eigenvals
 %                               for each pair of spaces
@@ -42,6 +50,15 @@ nbr_spaces                  = length(dim_red_FR);
 
 if isscalar(eigenvectors)
     nbr_eigenvectors        = eigenvectors;
+elseif iscell(eigenvectors)
+    % check that the cell with the eigenvector order has the right
+    % dimension --it should be if it was computed with find_closest_all.m
+    % but just in case
+    if numel(eigenvectors) ~= nbr_spaces^2
+        error('eigenvectors needs to be a cell of dimensions nbr of tasks-by-nbr of tasks');        
+    end
+    % store dimensionality of the space
+    nbr_eigenvectors        = size(eigenvectors{1,2},1);
 elseif ismatrix(eigenvectors)
    % check that the dimensions are right
     if size(eigenvectors,2) ~= nbr_spaces
@@ -69,12 +86,20 @@ for i = 1:(nbr_spaces-1)
         if isscalar(eigenvectors)
             angle_mtrx(i,j) = angle_btw_pcs( dim_red_FR{i}.w, dim_red_FR{j}.w, ...
                                 nbr_eigenvectors, show_plots );
+        
+        % if eigenvectors is a cell
+        elseif iscell(eigenvectors)
+            angle_mtrx(i,j) = angle_btw_pcs( dim_red_FR{i}.w, dim_red_FR{j}.w, ...
+                                eigenvectors{i,j}, show_plots );
+
         % if eigenvectors is a matrix with the eigenvectors from each task
         % that define the hyperplanes which angles will be computed
         elseif ismatrix(eigenvectors)
+
             angle_mtrx(i,j) = angle_btw_pcs( dim_red_FR{i}.w, dim_red_FR{j}.w, ...
                                 eigenvectors(:,[i j]), show_plots );
         end
+        % store
         angle_lbls{i,j}     = [labels(i) labels(j)];
     end
 end

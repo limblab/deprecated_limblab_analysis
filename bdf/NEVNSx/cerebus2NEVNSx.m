@@ -37,11 +37,13 @@ function NEVNSx = cerebus2NEVNSx(varargin)
     NEVlist = dir([filepath filesep file_prefix '*.nev']);
     
     if(opts.loadanalog)
+        NS1list = dir([filepath filesep file_prefix '*.ns1']);
         NS2list = dir([filepath filesep file_prefix '*.ns2']);
         NS3list = dir([filepath filesep file_prefix '*.ns3']);
         NS4list = dir([filepath filesep file_prefix '*.ns4']);
         NS5list = dir([filepath filesep file_prefix '*.ns5']);
     else
+        NS1list = []
         NS2list = [];
         NS3list = [];
         NS4list = [];
@@ -85,8 +87,8 @@ function NEVNSx = cerebus2NEVNSx(varargin)
             end
         end
     end
-    fs = [0,1000,2000,10000,30000];
-    for iNS = 2:5        
+    fs = [500,1000,2000,10000,30000];
+    for iNS = 1:5        
         for iFile = 1:length(eval(['NS' num2str(iNS) 'list']))
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSxLimblab('read', [filepath filesep eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
             if ~isempty(NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec)

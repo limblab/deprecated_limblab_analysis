@@ -10,7 +10,8 @@ function varargout = crosstalk_analysis(varargin)
 %    1) Histogram of all electrode-to-electrode comparisons
 %    2) Heat map of all electrode-to-electrode pairs
 %    3) Max crosstalk value for each electrode plotted on array map layout
-%           (requires path to array map file as input. See below)
+%    4) Visualization of shunted electrode groups plotted on array layout
+%           (3 and 4 require path to array map file as input. See below)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -29,10 +30,14 @@ function varargout = crosstalk_analysis(varargin)
 %     descriptions for what can be modified.
 %
 % OUTPUTS:
-%   1) crosstalk    : (array) NxN, where N is number of electrodes
-%                       Each entry has crosstalk value for the row/col pair
-%   2) crstlk_alt   : (array) Alternate format of data
-%                       Each row is [ unit1, unit2, crosstalk value ]
+%   1) crosstalk      : (array) NxN, where N is number of electrodes
+%                         Each entry has crosstalk value for the row/col pair
+%   2) crstlk_alt     : (array) Alternate format of data
+%                         Each row is [ unit1, unit2, crosstalk value ]
+%   3) shunted_groups : (cell array) each element contains IDs for channels
+%                         that are shunted together
+%   4) params         : (struct) Nice packaged struct with analysis parameters
+%                         in case anyone wants to save the results
 %
 %   If doing multiple, crosstalk will be a cell array, with an entry for each
 %       metric's individual results. However, crstlk_alt will simply add
@@ -52,6 +57,8 @@ function varargout = crosstalk_analysis(varargin)
 %           crosstalk_analysis(crosstalk,'spike','cmp_file',cmp_file_path);
 %   5) Convert existing standard results from each metric into alt list representation of both
 %           [~, crstlk_alt] = crosstalk_analysis( {crosstalk_spike,crosstalk_coh},'all','do_plots',false);
+%   6) Look at groups of shunted electrodes, and return parameters
+%           [crosstalk, ~, shunted_groups, params] = crosstalk_analysis(bdf);
 %
 % NOTES:
 %   - These analyses can sometimes be very slow. For coherence, I chose coarse parameters
@@ -76,29 +83,30 @@ function varargout = crosstalk_analysis(varargin)
 all_metrics = {'spike','coherence'}; % list of currently implemented metrics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Function and analysis parameters
-do_parallel  = false;    % (bool) whether or not to distribute across cores
-use_sort     = true;     % (bool) if true, keeps sorted units. If false, makes all unsorted
-bin_size     = 0.001;    % size of time bins in sec
-coh_time     = 60;       % how much of the datafile to use for coherence (in sec)
-coh_win      = 4096;     % window size for coherence in number of samples
-coh_overlap  = 0;        % amount of overlap in number of samples
-coh_nfft     = coh_win;  % nfft sample size
-coh_thresh   = 50;       % look for mean coherence above this frequency (Hz)
-do_plots     = false;    % (bool) whether to make plots (later defaults to false)
-cmp_file     = [];       % (string) full file path to .cmp file for array layout plot.
-% NOTE: If empty, does not make this plot
+do_parallel      = false;    % (bool) whether or not to distribute across cores
+use_sort         = false;    % (bool) if true, keeps sorted units. If false, makes all unsorted
+do_plots         = false;    % (bool) whether to make plots (later defaults to false)
+cmp_file         = [];       % (string) full file path to .cmp file for array layout plot.
+% NOTE: If cmp_file is empty, does not make the array plot
+bin_size         = 0.001;    % size of time bins in sec
+coh_time         = 60;       % how much of the datafile to use for coherence (in sec)
+coh_win          = 4096;     % window size for coherence in number of samples
+coh_overlap      = 0;        % amount of overlap in number of samples
+coh_nfft         = coh_win;  % nfft sample size
+coh_freq         = 30;       % look for mean coherence above this frequency (Hz)
+spike_thresh     = 30;       % threshold for "shunting" for spike (% spikes)
+coherence_thresh = 0.2;      % threshold for "shunting" for coherence (0 to 1)
 
-% Plotting-specific parameters. Can also be overwritten.
-figure_position = [100 100 800 600]; % figure positioning
-font_size       = 14;                % font size for all text and labels
-hist_bins       = 1000;              % number of bins for histogram
-array_size      = [10 10];           % [rows,cols] for array, for cmp plotting
+% Plotting parameters. Can be overwritten, but are not returned in params
+figure_position  = [100 100 800 600]; % figure positioning
+font_size        = 14;                % font size for all text and labels
+hist_bins        = 1000;              % number of bins for histogram
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Do some basic checks and set up main inputs
 clc;
-if nargout > 2
+if nargout > 4
     error('Too many outputs requested.');
 end
 if ~isstruct(varargin{1}) % plots only
@@ -171,13 +179,20 @@ for i = 3:2:length(varargin)
 end
 clear varargin;
 
+params.which_method = which_method;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check to see if it's plotting only
 if ~isempty(bdf)
+    tic;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Get some info
-    N = length(bdf.units);  % number of neurons
+    if use_sort
+        N = length(bdf.units);  % number of neurons
+    else
+        elec_ids = unique(cellfun(@(x) x(1),{bdf.units.id}));
+        N = length(elec_ids);
+    end
     t_start = bdf.pos(1,1);
     t_end = bdf.pos(end,1); % length of file
     
@@ -204,13 +219,23 @@ if ~isempty(bdf)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % bin all data in bin_size bins
     disp(['Binning data in ' num2str(round(1000*bin_size)) ' msec bins...']);
+    tic;
     bs = zeros(N,length(t_bins)-1);
     for u = 1:N
-        ts = bdf.units(u).ts;
+        if ~use_sort % pool all spikes from each electrode
+            idx = find(cellfun(@(x) x(1) == elec_ids(u),{bdf.units.id}));
+            ts = bdf.units(idx(1)).ts;
+            for i = 2:length(idx)
+                ts = [ts; bdf.units(idx(i)).ts];
+            end
+        else % just use each sorted unit's spikes
+            ts = bdf.units(u).ts;
+        end
         ts = ts(ts >= t_start & ts <= t_end);
         bs(u,:) = histcounts(ts,t_bins);
     end
     clear bdf ts;
+    toc;
     
     crosstalk = cell(1,length(which_method));
     for idx = 1:length(which_method)
@@ -242,7 +267,7 @@ if ~isempty(bdf)
                         if u1 ~= u2
                             [c,f]  = mscohere(bs(u1,1:coh_time*round(1/bin_size)),bs(u2,1:coh_time*round(1/bin_size)),hanning(coh_win),coh_overlap,coh_nfft,1/bin_size);
                             % as a percentage
-                            result(u1,u2) = mean(c(f > coh_thresh));
+                            result(u1,u2) = mean(c(f > coh_freq));
                         end
                     end
                 end
@@ -250,9 +275,23 @@ if ~isempty(bdf)
                 % half of the array to save computing time. Thus,
                 % duplicate the values here.
                 result = result + rot90(flip(result,1),-1);
+            otherwise
+                error('Error during analysis: method not recognized.');
         end
         crosstalk{idx} = result;
     end
+
+    % package up some parameters just in case someone wants them
+    params.use_sort = use_sort;
+    params.bin_size = bin_size;
+    if any(strcmpi('coherence',which_method))
+        params.coh_time = coh_time;
+        params.coh_win = coh_win;
+        params.coh_overlap = coh_overlap;
+        params.coh_nfft = coh_nfft;
+        params.coh_freq = coh_freq;
+    end
+    toc
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -274,6 +313,44 @@ for u1 = 1:N
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Look for groups of shunted channels
+shunted_groups = cell(1,length(which_method));
+for idx = 1:length(which_method)
+    eval(['thresh = ' which_method{idx} '_thresh;']);
+    above_thresh = crosstalk{idx} > thresh;
+    shunted = above_thresh & rot90(flip(above_thresh,1),-1);
+    
+    % get list of all units that are bidirectionally shunted with this one
+    shunt_list = cell(1,size(shunted,1));
+    for u = 1:size(shunted,1)
+        shunt_list{u} = find(shunted(u,:));
+    end
+    
+    % Dynamically build a list of channels that are shunted with any others
+    %   Bad coding practice? Sure. Effective? Definitely.
+    ignore_chans = [];
+    chans = cell(1,size(shunted,1));
+    for u = 1:size(shunted,1)
+        if ~any(ismember(u,ignore_chans))
+            % find all channels that are shunted with the current channel and
+            % make a master list
+            matches = find(cellfun(@(x) any(x==u),shunt_list));
+            if ~isempty(matches)
+                temp = shunt_list{u};
+                for i = 1:length(matches)
+                    temp = [temp, shunt_list{matches(i)}];
+                end
+                
+                chans{u} = unique(temp);
+                ignore_chans = [ignore_chans, unique(temp)];
+            end
+        end
+    end
+    shunted_groups{idx} = chans(~cellfun(@isempty,chans));
+    params.([which_method{idx} '_thresh']) = thresh;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make a bunch of plots
 if do_plots
     for idx = 1:length(which_method)
@@ -286,6 +363,8 @@ if do_plots
                 plot_title = 'High-Freq Coherence (Max ||Coherence||)';
                 plot_label = 'High-Frequency Coherence';
                 clim = [0 1];
+            otherwise
+                error('Error during plotting: method not recognized');
         end
         
         % Plot histogram of all electrode-to-electrode comparisons
@@ -307,9 +386,10 @@ if do_plots
         
         % If desired, plot array view like Blackrock's
         %   Color represents maximum crosstalk of that electrode across all pairs
-        if ~isempty(cmp_file)
+        if ~isempty(cmp_file) && ~use_sort % doesn't currently support sorted units
             cmp = read_cmp(cmp_file);
             [~,cmp_name,~] = fileparts(cmp_file);
+            array_size = [length(unique([cmp{:,1}])), length(unique([cmp{:,2}]))];
             
             array_data = zeros(array_size(1),array_size(2));
             for i = 1:size(cmp,1)
@@ -320,8 +400,26 @@ if do_plots
             imagesc(array_data,clim);
             axis square;
             colorbar;
-            set(gca,'Box','off','TickDir','out','FontSize',font_size);
+            set(gca,'Box','off','TickDir','out','FontSize',font_size,'YDir','normal');
             title(plot_title,'FontSize',font_size);
+            xlabel(cmp_name,'FontSize',font_size);
+            
+            % plot shunted groups
+            chans = [cmp{:,3}];
+            array_data = zeros(array_size(1),array_size(2));
+            for i = 1:length(shunted_groups{idx})
+                g = shunted_groups{idx}{i};
+                for j = 1:length(g)
+                    k = chans == g(j);
+                    array_data(cmp{k,2}+1,cmp{k,1}+1) = i;
+                end
+            end
+            
+            figure('Position',figure_position);
+            imagesc(array_data,[0,length(shunted_groups{idx})]);
+            axis square;
+            set(gca,'Box','off','TickDir','out','FontSize',font_size,'YDir','normal');
+            title([which_method{idx} ': shunted groups; thresh = ' num2str(eval([which_method{idx} '_thresh']))],'FontSize',font_size);
             xlabel(cmp_name,'FontSize',font_size);
         end
     end
@@ -334,8 +432,12 @@ end
 if length(crosstalk) == 1
     crosstalk = crosstalk{1};
 end
-varargout{1} = crosstalk;
-if nargout == 2
-    varargout{2} = crstlk_alt;
+if length(shunted_groups) == 1
+    shunted_groups = shunted_groups{1};
 end
+
+varargout{1} = crosstalk;
+varargout{2} = crstlk_alt;
+varargout{3} = shunted_groups;
+varargout{4} = params;
 

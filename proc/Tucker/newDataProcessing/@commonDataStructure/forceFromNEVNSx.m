@@ -8,7 +8,6 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
     handleforce=[];
     %forces for wf and other tasks that use force_ to denote force channels
     forceCols = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'force_')));
-    labels=[];
     if ~isempty(forceCols)
         [loadCellData,t]=getFilteredAnalogMat(NEVNSx,NSx_info,cds.kinFilterConfig,forceCols);
         %build our table of force data:
@@ -32,19 +31,24 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
     if opts.robot
         force_channels = find(~cellfun('isempty',strfind(NSx_info.NSx_labels,'ForceHandle')));
         if length(force_channels)==6
-            achan_index=-1*ones(1,6);
-            for i=1:6
-                achan_index(i)=find(~cellfun('isempty',strfind(NSx_info.NSx_labels,['ForceHandle',num2str(i)])));
+            if isempty(cds.enc)
+                warning('forceFromNEVNSx:noEncoderAngles','Encoder data is required to compute handle forces from raw load cell inputs. 6 load cell inputs are present, but no encoder data was found. Load cell data not included in cds')
+                cds.addProblem('missing encoder data: tried to load handle force data but had no encoder data to compute load direction from')
+            else
+                achan_index=-1*ones(1,6);
+                for i=1:6
+                    achan_index(i)=find(~cellfun('isempty',strfind(NSx_info.NSx_labels,['ForceHandle',num2str(i)])));
+                end
+                %pull filtered analog data for load cell:
+                [loadCellData,t]=getFilteredAnalogMat(NEVNSx,NSx_info,cds.kinFilterConfig,achan_index);
+                %truncate to handle the fact that encoder data doesn't start
+                %recording until 1 second into the file and convert load cell 
+                %voltage data into forces
+                handleforce=handleForceFromRaw(cds,loadCellData(t>=1,:),opts);
             end
-            %pull filtered analog data for load cell:
-            [loadCellData,t]=getFilteredAnalogMat(NEVNSx,NSx_info,cds.kinFilterConfig,achan_index);
-            %truncate to handle the fact that encoder data doesn't start
-            %recording until 1 second into the file and convert load cell 
-            %voltage data into forces
-            handleforce=handleForceFromRaw(cds,loadCellData(t>=1,:),opts);
         else
             handleforce=[];
-            warning('BDF:noForceSignal','No force handle signal found because calc_from_raw did not find 6 channels named ''ForceHandle*''');
+            warning('forceFromNEVNSx:noForceSignal','No force handle signal found because calc_from_raw did not find 6 channels named ''ForceHandle*''');
         end
     end
     %write temp into the cds
