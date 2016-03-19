@@ -18,13 +18,8 @@
 %   (binned_data)           : binned data struct
 %
 %
-%
-% Notes: 
-%   - The BDF is cropped between the first and last position reads, to
-%   avoid rounding problems and ensure compatibility with
-%   convertBDF2binned.m
-%   - The smoothing code is based on smoother.m, implemented in Byron's
-% Yu's GPFA library
+% Note: the smoothing code is based on smoother.m, implemented in Byron's
+% yu GPFA library
 %
 
 
@@ -53,8 +48,8 @@ end
 % if we also want the binned_data struct, bin the whole BDF
 if nargout == 2
     bin_pars.binsize    = bin_size;
-    bin_pars.starttime  = ceil(bdf(1).pos(1,1)/bin_size)*bin_size;
-    bin_pars.stoptime   = floor(bdf(1).pos(end,1)/bin_size)*bin_size;
+    bin_pars.starttime  = bdf(1).pos(1,1);
+    bin_pars.stoptime   = bdf(1).pos(end,1);
     binned_data         = convertBDF2binned(bdf,bin_pars);
     % store the binned firing rates into a variable, which will be used for
     % subsequent calculations. This is for compatibility with when the user
@@ -63,8 +58,8 @@ if nargout == 2
 % otherwise, just bin the spikes
 else
     % get start and end times
-    t_start             = ceil(bdf(1).pos(1,1)/bin_size)*bin_size;
-    t_end               = floor(bdf(1).pos(end,1)/bin_size)*bin_size;
+    t_start             = bdf.pos(1,1);
+    t_end               = bdf.pos(end,1);
     % time vector for binning
     t_bins              = t_start:bin_size:t_end;
     % preallocate matrix

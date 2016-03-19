@@ -29,6 +29,15 @@ else
 end
 
 
+% --Some of Steph's datasets have more than 96 channels. Get rid of all of
+% those
+if length(bdf.units) > 96
+    for i = length(bdf.units):-1:97
+        bdf.units(i)    = [];
+    end
+end
+
+
 % --This part is adapted from Matt's calcFR.m
 % define Gaussian kernel
 sigma                   = gauss_width / pi;
