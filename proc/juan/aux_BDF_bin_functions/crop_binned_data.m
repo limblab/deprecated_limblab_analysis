@@ -55,5 +55,5 @@ if isfield(binned_data,'smoothedspikerate')
     binned_data.smoothedspikerate = binned_data.smoothedspikerate(indx_keep,:);
 end
 
-% return variabnle
+% return variable
 cropped_binned_data     = binned_data;
