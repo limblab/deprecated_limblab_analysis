@@ -118,6 +118,11 @@ if (exist('force_channels','var') && length(force_channels)==6)
             elseif NSx_info.NSx_sampling(achan_index)==30000
                 a_data = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(achan_index),:))';
             end
+            % 6.5584993 is the ratio when comparing the output of 
+            % get_cerebus_data to the one from this script. It must come
+            % from the data type conversion that happens when pulling 
+            % analog data.
+            a_data = a_data/6.5584993;
         end
         [b,a] = butter(4, 200/NSx_info.NSx_sampling(achan_index));
         a_data = filtfilt(b, a, double(a_data));
