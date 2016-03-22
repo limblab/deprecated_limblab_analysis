@@ -445,8 +445,8 @@
                         rotcal = [-cos(theta_off) -sin(theta_off) 0;...
                                   -sin(theta_off) cos(theta_off)  0;...
                                   0               0               1]'; 
-%                         force_offsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
-                        force_offsets = [];
+                        force_offsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
+%                         force_offsets = [];
                     end
                     Fy_invert = 1;
                 end
