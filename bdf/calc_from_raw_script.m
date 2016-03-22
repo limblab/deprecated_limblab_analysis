@@ -325,6 +325,13 @@
                         elseif NSx_info.NSx_sampling(achan_index)==30000
                             a = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(achan_index),:))';
                         end
+                        
+                        % 6.5584993 is the ratio when comparing the output of 
+                        % get_cerebus_data to the one from this script. It must come
+                        % from the data type conversion that happens when pulling 
+                        % analog data.
+                        a = a/6.5584993;
+                        
                         t = (0:length(a)-1)' / NSx_info.NSx_sampling(achan_index);
                         a_data=[t a];
                     end
