@@ -310,7 +310,7 @@
                     if isempty(achan_index)
                         warning('calc_from_raw:ChannelNotFound',['Could not find a force channel named: ', channame, '. Continuing leaving force for that column empty'])
                         a_data = [];
-                    elseif length(achan_index>1)
+                    elseif length(achan_index)>1
                         warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
                         a_data = [];
                     else
@@ -438,7 +438,8 @@
                         rotcal = [-cos(theta_off) -sin(theta_off) 0;...
                                   -sin(theta_off) cos(theta_off)  0;...
                                   0               0               1]'; 
-                        force_offsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 
+%                         force_offsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
+                        force_offsets = [];
                     end
                     Fy_invert = 1;
                 end
@@ -460,8 +461,7 @@
                 no_mov_idx = v1(max_v_ind):v2(max_v_ind);
                 force_offsets_temp = mean(raw_force(no_mov_idx,:));
 
-                if max_v > 1000  % Only use if there are more than 
-                                 % 1000 contiguous movement free samples (1 s) % CHANGE TO BE BASED ON SAMPLING RATE                
+                if max_v > adfreq  % Only use if there are more than 1 s
                     force_offsets = force_offsets_temp;
                 else
                     force_offsets = mean(raw_force);
