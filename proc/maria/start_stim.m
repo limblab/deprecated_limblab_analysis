@@ -2,7 +2,7 @@ function [channels, ws] = start_stim
 
 % 
 %initiate wireless stim object
-serial_string = 'COM3'; %this is different via mac and windows
+serial_string = 'COM4'; %this is different via mac and windows
 ws = wireless_stim(serial_string, 1); %the number has to do with verbosity of running feedback
 ws.init(1, ws.comm_timeout_disable);
 
@@ -35,8 +35,8 @@ channels = struct(...
     'lg', [7, 2, .2, 40, 201, 400]); %points toe
 
 %pulse_plot(channels.bfa);
-sigs = make_sig_array(channels.vl, 600)
-plot(sigs)
+%sigs = make_sig_array(channels.vl, 600)
+%plot(sigs)
 
 end
 
