@@ -1,7 +1,8 @@
 %
 % Crop BDFs between certain specific times t_i and t_f
 %
-%   function cropped_bdf = crop_bdf( bdf_array )
+%   function cropped_bdf = crop_bdf( bdf_array, varargin )
+%
 %
 % Input (optional):
 %   bdf_array               : array of BDFs
@@ -10,9 +11,9 @@
 %                               array of BDFs and set to 'min', it will
 %                               crop all the BDFs to the minimum common
 %                               duration
-%
 % Output:
 %   cropped_bdf             : cropped BDFs
+%
 %
 % Note: the current version ignores raw analog data and does not crop
 % good_kin_data
@@ -55,7 +56,7 @@ end;
 % check that the duration of each BDF is equal or longer that t_f
 for i = 1:nbr_bdfs
     if bdf_array(i).meta.duration < t_f
-        error(['duration of BDF(' num2str(t_f) ') < t_f']);
+        error(['duration of BDF(' num2str(i) ') < t_f']);
     end
 end
 

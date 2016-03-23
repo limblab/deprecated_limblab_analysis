@@ -1,5 +1,5 @@
 %%
-bdf = get_nev_mat_data('X:\data\Test data\lab6\Load_cell_20160316_posX_',6);
+bdf = get_nev_mat_data('X:\data\Test data\lab6\Load_cell_20160316_negX_',6);
 
 %%
 figure

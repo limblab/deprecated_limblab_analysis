@@ -18,8 +18,11 @@
 %   (binned_data)           : binned data struct
 %
 %
-% Note: the smoothing code is based on smoother.m, implemented in Byron's
-% yu GPFA library
+% Notes: 
+%   - The BDF data is cropped between the first and last encoder pos
+%   readings, to ensure compatibility with the convertBDF2binned.m
+%   - The smoothing code is based on smoother.m, implemented in Byron's
+%   Yu's GPFA library
 %
 
 
@@ -48,8 +51,9 @@ end
 % if we also want the binned_data struct, bin the whole BDF
 if nargout == 2
     bin_pars.binsize    = bin_size;
-    bin_pars.starttime  = bdf(1).pos(1,1);
-    bin_pars.stoptime   = bdf(1).pos(end,1);
+    bin_pars.starttime  = ceil(bdf.pos(1,1)/bin_size)*bin_size;
+    bin_pars.stoptime   = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    bin_pas.NormData    = true; % normalize EMGs
     binned_data         = convertBDF2binned(bdf,bin_pars);
     % store the binned firing rates into a variable, which will be used for
     % subsequent calculations. This is for compatibility with when the user
@@ -58,8 +62,8 @@ if nargout == 2
 % otherwise, just bin the spikes
 else
     % get start and end times
-    t_start             = bdf.pos(1,1);
-    t_end               = bdf.pos(end,1);
+    t_start             = ceil(bdf.pos(1,1)/bin_size)*bin_size;
+    t_end               = floor(bdf.pos(end,1)/bin_size)*bin_size;
     % time vector for binning
     t_bins              = t_start:bin_size:t_end;
     % preallocate matrix
@@ -129,7 +133,6 @@ if nargout == 2
     binned_data.meta.processed_with{rtw,1} = ['gaussian_smoothing w.' transform 'transform'];
     binned_data.meta.processed_with{rtw,2} = datestr(now,'dd-mmm-yyyy');
     
-    binned_data.spiketransfmethod = transform;
     % add Gaussian Kernel info?
     % add smoothed data
     binned_data.smoothedspikerate = smoothed_FR;
