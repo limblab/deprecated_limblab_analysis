@@ -47,14 +47,14 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     %check whether the encoder signal is mangled and make a log of jumps in
     %the times:
     temp=mode(diff(enc(:,1)));
-    %get our sig, figs for rounding based on the nominal sampling rate:
-    SF=0;
+    %get our sig figs for rounding based on the nominal sampling rate:
+    sigFig=0;
     while temp<1
-        SF=SF+1;
+        sigFig=sigFig+1;
         temp=temp*10;
     end
-    dt=round(diff(enc(:,1)),SF);%the rounding allows jitter at ~ 10% of the sample frequency because SF is #sig figs+1 after the above while statement
-    tstep=unique(round(diff(enc(:,1)),SF));
+    dt=round(diff(enc(:,1)),sigFig);%the rounding allows jitter at ~ 10% of the sample frequency because sigFig is #sig figs+1 after the above while statement
+    tstep=unique(round(diff(enc(:,1)),sigFig));
     
     if length(tstep)>1
         %get a list of the skips in data collection
@@ -111,10 +111,10 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     jumpTimes(jumpTimes>cds.enc.t(end))=cds.enc.t(end);
     
     %convert jump times to flag vector indicating when we have good data:
-    goodData=ones(size(cds.pos,1),1);
+    goodData=ones(size(cds.enc,1),1);
     temp=[];
     for i=1:size(jumpTimes,1)
-        range=[find(cds.pos.t>=jumpTimes(i,1),1,'first'),find( cds.pos.t<=jumpTimes(i,2),1,'last')];
+        range=[find(cds.enc.t>=jumpTimes(i,1),1,'first'),find( cds.enc.t<=jumpTimes(i,2),1,'last')];
         %if there are no points inside the window, as the case with
         %fileseparateions, the first point of range will be larger than the
         %second. Thus we use min and max to get the actual window for all
@@ -126,32 +126,31 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     end
     
     %find still periods, and build table of kinematics flags:
-    still=is_still(sqrt(cds.pos.x.^2+cds.pos.y.^2));
+    still=is_still(sqrt(pos(:,1).^2+pos(:,2).^2));
     
-    %use cds.pos to compute vel:
-    vx=gradient(cds.pos.x,1/cds.kinFilterConfig.SR);
-    vy=gradient(cds.pos.y,1/cds.kinFilterConfig.SR);
+    %use pos to compute vel:
+    vx=gradient(pos(:,1),1/cds.kinFilterConfig.SR);
+    vy=gradient(pos(:,2),1/cds.kinFilterConfig.SR);
     
     %use cds.vel to compute acc:
-    ax=gradient(cds.vel.vx,1/cds.kinFilterConfig.SR);
-    ay=gradient(cds.vel.vy,1/cds.kinFilterConfig.SR);
+    ax=gradient(vx,1/cds.kinFilterConfig.SR);
+    ay=gradient(vy,1/cds.kinFilterConfig.SR);
     
     kin=table(cds.enc.t,still,goodData,pos(:,1),pos(:,2),vx,vy,ax,ay, ...
                 'VariableNames',{'t','still','good','x','y','vx','vy','ax','ay'});
+
     kin.Properties.VariableUnits={'s','bool','bool','cm','cm','cm/s','cm/s','cm/s^2','cm/s^2'};
     kin.Properties.VariableDescriptions={ 'time in seconds' ,'Flag indicating whether the cursor was still',...
                                     'Flag indicating whether the data at this time is good, or known to have problems (0=bad, 1=good)',...
                                     'x position in room coordinates. ','y position in room coordinates',...
                                     'x velocity in room coordinates. ','y velocity in room coordinates',...
                                     'x acceleration in room coordinates. ','y acceleration in room coordinates'};
-    kin.Properites.Description={'Kinematic signals. These are computed from the encoder data, and include position, velocity, acceleration, and flags indicating data quality'};
+    kin.Properties.Description='Kinematic signals. These are computed from the encoder data, and include position, velocity, acceleration, and flags indicating data quality';
     
-    if ~isempty(acc)
-        if isempty(cds.kin)
-            set(cds,'kin',kin)
-        else
-            cds.mergeTable('kin',kin)
-        end
-        cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig);
+    if isempty(cds.kin)
+        set(cds,'kin',kin);
+    elseif ~isempty(kin)
+        cds.mergeTable('kin',kin)
     end
+    cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig);
 end

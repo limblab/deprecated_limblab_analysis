@@ -1,7 +1,6 @@
 classdef firingRateData < timeSeriesData
     %sub-class inheriting from timeSeriesData so that FR specific methods
-    % may be added. See the binnedData sub-class for a more eleborate
-    % example of a timeSeriesData sub-class. See also the timeSeriesData
+    % may be added. See also the timeSeriesData
     % class definition for inherited properties and methods
     methods (Static = true)
         %constructor

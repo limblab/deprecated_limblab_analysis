@@ -5,7 +5,7 @@ classdef binnedData < matlab.mixin.SetGet
         gpfaConfig
         kalmanConfig
     end
-    properties (SetAccess = private,GetAccess=public,SetObservable=true)
+    properties (SetAccess = protected,GetAccess=public,SetObservable=true)
         bins
         meta
         weinerData
@@ -17,16 +17,19 @@ classdef binnedData < matlab.mixin.SetGet
     methods (Static = true)
         %constructor
         function binned=binnedData()
-            set(binned,'bins',cell2table(cell(0,0),'VariableNames',{'t','data'}));
+            %source data
+            set(binned,'bins',cell2table(cell(0,2),'VariableNames',{'t','data'}));
             set(binned,'meta',struct('dateTime','noData','binSize',0,'numLags',0,'offset',0));
-            set(binned,'weinerConfig',[]);
+            %configs
+            set(binned,'weinerConfig',struct('inputLabels',{'all'},'outputLabels',{'all'},'numFolds',0));
             set(binned,'glmConfig',struct('labels',{},'posPD',0,'velPD',0,'forcePD',0,'numRep',100,'noiseModel','poisson'));
-            set(binned,'gpfaConfig',[]);
-            set(binned,'kalmanConfig',[]);
-            set(binned,'weinerData',[]);
-            PDs={cell2table(cell(0,8),'VariableNames',{'chan','ID','posDir','posDirCI','posModdepth','posModdepthCI','isTuned'}),...
-                    cell2table(cell(0,8),'VariableNames',{'chan','ID','velPD','velPDCI','velModdepth','velModdepthCI','isTuned'}),...
-                    cell2table(cell(0,8),'VariableNames',{'chan','ID','forcePD','forcePDCI','forceModdepth','forceModdepthCI','isTuned'})};
+            set(binned,'gpfaConfig',struct('structData','this is a stub struct that needs to be coded'));
+            set(binned,'kalmanConfig',struct('structData','this is a stub struct that needs to be coded'));
+            %output data
+            set(binned,'weinerData',struct('structData','this is a stub struct that needs to be coded'));
+            PDs={cell2table(cell(0,8),'VariableNames',{'chan','ID','array','posDir','posDirCI','posModdepth','posModdepthCI','isTuned'}),...
+                    cell2table(cell(0,8),'VariableNames',{'chan','ID','array','velDir','velDirCI','velModdepth','velModdepthCI','isTuned'}),...
+                    cell2table(cell(0,8),'VariableNames',{'chan','ID','array','forceDir','forceDirCI','forceModdepth','forceModdepthCI','isTuned'})};
             set(binned,'pdData',PDs);
             set(binned,'glmData',[]);
             set(binned,'gpfaData',[]);
@@ -74,7 +77,7 @@ classdef binnedData < matlab.mixin.SetGet
             if ~isstruct(gpfac)
                 error('gpfaConfig:notAStruct','gpfaConfig must be a struct')
             else
-                binned.gpfaConfig=glmc;
+                binned.gpfaConfig=gpfac;
             end
         end
         function set.kalmanConfig(binned,kfc)
@@ -95,16 +98,16 @@ classdef binnedData < matlab.mixin.SetGet
             end
             prefix={'pos','vel','force'};
             for i=1:length(pdData)
-                if ~isTable(pdData{i})
+                if ~istable(pdData{i})
                     error('pdData:notATable',['Each cell of pdData must contain a table. Cell ',num2str(i),'is a: ',class(pdData{i})])
                 elseif size(pdData{i},2)~=8 ...
-                    || isempty(find(strcmp('chan',pdData.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('ID',pdData.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'Dir'],pdData.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'DirCI'],pdData.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'Moddepth'],pdData.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'ModdepthCI'],pdData.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('isTuned',pdData.Properties.VariableNames),1))
+                    || isempty(find(strcmp('chan',pdData{i}.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('ID',pdData{i}.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp([prefix{i},'Dir'],pdData{i}.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp([prefix{i},'DirCI'],pdData{i}.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp([prefix{i},'Moddepth'],pdData{i}.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp([prefix{i},'ModdepthCI'],pdData{i}.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('isTuned',pdData{i}.Properties.VariableNames),1))
                     disp(['the table for ',prefix{i},'has the following columns:'])
                     disp(pdData{i}.Properties.VariableNames)
                     error('pdData:badColumnSpec',['cell: ',num2str(i),'is the ',prefix{i}, ' PD table, and must have the following columns: chan, ID',prefix{i},'Dir',prefix{i},'DirCI',prefix{i},'Moddepth',prefix{i},'ModdepthCI','isTuned'])

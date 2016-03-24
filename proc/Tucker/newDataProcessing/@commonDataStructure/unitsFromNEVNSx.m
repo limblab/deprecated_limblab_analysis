@@ -39,7 +39,7 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
         units(i).spikes=table(ts,waves,'VariableNames',{'ts','wave'});
     end
     
-    %cds.setField('units',units)
+    %append to existing units field
     set(cds,'units',[cds.units units])
     cds.addOperation(mfilename('fullpath'))
 end

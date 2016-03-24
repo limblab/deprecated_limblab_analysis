@@ -34,7 +34,7 @@ function triggersFromNEVNSx(cds,NEVNSx,NSxInfo)
         triggers.Properties.VariableUnits=[{'s'},repmat({'V'},1,length(triggerNames)-1)];
         triggers.Properties.VariableDescriptions=[{'time'},repmat({'trigger voltage'},1,length(triggerNames)-1)];
         triggers.Properties.Description='Unfiltered trigger voltage.';
-        %cds.setField('EMG',emg)
+        
         if isempty(cds.triggers)
             set(cds,'triggers',triggers);
         elseif ~isempty(triggers)

@@ -49,7 +49,7 @@ function getTrialTable(cds,opts)
         end
     end
     mask=~isnan(stopTime);
-    times=table([1:sum(mask)]',startTime(mask),stopTime(mask),trialResult(mask),'VariableNames',{'number','startTime','endTime','result'});
+    times=table([1:sum(mask)]',startTime(mask),stopTime(mask),char(trialResult(mask)),'VariableNames',{'number','startTime','endTime','result'});
     
     
     %specific task table code will add operations, so add the operation

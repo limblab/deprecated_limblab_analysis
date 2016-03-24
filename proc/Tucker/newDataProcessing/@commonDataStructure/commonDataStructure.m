@@ -13,13 +13,14 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         units
         trials
     end
-    properties (Transient = true)
+    properties (Transient = true, SetAccess = private)
         %Not saved with the common_data_structure. used to store transient
         %data
-        scratch %scratch space for user data. 
         enc
         words
         databursts
+    end
+    properties (Transient = true, Access = public)
         aliasList%allows user to set aliases for incoming data streams in order to process correctly. 
     end
     methods (Static = true)
@@ -39,15 +40,16 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 m.knownProblems={};
                 m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
                 
-                m.hasEmg=0;
-                m.hasLfp=0;
-                m.hasKinematics=0;
-                m.hasForce=0;
-                m.hasAnalog=0;
-                m.hasUnits=0;
-                m.hasTriggers=0;
-                m.hasChaoticLoad=0;
-                m.hasBumps=0;
+                m.hasEmg=false;
+                m.hasLfp=false;
+                m.hasKinematics=false;
+                m.hasForce=false;
+                m.hasAnalog=false;
+                m.hasUnits=false;
+                m.hasTriggers=false;
+                m.hasChaoticLoad=false;
+                m.hasBumps=false;
+                m.hasTrials=false;
                 
                 m.duration=0;
                 m.dateTime='-1';
@@ -66,8 +68,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 set(cds,'kinFilterConfig',filterConfig('poles',8,'cutoff',25,'SR',100));%a low pass butterworth 
             %% empty kinetics tables
                 cds.enc=cell2table(cell(0,3),'VariableNames',{'t','th1','th2'});
-                cds.dataFlags=cell2table(cell(0,3),'VariableNames',{'t','still','good'});
-                cds.kin=cell2table(cell(0,7),'VariableNames',{'t','x','y','vx','vy','fx','fy','still','good'});
+                cds.kin=cell2table(cell(0,9),'VariableNames',{'t','x','y','vx','vy','ax','ay','still','good'});
                 cds.force=cell2table(cell(0,3),'VariableNames',{'t','fx','fy'});
             %% empty emg table
                 cds.emg=cell2table(cell(0,2),'VariableNames',{'t','emg'});
@@ -79,8 +80,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.triggers=cell2table(cell(0,2),'VariableNames',{'t','triggers'});
             %% units
                 cds.units=struct('chan',[],'ID',[],'array',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
-            %% fr
-                cds.fr=cell2table(cell(0,2),'VariableNames',{'t','r'});
             %% empty table of trial data
                 cds.trials=cell2table(cell(0,5),'VariableNames',{'trial_number','start_time','go_time','end_time','trial_result'});
             %% empty table of words
@@ -89,8 +88,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.databursts=cell2table(cell(0,2),'VariableNames',{'ts','word'});
             %% empty list of aliases to apply when loading analog data
                 cds.aliasList=cell(0,2);
-            %% scratch space
-                cds.scratch=[];
         end
     end
     methods
@@ -106,7 +103,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         end
 
         function set.kin(cds,kin)
-            if ~istable(kin) || size(kin,2)~=7 ...
+            if ~istable(kin) || size(kin,2)~=9 ...
                     || isempty(find(strcmp('t',kin.Properties.VariableNames),1)) ...
                     || isempty(find(strcmp('still',kin.Properties.VariableNames),1)) ...
                     || isempty(find(strcmp('good',kin.Properties.VariableNames),1))...
@@ -116,7 +113,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                     || isempty(find(strcmp('vy',kin.Properties.VariableNames),1))...
                     || isempty(find(strcmp('ax',kin.Properties.VariableNames),1)) ...
                     || isempty(find(strcmp('ay',kin.Properties.VariableNames),1))
-                error('kin:badFormat','kin must be a table with 7 columns: t, x, y, vx, vy, ax, and ay. t is the time of each sample, and (x,y), (vx,vy), (ax,ay) are the position velocity and acceleration respectively. ')
+                error('kin:badFormat','kin must be a table with 9 columns: t, x, y, vx, vy, ax, and ay. t is the time of each sample, and (x,y), (vx,vy), (ax,ay) are the position velocity and acceleration respectively. ')
             else
                 cds.kin=kin;
             end
@@ -255,7 +252,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 error('meta:BadpercentStillFormat','the percentStill field must be a fractional value indicating the percentage of the file where the cursor was still')
             elseif ~isfield(meta,'stillTime') || ~isnumeric(meta.stillTime)
                 error('meta:BadFormat','the stillTime field must contain a numeric variable with the number of seconds where the curstor was still')
-            elseif ~isfield(meta.trials,'numTrials') || ~isnumeric(meta.numTrials)...
+            elseif ~isfield(meta,'numTrials') || ~isnumeric(meta.numTrials)...
                     ||~isfield(meta,'numReward') || ~isnumeric(meta.numReward)...
                     ||~isfield(meta,'numAbort') || ~isnumeric(meta.numAbort)...
                     || ~isfield(meta,'numFail') || ~isnumeric(meta.numFail) ...
@@ -265,36 +262,28 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             elseif ~isfield(meta,'dataWindow') || ~isnumeric(meta.dataWindow) ...
                     || numel(meta.dataWindow)~=2 
                 error('meta:baddataWindowFormat','the dataWindow field must be a 2 element numeric vector')
-            elseif ~isfield(meta,'hasLfp')
+            elseif ~isfield(meta,'hasLfp') || ~islogical(meta.hasLfp)
                 error('meta:NoHasLfp','meta must include a hasLfp field with a boolean flag')
-            elseif ~isfield(meta,'hasEmg')
+            elseif ~isfield(meta,'hasEmg') || ~islogical(meta.hasEmg)
                 error('meta:NoHasEmg','meta must include a hasEmg field with a boolean flag')
-            elseif ~isfield(meta,'hasForce')
+            elseif ~isfield(meta,'hasForce') || ~islogical(meta.hasForce)
                 error('meta:NoHasForce','meta must include a hasForce field with a boolean flag')
-            elseif ~isfield(meta,'hasAnalog')
+            elseif ~isfield(meta,'hasAnalog') || ~islogical(meta.hasAnalog)
                 error('meta:NoHasAnlog','meta must include a hasAnalog field with a boolean flag')
-            elseif ~isfield(meta,'hasUnits')
+            elseif ~isfield(meta,'hasUnits') || ~islogical(meta.hasUnits)
                 error('meta:NoHasUnits','meta must include a hasUnits field with a boolean flag')
-            elseif ~isfield(meta,'hasTriggers')
-                error('meta:NoHasTriggers','meta must include a hasTriggers field with a boolean flag')
-            elseif ~isfield(meta,'hasTrials')
+            elseif ~isfield(meta,'hasTriggers') || ~islogical(meta.hasTriggers)
                 error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
-            elseif ~isfield(meta,'hasChaoticLoad')
+            elseif ~isfield(meta,'hasChaoticLoad') || ~islogical(meta.hasChaoticLoad)
                 error('meta:NoHasChaoticLoad','meta must include a hasChaoticLoad field with a boolean flag')
-            elseif ~isfield(meta,'hasBumps')
+            elseif ~isfield(meta,'hasBumps') || ~islogical(meta.hasBumps)
                 error('meta:NoHasBumps','meta must include a hasBumps field with a boolean flag')
+            elseif ~isfield(meta,'hasTrials') || ~islogical(meta.hasTrials)
+                error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
             else
                 cds.meta=meta;
             end
         end
-%         function set.fr(cds,fr)
-%             if ~isempty(fr) && (~isa(fr,'table') || size(fr,2)~=2 || isempty(find(strcmp('t',fr.Properties.VariableNames),1)) ...
-%                     || isempty(find(strcmp('r',fr.Properties.VariableNames),1)))
-%                 error('FR:badFormat','The FR field must be a table with 2 columns: t and r. t is the time of each observation, and r is the firing rate at time t in hz')
-%             else
-%                 cds.fr=fr;
-%             end
-%         end
     end
     methods (Static = false)
         %The following are methods for the common_data_structure class, but
@@ -324,8 +313,8 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             lfpFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             metaFromNEVNSx(cds,NEVNSx,opts)
-            enc2handlepos(cds,dateTime,lab)
-            enc2WFpos(cds)
+            pos=enc2handlepos(cds,dateTime,lab)
+            pos=enc2WFpos(cds)
             mergeTable(cds,fieldName,mergeData)
         %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
@@ -345,7 +334,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         addProblem(cds,problem)
         addOperation(cds,operation,varargin)
         sanitizeTimeWindows(cds)
-        
     end
 end
         

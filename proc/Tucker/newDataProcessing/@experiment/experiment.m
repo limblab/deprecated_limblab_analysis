@@ -16,29 +16,35 @@ classdef experiment < matlab.mixin.SetGet
     properties (Transient = true)
         scratch
     end
+    events
+        addedSession
+        computedFRs
+    end
     methods (Static = true)
         function ex=experiment()
             %constructor
             %% meta
                 m.experimentVersion=0;
                 m.includedSessions={};
-                m.mergedate={};
+                m.mergeDate={};
                 m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
-                m.knownProblems={};
+                m.knownProblems={'problem'};
                 m.fileSepShift=1;
                 m.duration=0;
-                m.fileSepShift=[];
+                m.fileSepTime=[];
+                m.dataWindow=[0 0];
                 
-                m.task='Unknown';
-                m.hasEmg=0;
-                m.hasLfp=0;
-                m.hasKinematics=0;
-                m.hasForce=0;
-                m.hasAnalog=0;
-                m.hasUnits=0;
-                m.hasTriggers=0;
-                m.hasChaoticLoad=0;
-                m.hasBumps=0;
+                m.task='NoDataLoaded';
+                m.hasEmg=false;
+                m.hasLfp=false;
+                m.hasKinematics=false;
+                m.hasForce=false;
+                m.hasAnalog=false;
+                m.hasUnits=false;
+                m.hasTriggers=false;
+                m.hasChaoticLoad=false;
+                m.hasBumps=false;
+                m.hasTrials=false;
                 
                 m.numTrials=0;
                 m.numReward=0;
@@ -66,13 +72,13 @@ classdef experiment < matlab.mixin.SetGet
                 set(ex,'fr',firingRateData());%empty firingRateData class object
             %% bin configuration
                 %settings to compute binned object from the experiment
-                bc.filter=filterConfig('poles',8,'cutoff',20,'SR',20);
+                bc.filter=filterConfig('poles',8,'cutoff',10,'SR',20);
                 bc.FR.offset=0;
                 bc.FR.method='bin';
-                bc.includedData={struct('includeField','units','which','all')};
+                bc.includedData=struct('includeField','units','which',[]);
                 set(ex,'binConfig',bc);
             %% bin
-                set(ex,'bin',binned()); %empty binned  class object
+                set(ex,'bin',binnedData()); %empty binned  class object
         end
     end
     methods
@@ -84,17 +90,17 @@ classdef experiment < matlab.mixin.SetGet
                 error('meta:BadIncludedSessionsFormat','the includedSessions field must be a cell array of strings, where each string describes once cds that data is drawn from')
             elseif ~isfield(meta,'task') || ~ischar(meta.task)  
                 error('meta:BadtaskFormat','the task field must contain a string')
-            elseif isempty(find(strcmp(meta.task,{'RW','CO','BD','DCO','multi_gadget','UNT','RP','Unknown'}),1))
-                warning('meta:UnrecognizedTask','This task string is not recognized. Standard analysis functions may fail to operate correctly using this task string')
             elseif ~isfield(meta,'knownProblems') || ~iscell(meta.knownProblems)
                 error('meta:BadknownProblemsFormat','The knownProblems field must contain a cell array, where each cell contains a string ')
             elseif ~isfield(meta,'processedWith') || ~iscell(meta.processedWith)
                 error('meta:BadprocessedWithFormat','the processedWith field must be a cell array with each row containing cells that describe the processing functions')
             elseif ~isfield(meta,'duration') || ~isnumeric(meta.duration)
                 error('meta:BaddurationFormat','the duration field must be numeric, and contain the duration of the data file in seconds')
+            elseif ~isfield(meta,'mergeDate') 
+                error('meta:badMergeDateFormat','meta must have a field containing the merge date for each cds merged into this experiment')
             elseif ~isfield(meta,'fileSepTime') || (~isempty(meta.fileSepTime) && size(meta.fileSepTime,2)~=2) || ~isnumeric(meta.fileSepTime)
                 error('meta:BadfileSepTimeFormat','the fileSepTime field must be a 2 column array, with each row containing the start and end of time gaps where two files were concatenated')
-            elseif ~isfield(meta.trials,'numTrials') || ~isnumeric(meta.numTrials)...
+            elseif ~isfield(meta,'numTrials') || ~isnumeric(meta.numTrials)...
                     ||~isfield(meta,'numReward') || ~isnumeric(meta.numReward)...
                     ||~isfield(meta,'numAbort') || ~isnumeric(meta.numAbort)...
                     || ~isfield(meta,'numFail') || ~isnumeric(meta.numFail) ...
@@ -103,25 +109,28 @@ classdef experiment < matlab.mixin.SetGet
             elseif ~isfield(meta,'dataWindow') || ~isnumeric(meta.dataWindow) ...
                     || numel(meta.dataWindow)~=2 
                 error('meta:baddataWindowFormat','the dataWindow field must be a 2 element numeric vector')
-            elseif ~isfield(meta,'hasLfp')
+            elseif ~isfield(meta,'hasLfp') || ~islogical(meta.hasLfp)
                 error('meta:NoHasLfp','meta must include a hasLfp field with a boolean flag')
-            elseif ~isfield(meta,'hasEmg')
+            elseif ~isfield(meta,'hasEmg') || ~islogical(meta.hasEmg)
                 error('meta:NoHasEmg','meta must include a hasEmg field with a boolean flag')
-            elseif ~isfield(meta,'hasForce')
+            elseif ~isfield(meta,'hasForce') || ~islogical(meta.hasForce)
                 error('meta:NoHasForce','meta must include a hasForce field with a boolean flag')
-            elseif ~isfield(meta,'hasAnalog')
+            elseif ~isfield(meta,'hasAnalog') || ~islogical(meta.hasAnalog)
                 error('meta:NoHasAnlog','meta must include a hasAnalog field with a boolean flag')
-            elseif ~isfield(meta,'hasUnits')
+            elseif ~isfield(meta,'hasUnits') || ~islogical(meta.hasUnits)
                 error('meta:NoHasUnits','meta must include a hasUnits field with a boolean flag')
-            elseif ~isfield(meta,'hasTriggers')
-                error('meta:NoHasTriggers','meta must include a hasTriggers field with a boolean flag')
-            elseif ~isfield(meta,'hasTrials')
+            elseif ~isfield(meta,'hasTriggers') || ~islogical(meta.hasTriggers)
                 error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
-            elseif ~isfield(meta,'hasChaoticLoad')
+            elseif ~isfield(meta,'hasChaoticLoad') || ~islogical(meta.hasChaoticLoad)
                 error('meta:NoHasChaoticLoad','meta must include a hasChaoticLoad field with a boolean flag')
-            elseif ~isfield(meta,'hasBumps')
+            elseif ~isfield(meta,'hasBumps') || ~islogical(meta.hasBumps)
                 error('meta:NoHasBumps','meta must include a hasBumps field with a boolean flag')
+            elseif ~isfield(meta,'hasTrials') || ~islogical(meta.hasTrials)
+                error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
             else
+                if isempty(find(strcmp(meta.task,{'RW','CO','BD','DCO','multi_gadget','UNT','RP','NoDataLoaded'}),1))
+                    warning('meta:UnrecognizedTask','This task string is not recognized. Standard analysis functions may fail to operate correctly using this task string')
+                end
                 ex.meta=meta;
             end
         end
@@ -212,8 +221,8 @@ classdef experiment < matlab.mixin.SetGet
     end
     methods (Static = false)
         addSession(ex,session)
-        
         addOperation(ex,operation,varargin)
+        addProblem(ex,problem)
         
         calcFR(ex)
         binData(ex)

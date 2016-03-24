@@ -1,8 +1,11 @@
 classdef kinematicData < timeSeriesData
     %sub-class inheriting from timeSeriesData so that kin specific methods
-    % may be added. See the binnedData sub-class for a more eleborate
-    % example of a timeSeriesData sub-class. See also the timeSeriesData
+    % may be added. See also the timeSeriesData
     % class definition for inherited properties and methods
+    %
+    %the kinematicData class is intended to be a field of the experiment
+    %class but can be used as a stand-alone object
+    
     properties(Access = public)
     end
     properties (Access = private)
@@ -10,10 +13,7 @@ classdef kinematicData < timeSeriesData
     methods (Static = true)
         %constructor
         function kin=kinematicData()
-            %set(kin,'fc',filterConfig());
-            kin.fc=filterConfig();
-            %set(kin,'data',cell2table(cell(0,9),'VariableNames',{'t','still','good','x','y','vx','vy','ax','ay'}))
-            kin.data=cell2table(cell(0,9),'VariableNames',{'t','still','good','x','y','vx','vy','ax','ay'});
+            kin = kin@timeSeriesData(cell2table(cell(0,9),'VariableNames',{'t','still','good','x','y','vx','vy','ax','ay'}));
         end
     end
     methods (Static = true, Access = protected)
@@ -42,7 +42,6 @@ classdef kinematicData < timeSeriesData
     end
     methods
         %setter methods 
-        
     end
     methods (Static = false)
        %general methods

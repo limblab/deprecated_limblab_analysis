@@ -11,10 +11,26 @@ classdef timeSeriesData < matlab.mixin.SetGet
     end
     methods (Static = true)
         %constructor
-        function dt=timeSeriesData()
+        function dt=timeSeriesData(varargin)
+            fc=[];
+            data=[];
+            if ~isempty(varargin)
+                for i=1:length(varargin)
+                    if isa(varargin{i},'filterConfig')
+                        fc=varargin{i};
+                    elseif isa(varargin{i},'table')
+                        data=varargin{i};
+                    end
+                end
+            end
+            if isempty(fc)
             fc=filterConfig();
+            end
+            if isempty(data)
+                data=cell2table(cell(0,2),'VariableNames',{'t','data'});
+            end
             set(dt,'fc',fc)
-            set(dt,'data',cell2table(cell(0,2),'VariableNames',{'t','data'}))
+            set(dt,'data',data)
         end
     end
     methods (Static = true, Access = protected)
@@ -121,7 +137,7 @@ classdef timeSeriesData < matlab.mixin.SetGet
         function appendTable(tsd,data,varargin)
             if isempty(varargin)
                 if ~isempty(tsd.data)
-                    warning('appendTable:NoTimeShift','when attempting to append new data, no time shift was passed. Defaulting to the max of the current data +1s')
+%                    warning('appendTable:NoTimeShift','when attempting to append new data, no time shift was passed. Defaulting to the max of the current data +1s')
                     timeShift=max(tsd.data.t)+1;
                 else
                     timeShift=0;
@@ -129,9 +145,8 @@ classdef timeSeriesData < matlab.mixin.SetGet
             else
                 timeShift=varargin{1};
                 if isempty(tsd.data)
-                    warning('appendTable:shiftedNewData','applying a time shift to data that is being placed in an empty units field')
+                    warning('appendTable:shiftedNewData','applying a time shift to data that is being placed in an empty timeSeriesData.data field')
                 end
-                
                 if ~isempty(tsd.data) && timeShift<max(tsd.data.t)
                     error('appendTable:timeShiftTooSmall','when attempting to append new data, the specified time shift must be larger than the largest existing time')
                 end

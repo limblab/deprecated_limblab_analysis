@@ -67,7 +67,7 @@ classdef filterConfig < matlab.mixin.SetGet%handle
             if isempty(c) || ischar(c) || ~isempty(find(~isreal(c),1)) ||  ~isempty(find(c<=0,1)) || numel(c)>2
                 error('cutoff:BadCutoffValue','Cutoff must be an Real or pair of Real values greater than or equal to 0')
             else
-                if c>FC.SR/2
+                if ~c>FC.SR/2
                     warning('cutoff:cutoffLargerThanSR',['The specified cutoff value of: ',num2str(c),' is larger than half the specified sample rate: ' num2str(FC.SR)])
                 end
                 FC.cutoff=c;

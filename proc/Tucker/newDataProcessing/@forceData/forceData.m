@@ -1,14 +1,13 @@
 classdef forceData < timeSeriesData 
     %sub-class inheriting from timeSeriesData so that force specific methods
-    % may be added. See the binnedData sub-class for a more eleborate
-    % example of a timeSeriesData sub-class. See also the timeSeriesData
+    % may be added. See also the timeSeriesData
     % class definition for inherited properties and methods
     properties(Access = public)
     end
     methods (Static = true)
         %constructor
         function fd=forceData()
-            fd.data=cell2table(cell(0,3),'VariableNames',{'t','fx','fy'});
+            fd = fd@timeSeriesData(cell2table(cell(0,3),'VariableNames',{'t','fx','fy'}));
         end
     end
     methods (Static = true, Access = protected)

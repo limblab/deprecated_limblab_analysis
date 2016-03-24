@@ -78,31 +78,33 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
     %data info:
     meta.hasEmg=~isempty(cds.emg);
     meta.hasLfp=~isempty(cds.lfp);
-    meta.hasKinematics=~isempty(cds.pos);
+    meta.hasKinematics=~isempty(cds.kin);
     meta.hasForce=~isempty(cds.force);
     meta.hasAnalog=~isempty(cds.analog);
     meta.hasUnits=~isempty(cds.units);
     meta.hasTriggers=~isempty(cds.triggers);
+    meta.hasBumps=~isempty(find(strcmp('bumpTime',cds.trials.Properties.VariableNames),1));
+    meta.hasChaoticLoad=logical(opts.hasChaoticLoad);
     
-    meta.percentStill=sum(cds.dataFlags.still)/size(cds.dataFlags.still,1);
+    meta.percentStill=sum(cds.kin.still)/size(cds.kin.still,1);
     meta.stillTime=meta.percentStill*meta.duration;
     meta.dataWindow=[0 meta.duration];
     %find the real data Window:
     if meta.hasEmg
-        meta.dataWindow=[max(dataWindow(1),cds.emg.t(1)),min(dataWindow(2),cds.emg.t(end))];
+        meta.dataWindow=[max(meta.dataWindow(1),cds.emg.t(1)),min(meta.dataWindow(2),cds.emg.t(end))];
     end
     if meta.hasLfp
-        meta.dataWindow=[max(dataWindow(1),cds.lfp.t(1)),min(dataWindow(2),cds.lfp.t(end))];
+        meta.dataWindow=[max(meta.dataWindow(1),cds.lfp.t(1)),min(meta.dataWindow(2),cds.lfp.t(end))];
     end
     if meta.hasKinematics
-        meta.dataWindow=[max(dataWindow(1),cds.kinematics.t(1)),min(dataWindow(2),cds.kinematics.t(end))];
+        meta.dataWindow=[max(meta.dataWindow(1),cds.kin.t(1)),min(meta.dataWindow(2),cds.kin.t(end))];
     end
     if meta.hasForce
-        meta.dataWindow=[max(dataWindow(1),cds.force.t(1)),min(dataWindow(2),cds.force.t(end))];
+        meta.dataWindow=[max(meta.dataWindow(1),cds.force.t(1)),min(meta.dataWindow(2),cds.force.t(end))];
     end
     if meta.hasAnalog
         for j=1:length(cds.analog)
-            meta.dataWindow=[max(dataWindow(1),cds.analog{j}.t(1)),min(dataWindow(2),cds.analog{j}.t(end))];
+            meta.dataWindow=[max(meta.dataWindow(1),cds.analog{j}.t(1)),min(meta.dataWindow(2),cds.analog{j}.t(end))];
         end
     end
     

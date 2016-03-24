@@ -20,7 +20,7 @@ function getCOTaskTable(cds,times)
     otOnCodes = cds.words.word( bitand(hex2dec('f0'),cds.words.word) == word_ot_on);
     
     wordGo = hex2dec('31');
-    goCues = cds.words.ts(cds.words.word == wordGo);
+    goCueTime = cds.words.ts(cds.words.word == wordGo);
     
     %preallocate our trial variables:
     numTrials=numel(times.number);
@@ -62,11 +62,11 @@ function getCOTaskTable(cds,times)
         end
         
         % Go cue
-        idxGo = find(goCues > times.startTime(trial) & goCues < times.endTime(trial), 1, 'first');
+        idxGo = find(goCueTime > times.startTime(trial) & goCueTime < times.endTime(trial), 1, 'first');
         if isempty(idxGo)
             goCueList(trial) = nan;
         else
-            goCueList(trial) = goCues(idxGo);
+            goCueList(trial) = goCueTime(idxGo);
         end
 
         % Classify bump phasing
@@ -92,7 +92,7 @@ function getCOTaskTable(cds,times)
     
     %build table:
     trialsTable=table(tgtOnTimeList,goCueList,tgtList,tgtCornerList,tgtDirList,tgtCtrList,bumpTimeList,bumpList,bumpPhaseList',bumpDirList,...
-                    'VariableNames',{'tgtOnTime','goCue','tgtID','tgtCorners','tgtDir','tgtCtr','bumpTime','bumpID','bumpPhase','bumpDir'});
+                    'VariableNames',{'tgtOnTime','goCueTime','tgtID','tgtCorners','tgtDir','tgtCtr','bumpTime','bumpID','bumpPhase','bumpDir'});
     
     trialsTable.Properties.VariableUnits={'s','s','int','cm, cm, cm, cm','rad','cm, cm','s','int','char','deg'};
     trialsTable.Properties.VariableDescriptions={'outer target onset time','go cue time','ID number of outer target',...
