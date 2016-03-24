@@ -16,6 +16,10 @@
 % Note: the function assumes EMGs were recorded. Also, it only merges the
 % filename, duration and FileSepTimes of meta
 %
+% ----------
+% NOTE: THE FUNCTION MAY NEED SOME IMPROVEMENTS IN HOW THE EMG, FORCE AND
+% POSITION TIME VECTORS ARE CONSTRUCTED
+%
 
 function conc_bdf = concatenate_bdfs( bdf_array ) 
 
@@ -26,21 +30,34 @@ max_nbr_units           = 96;
 % sampling frequency threshold crossings
 fs_units                = 30000;
 
+% ------------------------------------------------------------------------
+% 1. retrieve the end times of each bdf
 
-% ----------------------
-% retrieve the end times of each bdf
 % since it may be different between data streams (because of the different
-% sampling frequencies), take the maximum
+% sampling frequencies), take the minimum ...
 bdf_end_times           = zeros(1,nbr_bdfs);
 for i = 1:nbr_bdfs
     bdf_end_times(i)    = min([bdf_array(i).pos(end,1), bdf_array(i).emg.data(end,1), ...
-                        bdf_array(i).force.data(end,1)]);
+                            bdf_array(i).force.data(end,1)]);
 end
 
+% ... and round it to the minimum common duration that is multiple of the
+% slowest sampling rate between force and EMG
 
-% ----------------------
-% check that the number of neurons, forces, emgs and pos is the same across
-% BDFs
+% --> NOTE: This version ignores position since oftentimes they are missed
+% points in our datafiles
+
+min_fs                  = min([bdf_array(1).emg.emgfreq, bdf_array(1).force.forcefreq]);
+% but before that crop the extra microseconds that make bdf_end_times and
+% exact multiple of the slowest fs
+extra_bdf_time          = arrayfun(@(x) rem(x,1/min_fs), bdf_end_times );
+bdf_end_times           = bdf_end_times - extra_bdf_time;
+% now make all the bdf_end_times equal to the duration of the shortest file
+bdf_end_times           = min(bdf_end_times)*ones(1,nbr_bdfs);
+
+% ------------------------------------------------------------------------
+% 2. check that the number of neurons, forces, emgs and pos is the same
+% across BDFs 
 
 % check that all the BDFs have the same number of "good" neural channels
 nbr_units               = arrayfun(@(x)size(x.units,2),bdf_array);
@@ -97,8 +114,8 @@ clear nbr_poss nbr_forces nbr_emgs bdfs_extra_neurons
 nbr_units               = unique(arrayfun(@(x)size(x.units,2),bdf_array));
 
 
-% ----------------------
-% concatenate!!!
+% ------------------------------------------------------------------------
+% 3. concatenate
 
 % define the fields that are not repeated
 for i = 1:nbr_units
@@ -111,7 +128,7 @@ conc_bdf.emg.emgfreq    = bdf_array(1).emg.emgfreq;
 conc_bdf.force.labels   = bdf_array(1).force.labels;
 conc_bdf.force.forcefreq = bdf_array(1).force.forcefreq;
 
-% initialize some matrices
+% preallocate some matrices
 conc_bdf.words          = [];
 conc_bdf.databursts     = {};
 conc_bdf.emg.data       = [];
