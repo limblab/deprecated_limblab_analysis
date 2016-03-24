@@ -4,12 +4,24 @@ thv = reaches_mat(:,1);
 thf = reaches_mat(:,2);
 fr = reaches_mat(:,3:end);
 
-%% Plot the tuning curves
+%% setup
 increment = pi/10;
-[force_dir, vel_dir] = meshgrid(-pi:increment:pi-increment, -pi:increment:pi-increment);
+dir_vector = -pi:increment:pi-increment;
+[force_dir, vel_dir] = meshgrid(dir_vector,dir_vector);
+
+% group reaches into bins for anova later
+group_vector = -pi:pi/3:pi;
+force_group = interp1(group_vector,1:length(group_vector),thf,'nearest');
+vel_group = interp1(group_vector,1:length(group_vector),thv,'nearest');
+force_group(force_group == length(group_vector)) = 1; %
+vel_group(vel_group == length(group_vector)) = 1;
+
+%% Plot tuning curves
 resid_map_total = zeros(size(force_dir));
 for uid = 1:size(fr,2)
 %     [force_dir, vel_dir] = meshgrid(-pi:increment:pi, -pi:increment:pi);
+    
+    % convolve with a 2D gaussian kernel
     gx = zeros(size(force_dir));
     gp = zeros(size(force_dir));
     sig = .5;
@@ -17,7 +29,7 @@ for uid = 1:size(fr,2)
         for offsety = -2:2
             dx = 2*pi*offsetx;
             dy = 2*pi*offsety;
-            for i = 1:length(thf)
+            for i = 1:length(thf) % for every reach
                 gx = gx + fr(i,uid) * exp( -sqrt((thf(i)-force_dir-dx).^2 + (thv(i)-vel_dir-dy).^2) / 2 / sig.^2 );
                 gp = gp + exp( -sqrt((thf(i)-force_dir-dx).^2 + (thv(i)-vel_dir-dy).^2) / 2 / sig.^2 );
             end
@@ -76,6 +88,15 @@ for uid = 1:size(fr,2)
 %     end
     
     resid_map = full_map - vel_map - force_map - mean(mean(full_map));
+    
+    % anova of residual map
+    % find groups of original reaches
+%     velmap_groups = floor((vel_dir(:)+pi)/increment/5);
+%     forcemap_groups = floor((force_dir(:)+pi)/increment/5);
+    resid_vect = fr(:,uid)-mean(mean(full_map));
+%     p=anova2(resid_map,1,'off');
+%     p = anovan(full_map(:),{velmap_groups,forcemap_groups},'model','interaction');
+    p = anovan(resid_vect,{vel_group,force_group},'model','interaction','sstype',2,'display', 'off');
 %     resid_map_total = resid_map_total+resid_map/mean(mean(resid_map));
 %     figure; plot3(thf, thv, fr(:,uid), 'k.');
 %     hold on;
@@ -87,6 +108,7 @@ for uid = 1:size(fr,2)
     clim = [min(min(full_map)) max(max(full_map))];
     figure
     subplot(221)
+%     mesh(vel_dir-vel_PD,force_dir-force_PD,full_map)
     imagesc(full_map,clim)
     colorbar
     subplot(222)
@@ -100,8 +122,11 @@ for uid = 1:size(fr,2)
     subplot(224)
     imagesc(resid_map)
     colorbar
+    
     subplot(221)
     title(sprintf('Neuron %d', uid));
+    subplot(224)
+    title(['ANOVA p-vals: [' num2str(p(1)) ', ' num2str(p(2)) ', ' num2str(p(3)) ']'])
     colormap jet
 
 end % foreach unit
