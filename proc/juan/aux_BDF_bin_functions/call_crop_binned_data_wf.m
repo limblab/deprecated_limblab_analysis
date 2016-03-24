@@ -11,7 +11,7 @@
 %   word_i                  : word that defines the beginning of the
 %                               interval ('start','ot_on','go')
 %   word_f                  : word that defines the end of the interval
-%                               (ot_on,'go','end','R')
+%                               ('ot_on','go','end','R')
 %   (bin_size)              : [0.05 s] bin size for binning a BDF
 %
 % Outputs
@@ -90,6 +90,8 @@ for i = 1:nbr_bdfs
     % if the end word is 'R' (reward), get rid of the trials without a reward
     if word_f == 'R'
         cropping_times(trial_table(:,9) ~= double('R'),:) = [];
+        binned_data_array(i).trialtable( binned_data_array(i).trialtable(:,9) ...
+            ~= double('R'), : ) = [];
     end
 
     % call cropping function
