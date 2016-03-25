@@ -51,6 +51,7 @@ command{1} = struct('TL', 100, ... % 100ms
     'PL', 1, ...           % Cathodic first
     'Run', ws.run_once ... % Single train mode
     );
+
 %NOW SET AMPSSSS (OR LEAVE DEFAULT??)
 channel_list = 1:ws.num_channels;  % all channels
 ws.set_stim(command, channel_list);  % set the parameters
