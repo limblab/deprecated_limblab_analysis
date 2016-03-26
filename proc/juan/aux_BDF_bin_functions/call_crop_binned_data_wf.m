@@ -27,8 +27,8 @@
 function cropped_binned_data = call_crop_binned_data_wf( data_struct, word_i, word_f, varargin )
 
 
-% see if the data_struct is of type bdf or binned_data. If it is a BDF, bin
-% it
+% see if the data_struct is of type bdf or binned_data. If it is a BDF,
+% convert it to a binned_data struct
 if ~isfield(data_struct,'timeframe')
     % get desired bin size
     if nargin == 4
@@ -37,12 +37,15 @@ if ~isfield(data_struct,'timeframe')
     else
         bin_pars.binsize    = 0.05;
     end
-    % start and stop times are set to ensure compatibility with the
-    % dim_reduction code
-    bin_pars.starttime      = ceil(bdf.pos(1,1)/bin_size)*bin_size;
-    bin_pars.stoptime       = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    
     % bin each BDF
     for i = 1:length(data_struct)
+        % start and stop times are set to ensure compatibility with the
+        % dim_reduction code
+        bin_pars.starttime  = ceil(data_struct(i).pos(1,1)/bin_pars.binsize)*...
+                                    bin_pars.binsize;
+        bin_pars.stoptime   = floor(data_struct(i).pos(end,1)/bin_pars.binsize)*...
+                                    bin_pars.binsize;
         binned_data_array(i) = convertBDF2binned(data_struct(i),bin_pars);
     end
 else
