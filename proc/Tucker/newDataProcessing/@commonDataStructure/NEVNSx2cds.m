@@ -46,18 +46,20 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         set(0, 'defaulttextinterpreter', 'none');
 
         %initial setup
-        opts=struct('labNum',-1,'rothandle',0,'ignore_jumps',0,'ignore_filecat',0,'robot',0,'task','Unknown'); 
+        opts=struct('labNum',-1,'rothandle',false,'ignore_jumps',false,'ignore_filecat',false,'robot',false,'task','Unknown','hasChaoticLoad',false); 
 
         % Parse arguments
         if ~isempty(varargin)
             for i = 1:length(varargin)
                 optStr = char(varargin{i});           
                 if strcmp(optStr, 'rothandle')
-                    opts.rothandle = varargin{i+1};
+                    opts.rothandle = true;
+                elseif strcmp(optStr, 'chaoticLoad')
+                    opts.hasChaoticLoad=true;
                 elseif strcmp(optStr, 'ignoreJumps')
-                    opts.ignore_jumps=1;
+                    opts.ignore_jumps=true;
                 elseif strcmp(optStr, 'ignoreFilecat')
-                    opts.ignore_filecat=1;
+                    opts.ignore_filecat=true;
                 elseif ischar(optStr) && length(optStr)>4 && strcmp(optStr(1:4),'task')
                     opts.task=optStr(5:end);
                 elseif ischar(optStr) && length(optStr)>5 && strcmp(optStr(1:5),'array')
@@ -74,19 +76,19 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         %check the options and throw warnings if some things aren't set:
         flag=0;
         if strcmp(opts.task,'Unknown')
-            flag=1;
+            flag=true;
             warning('NEVNSx2cds:taskNotSet','No task was passed as an input variable. Further processing can attempt to automatically identify the task, but success is not garaunteed')
         end
         if ~isfield(opts,'array')
-            flag=1;
+            flag=true;
             warning('NEVNSx2cds:arrayNotSet','No array label was passed as an input variable.')
         end
         if opts.labNum==-1
-            flag=1;
+            flag=true;
             warning('NEVNSx2cds:labNotSet','The lab number where this data was collected was not passed as an input variable')
         end
         if ~isfield(opts,'monkey')
-            flag=1;
+            flag=true;
             warning('NEVNSx2cds:monkeyNotSet','The monkey from which this data was collected was not passed as an input variable')
         end
         if flag
@@ -103,7 +105,7 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         end
         %set the robot flag if we are using one of the robot labs:
         if opts.labNum == 2 || opts.labNum == 3 || opts.LabNum ==6
-            opts.robot=1;
+            opts.robot=true;
         end
         %get the date of the file so processing that depends on when the
         %file was collected has something to work with
@@ -146,7 +148,11 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
                 NSxInfo.NSx_labels(~cellfun('isempty',strfind(NSxInfo.NSx_labels,cds.aliasList{i,1})))=cds.aliasList(i,2);
             end
         end
-        
+        % check that we don't have a data stream using the reserved name
+        % 'good'
+        if ~isempty(find(strcmp('good',NSxInfo.NSx_labels),1));
+            error('NEVNSx2cds:goodIsAReservedName','the cds and experiment code uses the label good as a flag for kinematic data, and treats this label specially when refiltering. This label is reserved to avoid unintended behaviro when refiltering other data sreams. Please use the alias function to re-name the good channel of input data')
+        end
     %% Events: 
         %if events are already in the cds, then we keep them and ignore any
         %new words in the NEVNSx. Otherwise we load the events from the
@@ -199,7 +205,12 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
             end
             cds.getTrialTable(opts)
         end
+    %% sanitize times so that all our data is in the same window.
+        cds.sanitizeTimeWindows
     %% Set metadata. Some metadata will already be set, but this should finish the job
         cds.metaFromNEVNSx(NEVNSx,opts)
-        
+    %% write metadata to database
+        %cds.upload2DB
+    %% save to fsmres if possible
+        %cds.save2fsmres()
 end
