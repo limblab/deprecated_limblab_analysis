@@ -18,7 +18,8 @@
 % (Parameters Gaussian Kernel)
 %       (bin_width)         : [0.05] bin width (s)
 %       (gauss_SD)          : [5] SD Gaussian Kernel
-%       (gauss_width)       : [0.05] width Gaussian kernel (s)
+%       (transform)         : ['sqrt'] Transform applied on the binned
+%                               firing rates ('none','sqrt')
 % (Pass smoothed FRs and dimensionality-reduced firing rates if available,
 % instead of computing them in the function) 
 %       (smoothed_FR)       : array of smoothed_FRs, one per BDF
@@ -44,7 +45,7 @@ function [angles, dim_red_FR, smoothed_FR ] = comp_neural_spaces( bdf, neural_ch
 if nargin == 7
     bin_width           = varargin{1};
     gauss_SD            = varargin{2};
-    gauss_width         = varargin{3};
+    transform           = varargin{3};
 elseif nargin == 6
     smoothed_FR         = varargin{1};
     dim_red_FR          = varargin{2};
@@ -97,10 +98,10 @@ end
 if ~exist('smoothed_FR','var')
     for i = 1:nbr_bdfs
         if nargin == 4
-            smoothed_FR{i}  = gaussian_smoothing( bdf(i) ); %#ok<AGROW>
+            smoothed_FR{i}  = gaussian_smoothing2( bdf(i) ); %#ok<AGROW>
         elseif nargin == 7
-            smoothed_FR{i}  = gaussian_smoothing( bdf(i), bin_width, ...
-                                        gauss_SD, gauss_width ); %#ok<AGROW>
+            smoothed_FR{i}  = gaussian_smoothing2( bdf(i), transform, ...
+                                        bin_width, gauss_SD ); %#ok<AGROW>
         end
         dim_red_FR{i}       = dim_reduction( smoothed_FR{i}, 'pca', ...
                                         discard_neurons ); %#ok<AGROW>

@@ -11,7 +11,7 @@ function [angles, dim_red_FR, smoothed_FR ] = comp_neural_spaces_fcn_dim_finding
 if nargin == 8
     bin_width               = varargin{1};
     gauss_SD                = varargin{2};
-    gauss_width             = varargin{3};
+    transform               = varargin{3};
 elseif nargin == 7
     smoothed_FR             = varargin{1};
     dim_red_FR              = varargin{2};
@@ -45,7 +45,7 @@ if ~exist('smoothed_FR','var')
         elseif nargin == 8
 %             smoothed_FR{i}  = gaussian_smoothing( bdf(i), bin_width, ...
 %                                         gauss_SD, gauss_width ); %#ok<AGROW>
-            smoothed_FR{i}  = gaussian_smoothing( bdf(i), 'sqrt', ...
+            smoothed_FR{i}  = gaussian_smoothing( bdf(i), transform, ...
                                          bin_width, gauss_SD ); %#ok<AGROW>
         end
         dim_red_FR{i}       = dim_reduction( smoothed_FR{i}, method, ...
