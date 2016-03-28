@@ -57,7 +57,7 @@ function NEVNSx = cerebus2NEVNSx(varargin)
         disp('File(s) not found, aborting.')
         return
     end
-    NEVNSxstruct = struct('NEV',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
+    NEVNSxstruct = struct('NEV',[],'NS1',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
     
     if (length(NEVlist_nodigital_sorted)==length(NEVlist_nospikes) && ~isempty(NEVlist_nospikes))  || (length(NEVlist_nodigital)==length(NEVlist_nospikes) && ~isempty(NEVlist_nospikes))
        for iNEV = 1:length(NEVlist_nospikes)
