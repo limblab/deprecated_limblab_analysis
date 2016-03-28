@@ -16,100 +16,121 @@ classdef experiment < matlab.mixin.SetGet
     properties (Transient = true)
         scratch
     end
+    events
+        addedSession
+        computedFRs
+    end
     methods (Static = true)
         function ex=experiment()
             %constructor
             %% meta
                 m.experimentVersion=0;
                 m.includedSessions={};
-                m.mergedate='-1';
+                m.mergeDate={};
                 m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
-                m.knownProblems={};
+                m.knownProblems={'problem'};
+                m.fileSepShift=1;
+                m.duration=0;
+                m.fileSepTime=[];
+                m.dataWindow=[0 0];
                 
-                m.task='';
-                m.hasEmg=0;
-                m.hasLfp=0;
-                m.hasKinematics=0;
-                m.hasForce=0;
-                m.hasAnalog=0;
-                m.hasUnits=0;
-                m.hasTriggers=0;
+                m.task='NoDataLoaded';
+                m.hasEmg=false;
+                m.hasLfp=false;
+                m.hasKinematics=false;
+                m.hasForce=false;
+                m.hasAnalog=false;
+                m.hasUnits=false;
+                m.hasTriggers=false;
+                m.hasChaoticLoad=false;
+                m.hasBumps=false;
+                m.hasTrials=false;
                 
                 m.numTrials=0;
                 m.numReward=0;
                 m.numAbort=0;
                 m.numFail=0;
                 m.numIncomplete=0;
+                set(ex,'meta',m)
             %% kin
-                ex.kin=kinematicData();%empty kinematicData class object
+                set(ex,'kin',kinematicData());%empty kinematicData class object
             %% force
-                ex.force=forceData();%empty forceData class object
+                set(ex,'force',forceData());%empty forceData class object
             %% lfp
-                ex.lfp=lfpData();%empty lfpData class object
+                set(ex,'lfp',lfpData());%empty lfpData class object
             %% emg
-                ex.emg=emgData();%empty emgData class object
+                set(ex,'emg',emgData());%empty emgData class object
             %% analog
-                ex.analog=analogData();%empty analogData class object
+                set(ex,'analog',analogData());%empty analogData class object
             %% triggers
-                ex.triggers=triggerData();%empty triggerData class object
+                set(ex,'triggers',triggerData());%empty triggerData class object
             %% units
-                ex.units=unitData();%empty unitData class object
+                set(ex,'units',unitData());%empty unitData class object
             %% trials
-                ex.trials=trialData();%empty trialData class object
+                set(ex,'trials',trialData());%empty trialData class object
             %% fr
-                ex.fr=firingRateData();%empty firingRateData class object
+                set(ex,'fr',firingRateData());%empty firingRateData class object
             %% bin configuration
                 %settings to compute binned object from the experiment
-                bc.filter=filterConfig('poles',8,'cutoff',20,'SR',20);
+                bc.filter=filterConfig('poles',8,'cutoff',10,'SR',20);
                 bc.FR.offset=0;
                 bc.FR.method='bin';
-                bc.includedData={struct('includeField','units','which','all')};
-                ex.binConfig=bc;
+                bc.includedData=struct('includeField','units','which',[]);
+                set(ex,'binConfig',bc);
             %% bin
-                ex.bin=binned(); %empty binned  class object
+                set(ex,'bin',binnedData()); %empty binned  class object
         end
     end
     methods
         %set methods for experiment class
         function set.meta(ex,meta)
-            if ~isfield(meta,'experimentVersion') || ~isnumeric(meta.cdsVersion)
-                error('meta:BadcdsVersionFormat','the cdsVersion field must contain a numeric value')
+            if ~isfield(meta,'experimentVersion') || ~isnumeric(meta.experimentVersion)
+                error('meta:BadExperimentVersionFormat','the experimentVersion field must contain a numeric value')
             elseif ~isfield(meta,'includedSessions') || ~iscell(meta.includedSessions)
                 error('meta:BadIncludedSessionsFormat','the includedSessions field must be a cell array of strings, where each string describes once cds that data is drawn from')
             elseif ~isfield(meta,'task') || ~ischar(meta.task)  
                 error('meta:BadtaskFormat','the task field must contain a string')
-            elseif isempty(find(strcmp(meta.task,{'RW','CO','BD','DCO','multi_gadget','UNT','RP','Unknown'}),1))
-                %standard loading will catch 'Unknown' 
-                warning('meta:UnrecognizedTask','This task string is not recognized. Standard analysis functions may fail to operate correctly using this task string')
             elseif ~isfield(meta,'knownProblems') || ~iscell(meta.knownProblems)
                 error('meta:BadknownProblemsFormat','The knownProblems field must contain a cell array, where each cell contains a string ')
             elseif ~isfield(meta,'processedWith') || ~iscell(meta.processedWith)
                 error('meta:BadprocessedWithFormat','the processedWith field must be a cell array with each row containing cells that describe the processing functions')
-            elseif ~isfield(meta,'includedData') || ~isfield(meta.includedData,'emg') ...
-                    || ~isfield(meta.includedData,'lfp') || ~isfield(meta.includedData,'kinematics')...
-                    || ~isfield(meta.includedData,'force') || ~isfield(meta.includedData,'analog')...
-                    || ~isfield(meta.includedData,'units') || ~isfield(meta.includedData,'triggers')
-                error('meta:BadincludedDataFormat','the includedData field must be a structure with the following fields: EMG, LFP, kinematics, force, analog, units, triggers')
             elseif ~isfield(meta,'duration') || ~isnumeric(meta.duration)
                 error('meta:BaddurationFormat','the duration field must be numeric, and contain the duration of the data file in seconds')
-            elseif ~isfield(meta,'dateTime') || ~ischar(meta.dateTime)
-                error('meta:BaddateTimeFormat','Date time must be a string containing the date at which the raw data was collected')
+            elseif ~isfield(meta,'mergeDate') 
+                error('meta:badMergeDateFormat','meta must have a field containing the merge date for each cds merged into this experiment')
             elseif ~isfield(meta,'fileSepTime') || (~isempty(meta.fileSepTime) && size(meta.fileSepTime,2)~=2) || ~isnumeric(meta.fileSepTime)
                 error('meta:BadfileSepTimeFormat','the fileSepTime field must be a 2 column array, with each row containing the start and end of time gaps where two files were concatenated')
-            elseif ~isfield(meta,'percentStill') || ~isnumeric(meta.percentStill)
-                error('meta:BadpercentStillFormat','the percentStill field must be a fractional value indicating the percentage of the file where the cursor was still')
-            elseif ~isfield(meta,'stillTime') || ~isnumeric(meta.stillTime)
-                error('meta:BadFormat','the stillTime field must contain a numeric variable with the number of seconds where the curstor was still')
-            elseif ~isfield(meta,'trials') || ~isfield(meta.trials,'num')...
-                    ||~isfield(meta.trials,'reward') || ~isnumeric(meta.trials.reward)...
-                    ||~isfield(meta.trials,'abort') || ~isnumeric(meta.trials.abort)...
-                    || ~isfield(meta.trials,'fail') || ~isnumeric(meta.trials.fail) ...
-                    || ~isfield(meta.trials,'incomplete') || ~isnumeric(meta.trials.incomplete)
-                error('meta:BadtrialsFormat','the trials field must be a struct with the following fields: num, reward, abort, fail, incomplete. Each field must contain an integer number of trials')
+            elseif ~isfield(meta,'numTrials') || ~isnumeric(meta.numTrials)...
+                    ||~isfield(meta,'numReward') || ~isnumeric(meta.numReward)...
+                    ||~isfield(meta,'numAbort') || ~isnumeric(meta.numAbort)...
+                    || ~isfield(meta,'numFail') || ~isnumeric(meta.numFail) ...
+                    || ~isfield(meta,'numIncomplete') || ~isnumeric(meta.numIncomplete)
+                error('meta:BadtrialsFormat','meta must have the following fields: numTrials, numReward, numAbort, numFail, numIncomplete. Each field must contain an integer number of trials')
             elseif ~isfield(meta,'dataWindow') || ~isnumeric(meta.dataWindow) ...
                     || numel(meta.dataWindow)~=2 
                 error('meta:baddataWindowFormat','the dataWindow field must be a 2 element numeric vector')
+            elseif ~isfield(meta,'hasLfp') || ~islogical(meta.hasLfp)
+                error('meta:NoHasLfp','meta must include a hasLfp field with a boolean flag')
+            elseif ~isfield(meta,'hasEmg') || ~islogical(meta.hasEmg)
+                error('meta:NoHasEmg','meta must include a hasEmg field with a boolean flag')
+            elseif ~isfield(meta,'hasForce') || ~islogical(meta.hasForce)
+                error('meta:NoHasForce','meta must include a hasForce field with a boolean flag')
+            elseif ~isfield(meta,'hasAnalog') || ~islogical(meta.hasAnalog)
+                error('meta:NoHasAnlog','meta must include a hasAnalog field with a boolean flag')
+            elseif ~isfield(meta,'hasUnits') || ~islogical(meta.hasUnits)
+                error('meta:NoHasUnits','meta must include a hasUnits field with a boolean flag')
+            elseif ~isfield(meta,'hasTriggers') || ~islogical(meta.hasTriggers)
+                error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
+            elseif ~isfield(meta,'hasChaoticLoad') || ~islogical(meta.hasChaoticLoad)
+                error('meta:NoHasChaoticLoad','meta must include a hasChaoticLoad field with a boolean flag')
+            elseif ~isfield(meta,'hasBumps') || ~islogical(meta.hasBumps)
+                error('meta:NoHasBumps','meta must include a hasBumps field with a boolean flag')
+            elseif ~isfield(meta,'hasTrials') || ~islogical(meta.hasTrials)
+                error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
             else
+                if isempty(find(strcmp(meta.task,{'RW','CO','BD','DCO','multi_gadget','UNT','RP','NoDataLoaded'}),1))
+                    warning('meta:UnrecognizedTask','This task string is not recognized. Standard analysis functions may fail to operate correctly using this task string')
+                end
                 ex.meta=meta;
             end
         end
@@ -149,7 +170,7 @@ classdef experiment < matlab.mixin.SetGet
             end
         end
         function set.triggers(ex,triggers)
-            if ~isa(trigger,'triggerData')
+            if ~isa(triggers,'triggerData')
                 error('triggers:badFormat','triggers must be a triggerData class object. See the triggerData class for details')
             else
                 ex.triggers=triggers;
@@ -199,10 +220,11 @@ classdef experiment < matlab.mixin.SetGet
         %end of set methods    
     end
     methods (Static = false)
-        loadSessions(ex)
-        addSession(ex,sessionPath)
+        addSession(ex,session)
+        addOperation(ex,operation,varargin)
+        addProblem(ex,problem)
+        
         calcFR(ex)
         binData(ex)
-        cds2ex(ex,cds)
     end
 end

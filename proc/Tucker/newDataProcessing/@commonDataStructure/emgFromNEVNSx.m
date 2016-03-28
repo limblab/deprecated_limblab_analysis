@@ -33,14 +33,11 @@ function emgFromNEVNSx(cds,NEVNSx,NSxInfo)
         emg.Properties.VariableUnits=[{'s'},repmat({'mV'},1,length(emgNames)-1)];
         emg.Properties.VariableDescriptions=[{'time'},repmat({'EMG'},1,length(emgNames)-1)];
         emg.Properties.Description='EMG voltage. Filtered, but not rectified or otherwise processed';
-        %cds.setField('EMG',emg)
-        if ~isempty(emg)
-            if isempty(cds.emg)
-                set(cds,'emg',emg);
-            else
-                cds.mergeTable('emg',emg)
-            end
-            cds.addOperation(mfilename('fullpath'))
+        if isempty(cds.emg)
+            set(cds,'emg',emg);
+        elseif ~isempty(emg)
+            cds.mergeTable('emg',emg)
         end
+        cds.addOperation(mfilename('fullpath'))
     end
 end

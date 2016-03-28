@@ -21,6 +21,7 @@
 %                             2-D vector that established which transformed
 %                             dimensions in 'within' will be compared to
 %                             which dimensions in 'across'
+%   (plot_yn)               : [true] summary plot per component
 %
 % Note: if one of the eigenvectors has opposite orientation in the two
 % tasks, the function already fixes that
@@ -29,11 +30,17 @@
 
 function pc_proj_across_tasks = transform_and_compare_dim_red_data( dim_red_FR, ...
                             smoothed_FR, labels, neural_chs, within_task, ...
-                            across_task, comp_nbr )
+                            across_task, comp_nbr, varargin )
+
+                        
+% read inputs
+plot_yn                 = true;
+if nargin == 8
+    plot_yn             = varargin{1};
+end
 
 
-% some stuff that should be a parameter
-% min_t and max_t for the plot
+% min_t and max_t for the plot --could be a parameter
 t_lims                  = [0 30];
 
 
@@ -89,65 +96,80 @@ pc_proj_across_tasks    = struct('within_task',within_task,'across_task',across_
 % do
 for i = 1:nbr_comps
    
+    within_proj             = dim_red_FR{within_task}.scores(:,comp_nbr_array(i,1));
+    
     % Transform the data from task number 'within_task' using the
     % transformation matrix of task number 'across_task,' and remove mean
     % (for comparison, since matlab does remove the mean)
     % -- in smoothed_FR, add 1 to neural_chs because dim 1 is time
-    pca_this_comb       = (smoothed_FR{within_task}(:,neural_chs+1))*...
+    across_proj             = (smoothed_FR{within_task}(:,neural_chs+1))*...
                             dim_red_FR{across_task}.w(:,comp_nbr_array(i,2))...
                             - mean(smoothed_FR{within_task}(:,neural_chs+1))*...
                             dim_red_FR{across_task}.w(:,comp_nbr_array(i,2));
 
     % compute cross-correlation
-    xcorr_this_comb     = xcorr( dim_red_FR{within_task}.scores(:,comp_nbr_array(i,1)), ...
-                                pca_this_comb, int_xcorr);
+    xcorr_this_comb         = xcorr( within_proj, across_proj, int_xcorr );
 
+                            
     % compute coherence
-    [coh_this_comb, f_coh] = mscohere( dim_red_FR{within_task}.scores(:,comp_nbr_array(i,1)),...
-                                pca_this_comb, 20, 16, 1024, 20 );
+    [coh_this_comb, f_coh]  = mscohere( within_proj, across_proj, 20, 16, 1024, 20 );
+    
+    % invert the components that need to be inverted for the plots
+    [~, indx_max_xcorr ]    = max(abs(pc_proj_across_tasks.xcorr(:,i)));
+    if pc_proj_across_tasks.xcorr(indx_max_xcorr,i) < 0
+        inverted_eigenv_this = 1;
+        across_proj         = - across_proj;
+        xcorr_this_comb     = xcorr_this_comb;
+    else
+        inverted_eigenv_this = 0;
+    end
+    
+    % compute VAF
+    vaf_this_comb           = calc_vaf( within_proj, across_proj ); % limblab fcn
+    vaf_this_combR          = calc_VAF( within_proj, across_proj ); % Raeed's fcn
+
+    % compute R2 by fitting a linear regression model
+    linear_fit              = fitlm( within_proj, across_proj );
+    R2_this_comb            = linear_fit.Rsquared.Adjusted;
                             
     % store results in return struct
     pc_proj_across_tasks.scores_within(:,i)     = dim_red_FR{within_task}.scores(:,comp_nbr_array(i,1));
-    pc_proj_across_tasks.scores_across(:,i)     = pca_this_comb;
+    pc_proj_across_tasks.scores_across(:,i)     = across_proj;
     pc_proj_across_tasks.xcorr(:,i)             = xcorr_this_comb;
     pc_proj_across_tasks.coh(:,i)               = coh_this_comb;
+    pc_proj_across_tasks.inverted_eigenv(:,i)   = inverted_eigenv_this;
     if i == 1
         pc_proj_across_tasks.f_coh              = f_coh;
     end
+    pc_proj_across_tasks.vaf(:,i)               = vaf_this_comb;
+    pc_proj_across_tasks.vafR(:,i)              = vaf_this_combR;
+   pc_proj_across_tasks.R2(:,i)                 = R2_this_comb;
 end
+
+
 
 
 % ------------------------------------------------------------------------
 % PLOTS
 
-% invert the components that need to be inverted for the plots
-for i = 1:nbr_comps
-    [~, indx_max_xcorr ]    = max(abs(pc_proj_across_tasks.xcorr(:,i)));
-    if pc_proj_across_tasks.xcorr(indx_max_xcorr,i) < 0
-        pc_proj_across_tasks.inverted_eigenv(i) = 1;
-        pc_proj_across_tasks.scores_across(:,i) = - pc_proj_across_tasks.scores_across(:,i);
-        pc_proj_across_tasks.xcorr(:,i)         = - pc_proj_across_tasks.xcorr(:,i);
+if plot_yn
+    for i = 1:nbr_comps
+        figure,
+        subplot(211),hold on
+        plot(dim_red_FR{within_task}.t,[ pc_proj_across_tasks.scores_within(:,i), ...
+            pc_proj_across_tasks.scores_across(:,i) ], 'LineWidth',2)
+        %plot(dim_red_FR{within_task}.t,dim_red_FR{within_task}.scores(:,comp_nbr(i)),'LineWidth',2)
+        legend(labels{within_task},labels{across_task})
+        set(gca,'Tickdir','out'),set(gca,'FontSize',14)
+        ylabel(['neural comp.' num2str(comp_nbr(i))]),xlabel('time (s)'), xlim(t_lims)
+        subplot(223)
+        plot(t_axis_xcorr,pc_proj_across_tasks.xcorr(:,i),'LineWidth',2)
+        set(gca,'Tickdir','out'),set(gca,'FontSize',14)
+        ylabel('crosscorrelation'), xlabel('time (s)')
+        subplot(224)
+        plot(f_coh,pc_proj_across_tasks.coh(:,i),'LineWidth',2)
+        set(gca,'Tickdir','out'),set(gca,'FontSize',14)
+        ylabel('coherence'), xlabel('frequency (Hz)'), ylim([0 1])
+        set(gcf,'Colormap',winter)
     end
-end
-
-
-% plot
-for i = 1:nbr_comps
-    figure,
-    subplot(211),hold on
-    plot(dim_red_FR{within_task}.t,[ pc_proj_across_tasks.scores_within(:,i), ...
-        pc_proj_across_tasks.scores_across(:,i) ], 'LineWidth',2)
-    %plot(dim_red_FR{within_task}.t,dim_red_FR{within_task}.scores(:,comp_nbr(i)),'LineWidth',2)
-    legend(labels{within_task},labels{across_task})
-    set(gca,'Tickdir','out'),set(gca,'FontSize',14)
-    ylabel(['neural comp.' num2str(comp_nbr(i))]),xlabel('time (s)'), xlim(t_lims)
-    subplot(223)
-    plot(t_axis_xcorr,pc_proj_across_tasks.xcorr(:,i),'LineWidth',2)
-    set(gca,'Tickdir','out'),set(gca,'FontSize',14)
-    ylabel('crosscorrelation'), xlabel('time (s)')
-    subplot(224)
-    plot(f_coh,pc_proj_across_tasks.coh(:,i),'LineWidth',2)
-    set(gca,'Tickdir','out'),set(gca,'FontSize',14)
-    ylabel('coherence'), xlabel('frequency (Hz)'), ylim([0 1])
-    set(gcf,'Colormap',winter)
 end

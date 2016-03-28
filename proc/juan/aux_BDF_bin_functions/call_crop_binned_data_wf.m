@@ -11,7 +11,7 @@
 %   word_i                  : word that defines the beginning of the
 %                               interval ('start','ot_on','go')
 %   word_f                  : word that defines the end of the interval
-%                               (ot_on,'go','end','R')
+%                               ('ot_on','go','end','R')
 %   (bin_size)              : [0.05 s] bin size for binning a BDF
 %
 % Outputs
@@ -27,8 +27,8 @@
 function cropped_binned_data = call_crop_binned_data_wf( data_struct, word_i, word_f, varargin )
 
 
-% see if the data_struct is of type bdf or binned_data. If it is a BDF, bin
-% it
+% see if the data_struct is of type bdf or binned_data. If it is a BDF,
+% convert it to a binned_data struct
 if ~isfield(data_struct,'timeframe')
     % get desired bin size
     if nargin == 4
@@ -37,12 +37,15 @@ if ~isfield(data_struct,'timeframe')
     else
         bin_pars.binsize    = 0.05;
     end
-    % start and stop times are set to ensure compatibility with the
-    % dim_reduction code
-    bin_pars.starttime      = ceil(bdf.pos(1,1)/bin_size)*bin_size;
-    bin_pars.stoptime       = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    
     % bin each BDF
     for i = 1:length(data_struct)
+        % start and stop times are set to ensure compatibility with the
+        % dim_reduction code
+        bin_pars.starttime  = ceil(data_struct(i).pos(1,1)/bin_pars.binsize)*...
+                                    bin_pars.binsize;
+        bin_pars.stoptime   = floor(data_struct(i).pos(end,1)/bin_pars.binsize)*...
+                                    bin_pars.binsize;
         binned_data_array(i) = convertBDF2binned(data_struct(i),bin_pars);
     end
 else
@@ -90,6 +93,8 @@ for i = 1:nbr_bdfs
     % if the end word is 'R' (reward), get rid of the trials without a reward
     if word_f == 'R'
         cropping_times(trial_table(:,9) ~= double('R'),:) = [];
+        binned_data_array(i).trialtable( binned_data_array(i).trialtable(:,9) ...
+            ~= double('R'), : ) = [];
     end
 
     % call cropping function
