@@ -69,8 +69,8 @@ function h=catch_trials_all(tt,tt_hdr,stimcodes,invert_amp)
     
     errorbar(err_ind,probs,e_lower,e_upper,'k')
     
-    title(['\fontsize{14}Catch trials: reaching rate to primary target\newline' ...
-        '\fontsize{10}error is 95% CI computed using matlabs binoinv function']) 
+    title({'\fontsize{14} Catch trials: reaching rate to primary target\newline', ...
+        '\fontsize{10} error is 95% CI computed using matlabs binoinv function'}) 
     ylabel('proportion of reaches to the primary target')
     disp(strcat('Probability our stim catch trials are drawn from the same distribution as the no stim catch trials: ',num2str(P_dist)))
     

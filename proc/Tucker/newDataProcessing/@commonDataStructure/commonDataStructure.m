@@ -1,24 +1,17 @@
 classdef commonDataStructure < matlab.mixin.SetGet%handle
     properties (Access = public)%anybody can read/write/whatever to these
         kinFilterConfig
-        EMGFilterConfig
-        LFPFilterConfig
-        binConfig
     end
     properties (SetAccess = private)%anybody can read these, but only class methods can write to them
         meta
         enc
-        dataFlags
-        pos
-        vel
-        acc
+        kin
         force
-        EMG
-        LFP
+        lfp
+        emg
         analog
         triggers
         units
-        FR
         trials
         words
         databursts
@@ -36,7 +29,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             %% set meta field
                 m.cdsVersion=0;
                 m.dataSource='empty_cds';
-                m.rawFilename='Unknown';
+                m.rawFileName='Unknown';
                 m.lab=-1;
                 m.task='Unknown';
                 m.array='Unknown';
@@ -45,13 +38,15 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 m.knownProblems={};
                 m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
                 
-                m.includedData.EMG=0;
-                m.includedData.LFP=0;
-                m.includedData.kinematics=0;
-                m.includedData.force=0;
-                m.includedData.analog=0;
-                m.includedData.units=0;
-                m.includedData.triggers=0;
+                m.hasEmg=0;
+                m.hasLfp=0;
+                m.hasKinematics=0;
+                m.hasForce=0;
+                m.hasAnalog=0;
+                m.hasUnits=0;
+                m.hasTriggers=0;
+                m.hasChaoticLoad=0;
+                m.hasBumps=0;
                 
                 m.duration=0;
                 m.dateTime='-1';
@@ -60,35 +55,31 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 m.stillTime=0;
                 m.dataWindow=[0 0];
                 
-                m.trials.num=0;
-                m.trials.reward=0;
-                m.trials.abort=0;
-                m.trials.fail=0;
-                m.trials.incomplete=0;
+                m.numTrials=0;
+                m.numReward=0;
+                m.numAbort=0;
+                m.numFail=0;
+                m.numIncomplete=0;
                 set(cds,'meta',m);
             %% filters
                 set(cds,'kinFilterConfig',filterConfig('poles',8,'cutoff',25,'SR',100));%a low pass butterworth 
-                set(cds,'EMGFilterConfig',filterConfig('poles',4,'cutoff',[10 500],'SR',2000));%a band pass butterworth 4poles at each corner
-                set(cds,'LFPFilterConfig',filterConfig('poles',4,'cutoff',[3 500],'SR',2000));%a band pass butterworth 4poles at each corner
             %% empty kinetics tables
                 cds.enc=cell2table(cell(0,3),'VariableNames',{'t','th1','th2'});
                 cds.dataFlags=cell2table(cell(0,3),'VariableNames',{'t','still','good'});
-                cds.pos=cell2table(cell(0,3),'VariableNames',{'t','x','y'});%uses cell2table since you can't natively assign an empty table
-                cds.vel=cell2table(cell(0,3),'VariableNames',{'t','vx','vy'});%uses cell2table since you can't natively assign an empty table
-                cds.acc=cell2table(cell(0,3),'VariableNames',{'t','ax','ay'});
+                cds.kin=cell2table(cell(0,7),'VariableNames',{'t','x','y','vx','vy','fx','fy','still','good'});
                 cds.force=cell2table(cell(0,3),'VariableNames',{'t','fx','fy'});
             %% empty emg table
-                cds.EMG=cell2table(cell(0,2),'VariableNames',{'t','emg'});
+                cds.emg=cell2table(cell(0,2),'VariableNames',{'t','emg'});
             %% empty lfp table
-                cds.LFP=cell2table(cell(0,2),'VariableNames',{'t','lfp'});
+                cds.lfp=cell2table(cell(0,2),'VariableNames',{'t','lfp'});
             %% empty analog field
                 cds.analog=[];
             %% empty triggers field
                 cds.triggers=cell2table(cell(0,2),'VariableNames',{'t','triggers'});
             %% units
                 cds.units=struct('chan',[],'ID',[],'array',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
-            %% FR
-                cds.FR=cell2table(cell(0,2),'VariableNames',{'t','r'});
+            %% fr
+                cds.fr=cell2table(cell(0,2),'VariableNames',{'t','r'});
             %% empty table of trial data
                 cds.trials=cell2table(cell(0,5),'VariableNames',{'trial_number','start_time','go_time','end_time','trial_result'});
             %% empty table of words
@@ -99,29 +90,12 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.aliasList=cell(0,2);
             %% scratch space
                 cds.scratch=[];
-            %% bin configuration
-                bc.filter=filterConfig('poles',8,'cutoff',20,'SR',20);
-                bc.FR.offset=0;
-                bc.FR.method='bin';
-                cds.binConfig=bc;
         end
     end
     methods
         %the following are setter methods for the common_data_structure class, 
         % set methods must be in a methods block with no attributes
-        function set.binConfig(cds,binConfig)
-            if isempty(binConfig) 
-                cds.binConfig=binConfig;
-            elseif (~isfield(binConfig,'filter') || ~isa(binConfig.filter,'filterConfig'))
-                error('binConfig:BadfilterFormat','the filter field must be a filterconfig object')
-            elseif ~isfield(binConfig,'FR') || ~isfield(binConfig.FR,'offset') ...
-                    || ~isfield(binConfig.FR,'method') || ~isnumeric(binConfig.FR.offset)...
-                    || ~ischar(binConfig.FR.method)
-                error('binConfig:badFRFormat','the FR field of binconfig must have 2 fields: offset and method. offset must be the offset time between neural and external data, and method must be a string defining the type of calculation used to compute firing rate ')
-            else
-                cds.binConfig=binConfig;
-            end
-        end
+        
         function set.kinFilterConfig(cds,FilterConfig)
             if ~isa(FilterConfig,'filterConfig')
                 error('kinFilterConfig:badFormat','kinFilterConfig must be a filterConfig object')
@@ -129,60 +103,24 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.kinFilterConfig=FilterConfig;
             end
         end
-        function set.EMGFilterConfig(cds,FilterConfig)
-            if ~isa(FilterConfig,'filterConfig')
-                error('EMGFilterConfig:badFormat','EMGFilterConfig must be a filterConfig object')
+
+        function set.kin(cds,kin)
+            if ~istable(kin) || size(kin,2)~=7 ...
+                    || isempty(find(strcmp('t',kin.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('still',kin.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('good',kin.Properties.VariableNames),1))...
+                    || isempty(find(strcmp('x',kin.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('y',kin.Properties.VariableNames),1))...
+                    || isempty(find(strcmp('vx',kin.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('vy',kin.Properties.VariableNames),1))...
+                    || isempty(find(strcmp('ax',kin.Properties.VariableNames),1)) ...
+                    || isempty(find(strcmp('ay',kin.Properties.VariableNames),1))
+                error('kin:badFormat','kin must be a table with 7 columns: t, x, y, vx, vy, ax, and ay. t is the time of each sample, and (x,y), (vx,vy), (ax,ay) are the position velocity and acceleration respectively. ')
             else
-                cds.EMGFilterConfig=FilterConfig;
+                cds.kin=kin;
             end
         end
-        function set.LFPFilterConfig(cds,FilterConfig)
-            if ~isa(FilterConfig,'filterConfig')
-                error('LFPFilterConfig:badFormat','LFPFilterConfig must be a filterConfig object')
-            else
-                cds.LFPFilterConfig=FilterConfig;
-            end
-        end
-        function set.dataFlags(cds,dataFlags)
-            if ~istable(dataFlags) || size(dataFlags,2)~=3 ...
-                    || isempty(find(strcmp('t',dataFlags.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('still',dataFlags.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('good',dataFlags.Properties.VariableNames),1))
-                error('dataFlags:badFormat','dataFlags must be a table with 3 columns: t, still and good. t is the time of each sample, still is a flag indicating that the cursor position was still at that point, and good is a flag indicating that the data is not corrupt at that point. ')
-            else
-                cds.dataFlags=dataFlags;
-            end
-        end
-        function set.pos(cds,pos)
-            if ~istable(pos) || size(pos,2)~=3 ...
-                    || isempty(find(strcmp('t',pos.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('x',pos.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('y',pos.Properties.VariableNames),1))
-                error('pos:badFormat','pos must be a table with 3 columns: t, x and y. t is the time of each sample, and x and y are the x and y position respectively. ')
-            else
-                cds.pos=pos;
-            end
-        end
-        function set.vel(cds,vel)
-            if ~istable(vel) || size(vel,2)~=3 ...
-                    || isempty(find(strcmp('t',vel.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('vx',vel.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('vy',vel.Properties.VariableNames),1))
-                error('vel:badFormat','vel must be a table with 3 columns: t, vx and vy. t is the time of each sample, and vx and vy are the x and y velocity respectively. ')
-            else
-                cds.vel=vel;
-            end
-        end
-        function set.acc(cds,acc)
-            if ~istable(acc) || size(acc,2)~=3 ...
-                    || isempty(find(strcmp('t',acc.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('ax',acc.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('ay',acc.Properties.VariableNames),1))
-                error('acc:badFormat','acc must be a table with 3 columns: t, ax and ay. t is the time of each sample, and ax and ay are the x and y acceleration respectively.')
-            else
-                cds.acc=acc;
-            end
-        end
+
         function set.force(cds,force)
             if ~istable(force)...
                     || isempty(find(strcmp('t',force.Properties.VariableNames),1)) ...
@@ -193,20 +131,20 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.force=force;
             end
         end
-        function set.EMG(cds,EMG)
-            if ~istable(EMG) ...
-                    || isempty(find(strcmp('t',EMG.Properties.VariableNames),1)) 
-                error('EMG:badFormat','EMG must be a table with a column t indicating the times of each row')
+        function set.emg(cds,emg)
+            if ~istable(emg) ...
+                    || isempty(find(strcmp('t',emg.Properties.VariableNames),1)) 
+                error('emg:badFormat','emg must be a table with a column t indicating the times of each row')
             else
-                cds.EMG=EMG;
+                cds.emg=emg;
             end
         end
-        function set.LFP(cds,LFP)
-            if ~istable(LFP) ...
-                    || isempty(find(strcmp('t',LFP.Properties.VariableNames),1)) 
-                error('LFP:badFormat','LFP must be a table with a column t indicating the times of each row')
+        function set.lfp(cds,lfp)
+            if ~istable(lfp) ...
+                    || isempty(find(strcmp('t',lfp.Properties.VariableNames),1)) 
+                error('lfp:badFormat','lfp must be a table with a column t indicating the times of each row')
             else
-                cds.LFP=LFP;
+                cds.lfp=lfp;
             end
         end
         function set.triggers(cds,triggers)
@@ -240,8 +178,10 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             f3=@(x) isempty(find(strcmp('ts',x.Properties.VariableNames),1));
             f4=@(x) isempty(find(strcmp('wave',x.Properties.VariableNames),1));
             
-            if isempty(units) || ~isstruct(units)
+            if isempty(units)
                 cds.units=units;
+            elseif ~isstruct(units)
+                error('units:badFormat','Units must be a struct')
             elseif ~isfield(units,'chan') ||  ~isnumeric([units(:).chan])
                 error('units:badchanFormat','units must have a field called chan that contains a numeric array of channel numbers')
             elseif ~isfield(units,'ID') || ~isnumeric([units(:).ID])
@@ -287,8 +227,8 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 error('meta:BadcdsVersionFormat','the cdsVersion field must contain a numeric value')
             elseif ~isfield(meta,'dataSource') || ~ischar(meta.dataSource)
                 error('meta:BaddataSourceFormat','the dataSource field must contain a string describing the source data, e.g. NEVNSx, or bdf')
-            elseif ~isfield(meta,'rawFilename')
-                error('meta:BadrawFilenameFormat','The rawFilename field must contain a string with the name of the raw file that the data is sourced from')
+            elseif ~isfield(meta,'rawFileName') || ~ischar(meta.rawFileName)
+                error('meta:BadrawFileNameFormat','The rawFilename field must contain a string with the name of the raw file that the data is sourced from')
             elseif ~isfield(meta,'lab') || ~isnumeric(meta.lab) || isempty(find(meta.lab==[-1 1 2 3 6],1))
                 error('meta:BadlabnumFormat','the labnum field must be a numeric value from the following set: [-1 1 2 3 6]')
             elseif ~isfield(meta,'task') || ~ischar(meta.task)  
@@ -304,8 +244,8 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 error('meta:BadknownProblemsFormat','The knownProblems field must contain a cell array, where each cell contains a string ')
             elseif ~isfield(meta,'processedWith') || ~iscell(meta.processedWith)
                 error('meta:BadprocessedWithFormat','the processedWith field must be a cell array with each row containing cells that describe the processing functions')
-            elseif ~isfield(meta,'includedData') || ~isfield(meta.includedData,'EMG') ...
-                    || ~isfield(meta.includedData,'LFP') || ~isfield(meta.includedData,'kinematics')...
+            elseif ~isfield(meta,'includedData') || ~isfield(meta.includedData,'emg') ...
+                    || ~isfield(meta.includedData,'lfp') || ~isfield(meta.includedData,'kinematics')...
                     || ~isfield(meta.includedData,'force') || ~isfield(meta.includedData,'analog')...
                     || ~isfield(meta.includedData,'units') || ~isfield(meta.includedData,'triggers')
                 error('meta:BadincludedDataFormat','the includedData field must be a structure with the following fields: EMG, LFP, kinematics, force, analog, units, triggers')
@@ -332,14 +272,14 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.meta=meta;
             end
         end
-        function set.FR(cds,FR)
-            if ~isempty(FR) && (~isa(FR,'table') || size(FR,2)~=2 || isempty(find(strcmp('t',FR.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('r',FR.Properties.VariableNames),1)))
-                error('FR:badFormat','The FR field must be a table with 2 columns: t and r. t is the time of each observation, and r is the firing rate at time t in hz')
-            else
-                cds.FR=FR;
-            end
-        end
+%         function set.fr(cds,fr)
+%             if ~isempty(fr) && (~isa(fr,'table') || size(fr,2)~=2 || isempty(find(strcmp('t',fr.Properties.VariableNames),1)) ...
+%                     || isempty(find(strcmp('r',fr.Properties.VariableNames),1)))
+%                 error('FR:badFormat','The FR field must be a table with 2 columns: t and r. t is the time of each observation, and r is the firing rate at time t in hz')
+%             else
+%                 cds.fr=fr;
+%             end
+%         end
     end
     methods (Static = false)
         %The following are methods for the common_data_structure class, but
@@ -359,30 +299,26 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         %data loading functions:
         bdf2cds(cds,bdf)
         sourceFile2cds(cds,folderPath,fileName,varargin)
+        database2cds(cds,conn,filepath,varargin)
         NEVNSx2cds(cds,NEVNSx,varargin)
-            eventsFromNEVNSx(cds,NEVNSx)
+            eventsFromNEVNSx(cds,NEVNSx,opts)
             kinematicsFromNEVNSx(cds,NEVNSx,opts)
             forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
             unitsFromNEVNSx(cds,NEVNSx,opts)
             emgFromNEVNSx(cds,NEVNSx,NSxInfo)
-            LFPFromNEVNSx(cds,NEVNSx,NSxInfo)
+            lfpFromNEVNSx(cds,NEVNSx,NSxInfo)
             analogFromNEVNSx(cds,NEVNSx,NSxInfo)
             metaFromNEVNSx(cds,NEVNSx,opts)
-            enc2handlepos(cds)
+            enc2handlepos(cds,dateTime,lab)
             enc2WFpos(cds)
-        appendFile2cds(cds,folderPath,fileName,varargin)
-        appendNEVNSx2cds(cds,NEVNSx,varargin)
-        appendcds2cds(cds,cds2)
-        mergeFile2cds(cds,folderPath,fileName,varargin)
-        mergeNEVNSx2cds(cds,NEVNSx,varargin)
-        mergecds2cds(cds,cds2)
+            mergeTable(cds,fieldName,mergeData)
         %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
         writeSessionSummary(cds)
         checkEMG60hz(cds)
         checkLFP60hz(cds)
         %trial table functions
-        getTrialTable(cds)
+        getTrialTable(cds,opts)
         getWFTaskTable(cds,times)
         getRWTaskTable(cds,times)
         getCOTaskTable(cds,times)
@@ -393,9 +329,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         %general functions
         addProblem(cds,problem)
         addOperation(cds,operation,varargin)
-        refilterEMG(cds)
-        refilterLFP(cds)
-        bds=cds2bds(cds)
         sanitizeTimeWindows(cds)
         
     end

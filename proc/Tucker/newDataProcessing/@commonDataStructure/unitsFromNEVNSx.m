@@ -10,6 +10,11 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
         cds.addProblem('ArrayNameUnknown: the user did not specify a name for the array this data comes from')
         array='?';
     end
+    %if we already have unit data, check that our new units come from a
+        %different source so that we don't get duplicate entries
+    if ~isempty(cds.units) && ~isempty(unitList) && ~isempty(find(strcmp({cds.units.array},opts.array),1,'first'))
+        error('unitsFromNEVNSx:sameArrayName','the cds and the current data have the same array name, which will result in duplicate entries in the units field. Re-load one of the data files using a different array name to avoid this problem')
+    end
     
     %loop through and unit entries for each unit
     units=struct('chan',[],'ID',[],'array',array,'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
@@ -35,6 +40,6 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
     end
     
     %cds.setField('units',units)
-    set(cds,'units',units)
+    set(cds,'units',[cds.units units])
     cds.addOperation(mfilename('fullpath'))
 end

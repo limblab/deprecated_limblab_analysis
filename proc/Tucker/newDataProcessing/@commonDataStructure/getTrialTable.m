@@ -1,4 +1,4 @@
-function getTrialTable(cds)
+function getTrialTable(cds,opts)
     %this is a method function for the common_data_structure (cds) class, and
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files
@@ -55,9 +55,9 @@ function getTrialTable(cds)
     %specific task table code will add operations, so add the operation
     %for this file here, before we run the task specific code:
     cds.addOperation(mfilename('fullpath'))
-    if ~strcmpi(cds.meta.task,'Unknown')
+    if ~strcmpi(opts.task,'Unknown')
         %try to get trial data specific to the task
-        switch cds.meta.task
+        switch opts.task
             case 'RW' %Labs standard random walk task for the robot
                 cds.getRWTaskTable(times);
             case 'CO' %labs standard center out task for the robot
