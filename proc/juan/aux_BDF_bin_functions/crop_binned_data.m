@@ -15,7 +15,7 @@
 %   cropped_bdf             : cropped BDFs
 %
 %
-% Note: the current version does not crop trialtable or words
+% NOTE: the current version does not crop the words or the targets !!!!
 %
 
 
@@ -45,6 +45,8 @@ binned_data.emgdatabin  = binned_data.emgdatabin(indx_keep,:);
 
 binned_data.forcedatabin = binned_data.forcedatabin(indx_keep,:);
 
+binned_data.spikeratedata = binned_data.spikeratedata(indx_keep,:);
+
 if isfield(binned_data,'cursorposbin')
     binned_data.cursorposbin = binned_data.cursorposbin(indx_keep,:);
 end
@@ -55,5 +57,5 @@ if isfield(binned_data,'smoothedspikerate')
     binned_data.smoothedspikerate = binned_data.smoothedspikerate(indx_keep,:);
 end
 
-% return variabnle
+% return variable
 cropped_binned_data     = binned_data;

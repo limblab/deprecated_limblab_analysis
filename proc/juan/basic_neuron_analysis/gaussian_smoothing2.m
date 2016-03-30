@@ -53,6 +53,7 @@ if nargout == 2
     bin_pars.binsize    = bin_size;
     bin_pars.starttime  = ceil(bdf.pos(1,1)/bin_size)*bin_size;
     bin_pars.stoptime   = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    bin_pas.NormData    = true; % normalize EMGs
     binned_data         = convertBDF2binned(bdf,bin_pars);
     % store the binned firing rates into a variable, which will be used for
     % subsequent calculations. This is for compatibility with when the user
@@ -132,7 +133,6 @@ if nargout == 2
     binned_data.meta.processed_with{rtw,1} = ['gaussian_smoothing w.' transform 'transform'];
     binned_data.meta.processed_with{rtw,2} = datestr(now,'dd-mmm-yyyy');
     
-    binned_data.spiketransfmethod = transform;
     % add Gaussian Kernel info?
     % add smoothed data
     binned_data.smoothedspikerate = smoothed_FR;

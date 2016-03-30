@@ -1,8 +1,59 @@
+%
+% Crop binned_data from a 'Wrist Flexion' task in intervals defined by two
+% words. The function can take a BDF that will be first converted into a
+% binned_data struct
+%
+%   function cropped_binned_data = call_crop_binned_data_wf( data_struct, ...
+%                                   word_i, word_f, varargin )
+%
+% Inputs (opt)              : [default]
+%   data_struct             : array of BDFs or binned_data structs
+%   word_i                  : word that defines the beginning of the
+%                               interval ('start','ot_on','go')
+%   word_f                  : word that defines the end of the interval
+%                               ('ot_on','go','end','R')
+%   (bin_size)              : [0.05 s] bin size for binning a BDF
+%
+% Outputs
+%   cropped_binned_data     : cropped binned_data struct
+%
+%
+% Usage:
+%   cropped_binned_data = call_crop_binned_data_wf( binned_data, word_i, word_f )
+%   cropped_binned_data = call_crop_binned_data_wf( bdf, word_i, word_f )
+%   cropped_binned_data = call_crop_binned_data_wf( bdf, word_i, word_f, bin_size )
+  
+
+function cropped_binned_data = call_crop_binned_data_wf( data_struct, word_i, word_f, varargin )
 
 
-function cropped_binned_data = call_crop_binned_data_wf( binned_data_array, word_i, word_f )
+% see if the data_struct is of type bdf or binned_data. If it is a BDF,
+% convert it to a binned_data struct
+if ~isfield(data_struct,'timeframe')
+    % get desired bin size
+    if nargin == 4
+        bin_pars.binsize    = varargin{1};
+    % or set it to default
+    else
+        bin_pars.binsize    = 0.05;
+    end
+    
+    % bin each BDF
+    for i = 1:length(data_struct)
+        % start and stop times are set to ensure compatibility with the
+        % dim_reduction code
+        bin_pars.starttime  = ceil(data_struct(i).pos(1,1)/bin_pars.binsize)*...
+                                    bin_pars.binsize;
+        bin_pars.stoptime   = floor(data_struct(i).pos(end,1)/bin_pars.binsize)*...
+                                    bin_pars.binsize;
+        binned_data_array(i) = convertBDF2binned(data_struct(i),bin_pars);
+    end
+else
+    binned_data_array       = data_struct;
+end
 
-
+clear data_struct;
+    
 % get the column of the words
 switch word_i
     case 'start'
@@ -42,6 +93,8 @@ for i = 1:nbr_bdfs
     % if the end word is 'R' (reward), get rid of the trials without a reward
     if word_f == 'R'
         cropping_times(trial_table(:,9) ~= double('R'),:) = [];
+        binned_data_array(i).trialtable( binned_data_array(i).trialtable(:,9) ...
+            ~= double('R'), : ) = [];
     end
 
     % call cropping function
