@@ -4,14 +4,14 @@ classdef filterConfig < matlab.mixin.SetGet%handle
     %the common_data_structure class for specificing parameters to be used 
     %when filtering and decimating data
     properties (SetAccess = public)
-        SR
+        sampleRate
         poles
         cutoff
     end
     methods (Static = true)
         function FC=filterConfig(varargin)
             %constructor function for the filterConfig class. 
-            SR=100;
+            sampleRate=100;
             poles=8;
             cutoff=25;
             if ~isempty(varargin)
@@ -21,14 +21,14 @@ classdef filterConfig < matlab.mixin.SetGet%handle
                            poles=varargin{i+1};
                        case 'cutoff'
                            cutoff=varargin{i+1};
-                       case 'SR'
-                           SR=varargin{i+1};
+                       case 'sampleRate'
+                           sampleRate=varargin{i+1};
                        otherwise
                             error('filterConfig:BadPropertyName',['the filterConfig class does not have a property named: ' varargin{i+1}])
                    end
                end
             end
-            set(FC,'SR',SR)
+            set(FC,'SR',sampleRate)
             set(FC,'poles',poles)
             set(FC,'cutoff',cutoff)
         end
@@ -48,7 +48,7 @@ classdef filterConfig < matlab.mixin.SetGet%handle
                 FC.poles=p;
             end
         end
-        function set.SR(FC,SR)
+        function set.sampleRate(FC,SR)
             %setter function for the filterconfig class. Sets the sample
             %rate property
             

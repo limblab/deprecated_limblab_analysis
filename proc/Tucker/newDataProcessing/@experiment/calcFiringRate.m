@@ -1,4 +1,4 @@
-function FR=calcFR(ex,varargin)
+function calcFiringRate(ex,varargin)
     %this is a method function for the experiment class, and
     %should be located in a folder '@experiment' with the class
     %definition file and other method files
@@ -14,12 +14,18 @@ function FR=calcFR(ex,varargin)
         switch varargin{i}
             case 'method'
                 method=varargin{i+1};
-            case 'SR'
-                SR=varargin{i+1};
+            case 'sampleRate'
+                sampleRate=varargin{i+1};
             case 'offset'
                 offset=varargin{i+1};
             case 'kernelWidth'
                 kw=varargin{i+1};
+            case 'lags'
+                lags=varargin{i+1};
+            case 'lagSteps'
+                lagSteps=varargin{i+1};
+            case 'cropType'
+                cropType=varargin{i+1};
             otherwise
                 if ~ischar(varargin{i})
                     error('calcFR:badOptionFormat','calcFR takes options in key-value pairs. Keys must be strings specifying a valid option, e.g. method')
@@ -28,29 +34,42 @@ function FR=calcFR(ex,varargin)
                 end
         end
     end
-    
+    %if any variables weren't passed get them from the experiment.frConfig
+    %field:
     if ~exist('method','var')
-        method=ex.binConfig.method;
+        method=ex.frConfig.method;
     end
     if ~exist('SR','var')
-        SR=ex.binConfig.SR;
+        sampleRate=ex.frConfig.sampleRate;
     end
     if ~exist('offset','var')
-        offset=ex.binConfig.offset;
+        offset=ex.frConfig.offset;
     end
     if ~exist('kw','var')
-        %kw=1/SR;
-        kw=ex.binConfig.kernelWidth;
+        kw=ex.frConfig.kernelWidth;
+    end
+    if ~exist('lags','var')
+        lags=ex.frConfig.lags;
+    end
+    if ~exist('lagSteps','var')
+        lagSteps=ex.frConfig.lagSteps;
+    end
+    if ~exist('cropType','var')
+        cropType=ex.frConfig.cropType;
     end
     
     if offset==0
         warning('calcFR:zeroOffset','There is no offset between neural and external data. Normally you want some offset to account for effernt/affernt latency')
     end
     %build time vector from SR
-    ti=ex.meta.dataWindow(1):1/SR:ex.meta.dataWindow(2);
+    ti=ex.meta.dataWindow(1):1/sampleRate:ex.meta.dataWindow(2);
     %loop through units and get FR for each one:
     FR=zeros(length(ti),length(ex.units.data));
     for j=1:length(ex.units.data)
+        %if this unit is invalid, skip it:
+        if ex.units.data(j).ID==255
+            continue
+        end
         %get timestamps for unit i
         ts=ex.units.data(j).spikes.ts+offset;
         %convert timestamps into firing rate sampled on the time vector ti
@@ -71,7 +90,7 @@ function FR=calcFR(ex,varargin)
                     rate(i) = sum( exp(-tau.^2/(2*sigma^2))/(sqrt(2*pi)*sigma) );
                 end
             case 'bin'
-                rate=hist(ts,ti)*SR;
+                rate=hist(ts,ti)*sampleRate;
             otherwise
                 error('calcFR:methodNotImplemented',['the ',method,' method of firing rate computation is not implemented in calcFR'])
         end
@@ -86,12 +105,24 @@ function FR=calcFR(ex,varargin)
         unitNames{j}=[ex.units.data(j).array,'_CH',num2str(ex.units.data(j).chan),'_ID',num2str(ex.units.data(j).ID)];
     end
     if ~isempty(FR)
-        %put FR into cds.FR field:
-        
-        FR=[table(ti,'VariableNames',{'t'}),array2table(FR,'VariableNames',unitNames)];
-        FR.Properties.VariableUnits=[{'s'},repmat({'hz'},1,length(unitNames))];
-        FR.Properties.VariableDescriptions=[{'time'},repmat({'firing rate'},1,length(unitNames))];
-        FR.Properties.Description='a table with the firing rate for each neuron in ex.units. Order of columns is the same as the order of units in ex.units';
+        %add lags and put FR into a table
+        FRTable=table(ti','VariableNames',{'t'});
+        for i=1:length(unitNames)
+            [temp,lagRange]=timeShiftBins(FR(:,i),lags,'lagSteps',lagSteps,'cropType',cropType);
+            FRTable=[FRTable,table(temp,'VariableNames',unitNames(i))];
+        end
+        FRTable.Properties.VariableUnits=[{'s'},repmat({'hz'},1,length(unitNames))];
+        FRTable.Properties.VariableDescriptions=[{'time'},repmat({'firing rate'},1,length(unitNames))];
+        FRTable.Properties.Description='a table with the firing rate for each neuron in ex.units. Order of columns is the same as the order of units in ex.units';
+        ex.fr.appendTable(FRTable,'overWrite',true)
+        m.offset=offset;
+        m.method=method;
+        m.lagSteps=ex.frConfig.lagSteps;
+        m.cropType=ex.frConfig.cropType;
+        m.sampleRate=sampleRate;
+        m.kernelWidth=kw;
+        m.lags=lagRange;
+        ex.fr.updateMeta(m)
     end
 end
 

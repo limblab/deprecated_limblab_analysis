@@ -1,6 +1,6 @@
 classdef timeSeriesData < matlab.mixin.SetGet
     properties (Access = public, SetObservable = true)
-        fc
+        filterConfig
     end
     properties (SetAccess = protected, GetAccess = public, SetObservable = true)
         data
@@ -29,7 +29,7 @@ classdef timeSeriesData < matlab.mixin.SetGet
             if isempty(data)
                 data=cell2table(cell(0,2),'VariableNames',{'t','data'});
             end
-            set(dt,'fc',fc)
+            set(dt,'filterConfig',fc)
             set(dt,'data',data)
         end
     end
@@ -66,11 +66,11 @@ classdef timeSeriesData < matlab.mixin.SetGet
                 tsd.data=data;
             end
         end
-        function set.fc(dt,fc)
+        function set.filterConfig(tsd,fc)
             if ~isa(fc,'filterConfig')
-                error('dataTable:NotAFilterConfig','the fc field must be an object with the filterConfig class')
+                error('dataTable:NotAFilterConfig','the filterConfig field must be an object with the filterConfig class')
             else
-                dt.fc=fc;
+                tsd.filterConfig=fc;
             end
         end
         
@@ -101,7 +101,7 @@ classdef timeSeriesData < matlab.mixin.SetGet
                 %extend 'bad' regions by 4x the period of the cutoff
                 %frequency to reduce the impact of ringing artifacts:
                 %get the number of points equal to 4x the cutoff period:
-                wnd=ceil((4/tsd.fc.cutoff)/mode(diff(lData(:,1))));
+                wnd=ceil((4/tsd.filterConfig.cutoff)/mode(diff(lData(:,1))));
                 %find the 'bad' windows
                 chng=diff(tsd.data{:,ind});
                 numInd=length(tsd.data{:,ind});
@@ -135,31 +135,50 @@ classdef timeSeriesData < matlab.mixin.SetGet
             notify(tsd,'refiltered')
         end
         function appendTable(tsd,data,varargin)
-            if isempty(varargin)
+            if ~isempty(varargin)
+
+                for i=1:2:length(varargin)
+                    if ~ischar(varargin{i}) || mod(length(varargin),2)>1
+                        error('appendTable:badKey','additional inputs to the appendTable method must be key-value pairs, with a string as the key')
+                    end
+                    switch varargin{i}
+                        case 'timeShift'
+                            timeShift=varargin{i+1};
+                        case 'overWrite'
+                            overWrite=varargin{i+1};
+                        otherwise
+                            error('appendTable:badKeyString',['the key string: ',varargin{i}, 'is not recognized by appendTable'])
+                    end
+                end
+            end
+            if ~exist('overWrite','var')
+                overWrite=false;
+            end
+            if ~exist('timeShift','var')
                 if ~isempty(tsd.data)
 %                    warning('appendTable:NoTimeShift','when attempting to append new data, no time shift was passed. Defaulting to the max of the current data +1s')
                     timeShift=max(tsd.data.t)+1;
                 else
                     timeShift=0;
                 end
-            else
-                timeShift=varargin{1};
-                if isempty(tsd.data)
+            end            
+                
+                if isempty(tsd.data) && exist('timeShift','var') && timeShift~=0
                     warning('appendTable:shiftedNewData','applying a time shift to data that is being placed in an empty timeSeriesData.data field')
+                    mask=cell2mat({strcmp(data.Properties.VariableNames,'t')});
+                    data{:,mask}=data{:,mask}+timeShift;
                 end
-                if ~isempty(tsd.data) && timeShift<max(tsd.data.t)
+                if ~isempty(tsd.data)&& timeShift<max(tsd.data.t)
                     error('appendTable:timeShiftTooSmall','when attempting to append new data, the specified time shift must be larger than the largest existing time')
                 end
-            end
-            
-            if isempty(tsd.data)
+
+
+            if isempty(tsd.data) || overWrite
                 %just put the new dt in the field
                 set(tsd,'data',data)
             else
                 %get the column index of timestamp or time, whichever this
                 %table is using:
-                mask=cell2mat({strcmp(data.Properties.VariableNames,'t')});
-                data{:,mask}=data{:,mask}+timeShift;
                 set(tsd,'data',[tsd.data;data]);
             end
             notify(tsd,'appended')

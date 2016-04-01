@@ -105,7 +105,9 @@ function addSession(ex,cds)
             error('addSession:NoAnalog','cds has no analog data')
         end
         %load analog from cdsOrPath into ex
-        ex.analog.appendData(cds.analog);
+        for i=1:length(cds.analog)
+            ex.analog{i}=timeSeriesData(cds.analog{i});
+        end
     end
     %% triggers
     if ex.meta.hasTriggers

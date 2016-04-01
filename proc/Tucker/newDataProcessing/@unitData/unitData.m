@@ -28,6 +28,8 @@ classdef unitData < matlab.mixin.SetGet
                 error('unitData:badIDFormat','units must have a field called ID that contains a numeric array of the ID numbers')
             elseif ~isfield(data,'array') ||  ~iscellstr({data.array})
                 error('unitData:badarrayFormat','units must have a field called array that contains a cell array of strings, where each string specifies the array on which the unit was collected')
+            elseif ~isfield(data,'monkey') || ~iscellstr({data.monkey})
+                error('units:badMonkeyFormat','data must have a field called array that contains a cell array of strings, where each string specifies the monkey on which the unit was collected')
             elseif ~isfield(data,'spikes') 
                 error('unitData:missingspikes','units must have a field called spikes containing tables of the spike times and waveforms')
             elseif ~isempty({data.spikes}) && (~isempty(find(cellfun(f,{data.spikes}),1)) ...
