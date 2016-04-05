@@ -28,7 +28,7 @@ classdef filterConfig < matlab.mixin.SetGet%handle
                    end
                end
             end
-            set(FC,'SR',sampleRate)
+            set(FC,'sampleRate',sampleRate)
             set(FC,'poles',poles)
             set(FC,'cutoff',cutoff)
         end
@@ -54,9 +54,9 @@ classdef filterConfig < matlab.mixin.SetGet%handle
             
             %check that SR is of the appropriate type:
             if ischar(SR) || ~isreal(SR) || numel(SR)~=1 || SR<=0
-                error('SR:BadSRValue','SR must be an real value greater than or equal to 0')
+                error('SR:BadsampleRateValue','sampleRate must be an real value greater than or equal to 0')
             else
-                FC.SR=SR;
+                FC.sampleRate=SR;
             end
         end
         function set.cutoff(FC,c)
@@ -67,8 +67,8 @@ classdef filterConfig < matlab.mixin.SetGet%handle
             if isempty(c) || ischar(c) || ~isempty(find(~isreal(c),1)) ||  ~isempty(find(c<=0,1)) || numel(c)>2
                 error('cutoff:BadCutoffValue','Cutoff must be an Real or pair of Real values greater than or equal to 0')
             else
-                if ~c>FC.SR/2
-                    warning('cutoff:cutoffLargerThanSR',['The specified cutoff value of: ',num2str(c),' is larger than half the specified sample rate: ' num2str(FC.SR)])
+                if ~c>FC.sampleRate/2
+                    warning('cutoff:cutoffLargerThansampleRate',['The specified cutoff value of: ',num2str(c),' is larger than half the specified sample rate: ' num2str(FC.sampleRate)])
                 end
                 FC.cutoff=c;
             end

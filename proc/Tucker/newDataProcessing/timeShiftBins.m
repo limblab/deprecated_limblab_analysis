@@ -1,4 +1,4 @@
-function [lagData, lagPts]=timeShiftBins(data,lags,varargin)
+function [lagData, lagPts, t]=timeShiftBins(data,lags,varargin)
     %lagData=timeShiftBins(data,lags)
     %takes in a vector 'data' and returns a matrix where each column
     %contains a shifted version of the original vector. By default data is
@@ -13,10 +13,20 @@ function [lagData, lagPts]=timeShiftBins(data,lags,varargin)
     %returns both the lag matrix and a vector containing the number of
     %points each column is shifted.
     %
+    %[lagData, lagPts, t]=timeShiftBins(data,lags)
+    %additionally returns a 'time' vector indicating the time of the bins.
+    %If no time is passed into the function (see below), then the output
+    %will be based on indexes; i.e., the indexes for data would be
+    %1:length(data(:,1))
+    %
     %timeShiftBins also accepts key-value pairs to modify behavior of the
     %function. Currently implemented key-value pairs are:
     %'lagSteps':    the number of points between lags. can be used to 
     %               separate lags by multiples of the sample rate
+    %'time':        a vector of time. Passing time will do nothing unless a
+    %               third output is selected. If a third output is selected
+    %               the passed time vector will be pruned or expanded to
+    %               match the data length after cropType is accounted for.
     %'cropType':    can be a string or an integer. If a string, must be
     %               'noCrop','keepSize' or 'tightCrop'. If an integer must
     %               be 0, 1 or 2. 0 or 'noCrop' return an expanded matrix 
@@ -43,6 +53,11 @@ function [lagData, lagPts]=timeShiftBins(data,lags,varargin)
             switch(varargin{i})
                 case 'lagSteps'
                     lagSteps=varargin{i+1};
+                case 'time'
+                    t=varargin{i+1};
+                    if numel(t)~=numel(data)
+                        error('timeShiftBins:badTimeVector','time must be a vector with the same number of elements as data')
+                    end
                 case 'cropType'
                     switch varargin{i+1}
                         case 'noCrop'
@@ -129,4 +144,44 @@ function [lagData, lagPts]=timeShiftBins(data,lags,varargin)
             error('timeShiftBins:badTrimTypeValue','This should never happen: the trimType variable internal to the timeShiftBins function should only take on values of 0 1 or 2, somebody broke the code')
     end
     
+    if nargout==3
+        %deal with time:
+        %if we don't have time, generate a vector of indexes:
+        if ~exist('t','var')
+            t=[1:length(data(:,1))]';
+        elseif isrow(t)
+            t=t';
+        end
+        %get the time step of whatever time we have now
+        dt=mode(diff(t));
+        %now expand or crop time to match the result of cropType
+        switch cropType
+            case 0
+                if min(lags)<0
+                    pre=dt*([min(lagPts):-1]' )+t(1);
+                else
+                    pre=[];
+                end
+                if max(lags)>0
+                    post=dt*[1:max(lagPts)]'+max(t);
+                    %post=dt*[1:abs(min(lagPts))]'+max(t);
+                else
+                    post=[];
+                end
+                
+                %expand t to handle the extra points
+                t=[pre;t;post];
+            case 1
+    %             %do nothing to t
+            case 2
+                %crop t to match cropped lagData:
+                t=t(max(lagPts)+1:end-abs(min(lagPts)));
+            otherwise
+                error('timeShiftBins:badTrimTypeValue','This should never happen: the trimType variable internal to the timeShiftBins function should only take on values of 0 1 or 2, somebody broke the code')
+        end
+        %ensure the dimension of t matches the dimension of data
+        if  isrow(data)
+            t=t';
+        end
+    end
 end

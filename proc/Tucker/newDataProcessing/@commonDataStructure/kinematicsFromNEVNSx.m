@@ -25,7 +25,7 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         % low byte (bits 8-1).
         encStrobes = [event_ts, bitand(hex2dec('00FF'),event_data)];
     end   
-    if isempty(encStrobes)
+    if isempty(encStrobes) && isempty(cds.kin)
         warning('kinematicsFromNEVNSx:noEncoderData','Found no encoder data, returning without populating cds.pos,cds.vel or cds.acc. Some additional processing relies on kinematics and may fail.');
         disp('load data using the noKin flag to suppress this warning')
         return
@@ -129,12 +129,12 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     still=is_still(sqrt(pos(:,1).^2+pos(:,2).^2));
     
     %use pos to compute vel:
-    vx=gradient(pos(:,1),1/cds.kinFilterConfig.SR);
-    vy=gradient(pos(:,2),1/cds.kinFilterConfig.SR);
+    vx=gradient(pos(:,1),1/cds.kinFilterConfig.sampleRate);
+    vy=gradient(pos(:,2),1/cds.kinFilterConfig.sampleRate);
     
     %use cds.vel to compute acc:
-    ax=gradient(vx,1/cds.kinFilterConfig.SR);
-    ay=gradient(vy,1/cds.kinFilterConfig.SR);
+    ax=gradient(vx,1/cds.kinFilterConfig.sampleRate);
+    ay=gradient(vy,1/cds.kinFilterConfig.sampleRate);
     
     kin=table(cds.enc.t,still,goodData,pos(:,1),pos(:,2),vx,vy,ax,ay, ...
                 'VariableNames',{'t','still','good','x','y','vx','vy','ax','ay'});

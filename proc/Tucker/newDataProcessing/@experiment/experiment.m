@@ -10,7 +10,7 @@ classdef experiment < matlab.mixin.SetGet
         units
         trials
         firingRateConfig
-        fr
+        firingRate
         binConfig
         bin
         analysis
@@ -18,9 +18,16 @@ classdef experiment < matlab.mixin.SetGet
     properties (Transient = true)
         scratch
     end
+    properties (Access = private)
+        %storage space for listner handles
+        addSessionListner
+        computeFiringRateListner
+        binDataListner
+    end
     events
         addedSession
-        computedFRs
+        computedFiringRates
+        binnedData
     end
     methods (Static = true)
         function ex=experiment()
@@ -63,7 +70,7 @@ classdef experiment < matlab.mixin.SetGet
             %% emg
                 set(ex,'emg',emgData());%empty emgData class object
             %% analog
-                set(ex,'analog',analogData());%empty analogData class object
+                set(ex,'analog',timeSeriesData());%empty timeSeriesData class object
             %% triggers
                 set(ex,'triggers',triggerData());%empty triggerData class object
             %% units
@@ -71,11 +78,13 @@ classdef experiment < matlab.mixin.SetGet
             %% trials
                 set(ex,'trials',trialData());%empty trialData class object
             %% fr
-                set(ex,'fr',firingRateData());%empty firingRateData class object
+                set(ex,'firingRate',firingRateData());%empty firingRateData class object
             %% bin configuration
                 %settings to compute binned object from the experiment
                 bc.filterConfig=filterConfig('poles',8,'cutoff',10,'sampleRate',20);
-                bc.include=struct('field','units','which',{});
+                inc.field={};
+                inc.which={};
+                bc.include=inc;
                 set(ex,'binConfig',bc);
             %% firing rate configuration
                 frc.offset=0;
@@ -90,6 +99,10 @@ classdef experiment < matlab.mixin.SetGet
                 set(ex,'bin',binnedData()); %empty binned  class object
             %% analysis
                 set(ex,'analysis',[]);%empty analysis structure
+            %% listners   
+                addSessionListner=addlistner(ex,'addedSession',@ex.newSessionCallback);
+                computeFiringRateListner=addlistner(ex,'computedFiringRates',@ex.newFiringRateCallback);
+                binDataListner=addlistner(ex,'binnedData',@ex.newBinnedDataCallback);
         end
     end
     methods
@@ -174,8 +187,8 @@ classdef experiment < matlab.mixin.SetGet
             end
         end
         function set.analog(ex,analog)
-            if ~isa(analog,'analogData')
-                error('analog:badFormat','analog must be a analogData class object. See the analogData class for details')
+            if ~isa(analog,'timeSeriesData')
+                error('analog:badFormat','analog must be a struct array of timeSeriesData class objects. See the analogData class for details')
             else
                 ex.analog=analog;
             end
@@ -201,11 +214,11 @@ classdef experiment < matlab.mixin.SetGet
                 ex.trials=trials;
             end
         end
-        function set.fr(ex,fr)
+        function set.firingRate(ex,fr)
             if ~isa(fr,'firingRateData')
                 error('fr:badFormat','fr must be a firingRateData class object. See the firingRateData class for details')
             else
-                ex.fr=fr;
+                ex.firingRate=fr;
             end
         end
         function set.firingRateConfig(ex,frc)
@@ -239,11 +252,16 @@ classdef experiment < matlab.mixin.SetGet
                 error('binConfig:BadFilterFormat','the filterConfig field must be a filterconfig object')
             elseif (~isfield(binConfig,'include') || (~isempty(binConfig.include) && ~isstruct(binConfig.include)))
                 error('binConfig:BadincludeFormat','the include field must be a struct array with fields: includedData.includedField and includedData.which')
-            elseif ~isfield(binConfig.include,'field') || ~ischar(binConfig.include.field)
+            elseif ~isfield(binConfig.include,'field') || (numel(binConfig.include.field)>=1 && ~iscellstr({binConfig.include.field}))
                     error('binConfig:BadIncludeFormat','the include field must have a sub-field include.field')
-            elseif ~isfield(binConfig.include,'which') || ~iscell(binConfig.include.which)
+            elseif ~isfield(binConfig.include,'which') 
                     error('binConfig:BadIncludeFormat','the include field must have a sub-field called include.which')
             else
+                for i=1:length(binConfig)
+                    if ~isempty(binConfig.include(i).which) && ~iscellstr(binConfig.include(i).which) && ~isnumeric(binConfig.include(i).which{1})
+                        error('binConfig:badIncludedFormat','the binConfig.included.which field must be either a cell array of column labels, or a cell containing a numeric matrix')
+                    end
+                end
                 ex.binConfig=binConfig;
             end
         end
@@ -285,6 +303,18 @@ classdef experiment < matlab.mixin.SetGet
         addProblem(ex,problem)
         
         calcFiringRate(ex)
-        binData(ex)
+        binData(ex,varargin)
+    end
+    methods
+        %callbacks
+        function newSessionCallback(ex)
+            disp('new session whee')
+        end
+        function newFiringRateCallback(ex)
+            disp('computed FR whee')
+        end
+        function newBinnedDataCallback(ex)
+            disp('binned data whee')
+        end
     end
 end

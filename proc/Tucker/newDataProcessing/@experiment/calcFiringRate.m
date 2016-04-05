@@ -37,31 +37,31 @@ function calcFiringRate(ex,varargin)
     %if any variables weren't passed get them from the experiment.frConfig
     %field:
     if ~exist('method','var')
-        method=ex.frConfig.method;
+        method=ex.firingRateConfig.method;
     end
     if ~exist('SR','var')
-        sampleRate=ex.frConfig.sampleRate;
+        sampleRate=ex.firingRateConfig.sampleRate;
     end
     if ~exist('offset','var')
-        offset=ex.frConfig.offset;
+        offset=ex.firingRateConfig.offset;
     end
     if ~exist('kw','var')
-        kw=ex.frConfig.kernelWidth;
+        kw=ex.firingRateConfig.kernelWidth;
     end
     if ~exist('lags','var')
-        lags=ex.frConfig.lags;
+        lags=ex.firingRateConfig.lags;
     end
     if ~exist('lagSteps','var')
-        lagSteps=ex.frConfig.lagSteps;
+        lagSteps=ex.firingRateConfig.lagSteps;
     end
     if ~exist('cropType','var')
-        cropType=ex.frConfig.cropType;
+        cropType=ex.firingRateConfig.cropType;
     end
     
     if offset==0
-        warning('calcFR:zeroOffset','There is no offset between neural and external data. Normally you want some offset to account for effernt/affernt latency')
+        warning('calcFiringRate:zeroOffset','There is no offset between neural and external data. Normally you want some offset to account for effernt/affernt latency')
     end
-    %build time vector from SR
+    %build time vector from sampleRate
     ti=ex.meta.dataWindow(1):1/sampleRate:ex.meta.dataWindow(2);
     %loop through units and get FR for each one:
     FR=zeros(length(ti),length(ex.units.data));
@@ -82,17 +82,35 @@ function calcFiringRate(ex,varargin)
                     tEnd = ti(i) + kw/2;
                     rate(i) = sum(ts >= tStart & ts < tEnd)/kw;
                 end
-            case 'gaussian',      
+            case 'gaussian',
+                
                 sigma = kw/pi;
                 for i = 1:length( ti ),
                     curT = ti(i);
                     tau = curT - ts( find( ts >= curT-5*sigma & ts < curT+5*sigma) );
                     rate(i) = sum( exp(-tau.^2/(2*sigma^2))/(sqrt(2*pi)*sigma) );
                 end
+                
+                %alternate code. This works but is slow, and has close
+                %to singular matrix problems due to very high sample rate
+                %also throws a warning for every unit which is dumb
+%                 warning('calcFiringRate:gaussianAssumes30khz','the gaussian convolution method assumes that spike timestamps are collected at 30khz. Data collected a lower sample rates may cause ripples in the computed FR if the output frequency is high enough')
+%                 %get gaussian kernel:
+%                 spikeSamplePeriod=1/30000;
+%                 tau=-kw/2:spikeSamplePeriod:kw/2;
+%                 sigma=kw/pi;
+%                 kernel=exp(-tau.^2/(2*sigma^2))/(sqrt(2*pi)*sigma);
+%                 %convolve the kernel with a 30000hz histogram to get rate
+%                 %at 30khz
+%                 t=min(ti):double(spikeSamplePeriod):max(ti);
+%                 rate=conv(hist(ts,t),kernel,'same');
+%                 %now decimate the data to get firing rate at our desired frequency:
+%                 tmp=decimateData([t',rate'],filterConfig('poles',8,'cutoff',sampleRate/2,'sampleRate',sampleRate));
+%                 rate=tmp(:,2);
             case 'bin'
                 rate=hist(ts,ti)*sampleRate;
             otherwise
-                error('calcFR:methodNotImplemented',['the ',method,' method of firing rate computation is not implemented in calcFR'])
+                error('calcFiringRate:methodNotImplemented',['the ',method,' method of firing rate computation is not implemented in calcFiringRate'])
         end
 
         if size( rate, 1) < size(rate,2),
@@ -102,28 +120,30 @@ function calcFiringRate(ex,varargin)
         end
         clear rate
         %now make our variable names for each unit:
-        unitNames{j}=[ex.units.data(j).array,'_CH',num2str(ex.units.data(j).chan),'_ID',num2str(ex.units.data(j).ID)];
+        unitNames{j}=[ex.units.data(j).array,'CH',num2str(ex.units.data(j).chan),'ID',num2str(ex.units.data(j).ID)];
     end
     if ~isempty(FR)
         %add lags and put FR into a table
-        FRTable=table(ti','VariableNames',{'t'});
+        FRTable=[];
         for i=1:length(unitNames)
-            [temp,lagRange]=timeShiftBins(FR(:,i),lags,'lagSteps',lagSteps,'cropType',cropType);
+            [temp,lagRange,t]=timeShiftBins(FR(:,i),lags,'time',ti,'lagSteps',lagSteps,'cropType',cropType);
             FRTable=[FRTable,table(temp,'VariableNames',unitNames(i))];
         end
+        FRTable=[table(t,'VariableNames',{'t'}),FRTable];
         FRTable.Properties.VariableUnits=[{'s'},repmat({'hz'},1,length(unitNames))];
         FRTable.Properties.VariableDescriptions=[{'time'},repmat({'firing rate'},1,length(unitNames))];
         FRTable.Properties.Description='a table with the firing rate for each neuron in ex.units. Order of columns is the same as the order of units in ex.units';
-        ex.fr.appendTable(FRTable,'overWrite',true)
+        ex.firingRate.appendTable(FRTable,'overWrite',true)
         m.offset=offset;
         m.method=method;
-        m.lagSteps=ex.frConfig.lagSteps;
-        m.cropType=ex.frConfig.cropType;
+        m.lagSteps=ex.firingRateConfig.lagSteps;
+        m.cropType=ex.firingRateConfig.cropType;
         m.sampleRate=sampleRate;
         m.kernelWidth=kw;
         m.lags=lagRange;
-        ex.fr.updateMeta(m)
+        ex.firingRate.updateMeta(m)
     end
+    notify(ex,'computedFiringRates')
 end
 
 

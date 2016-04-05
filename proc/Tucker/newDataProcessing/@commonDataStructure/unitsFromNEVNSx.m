@@ -43,7 +43,7 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
         units(i).chan=unitList(i,1);
         units(i).ID=unitList(i,2);
         units(i).array=array;
-        units(i).monkey=monkey;
+        units(i).monkey=opts.monkey;
         units(i).spikes=table(ts,waves,'VariableNames',{'ts','wave'});
     end
     

@@ -48,7 +48,9 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
             end
         else
             handleforce=[];
-            warning('forceFromNEVNSx:noForceSignal','No force handle signal found because calc_from_raw did not find 6 channels named ''ForceHandle*''');
+            if isempty(cds.force)
+                warning('forceFromNEVNSx:noForceSignal','No force handle signal found because calc_from_raw did not find 6 channels named ''ForceHandle*''');
+            end
         end
     end
     %write temp into the cds
