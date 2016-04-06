@@ -4,11 +4,14 @@
 %   function dim_red_FR = dim_reduction( smoothed_FR, method, varargin )
 %
 % Inputs (opt)              : [defaults]
-%       smoothed_FR         : matrix with smoothed FRs (1 col is time)
+%       smoothed_FR         : matrix with smoothed FRs (1 col is time) or
+%                               binned_data struct with field
+%                               smoothedspikerate 
 %       method              : 'pca' or 'fa'
 %       (discard_neurons)   : array with the nbr of the neural channels
 %                               to be excluded from the analysis
-%       (show_plot)         : bool to plot the variance explained by the
+%       (norm_FR)           : [false] bool to normalize (z-score) the firing rates
+%       (show_plot)         : [true] bool to plot the variance explained by the
 %                               components
 %
 % Outputs:
@@ -20,13 +23,19 @@
 %           chs             : neural channels included in the analysis
 %                               
 
-function dim_red_FR = dim_reduction( smoothed_FR, method, varargin )
+function dim_red_FR = dim_reduction( FR_data, method, varargin )
 
 
-% read time vector in smoothed_FR and delete it from the matrix for further
-% analysis
-t_axis                      = smoothed_FR(:,1);
-smoothed_FR(:,1)            = [];
+% see if we have passed the smoothed FRs or a binned_data struct with the
+% smoothed FRs
+if isstruct(FR_data)
+    % if it's a binned_data struct, take the smoothed firing rates
+    smoothed_FR             = FR_data.smoothedspikerate;
+    t_axis                  = FR_data.timeframe;
+else
+    t_axis                  = FR_data(:,1);
+    smoothed_FR             = FR_data(:,2:end);
+end
 
 % read input arguments
 if nargin >= 3 
@@ -36,14 +45,33 @@ if nargin >= 3
     smoothed_FR(:,discard_neurons) = [];
 end
 
-if nargin == 4
+if nargin >= 4
+    % read normalization flag
+    normalize_FR            = varargin{2};
+else 
+    normalize_FR            = false;
+end
+
+if nargin ==5
     show_plot               = varargin{2};
 else
-    show_plot               = true;
+    show_plot               = false;
 end
 
 
-% do it!
+% ----------------
+% normalize firing rates, if specified
+if normalize_FR
+   % normalize (z-score) the firing rates
+   for i = 1:size(smoothed_FR,2)
+       smoothed_FR(:,i)    = ( smoothed_FR(:,i) - mean(smoothed_FR(:,i)) ) ...
+                                / std(smoothed_FR(:,i));
+   end
+end
+
+
+% ----------------
+% Dimensionality reduction
 switch method
     case 'pca'
         % do pca of the smoothed firing rates
@@ -84,6 +112,6 @@ switch method
         if exist('discard_neurons','var')
             dim_red_FR.chs  = setdiff(original_neurons,discard_neurons);
         end
-        case 'fa'
+    case 'fa'
         disp('to be programmed...')
 end
