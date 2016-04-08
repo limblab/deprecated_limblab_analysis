@@ -87,7 +87,9 @@ function analogFromNEVNSx(cds,NEVNSx,NSxInfo)
         else
             set(cds,'analog',analogData)
         end
-        cds.addOperation(mfilename('fullpath'))
+        %cds.addOperation(mfilename('fullpath'))
+        evntData=loggingListenerEventData('analogFromNEVNSx',[]);
+        notify(cds,'ranOperation',evntData)
     end
 end
 function merged=mergeAnalogTables(table1,table2)

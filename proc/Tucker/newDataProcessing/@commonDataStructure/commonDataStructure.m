@@ -21,6 +21,9 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
     properties (Transient = true, Access = public)
         aliasList%allows user to set aliases for incoming data streams in order to process correctly. 
     end
+    events
+        ranOperation
+    end
     methods (Static = true)
         function cds=commonDataStructure(varargin)
             %cds=common_data_structure(str,varargin)
@@ -85,6 +88,8 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.databursts=cell2table(cell(0,2),'VariableNames',{'ts','word'});
             %% empty list of aliases to apply when loading analog data
                 cds.aliasList=cell(0,2);
+            %% set up listners
+                addlistener(cds,'ranOperation',@(src,evnt)cds.cdsLoggingEventCallback(src,evnt));
         end
     end
     methods
@@ -331,6 +336,23 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         addProblem(cds,problem)
         addOperation(cds,operation,varargin)
         sanitizeTimeWindows(cds)
+        %storage functions
+        upload2DB(cds)
+        save2fsmres(cds)
+    end
+    methods
+        %callbacks
+        function cdsLoggingEventCallback(ex,src,evnt)
+            %because this method is a callback we get the experiment passed
+            %twice: once as the primary input to the method, and once as
+            %the source of the callback.
+            %
+            %this implementation expects that the event data will be of the
+            %loggingListnerEventData subclass to event.EventData so that
+            %the operation name and operation data properties are available
+            
+            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+        end
     end
 end
         

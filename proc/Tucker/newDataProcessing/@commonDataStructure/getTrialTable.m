@@ -81,4 +81,6 @@ function getTrialTable(cds,opts)
         %cds.setField('trials',times)
         set(cds,'trials',times)
     end
+    evntData=loggingListenerEventData('getTrialTable',[]);
+    notify(cds,'ranOperation',evntData)
 end

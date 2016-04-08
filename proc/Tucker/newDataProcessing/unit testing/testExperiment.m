@@ -1,4 +1,17 @@
 %script to test experiment:
+%% load from file into NEVNSx objects
+if ~exist('M1_NEVNSx','var')
+    M1_NEVNSx=cerebus2NEVNSx('E:\local processing\mihili\testing merge files','Mihili_M1');
+end
+if ~exist('PMd_NEVNSx','var')
+    PMd_NEVNSx=cerebus2NEVNSx('E:\local processing\mihili\testing merge files','Mihili_PMd');
+end
+%% load test data into cds
+if ~exist('cds','var')
+    cds=commonDataStructure();
+    cds.NEVNSx2cds(M1_NEVNSx,'arrayM1','monkeyMihili',3,'ignoreJumps','taskCO');
+    cds.NEVNSx2cds(PMd_NEVNSx,'arrayPMd','monkeyMihili',3,'ignoreJumps','taskCO');
+end
 %% create new experiment object
 ex=experiment();
 

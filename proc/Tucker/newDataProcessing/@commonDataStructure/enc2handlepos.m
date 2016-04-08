@@ -30,4 +30,6 @@ function [pos]=enc2handlepos(cds,dateTime,lab)
     
     %pos=[x,y]
     pos=[(- l1 * sin( cds.enc.th1 ) + l2 * cos( -cds.enc.th2 )),  (- l1 * cos( cds.enc.th1 ) - l2 * sin( -cds.enc.th2 ))];
+    evntData=loggingListenerEventData('enc2handlepos',[]);
+    notify(cds,'ranOperation',evntData)
 end

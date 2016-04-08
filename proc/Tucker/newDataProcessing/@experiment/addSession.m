@@ -105,6 +105,31 @@ function addSession(ex,cds)
             error('addSession:NoAnalog','cds has no analog data')
         end
         %load analog from cdsOrPath into ex
+        if isempty(ex.analog)
+            for i=1:length(cds.analog)
+                ex.analog{i}=timeSeriesData();
+                addlistener(ex.analog{i},'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.analog{i},'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                cds.analog{i};
+            end
+        elseif length(ex.analog)==length(cds.analog)
+            for i=1:length(cds.analog)
+                %find the sampling frequency of the i'th table of analog in
+                %the cds:
+                cdsFreq=mode(diff(cds.analog{i}.t));
+                %now find the matchting field in ex.analog and append the
+                %analog table:
+                for j=1:length(ex.analog)
+                    exFreq=mode(diff(ex.analog{j}.data));
+                    if cdsFreq==exFreq
+                        ex.analog{j}.appendData(cds.analog{i});
+                        break
+                    end
+                end
+            end
+        else
+            error('addSession:analogMismatch','The cds does not have the same number of analog fields as the data currently in the experiment')
+        end
         for i=1:length(cds.analog)
             ex.analog{i}=timeSeriesData(cds.analog{i});
         end
@@ -135,6 +160,18 @@ function addSession(ex,cds)
         %load trials from cds into ex
         ex.trials.appendTable(cds.trials);
     end
-    
-    notify(ex,'addedSession')
+    %% set up logging info and notify event so the listner for the addedSession event can log this operation:
+    opData.cdsInfo=cds.meta;
+    opData.exInfo.hasEmg=ex.meta.hasEmg;
+    opData.exInfo.hasLfp=ex.meta.hasLfp;
+    opData.exInfo.hasKinematics=ex.meta.hasKinematics;
+    opData.exInfo.hasForce=ex.meta.hasForce;
+    opData.exInfo.hasAnalog=ex.meta.hasAnalog;
+    opData.exInfo.hasUnits=ex.meta.hasUnits;
+    opData.exInfo.hasTriggers=ex.meta.hasTriggers;
+    opData.exInfo.hasChaoticLoad=ex.meta.hasChaoticLoad;
+    opData.exInfo.hasBumps=ex.meta.hasBumps;
+    opData.exInfo.hasTrials=ex.meta.hasTrials;
+    evntData=loggingListenerEventData('addSession',opData);
+    notify(ex,'ranOperation',evntData)
 end

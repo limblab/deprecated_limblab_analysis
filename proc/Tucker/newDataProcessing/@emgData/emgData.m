@@ -7,12 +7,11 @@ classdef emgData < timeSeriesData
         function emg=emgData()
         end
     end
+    events
+        rectified
+    end
     methods (Static = false)
         %general methods
-        function rectify(emg)
-            tmp=emg.data;
-            tmp{:,2:end}=abs(tmp{:,2:end});
-            set(emg,'data',tmp)
-        end
+        rectify(emg)
     end
 end

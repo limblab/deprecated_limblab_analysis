@@ -45,58 +45,7 @@ classdef firingRateData < timeSeriesData
     end
     methods (Static = false)
         %general methods
-        function updateMeta(frd,meta)
-            %this is a wrapper function intended to allow the experiment
-            %class to set the meta field of the firingRateData. It is not
-            %really intended for public use
-            set(frd,'meta',meta)
-        end
-        function reCrop(frd,cropType)
-            %re-does the firing rate matrix cropping based on lags.
-            %Cropping removes points at the beginning and end of the time
-            %series where data did not exist to generate lags. These points
-            %are normally filled with 'nan'
-            if isempty(frd.data)
-                error('reCrop:noData','there is no data in the firingRateData object to crop')
-            end
-            
-            switch frd.meta.cropType
-                case 'noCrop'
-                    switch cropType
-                        case 'noCrop'
-                            warning('reCrop:AlreadyKeptSize','the firing rate data was already cropped with the keepSize flag. No cropping was performed')
-                        case 'keepSize'
-                            set(frd,'data',frd.data(abs(min(frd.meta.lags))+1:end-max(frd.meta.lags),:));
-                        case 'tightCrop'
-                            tmp=abs(min(frd.meta.lags))+max(frd.meta.lags);
-                            set(frd,'data',frd.data(tmp+1:end-tmp,:));
-                        otherwise
-                            error('reCrop:unrecognizedMethod',['reCrop does not recognize the cropping method: ',cropType])
-                    end
-                case 'keepSize'
-                    switch cropType
-                        case 'noCrop'
-                            error('reCrop:cannotUnCrop','You tried to reCrop the data with noCrop as the method, but the data was already cropped')
-                        case 'keepSize'
-                            warning('reCrop:AlreadyKeptSize','the firing rate data was already cropped with the keepSize flag. No cropping was performed')
-                        case 'tightCrop'
-                            set(frd,'data',frd.data(max(frd.meta.lags)+1:end-abs(min(frd.meta.lags)),:));
-                        otherwise
-                            error('reCrop:unrecognizedMethod',['reCrop does not recognize the cropping method: ',cropType])
-                    end
-                case 'tightCrop'
-                    switch cropType
-                        case 'noCrop'
-                            error('reCrop:cannotUnCrop','You tried to reCrop the data with noCrop as the method, but the data was already cropped')
-                        case 'keepSize'
-                            error('reCrop:cannotUnCrop','You tried to reCrop the data with keepSize as the method, but the data was already cropped with tightCrop')
-                        case 'tightCrop'
-                            warning('reCrop:alreadyTightCroppped','the firing rate data was already tight cropped, and cannot be further cropped')
-                        otherwise
-                            error('reCrop:unrecognizedOriginalCropping',['could not identify the original cropping method: ',frd.meta.cropType,' unable to re-crop the firing rate data'])
-                    end
-                    
-            end
-        end
+        updateMeta(frd,meta)
+        reCrop(frd,croptype)
     end
 end

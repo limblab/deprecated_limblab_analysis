@@ -143,7 +143,8 @@ function calcFiringRate(ex,varargin)
         m.lags=lagRange;
         ex.firingRate.updateMeta(m)
     end
-    notify(ex,'computedFiringRates')
+    evntData=loggingListnerEventData('calcFiringRate',ex.firingRate.meta);
+    notify(ex,'ranOperation',evntData)
 end
 
 

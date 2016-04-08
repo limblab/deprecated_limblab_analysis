@@ -49,5 +49,8 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
     
     %append to existing units field
     set(cds,'units',[cds.units units])
-    cds.addOperation(mfilename('fullpath'))
+    opData.array=array;
+    opData.numUnitsAdded=size(unitList,1);
+    evntData=loggingListenerEventData('unitsFromNEVNSx',opData);
+    notify(cds,'ranOperation',evntData)
 end

@@ -52,5 +52,6 @@ function handleforce=handleForceFromNEVNSx(raw_force,cds,enc,opts)
             raw_force(:,6),...
             'VariableNames',{'fx','fy','fz','mx','my','mz'});
     end
-    
+    evntData=loggingListenerEventData('handleForceFromNEVNSx',[]);
+    notify(cds,'ranOperation',evntData)
 end

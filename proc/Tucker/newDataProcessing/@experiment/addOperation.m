@@ -1,4 +1,4 @@
-function addOperation(ex,operation,varargin)
+function addOperation(ex,operation,opPath,varargin)
     %this is a method function for the experiment class, and
     %should be located in a folder '@experiment' with the class
     %definition file and other method files
@@ -35,10 +35,10 @@ function addOperation(ex,operation,varargin)
         [username,hostname]=getUserHost();
     
     %get git log information for the specified operation file
-        [gitLog, fileLog]=getGitLog(operation);
+        [gitLog, fileLog]=getGitLog(opPath);
     %append the current data to the cds.meta.processedWith field
-        [~,fname,~]=fileparts(operation);
+        [~,fname,~]=fileparts(opPath);
         meta=ex.meta;
-        meta.processedWith=[meta.processedWith;{fname,date,hostname,username,gitLog,fileLog,opData}];
+        meta.processedWith=[meta.processedWith;{operation,fname,opPath,date,hostname,username,gitLog,fileLog,opData}];
         set(ex,'meta',meta)
 end

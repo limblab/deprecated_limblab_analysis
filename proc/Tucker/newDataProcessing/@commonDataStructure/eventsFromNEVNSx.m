@@ -51,6 +51,7 @@ function eventsFromNEVNSx(cds,NEVNSx,opts)
         databursts.Properties.Description='list of all databursts captured during data collection';           
         %cds.setField('databursts',databursts);
         set(cds,'databursts',databursts)
-        cds.addOperation(mfilename('fullpath'))
+        evntData=loggingListenerEventData('eventsFromNEVNSx',[]);
+        notify(cds,'ranOperation',evntData)
     end
 end

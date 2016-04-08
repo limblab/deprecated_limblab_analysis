@@ -75,5 +75,6 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
     
     set(cds,'meta',meta)
     %cds.setField('meta',meta)
-    cds.addOperation(mfilename('fullpath'))
+    evntData=loggingListenerEventData('metaFromNEVNSx',opData);
+    notify(cds,'ranOperation',evntData)
 end

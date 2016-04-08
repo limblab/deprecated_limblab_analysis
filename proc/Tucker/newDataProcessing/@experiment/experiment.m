@@ -1,4 +1,4 @@
-classdef experiment < matlab.mixin.SetGet
+classdef experiment < matlab.mixin.SetGet %matlab.mixin.SetGet is a subclass of the handle class, and implements set & get methods on top of the attributes of handle classes
     properties (Access = public)
         meta
         kin
@@ -18,16 +18,8 @@ classdef experiment < matlab.mixin.SetGet
     properties (Transient = true)
         scratch
     end
-    properties (Access = private)
-        %storage space for listner handles
-        addSessionListner
-        computeFiringRateListner
-        binDataListner
-    end
     events
-        addedSession
-        computedFiringRates
-        binnedData
+        ranOperation
     end
     methods (Static = true)
         function ex=experiment()
@@ -36,7 +28,7 @@ classdef experiment < matlab.mixin.SetGet
                 m.experimentVersion=0;
                 m.includedSessions={};
                 m.mergeDate={};
-                m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
+                m.processedWith={'operation','function','functionFile','date','computer name','user name','Git log','File log','operation_data'};
                 m.knownProblems={'problem'};
                 m.fileSepShift=1;
                 m.duration=0;
@@ -99,10 +91,24 @@ classdef experiment < matlab.mixin.SetGet
                 set(ex,'bin',binnedData()); %empty binned  class object
             %% analysis
                 set(ex,'analysis',[]);%empty analysis structure
-            %% listners   
-                addSessionListner=addlistner(ex,'addedSession',@ex.newSessionCallback);
-                computeFiringRateListner=addlistner(ex,'computedFiringRates',@ex.newFiringRateCallback);
-                binDataListner=addlistner(ex,'binnedData',@ex.newBinnedDataCallback);
+            %% listners  
+                %experiment event listners
+                addlistener(ex,'ranOperation',@(src,evnt)ex.experimentLoggingEventCallback(src,evnt));
+                %data event listners
+                addlistener(ex.kin,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.kin,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.force,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.force,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.lfp,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.lfp,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.emg,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.emg,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.triggers,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.triggers,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                %no listners on analog since its empty. we will add them
+                %when we insert data
+                addlistener(ex.trials,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.units,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
         end
     end
     methods
@@ -307,14 +313,28 @@ classdef experiment < matlab.mixin.SetGet
     end
     methods
         %callbacks
-        function newSessionCallback(ex)
-            disp('new session whee')
+        function experimentLoggingEventCallback(ex,src,evnt)
+            %because this method is a callback we get the experiment passed
+            %twice: once as the primary input to the method, and once as
+            %the source of the callback.
+            %
+            %this implementation expects that the event data will be of the
+            %loggingListnerEventData subclass to event.EventData so that
+            %the operation name and operation data properties are available
+            
+            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
         end
-        function newFiringRateCallback(ex)
-            disp('computed FR whee')
-        end
-        function newBinnedDataCallback(ex)
-            disp('binned data whee')
+        function dataLoggingCallback(ex,src,evnt)
+            %because this method is a callback we get the experiment passed
+            %as the primary input, and the source class of the event passed
+            %as the second input.
+            %
+            %this method is inteded as a logging callback for when data of
+            %the experiment performs an operation such as re-filtering.
+            %this implementation expects that the event data will be of the
+            %loggingListnerEventData subclass to event.EventData so that
+            %the operation name and operation data properties are available
+            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
         end
     end
 end

@@ -40,7 +40,8 @@ function triggersFromNEVNSx(cds,NEVNSx,NSxInfo)
         elseif ~isempty(triggers)
             cds.mergeTable('triggers',triggers)
         end
-        cds.addOperation(mfilename('fullpath'))
+        evntData=loggingListenerEventData('triggersFromNEVNSx',[]);
+        notify(cds,'ranOperation',evntData)
     end
     
 end

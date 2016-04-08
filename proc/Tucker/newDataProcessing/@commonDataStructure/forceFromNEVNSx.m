@@ -69,5 +69,6 @@ function forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
     elseif ~isempty(force)
         cds.mergeTable('force',forces)
     end
-    cds.addOperation(mfilename('fullpath'),cds.kinFilterConfig)
+    evntData=loggingListenerEventData('forceFromNEVNSx',cds.kinFilterConfig);
+    notify(cds,'ranOperation',evntData)
 end

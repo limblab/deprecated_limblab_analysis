@@ -20,12 +20,20 @@ function binData(ex,varargin)
                 error('binData:unrecognizedInput',['did not recognize input number ',temp])
         end
     end
-    if ~exist('recalcFR','var')
+    if ~exist('recalcFR','var')  
+        %default to using existing firing rate
         recalcFR=false;
+    end
+    if isempty(ex.firingRate.data)
+        %if we have no firing rate data to use, then we have to run
+        %ex.calcFiringRate, whether we want to or not. This flag is also
+        %used at the end of the function to determine whether the logging
+        %data needs to include the firing rate configuration.
+        recalcFR=true;
     end
     
     %% get the units into a table:
-    if isempty(ex.firingRate.data) || recalcFR
+    if recalcFR
         if ex.binConfig.filterConfig.sampleRate>ex.firingRateConfig.sampleRate;
             error('binData:frequencyMismatch','The sample rate of the firing rates must be equal to or greater than the sample rate of the binned data. Recompute the firing rates with a higher sample rate, or set a lower binning frequency')
         end
@@ -128,5 +136,7 @@ function binData(ex,varargin)
         %if no units flag was evident, just put the analog data into bins
         ex.bin.updateBins(bins);
     end
-    notify(ex,'binnedData')
+    %% notify the appended event so listners can log the operation
+    evntData=loggingListnerEventData('binData',ex.binConfig);
+    notify(ex,'ranOperation',evntData)
 end
