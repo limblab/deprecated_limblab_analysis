@@ -1,4 +1,4 @@
-classdef experiment < matlab.mixin.SetGet %matlab.mixin.SetGet is a subclass of the handle class, and implements set & get methods on top of the attributes of handle classes
+classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet is a subclass of the handle class, and implements set & get methods on top of the attributes of handle classes
     properties (Access = public)
         meta
         kin
@@ -305,7 +305,6 @@ classdef experiment < matlab.mixin.SetGet %matlab.mixin.SetGet is a subclass of 
     end
     methods (Static = false)
         addSession(ex,session)
-        addOperation(ex,operation,varargin)
         addProblem(ex,problem)
         
         calcFiringRate(ex)

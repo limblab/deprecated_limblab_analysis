@@ -1,4 +1,4 @@
-classdef commonDataStructure < matlab.mixin.SetGet%handle
+classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
     properties (SetAccess = private, GetAccess=public, SetObservable=true)%anybody can read these, but only class methods can write to them
         kinFilterConfig
         meta
@@ -334,7 +334,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         getDCOTaskTable(cds,times)
         %general functions
         addProblem(cds,problem)
-        addOperation(cds,operation,varargin)
         sanitizeTimeWindows(cds)
         %storage functions
         upload2DB(cds)
@@ -342,7 +341,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
     end
     methods
         %callbacks
-        function cdsLoggingEventCallback(ex,src,evnt)
+        function cdsLoggingEventCallback(cds,src,evnt)
             %because this method is a callback we get the experiment passed
             %twice: once as the primary input to the method, and once as
             %the source of the callback.
@@ -351,7 +350,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             %loggingListnerEventData subclass to event.EventData so that
             %the operation name and operation data properties are available
             
-            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+            cds.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
         end
     end
 end

@@ -11,8 +11,9 @@ classdef (ConstructOnLoad) loggingListenerEventData < event.EventData
       operationName
    end
    
-   methods
-      function data = loggingListnerEventData(opName,opData)
+   methods (Static = true)
+      function data = loggingListenerEventData(opName,opData,varargin)
+          %simple constructor
           data.operationName=opName;
           data.operationData = opData;
       end
