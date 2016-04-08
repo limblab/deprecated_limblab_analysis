@@ -1,14 +1,28 @@
-%%
-recalculate_all_data = 1;
-% folder_location = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\User_folders\Stephanie\Data Analysis\Generalizability\Jango\';
-folder_location = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\User_folders\Stephanie\Data Analysis\FESgrantrenewal\JangoThresholdCrossings\';
+file_name_folder_location = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\User_folders\Stephanie\Data Analysis\FESgrantrenewal\JangoThresholdCrossings\';
+folder_location = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\data\Jango_12a1\CerebusData\Generalizability\WithHandle';
 behavior_names = {'SprBinned','WmBinned','IsoBinned'};
+behavior_str = {'Spr','Wm','IsoBox'};
+
+bin_opts.NormData = true;
+
+folders_to_use = dir(file_name_folder_location);
+folders_to_use = {folders_to_use(:).name};
+folders_to_use = folders_to_use(~cellfun(@isempty,regexp(folders_to_use,'[0-9][0-9]-[0-9]*')));
+
+recalculate_all_data = 1;
+% %%
+% recalculate_all_data = 1;
+% % folder_location = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\User_folders\Stephanie\Data Analysis\Generalizability\Jango\';
+% folder_location = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\User_folders\Stephanie\Data Analysis\FESgrantrenewal\JangoThresholdCrossings\';
+% behavior_names = {'SprBinned','WmBinned','IsoBinned'};
 
 %%
 if recalculate_all_data
-    folders = dir(folder_location);
-    folders = {folders(:).name};
-    folders = folders(~cellfun(@isempty,regexp(folders,'[0-9][0-9]-[0-9]*')));
+    
+    
+%     folders = dir(folder_location);
+%     folders = {folders(:).name};
+%     folders = folders(~cellfun(@isempty,regexp(folders,'[0-9][0-9]-[0-9]*')));
 
     DecoderOptions.PredEMGs = 1;
     DecoderOptions.PredForce = 0;
@@ -26,36 +40,40 @@ if recalculate_all_data
 
     R2 = {};
     electrodes = {};
-    for iFile = 1:length(folders)
-        filename = dir([folder_location filesep folders{iFile} filesep 'Gen*.mat']);
-        all_data = load([folder_location filesep folders{iFile} filesep filename(1).name]);
-        for iBehavior = 1:length(behavior_names)
-            if isfield(all_data,behavior_names{iBehavior})
-                binnedData_all = all_data.(behavior_names{iBehavior});
-                R2{iFile,iBehavior} = [];            
-                for iSpike = 1:size(binnedData_all.spikeratedata,2)
-                    binnedData_new = binnedData_all;
-                    binnedData_new.emgdatabin = binnedData_all.spikeratedata(:,iSpike);
-                    binnedData_new.emgguide = {['Elec' num2str(binnedData_all.neuronIDs(iSpike,1))]};
-                    binnedData_new.spikeratedata(:,iSpike) = [];
-                    binnedData_new.neuronIDs(iSpike,:) = [];
+    for iFolder = 1:length(folders_to_use)
+        current_folder = [folder_location filesep folders_to_use{iFolder}];
+        files_in_folder = dir([current_folder filesep '*-binned*']);
+        for iFile = 1:length(files_in_folder)
+            all_data = load([current_folder filesep files_in_folder(iFile).name]);
+            %             all_data = load([folder_location filesep folders{iFile} filesep filename(1).name]);
+            iBehavior = find(~cellfun(@isempty,cellfun(@strfind,repmat({files_in_folder(iFile).name},...
+                size(behavior_str)),behavior_str,'UniformOutput',false)));
+            
+            binnedData_all = all_data.binned_data;
+            R2{iFile,iBehavior} = [];
+            for iSpike = 1:size(binnedData_all.spikeratedata,2)
+                binnedData_new = binnedData_all;
+                binnedData_new.emgdatabin = binnedData_all.spikeratedata(:,iSpike);
+                binnedData_new.emgguide = {['Elec' num2str(binnedData_all.neuronIDs(iSpike,1))]};
+                binnedData_new.spikeratedata(:,iSpike) = [];
+                binnedData_new.neuronIDs(iSpike,:) = [];
 
-                    [R2_all, vaf_all, mse_all] = mfxval(binnedData_new, DecoderOptions);
-                    R2{iFile,iBehavior}(iSpike) = mean(R2_all(~isnan(R2_all)));
-    %                 [filter_all, pred_spike] = BuildModel(binnedData_new, DecoderOptions);
-    %                 temp = corrcoef(binnedData_all.spikeratedata(10:end,iSpike),...
-    %                     pred_spike.preddatabin);
-    %                 R2{iFile,iBehavior}(iSpike) = temp(2)^2;
-                    electrodes{iFile,iBehavior}(iSpike,:) = binnedData_all.neuronIDs(iSpike,:);
-                    disp(['File: ' num2str(iFile) '. Behavior: ' num2str(iBehavior) ...
-                        '. Chan: ' num2str(iSpike) '. R^2 = ' num2str(R2{iFile,iBehavior}(iSpike))])
-                end
+                [R2_all, vaf_all, mse_all] = mfxval(binnedData_new, DecoderOptions);
+                R2{iFile,iBehavior}(iSpike) = mean(R2_all(~isnan(R2_all)));
+                %                 [filter_all, pred_spike] = BuildModel(binnedData_new, DecoderOptions);
+                %                 temp = corrcoef(binnedData_all.spikeratedata(10:end,iSpike),...
+                %                     pred_spike.preddatabin);
+                %                 R2{iFile,iBehavior}(iSpike) = temp(2)^2;
+                electrodes{iFile,iBehavior}(iSpike,:) = binnedData_all.neuronIDs(iSpike,:);
+                disp(['File: ' num2str(iFile) '. Behavior: ' num2str(iBehavior) ...
+                    '. Chan: ' num2str(iSpike) '. R^2 = ' num2str(R2{iFile,iBehavior}(iSpike))])
 
-    %             figure; 
-    %             histogram(vaf,0:.05:1)
-    %             xlabel('VAF','Interpreter','tex')
-    %             ylabel('Count')
-    %             title('Firing rate predictions from other firing rates')
+                
+                %             figure;
+                %             histogram(vaf,0:.05:1)
+                %             xlabel('VAF','Interpreter','tex')
+                %             ylabel('Count')
+                %             title('Firing rate predictions from other firing rates')
             end
         end
     end
