@@ -55,7 +55,7 @@ function DVMax_checker()
         ccmList = load_ccm_list(MonkeyWaterLocation);    
 
         if ~isequal(animalList2,oldAnimalList2)
-            send_monkey_person_email(animalList,peopleList,ccmList)
+            send_monkey_person_email(animalList,peopleList,ccmList,maintainer_email_address)
         end
 
         [~,weekend_water_xls,~] = xlsread(MonkeyWaterLocation,3);   
@@ -518,7 +518,7 @@ function monkey_final_list(animalList,peopleList,testing,maintainer_email_addres
     end    
 end
 
-function send_monkey_person_email(animalList,peopleList,ccmList)
+function send_monkey_person_email(animalList,peopleList,ccmList,maintainer_email_address)
     subject = 'NHP caretaker list update';
     message_table = {};
     for iAnimal = 1:length(animalList)

@@ -854,6 +854,9 @@ end             %ending "if opts.eye"
             temp=bad_times>analog_time_base(1) & bad_times<analog_time_base(end);
             bad_times=sort(bad_times(temp));
             %convert times into indices:
+            if ~exist('adfreq','var')
+                adfreq = 1/diff(analog_time_base(1:2));
+            end
             bad_ind=(bad_times-analog_time_base(1))*adfreq;
             %convert single indices into 1s range. note that adfreq is taken as
             %shorthand for 1s*adfreq here 
