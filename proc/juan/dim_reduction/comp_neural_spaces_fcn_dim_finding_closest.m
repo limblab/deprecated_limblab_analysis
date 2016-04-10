@@ -3,7 +3,7 @@
 % closest eigenvectors for dimensions 1:dims_hyper_in_orig
 %
 
-function [angles, dim_red_FR, smoothed_FR ] = comp_regress_models_fcn_dim_finding_closest( bdf, ...
+function [angles, dim_red_FR, smoothed_FR ] = comp_neural_spaces_fcn_dim_finding_closest( bdf, ...
                                 neural_chs, dims_hyper_in_orig, labels, method, varargin ) 
                             
 
