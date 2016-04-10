@@ -13,7 +13,7 @@
 %   dims_hyper_in_orig      : the dimensions in the original space you want
 %                               to match (scalar or matrix). Do 'all' for
 %                               all the eigenvectors
-%   (no_warm)               : [false] don't give warnings if the closest
+%   (no_warn)               : [false] don't give warnings if the closest
 %                               eigenvector for eigenvector P was also the
 %                               closest for dimension N with N < P
 %                               (dimensions ranked according to their
