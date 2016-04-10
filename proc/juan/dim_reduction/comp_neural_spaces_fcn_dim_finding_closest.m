@@ -3,7 +3,7 @@
 % closest eigenvectors for dimensions 1:dims_hyper_in_orig
 %
 
-function [angles, dim_red_FR, smoothed_FR ] = comp_neural_spaces_fcn_dim_finding_closest( bdf, ...
+function [angles, dim_red_FR, smoothed_FR ] = comp_regress_models_fcn_dim_finding_closest( bdf, ...
                                 neural_chs, dims_hyper_in_orig, labels, method, varargin ) 
                             
 
@@ -57,7 +57,7 @@ end
 % -------------------------------------------------------------------------
 % find closest eigenvector for each dimension
 % Do until n = N - 1
-[~, dim_min_angle]          = find_closest_hyperplane_all( dim_red_FR, 1:dims_hyper_in_orig-1, labels );
+[~, dim_min_angle]          = find_closest_neural_hyperplane_all( dim_red_FR, 1:dims_hyper_in_orig-1, labels );
 
 
 % compare hyperplanes for increasing number of vectors, re-ordering the
