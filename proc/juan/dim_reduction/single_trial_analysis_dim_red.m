@@ -48,7 +48,7 @@ nbr_neural_dims         = length(dim_red_FR.eigen);
 nbr_emg_dims            = length(dim_red_emg.eigen);
 
 % Plot targets
-[nbr_targets, target_coord] = plot_targets(cropped_binned_data);
+[nbr_targets, target_coord] = plot_targets(cropped_binned_data, label);
 
 % find what target corresponds to each trial
 target_nbr              = zeros(1,nbr_trials);
