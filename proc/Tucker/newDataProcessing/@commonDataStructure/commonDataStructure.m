@@ -328,6 +328,7 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         getWFTaskTable(cds,times)
         getRWTaskTable(cds,times)
         getCOTaskTable(cds,times)
+        getCObumpTaskTable(cds,times)
         getBDTaskTable(cds,times)
         getUNTTaskTable(cds,times)
         getRPTaskTable(cds,times)
