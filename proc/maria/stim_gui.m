@@ -1451,35 +1451,51 @@ for j=1:length(index)
 end
 starts = temp; %TODO: check this
 
-j=0;
-
-
-while ~isempty(starts)
+j=0; %increment while loop
+while ~isempty(temp)
     j = j+1;
-    a = min(cell2mat(starts)); %find min in start times
+    a = min(cell2mat(temp)); %find min in start times
     i = find([starts{:}] == a); %find out which channels it runs on
-    ch_times(j, :) = {a, index(i)}; %store channels that start at time a: {row, col} = {pair, [value channels]}
-    starts(i) = []; %remove the min from the starts array
+    ch_times(j, :) = {a, index(i)}; %store channels that start at time a: {row, col} = {starttime, [value channels]}
+    temp(find([temp{:}] == a)) = []; %remove the min from the starts array
 end    
 %now I have ch_times. so I need to do timing. with tic and pause for now...
 
-for i=1:num_cycles
+cycle_len = 0; %set up a variable to track cycle length
+cur_time = 0; %track sum of pause times
+for i=1:num_cycles %for as many steps as necessary
     tic
-    for j=1:size(ch_times, 1)
-        if j==1 %pause time for the first one is just start value
-            ptime = ch_times{1, 1};
-        else %pause time for following cycles is 
+    disp('begin step cycle'); 
+    for j=1:size(ch_times, 1) %for as many channels as necessary, stagger start times
+        if j==1 %pause time before the first one is just the first value
+            ptime = ch_times{1, 1}; %set pause time to beginning of first channel
+            cur_time = cur_time + ptime; 
+            %disp(['set pause time for first channel at ' num2str(ptime)]); 
+        else %pause time for following cycles is subtractive from previous start time
             ptime = ch_times{j, 1}-ch_times{j-1, 1};
+            cur_time = cur_time + ptime;
+            %disp(['set pause time for channel ' num2str(j) ' at ' num2str(ptime)])
+            %disp(['cur_time is now ' num2str(cur_time)]); 
         end
-        pause(ptime/1000); %pause (convert to ms) to get to the next pulse time
+        pause(ptime/1000); %pause (convert to ms) to reach the time we should stimulate
         toc
+        %TODO: add start and stop signals (not sure about timing of these)
+        
+        cl = max(ws.get_TL(ch_times{j, 2}))+cur_time;
+        if cl>cycle_len
+            cycle_len = cl;
+        end
         command{1} = struct('Run', ws.run_once_go);
         ws.set_stim(command, ch_times{j, 2}); %stim the channels listed for this time
     end
     
+    %after all of the channels have started stimulation, pause until
+    %they're done stimulating (cycle_len) but subtract time already paused
+    %(cur_time)
     disp(['end of cycle ' num2str(i)]);
-    pause(cycle_del/1000); %pause for length of cycle_del TODO fix this!
+    pause((cycle_del+cycle_len-cur_time)/1000); %pause for length of cycle_del and calculated time of train?
     toc
+    cur_time = 0; 
 end
 
 disp('done stimulating'); 
