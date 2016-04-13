@@ -60,7 +60,8 @@ function lfpFromNEVNSx(cds,NEVNSx,NSxInfo)
             elseif ~isempty(lfp)
                 cds.mergeTable('lfp',lfp)
             end
-            cds.addOperation(mfilename('fullpath'))
+            evntData=loggingListenerEventData('lfpFromNEVNSx',[]);
+            notify(cds,'ranOperation',evntData)
         end
     end    
 end

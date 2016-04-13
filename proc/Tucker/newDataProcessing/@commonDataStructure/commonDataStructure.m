@@ -1,8 +1,6 @@
-classdef commonDataStructure < matlab.mixin.SetGet%handle
-    properties (Access = public )%anybody can read/write/whatever to these
+classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
+    properties (SetAccess = private, GetAccess=public, SetObservable=true)%anybody can read these, but only class methods can write to them
         kinFilterConfig
-    end
-    properties (SetAccess = private)%anybody can read these, but only class methods can write to them
         meta
         kin
         force
@@ -15,13 +13,16 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
     end
     properties (Transient = true, SetAccess = private)
         %Not saved with the common_data_structure. used to store transient
-        %data
+        %data during loading
         enc
         words
         databursts
     end
     properties (Transient = true, Access = public)
         aliasList%allows user to set aliases for incoming data streams in order to process correctly. 
+    end
+    events
+        ranOperation
     end
     methods (Static = true)
         function cds=commonDataStructure(varargin)
@@ -49,7 +50,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 m.hasTriggers=false;
                 m.hasChaoticLoad=false;
                 m.hasBumps=false;
-                m.hasTrials=false;
                 
                 m.duration=0;
                 m.dateTime='-1';
@@ -65,7 +65,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 m.numIncomplete=0;
                 set(cds,'meta',m);
             %% filters
-                set(cds,'kinFilterConfig',filterConfig('poles',8,'cutoff',25,'SR',100));%a low pass butterworth 
+                set(cds,'kinFilterConfig',filterConfig('poles',8,'cutoff',25,'sampleRate',100));%a low pass butterworth 
             %% empty kinetics tables
                 cds.enc=cell2table(cell(0,3),'VariableNames',{'t','th1','th2'});
                 cds.kin=cell2table(cell(0,9),'VariableNames',{'t','x','y','vx','vy','ax','ay','still','good'});
@@ -79,7 +79,7 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
             %% empty triggers field
                 cds.triggers=cell2table(cell(0,2),'VariableNames',{'t','triggers'});
             %% units
-                cds.units=struct('chan',[],'ID',[],'array',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
+                cds.units=struct('chan',[],'ID',[],'array',{},'monkey',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
             %% empty table of trial data
                 cds.trials=cell2table(cell(0,5),'VariableNames',{'trial_number','start_time','go_time','end_time','trial_result'});
             %% empty table of words
@@ -88,6 +88,8 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.databursts=cell2table(cell(0,2),'VariableNames',{'ts','word'});
             %% empty list of aliases to apply when loading analog data
                 cds.aliasList=cell(0,2);
+            %% set up listners
+                addlistener(cds,'ranOperation',@(src,evnt)cds.cdsLoggingEventCallback(src,evnt));
         end
     end
     methods
@@ -180,12 +182,14 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 cds.units=units;
             elseif ~isstruct(units)
                 error('units:badFormat','Units must be a struct')
-            elseif ~isfield(units,'chan') ||  ~isnumeric([units(:).chan])
+            elseif ~isfield(units,'chan') || ~isnumeric([units(:).chan])
                 error('units:badchanFormat','units must have a field called chan that contains a numeric array of channel numbers')
             elseif ~isfield(units,'ID') || ~isnumeric([units(:).ID])
                 error('units:badIDFormat','units must have a field called ID that contains a numeric array of the ID numbers')
-            elseif ~isfield(units,'array') ||  ~iscellstr({units.array})
-                error('units:badarrayFormat','units must have a field called array that contains a cell array of strings, where each string specifies the array on which the unit was collected')
+            elseif ~isfield(units,'array') || ~iscellstr({units.array})
+                error('units:badArrayFormat','units must have a field called array that contains a cell array of strings, where each string specifies the array on which the unit was collected')
+            elseif ~isfield(units,'monkey') || ~iscellstr({units.monkey})
+                error('units:badMonkeyFormat','units must have a field called array that contains a cell array of strings, where each string specifies the monkey on which the unit was collected')
             elseif ~isfield(units,'spikes') 
                 error('units:missingspikes','units must have a field called spikes containing tables of the spike times and waveforms')
             elseif ~isempty({units.spikes}) && (~isempty(find(cellfun(f,{units.spikes}),1)) ...
@@ -278,8 +282,6 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
                 error('meta:NoHasChaoticLoad','meta must include a hasChaoticLoad field with a boolean flag')
             elseif ~isfield(meta,'hasBumps') || ~islogical(meta.hasBumps)
                 error('meta:NoHasBumps','meta must include a hasBumps field with a boolean flag')
-            elseif ~isfield(meta,'hasTrials') || ~islogical(meta.hasTrials)
-                error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
             else
                 cds.meta=meta;
             end
@@ -326,14 +328,31 @@ classdef commonDataStructure < matlab.mixin.SetGet%handle
         getWFTaskTable(cds,times)
         getRWTaskTable(cds,times)
         getCOTaskTable(cds,times)
+        getCObumpTaskTable(cds,times)
         getBDTaskTable(cds,times)
         getUNTTaskTable(cds,times)
         getRPTaskTable(cds,times)
         getDCOTaskTable(cds,times)
         %general functions
         addProblem(cds,problem)
-        addOperation(cds,operation,varargin)
         sanitizeTimeWindows(cds)
+        %storage functions
+        upload2DB(cds)
+        save2fsmres(cds)
+    end
+    methods
+        %callbacks
+        function cdsLoggingEventCallback(cds,src,evnt)
+            %because this method is a callback we get the experiment passed
+            %twice: once as the primary input to the method, and once as
+            %the source of the callback.
+            %
+            %this implementation expects that the event data will be of the
+            %loggingListnerEventData subclass to event.EventData so that
+            %the operation name and operation data properties are available
+            
+            cds.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+        end
     end
 end
         

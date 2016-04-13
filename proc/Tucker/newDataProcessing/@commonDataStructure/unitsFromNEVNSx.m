@@ -7,8 +7,15 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
         array=opts.array;
     else
         warning('unitsFromNEVNSx:noArrayName','The user did not specify an array name for this data. Please re-load the data and specify an array name')
-        cds.addProblem('ArrayNameUnknown: the user did not specify a name for the array this data comes from')
+        cds.addProblem('arrayNameUnknown: the user did not specify a name for the array this data comes from')
         array='?';
+    end
+    if isfield(opts,'monkey')
+        array=opts.array;
+    else
+        warning('unitsFromNEVNSx:noArrayName','The user did not specify an monkey name for this data. Please re-load the data and specify an array name')
+        cds.addProblem('monkeyNameUnknown: the user did not specify a name for the monkey this data comes from')
+        monkey='?';
     end
     %if we already have unit data, check that our new units come from a
         %different source so that we don't get duplicate entries
@@ -36,10 +43,14 @@ function unitsFromNEVNSx(cds,NEVNSx,opts)
         units(i).chan=unitList(i,1);
         units(i).ID=unitList(i,2);
         units(i).array=array;
+        units(i).monkey=opts.monkey;
         units(i).spikes=table(ts,waves,'VariableNames',{'ts','wave'});
     end
     
     %append to existing units field
     set(cds,'units',[cds.units units])
-    cds.addOperation(mfilename('fullpath'))
+    opData.array=array;
+    opData.numUnitsAdded=size(unitList,1);
+    evntData=loggingListenerEventData('unitsFromNEVNSx',opData);
+    notify(cds,'ranOperation',evntData)
 end

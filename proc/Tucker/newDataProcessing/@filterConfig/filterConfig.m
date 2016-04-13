@@ -4,14 +4,14 @@ classdef filterConfig < matlab.mixin.SetGet%handle
     %the common_data_structure class for specificing parameters to be used 
     %when filtering and decimating data
     properties (SetAccess = public)
-        SR
+        sampleRate
         poles
         cutoff
     end
     methods (Static = true)
         function FC=filterConfig(varargin)
             %constructor function for the filterConfig class. 
-            SR=100;
+            sampleRate=100;
             poles=8;
             cutoff=25;
             if ~isempty(varargin)
@@ -21,14 +21,14 @@ classdef filterConfig < matlab.mixin.SetGet%handle
                            poles=varargin{i+1};
                        case 'cutoff'
                            cutoff=varargin{i+1};
-                       case 'SR'
-                           SR=varargin{i+1};
+                       case 'sampleRate'
+                           sampleRate=varargin{i+1};
                        otherwise
                             error('filterConfig:BadPropertyName',['the filterConfig class does not have a property named: ' varargin{i+1}])
                    end
                end
             end
-            set(FC,'SR',SR)
+            set(FC,'sampleRate',sampleRate)
             set(FC,'poles',poles)
             set(FC,'cutoff',cutoff)
         end
@@ -48,15 +48,15 @@ classdef filterConfig < matlab.mixin.SetGet%handle
                 FC.poles=p;
             end
         end
-        function set.SR(FC,SR)
+        function set.sampleRate(FC,SR)
             %setter function for the filterconfig class. Sets the sample
             %rate property
             
             %check that SR is of the appropriate type:
             if ischar(SR) || ~isreal(SR) || numel(SR)~=1 || SR<=0
-                error('SR:BadSRValue','SR must be an real value greater than or equal to 0')
+                error('SR:BadsampleRateValue','sampleRate must be an real value greater than or equal to 0')
             else
-                FC.SR=SR;
+                FC.sampleRate=SR;
             end
         end
         function set.cutoff(FC,c)
@@ -67,8 +67,8 @@ classdef filterConfig < matlab.mixin.SetGet%handle
             if isempty(c) || ischar(c) || ~isempty(find(~isreal(c),1)) ||  ~isempty(find(c<=0,1)) || numel(c)>2
                 error('cutoff:BadCutoffValue','Cutoff must be an Real or pair of Real values greater than or equal to 0')
             else
-                if ~c>FC.SR/2
-                    warning('cutoff:cutoffLargerThanSR',['The specified cutoff value of: ',num2str(c),' is larger than half the specified sample rate: ' num2str(FC.SR)])
+                if ~c>FC.sampleRate/2
+                    warning('cutoff:cutoffLargerThansampleRate',['The specified cutoff value of: ',num2str(c),' is larger than half the specified sample rate: ' num2str(FC.sampleRate)])
                 end
                 FC.cutoff=c;
             end

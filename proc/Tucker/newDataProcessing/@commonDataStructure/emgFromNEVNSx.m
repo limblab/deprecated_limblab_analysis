@@ -38,6 +38,7 @@ function emgFromNEVNSx(cds,NEVNSx,NSxInfo)
         elseif ~isempty(emg)
             cds.mergeTable('emg',emg)
         end
-        cds.addOperation(mfilename('fullpath'))
+        evntData=loggingListenerEventData('emgFromNEVNSx',[]);
+        notify(cds,'ranOperation',evntData)
     end
 end

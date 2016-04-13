@@ -1,4 +1,4 @@
-function [adata,t]=getFilteredAnalogMat(NEVNSx,NSx_info,filterConfig,achan_index)
+function [adata,t]=getFilteredAnalogMat(NEVNSx,NSx_info,fc,achan_index)
 %[adata,t]=getFilteredAnalogMat(NEVNSx,NSx_info,filter_config,achan_index)
     %takes an NEVNSx object, an NSx_info object, a filter_config object,
     %and a list of analog channels achan_index. Returns a matrix where each
@@ -25,7 +25,7 @@ function [adata,t]=getFilteredAnalogMat(NEVNSx,NSx_info,filterConfig,achan_index
         t = (0:length(a)-1)' / NSx_info.NSx_sampling(achan_index(c));
 
         %decimate and filter the raw force signals
-        temp=decimateData([t a],filterConfig);
+        temp=decimateData([t a],fc);
         %allocate the adata matrix if it doesn't exist yet
         if isempty(adata)
             adata=zeros(size(temp,1),numel(achan_index));

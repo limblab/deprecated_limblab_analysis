@@ -43,6 +43,7 @@ function [opts]=getTask(cds,task,opts)
             meta=cds.meta;
             meta.task=opts.task;
             set(cds,'meta',meta)
-            cds.addOperation(mfilename('fullpath'))
+            evntData=loggingListenerEventData('getTask',[]);
+            notify(cds,'ranOperation',evntData)
         end
 end

@@ -1,5 +1,12 @@
+%%%
+% Plots tuning surfaces for RW chaos task from CSV files of force
+% direction, velocity direction, and firing rate
+%%%
+
 %% read csv files
-reaches_mat = csvread('C:\Users\rhc307\Documents\Data\ForceKin\Data\Arthur_S1_012-s.csv');
+file = '/home/raeed/Dropbox/ForceKin Paper/Data/tiki_rw026_s';
+reaches_mat = csvread([file '.csv']);
+% reaches_mat = csvread('/home/raeed/Dropbox/ForceKin Paper/Data/Arthur_S1_016.csv');
 thv = reaches_mat(:,1);
 thf = reaches_mat(:,2);
 fr = reaches_mat(:,3:end);
@@ -10,13 +17,18 @@ dir_vector = -pi:increment:pi-increment;
 [force_dir, vel_dir] = meshgrid(dir_vector,dir_vector);
 
 % group reaches into bins for anova later
-group_vector = -pi:pi/3:pi;
+group_vector = -pi:pi/2:pi;
 force_group = interp1(group_vector,1:length(group_vector),thf,'nearest');
 vel_group = interp1(group_vector,1:length(group_vector),thv,'nearest');
 force_group(force_group == length(group_vector)) = 1; %
 vel_group(vel_group == length(group_vector)) = 1;
 
 %% Plot tuning curves
+dir_results = dir([file '_binANOVA/']);
+if isempty(dir_results)
+    mkdir([file '_binANOVA/'])
+end
+
 resid_map_total = zeros(size(force_dir));
 for uid = 1:size(fr,2)
 %     [force_dir, vel_dir] = meshgrid(-pi:increment:pi, -pi:increment:pi);
@@ -96,7 +108,7 @@ for uid = 1:size(fr,2)
     resid_vect = fr(:,uid)-mean(mean(full_map));
 %     p=anova2(resid_map,1,'off');
 %     p = anovan(full_map(:),{velmap_groups,forcemap_groups},'model','interaction');
-    p = anovan(resid_vect,{vel_group,force_group},'model','interaction','sstype',2,'display', 'off');
+    p = anovan(resid_vect,{vel_group,force_group},'model','interaction','sstype',3,'display', 'off');
 %     resid_map_total = resid_map_total+resid_map/mean(mean(resid_map));
 %     figure; plot3(thf, thv, fr(:,uid), 'k.');
 %     hold on;
@@ -106,10 +118,10 @@ for uid = 1:size(fr,2)
 %     zlabel('Firing Rate');
 
     clim = [min(min(full_map)) max(max(full_map))];
-    figure
+    h=figure('visible','off');
     subplot(221)
 %     mesh(vel_dir-vel_PD,force_dir-force_PD,full_map)
-    imagesc(full_map,clim)
+    imagesc(full_map)
     colorbar
     subplot(222)
 %     imagesc(vel_map,clim)
@@ -128,8 +140,15 @@ for uid = 1:size(fr,2)
     subplot(224)
     title(['ANOVA p-vals: [' num2str(p(1)) ', ' num2str(p(2)) ', ' num2str(p(3)) ']'])
     colormap jet
-
+    
+    saveas(h,[file '_binANOVA\Neuron_' num2str(uid) '.png'])
+    
+    close(h)
+    
+    disp(['Processed unit: ' num2str(uid)])
 end % foreach unit
+
+disp('Done!')
 
 % figure
 % imagesc(resid_map_total)

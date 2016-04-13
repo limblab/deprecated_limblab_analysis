@@ -78,4 +78,6 @@ function sanitizeTimeWindows(cds)
         end
         set(cds,'units',units)
     end
+    evntData=loggingListenerEventData('sanitizeTimeWindows',opData);
+    notify(ex,'ranOperation',evntData)
 end

@@ -1,4 +1,4 @@
-classdef experiment < matlab.mixin.SetGet
+classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet is a subclass of the handle class, and implements set & get methods on top of the attributes of handle classes
     properties (Access = public)
         meta
         kin
@@ -9,16 +9,17 @@ classdef experiment < matlab.mixin.SetGet
         triggers
         units
         trials
-        fr
+        firingRateConfig
+        firingRate
         binConfig
         bin
+        analysis
     end
     properties (Transient = true)
         scratch
     end
     events
-        addedSession
-        computedFRs
+        ranOperation
     end
     methods (Static = true)
         function ex=experiment()
@@ -27,7 +28,7 @@ classdef experiment < matlab.mixin.SetGet
                 m.experimentVersion=0;
                 m.includedSessions={};
                 m.mergeDate={};
-                m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
+                m.processedWith={'operation','function','functionFile','date','computer name','user name','Git log','File log','operation_data'};
                 m.knownProblems={'problem'};
                 m.fileSepShift=1;
                 m.duration=0;
@@ -61,7 +62,7 @@ classdef experiment < matlab.mixin.SetGet
             %% emg
                 set(ex,'emg',emgData());%empty emgData class object
             %% analog
-                set(ex,'analog',analogData());%empty analogData class object
+                set(ex,'analog',timeSeriesData());%empty timeSeriesData class object
             %% triggers
                 set(ex,'triggers',triggerData());%empty triggerData class object
             %% units
@@ -69,16 +70,45 @@ classdef experiment < matlab.mixin.SetGet
             %% trials
                 set(ex,'trials',trialData());%empty trialData class object
             %% fr
-                set(ex,'fr',firingRateData());%empty firingRateData class object
+                set(ex,'firingRate',firingRateData());%empty firingRateData class object
             %% bin configuration
                 %settings to compute binned object from the experiment
-                bc.filter=filterConfig('poles',8,'cutoff',10,'SR',20);
-                bc.FR.offset=0;
-                bc.FR.method='bin';
-                bc.includedData=struct('includeField','units','which',[]);
+                bc.filterConfig=filterConfig('poles',8,'cutoff',10,'sampleRate',20);
+                inc.field={};
+                inc.which={};
+                bc.include=inc;
                 set(ex,'binConfig',bc);
+            %% firing rate configuration
+                frc.offset=0;
+                frc.method='bin';
+                frc.lagSteps=1;
+                frc.cropType='keepSize';
+                frc.lags=0;
+                frc.sampleRate=20;
+                frc.kernelWidth=.05;
+                set(ex,'firingRateConfig',frc)
             %% bin
                 set(ex,'bin',binnedData()); %empty binned  class object
+            %% analysis
+                set(ex,'analysis',[]);%empty analysis structure
+            %% listners  
+                %experiment event listners
+                addlistener(ex,'ranOperation',@(src,evnt)ex.experimentLoggingEventCallback(src,evnt));
+                %data event listners
+                addlistener(ex.kin,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.kin,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.force,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.force,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.lfp,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.lfp,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.emg,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.emg,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.triggers,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.triggers,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                %no listners on analog since its empty. we will add them
+                %when we insert data
+                addlistener(ex.trials,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.units,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
         end
     end
     methods
@@ -163,8 +193,8 @@ classdef experiment < matlab.mixin.SetGet
             end
         end
         function set.analog(ex,analog)
-            if ~isa(analog,'analogData')
-                error('analog:badFormat','analog must be a analogData class object. See the analogData class for details')
+            if ~isa(analog,'timeSeriesData')
+                error('analog:badFormat','analog must be a struct array of timeSeriesData class objects. See the analogData class for details')
             else
                 ex.analog=analog;
             end
@@ -190,23 +220,54 @@ classdef experiment < matlab.mixin.SetGet
                 ex.trials=trials;
             end
         end
-        function set.fr(ex,fr)
+        function set.firingRate(ex,fr)
             if ~isa(fr,'firingRateData')
                 error('fr:badFormat','fr must be a firingRateData class object. See the firingRateData class for details')
             else
-                ex.fr=fr;
+                ex.firingRate=fr;
+            end
+        end
+        function set.firingRateConfig(ex,frc)
+            if ~isstruct(frc)
+                error('firingRateConfig:badFormat','fr must be a structure')
+            elseif ~isfield(frc,'method') || ~ischar(frc.method)
+                error('firingRateConfig:misconfiguredField','the firingRateConfig field must have a method field containing a string with the method for computing fr')
+            elseif ~isfield(frc,'lagSteps') || ~isnumeric(frc.lagSteps)
+                error('firingRateConfig:misconfiguredField','the firingRateConfig field must have a lagSteps field containing an integer with the number of time steps between successive lags')
+            elseif ~isfield(frc,'cropType') || ~ischar(frc.cropType)
+                error('firingRateConfig:misconfiguredField','the firingRateConfig field must have a cropType field containing a string with the method for cropping the firing rate data')
+            elseif ~isfield(frc,'lags') || ~isnumeric(frc.lags)
+                error('firingRateConfig:misconfiguredField','the firingRateConfig field must have a lags field containing an integer with the min and max lags. If one-sided lags are desired a single value can be used. If no lags are desired set this value to 0')
+            elseif ~isfield(frc,'sampleRate') || ~isnumeric(frc.sampleRate)
+                error('firingRateConfig:misconfiguredField','the firingRateConfig field of the experiment must contain a sampleRate field with a number describing the sample rate in Hz')
+            elseif ~isfield(frc,'kernelWidth') || ~isnumeric(frc.kernelWidth)
+                error('firingRateConfig:misconfiguredField','the firingRateConfig field of the experiment must contain a kernelWidth field with a number describing the width in s of the gaussian kernel used for the gaussian method of computing firing rate')
+            else
+                ex.firingRateConfig=frc;
+            end
+            if frc.sampleRate>ex.binConfig.filterConfig.sampleRate
+                warning('firingRateConfig:FRBinSizeMismatch','The firing rate bin size selected is smaller than the configured binsize for binnedData. This will cause errors if using the firing rate to generate binnedData')
+            elseif frc.sampleRate~=ex.binConfig.filterConfig.sampleRate
+                warning('firingRateConfig:FRBinSizeMismatch','The firing rate bin size selected is smaller than the configured binsize for binnedData. The FR data will be decimated to generate binnedData')
             end
         end
         function set.binConfig(ex,binConfig)
             if isempty(binConfig) 
                 ex.binConfig=binConfig;
-            elseif (~isfield(binConfig,'filter') || ~isa(binConfig.filter,'filterConfig'))
-                error('binConfig:BadfilterFormat','the filter field must be a filterconfig object')
-            elseif ~isfield(binConfig,'FR') || ~isfield(binConfig.FR,'offset') ...
-                    || ~isfield(binConfig.FR,'method') || ~isnumeric(binConfig.FR.offset)...
-                    || ~ischar(binConfig.FR.method)
-                error('binConfig:badFRFormat','the FR field of binconfig must have 2 fields: offset and method. offset must be the offset time between neural and external data, and method must be a string defining the type of calculation used to compute firing rate ')
+            elseif (~isfield(binConfig,'filterConfig') || ~isa(binConfig.filterConfig,'filterConfig'))
+                error('binConfig:BadFilterFormat','the filterConfig field must be a filterconfig object')
+            elseif (~isfield(binConfig,'include') || (~isempty(binConfig.include) && ~isstruct(binConfig.include)))
+                error('binConfig:BadincludeFormat','the include field must be a struct array with fields: includedData.includedField and includedData.which')
+            elseif ~isfield(binConfig.include,'field') || (numel(binConfig.include.field)>=1 && ~iscellstr({binConfig.include.field}))
+                    error('binConfig:BadIncludeFormat','the include field must have a sub-field include.field')
+            elseif ~isfield(binConfig.include,'which') 
+                    error('binConfig:BadIncludeFormat','the include field must have a sub-field called include.which')
             else
+                for i=1:length(binConfig)
+                    if ~isempty(binConfig.include(i).which) && ~iscellstr(binConfig.include(i).which) && ~isnumeric(binConfig.include(i).which{1})
+                        error('binConfig:badIncludedFormat','the binConfig.included.which field must be either a cell array of column labels, or a cell containing a numeric matrix')
+                    end
+                end
                 ex.binConfig=binConfig;
             end
         end
@@ -217,14 +278,62 @@ classdef experiment < matlab.mixin.SetGet
                 ex.bin=bin;
             end
         end
+        function set.analysis(ex,anal)
+            if ~isempty(anal) 
+                if ~isstruct(anal)
+                    error('analysis:notAStructure','the analysis field must be a structure with the following fields: ID, date, type, data')
+                elseif ~isfield(anal,'ID')
+                    error('analysis:missingIDField','the analyssis struct array must have an ID field')
+                elseif ~isfield(anal,'date')
+                    error('analysis:missingDateField','the analyssis struct array must have a date field')
+                elseif ~isfield(anal,'type')
+                    error('analysis:missingTypeField','the analyssis struct array must have a type field')
+                elseif ~isfield(anal,'data')
+                    error('analysis:missingDataField','the analyssis struct array must have a data field')
+                elseif ~isfield(anal,'user')
+                    error('analysis:missingUserField','the analyssis struct array must have a user field')
+                elseif ~isfield(anal,'PCName')
+                    error('analysis:missingPCNameField','the analyssis struct array must have a PCName field')
+                else
+                    ex.analysis=anal;
+                end
+            else
+                ex.analysis=anal;
+            end
+        end
         %end of set methods    
     end
     methods (Static = false)
         addSession(ex,session)
-        addOperation(ex,operation,varargin)
         addProblem(ex,problem)
         
-        calcFR(ex)
-        binData(ex)
+        calcFiringRate(ex)
+        binData(ex,varargin)
+    end
+    methods
+        %callbacks
+        function experimentLoggingEventCallback(ex,src,evnt)
+            %because this method is a callback we get the experiment passed
+            %twice: once as the primary input to the method, and once as
+            %the source of the callback.
+            %
+            %this implementation expects that the event data will be of the
+            %loggingListnerEventData subclass to event.EventData so that
+            %the operation name and operation data properties are available
+            
+            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+        end
+        function dataLoggingCallback(ex,src,evnt)
+            %because this method is a callback we get the experiment passed
+            %as the primary input, and the source class of the event passed
+            %as the second input.
+            %
+            %this method is inteded as a logging callback for when data of
+            %the experiment performs an operation such as re-filtering.
+            %this implementation expects that the event data will be of the
+            %loggingListnerEventData subclass to event.EventData so that
+            %the operation name and operation data properties are available
+            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+        end
     end
 end

@@ -17,6 +17,7 @@ function enc2WFpos(cds)
         else
             cds.mergeTable('pos',pos)
         end
-        cds.addOperation(mfilename('fullpath'));
+        evntData=loggingListenerEventData('enc2WFpos',[]);
+        notify(cds,'ranOperation',evntData)
     end
 end

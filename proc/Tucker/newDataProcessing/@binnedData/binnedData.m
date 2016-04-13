@@ -14,6 +14,12 @@ classdef binnedData < matlab.mixin.SetGet
         gpfaData
         kalmanData
     end
+    events
+        ranGLMFit
+        ranWeinerFit
+        ranGPFAFit
+        ranKalmanFit
+    end
     methods (Static = true)
         %constructor
         function binned=binnedData()
@@ -50,11 +56,11 @@ classdef binnedData < matlab.mixin.SetGet
         function set.meta(binned,meta)
             if ~isstruct(meta)
                 error('meta:notAStruct','meta must be a struct')
-            elseif ~isfield(meta,'binSize') & ~isa(meta.binSize,'double')
+            elseif ~isfield(meta,'binSize') && ~isa(meta.binSize,'double')
                 error('meta:noBinSize','meta must contain a binSize field with the size of the bins in ms')
-            elseif ~isfield(meta,'numLags') & ~isa(meta.numLags,'double')
+            elseif ~isfield(meta,'numLags') && ~isa(meta.numLags,'double')
                 error('meta:noNumLags','meta must contain a numLags field with the number of lags used to generate the binned data')
-            elseif ~isfield(meta,'dateTime') & ~isa(meta.dateTime,'char')
+            elseif ~isfield(meta,'dateTime') && ~isa(meta.dateTime,'char')
                 error('meta:noNumLags','meta must contain a numLags field with the number of lags used to generate the binned data')
             end
             binned.meta=meta;
@@ -128,6 +134,7 @@ classdef binnedData < matlab.mixin.SetGet
         end
     end
     methods (Static = false)
+        updateBins(binned,bins)
         %general methods
         fitGlm(binned)
         fitWeiner(binned)
