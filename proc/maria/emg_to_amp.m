@@ -1,0 +1,95 @@
+%inputs
+emg_file = 'EMGdata'; 
+load(emg_file); %imports an 8x135 cell called rawCycleData
+%each row corresponds to a different animal, each col corresponds to a
+%different step (only one animal has 135 steps)
+%each cell is ndatapts x 15 array (15 is number of muscles)
+%SO to extract an individual muscle over one step, follow this format:
+%rawCycleData{1}(:, 1)
+
+stepnum = 1; 
+musclenum = 2; 
+step = rawCycleData{stepnum}(:, musclenum); 
+
+plot(step)
+
+%do absolute value of the whole thing
+
+%do a little bit of smoothing?
+
+%create min and max stim levels
+%NOTE: these will depend on the different muscles
+emglow_limit = .35; 
+emghigh_limit = 2; 
+amplow_limit = 1.2; %lowest level of stim to twitch
+amphigh_limit = 4;  %highest level of stim to use
+for i=1:length(step)
+    step(i) = abs(step(i)); 
+    if step(i)<emglow_limit
+        step(i)=0; 
+    elseif step(i)>emghigh_limit
+        step(i)=amphigh_limit; 
+    else
+        step(i)=amplow_limit+step(i)*(amphigh_limit-amplow_limit)/(emghigh_limit-emglow_limit); %follows EMG_to_stim format
+    end
+    
+end
+
+zero_ind = find(step==0);
+seq = 0; 
+
+%zero_ind = zero_ind([1:50])
+removals = [];
+for i=2:length(zero_ind)
+    if zero_ind(i)==(zero_ind(i-1)+1)
+        %disp(['index: ' num2str(zero_ind(i))]); 
+        seq = seq+1; 
+        %disp(['seq length: ' num2str(seq)]); 
+    else
+        if seq>=25 %if more than n zeros in a row, we won't mess with it
+            removals = [removals; zero_ind(i-seq:i-1)];
+            %disp(['deleting ' num2str(zero_ind(i-seq)) ' to ' num2str(zero_ind(i-1))])
+        end
+        seq = 0; %reset
+    end
+    if i+1>length(zero_ind)
+        removals = [removals; zero_ind(i-seq:i-1)];
+        %disp(['deleting ' num2str(zero_ind(i-seq)) ' to ' num2str(zero_ind(i-1))])
+        break;
+    end
+    
+end
+zero_ind = setdiff(zero_ind, removals);
+
+for i=2:length(zero_ind)
+    step(zero_ind(i))=step(zero_ind(i)-1); 
+end
+hold on;
+plot(step)
+
+
+
+delta = .5; 
+timing = 0; 
+tic
+for i=2:length(step)
+    if abs(step(i)-step(i-1))>delta
+        %disp('large delta, stim now');
+        timing=0; tic
+    else
+        %disp('do nothing/keep stim constant');
+        step(i) = step(i-1); 
+        timing = timing + 1/5000
+        toc
+        if toc<timing
+            pause(timing-toc)
+        end
+        
+    end
+end
+plot(step)
+%timing for 5000 Hz sample - take ???? no of samples/5000 
+
+
+%NOTE: sampling happened at 5000 hz
+%we want to stim at ?? hz

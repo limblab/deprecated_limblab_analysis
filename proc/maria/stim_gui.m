@@ -1372,7 +1372,8 @@ starts = {str2num(get(handles.start1, 'String')), str2num(get(handles.start2, 'S
 %if saving, write all of these cells to a .mat file: 
 if get(handles.save, 'Value')
     file_name = get(handles.filename, 'String'); %must make a new file name every time
-    file_name = file_name{1}
+    disp(file_name)
+    %file_name = file_name{1}
     if exist(strcat(file_name, '.mat'), 'file')
         overwrite = questdlg('This file already exists. Are you sure you want to overwrite it?', ...
             'Choices', 'Okay', 'Cancel', 'Cancel'); 
@@ -1396,7 +1397,7 @@ end
 
 %if the stimulator object doesn't exist yet, set it up: 
 if ~exist('ws', 'var')
-    serial_string = 'COM3'; %this is different via mac and windows; use instrfind to check location
+    serial_string = 'COM6'; %this is different via mac and windows; use instrfind to check location
     ws = wireless_stim(serial_string, 1); %the number has to do with verbosity of running feedback
     ws.init(1, ws.comm_timeout_disable);
 end
@@ -1409,10 +1410,10 @@ end
 %there...
 for element=1:length(index)
     ch = index(element); 
-    tl = tls(ch); % ms
-    freq = get(handles.freq, 'Value'); %Hz
-    pw = pws(ch)*1000; % us, converted from input in ms
-    amp = amps(ch)*1000; %input in mA, gets programmed in uA
+    tl = tls{ch}; % ms
+    freq = str2num(get(handles.freq, 'String')); %Hz
+    pw = pws{ch}*1000; % us, converted from input in ms
+    amp = amps{ch}*1000; %input in mA, gets programmed in uA
     
     %Can add parameters for train delay (TD) and polarity (PL; 1 is
     %cathodic first)
@@ -1420,8 +1421,8 @@ for element=1:length(index)
         'Freq', freq, ...        % Hz
         'CathDur', pw, ...    % us
         'AnodDur', pw, ...    % us
-        'CathAmp', amp, ... % uA
-        'AnodAmp', amp, ... % uA
+        'CathAmp', amp+32768, ... % uA
+        'AnodAmp', 32768-amp, ... % uA
         'Run', ws.run_once ... % Single train mode
         );
     ws.set_stim(command, ch); 
@@ -1430,13 +1431,58 @@ end
 %now run all of the things you just set. must now get things from the
 %starts array to stagger them correctly. TIMING SUXXXX
 
-%to run them all simultaneously: 
-command{1} = struct('Run', ws.run_cont);
-ws.set_stim(command, index); %check that this actually works tho!
+% %to run them all simultaneously: 
+% command{1} = struct('Run', ws.run_cont);
+% ws.set_stim(command, index); %check that this actually works tho!
 
-%now to deal with TIMINGGGGGG ugh.
+%now to deal with TIMINGGGGG
+%okay, two parameters: start time, length of time to stimulate (det by
+%train but I need to pause it for long enough to finish), cycle delay, num
+%cycles
+
+%start time for each is stored in starts{index(element)}
+%tl for each is in tls{index(element)}
+cycle_del = str2num(get(handles.cycdelay, 'String')); %get cycle delay
+num_cycles = str2num(get(handles.numcyc, 'String')); %number of cycles
+
+%remove unchecked rows from "starts" 
+for j=1:length(index)
+    temp{j} = starts{index(j)};
+end
+starts = temp; %TODO: check this
+
+j=0;
 
 
+while ~isempty(starts)
+    j = j+1;
+    a = min(cell2mat(starts)); %find min in start times
+    i = find([starts{:}] == a); %find out which channels it runs on
+    ch_times(j, :) = {a, index(i)}; %store channels that start at time a: {row, col} = {pair, [value channels]}
+    starts(i) = []; %remove the min from the starts array
+end    
+%now I have ch_times. so I need to do timing. with tic and pause for now...
 
+for i=1:num_cycles
+    tic
+    for j=1:size(ch_times, 1)
+        if j==1 %pause time for the first one is just start value
+            ptime = ch_times{1, 1};
+        else %pause time for following cycles is 
+            ptime = ch_times{j, 1}-ch_times{j-1, 1};
+        end
+        pause(ptime/1000); %pause (convert to ms) to get to the next pulse time
+        toc
+        command{1} = struct('Run', ws.run_once_go);
+        ws.set_stim(command, ch_times{j, 2}); %stim the channels listed for this time
+    end
+    
+    disp(['end of cycle ' num2str(i)]);
+    pause(cycle_del/1000); %pause for length of cycle_del TODO fix this!
+    toc
+end
 
+disp('done stimulating'); 
+%TODO: cleanup. does this still run fine if I get rid of all the extra
+%functions above?
 
