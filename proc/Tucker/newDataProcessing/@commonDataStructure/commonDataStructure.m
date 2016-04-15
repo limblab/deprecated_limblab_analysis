@@ -14,6 +14,13 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
     properties (Transient = true, SetAccess = private)
         %Not saved with the common_data_structure. used to store transient
         %data during loading
+        NEV
+        NS1
+        NS2
+        NS3
+        NS4
+        NS5
+        NSxInfo
         enc
         words
         databursts
@@ -53,7 +60,6 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 
                 m.duration=0;
                 m.dateTime='-1';
-                m.fileSepTime=[];
                 m.percentStill=0;
                 m.stillTime=0;
                 m.dataWindow=[0 0];
@@ -82,7 +88,14 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 cds.units=struct('chan',[],'ID',[],'array',{},'monkey',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
             %% empty table of trial data
                 cds.trials=cell2table(cell(0,5),'VariableNames',{'trial_number','start_time','go_time','end_time','trial_result'});
-            %% empty table of words
+            %% empty NEVNSx fields:
+                set(cds,'NEV',[])
+                set(cds,'NS1',[])
+                set(cds,'NS2',[])
+                set(cds,'NS3',[])
+                set(cds,'NS4',[])
+                set(cds,'NS5',[])
+                %% empty table of words
                 cds.words=cell2table(cell(0,2),'VariableNames',{'ts','word'});
             %% empty table of databursts
                 cds.databursts=cell2table(cell(0,2),'VariableNames',{'ts','word'});
@@ -201,6 +214,45 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 cds.units=units;
             end
         end 
+        function set.NEV(cds,NEV)
+            %check for one of the random fields that should be in the NEV
+            %object if its the thing that Blackrock's loading function
+            %produces:
+            if ~isstruct(NEV) && ~isfield(NEV,'Data') && ~isfield(NEV.Data,'SerialDigitalIO')
+                error('NEV:badFormat','The passed object does not appear to be an NEV object')
+            end
+            cds.NEV=NEV;
+        end
+        function set.NS1(cds,NS1)
+            if ~isstruct(NS1) && ~isfield(NS1,'MetaTags')
+                error('NS1:badFormat','The NS1 must be a NSx object loaded using the openNSxLimblab function')
+            end
+            cds.NS1=NS1;
+        end
+        function set.NS2(cds,NS2)
+            if ~isstruct(NS2) && ~isfield(NS2,'MetaTags')
+                error('NS2:badFormat','The NS2 must be a NSx object loaded using the openNSxLimblab function')
+            end
+            cds.NS2=NS2;
+        end
+        function set.NS3(cds,NS3)
+            if ~isstruct(NS3) && ~isfield(NS3,'MetaTags')
+                error('NS3:badFormat','The NS3 must be a NSx object loaded using the openNSxLimblab function')
+            end
+            cds.NS3=NS3;
+        end
+        function set.NS4(cds,NS4)
+            if ~isstruct(NS4) && ~isfield(NS4,'MetaTags')
+                error('NS4:badFormat','The NS4 must be a NSx object loaded using the openNSxLimblab function')
+            end
+            cds.NS4=NS4;
+        end
+        function set.NS5(cds,NS5)
+            if ~isstruct(NS5) && ~isfield(NS5,'MetaTags')
+                error('NS5:badFormat','The NS5 must be a NSx object loaded using the openNSxLimblab function')
+            end
+            cds.NS5=NS5;
+        end
         function set.words(cds,words)
             if ~istable(words) || isempty(find(strcmp('ts',words.Properties.VariableNames),1)) ...
                     || isempty(find(strcmp('word',words.Properties.VariableNames),1))
@@ -250,8 +302,6 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 error('meta:BaddurationFormat','the duration field must be numeric, and contain the duration of the data file in seconds')
             elseif ~isfield(meta,'dateTime') || ~ischar(meta.dateTime)
                 error('meta:BaddateTimeFormat','Date time must be a string containing the date at which the raw data was collected')
-            elseif ~isfield(meta,'fileSepTime') || (~isempty(meta.fileSepTime) && size(meta.fileSepTime,2)~=2) || ~isnumeric(meta.fileSepTime)
-                error('meta:BadfileSepTimeFormat','the fileSepTime field must be a 2 column array, with each row containing the start and end of time gaps where two files were concatenated')
             elseif ~isfield(meta,'percentStill') || ~isnumeric(meta.percentStill)
                 error('meta:BadpercentStillFormat','the percentStill field must be a fractional value indicating the percentage of the file where the cursor was still')
             elseif ~isfield(meta,'stillTime') || ~isnumeric(meta.stillTime)
@@ -306,15 +356,17 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         bdf2cds(cds,bdf)
         sourceFile2cds(cds,folderPath,fileName,varargin)
         database2cds(cds,conn,filepath,varargin)
+        nev2NEVNSx(cds,fname)
         NEVNSx2cds(cds,NEVNSx,varargin)
-            eventsFromNEVNSx(cds,NEVNSx,opts)
-            kinematicsFromNEVNSx(cds,NEVNSx,opts)
-            forceFromNEVNSx(cds,NEVNSx,NSx_info,opts)
-            unitsFromNEVNSx(cds,NEVNSx,opts)
-            emgFromNEVNSx(cds,NEVNSx,NSxInfo)
-            lfpFromNEVNSx(cds,NEVNSx,NSxInfo)
-            analogFromNEVNSx(cds,NEVNSx,NSxInfo)
-            metaFromNEVNSx(cds,NEVNSx,opts)
+            eventsFromNEV(cds,opts)
+            kinematicsFromNEV(cds,opts)
+            forceFromNSx(cds,opts)
+            unitsFromNEV(cds,opts)
+            emgFromNSx(cds)
+            lfpFromNSx(cds)
+            triggersFromNSx(cds)
+            analogFromNSx(cds)
+            metaFromNEVNSx(cds,opts)
             pos=enc2handlepos(cds,dateTime,lab)
             pos=enc2WFpos(cds)
             mergeTable(cds,fieldName,mergeData)

@@ -1,4 +1,4 @@
-function NEVNSx2cds(cds,NEVNSx,varargin)
+function NEVNSx2cds(cds,varargin)
     %this is a method function for the common_data_structure (cds) class, and
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files
@@ -109,57 +109,20 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         end
         %get the date of the file so processing that depends on when the
         %file was collected has something to work with
-        opts.dateTime= [int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(1)) ...
-            ' ' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(NEVNSx.NEV.MetaTags.DateTimeRaw(8))];
-        opts.duration= NEVNSx.NEV.MetaTags.DataDurationSec;
+        opts.dateTime= [int2str(cds.NEV.MetaTags.DateTimeRaw(2)) '/' int2str(cds.NEV.MetaTags.DateTimeRaw(4)) '/' int2str(cds.NEV.MetaTags.DateTimeRaw(1)) ...
+            ' ' int2str(cds.NEV.MetaTags.DateTimeRaw(5)) ':' int2str(cds.NEV.MetaTags.DateTimeRaw(6)) ':' int2str(cds.NEV.MetaTags.DateTimeRaw(7)) '.' int2str(cds.NEV.MetaTags.DateTimeRaw(8))];
+        opts.duration= cds.NEV.MetaTags.DataDurationSec;
     %% get the info of data we have to work with
         % Build catalogue of entities
-        unit_list = unique([NEVNSx.NEV.Data.Spikes.Electrode;NEVNSx.NEV.Data.Spikes.Unit]','rows');
+        unit_list = unique([cds.NEV.Data.Spikes.Electrode;cds.NEV.Data.Spikes.Unit]','rows');
 
-        NSxInfo.NSx_labels = {};
-        NSxInfo.NSx_sampling = [];
-        NSxInfo.NSx_idx = [];
-        if ~isempty(NEVNSx.NS2)
-            NSxInfo.NSx_labels = {NSxInfo.NSx_labels{:} NEVNSx.NS2.ElectrodesInfo.Label}';
-            NSxInfo.NSx_sampling = [NSxInfo.NSx_sampling repmat(1000,1,size(NEVNSx.NS2.ElectrodesInfo,2))];
-            NSxInfo.NSx_idx = [NSxInfo.NSx_idx 1:size(NEVNSx.NS2.ElectrodesInfo,2)];
-        end
-        if ~isempty(NEVNSx.NS3)
-            NSxInfo.NSx_labels = {NSxInfo.NSx_labels{:} NEVNSx.NS3.ElectrodesInfo.Label};
-            NSxInfo.NSx_sampling = [NSxInfo.NSx_sampling repmat(2000,1,size(NEVNSx.NS3.ElectrodesInfo,2))];
-            NSxInfo.NSx_idx = [NSxInfo.NSx_idx 1:size(NEVNSx.NS3.ElectrodesInfo,2)];
-        end
-        if ~isempty(NEVNSx.NS4)
-            NSxInfo.NSx_labels = {NSxInfo.NSx_labels{:} NEVNSx.NS4.ElectrodesInfo.Label}';
-            NSxInfo.NSx_sampling = [NSxInfo.NSx_sampling repmat(10000,1,size(NEVNSx.NS4.ElectrodesInfo,2))];
-            NSxInfo.NSx_idx = [NSxInfo.NSx_idx 1:size(NEVNSx.NS4.ElectrodesInfo,2)];
-        end
-        if ~isempty(NEVNSx.NS5)
-            NSxInfo.NSx_labels = {NSxInfo.NSx_labels{:} NEVNSx.NS5.ElectrodesInfo.Label}';
-            NSxInfo.NSx_sampling = [NSxInfo.NSx_sampling repmat(30000,1,size(NEVNSx.NS5.ElectrodesInfo,2))];
-            NSxInfo.NSx_idx = [NSxInfo.NSx_idx 1:size(NEVNSx.NS5.ElectrodesInfo,2)];
-        end
-        %sanitize labels
-        NSxInfo.NSx_labels = NSxInfo.NSx_labels(~cellfun('isempty',NSxInfo.NSx_labels));
-        NSxInfo.NSx_labels = deblank(NSxInfo.NSx_labels);
-        %apply aliases to labels:
-        if ~isempty(cds.aliasList)
-            for i=1:size(cds.aliasList,1)
-                NSxInfo.NSx_labels(~cellfun('isempty',strfind(NSxInfo.NSx_labels,cds.aliasList{i,1})))=cds.aliasList(i,2);
-            end
-        end
-        % check that we don't have a data stream using the reserved name
-        % 'good'
-        if ~isempty(find(strcmp('good',NSxInfo.NSx_labels),1));
-            error('NEVNSx2cds:goodIsAReservedName','the cds and experiment code uses the label good as a flag for kinematic data, and treats this label specially when refiltering. This label is reserved to avoid unintended behaviro when refiltering other data sreams. Please use the alias function to re-name the good channel of input data')
-        end
     %% Events: 
         %if events are already in the cds, then we keep them and ignore any
         %new words in the NEVNSx. Otherwise we load the events from the
         %NEVNSx, followed by the task
         if isempty(cds.words)
             %do this first since the task check requires the words to already be processed, and task is required to work on kinematics and force
-            cds.eventsFromNEVNSx(NEVNSx,opts)
+            cds.eventsFromNEV(opts)
             % if a task was not passed in, set task varable
             if strcmp(opts.task,'Unknown')%if no task label was passed into the function call try to get one automatically
                 opts=cds.getTask(task,opts);
@@ -172,29 +135,29 @@ function NEVNSx2cds(cds,NEVNSx,varargin)
         if isempty(cds.words)
             error('NEVNSx2cds:noWordsLoaded','Words have not been loaded into the cds yet. This means there was no encoder data in this NEVNSx, and no prior file was loaded that contained that data. If encoder data is in a different file, load that file to include kinematics, and use the noKin flag when loading this file')
         end
-        cds.kinematicsFromNEVNSx(NEVNSx,opts)
+        cds.kinematicsFromNEV(opts)
        
 
     %% the kinetics
-        cds.forceFromNEVNSx(NEVNSx,NSxInfo,opts)
+        cds.forceFromNSx(opts)
 
     %% The Units
         if ~isempty(unit_list)   
-            cds.unitsFromNEVNSx(NEVNSx,opts)
+            cds.unitsFromNEV(opts)
         end
         
     %% EMG
-        cds.emgFromNEVNSx(NEVNSx,NSxInfo)
+        cds.emgFromNSx()
             
     %% LFP. any collection channel that comes in with the name chan* will be treated as LFP
-        cds.lfpFromNEVNSx(NEVNSx,NSxInfo)
+        cds.lfpFromNSx()
 
     %% Triggers
         %get list of triggers
-        cds.triggersFromNEVNSx(NEVNSx,NSxInfo)
+        cds.triggersFromNSx()
 
     %% Analog
-        cds.analogFromNEVNSx(NEVNSx,NSxInfo)
+        cds.analogFromNSx()
 
     %% trial data
         %if we have databursts and we don't have a trial table yet, compute
