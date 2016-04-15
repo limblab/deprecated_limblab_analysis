@@ -68,17 +68,38 @@ hold on;
 plot(step)
 
 
+%if the stimulator object doesn't exist yet, set it up: 
+if ~exist('ws', 'var')
+    serial_string = 'COM6'; %this is different via mac and windows; use instrfind to check location
+    ws = wireless_stim(serial_string, 1); %the number has to do with verbosity of running feedback
+    ws.init(1, ws.comm_timeout_disable);
+end
+
+pw = 200;
+ch = 2;
+command{1} = struct('Freq', 30, ...        % Hz
+    'CathDur', pw, ...    % us
+    'AnodDur', pw ...    % us
+...%     'CathAmp', amp+32768, ... % uA
+...%     'AnodAmp', 32768-amp, ... % uA
+    );
+ws.set_stim(command, ch);
 
 delta = .5; 
 timing = 0; 
+amp = 2;
 tic
 for i=2:length(step)
     if abs(step(i)-step(i-1))>delta
-        %disp('large delta, stim now');
+        disp('large delta, stim now');
+        command{1} = struct('CathAmp', amp+32768, ... % uA
+            'AnodAmp', 32768-amp, ... % uA
+            'Run', ws.run_cont);
+        ws.set_stim(command, ch);
         timing=0; tic
     else
         %disp('do nothing/keep stim constant');
-        step(i) = step(i-1); 
+        step(i) = step(i-1);
         timing = timing + 1/5000
         toc
         if toc<timing
