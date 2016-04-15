@@ -6,11 +6,11 @@ all_medians_aligned(:,:,start:finish)=all_medians;
 
 
 %% Set things
-markers=[7 9 10];%1:11;
+markers=[6 7 8 9 10];%1:11;
 pause_manually=1;
 plot_original=1;
-start_frame=2625+start-1;
-finish=n;
+start_frame=2585+start-1;
+finish_frame=2595+start-1;
 
 %% Plot
 
@@ -20,6 +20,10 @@ medians=all_medians_aligned; %Renamed (to make compatible with my previous plott
 xlims=[min(min(medians(markers,1,:))) max(max(medians(markers,1,:)))];
 ylims=[min(min(medians(markers,2,:))) max(max(medians(markers,2,:)))];
 zlims=[min(min(medians(markers,3,:))) max(max(medians(markers,3,:)))];
+
+    xlims=[-.2 .5];
+    ylims=[-.4 .4];
+    zlims=[.9 1.4];
 
 %Initialize figure
 figure;
@@ -33,7 +37,7 @@ plot_colors_all=[1 0 0; 0 1 0; 0 0 1; 1 1 0; 0 1 1; 1 0 1; 0 0 0; 1 .5 0; .5 0 1
 plot_colors=plot_colors_all(markers,:);
 
 
-for i=start_frame:finish %Loop through time
+for i=start_frame:finish_frame %Loop through time
     
     %Plot Original Points
     if plot_original
@@ -53,6 +57,11 @@ for i=start_frame:finish %Loop through time
         y=temp(end/3+1:2*end/3);
         z=temp(2*end/3+1:end);
         scatter3(z,x,y,'r')
+        temp=color4{i};
+        x=temp(1:end/3);
+        y=temp(end/3+1:2*end/3);
+        z=temp(2*end/3+1:end);
+        scatter3(z,x,y,'y')
     end
     
     %Plot Markers
