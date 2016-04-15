@@ -54,7 +54,6 @@ function getTrialTable(cds,opts)
     
     %specific task table code will add operations, so add the operation
     %for this file here, before we run the task specific code:
-    cds.addOperation(mfilename('fullpath'))
     if ~strcmpi(opts.task,'Unknown')
         %try to get trial data specific to the task
         switch opts.task
@@ -83,6 +82,6 @@ function getTrialTable(cds,opts)
         %cds.setField('trials',times)
         set(cds,'trials',times)
     end
-    evntData=loggingListenerEventData('getTrialTable',[]);
+    evntData=loggingListenerEventData('getTrialTable',opts.task);
     notify(cds,'ranOperation',evntData)
 end

@@ -1,11 +1,11 @@
-function emgFromNEVNSx(cds,NEVNSx,NSxInfo)
+function emgFromNSx(cds)
     %retrieves emg information from a NEVNSx object and inserts it into the
     %cds. Because cds is a member of the handle superclass, nothing is
     %returned from this function
-    emgList = find(~cellfun('isempty',strfind(lower(NSxInfo.NSx_labels),'emg_')));
+    emgList = find(~cellfun('isempty',strfind(lower(cds.NSxInfo.NSx_labels),'emg_')));
     if ~isempty(emgList)
-        emgNames = NSxInfo.NSx_labels(emgList);
-        emgFreq = NSxInfo.NSx_sampling(emgList);
+        emgNames = cds.NSxInfo.NSx_labels(emgList);
+        emgFreq = cds.NSxInfo.NSx_sampling(emgList);
 
         % ensure all emg channels have the same frequency
         emgFreq = unique(emgFreq);
@@ -14,14 +14,16 @@ function emgFromNEVNSx(cds,NEVNSx,NSxInfo)
         end
 
         for i = length(emgList):-1:1
-            if NSxInfo.NSx_sampling(emgList(i))==1000
-                data(:,i+1) = double(NEVNSx.NS2.Data(NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
-            elseif NSxInfo.NSx_sampling(emgList(i))==2000
-                data(:,i+1) = double(NEVNSx.NS3.Data(NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
-            elseif NSxInfo.NSx_sampling(emgList(i))==10000
-                data(:,i+1) = double(NEVNSx.NS4.Data(NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
-            elseif NSxInfo.NSx_sampling(emgList(i))==30000
-                data(:,i+1) = double(NEVNSx.NS5.Data(NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
+            if cds.NSxInfo.NSx_sampling(emgList(i))==500
+                data(:,i+1) = double(cds.NS1.Data(cds.NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
+            elseif cds.NSxInfo.NSx_sampling(emgList(i))==1000
+                data(:,i+1) = double(cds.NS2.Data(cds.NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
+            elseif cds.NSxInfo.NSx_sampling(emgList(i))==2000
+                data(:,i+1) = double(cds.NS3.Data(cds.NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
+            elseif cds.NSxInfo.NSx_sampling(emgList(i))==10000
+                data(:,i+1) = double(cds.NS4.Data(cds.NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
+            elseif cds.NSxInfo.NSx_sampling(emgList(i))==30000
+                data(:,i+1) = double(cds.NS5.Data(cds.NSxInfo.NSx_idx(emgList(i)),:))/6.5584993;
             end
         end        
 
@@ -38,7 +40,7 @@ function emgFromNEVNSx(cds,NEVNSx,NSxInfo)
         elseif ~isempty(emg)
             cds.mergeTable('emg',emg)
         end
-        evntData=loggingListenerEventData('emgFromNEVNSx',[]);
+        evntData=loggingListenerEventData('emgFromNSx',[]);
         notify(cds,'ranOperation',evntData)
     end
 end

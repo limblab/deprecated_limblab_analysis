@@ -50,5 +50,6 @@ classdef unitData < matlab.mixin.SetGet
         %general methods
         appendData(units,data,varargin)
         removeSorting(units,varargin)
+        deleteUnsorted(units)
     end
 end

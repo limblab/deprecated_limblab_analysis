@@ -1,11 +1,11 @@
-function kinematicsFromNEVNSx(cds,NEVNSx,opts)
+function kinematicsFromNEV(cds,opts)
     %wrapper function for kinematic processing during cds generation
     
     %get events:
-    event_data = double(NEVNSx.NEV.Data.SerialDigitalIO.UnparsedData);
-    event_ts = NEVNSx.NEV.Data.SerialDigitalIO.TimeStampSec';       
+    event_data = double(cds.NEV.Data.SerialDigitalIO.UnparsedData);
+    event_ts = cds.NEV.Data.SerialDigitalIO.TimeStampSec';       
 
-    idx=skip_resets(NEVNSx.NEV.Data.SerialDigitalIO.TimeStampSec');
+    idx=skip_resets(cds.NEV.Data.SerialDigitalIO.TimeStampSec');
     if ~isempty(idx)
         event_data = event_data( (idx(end)+1):end);
         event_ts   = event_ts  ( (idx(end)+1):end);
@@ -33,17 +33,17 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     end
     %now that we have the encoder strobes, convert those to actual encoder values    
     jumpTimes=[];
-    if opts.ignore_jumps || ~isfield(NEVNSx.MetaTags,'FileSepTime')
+    if opts.ignore_jumps 
         enc = strobed2encoder(encStrobes,[0 opts.duration]);
     else
-        [enc, jumpTimes]= strobed2encoder(encStrobes,NEVNSx.MetaTags.FileSepTime);
+        [enc, jumpTimes]= strobed2encoder(encStrobes,[]);
         if ~isempty(jumpTimes)
             %insert a 'known problem' entry
             cds.addProblem('encoder data contains jumps in encoder output. These have been corrected in software by offsetting the data after the jump')
         end
     end
     
-    %check for missing encoder timepoints:
+    %set up to check for missing encoder timepoints:
     skips=[];
     %check whether the encoder signal is mangled and make a log of jumps in
     %the times:
@@ -55,9 +55,12 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
         temp=temp*10;
     end
     dt=round(diff(enc(:,1)),sigFig);%the rounding allows jitter at ~ 10% of the sample frequency because sigFig is #sig figs+1 after the above while statement
-    tstep=unique(round(diff(enc(:,1)),sigFig));
+    tstep=unique(dt);
+    %set up to test for slow drift in the signal that won't show up as a
+    %jump:
+    drift=sum(diff(enc(:,1))-mode(dt));
     
-    if length(tstep)>1
+    if length(tstep)>1 || drift>.001
         %get a list of the skips in data collection
         tstep=tstep(tstep>mode(dt));%we can ignore oversampling, we just care about undersampling
         
@@ -67,9 +70,10 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
             skips=[skips;[enc(stepStarts,1),enc(stepEnds,1)]];
         end
         %interpolate enc to new times:
-        newtime=enc(1,1):mode(diff(enc(:,1))):enc(end,1);
+        newtime=enc(1,1):mode(dt):enc(end,1);
         enc=[newtime',interp1(enc(:,1),enc(:,2:3),newtime)];
     end
+    
     enc=decimateData(enc,cds.kinFilterConfig);
     %clip the first 1s because analog data won't start recording for 1s:
     enc=enc(enc(:,1)>=1,:);
@@ -98,10 +102,6 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     if ~isempty(jumpTimes)
         %convert jump times to window using the pad range:
         jumpTimes=[jumpTimes-pad,jumpTimes+pad];
-    end
-    if isfield(NEVNSx.MetaTags,'FileSepTime') && ~isempty(NEVNSx.MetaTags.FileSepTime)
-        %pad the file separation times and append to the jump times:
-        jumpTimes=[jumpTimes;[NEVNSx.MetaTags.FileSepTime(:,1)-pad,NEVNSx.MetaTags.FileSepTime(:,2)+pad]];
     end
     if ~isempty(skips)
         %pad the encoder skip times and append to the jump times:
@@ -153,6 +153,6 @@ function kinematicsFromNEVNSx(cds,NEVNSx,opts)
     elseif ~isempty(kin)
         cds.mergeTable('kin',kin)
     end
-    evntData=loggingListenerEventData('kinematicsFromNEVNSx',cds.kinFilterConfig);
+    evntData=loggingListenerEventData('kinematicsFromNEV',cds.kinFilterConfig);
     notify(cds,'ranOperation',evntData)
 end

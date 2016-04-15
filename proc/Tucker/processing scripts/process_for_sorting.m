@@ -1,8 +1,8 @@
 %% strip digital data from NEV
-basepath='E:\local processing\chips\experiment_20160225_BD_bumpPDs';
-basefilename='Chips_20160225_BD_tucker_random_for_bumpPD_001.nev';
-nodigitalfilename='Chips_20160225_BD_tucker_random_for_bumpPD_001_nodigital.nev';
-spikelessfilename='Chips_20160225_BD_tucker_random_for_bumpPD_001_nospikes.mat';
+basepath='E:\local processing\Han';
+basefilename='Han_20160411_COBump_area2_001.nev';
+nodigitalfilename='Han_20160411_COBump_area2_001_nodigital.nev';
+spikelessfilename='Han_20160411_COBump_area2_001_nospikes.mat';
 
 %open data
 NEV = openNEV('read', [basepath, filesep, basefilename],'nosave','nomat','report');
@@ -15,9 +15,9 @@ saveNEVOnlyDigital(NEV,[basepath filesep spikelessfilename]);
 %should be unneccesary with new versions of cerebus2nevnsx
 
 %basepath='E:\local_processing\chips\experiment_20150406_RW_sorting';
-sortedfilename='Chips_20160225_BD_tucker_random_for_bumpPD_001_nodigital-01.nev';
-spikelessfilename='Chips_20160225_BD_tucker_random_for_bumpPD_001_nospikes.mat';
-processfilename='Chips_20160225_BD_tucker_random_for_bumpPD_001-s.nev';
+sortedfilename='Han_20160411_COBump_area2_001_nodigital-01.nev';
+spikelessfilename='Han_20160411_COBump_area2_001_nospikes.mat';
+processfilename='Han_20160411_COBump_area2_001-s.nev';
 
 oldnevdata=load([basepath filesep spikelessfilename]);
 sortednev=openNEV([basepath filesep sortedfilename],'nosave','nomat','report');

@@ -4,6 +4,7 @@ classdef binnedData < matlab.mixin.SetGet
         glmConfig
         gpfaConfig
         kalmanConfig
+        pdConfig
     end
     properties (SetAccess = protected,GetAccess=public,SetObservable=true)
         bins
@@ -31,6 +32,17 @@ classdef binnedData < matlab.mixin.SetGet
             set(binned,'glmConfig',struct('labels',{},'posPD',0,'velPD',0,'forcePD',0,'numRep',100,'noiseModel','poisson'));
             set(binned,'gpfaConfig',struct('structData','this is a stub struct that needs to be coded'));
             set(binned,'kalmanConfig',struct('structData','this is a stub struct that needs to be coded'));
+            pdc.method='glm';
+            pdc.units=[];
+            pdc.pos=false;
+            pdc.vel=false;
+            pdc.force=false;
+            pdc.speed=false;
+            pdc.glmNoiseModel='poisson';
+            pdc.bootstrapReps=100;
+            pdc.windows=[];
+            pdc.useParallel=false;
+            set(binned,'pdConfig',pdc);
             %output data
             set(binned,'weinerData',struct('structData','this is a stub struct that needs to be coded'));
             PDs={cell2table(cell(0,8),'VariableNames',{'chan','ID','array','posDir','posDirCI','posModdepth','posModdepthCI','isTuned'}),...
@@ -93,31 +105,39 @@ classdef binnedData < matlab.mixin.SetGet
                 binned.kalmanConfig=kfc;
             end
         end
-        
+        function set.pdConfig(binned,pdc)
+            if ~isstruct(pdc)
+                error('pdConfig:notAStruct','the pdConfig field must be a struct describing the way that PDs will be computed')
+            elseif ~isfield(pdc,'method') || ~ischar(pdc.method)
+                error('pdConfig:badMethod','the method field of pdConfig must be a string describing the method to compute PDs')
+            elseif ~isfield(pdc,'units') || (~isempty(pdc.units)&& ~isnumeric(pdc.units))
+                error('pdConfig:badUnitsConfiguration','the pdConfig must have a units field that is either empty or contains a set of unit labels')
+            elseif ~isfield(pdc,'pos') || ~islogical(pdc.pos)
+                error('pdConfig:badPosConfiguration','pdConfig must have a pos field that must have a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
+            elseif ~isfield(pdc,'vel') || ~islogical(pdc.vel)
+                error('pdConfig:badVelConfiguration','pdConfig must have a vel field that must have a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
+            elseif ~isfield(pdc,'force') || ~islogical(pdc.force)
+                error('pdConfig:badForceConfiguration','pdConfig must have a force field that must have a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
+            elseif ~isfield(pdc,'speed') || ~islogical(pdc.speed)
+                error('pdConfig:badspeedConfiguration','pdConfig must have a speed field that must have a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
+            elseif ~isfield(pdc,'useParallel') || ~islogical(pdc.useParallel)
+                error('pdConfic:badUseParallelConfig','pdConfig must have a field useParalle that contains a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
+            elseif ~isfield(pdc,'windows') || ~isnumeric(pdc.windows) || size(pdc.windows,2)~=2
+                error('pdConfig:badWindowConfiguration','pdConfig must have a windows field that contains the 
+            else
+                binned.pdConfig=pdc;
+            end
+        end
         function set.weinerData(binned,wData)
             warning('weinerData:SetNotImplemented','set method for the weinerData field of the binnedData class is not implemented')
             binned.weinerData=[];
         end
         function set.pdData(binned,pdData)
             if ~iscell(pdData)
-                error('pdData:not a cell array','pdData must be a cell array')
+                error('pdData:notCellArray','pdData must be a cell array')
             end
-            prefix={'pos','vel','force'};
-            for i=1:length(pdData)
-                if ~istable(pdData{i})
-                    error('pdData:notATable',['Each cell of pdData must contain a table. Cell ',num2str(i),'is a: ',class(pdData{i})])
-                elseif size(pdData{i},2)~=8 ...
-                    || isempty(find(strcmp('chan',pdData{i}.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('ID',pdData{i}.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'Dir'],pdData{i}.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'DirCI'],pdData{i}.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'Moddepth'],pdData{i}.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp([prefix{i},'ModdepthCI'],pdData{i}.Properties.VariableNames),1)) ...
-                    || isempty(find(strcmp('isTuned',pdData{i}.Properties.VariableNames),1))
-                    disp(['the table for ',prefix{i},'has the following columns:'])
-                    disp(pdData{i}.Properties.VariableNames)
-                    error('pdData:badColumnSpec',['cell: ',num2str(i),'is the ',prefix{i}, ' PD table, and must have the following columns: chan, ID',prefix{i},'Dir',prefix{i},'DirCI',prefix{i},'Moddepth',prefix{i},'ModdepthCI','isTuned'])
-                end
+            if ~istable(pdData)
+                error('pdData:notATable',['pdData must contain a table. Instead a variabley of type: ',class(pdData),' was passed'])
             end
         end
         function set.glmData(binned,glmData)
@@ -140,7 +160,7 @@ classdef binnedData < matlab.mixin.SetGet
         fitWeiner(binned)
         fitGpfa(binned)
         fitKalman(binned)
-        
+        fitPds(binned)
         tuningCircle(binned,label)%plots an empirical tuning circle for a single neuron against the variable 'label'
         polarPDs(binned,units)%makes a polar plot of the PDs associated with the units defined in 'units'    
     end
