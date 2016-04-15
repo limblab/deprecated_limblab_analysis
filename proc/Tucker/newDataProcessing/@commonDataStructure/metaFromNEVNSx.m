@@ -1,4 +1,4 @@
-function metaFromNEVNSx(cds,NEVNSx,opts)
+function metaFromNEVNSx(cds,opts)
     %this is a method function for the common_data_structure (cds) class, and
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files
@@ -12,7 +12,7 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
 
     % source info
     meta.cdsVersion=cds.meta.cdsVersion;
-    meta.rawFileName=NEVNSx.NEV.MetaTags.Filename;
+    meta.rawFileName=cds.NEV.MetaTags.Filename;
     meta.dataSource='NEVNSx';
     meta.array=opts.array;
 
@@ -21,12 +21,7 @@ function metaFromNEVNSx(cds,NEVNSx,opts)
 
     %timing
     meta.dateTime=opts.dateTime;
-    meta.duration=NEVNSx.NEV.MetaTags.DataDurationSec;
-    if isfield(NEVNSx.MetaTags,'FileSepTime')
-        meta.fileSepTime=NEVNSx.MetaTags.FileSepTime;
-    else
-        meta.fileSepTime=[];
-    end
+    meta.duration=cds.NEV.MetaTags.DataDurationSec;
 
     meta.task=opts.task;
     meta.lab=opts.labNum;

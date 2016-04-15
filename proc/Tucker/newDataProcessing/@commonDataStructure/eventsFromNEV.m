@@ -1,9 +1,9 @@
-function eventsFromNEVNSx(cds,NEVNSx,opts)
+function eventsFromNEV(cds,opts)
     %takes a cds handle and an NEVNSx structure and returns the words and
     %databursts fields to populate those fields of the cds
-    if ~isempty(NEVNSx.NEV.Data.SerialDigitalIO.TimeStamp)  
-        event_data = double(NEVNSx.NEV.Data.SerialDigitalIO.UnparsedData);
-        event_ts = NEVNSx.NEV.Data.SerialDigitalIO.TimeStampSec';       
+    if ~isempty(cds.NEV.Data.SerialDigitalIO.TimeStamp)  
+        event_data = double(cds.NEV.Data.SerialDigitalIO.UnparsedData);
+        event_ts = cds.NEV.Data.SerialDigitalIO.TimeStampSec';       
 
         idx=skip_resets(event_ts);
         if ~isempty(idx)
@@ -39,19 +39,23 @@ function eventsFromNEVNSx(cds,NEVNSx,opts)
         if  exist('actual_words','var')
             [words, databursts] = extract_datablocks(actual_words);
         end
+        %generate the words table:
         words=table(words(:,1),words(:,2),'VariableNames',{'ts','word'});
         words.Properties.VariableUnits={'s','int'};
         words.Properties.VariableDescriptions={'timestamp of word in seconds','word value'};
         words.Properties.Description='list of all words captured during data collection';
-        %cds.setField('words',words) 
         set(cds,'words',words)
+        %generate the databursts table:
+        %first sanitize the databursts of any databursts that arent the apparent size of the databurst:
+        dbSize=mode(cellfun(@length,databursts(:,2)));
+        databursts=databursts(cellfun(@(x)length(x)==dbSize,databursts(:,2)),:);
         databursts=table(cell2mat(databursts(:,1)),cell2mat(databursts(:,2:end)),'VariableNames',{'ts','db'});
         databursts.Properties.VariableUnits={'s','int'};
         databursts.Properties.VariableDescriptions={'timestamp of databurst in seconds','row vector containing databurst'};
         databursts.Properties.Description='list of all databursts captured during data collection';           
         %cds.setField('databursts',databursts);
         set(cds,'databursts',databursts)
-        evntData=loggingListenerEventData('eventsFromNEVNSx',[]);
+        evntData=loggingListenerEventData('eventsFromNEV',[]);
         notify(cds,'ranOperation',evntData)
     end
 end
