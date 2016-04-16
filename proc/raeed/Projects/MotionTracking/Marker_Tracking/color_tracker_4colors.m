@@ -10,25 +10,40 @@
 
 
 
-%% User Options / Initializations
+%% Input File to Load
 
 %File to load
 main_dir='/Users/jig289/Box Sync/Tracking_Data/';
 monkey='Han';
-date='3-15-16'; %mo-day-yr
+date='03-15-16'; %mo-day-yr
 exp='RW';
 num='001';
+
+% Load ColorTracking File and Settings
+fname_load=ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']);
+load(deblank(fname_load))
+
+
+%% User Options / Initializations
 
 %If this is the first file from a date, set equal to 1 (there are more initializations)
 first_time=1; 
 
+%Load all of the settings if it's not the first file 
+if ~first_time
+    date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
+    fname_load_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
+    load(fname_load_settings);
+end
+
+
 %TIME INITIALIZATIONS
 start=1; %Time point we're starting at
 n=length(color1);
-finish=3000; %n; %Time point we're finishing at
+finish=n; %n; %Time point we're finishing at
 n_times=finish-start+1; %Number of time points (frames)
 
-n_times_prelim=2000; %Number of time points to run in order to set distance limits (using all frames is not necessary and will take longer)
+n_times_prelim=3000; %Number of time points to run in order to set distance limits (using all frames is not necessary and will take longer)
 finish_prelim=start+n_times_prelim-1;
 
 %Plot figure of schematic of marker locations?
@@ -74,18 +89,6 @@ dists3=NaN(1,n_times_prelim);
 dists4=NaN(1,n_times_prelim);
 dists5=NaN(1,n_times_prelim);
 
-
-%% Load ColorTracking File and Settings
-
-fname_load=ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']);
-load(deblank(fname_load));
-
-%Load all of the settings if it's not the first file 
-if ~first_time
-    date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
-    fname_load_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
-    load(fname_load_settings);
-end
 
 %% Marker location schematic figure
 
@@ -344,7 +347,7 @@ end
 if first_time %If this is not the first file from a date, we don't need to run this.
     
     %Calculate distances for each time point
-    for i=1:n_times
+    for i=1:n_times_prelim
         dists(i)=pdist2(all_medians(10,:,i),all_medians(7,:,i)); %Distance between markers 7 and 10 (blue arm and red elbow)
         dists2(i)=pdist2(all_medians(8,:,i),all_medians(7,:,i)); %Distance between markers 7 and 9 (blue arm and red arm)
     end
@@ -920,17 +923,17 @@ if first_time
     
     str1='5A. Input green_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the green hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.17,.26] \n';    
+    str3='Value is generally ~ [.15,.26] \n';    
     green_hand_dists_elbow=input([str1 str2 str3]);
     
     str1='5B. Input red_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the red hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.17,.24] \n';    
+    str3='Value is generally ~ [.17,.23] \n';    
     red_hand_dists_elbow=input([str1 str2 str3]);
     
     str1='5C. Input blue_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the blue hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.19,.23] \n';    
+    str3='Value is generally ~ [.17,.23] \n';    
     blue_hand_dists_elbow=input([str1 str2 str3]);
 
     str1='5D. Input yellow_hand_dists_elbow \n';
@@ -981,7 +984,7 @@ if first_time
     
     str1='6A. Input green_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the blue arm marker\n';
-    str3='Value is generally ~ [.16,.29] \n';    
+    str3='Value is generally ~ [.15,.30] \n';    
     green_hand_dists_bluearm=input([str1 str2 str3]);
     
     str1='6B. Input red_hand_dists_bluearm \n';
@@ -991,12 +994,12 @@ if first_time
 
     str1='6C. Input blue_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the blue hand markers (blue above) to the blue arm marker\n';
-    str3='Value is generally ~ [.18,.28] \n';    
+    str3='Value is generally ~ [.16,.28] \n';    
     blue_hand_dists_bluearm=input([str1 str2 str3]);
     
     str1='6D. Input yellow_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the blue arm marker\n';
-    str3='Value is generally ~ [.16,.28] \n';    
+    str3='Value is generally ~ [.14,.26] \n';    
     yellow_hand_dists_bluearm=input([str1 str2 str3]);
     
     
@@ -1063,7 +1066,7 @@ end
 
 if first_time
     %Calculate distances
-    for i=1:n_times
+    for i=1:n_times_prelim
         dists1(i)=pdist2(all_medians(5,:,i),all_medians(1,:,i)); %Distances between green hand markers
     end
     %Plot
@@ -1542,9 +1545,10 @@ end
 all_medians(marker_ids,:,:)=medians;
 all_medians2(marker_ids,:,:)=medians2;
 
-%% REMOVE/SWITCH HAND MARKERS BELOW
+%% HAND MARKERS CORRECTIONS (REMOVING/SWITCHING) BELOW
 
-%% Remove marker 3 that is too far away from other hand markers - Plot
+
+%% Remove marker 3 that is too far away from other hand markers - Automatic
 
 %Calculate distance from marker 3 to other hand markers
 for i=1:n_times
@@ -1554,14 +1558,13 @@ for i=1:n_times
 end
 
 %Plot
-if first_time   
-    figure;
-    hold on;
-    plot(dists4,'-x')
-    plot(dists5,'-x')
-    plot(dists2,'-x')
-end
-%% Remove marker 3 that is too far away from other hand markers
+% if first_time   
+%     figure;
+%     hold on;
+%     plot(dists4,'-x')
+%     plot(dists5,'-x')
+%     plot(dists2,'-x')
+% end
 
 %Determine frames when each of the distances is greater than expected
 d2=dists2>nanmean(dists2)+.02;
@@ -1570,10 +1573,11 @@ d5=dists5>nanmean(dists5)+.02;
 
 %Remove when distance from all points is too large (including times when
 %marker 2 is missing)
-rmv=(d4 & d5 & isnan(dists2)) | (d4 & d5 & d2);
-all_medians(3,:,rmv)=NaN;
+rmv3=(d4 & d5 & isnan(dists2)) | (d4 & d5 & d2);
+all_medians(3,:,rmv3)=NaN;
 
-%% Remove marker 2 that is too far away from other hand markers - Plot
+
+%% Remove marker 2 that is too far away from other hand markers - Automatic
 
 %Calculate distance from marker 2 to other hand markers
 for i=1:n_times
@@ -1583,14 +1587,13 @@ for i=1:n_times
 end
 
 %Plot
-if first_time    
-    figure;
-    hold on;
-    plot(dists3,'-x')
-    plot(dists4,'-x')
-    plot(dists5,'-x')    
-end
-%% Remove marker 2 that is too far away from other hand markers
+% if first_time    
+%     figure;
+%     hold on;
+%     plot(dists3,'-x')
+%     plot(dists4,'-x')
+%     plot(dists5,'-x')    
+% end
 
 %Determine frames when each of the distances is greater than expected
 d3=dists3>nanmean(dists3)+.03;
@@ -1599,10 +1602,18 @@ d5=dists5>nanmean(dists5)+.03;
 
 %Remove when distance from all points is too large (including times when
 %marker 3 is missing)
-rmv=(d4 & d5 & isnan(dists3)) | (d4 & d5 & d3);
-all_medians(2,:,rmv)=NaN;
+rmv2=(d4 & d5 & isnan(dists3)) | (d4 & d5 & d3);
+all_medians(2,:,rmv2)=NaN;
 
 %% Calculate/Plot hand distances from elbow
+
+%Initialize some vectors that I use later for calculating the distance
+%between points
+dists1=NaN(1,n_times);
+dists2=NaN(1,n_times);
+dists3=NaN(1,n_times);
+dists4=NaN(1,n_times);
+dists5=NaN(1,n_times);
 
 %Calculate distances from red elbow to points on the hand
 for i=1:n_times
@@ -1610,29 +1621,18 @@ for i=1:n_times
     dists2(i)=pdist2(all_medians(10,:,i),all_medians(2,:,i));
     dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
     dists4(i)=pdist2(all_medians(10,:,i),all_medians(4,:,i));
-    dists5(i)=pdist2(all_medians(10,:,i),all_medians(5,:,i));
-    
-    % dists1(i)=pdist2(all_medians(6,:,i),all_medians(1,:,i));
-    % dists2(i)=pdist2(all_medians(6,:,i),all_medians(2,:,i));
-    % dists3(i)=pdist2(all_medians(6,:,i),all_medians(3,:,i));
-    % dists4(i)=pdist2(all_medians(6,:,i),all_medians(4,:,i));
-    % dists5(i)=pdist2(all_medians(6,:,i),all_medians(5,:,i));
-    
-    % dists1(i)=pdist2(all_medians(7,:,i),all_medians(1,:,i));
-    % dists2(i)=pdist2(all_medians(7,:,i),all_medians(2,:,i));
-    % dists3(i)=pdist2(all_medians(7,:,i),all_medians(3,:,i));
-    % dists4(i)=pdist2(all_medians(7,:,i),all_medians(4,:,i));
-    % dists5(i)=pdist2(all_medians(7,:,i),all_medians(5,:,i));
+    dists5(i)=pdist2(all_medians(10,:,i),all_medians(5,:,i));    
 end
 
 %Plot
-figure;
-plot(dists1,'g-x');
-hold on;
-plot(dists2,'b-x');
-plot(dists3,'r-x');
-plot(dists4,'m-x');
-plot(dists5,'c-x');
+% figure;
+% plot(dists1,'g-x');
+% hold on;
+% plot(dists2,'b-x');
+% plot(dists3,'r-x');
+% plot(dists4,'m-x');
+% plot(dists5,'c-x');
+
 
 %% SET 9. Determine red hand point 3 to remove (based on having a larger distance to the elbow than point 1)
 
@@ -1667,13 +1667,13 @@ for i=1:length(idxs)
     end
 end
 
-%% Set red hand point 3 and green hand point 1 to remove (and green switch), based on above section
+%% Remove/Switch based on above section
+
+% Set red hand point 3 and green hand point 1 to remove (and green switch), based on above section
 
 rmv3=[rmv3_cell{:}];  %Times to remove of red hand point 3
 rmv1=[rmv1_cell{:}];  %Times to remove of green hand point 1
 switch1=[switch1_cell{:}]; %Times to switch markers 1 and 5 (green and cyan)
-
-%% Remove and switch (based on above section)
 
 %Remove (based on above section)
 all_medians(3,:,rmv3)=NaN;
@@ -1686,6 +1686,14 @@ all_medians(1,:,switch1)=all_medians(5,:,switch1);
 all_medians2(1,:,switch1)=all_medians2(5,:,switch1);
 all_medians(5,:,switch1)=temp;
 all_medians2(5,:,switch1)=temp2;
+
+
+%% Recalculate distances from red elbow to points on the hand (due to above changes)
+for i=1:n_times
+    dists1(i)=pdist2(all_medians(10,:,i),all_medians(1,:,i));
+    dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
+    dists5(i)=pdist2(all_medians(10,:,i),all_medians(5,:,i));    
+end
 
 %% SET 10. Determine blue hand point 2 to remove (based on having a larger distance to the elbow than point 1)
 
@@ -1719,8 +1727,9 @@ for i=1:length(idxs)
     end
 end
 
-%% Set blue hand point 2 and green hand point 1 to remove, based on above section
+%% Remove/Switch based on above section
 
+% Set blue hand point 2 and green hand point 1 to remove, based on above section
 %When blue is greater than green in above plot
 
 rmv2=[rmv2_cell{:}]; %Times to remove of blue hand point 2
@@ -1729,291 +1738,13 @@ rmv1=[rmv1_cell{:}]; %Times to remove of green hand point 1
 all_medians(2,:,rmv2)=NaN;
 all_medians(1,:,rmv1)=NaN;
 
-%% SET 11. Determine red hand points to remove (based on having similar distance from elbow)
+%% Recalculate distances from red elbow to points on the hand (due to above changes)
 
-%Calculate distances of red hand markers 3 and 4, and the red elbow
-for i=1:n_times    
-    dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
-    dists4(i)=pdist2(all_medians(10,:,i),all_medians(4,:,i));   
-end
-
-
-wdw=20; %Time window for plots below
-
-%Find times when marker 3 and marker 4 are a similar distance to the elbow
-%marker (which is a problem)
-idxs=find(abs(dists3-dists4)<.01);
-
-%Initialize points to be removed
-red_test_cell=cell(1,length(idxs));
-pink_test_cell=cell(1,length(idxs));
-
-
-%Plot those times
-for i=1:length(idxs)
-    figure;
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists1(idxs(i)-wdw:idxs(i)+wdw),'g-x');
-    hold on;
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists2(idxs(i)-wdw:idxs(i)+wdw),'b-x');
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
-    
-    title(num2str(idxs(i)));
-    
-    red_test_cell{i}=input('11. Times pink is in red area \n');
-    pink_test_cell{i}=input('11. Times red is in pink area \n');
-    
-end
-
-%% Set times when red hand points should be removed (based on having similar distance from elbow)
-
-red_test=[red_test_cell{:}]; %Pink is in red area
-pink_test=[pink_test_cell{:}]; %Red is in pink area
-
-%% Determine which red hand point (3 or 4) to remove, at the above times
-
-%Above we specified times when the two red markers had the same distance from
-%the elbow. 
-
-%Sometimes both were had the expected distance for marker 3 (red
-%points). In this case, we want to determine which of these markers really
-%should be marker 3, and which should be removed. We do this by determining
-%which is closer to the previous frame's marker 3.
-red_points=sort(red_test);
-for i=1:length(red_points)
-    t=red_points(i);
-    %Compare the distances from the current markers 3 and 4 to the
-    %previous marker 3. Make the one that's closer the new marker 3.
-    if pdist2(all_medians2(3,:,t-1),all_medians(3,:,t))>pdist2(all_medians2(3,:,t-1),all_medians(4,:,t))
-        all_medians(3,:,t)=all_medians(4,:,t);
-    end
-    all_medians(4,:,t)=NaN;
-end
-
-%Sometimes both were had the expected distance for marker 4 (pink
-%points). In this case, we want to determine which of these markers really
-%should be marker 4, and which should be removed. We do this by determining
-%which is closer to the previous frame's marker 4.
-pink_points=sort(pink_test);
-for i=1:length(pink_points)
-    t=pink_points(i);
-    %Compare the distances from the current markers 3 and 4 to the
-    %previous marker 4. Make the one that's closer the new marker 4.
-    if pdist2(all_medians2(4,:,t-1),all_medians(4,:,t))>pdist2(all_medians2(4,:,t-1),all_medians(3,:,t))
-        all_medians(4,:,t)=all_medians(3,:,t);
-    end
-    all_medians(3,:,t)=NaN;
-end
-
-%% Calculate hand distances from red elbow marker
-
-%Redo, since some points have been updated in the previous sections
 for i=1:n_times
     dists1(i)=pdist2(all_medians(10,:,i),all_medians(1,:,i));
-    dists2(i)=pdist2(all_medians(10,:,i),all_medians(2,:,i));
-    dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
-    dists4(i)=pdist2(all_medians(10,:,i),all_medians(4,:,i));
-    dists5(i)=pdist2(all_medians(10,:,i),all_medians(5,:,i));
+    dists2(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
 end
 
-%Plot
-
-% figure;
-% plot(dists1,'g-x');
-% hold on;
-% plot(dists2,'b-x');
-% plot(dists3,'r-x');
-% plot(dists4,'m-x');
-% plot(dists5,'c-x');
-
-%% Switch red hand points when one is missing (the assignment was wrong)
-
-%Here, we'll determine what time points to switch the red hand markers (3
-%and 4) when one of those markers was missing. That is, there was a single
-%marker that was incorrectly assigned.
-%We will determine this based on having a expected/unexpected distance from
-%the red elbow marker. We will go both forward and backward in time, to see
-%whether switching the marker assignment would lead to distances from the
-%elbow that are more consistent with the previous time.
-
-%Initializations for forward run
-dists3_forward=NaN(1,n_times);
-dists4_forward=NaN(1,n_times);
-dists33_forward=NaN(1,n_times);
-dists44_forward=NaN(1,n_times);
-dists34_forward=NaN(1,n_times);
-dists43_forward=NaN(1,n_times);
-change_forward=zeros(1,n_times);
-
-%Calculate the distances from the red hand markers (3 and 4) to the red
-%elbow marker (10)
-for i=1:n_times    
-    dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i)); %Distances from marker 3 to the elbow (marker 10)
-    dists4(i)=pdist2(all_medians(10,:,i),all_medians(4,:,i)); %Distances from marker 4 to the elbow (marker 10)
-    % dists3(i)=pdist2(all_medians(6,:,i),all_medians_temp(3,:,i));
-    % dists4(i)=pdist2(all_medians(6,:,i),all_medians_temp(4,:,i));
-end
-
-
-for i=1:n_times
-    %dists3_forward is the most recently known distance from marker 3 to
-    %the elbow (the distance from the last frame where neither marker is missing).
-    if ~isnan(dists3(i))
-        dists3_forward(i)=dists3(i);
-    else
-        dists3_forward(i)=dists3_forward(i-1);
-    end
-    %dists3_forward is the most recently known distance from marker 3 to
-    %the elbow (the distance from the last frame where neither marker is missing).
-    if ~isnan(dists4(i))
-        dists4_forward(i)=dists4(i);
-    else
-        dists4_forward(i)=dists4_forward(i-1);
-    end
-    %Calculate the differences in distances between successive timepoints.
-    if i>1
-        dists33_forward(i)=abs(dists3_forward(i)-dists3_forward(i-1)); %The difference in the distance of marker 3 from in current frame and marker 3 from the prevous frame
-        dists44_forward(i)=abs(dists4_forward(i)-dists4_forward(i-1)); %The difference in the distance of marker 4 from in current frame and marker 4 from the prevous frame
-        dists34_forward(i)=abs(dists4_forward(i)-dists3_forward(i-1)); %The difference in the distance of marker 4 from in current frame and marker 3 from the prevous frame
-        dists43_forward(i)=abs(dists3_forward(i)-dists4_forward(i-1)); %The difference in the distance of marker 3 from in current frame and marker 4 from the prevous frame
-    end
-  
-    %According to the forward direction, we want to switch markers 3 and 4
-    %(correct the incorrect assignment) when:
-    %The marker was identified as marker 4, and the current marker 4
-    %distance (to the elbow) is closer to the previous marker 3 distance
-    %than the previous marker 4 distance.
-    if ((dists34_forward(i)<dists44_forward(i)) & isnan(dists3(i)) & ~isnan(dists4(i)))
-        change_forward(i)=1;
-        dists3_forward(i)=dists4_forward(i);
-        dists4_forward(i)=dists4_forward(i-1);
-    end
-    %The marker was identified as marker 3, and the current marker 3
-    %distance (to the elbow) is closer to the previous marker 4 distance
-    %than the previous marker 3 distance.
-    if ((dists43_forward(i)<dists33_forward(i)) & ~isnan(dists3(i)) & isnan(dists4(i)))
-        change_forward(i)=1;
-        dists4_forward(i)=dists3_forward(i);
-        dists3_forward(i)=dists3_forward(i-1);
-    end
-end
-
-%Next we do the same as above, but backwards in time.
-
-%Initializations for backwards run
-dists3_backward=NaN(1,n_times);
-dists4_backward=NaN(1,n_times);
-dists33_backward=NaN(1,n_times);
-dists44_backward=NaN(1,n_times);
-dists34_backward=NaN(1,n_times);
-dists43_backward=NaN(1,n_times);
-change_backward=zeros(1,n_times);
-
-for i=n_times-1:-1:1
-    %dists3_backward is the next known distance from marker 3 to
-    %the elbow (the distance from the next frame where neither marker is missing).
-    if ~isnan(dists3(i))
-        dists3_backward(i)=dists3(i);
-    else
-        dists3_backward(i)=dists3_backward(i+1);
-    end
-    %dists4_backward is the next known distance from marker 4 to
-    %the elbow (the distance from the next frame where neither marker is missing).
-    if ~isnan(dists4(i))
-        dists4_backward(i)=dists4(i);
-    else
-        dists4_backward(i)=dists4_backward(i+1);
-    end
-    
-    %Calculate the differences in distances between successive timepoints.
-    if i<n_times
-        dists33_backward(i)=abs(dists3_backward(i+1)-dists3_backward(i)); %The difference in the distance of marker 3 from in current frame and marker 3 from the next frame
-        dists44_backward(i)=abs(dists4_backward(i+1)-dists4_backward(i)); %The difference in the distance of marker 4 from in current frame and marker 4 from the next frame
-        dists34_backward(i)=abs(dists4_backward(i+1)-dists3_backward(i)); %The difference in the distance of marker 3 from in current frame and marker 4 from the next frame
-        dists43_backward(i)=abs(dists3_backward(i+1)-dists4_backward(i)); %The difference in the distance of marker 4 from in current frame and marker 3 from the next frame
-    end
-    
-    %According to the backward direction, we want to switch markers 3 and 4
-    %(correct the incorrect assignment) when:
-    %The marker was identified as marker 4, and the current marker 4
-    %distance (to the elbow) is closer to the next marker 3 distance
-    %than the next marker 4 distance.
-    if ((dists43_backward(i)<dists44_backward(i)) & isnan(dists3(i)) & ~isnan(dists4(i)))
-        change_backward(i)=1;
-        dists3_backward(i)=dists4_backward(i);
-        dists4_backward(i)=dists4_backward(i+1);
-    end
-    %The marker was identified as marker 3, and the current marker 3
-    %distance (to the elbow) is closer to the next marker 4 distance
-    %than the next marker 3 distance.
-    if ((dists34_backward(i)<dists33_forward(i)) & ~isnan(dists3(i)) & isnan(dists4(i)))
-        change_backward(i)=1;
-        dists4_backward(i)=dists3_backward(i);
-        dists3_backward(i)=dists3_backward(i+1);
-    end
-    
-end
-
-%Automatically make the switch if there should be a switch (according to
-%above) in both the foward and backward directions. In the next section,
-%we'll manually look at the cases of disagreement between the forward and
-%backward directions.
-switch34=change_forward & change_backward;
-temp=all_medians(3,:,switch34);
-temp2=all_medians2(3,:,switch34);
-all_medians(3,:,switch34)=all_medians(4,:,switch34);
-all_medians2(3,:,switch34)=all_medians2(4,:,switch34);
-all_medians(4,:,switch34)=temp;
-all_medians2(4,:,switch34)=temp2;
-
-%% SET 12. Plot questionable ones
-
-%Above, we switched the red markers when we were sure about it. That is
-%when going forward and backward through time, both agreed that the markers
-%should be switched. There are also questionable cases, when going froward
-%or backward in time (but not both), it appears they should be swiched. We
-%plot those cases here to determine which should be switched.
-
-%Recalculate distances after above switches
-for i=1:n_times    
-    dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
-    dists4(i)=pdist2(all_medians(10,:,i),all_medians(4,:,i));
-end
-
-wdw=20; %Time window for plots below
-
-%Find times when the markers should be switched according to forward time
-%or backward time (see previous section), but not both.
-idxs=find((change_forward & ~change_backward) | (~change_forward & change_backward));
-
-%Initialize points to switch
-switch34_cell=cell(1,length(idxs));
-
-%Plot those times
-for i=1:length(idxs)
-    figure;
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists1(idxs(i)-wdw:idxs(i)+wdw),'g-x');
-    hold on;
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists2(idxs(i)-wdw:idxs(i)+wdw),'b-x');
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
-    plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
-    title(num2str(idxs(i)));
-    
-    switch34_cell{i}=input('12. Time points to switch (red and pink) \n');
-    
-end
-
-%% Set more red hand markers to switch (the questionable ones from above)
-
-switch34=[switch34_cell{:}]; %The time points to switch
-temp=all_medians(3,:,switch34);
-temp2=all_medians(3,:,switch34);
-all_medians(3,:,switch34)=all_medians(4,:,switch34);
-all_medians2(3,:,switch34)=all_medians2(4,:,switch34);
-all_medians(4,:,switch34)=temp;
-all_medians2(4,:,switch34)=temp2;
 
 %% SET 13. Determine green hand points to remove (based on having similar distance from elbow)
 
@@ -2043,8 +1774,7 @@ for i=1:length(idxs)
     cyan_test_cell{i}=input('13. Times green is in cyan area \n');
 end
 
-%% Set green hand points to remove
-
+% Set green hand points to remove
 green_test=[green_test_cell{:}]; %Cyan is in green area
 cyan_test=[cyan_test_cell{:}]; %Green is in cyan area
 
@@ -2089,6 +1819,14 @@ end
 
 %% Compare hand distances to shoulder (for times other markers are missing)
 
+%Initialize some vectors that I use later for calculating the distance
+%between points
+dists1=NaN(1,n_times);
+dists2=NaN(1,n_times);
+dists3=NaN(1,n_times);
+dists4=NaN(1,n_times);
+dists5=NaN(1,n_times);
+
 %Calculate the distances from marker 9 (green shoulder) to all the hand
 %points. Note that all_medians2 is used for marker 9, since the marker will
 %not move significantly across frames, and will allow us to have a value
@@ -2103,12 +1841,12 @@ end
 
 %Plot
 if first_time
+    figure; % Yellow
+    plot(dists4,'y-x');
     figure; %Blue
     plot(dists2,'b-x');
     figure; %Red
     plot(dists3,'r-x');
-    hold on;
-    plot(dists4,'m-x');
     figure; %Green
     plot(dists1,'g-x');
     hold on;
@@ -2125,7 +1863,7 @@ if first_time
     green_keep=input([str1 str2 str3]);
     
     str1='14B. Input red_keep \n';
-    str2='Lower and upper limits of distances of the red hand markers (red and magenta above) to the green shoulder marker\n';
+    str2='Lower and upper limits of distances of the red hand markers (red above) to the green shoulder marker\n';
     str3='Value is generally ~ [.15,.45] \n';    
     red_keep=input([str1 str2 str3]);
     
@@ -2133,7 +1871,11 @@ if first_time
     str2='Lower and upper limits of distances of the blue hand markers (blue above) to the green shoulder marker\n';
     str3='Value is generally ~ [.15,.45] \n';    
     blue_keep=input([str1 str2 str3]);
-    
+
+    str1='14D. Input yellow_keep \n';
+    str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the green shoulder marker\n';
+    str3='Value is generally ~ [.15,.45] \n';    
+    yellow_keep=input([str1 str2 str3]);
 end
 %% Remove hand points (because they're too close or far from shoulder)
 
@@ -2143,12 +1885,21 @@ rmv2=dists2<blue_keep(1) | dists2>blue_keep(2);
 all_medians(2,:,rmv2)=NaN;
 rmv3=dists3<red_keep(1) | dists3>red_keep(2);
 all_medians(3,:,rmv3)=NaN;
-rmv4=dists4<red_keep(1) | dists4>red_keep(2);
+rmv4=dists4<yellow_keep(1) | dists4>yellow_keep(2);
 all_medians(4,:,rmv4)=NaN;
 rmv5=dists5<green_keep(1) | dists5>green_keep(2);
 all_medians(5,:,rmv5)=NaN;
 
 %% Recalculate hand distances from the red elbow marker (in order to make comparisons of hand points)
+
+%Initialize some vectors that I use later for calculating the distance
+%between points
+dists=NaN(1,n_times);
+dists1=NaN(1,n_times);
+dists2=NaN(1,n_times);
+dists3=NaN(1,n_times);
+dists4=NaN(1,n_times);
+dists5=NaN(1,n_times);
 
 for i=1:n_times
     dists1(i)=pdist2(all_medians(10,:,i),all_medians(1,:,i));
@@ -2161,43 +1912,35 @@ end
 %% SET 15. Check whether elbow-5 distance is greater than elbow-3 distance
 %Which it shouldn't be
 
-wdw=20; %Time window for plots below
-
 %Find times when marker 5 has a greater distance to the elbow
 %than marker 3 (which is a problem)
 idxs=find(dists5>dists3);
 
-%Initialize points to be removed
-rmv3_cell=cell(1,length(idxs));
-rmv5_cell=cell(1,length(idxs));
-
 %Plot those times
 for i=1:length(idxs)
-    if idxs(i)+wdw<=n_times & idxs(i)-wdw>0
-        figure;
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists1(idxs(i)-wdw:idxs(i)+wdw),'g-x');
-        hold on;
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists2(idxs(i)-wdw:idxs(i)+wdw),'b-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
-        
-        title(num2str(idxs(i)));
-        
-        rmv3_cell{i}=input('15. Times to remove hand point 3 (red) \n');
-        rmv5_cell{i}=input('15. Times to remove hand point 5 (cyan) \n');
+
+    plot_together_4colors_func(idxs(i), [1 3 5], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)        
+    title(num2str(idxs(i)));
+    
+    %Points to Remove
+    str1='Pt 3 is farther from elbow than Pt 1 \n';
+    str2='Type in the points to remove \n';
+    str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
+    rmv=input([str1 str2 str3]);
+    for j=1:length(rmv)
+        all_medians(rmv(j),:,idxs(i))=NaN;
+    end
+    
+    %Points to Switch
+    str2='Type in the points to switch \n';
+    str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
+    switches=input([str2 str3]);
+    for j=1:size(switches,1)
+        switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
 end
 
-%% Set marker 3 or 5 to remove based on above
 
-%If cyan greater than red
-
-rmv3=[rmv3_cell{:}]; %Times to remove marker of red hand point 3
-rmv5=[rmv5_cell{:}]; %Times to remove marker of green hand point 5
-
-all_medians(3,:,rmv3)=NaN;
-all_medians(5,:,rmv5)=NaN;
 
 %% SET 16. Check whether elbow-4 distance is greater than elbow-2 distance
 %Which it shouldn't be
@@ -2208,37 +1951,87 @@ wdw=20; %Time window for plots below
 %than marker2 (which is a problem)
 idxs=find(dists4>dists2);
 
-%Initialize points to be removed
-rmv2_cell=cell(1,length(idxs));
-rmv4_cell=cell(1,length(idxs));
-
-
 %Plot those times
 for i=1:length(idxs)
-    if idxs(i)+wdw<=n_times & idxs(i)-wdw>0
-        figure;
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists1(idxs(i)-wdw:idxs(i)+wdw),'g-x');
-        hold on;
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists2(idxs(i)-wdw:idxs(i)+wdw),'b-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists3(idxs(i)-wdw:idxs(i)+wdw),'r-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists4(idxs(i)-wdw:idxs(i)+wdw),'m-x');
-        plot(idxs(i)-wdw:idxs(i)+wdw,dists5(idxs(i)-wdw:idxs(i)+wdw),'c-x');
-        title(num2str(idxs(i)));
-        
-        rmv2_cell{i}=input('16. Times to remove hand point 2 (blue) \n');
-        rmv4_cell{i}=input('16. Times to remove hand point 4 (magenta) \n');
+
+    plot_together_4colors_func(idxs(i), [2 4], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)        
+    title(num2str(idxs(i)));
+    
+    %Points to Remove
+    str1='Pt 4 is farther from elbow than Pt 1 \n';
+    str2='Type in the points to remove \n';
+    str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
+    rmv=input([str1 str2 str3]);
+    for j=1:length(rmv)
+        all_medians(rmv(j),:,idxs(i))=NaN;
+    end
+    
+    %Points to Switch
+    str2='Type in the points to switch \n';
+    str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
+    switches=input([str2 str3]);
+    for j=1:size(switches,1)
+        switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
 end
 
-%% Set marker 2 or 4 to remove based on above
 
-%If magenta greater than blue
+%% Recalculate hand distances from the red elbow marker (in order to make comparisons of hand points)
 
-rmv2=[rmv2_cell{:}]; %Times to remove marker of blue hand point 2
-rmv4=[rmv4_cell{:}]; %Times to remove marker of red hand point 4
+%Initialize some vectors that I use later for calculating the distance
+%between points
+dists=NaN(1,n_times);
+dists1=NaN(1,n_times);
+dists2=NaN(1,n_times);
+dists3=NaN(1,n_times);
+dists4=NaN(1,n_times);
+dists5=NaN(1,n_times);
 
-all_medians(2,:,rmv2)=NaN;
-all_medians(4,:,rmv4)=NaN;
+for i=1:n_times
+    dists1(i)=pdist2(all_medians(10,:,i),all_medians(1,:,i));
+    dists2(i)=pdist2(all_medians(10,:,i),all_medians(2,:,i));
+    dists3(i)=pdist2(all_medians(10,:,i),all_medians(3,:,i));
+    dists4(i)=pdist2(all_medians(10,:,i),all_medians(4,:,i));
+    dists5(i)=pdist2(all_medians(10,:,i),all_medians(5,:,i));
+end
+
+
+%% SET 16. Check whether elbow-4 distance is greater than elbow-3 distance ????
+%Which it shouldn't be
+
+wdw=20; %Time window for plots below
+
+%Find times when marker 4 has a greater distance to the elbow
+%than marker2 (which is a problem)
+idxs=find(dists4>dists3);
+
+%Plot those times
+for i=1:length(idxs)
+
+    plot_together_4colors_func(idxs(i), [2 4], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)        
+    title(num2str(idxs(i)));
+    
+    %Points to Remove
+    str1='Pt 4 is farther from elbow than Pt 1 \n';
+    str2='Type in the points to remove \n';
+    str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
+    rmv=input([str1 str2 str3]);
+    for j=1:length(rmv)
+        all_medians(rmv(j),:,idxs(i))=NaN;
+    end
+    
+    %Points to Switch
+    str2='Type in the points to switch \n';
+    str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
+    switches=input([str2 str3]);
+    for j=1:size(switches,1)
+        switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
+    end
+end
+
+
+
+
 
 
 %% Update all_medians2 to deal with removals
@@ -2282,87 +2075,6 @@ for i=1:10
 end
 
 
-%% Hand Removals when there is no elbow
-
-% for i=1:n_times
-%     dists(i)=pdist2(all_medians(4,:,i),all_medians(5,:,i));
-%     dists2(i)=pdist2(all_medians(3,:,i),all_medians(5,:,i));
-%     dists3(i)=pdist2(all_medians(3,:,i),all_medians(4,:,i));
-% end
-% figure; plot(dists)
-% hold on;
-% plot(dists2)
-% plot(dists3)
-
-
-%% Update the hand markers
-
-% num_clusts=6; %5 hand and 1 elbow
-% num_dists=num_clusts*(num_clusts-1)/2;
-%
-% hand_dists=NaN(n_times,num_dists);
-% hand_dists_matrix=NaN(num_clusts,num_clusts,n_times);
-% for i=1:n_times
-%     hand_dists(i,:)=pdist(all_medians([1:5 10],:,i));
-%     %12 13 14 15 23 24 25 34 35 45 (when it was just 1-5)
-%     hand_dists_matrix(:,:,i)=squareform(hand_dists(i,:));
-% end
-% med_hand_dists=nanmedian(hand_dists);
-% med_hand_dists_matrix=squareform(med_hand_dists);
-% med_hand_dists_matrix_reshape=repmat(med_hand_dists_matrix,[1,1,n_times]);
-%
-%
-% perm1=[5 2 3 4 1 6]; %1 and 5 switched
-% perm2=[1 2 4 3 5 6]; %3 and 4 switched
-% perm3=[5 2 4 3 1 6]; %Both switched
-%
-% %Permutation of hand distances
-% hand_dists_matrix1=hand_dists_matrix(perm1,perm1,:);
-% hand_dists_matrix2=hand_dists_matrix(perm2,perm2,:);
-% hand_dists_matrix3=hand_dists_matrix(perm3,perm3,:);
-%
-% num_hand_marks=reshape(sum(~isnan(all_medians(1:5,1,:))),[n_times,1]);
-% elbow_weight=1./num_hand_marks;
-% elbow_weight(elbow_weight==Inf)=1;
-% weight_matrix=ones(size(hand_dists_matrix));
-% % weight_matrix(6,1,:)=elbow_weight;
-% % weight_matrix(6,2,:)=elbow_weight;
-% % weight_matrix(6,3,:)=elbow_weight;
-% % weight_matrix(6,4,:)=elbow_weight;
-% % weight_matrix(6,5,:)=elbow_weight;
-% % weight_matrix(6,6,:)=elbow_weight;
-% % weight_matrix(1,6,:)=elbow_weight;
-% % weight_matrix(2,6,:)=elbow_weight;
-% % weight_matrix(3,6,:)=elbow_weight;
-% % weight_matrix(4,6,:)=elbow_weight;
-% % weight_matrix(5,6,:)=elbow_weight;
-% % weight_matrix(6,6,:)=elbow_weight;
-%
-% %Differences of hand distances from expected (for actual and permutations)
-%
-% sse=reshape(nansum(nansum(weight_matrix.*(hand_dists_matrix-med_hand_dists_matrix_reshape).^2,1),2),[1,n_times]);
-% sse1=reshape(nansum(nansum(weight_matrix.*(hand_dists_matrix1-med_hand_dists_matrix_reshape).^2,1),2),[1,n_times]);
-% sse2=reshape(nansum(nansum(weight_matrix.*(hand_dists_matrix2-med_hand_dists_matrix_reshape).^2,1),2),[1,n_times]);
-% sse3=reshape(nansum(nansum(weight_matrix.*(hand_dists_matrix3-med_hand_dists_matrix_reshape).^2,1),2),[1,n_times]);
-%
-% [~,m]=min([sse; sse1; sse2; sse3]);
-%
-%
-%
-%
-%
-%
-%
-% %     if m(i)==2 || m(i)==4
-% %         temp=all_medians(5,:,i);
-% %         all_medians(5,:,i)=all_medians(8,:,i);
-% %         all_medians(8,:,i)=temp;
-% %     end
-% %     if m(i)==3 || m(i)==4
-% %         temp=all_medians(6,:,i);
-% %         all_medians(6,:,i)=all_medians(9,:,i);
-% %         all_medians(9,:,i)=temp;
-% %     end
 
 
 %% save
@@ -2374,10 +2086,10 @@ if savefile
     
     if first_time
         fname_save_settings=[main_dir monkey '/Color_Tracking/' date '/Markers/settings_' monkey '_' date2];
-        save(fname_save_settings,'red_elbow_dist_from_blue','red_blue_arm_dist_max','red_arm_thresh1','red_arm_thresh2',...
-        'green_hand_dists_elbow','red_hand_dists_elbow','blue_hand_dists_elbow','green_separator',...
-        'green_hand_dists_bluearm','red_hand_dists_bluearm','blue_hand_dists_bluearm',...
-        'green_hand_dists_redarm', 'red_hand_dists_redarm', 'blue_hand_dists_redarm',...
-        'red_dist_min','green_dist_min','red_keep','green_keep','blue_keep','marker_inits');     
+        save(fname_save_settings,'red_elbow_dist_from_blue','red_blue_arm_dist_max',...
+        'green_hand_dists_elbow','red_hand_dists_elbow','blue_hand_dists_elbow','yellow_hand_dists_elbow','green_separator',...
+        'green_hand_dists_bluearm','red_hand_dists_bluearm','blue_hand_dists_bluearm','yellow_hand_dists_bluearm',...
+        'green_hand_dists_redarm', 'red_hand_dists_redarm', 'blue_hand_dists_redarm','yellow_hand_dists_redarm',...
+        'green_dist_min','red_keep','green_keep','blue_keep','marker_inits');     
     end
 end
