@@ -2,6 +2,18 @@
 
 %A file needs to be loaded which contains the color pixels of each frame
 
+%In general, tracking works by finding points that are near the marker in
+%the previous frame, along with using constraints based on distances to
+%other markers. 
+
+%The general flow of the script is as follows:
+%1) Get the location of the arm markers
+%The red arm markers are run a preliminary time, in order to get distance
+%constraints from the blue arm marker
+%Some manual correction is allowed for the elbow markers
+
+%2) Get the location of the 
+
 %For the main tracking portions of the script (e.g. blue arm, red hand,
 %etc.), there are more detailed comments in the "Blue Arm" section which
 %comes first. For the subsequent sections, only unique aspects are
@@ -15,8 +27,8 @@
 %File to load
 main_dir='/Users/jig289/Box Sync/Tracking_Data/';
 monkey='Han';
-date='03-15-16'; %mo-day-yr
-exp='RW';
+date='03-22-16'; %mo-day-yr
+exp='RW_DL';
 num='001';
 
 % Load ColorTracking File and Settings
@@ -27,7 +39,7 @@ load(deblank(fname_load))
 %% User Options / Initializations
 
 %If this is the first file from a date, set equal to 1 (there are more initializations)
-first_time=1; 
+first_time=0; 
 
 %Load all of the settings if it's not the first file 
 if ~first_time
@@ -40,7 +52,7 @@ end
 %TIME INITIALIZATIONS
 start=1; %Time point we're starting at
 n=length(color1);
-finish=n; %n; %Time point we're finishing at
+finish=n; %Time point we're finishing at
 n_times=finish-start+1; %Number of time points (frames)
 
 n_times_prelim=3000; %Number of time points to run in order to set distance limits (using all frames is not necessary and will take longer)
@@ -67,9 +79,10 @@ green_hand_marker_ids=[1,5];
 
 figure;
 set(gca,'NextPlot','replacechildren');
+
 xlims=[-.5 .5];
-ylims=[-.5 .5];
-zlims=[0.5 1.5];
+ylims=[-.5 .4];
+zlims=[.9 1.4];
 
 pause_time=.03;
 
@@ -117,10 +130,6 @@ end
 if ~marker_init_manual
     
     marker_colors={'g','b','r','y','g','g','b','r','g','r'}; %The colors of each of our markers
-    
-    xlims=[-.2 .5];
-    ylims=[-.4 .4];
-    zlims=[.9 1.4];
     
     num_markers=10;
     marker_coords_xy=NaN(num_markers,2);
@@ -342,37 +351,47 @@ if first_time %If this is not the first file from a date, we don't need to run t
     all_medians2(marker_ids,:,:)=medians2;
     
 end
-%% Plot Red elbow to Blue Arm Distance
+%% SET LIMITS ON RED ARM TO BLUE ARM DISTANCES
 
+%PLOT RED ARM TO BLUE ARM DISTANCES
 if first_time %If this is not the first file from a date, we don't need to run this.
     
     %Calculate distances for each time point
     for i=1:n_times_prelim
         dists(i)=pdist2(all_medians(10,:,i),all_medians(7,:,i)); %Distance between markers 7 and 10 (blue arm and red elbow)
-        dists2(i)=pdist2(all_medians(8,:,i),all_medians(7,:,i)); %Distance between markers 7 and 9 (blue arm and red arm)
+        dists2(i)=pdist2(all_medians(8,:,i),all_medians(7,:,i)); %Distance between markers 7 and 8 (blue arm and red arm)
     end
     
     %Plot
-    figure; plot(dists); 
+    figure; plot(dists);
     hold on;
     plot(dists2)
     legend('7-10','7-8')
-end
-
-%% SET 1: Red Elbow/Arm to Blue Arm Distance
-
-if first_time
     
+    % VISUALIZE FRAMES
+    user_input=1; %A value so that it enters the while loop below
+    while ~isempty(user_input)
+        
+        str1='Enter time point you want to visualize (or just press enter to continue) \n';
+        user_input=input(str1);
+        if ~isempty(user_input)
+            plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+        end
+    end
+    
+    % SET RED ARM TO BLUE ARM DISTANCES
     str1='1A. Input red_elbow_dist_from_blue \n';
-    str2='The blue values in the above plot should be below this value (the red elbow should always be within this distance of the blue arm)\n';
-    str3='Value is generally ~ .05 \n';    
-    red_elbow_dist_from_blue=input([str1 str2 str3]);
+    str2='The blue values in the above plot should be generally be below this value (the red elbow should be within this distance of the blue arm)\n';
+    str3='The purpose of this is to keep all points w/in this distance of the blue as marker candidates (useful if the red elbow marker was gone the previous frame) \n';
+    str4='Value is generally ~ .05-.1 \n';
+    red_elbow_dist_from_blue=input([str1 str2 str3 str4]);
     
     str1='1B. Input red_blue_arm_dist_max \n';
-    str2='%All values in above plot should be below this value (Maximum distance from a red arm point to the blue)\n';
-    str3='Value is generally ~ .08 \n';   
-    red_blue_arm_dist_max=input([str1 str2 str3]);
-        
+    str2='All values in above plot should be below this value (Maximum distance from a red arm point to the blue)\n';
+    str3='The purpose of this is to remove all points farther than this from the blue marker (to get rid of noise)';
+    str4='Value is generally ~ .05-.1 \n';
+    red_blue_arm_dist_max=input([str1 str2 str3 str4]);
+    
 end
 
 %% Red Arm (Redo)
@@ -387,7 +406,7 @@ prev_meds=marker_inits(marker_ids,:);
 num_clust=length(marker_ids); %Number of clusters
 within_clust_dist1=.07; %How close points must be to the previous frame's first marker, # marker_ids(1), to be considered
 within_clust_dist2=.07; %How close points must be to the previous frame's second marker, # marker_ids(2), to be considered   
-dist_min=0.07; %Minimum distance between markers (cluster medians aren't allowed w/ distance < min_dist)
+dist_min=0.05; %Minimum distance between markers (cluster medians aren't allowed w/ distance < min_dist)
 
 medians=NaN(num_clust,3,n_times); %Has NaNs when a marker is missing
 medians2=NaN(num_clust,3,n_times); %Has previous known positions when a marker is missing
@@ -469,9 +488,28 @@ for i=1:n_times
 end
 
 %Plot
-%figure; plot(angle)   
-
+figure; plot(angle)   
 red_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle below this will have marker 10 removed
+title(['Red Elbow Angles: Default Threshold=' num2str(red_elbow_angle_thresh)]);
+
+
+%VISUALIZE FRAMES
+user_input=1; %A value so that it enters the while loop below
+while ~isempty(user_input)
+    
+    str1='Enter time point you want to visualize (or just press enter to continue) \n';    
+    user_input=input(str1);
+    if ~isempty(user_input)
+        plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+    end
+end
+
+%SET ANGLE THRESHOLD FOR RED ELBOW REMOVAL
+str1='Enter angle threshold for red elbow removal. Press enter for default. \n'; 
+temp=input(str1);
+if ~isempty(temp)
+    red_elbow_angle_thresh=temp;
+end
 
 %Remove red elbow points (based on angle)
 rmv10=angle<red_elbow_angle_thresh;
@@ -624,17 +662,36 @@ for i=1:n_times
 end
 
 %Plot
-% figure; plot(angle)
-
-% Set green elbow points to remove (based on angle)
+figure; plot(angle)
 green_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle below this will have marker 6 removed
+title(['Green Elbow Angles: Default Threshold=' num2str(green_elbow_angle_thresh)]);
 
-% Remove green elbow points
+
+% VISUALIZE FRAMES
+user_input=1; %A value so that it enters the while loop below
+while ~isempty(user_input)
+    
+    str1='Enter time point you want to visualize (or just press enter to continue) \n';    
+    user_input=input(str1);
+    if ~isempty(user_input)
+        plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+    end
+end
+
+% SET ANGLE THRESHOLD FOR GREEN ELBOW REMOVAL
+str1='Enter angle threshold for green elbow removal. Press enter for default. \n'; 
+temp=input(str1);
+if ~isempty(temp)
+    green_elbow_angle_thresh=temp;
+end
+
+% Remove green elbow points (based on angle)
 rmv6=angle<green_elbow_angle_thresh;
 all_medians(6,:,rmv6)=NaN;
 
 
-%% Red Hand
+
+%% Red Hand (Preliminary)
 if first_time %If this is not the first file from a date, we don't need to run this.
     
     %Initializations
@@ -700,7 +757,7 @@ if first_time %If this is not the first file from a date, we don't need to run t
     
 end
 
-%% Yellow Hand
+%% Yellow Hand (Preliminary)
 if first_time %If this is not the first file from a date, we don't need to run this.
     
     %Initializations
@@ -766,7 +823,7 @@ if first_time %If this is not the first file from a date, we don't need to run t
     
 end
 
-%% Green Hand
+%% Green Hand (Preliminary)
 if first_time %If this is not the first file from a date, we don't need to run this.
     
     %Initializations
@@ -832,7 +889,7 @@ if first_time %If this is not the first file from a date, we don't need to run t
     all_medians2(marker_ids,:,:)=medians2;
     
 end
-%% Blue Hand
+%% Blue Hand (Preliminary)
 if first_time %If this is not the first file from a date, we don't need to run this.
     
     %Initializations
@@ -915,6 +972,19 @@ if first_time
     plot(dists3,'r');
     plot(dists4,'y');
     plot(dists5,'g');
+   
+    
+    %VISUALIZE FRAMES
+    user_input=1; %A value so that it enters the while loop below
+    while ~isempty(user_input)
+        
+        str1='Enter time point you want to visualize (or just press enter to continue) \n';
+        user_input=input(str1);
+        if ~isempty(user_input)
+            plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+        end
+    end
+    
     
 end
 %% SET 5. hand distance limits from red elbow
