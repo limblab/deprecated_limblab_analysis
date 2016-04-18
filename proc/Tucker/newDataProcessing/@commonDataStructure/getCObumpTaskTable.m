@@ -12,19 +12,22 @@ function getCObumpTaskTable(cds,times)
     %get our word timing for changes in the state machine:
     % Isolate the individual word timestamps
     bumpWordBase = hex2dec('50');
-    bumpTimes = cds.words.ts(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5))';
-    bumpCodes = cds.words.word(cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5))';
+    bumpMask=cds.words.word >= (bumpWordBase) & cds.words.word <= (bumpWordBase+5);
+    bumpTimes = cds.words.ts(bumpMask)';
+    bumpCodes = cds.words.word(bumpMask)';
 
     wordOTOn = hex2dec('40');
-    otOnTimes = cds.words.ts( bitand(hex2dec('f0'),cds.words.word) == wordOTOn);
-    otOnCodes = cds.words.word( bitand(hex2dec('f0'),cds.words.word) == wordOTOn);
+    otMask=bitand(hex2dec('f0'),cds.words.word) == wordOTOn;
+    otOnTimes = cds.words.ts( otMask);
+    otOnCodes = cds.words.word( otMask);
     
     wordGo = hex2dec('31');
     goCueTime = cds.words.ts(cds.words.word == wordGo);
     
     wordStim=hex2dec('60');
-    stimTimes=cds.words.ts( bitand(hex2dec('f0'),cds.words.word) == wordStim,1);
-    stimCode=cds.words.word( bitand(hex2dec('f0'),cds.words.word) == wordStim,2);
+    stimMask=bitand(hex2dec('f0'),cds.words.word) == wordStim;
+    stimTimes=cds.words.ts( stimMask );
+    stimCodeList=cds.words.word( stimMask );
     
     %preallocate our trial variables:
     numTrials=numel(times.number);
@@ -43,7 +46,7 @@ function getCObumpTaskTable(cds,times)
 
     tgtSize=nan(numTrials,1);
     tgtAngle=nan(numTrials,1);
-    tgtCtr=nan(numTrials,1);
+    tgtCtr=nan(numTrials,2);
 
     hideCursor=false(numTrials,1);
     hideCursorMin=nan(numTrials,1);
@@ -72,9 +75,6 @@ function getCObumpTaskTable(cds,times)
             for trial = 1:numTrials
                 %find and parse the current databurst:
                 idxDB = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
-                if cds.databursts.db(idxDB,2)~=1
-                    error('getCOTaskTable:badDataburstVersion',['getCOTaskTable is not coded to handle databursts of version: ',num2str(cds.databursts.db(idxDB,2))])
-                end
 
                 % * Version 2 (0x02)
                 %  * ----------------
@@ -123,7 +123,7 @@ function getCObumpTaskTable(cds,times)
 
                 tgtSize(trial)=bytes2float(cds.databursts.db(idxDB,38:41));
                 tgtAngle(trial)=bytes2float(cds.databursts.db(idxDB,46:49));
-                tgtCtr(trial)=bytes2float(cds.databursts.db(idxDB,42:45))*[cos(tgtAngle(trial)*pi/180),sin(tgtAngle(trial)*pi/180)];
+                tgtCtr(trial,:)=bytes2float(cds.databursts.db(idxDB,42:45))*[cos(tgtAngle(trial)*pi/180),sin(tgtAngle(trial)*pi/180)];
 
                 hideCursor(trial)=cds.databursts.db(idxDB,50);
                 hideCursorMin(trial)=bytes2float(cds.databursts.db(idxDB,51:54));
@@ -171,7 +171,7 @@ function getCObumpTaskTable(cds,times)
                 %Stim code
                 idx = find(stimTimes > times.startTime(trial) & stimTimes < times.endTime(trial),1,'first');
                 if ~isempty(idx)
-                    stimCode(trial) = bitand(hex2dec('0f'),stimCode(idx));%hex2dec('0f') is a bitwise mask for the trailing bit of the word
+                    stimCode(trial) = bitand(hex2dec('0f'),stimCodeList(idx));%hex2dec('0f') is a bitwise mask for the trailing bit of the word
                 else
                     stimCode(trial) = nan;
                 end
@@ -204,9 +204,6 @@ function getCObumpTaskTable(cds,times)
             for trial = 1:numTrials
                 %find and parse the current databurst:
                 idxDB = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
-                if cds.databursts.db(idxDB,2)~=1
-                    error('getCOTaskTable:badDataburstVersion',['getCOTaskTable is not coded to handle databursts of version: ',num2str(cds.databursts.db(idxDB,2))])
-                end
 
                 % * Version 3 (0x03)
                 %  * ----------------

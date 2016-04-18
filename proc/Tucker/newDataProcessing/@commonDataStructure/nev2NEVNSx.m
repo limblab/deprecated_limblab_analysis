@@ -1,4 +1,4 @@
-function NEVNSx=nev2NEVNSx(cds,fname)
+function nev2NEVNSx(cds,fname)
     %this is a method function for the commonDataStructure class and should
     %be saved in the @commonDataStructure folder
     %
@@ -20,11 +20,12 @@ function NEVNSx=nev2NEVNSx(cds,fname)
     end
     %get the path for files matching the filename
     NEVpath = dir([folderPath filesep fileName '*.nev']);
-    NS1path = dir([folderPath filesep fileName '*.ns1']);
-    NS2path = dir([folderPath filesep fileName '*.ns2']);
-    NS3path = dir([folderPath filesep fileName '*.ns3']);
-    NS4path = dir([folderPath filesep fileName '*.ns4']);
-    NS5path = dir([folderPath filesep fileName '*.ns5']);
+    NSxList{1} = dir([folderPath filesep fileName '*.ns1']);
+    NSxList{2} = dir([folderPath filesep fileName '*.ns2']);
+    NSxList{3} = dir([folderPath filesep fileName '*.ns3']);
+    NSxList{4} = dir([folderPath filesep fileName '*.ns4']);
+    NSxList{5} = dir([folderPath filesep fileName '*.ns5']);
+    frequencies=[500 1000 2000 10000 30000];%vector of frequencies in the order that the NSx entries appear in NSxList
     
     %% populate cds.NEV
     if isempty(NEVpath)
@@ -34,8 +35,8 @@ function NEVNSx=nev2NEVNSx(cds,fname)
     end
     
     %% populate the cds.NSx fields
-    frequencies=[500 1000 2000 10000 30000];
     for i=1:length(NSxList)
+        fieldName=['NS',num2str(i)];
         if ~isempty(NSxList{i})
             if ~isempty(cds.NEV.Data.SerialDigitalIO.TimeStampSec)
                 %we know the analog data lags the digital data, so we need
@@ -45,7 +46,7 @@ function NEVNSx=nev2NEVNSx(cds,fname)
                 %field of the cds
                 
                 %load the NSx into a temporary variable:
-                NSx=openNSxLimblab('read', [folderPath filesep NSxList{i}],'precision','short');
+                NSx=openNSxLimblab('read', [folderPath filesep NSxList{i}.name],'precision','short');
                 %get the last timepoint in the digital data:
                 digitalLength = cds.NEV.Data.SerialDigitalIO.TimeStampSec(end);
                 %compute the pad by comparing the actual number of points
@@ -58,17 +59,17 @@ function NEVNSx=nev2NEVNSx(cds,fname)
                 NSx.MetaTags.DataPoints = NSx.MetaTags.DataPoints + num_zeros;
                 NSx.MetaTags.DataDurationSec = NSx.MetaTags.DataPoints/frequencies(i);
                 %insert into the cds
-                set(cds,upper(NSxList{i}(end-3:end)),NSx)
+                set(cds,upper(fieldName),NSx)
             else %no digital data was collected
                 % no padding, just load the NSx directly into the
                 % appropriate field
-                set(cds,upper(NSxList{i}(end-3:end)),openNSxLimblab('read', [folderPath filesep NSxList{i}],'precision','short'))
+                set(cds,upper(fieldName),openNSxLimblab('read', [folderPath filesep NSxList{i}.name],'precision','short'))
             end
         else
-            %set the NSx field empty in case we are loading a second NEV.
-            %This prevents re-loading data that was in one *.nev file but
-            %not the other when NEVNSx2cds is called
-            set(cds,upper(NSxList{i}(end-3:end)),[])
+            %set the NSx field empty in case we are currently loading a
+            % second NEV. This prevents re-loading data that was in one 
+            %*.nev file but not the other when NEVNSx2cds is called
+            set(cds,upper(fieldName),[])
         end
     end
     

@@ -40,11 +40,11 @@ function forceFromNSx(cds,opts)
                     achan_index(i)=find(~cellfun('isempty',strfind(cds.NSxInfo.NSx_labels,['ForceHandle',num2str(i)])));
                 end
                 %pull filtered analog data for load cell:
-                [loadCellData,t]=getFilteredFromNSx(cds.kinFilterConfig,achan_index);
+                [loadCellData,t]=cds.getFilteredFromNSx(cds.kinFilterConfig,achan_index);
                 %truncate to handle the fact that encoder data doesn't start
                 %recording until 1 second into the file and convert load cell 
                 %voltage data into forces
-                handleforce=handleForceFromRaw(cds,loadCellData(t>=1,:),opts);
+                handleforce=cds.handleForceFromRaw(loadCellData(t>=1,:),opts);
             end
         else
             handleforce=[];

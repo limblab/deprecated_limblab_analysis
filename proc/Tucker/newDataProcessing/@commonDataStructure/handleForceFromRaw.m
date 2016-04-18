@@ -1,4 +1,7 @@
 function handleForce=handleForceFromRaw(cds,raw_force,opts)
+    %this is a method function of the commonDataStructure class and must be
+    %saved in the @commonDataStructure folder with the class definition
+    %
     % computes the handle force using the data in the NEVNSx object and
     % puts it into the correct field of the cds. since the cds is a member
     % of the handle superclass no variable needs to be passed back. Assumes
