@@ -6,11 +6,11 @@ all_medians_aligned(:,:,start:finish)=all_medians;
 
 
 %% Set things
-markers=[6 7 8 9 10];%1:11;
-pause_manually=1;
-plot_original=1;
-start_frame=2585+start-1;
-finish_frame=2595+start-1;
+markers=1:10;%[6 7 8 9 10];%1:11;
+pause_manually=0;
+plot_original=0;
+start_frame=75000+start-1;
+finish_frame=75100+start-1;
 
 %% Plot
 
