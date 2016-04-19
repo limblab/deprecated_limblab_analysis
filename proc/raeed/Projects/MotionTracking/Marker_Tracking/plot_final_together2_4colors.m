@@ -9,8 +9,8 @@ all_medians_aligned(:,:,start:finish)=all_medians;
 markers=1:10;%[6 7 8 9 10];%1:11;
 pause_manually=0;
 plot_original=0;
-start_frame=80000+start-1;
-finish_frame=81000+start-1;
+start_frame=43000+start-1;
+finish_frame=44000+start-1;
 
 %% Plot
 
