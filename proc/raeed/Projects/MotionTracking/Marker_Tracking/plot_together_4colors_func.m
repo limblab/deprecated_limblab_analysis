@@ -15,9 +15,9 @@ xlims=[min(min(medians(markers,1,:))) max(max(medians(markers,1,:)))];
 ylims=[min(min(medians(markers,2,:))) max(max(medians(markers,2,:)))];
 zlims=[min(min(medians(markers,3,:))) max(max(medians(markers,3,:)))];
 
-xlims=[-.2 .5];
+xlims=[-.4 .5];
 ylims=[-.4 .4];
-zlims=[.9 1.4];
+zlims=[.8 1.4];
 
 %Initialize figure
 figure;
