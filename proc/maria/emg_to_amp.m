@@ -7,25 +7,30 @@ load(emg_file); %imports an 8x135 cell called rawCycleData
 %SO to extract an individual muscle over one step, follow this format:
 %rawCycleData{1}(:, 1)
 
+%choose which step and which muscle(s) to use
 stepnum = 2; 
 musclenum = [2 3]; 
-%step = rawCycleData{stepnum}(:, musclenum)
-steps = {1:length(musclenum)};
-for i=1:length(steps)
-    steps{i} = rawCycleData{stepnum}(:, musclenum(i));
-    plot(steps{i})
-end
-%-----keep changing step to steps from here. TODO
+%TODO add a "repeat" and "delay" option here
+
+%define limits in this order: emglow_limit, emghigh_limit, amplow_limit,
+%amphigh_limit
+emglow_limit = .35; %get rid of low noise
+emghigh_limit = 2; %get rid of excessively high spikes
+amplow_limit = 1.2; %lowest level of stim to twitch
+amphigh_limit = 4;  %highest level of stim to use
+
+%define stim parameters
+pw = 200;
+ch = 2;
+
+step = rawCycleData{stepnum}(:, musclenum);
 %do absolute value of the whole thing
 
 %do a little bit of smoothing?
 
 %create min and max stim levels
 %NOTE: these will depend on the different muscles
-emglow_limit = .35; 
-emghigh_limit = 2; 
-amplow_limit = 1.2; %lowest level of stim to twitch
-amphigh_limit = 4;  %highest level of stim to use
+
 for i=1:length(step)
     step(i) = abs(step(i)); 
     if step(i)<emglow_limit
@@ -78,8 +83,7 @@ if ~exist('ws', 'var')
     ws.init(1, ws.comm_timeout_disable);
 end
 
-pw = 200;
-ch = 2;
+
 command{1} = struct('Freq', 30, ...        % Hz
     'CathDur', pw, ...    % us
     'AnodDur', pw ...    % us
