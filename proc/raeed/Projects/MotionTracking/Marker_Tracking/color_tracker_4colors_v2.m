@@ -10,9 +10,19 @@
 %1) Get the location of the arm markers
 %The red arm markers are run a preliminary time, in order to get distance
 %constraints from the blue arm marker
-%Some manual correction is allowed for the elbow markers
-
-%2) Get the location of the 
+%Some manual correction is allowed for the elbow markers (of frames that
+%get automatically flagged)
+%2) Get the location of the hand markers a preliminary time, and then set
+%distance constraints (from the elbow) based on the preliminary locations
+%3) Get the location of the hand markers (except the yellow one), using distance constraints
+%4) Do manual correction of hand markers (for frames that get automatically flagged)
+%5) Get the location of the yellow hand marker
+%This is done after correcting the other hand markers, because it is noisy (sometimes green triggers the
+%yellow detector), and we use the other hand markers as constraints for
+%finding the yellow marker
+%6) Do some additional correction of hand points not based on distances
+%from the elbow marker (in case there are frames the elbow marker was
+%missing)
 
 %For the main tracking portions of the script (e.g. blue arm, red hand,
 %etc.), there are more detailed comments in the "Blue Arm" section which
@@ -28,8 +38,8 @@
 main_dir='/Users/jig289/Box Sync/Tracking_Data/';
 monkey='Han';
 date='03-22-16'; %mo-day-yr
-exp='RW_DL';
-num='001';
+exp='RW';
+num='003';
 
 % Load ColorTracking File and Settings
 fname_load=ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']);
@@ -272,7 +282,7 @@ for i=start:finish
     loc(rmv,:)=[];
         
     %2. Cluster and assign
-    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 );
+    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2, 1 );
     
     %3. Plot original image and cluster centers
     plot_clusts( plot_on, num_clust, x, y, z, medians, i, t, pause_time, xlims, ylims, zlims )
@@ -368,16 +378,21 @@ if first_time %If this is not the first file from a date, we don't need to run t
     plot(dists2)
     legend('7-10','7-8')
     
-    % VISUALIZE FRAMES
-    user_input=1; %A value so that it enters the while loop below
-    while ~isempty(user_input)
-        
-        str1='Enter time point you want to visualize (or just press enter to continue) \n';
-        user_input=input(str1);
-        if ~isempty(user_input)
-            plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+ %VISUALIZE FRAMES
+user_input=1; %A value so that it enters the while loop below
+while ~isempty(user_input)    
+    str1='Enter time point you want to visualize (or just press enter to continue) \n';    
+    user_input=input(str1);
+    %Make sure the input was valid (an integer between start and finish)
+    if ~isempty(user_input)
+        while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+            user_input=input('Re-enter valid time point \n');
         end
     end
+    if ~isempty(user_input)
+        plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+    end
+end
     
     % SET RED ARM TO BLUE ARM DISTANCES
     str1='1A. Input red_elbow_dist_from_blue \n';
@@ -385,12 +400,21 @@ if first_time %If this is not the first file from a date, we don't need to run t
     str3='The purpose of this is to keep all points w/in this distance of the blue as marker candidates (useful if the red elbow marker was gone the previous frame) \n';
     str4='Value is generally ~ .05-.1 \n';
     red_elbow_dist_from_blue=input([str1 str2 str3 str4]);
+    %Make sure it's a valid entry
+    while ~(isnumeric(red_elbow_dist_from_blue))
+        red_elbow_dist_from_blue=input('Re-enter valid value');
+    end
+    
     
     str1='1B. Input red_blue_arm_dist_max \n';
     str2='All values in above plot should be below this value (Maximum distance from a red arm point to the blue)\n';
     str3='The purpose of this is to remove all points farther than this from the blue marker (to get rid of noise)';
     str4='Value is generally ~ .05-.1 \n';
     red_blue_arm_dist_max=input([str1 str2 str3 str4]);
+    %Make sure it's a valid entry
+    while ~(isnumeric(red_blue_arm_dist_max))
+        red_blue_arm_dist_max=input('Re-enter valid value');
+    end
     
 end
 
@@ -455,7 +479,7 @@ for i=start:finish
     loc(rmv,:)=[];
        
     %2. Cluster and assign
-    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 );
+    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2, 1 );
     
     %3. Plot original image and cluster centers
     plot_clusts( plot_on, num_clust, x, y, z, medians, i, t, pause_time, xlims, ylims, zlims )
@@ -489,16 +513,21 @@ end
 
 %Plot
 figure; plot(angle)   
-red_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle below this will have marker 10 removed
+red_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle below this will have marker 10 removed (default threshold)
 title(['Red Elbow Angles: Default Threshold=' num2str(red_elbow_angle_thresh)]);
 
 
 %VISUALIZE FRAMES
 user_input=1; %A value so that it enters the while loop below
-while ~isempty(user_input)
-    
+while ~isempty(user_input)    
     str1='Enter time point you want to visualize (or just press enter to continue) \n';    
     user_input=input(str1);
+    %Make sure the input was valid (an integer between start and finish)
+    if ~isempty(user_input)
+        while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+            user_input=input('Re-enter valid time point \n');
+        end
+    end
     if ~isempty(user_input)
         plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
     end
@@ -507,6 +536,11 @@ end
 %SET ANGLE THRESHOLD FOR RED ELBOW REMOVAL
 str1='Enter angle threshold for red elbow removal. Press enter for default. \n'; 
 temp=input(str1);
+%Make sure it's a valid entry
+    while ~(isnumeric(temp) || isempty(temp))
+        temp=input('Re-enter valid value');
+    end
+
 if ~isempty(temp)
     red_elbow_angle_thresh=temp;
 end
@@ -562,7 +596,7 @@ if ~isempty(green_shoulder_marker_ids) %Only do this if it is a file with a gree
         
         
         %2. Cluster and assign
-        [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 );
+        [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2, 1 );
         
         %3. Plot original image and cluster centers
         plot_clusts( plot_on, num_clust, x, y, z, medians, i, t, pause_time, xlims, ylims, zlims )
@@ -628,7 +662,7 @@ for i=start:finish
     loc(rmv,:)=[];
         
     %2. Cluster and assign
-    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 );
+    [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2, 1 );
     
     %3. Plot original image and cluster centers
     plot_clusts( plot_on, num_clust, x, y, z, medians, i, t, pause_time, xlims, ylims, zlims )
@@ -668,19 +702,28 @@ title(['Green Elbow Angles: Default Threshold=' num2str(green_elbow_angle_thresh
 
 
 % VISUALIZE FRAMES
+%VISUALIZE FRAMES
 user_input=1; %A value so that it enters the while loop below
-while ~isempty(user_input)
-    
+while ~isempty(user_input)    
     str1='Enter time point you want to visualize (or just press enter to continue) \n';    
     user_input=input(str1);
+    %Make sure the input was valid (an integer between start and finish)
     if ~isempty(user_input)
-        plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+        while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+            user_input=input('Re-enter valid time point \n');
+        end
+    end
+    if ~isempty(user_input)
+        plot_together_4colors_func(user_input, [6 7 8], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
     end
 end
 
 % SET ANGLE THRESHOLD FOR GREEN ELBOW REMOVAL
 str1='Enter angle threshold for green elbow removal. Press enter for default. \n'; 
 temp=input(str1);
+while ~(isnumeric(temp) || isempty(temp))
+        temp=input('Re-enter valid value');
+end
 if ~isempty(temp)
     green_elbow_angle_thresh=temp;
 end
@@ -974,47 +1017,72 @@ if first_time
     plot(dists5,'g');
    
     
-    %VISUALIZE FRAMES
-    user_input=1; %A value so that it enters the while loop below
-    while ~isempty(user_input)
-        
-        str1='Enter time point you want to visualize (or just press enter to continue) \n';
-        user_input=input(str1);
-        if ~isempty(user_input)
-            plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+%VISUALIZE FRAMES
+user_input=1; %A value so that it enters the while loop below
+while ~isempty(user_input)    
+    str1='Enter time point you want to visualize (or just press enter to continue) \n';    
+    user_input=input(str1);
+    %Make sure the input was valid (an integer between start and finish)
+    if ~isempty(user_input)
+        while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+            user_input=input('Re-enter valid time point \n');
         end
     end
+    if ~isempty(user_input)
+        plot_together_4colors_func(user_input, [1:5], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+    end
+end
     
     
 end
-%% SET 5. hand distance limits from red elbow
+%% SET hand distance limits from red elbow
 
 if first_time
     
-    str1='5A. Input green_hand_dists_elbow \n';
+    str1='Input green_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the green hand markers to the red elbow marker\n';
     str3='Value is generally ~ [.15,.26] \n';    
     green_hand_dists_elbow=input([str1 str2 str3]);
-    
-    str1='5B. Input red_hand_dists_elbow \n';
+    %Make sure entry was valid
+    while ~(length(green_hand_dists_elbow)==2)
+        green_hand_dists_elbow=input('Re-enter valid values');
+    end
+        
+    str1='Input red_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the red hand markers to the red elbow marker\n';
     str3='Value is generally ~ [.17,.23] \n';    
     red_hand_dists_elbow=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(red_hand_dists_elbow)==2)
+        red_hand_dists_elbow=input('Re-enter valid values');
+    end
     
-    str1='5C. Input blue_hand_dists_elbow \n';
+    str1='Input blue_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the blue hand markers to the red elbow marker\n';
     str3='Value is generally ~ [.17,.23] \n';    
     blue_hand_dists_elbow=input([str1 str2 str3]);
-
-    str1='5D. Input yellow_hand_dists_elbow \n';
+    %Make sure entry was valid
+    while ~(length(blue_hand_dists_elbow)==2)
+        blue_hand_dists_elbow=input('Re-enter valid values');
+    end
+    
+    str1='Input yellow_hand_dists_elbow \n';
     str2='Lower and upper limits of distances of the yellow hand markers to the red elbow marker\n';
     str3='Value is generally ~ [.15,.21] \n';    
     yellow_hand_dists_elbow=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(yellow_hand_dists_elbow)==2)
+        yellow_hand_dists_elbow=input('Re-enter valid values');
+    end
     
-    str1='5E. Input green_separator \n';
+    str1='Input green_separator \n';
     str2='Distance that separates the green hand points\n';
     str3='Value is generally ~ .2 \n';    
     green_separator=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(isnumeric(green_separator))
+        green_separator=input('Re-enter valid values');
+    end
     
 end
 %% Plot hand distances from blue arm
@@ -1048,30 +1116,45 @@ if first_time
     plot(dists5,'c-x');
     
 end
-%% SET 6. hand distance limits from blue arm
+%% SET hand distance limits from blue arm
 
 if first_time
     
-    str1='6A. Input green_hand_dists_bluearm \n';
+    str1='Input green_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the blue arm marker\n';
     str3='Value is generally ~ [.15,.30] \n';    
     green_hand_dists_bluearm=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(green_hand_dists_bluearm)==2)
+        green_hand_dists_bluearm=input('Re-enter valid values');
+    end
     
-    str1='6B. Input red_hand_dists_bluearm \n';
+    str1='Input red_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the red hand markers (red above) to the blue arm marker\n';
     str3='Value is generally ~ [.16,.28] \n';    
     red_hand_dists_bluearm=input([str1 str2 str3]);
-
-    str1='6C. Input blue_hand_dists_bluearm \n';
+    %Make sure entry was valid
+    while ~(length(red_hand_dists_bluearm)==2)
+        red_hand_dists_bluearm=input('Re-enter valid values');
+    end
+    
+    str1='Input blue_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the blue hand markers (blue above) to the blue arm marker\n';
     str3='Value is generally ~ [.16,.28] \n';    
     blue_hand_dists_bluearm=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(blue_hand_dists_bluearm)==2)
+        blue_hand_dists_bluearm=input('Re-enter valid values');
+    end
     
     str1='6D. Input yellow_hand_dists_bluearm \n';
     str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the blue arm marker\n';
     str3='Value is generally ~ [.14,.26] \n';    
     yellow_hand_dists_bluearm=input([str1 str2 str3]);
-    
+    %Make sure entry was valid
+    while ~(length(yellow_hand_dists_bluearm)==2)
+        yellow_hand_dists_bluearm=input('Re-enter valid values');
+    end
     
 end
 %% Plot hand distances from red arm
@@ -1104,29 +1187,45 @@ if first_time
     plot(dists5,'c-x');
     
 end
-%% SET 7. hand distance limits from red arm
+%% SET hand distance limits from red arm
 
 if first_time
     
-    str1='7A. Input green_hand_dists_redarm \n';
+    str1='Input green_hand_dists_redarm \n';
     str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the red arm marker\n';
     str3='Value is generally ~ [.15,.35] \n';    
     green_hand_dists_redarm=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(green_hand_dists_redarm)==2)
+        green_hand_dists_redarm=input('Re-enter valid values');
+    end
     
-    str1='7B. Input red_hand_dists_redarm \n';
+    str1='Input red_hand_dists_redarm \n';
     str2='Lower and upper limits of distances of the red hand markers (red above) to the red arm marker\n';
     str3='Value is generally ~ [.15,.34] \n';    
     red_hand_dists_redarm=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(red_hand_dists_redarm)==2)
+        red_hand_dists_redarm=input('Re-enter valid values');
+    end
     
-    str1='7C. Input blue_hand_dists_redarm \n';
+    str1='Input blue_hand_dists_redarm \n';
     str2='Lower and upper limits of distances of the blue hand markers (blue above) to the red arm marker\n';
     str3='Value is generally ~ [.18,.35] \n';    
     blue_hand_dists_redarm=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(blue_hand_dists_redarm)==2)
+        blue_hand_dists_redarm=input('Re-enter valid values');
+    end
     
-    str1='7D. Input yellow_hand_dists_redarm \n';
+    str1='Input yellow_hand_dists_redarm \n';
     str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the red arm marker\n';
     str3='Value is generally ~ [.15,.34] \n';    
     yellow_hand_dists_redarm=input([str1 str2 str3]);    
+    %Make sure entry was valid
+    while ~(length(yellow_hand_dists_redarm)==2)
+        yellow_hand_dists_redarm=input('Re-enter valid values');
+    end
     
 end
 %% Plot hand distances from each other
@@ -1143,7 +1242,7 @@ if first_time
     figure; plot(dists1,'g');
     title('Plot between green markers');
 end
-%% SET 8. minimum hand distances from each other
+%% SET minimum hand distances from each other
 
 if first_time
 
@@ -1151,6 +1250,11 @@ if first_time
     str2='Minimum distance allowed between green hand markers (green above)\n';
     str3='Value is generally ~ .03 \n';    
     green_dist_min=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(isnumeric(green_dist_min))
+        green_dist_min=input('Re-enter valid values');
+    end
+    
     
 end
 
@@ -1557,7 +1661,7 @@ end
 % plot(dists5,'c-x');
 
 
-%% SET 13. Determine green hand points to remove (based on having similar distance from elbow)
+%% Determine green hand points to remove (based on having similar distance from elbow)
 
 %Find times when marker 1 and marker 5 are a similar distance to the elbow
 %marker (which is a problem)
@@ -1574,6 +1678,10 @@ for i=1:length(idxs)
     str2='Type in the points to remove \n';
     str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
     rmv=input([str1 str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(rmv) || (all(mod(rmv,1)==0) && all(rmv>0) && all(rmv<=size(all_medians,1))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:length(rmv)
         all_medians(rmv(j),:,idxs(i))=NaN;
     end
@@ -1582,6 +1690,10 @@ for i=1:length(idxs)
     str2='Type in the points to switch \n';
     str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
     switches=input([str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(switches) || (all(all(mod(switches,1)==0)) && all(all(switches>0)) && all(all(switches<=size(all_medians,1)))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:size(switches,1)
         switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
@@ -1599,7 +1711,7 @@ if ~isempty(idxs) %Only redo if there was a change above
     end
 end
 
-%% SET 9. Determine red hand point 3 to remove (based on having a larger distance to the elbow than point 1)
+%% Determine red hand point 3 to remove (based on having a larger distance to the elbow than point 1)
 
 %Find times (idxs) where the distance from the elbow to point 3 are
 %greater than the distance from the elbow to point 1 (which shouldn't
@@ -1617,6 +1729,10 @@ for i=1:length(idxs)
     str2='Type in the points to remove \n';
     str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
     rmv=input([str1 str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(rmv) || (all(mod(rmv,1)==0) && all(rmv>0) && all(rmv<=size(all_medians,1))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:length(rmv)
         all_medians(rmv(j),:,idxs(i))=NaN;
     end
@@ -1625,6 +1741,10 @@ for i=1:length(idxs)
     str2='Type in the points to switch \n';
     str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
     switches=input([str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(switches) || (all(all(mod(switches,1)==0)) && all(all(switches>0)) && all(all(switches<=size(all_medians,1)))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:size(switches,1)
         switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
@@ -1644,7 +1764,7 @@ if ~isempty(idxs) %Only redo if there was a change above
     end
 end
 
-%% SET 10. Determine blue hand point 2 to remove (based on having a larger distance to the elbow than point 1)
+%% Determine blue hand point 2 to remove (based on having a larger distance to the elbow than point 1)
 
 %Find times (idxs) where the distance from the elbow to point 2 are
 %greater than the distance from the elbow to point 1 (which shouldn't
@@ -1662,6 +1782,10 @@ for i=1:length(idxs)
     str2='Type in the points to remove \n';
     str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
     rmv=input([str1 str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(rmv) || (all(mod(rmv,1)==0) && all(rmv>0) && all(rmv<=size(all_medians,1))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:length(rmv)
         all_medians(rmv(j),:,idxs(i))=NaN;
     end
@@ -1670,6 +1794,10 @@ for i=1:length(idxs)
     str2='Type in the points to switch \n';
     str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
     switches=input([str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(switches) || (all(all(mod(switches,1)==0)) && all(all(switches>0)) && all(all(switches<=size(all_medians,1)))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:size(switches,1)
         switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
@@ -1690,7 +1818,7 @@ if ~isempty(idxs) %Only redo if there was a change above
 end
 
 
-%% SET 15. Check whether elbow-5 distance is greater than elbow-3 distance
+%% Check whether elbow-5 distance is greater than elbow-3 distance
 %Which it shouldn't be
 
 %Find times when marker 5 has a greater distance to the elbow
@@ -1708,6 +1836,10 @@ for i=1:length(idxs)
     str2='Type in the points to remove \n';
     str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
     rmv=input([str1 str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(rmv) || (all(mod(rmv,1)==0) && all(rmv>0) && all(rmv<=size(all_medians,1))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:length(rmv)
         all_medians(rmv(j),:,idxs(i))=NaN;
     end
@@ -1716,6 +1848,10 @@ for i=1:length(idxs)
     str2='Type in the points to switch \n';
     str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
     switches=input([str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(switches) || (all(all(mod(switches,1)==0)) && all(all(switches>0)) && all(all(switches<=size(all_medians,1)))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:size(switches,1)
         switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
@@ -1734,7 +1870,7 @@ if ~isempty(idxs) %Only redo if there was a change above
 end
 
 
-%% SET 15. Check whether elbow-5 distance is greater than elbow-2 distance
+%% Check whether elbow-5 distance is greater than elbow-2 distance
 %Which it shouldn't be
 
 %Find times when marker 5 has a greater distance to the elbow
@@ -1752,6 +1888,10 @@ for i=1:length(idxs)
     str2='Type in the points to remove \n';
     str3='e.g. 1, or [1,2] - Note that enter removes no points \n';
     rmv=input([str1 str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(rmv) || (all(mod(rmv,1)==0) && all(rmv>0) && all(rmv<=size(all_medians,1))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:length(rmv)
         all_medians(rmv(j),:,idxs(i))=NaN;
     end
@@ -1760,6 +1900,10 @@ for i=1:length(idxs)
     str2='Type in the points to switch \n';
     str3='e.g. [3,4], or [3,4; 5,6] - Note that enter switches no points \n';
     switches=input([str2 str3]);
+    %Make sure entry is valid (either empty, or composed of markers)
+    while ~(isempty(switches) || (all(all(mod(switches,1)==0)) && all(all(switches>0)) && all(all(switches<=size(all_medians,1)))))
+        rmv=input('Enter valid point(s)');
+    end
     for j=1:size(switches,1)
         switch_pts(switches(j,:),idxs(i),all_medians,all_medians2);
     end
@@ -1971,29 +2115,46 @@ if first_time
     plot(dists5,'c-x');
 end
 
-%% SET 14. hand distance limits from the shoulder
+%% SET hand distance limits from the shoulder
 
 if first_time
     
-    str1='14A. Input green_keep \n';
+    str1='Input green_keep \n';
     str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the green shoulder marker\n';
     str3='Value is generally ~ [.15,.45] \n';    
     green_keep=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(green_keep)==2)
+        green_keep=input('Re-enter valid values');
+    end
     
-    str1='14B. Input red_keep \n';
+    str1='Input red_keep \n';
     str2='Lower and upper limits of distances of the red hand markers (red above) to the green shoulder marker\n';
     str3='Value is generally ~ [.15,.45] \n';    
     red_keep=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(red_keep)==2)
+        red_keep=input('Re-enter valid values');
+    end
     
-    str1='14C. Input blue_keep \n';
+    str1='Input blue_keep \n';
     str2='Lower and upper limits of distances of the blue hand markers (blue above) to the green shoulder marker\n';
     str3='Value is generally ~ [.15,.45] \n';    
     blue_keep=input([str1 str2 str3]);
-
-    str1='14D. Input yellow_keep \n';
+    %Make sure entry was valid
+    while ~(length(blue_keep)==2)
+        blue_keep=input('Re-enter valid values');
+    end
+    
+    str1='Input yellow_keep \n';
     str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the green shoulder marker\n';
     str3='Value is generally ~ [.15,.45] \n';    
     yellow_keep=input([str1 str2 str3]);
+    %Make sure entry was valid
+    while ~(length(yellow_keep)==2)
+        yellow_keep=input('Re-enter valid values');
+    end
+    
 end
 %% Remove hand points (because they're too close or far from shoulder)
 
@@ -2046,14 +2207,13 @@ all_medians2(:,:,start:finish)=temp2;
 
 %% Get smoothed time points
 
-all_medians_smooth=NaN(size(all_medians));
-for i=1:10
-    for j=1:3
-        temp=reshape(all_medians(i,j,:),[1,size(all_medians,3)]);
-        all_medians_smooth(i,j,:)=medfilt1nan(temp,5);
-    end
-end
-
+% all_medians_smooth=NaN(size(all_medians));
+% for i=1:10
+%     for j=1:3
+%         temp=reshape(all_medians(i,j,:),[1,size(all_medians,3)]);
+%         all_medians_smooth(i,j,:)=medfilt1nan(temp,5);
+%     end
+% end
 
 
 
@@ -2070,6 +2230,6 @@ if savefile
         'green_hand_dists_elbow','red_hand_dists_elbow','blue_hand_dists_elbow','yellow_hand_dists_elbow','green_separator',...
         'green_hand_dists_bluearm','red_hand_dists_bluearm','blue_hand_dists_bluearm','yellow_hand_dists_bluearm',...
         'green_hand_dists_redarm', 'red_hand_dists_redarm', 'blue_hand_dists_redarm','yellow_hand_dists_redarm',...
-        'green_dist_min','red_keep','green_keep','blue_keep','marker_inits');     
+        'green_dist_min','red_keep','green_keep','blue_keep','yellow_keep','marker_inits');     
     end
 end
