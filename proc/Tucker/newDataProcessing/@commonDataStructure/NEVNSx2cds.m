@@ -171,7 +171,7 @@ function NEVNSx2cds(cds,varargin)
     %% sanitize times so that all our data is in the same window.
         cds.sanitizeTimeWindows
     %% Set metadata. Some metadata will already be set, but this should finish the job
-        cds.metaFromNEVNSx(NEVNSx,opts)
+        cds.metaFromNEVNSx(opts)
     %% write metadata to database
         %cds.upload2DB
     %% save to fsmres if possible

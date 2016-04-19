@@ -1,4 +1,7 @@
-function varargout=getGitLog(path,varargin)
+function varargout=getGitLog(obj,path,varargin)
+    %getGitLog is a method of the operationLogger superclass and should be
+    %saved in the @operationLogger folder with the other class methods
+    %
     %takes the full path to an m-file and searches all the parent folders
     %to see if the file is in a git repository. At the first git repository
     % getGitLog will pull the git log into a string and then  break it into

@@ -75,7 +75,9 @@ function getCObumpTaskTable(cds,times)
             for trial = 1:numTrials
                 %find and parse the current databurst:
                 idxDB = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
-
+                if isempty(idxDB)
+                    continue
+                end
                 % * Version 2 (0x02)
                 %  * ----------------
                 %  * byte  0:		uchar		=> number of bytes to be transmitted
@@ -198,13 +200,14 @@ function getCObumpTaskTable(cds,times)
 
             %cds.setField('trials',trialsTable)
             set(cds,'trials',trialsTable)
-            cds.addOperation(mfilename('fullpath'))
         case 3
                         % loop thorugh our trials and build our list vectors:
             for trial = 1:numTrials
                 %find and parse the current databurst:
                 idxDB = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
-
+                if isempty(idxDB)
+                    continue
+                end
                 % * Version 3 (0x03)
                 %  * ----------------
                 %  * byte  0:		uchar		=> number of bytes to be transmitted
@@ -329,4 +332,6 @@ function getCObumpTaskTable(cds,times)
         otherwise
             error('getCObumpTaskTable:unrecognizedDBVersion',['the trial table code for CObump is not implemented for databursts with version#:',num2str(dbVersion)])
     end
+    evntData=loggingListenerEventData('getCOTaskTable',[]);
+    notify(cds,'ranOperation',evntData)
 end

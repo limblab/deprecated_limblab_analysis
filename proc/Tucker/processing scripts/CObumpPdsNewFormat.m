@@ -1,7 +1,7 @@
-%get PDs from CObump data
-    if ~exist('NEVNSx','var')
-        NEVNSx=cerebus2NEVNSx('E:\local processing\Han\20160411_COBump_ctrHold_Delay','Han_20160411_COBump_area2_001');
-    end
+% %get PDs from CObump data
+%     if ~exist('NEVNSx','var')
+%         NEVNSx=cerebus2NEVNSx('E:\local processing\Han\20160411_COBump_ctrHold_Delay','Han_20160411_COBump_area2_001');
+%     end
 %% load test data into cds
     if ~exist('cds','var')
         cds=commonDataStructure();

@@ -310,6 +310,9 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
         calcFiringRate(ex)
         binData(ex,varargin)
     end
+    methods (Static = false, Access = protected, Hidden=true)
+        [lagData,lagPts,time]=timeShiftBins(ex,data,lags,varargin)
+    end
     methods
         %callbacks
         function experimentLoggingEventCallback(ex,src,evnt)

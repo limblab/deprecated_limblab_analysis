@@ -123,7 +123,7 @@ classdef binnedData < matlab.mixin.SetGet
             elseif ~isfield(pdc,'useParallel') || ~islogical(pdc.useParallel)
                 error('pdConfic:badUseParallelConfig','pdConfig must have a field useParalle that contains a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
             elseif ~isfield(pdc,'windows') || ~isnumeric(pdc.windows) || size(pdc.windows,2)~=2
-                error('pdConfig:badWindowConfiguration','pdConfig must have a windows field that contains the 
+                error('pdConfig:badWindowConfiguration','pdConfig must have a windows field that contains the time windows for PD computation')
             else
                 binned.pdConfig=pdc;
             end

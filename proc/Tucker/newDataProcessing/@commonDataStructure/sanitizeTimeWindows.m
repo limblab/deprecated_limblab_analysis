@@ -46,38 +46,71 @@ function sanitizeTimeWindows(cds)
     meta.dataWindow=window;
     set(cds,'meta',meta)
     %% run through all fields and make sure the data only exists between the window:
+    %sub-referencing a table is very slow, so we want to avoid it at all
+    %costs. Below we are going to check for points that need to be removed,
+    %and if we don't find any we are going to skip the empty assignment
+    %just to save time. For some reason Matlab still takes a lot of time
+    %with a line like cds.kin(zeros(length(cds.kin.t)),:)=[]; even though
+    %no actual assignment is done. The below structure of making a mask and
+    %then checking whether its empty should be MUCH faster in cases where
+    %no truncation is needed (~30s vs ~.5s for my test dataset).
     if ~isempty(cds.kin)
-        set(cds,'kin',cds.kin(cds.kin.t>window(1) & cds.kin.t<window(2),:))
+        mask=cds.kin.t<window(1) | cds.kin.t>window(2);
+        if ~isempty(find(mask,1))
+            cds.kin(mask,:)=[];
+        end
     end
     if ~isempty(cds.force)
-        set(cds,'force',cds.force(cds.force.t>window(1) & cds.force.t<window(2),:))
+        mask=cds.force.t<window(1) | cds.force.t>window(2);
+        if ~isempty(find(mask,1))
+            cds.force(mask,:)=[];
+        end
     end
     if ~isempty(cds.emg)
-        set(cds,'emg',cds.emg(cds.emg.t>window(1) & cds.emg.t<window(2),:))
+        mask=cds.emg.t<window(1) | cds.emg.t>window(2);
+        if ~isempty(find(mask,1))
+            cds.emg(mask,:)=[];
+        end
     end
     if ~isempty(cds.lfp)
-        set(cds,'lfp',cds.lfp(cds.lfp.t>window(1) & cds.lfp.t<window(2),:))
+        mask=cds.lfp.t<window(1) | cds.lfp.t>window(2);
+        if ~isempty(find(mask,1))
+            cds.lfp(mask,:)=[];
+        end
     end
     if ~isempty(cds.triggers)
-        set(cds,'triggers',cds.triggers(cds.triggers.t>window(1) & cds.triggers.t<window(2),:))
+        mask=cds.triggers.t<window(1) | cds.triggers.t>window(2);
+        if ~isempty(find(mask,1))
+            cds.triggers(mask,:)=[];
+        end
     end
     if ~isempty(cds.analog)
         for i=1:length(cds.analog)
-            analog{i}=cds.analog{i}(cds.analog{i}.t>window(1) & cds.analog{i}.t<window(2),:);
+            mask=cds.analog{i}.t<window(1) | cds.analog{i}.t>window(2);
+            if ~isempty(find(mask,1))
+                cds.analog{i}(mask,:)=[];
+            end
         end
-        set(cds,'analog',analog)
     end
     if ~isempty(cds.trials)
-        set(cds,'trials',cds.trials(cds.trials.startTime>window(1) & cds.trials.endTime<window(2),:))
+        mask=cds.trials.startTime<window(1) | cds.trials.endTime>window(2);
+        if ~isempty(find(mask,1))
+            cds.trials(mask,:)=[];
+        end
     end
     if ~isempty(cds.units)
         %loop through units trimming off all timestamps not in the window
+        %copying data hits memory, but only calls the set function once,
+        %and set actually has substantial overhead when called ~200 times
         units=cds.units;
         for i=1:length(cds.units)
-            units(i).spikes=units(i).spikes(units(i).spikes.ts>=window(1) &units(i).spikes.ts<=window(2),:);
+            mask=units(i).spikes.ts<=window(1) &units(i).spikes.ts>=window(2);
+            if ~isempty(find(mask,1))
+                units(i).spikes(mask,:)=[];
+            end
         end
         set(cds,'units',units)
     end
-    evntData=loggingListenerEventData('sanitizeTimeWindows',opData);
-    notify(ex,'ranOperation',evntData)
+    evntData=loggingListenerEventData('sanitizeTimeWindows',[]);
+    notify(cds,'ranOperation',evntData)
 end

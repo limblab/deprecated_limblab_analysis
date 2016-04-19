@@ -54,9 +54,14 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 m.hasForce=false;
                 m.hasAnalog=false;
                 m.hasUnits=false;
+                m.hasSorting=false;
                 m.hasTriggers=false;
                 m.hasChaoticLoad=false;
                 m.hasBumps=false;
+                                
+                m.numSorted=0;
+                m.numWellSorted=0;
+                m.numDualUnits=0;
                 
                 m.duration=0;
                 m.dateTime='-1';
@@ -85,7 +90,7 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
             %% empty triggers field
                 cds.triggers=cell2table(cell(0,2),'VariableNames',{'t','triggers'});
             %% units
-                cds.units=struct('chan',[],'ID',[],'array',{},'monkey',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
+                cds.units=struct('chan',[],'ID',[],'array',{},'wellSorted',false,'monkey',{},'spikes',cell2table(cell(0,2),'VariableNames',{'ts','wave'}));
             %% empty table of trial data
                 cds.trials=cell2table(cell(0,5),'VariableNames',{'trial_number','start_time','go_time','end_time','trial_result'});
             %% empty NEVNSx fields:
@@ -186,30 +191,22 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
             end
         end
         function set.units(cds,units)
-            f=@(x) ~isa(x,'table');
-            f2=@(x) size(x,2)~=2;
-            f3=@(x) isempty(find(strcmp('ts',x.Properties.VariableNames),1));
-            f4=@(x) isempty(find(strcmp('wave',x.Properties.VariableNames),1));
-            
             if isempty(units)
                 cds.units=units;
             elseif ~isstruct(units)
                 error('units:badFormat','Units must be a struct')
-            elseif ~isfield(units,'chan') || ~isnumeric([units(:).chan])
+            elseif ~isfield(units,'chan') 
                 error('units:badchanFormat','units must have a field called chan that contains a numeric array of channel numbers')
-            elseif ~isfield(units,'ID') || ~isnumeric([units(:).ID])
+            elseif ~isfield(units,'ID')
                 error('units:badIDFormat','units must have a field called ID that contains a numeric array of the ID numbers')
-            elseif ~isfield(units,'array') || ~iscellstr({units.array})
+            elseif ~isfield(units,'wellSorted')
+                error('units:badWellSortedFormat','units must have a field called wellSorted that contains a logical')
+            elseif ~isfield(units,'array')
                 error('units:badArrayFormat','units must have a field called array that contains a cell array of strings, where each string specifies the array on which the unit was collected')
-            elseif ~isfield(units,'monkey') || ~iscellstr({units.monkey})
+            elseif ~isfield(units,'monkey')
                 error('units:badMonkeyFormat','units must have a field called array that contains a cell array of strings, where each string specifies the monkey on which the unit was collected')
             elseif ~isfield(units,'spikes') 
                 error('units:missingspikes','units must have a field called spikes containing tables of the spike times and waveforms')
-            elseif ~isempty({units.spikes}) && (~isempty(find(cellfun(f,{units.spikes}),1)) ...
-                    || ~isempty(find(cellfun(f2,{units.spikes}),1)) ...
-                    || ~isempty(find(cellfun(f3,{units.spikes}),1)) ...
-                    || ~isempty(find(cellfun(f4,{units.spikes}),1)) )
-                error('units:badFormat','all elements in units.spikes must be tables with 2 columns: ts and wave. ts contains the timestamps of each wave, and wave contains the snippet of the threshold crossing')
             else
                 cds.units=units;
             end
@@ -287,9 +284,9 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 error('meta:BadlabnumFormat','the labnum field must be a numeric value from the following set: [-1 1 2 3 6]')
             elseif ~isfield(meta,'task') || ~ischar(meta.task)  
                 error('meta:BadtaskFormat','the task field must contain a string')
-            elseif isempty(find(strcmp(meta.task,{'RW','CO','BD','DCO','multi_gadget','UNT','RP','Unknown'}),1))
+            elseif isempty(find(strcmp(meta.task,{'RW','CO','CObump','BD','DCO','multi_gadget','UNT','RP','Unknown'}),1))
                 %standard loading will catch 'Unknown' 
-                warning('meta:UnrecognizedTask','This task string is not recognized. Standard analysis functions may fail to operate correctly using this task string')
+                warning('meta:UnrecognizedTask',['The task string: ',meta.task,' is not recognized. Standard analysis functions may fail to operate correctly using this task string'])
             elseif ~isfield(meta,'monkey') || ~ischar(meta.monkey)
                 error('meta:BadmonkeyFormat','The monkey name must contain a string with the monkey name')
             elseif ~isfield(meta,'array') || ~ischar(meta.array)
@@ -332,6 +329,14 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 error('meta:NoHasChaoticLoad','meta must include a hasChaoticLoad field with a boolean flag')
             elseif ~isfield(meta,'hasBumps') || ~islogical(meta.hasBumps)
                 error('meta:NoHasBumps','meta must include a hasBumps field with a boolean flag')
+            elseif ~isfield(meta,'hasSorting') || ~islogical(meta.hasSorting)
+                error('meta:NoHasSorting','meta must include a hasSorting field with a boolean flag')
+            elseif ~isfield(meta,'numSorted') || ~isnumeric(meta.numSorted)
+                error('meta:NoNumSorted','meta must include a numSorted field with an integer count of the number of units sorted in the file')
+            elseif ~isfield(meta,'numWellSorted') || ~isnumeric(meta.numWellSorted)
+                error('meta:NoNumWellSorted','meta must include a numWellSorted field with an integer specifying how many of the sorted units are well sorted from noise and other units on the channel')
+            elseif ~isfield(meta,'numDualUnits') || ~isnumeric(meta.numDualUnits)
+                error('meta:noNumDualUnits','meta must include a numDualUnits field with an integer specifying the number of dual units that have been sorted in the array')
             else
                 cds.meta=meta;
             end
@@ -353,9 +358,18 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         %the method from a class instance.
         
         %data loading functions:
-        bdf2cds(cds,bdf)
-        sourceFile2cds(cds,folderPath,fileName,varargin)
+        file2cds(cds,filePath,varargin)
         database2cds(cds,conn,filepath,varargin)
+        %data preprocessing functions
+        checkEMG60hz(cds)
+        checkLFP60hz(cds)
+        %storage functions
+        upload2DB(cds)
+        save2fsmres(cds)
+    end
+    methods (Static = false, Access = protected, Hidden=true)
+        %the following methods are all hidden from the user and may only be
+        %called by methods of the cds class.
         nev2NEVNSx(cds,fname)
         NEVNSx2cds(cds,NEVNSx,varargin)
             eventsFromNEV(cds,opts)
@@ -364,6 +378,7 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
             [filteredData,time]=getFilteredFromNSx(cds,filterConfig,chans)
             handleForce=handleForceFromRaw(cds,rawForce,opts)
             unitsFromNEV(cds,opts)
+            testSorting(cds)
             emgFromNSx(cds)
             lfpFromNSx(cds)
             triggersFromNSx(cds)
@@ -372,11 +387,10 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
             pos=enc2handlepos(cds,dateTime,lab)
             pos=enc2WFpos(cds)
             mergeTable(cds,fieldName,mergeData)
-        %data preprocessing functions
         [task,opts]=getTask(cds,task,opts)
         writeSessionSummary(cds)
-        checkEMG60hz(cds)
-        checkLFP60hz(cds)
+        sanitizeTimeWindows(cds)
+        idx=skipResets(cds,time)
         %trial table functions
         getTrialTable(cds,opts)
         getWFTaskTable(cds,times)
@@ -389,12 +403,8 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         getDCOTaskTable(cds,times)
         %general functions
         addProblem(cds,problem)
-        sanitizeTimeWindows(cds)
-        %storage functions
-        upload2DB(cds)
-        save2fsmres(cds)
     end
-    methods
+    methods (Access = protected, Hidden=true)
         %callbacks
         function cdsLoggingEventCallback(cds,src,evnt)
             %because this method is a callback we get the experiment passed
@@ -405,7 +415,7 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
             %loggingListnerEventData subclass to event.EventData so that
             %the operation name and operation data properties are available
             
-            cds.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+            cds.addOperation([class(src),'.',evnt.operationName],cds.locateMethod(class(src),evnt.operationName),evnt.operationData)
         end
     end
 end

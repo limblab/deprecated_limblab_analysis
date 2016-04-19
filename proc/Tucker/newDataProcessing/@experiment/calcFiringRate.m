@@ -126,7 +126,7 @@ function calcFiringRate(ex,varargin)
         %add lags and put FR into a table
         FRTable=[];
         for i=1:length(unitNames)
-            [temp,lagRange,t]=timeShiftBins(FR(:,i),lags,'time',ti,'lagSteps',lagSteps,'cropType',cropType);
+            [temp,lagRange,t]=ex.timeShiftBins(FR(:,i),lags,'time',ti,'lagSteps',lagSteps,'cropType',cropType);
             FRTable=[FRTable,table(temp,'VariableNames',unitNames(i))];
         end
         FRTable=[table(t,'VariableNames',{'t'}),FRTable];
