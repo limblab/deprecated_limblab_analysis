@@ -8,6 +8,7 @@ load(emg_file); %imports an 8x135 cell called rawCycleData
 %rawCycleData{1}(:, 1)
 
 %choose which step and which muscle(s) to use
+animalnum = 7; 
 stepnum = 2;
 musclenum = [2 3];
 %TODO add a "repeat" and "delay" option here
@@ -33,7 +34,7 @@ end
 steps = num2cell([1:lm]);
 size(steps)
 for i=1:length(steps)
-    steps{i} = rawCycleData{stepnum}(:, musclenum(i));
+    steps{i} = rawCycleData{animalnum, stepnum}(:, musclenum(i));
     figure(i)
     plot(steps{i})
 end
@@ -96,6 +97,29 @@ for j=1:lm %do all of the following for each muscle
 end
 
 
+%-----okay, I'm here so far. update step, do same stuff, save .mat file
+%-----TODO: make .mat file reader thing. (that's basically what this is?)
+delta = .5;
+
+%for every muscle selected
+    %NO WAIT THIS WILL RUN EACH OF THEM CONSECUTIVELY. drat. 
+    %also, are there the same number of data points for each muscle? add a
+    %check
+    %TODO: make this check each muscle for each advance to next data point
+for j=1:lm %get stim arrays for all the muscles
+    for i=2:length(steps{1}) %all of the channels have the same no. of data pts
+        if abs(steps{j}(i)-steps{j}(i-1))<delta
+            %do nothing/keep stim constant
+            steps{j}(i) = steps{j}(i-1); %set the array to reflect actual stimulated values
+        end
+    end
+    figure(j); 
+    plot(steps{j})
+end
+%timing for 5000 Hz sample - take ???? no of samples/5000
+
+%% Do stimulation (run arrays concurrently)
+
 %if the stimulator object doesn't exist yet, set it up:
 if ~exist('ws', 'var')
     serial_string = 'COM7'; %use instrfind to check location
@@ -112,42 +136,44 @@ for i=1:lm
     ws.set_stim(command, ch(i));
 end
 
-%-----okay, I'm here so far. update step, do same stuff, save .mat file
-%-----TODO: make .mat file reader thing. (that's basically what this is?)
-delta = .5;
+%set up timing (so I can regulate how quickly we go through the arrays)
 timing = 0;
 tic
-for j=1:lm %for every muscle selected
-    %NO WAIT THIS WILL RUN EACH OF THEM CONSECUTIVELY. drat. 
-    %also, are there the same number of data points for each muscle? add a
-    %check
-    %TODO: make this check each muscle for each advance to next data point
-    step = steps{j};
-    for i=2:length(step)
-        if abs(step(i)-step(i-1))>delta
-            %disp('large delta, stim now');
-            %choose new amp
-            amp = step(i);
-            command{1} = struct('CathAmp', amp*1000+32768, ... % uA
-                'AnodAmp', 32768-amp*1000, ... % uA
-                'Run', ws.run_cont);
-            ws.set_stim(command, ch(j));
-            timing=0; tic;
+
+amps = [0 0 0 0 0 0 0 0];
+
+for i=2:length(steps{1}) %all of the channels have the same no. of data pts
+    timing = timing + 1/5000;
+    
+    for j=1:size(steps, 2) %TODO change this to lm in the real code
+        if steps{j}(i)~=steps{j}(i-1) % update changed amps for stim
+            %large delta, stim now with new amp
+            amps(j) = steps{j}(i)*1000;
         else
             %disp('do nothing/keep stim constant');
-            step(i) = step(i-1);
-            timing = timing + 1/5000;
-            toc;
-            if toc<timing
-                %disp('pausing');
-                pause(timing-toc);
-            end
-            
+            amps(j) = 0;
         end
     end
+    for j=1:size(steps, 2)
+        if amps(j)~=0 %stimulate all of the channels that are changing. 
+            disp(['stim ch ' num2str(ch(j)) ' at ' num2str(amps(j))]);
+            command{1} = struct('CathAmp', amps(j)+32768, ... % uA
+                'AnodAmp', 32768-amps(j), ... % uA
+                'Run', ws.run_cont);
+            ws.set_stim(command, ch(j)); 
+        end
+    end
+    %timing=0; tic;
+    
+    %toc;
+    %timing
+    if toc<timing %if it takes less than 1/5000 sec to stim each step, wait
+        disp('pausing');
+        pause(timing-toc);
+    end
+    
 end
-plot(step)
-%timing for 5000 Hz sample - take ???? no of samples/5000
+
 
 %End all of the stimulation
 command{1} = struct('Run', ws.run_stop);
