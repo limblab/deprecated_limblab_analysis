@@ -17,7 +17,6 @@ function metaFromNEVNSx(cds,opts)
     meta.array=opts.array;
 
     meta.knownProblems=cds.meta.knownProblems;
-    meta.processedWith=cds.meta.processedWith;
 
     %timing
     meta.dateTime=opts.dateTime;

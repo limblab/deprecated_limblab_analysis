@@ -32,14 +32,6 @@ function binData(ex,varargin)
         recalcFR=true;
     end
     
-    %% get the units into a table:
-    if recalcFR
-        if ex.binConfig.filterConfig.sampleRate>ex.firingRateConfig.sampleRate;
-            error('binData:frequencyMismatch','The sample rate of the firing rates must be equal to or greater than the sample rate of the binned data. Recompute the firing rates with a higher sample rate, or set a lower binning frequency')
-        end
-        ex.calcFiringRate;
-    end
-    
     %% get the continuous data into a table:
     %start with our difined fields
     bins=[];
@@ -93,6 +85,12 @@ function binData(ex,varargin)
     temp=[];
     unitIdx=find([strcmp({ex.binConfig.include.field},'units')],1);
     if ~isempty(unitIdx)
+        if recalcFR
+            if ex.binConfig.filterConfig.sampleRate>ex.firingRateConfig.sampleRate;
+                error('binData:frequencyMismatch','The sample rate of the firing rates must be equal to or greater than the sample rate of the binned data. Recompute the firing rates with a higher sample rate, or set a lower binning frequency')
+            end
+            ex.calcFiringRate;
+        end
         %decimate the Fr data if necessary:
         if ex.binConfig.filterConfig.sampleRate<ex.firingRate.meta.sampleRate
             temp=decimateData(ex.firingRate.data{:,:},ex.binConfig.filterConfig);
@@ -130,13 +128,26 @@ function binData(ex,varargin)
         contEnd=find(bins.t<=tEnd,1,'last');
         FRStart=find(temp.t>=tStart,1);
         FREnd=find(temp.t<=tEnd,1,'last');
+        %get the indicees of units that we want to include in the bin
+        %table:
+        if isempty(ex.binConfig.include(unitIdx).which)
+            incMask=true(numel(ex.units.data),1);
+        else
+            incMask=false(numel(ex.units.data),1);
+            incMask(ex.binConfig.include(unitIdx).which)=true;
+        end
+        %strip rows from the mask that would be invalidated spikes:
+        incMask([ex.units.data.ID]==255)=[];
+        %get indexes and shift by 1 to account for the time column in the
+        %temp table:
+        incMask=find(incMask)+1;
         %put the joint continuous and unit bins into ex.bin.data
-        ex.bin.updateBins([bins(contStart:contEnd,:),temp(FRStart:FREnd,2:end)])
+        ex.bin.updateBins([bins(contStart:contEnd,:),temp(FRStart:FREnd,incMask)])
     else
         %if no units flag was evident, just put the analog data into bins
         ex.bin.updateBins(bins);
     end
     %% notify the appended event so listners can log the operation
-    evntData=loggingListnerEventData('binData',ex.binConfig);
+    evntData=loggingListenerEventData('binData',ex.binConfig);
     notify(ex,'ranOperation',evntData)
 end

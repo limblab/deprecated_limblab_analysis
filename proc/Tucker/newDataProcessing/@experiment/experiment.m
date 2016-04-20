@@ -32,7 +32,6 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
                 m.knownProblems={'problem'};
                 m.fileSepShift=1;
                 m.duration=0;
-                m.fileSepTime=[];
                 m.dataWindow=[0 0];
                 
                 m.task='NoDataLoaded';
@@ -128,8 +127,6 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
                 error('meta:BaddurationFormat','the duration field must be numeric, and contain the duration of the data file in seconds')
             elseif ~isfield(meta,'mergeDate') 
                 error('meta:badMergeDateFormat','meta must have a field containing the merge date for each cds merged into this experiment')
-            elseif ~isfield(meta,'fileSepTime') || (~isempty(meta.fileSepTime) && size(meta.fileSepTime,2)~=2) || ~isnumeric(meta.fileSepTime)
-                error('meta:BadfileSepTimeFormat','the fileSepTime field must be a 2 column array, with each row containing the start and end of time gaps where two files were concatenated')
             elseif ~isfield(meta,'numTrials') || ~isnumeric(meta.numTrials)...
                     ||~isfield(meta,'numReward') || ~isnumeric(meta.numReward)...
                     ||~isfield(meta,'numAbort') || ~isnumeric(meta.numAbort)...
@@ -158,7 +155,7 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
             elseif ~isfield(meta,'hasTrials') || ~islogical(meta.hasTrials)
                 error('meta:NoHasTrials','meta must include a hasTrials field with a boolean flag')
             else
-                if isempty(find(strcmp(meta.task,{'RW','CO','BD','DCO','multi_gadget','UNT','RP','NoDataLoaded'}),1))
+                if isempty(find(strcmp(meta.task,{'RW','CO','CObump','BD','DCO','multi_gadget','UNT','RP','NoDataLoaded'}),1))
                     warning('meta:UnrecognizedTask','This task string is not recognized. Standard analysis functions may fail to operate correctly using this task string')
                 end
                 ex.meta=meta;
@@ -324,7 +321,7 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
             %loggingListnerEventData subclass to event.EventData so that
             %the operation name and operation data properties are available
             
-            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+            ex.addOperation([class(src),'.',evnt.operationName],ex.locateMethod(class(src),evnt.operationName),evnt.operationData)
         end
         function dataLoggingCallback(ex,src,evnt)
             %because this method is a callback we get the experiment passed
@@ -336,7 +333,7 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
             %this implementation expects that the event data will be of the
             %loggingListnerEventData subclass to event.EventData so that
             %the operation name and operation data properties are available
-            ex.addOperation([class(src),'.',evnt.operationName],locateMethod(class(src),evnt.operationName),evnt.operationData)
+            ex.addOperation([class(src),'.',evnt.operationName],ex.locateMethod(class(src),evnt.operationName),evnt.operationData)
         end
     end
 end

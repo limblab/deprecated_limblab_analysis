@@ -122,13 +122,17 @@ function calcFiringRate(ex,varargin)
         %now make our variable names for each unit:
         unitNames{j}=[ex.units.data(j).array,'CH',num2str(ex.units.data(j).chan),'ID',num2str(ex.units.data(j).ID)];
     end
+    %clear out columns that were due to invalid units:
+    mask=([ex.units.data.ID]==255);
+    FR(:,mask)=[];
+    unitNames=unitNames(~mask);
+    
     if ~isempty(FR)
         %add lags and put FR into a table
-        FRTable=[];
         for i=1:length(unitNames)
-            [temp,lagRange,t]=ex.timeShiftBins(FR(:,i),lags,'time',ti,'lagSteps',lagSteps,'cropType',cropType);
-            FRTable=[FRTable,table(temp,'VariableNames',unitNames(i))];
+            [temp{i},lagRange,t]=ex.timeShiftBins(FR(:,i),lags,'time',ti,'lagSteps',lagSteps,'cropType',cropType);
         end
+        FRTable=table(temp{:},'VariableNames',unitNames);
         FRTable=[table(t,'VariableNames',{'t'}),FRTable];
         FRTable.Properties.VariableUnits=[{'s'},repmat({'hz'},1,length(unitNames))];
         FRTable.Properties.VariableDescriptions=[{'time'},repmat({'firing rate'},1,length(unitNames))];
@@ -143,7 +147,7 @@ function calcFiringRate(ex,varargin)
         m.lags=lagRange;
         ex.firingRate.updateMeta(m)
     end
-    evntData=loggingListnerEventData('calcFiringRate',ex.firingRate.meta);
+    evntData=loggingListenerEventData('calcFiringRate',ex.firingRate.meta);
     notify(ex,'ranOperation',evntData)
 end
 

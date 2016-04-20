@@ -37,6 +37,7 @@ function file2cds(cds,filePath,varargin)
 %         varargin=[varargin,{'dbEmpty'}];
         cds.nev2NEVNSx(filePath);
         cds.NEVNSx2cds(varargin{:});
+        cds.clearTempFields()
         evntData=loggingListenerEventData('file2cds',[]);
         notify(cds,'ranOperation',evntData)
 %     end

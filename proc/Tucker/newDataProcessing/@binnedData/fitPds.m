@@ -10,17 +10,12 @@ function fitPds(binned)
     %get our list of units
     if isempty(binned.pdConfig.units)
         %find all our units and make a cell array containing the whole list
-        mask=false(1,numel(binned.bins.Properties.VariableNames));
-        for i=1:numel(mask);
-            if ~isempty(strfind(binned.bins.Properties.VariableNames{i},'CH')) && ~isempty(strfind(binned.bins.Properties.VariableNames{i},'ID'))
-                mask(i)=true;
-            end
-        end
+        unitMask=~cellfun(@(x)isempty(strfind(x,'CH')),ex.bin.bins.Properties.VariableNames) & ~cellfun(@(x)isempty(strfind(x,'ID')),ex.bin.bins.Properties.VariableNames);
     else
         %use the list the user supplied
-        mask=binned.pdConfig.units;
+        unitMask=binned.pdConfig.units;
     end
-    uList=binned.bins.Properties.VariableNames(mask);
+    uList=binned.bins.Properties.VariableNames(unitMask);
     %get the mask for the rows of 
     if isempty(binned.pdConfig.windows)
         rowMask=true(size(binned.bins.t));
@@ -34,7 +29,7 @@ function fitPds(binned)
             opt=setUpParallelProcessing(binned.pdConfig.useParallel);
             %% set up the modelSpec string that contains the wilkinson notation describing the model to fit
             fullInput={'x+y','vx+vy','fx+fy','speed'};
-            inputMask=[pdConfig.pos,pdConfig.vel,pdConfig.force,pdConfig.speed];
+            inputMask=[binned.pdConfig.pos,binned.pdConfig.vel,binned.pdConfig.force,binned.pdConfig.speed];
             modelSpec=[strjoin(fullInput(inputMask),'+'),'~',strjoin(uList,',')];
             %% Set up parameters for bootstrap and GLM
             % set boot function by checking stats toolbox version number

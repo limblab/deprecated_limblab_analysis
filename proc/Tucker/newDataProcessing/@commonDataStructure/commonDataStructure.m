@@ -1,5 +1,5 @@
 classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
-    properties (SetAccess = private, GetAccess=public, SetObservable=true)%anybody can read these, but only class methods can write to them
+    properties (SetAccess = private, GetAccess=public)%anybody can read these, but only class methods can write to them
         kinFilterConfig
         meta
         kin
@@ -46,7 +46,6 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 m.monkey='Unknown';
                 
                 m.knownProblems={};
-                m.processedWith={'function','date','computer name','user name','Git log','File log','operation_data'};
                 
                 m.hasEmg=false;
                 m.hasLfp=false;
@@ -100,6 +99,7 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 set(cds,'NS3',[])
                 set(cds,'NS4',[])
                 set(cds,'NS5',[])
+                set(cds,'NSxInfo',[])
                 %% empty table of words
                 cds.words=cell2table(cell(0,2),'VariableNames',{'ts','word'});
             %% empty table of databursts
@@ -293,8 +293,6 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
                 error('meta:BadarrayFormat','The array field must contain a string with the name of the array, e.g. M1, S1, PMd')
             elseif ~isfield(meta,'knownProblems') || ~iscell(meta.knownProblems)
                 error('meta:BadknownProblemsFormat','The knownProblems field must contain a cell array, where each cell contains a string ')
-            elseif ~isfield(meta,'processedWith') || ~iscell(meta.processedWith)
-                error('meta:BadprocessedWithFormat','the processedWith field must be a cell array with each row containing cells that describe the processing functions')
            elseif ~isfield(meta,'duration') || ~isnumeric(meta.duration)
                 error('meta:BaddurationFormat','the duration field must be numeric, and contain the duration of the data file in seconds')
             elseif ~isfield(meta,'dateTime') || ~ischar(meta.dateTime)
@@ -366,6 +364,10 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         %storage functions
         upload2DB(cds)
         save2fsmres(cds)
+        S=saveobj(cds)
+    end
+    methods (Static = true)
+        cds=loadobj()
     end
     methods (Static = false, Access = protected, Hidden=true)
         %the following methods are all hidden from the user and may only be
@@ -391,6 +393,7 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         writeSessionSummary(cds)
         sanitizeTimeWindows(cds)
         idx=skipResets(cds,time)
+        clearTempFields(cds)
         %trial table functions
         getTrialTable(cds,opts)
         getWFTaskTable(cds,times)

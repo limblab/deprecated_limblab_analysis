@@ -13,6 +13,11 @@ function varargout=getGitLog(obj,path,varargin)
         fullLog=0;
     end
     
+    %This method needs the working directory to be somewhere in the git
+    %repo if it is to work.
+    workingDir=pwd;
+    cd(fileparts(path));
+    
     gitLogString=[];
     temp=path;
     %get the git log for our file:
@@ -42,8 +47,6 @@ function varargout=getGitLog(obj,path,varargin)
         else
             varargout{2}='not in git';
         end
-        
-        
     end
     if ~isempty( fileLogString)
         %if our file is in a git repo, find the home directory for the git repo
@@ -78,10 +81,12 @@ function varargout=getGitLog(obj,path,varargin)
         end
     
         varargout{1}=gitLogStruct;
+        cd(workingDir)
         return
     else
         %if the file was not in a repo, set the logString as empty
         varargout{1}=[];
+        cd(workingDir)
         return
     end
     

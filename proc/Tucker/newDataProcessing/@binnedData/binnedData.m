@@ -122,7 +122,7 @@ classdef binnedData < matlab.mixin.SetGet
                 error('pdConfig:badspeedConfiguration','pdConfig must have a speed field that must have a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
             elseif ~isfield(pdc,'useParallel') || ~islogical(pdc.useParallel)
                 error('pdConfic:badUseParallelConfig','pdConfig must have a field useParalle that contains a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
-            elseif ~isfield(pdc,'windows') || ~isnumeric(pdc.windows) || size(pdc.windows,2)~=2
+            elseif ~isfield(pdc,'windows') || (~isempty(pdc.windows) && (~isnumeric(pdc.windows) || size(pdc.windows,2)~=2))
                 error('pdConfig:badWindowConfiguration','pdConfig must have a windows field that contains the time windows for PD computation')
             else
                 binned.pdConfig=pdc;
@@ -136,8 +136,8 @@ classdef binnedData < matlab.mixin.SetGet
             if ~iscell(pdData)
                 error('pdData:notCellArray','pdData must be a cell array')
             end
-            if ~istable(pdData)
-                error('pdData:notATable',['pdData must contain a table. Instead a variabley of type: ',class(pdData),' was passed'])
+            if numel(find(cellfun(@istable,pdData)))<numel(pdData)
+                error('pdData:notATable','all cells of pdData must contain tables')
             end
         end
         function set.glmData(binned,glmData)

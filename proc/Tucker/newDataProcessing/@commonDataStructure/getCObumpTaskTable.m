@@ -65,6 +65,7 @@ function getCObumpTaskTable(cds,times)
     stimCode=nan(numTrials,1);
     %get the databurst version:
     dbVersion=cds.databursts.db(1,2);
+    skipList=[];
     switch dbVersion
         case 0
             error('getCObumpTaskTable:unrecognizedDBVersion',['the trial table code for CObump is not implemented for databursts with version#:',num2str(dbVersion)])
@@ -76,6 +77,7 @@ function getCObumpTaskTable(cds,times)
                 %find and parse the current databurst:
                 idxDB = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
                 if isempty(idxDB)
+                    skipList=[skipList,trial];
                     continue
                 end
                 % * Version 2 (0x02)
@@ -145,21 +147,23 @@ function getCObumpTaskTable(cds,times)
 
                 %now get things that rely only on words and word timing:
                 idxOT=find(otOnTimes>times.startTime(trial) & otOnTimes < times.endTime(trial),1,'first');
-                if ~isempty(idxOT)
-                    tgtOnTime(trial)=otOnTimes(idxOT);
-                    tgtID(trial)=otOnCodes(idxOT);
+                if isempty(idxOT)
+                    tgtOnTime(trial)=nan;
+                    %tgtID(trial)=nan; %target ID has no meaning in this version of the databurst
                 else
-
+                    tgtOnTime(trial)=otOnTimes(idxOT);
+                    %tgtID(trial)=otOnCodes(idxOT); %target ID has no meaning in this version of the databurst
                 end
 
                 % Bump code and time
                 idxBump = find(bumpTimes > times.startTime(trial) & bumpTimes < times.endTime(trial), 1, 'first');
                 if isempty(idxBump)
                     bumpTimeList(trial) = nan;
-                    bumpList(trial) = nan;
+                    %bumpList(trial) = nan;%bump ID has no meaning in this version of the databurst
+                    bumpAngle(trial)=nan;
                 else
                     bumpTimeList(trial) = bumpTimes(idxBump);
-                    bumpList(trial) = bitand(hex2dec('0f'),bumpCodes(idxBump));
+                    %bumpList(trial) = bitand(hex2dec('0f'),bumpCodes(idxBump));%bump ID has no meaning in this version of the databurst
                 end
 
                 % Go cue
@@ -172,40 +176,37 @@ function getCObumpTaskTable(cds,times)
 
                 %Stim code
                 idx = find(stimTimes > times.startTime(trial) & stimTimes < times.endTime(trial),1,'first');
-                if ~isempty(idx)
-                    stimCode(trial) = bitand(hex2dec('0f'),stimCodeList(idx));%hex2dec('0f') is a bitwise mask for the trailing bit of the word
-                else
+                if isempty(idx)
                     stimCode(trial) = nan;
+                else
+                    stimCode(trial) = bitand(hex2dec('0f'),stimCodeList(idx));%hex2dec('0f') is a bitwise mask for the trailing bit of the word
                 end
             end
 
             %build table:
             trialsTable=table(ctrHold,tgtOnTime,delayHold,goCueList,movePeriod,intertrialPeriod,penaltyPeriod,...
-                                tgtID,tgtSize,tgtAngle,tgtCtr,...
-                                bumpTimeList,bumpList,abortDuringBump,ctrHoldBump,delayBump,moveBump,bumpHoldPeriod,bumpRisePeriod,bumpMagnitude,bumpAngle,...
+                                tgtSize,tgtAngle,round(tgtCtr,4),...
+                                bumpTimeList,abortDuringBump,ctrHoldBump,delayBump,moveBump,bumpHoldPeriod,bumpRisePeriod,bumpMagnitude,bumpAngle,...
                                 'VariableNames',{'ctrHold','tgtOnTime','delayHold','goCueTime','movePeriod','intertrialPeriod','penaltyPeriod',...
-                                'tgtID','tgtSize','tgtDir','tgtCtr',...
-                                'bumpTime','bumpID','abortDuringBump','ctrHoldBump','delayBump','moveBump','bumpHoldPeriod','bumpRisePeriod','bumpMagnitude','bumpDir'});
+                                'tgtSize','tgtDir','tgtCtr',...
+                                'bumpTime','abortDuringBump','ctrHoldBump','delayBump','moveBump','bumpHoldPeriod','bumpRisePeriod','bumpMagnitude','bumpDir'});
 
             trialsTable.Properties.VariableUnits={'s','s','s','s','s','s','s',...
-                                                    'int','cm','deg','cm, cm',...
-                                                    's','int','bool','bool','bool','bool','s','s','N','deg'};
+                                                    'cm','deg','cm, cm',...
+                                                    's','bool','bool','bool','bool','s','s','N','deg'};
             trialsTable.Properties.VariableDescriptions={'center hold time','outer target onset time','instructed delay time','go cue time','movement time','intertrial time','penalty time',...
-                                                            'ID number of outer target','size of targets','angle of outer target','x-y position of outer target',...
-                                                            'time of bump onset','ID number of bump','would we abort during bumps','did we have a center hold bump',...
+                                                            'size of targets','angle of outer target','x-y position of outer target',...
+                                                            'time of bump onset','would we abort during bumps','did we have a center hold bump',...
                                                                 'did we have a delay period bump','did we have a movement period bump','the time the bump was held at peak amplitude',...
                                                                 'the time the bump took to rise and fall from peak amplitude','magnitude of the bump','direction of the bump'};
-            trialsTable=[times,trialsTable];
-            trialsTable.Properties.Description='Trial table for the CO task';
-
-            %cds.setField('trials',trialsTable)
-            set(cds,'trials',trialsTable)
+            
         case 3
                         % loop thorugh our trials and build our list vectors:
             for trial = 1:numTrials
                 %find and parse the current databurst:
                 idxDB = find(cds.databursts.ts > times.startTime(trial) & cds.databursts.ts<times.endTime(trial), 1, 'first');
                 if isempty(idxDB)
+                    skipList=[skipList,trial];
                     continue
                 end
                 % * Version 3 (0x03)
@@ -273,21 +274,23 @@ function getCObumpTaskTable(cds,times)
 
                 %now get things that rely only on words and word timing:
                 idxOT=find(otOnTimes>times.startTime(trial) & otOnTimes < times.endTime(trial),1,'first');
-                if ~isempty(idxOT)
-                    tgtOnTime(trial)=otOnTimes(idxOT);
-                    tgtID(trial)=otOnCodes(idxOT);
+                if isempty(idxOT)
+                    tgtOnTime(trial)=nan;
+                    %tgtID(trial)=nan;%target ID has no meaning in this version of the databurst
                 else
-
+                    tgtOnTime(trial)=otOnTimes(idxOT);
+                    %tgtID(trial)=otOnCodes(idxOT);%target ID has no meaning in this version of the databurst
                 end
 
                 % Bump code and time
                 idxBump = find(bumpTimes > times.startTime(trial) & bumpTimes < times.endTime(trial), 1, 'first');
                 if isempty(idxBump)
                     bumpTimeList(trial) = nan;
-                    bumpList(trial) = nan;
+                    %bumpList(trial) = nan;%bump ID has no meaning in this version of the databurst
+                    bumpAngle(trial)=nan;
                 else
                     bumpTimeList(trial) = bumpTimes(idxBump);
-                    bumpList(trial) = bitand(hex2dec('0f'),bumpCodes(idxBump));
+                    %bumpList(trial) = bitand(hex2dec('0f'),bumpCodes(idxBump));%bump ID has no meaning in this version of the databurst
                 end
 
                 % Go cue
@@ -309,29 +312,50 @@ function getCObumpTaskTable(cds,times)
 
             %build table:
             trialsTable=table(ctrHold,tgtOnTime,delayHold,goCueList,movePeriod,intertrialPeriod,penaltyPeriod,...
-                                tgtID,tgtSize,tgtAngle,tgtCtr,...
-                                bumpTimeList,bumpList,abortDuringBump,ctrHoldBump,delayBump,moveBump,bumpHoldPeriod,bumpRisePeriod,bumpMagnitude,bumpAngle,...
+                                tgtSize,tgtAngle,round(tgtCtr,4),...
+                                bumpTimeList,abortDuringBump,ctrHoldBump,delayBump,moveBump,bumpHoldPeriod,bumpRisePeriod,bumpMagnitude,bumpAngle,...
                                 'VariableNames',{'ctrHold','tgtOnTime','delayHold','goCueTime','movePeriod','intertrialPeriod','penaltyPeriod',...
-                                'tgtID','tgtSize','tgtDir','tgtCtr',...
-                                'bumpTime','bumpID','abortDuringBump','ctrHoldBump','delayBump','moveBump','bumpHoldPeriod','bumpRisePeriod','bumpMagnitude','bumpDir'});
+                                'tgtSize','tgtDir','tgtCtr',...
+                                'bumpTime','abortDuringBump','ctrHoldBump','delayBump','moveBump','bumpHoldPeriod','bumpRisePeriod','bumpMagnitude','bumpDir'});
 
             trialsTable.Properties.VariableUnits={'s','s','s','s','s','s','s',...
-                                                    'int','cm','deg','cm, cm',...
-                                                    's','int','bool','bool','bool','bool','s','s','N','deg'};
+                                                    'cm','deg','cm, cm',...
+                                                    's','bool','bool','bool','bool','s','s','N','deg'};
             trialsTable.Properties.VariableDescriptions={'center hold time','outer target onset time','instructed delay time','go cue time','movement time','intertrial time','penalty time',...
-                                                            'ID number of outer target','size of targets','angle of outer target','x-y position of outer target',...
-                                                            'time of bump onset','ID number of bump','would we abort during bumps','did we have a center hold bump',...
+                                                            'size of targets','angle of outer target','x-y position of outer target',...
+                                                            'time of bump onset','would we abort during bumps','did we have a center hold bump',...
                                                                 'did we have a delay period bump','did we have a movement period bump','the time the bump was held at peak amplitude',...
                                                                 'the time the bump took to rise and fall from peak amplitude','magnitude of the bump','direction of the bump'};
-            trialsTable=[times,trialsTable];
-            trialsTable.Properties.Description='Trial table for the CO task';
-
-            %cds.setField('trials',trialsTable)
-            set(cds,'trials',trialsTable)
-            cds.addOperation(mfilename('fullpath'))
+            
         otherwise
             error('getCObumpTaskTable:unrecognizedDBVersion',['the trial table code for CObump is not implemented for databursts with version#:',num2str(dbVersion)])
     end
+    
+    trialsTable=[times,trialsTable];
+    trialsTable.Properties.Description='Trial table for the CO task';
+    %sanitize trial table by masking off corrupt databursts with nan's:
+    mask= ( trialsTable.ctrHold<0           | trialsTable.ctrHold>10000 | ...
+            trialsTable.delayHold<0         | trialsTable.delayHold>10000 |...
+            trialsTable.intertrialPeriod<0  | trialsTable.intertrialPeriod>10000 |...
+            trialsTable.penaltyPeriod<0     | trialsTable.penaltyPeriod>10000 |...
+            trialsTable.bumpHoldPeriod<0     | trialsTable.bumpHoldPeriod>10000 |...
+            trialsTable.bumpRisePeriod<0     | trialsTable.bumpRisePeriod>10000 |...
+            trialsTable.bumpMagnitude<-100     | trialsTable.bumpMagnitude>100 |...
+            trialsTable.tgtSize<.000001);
+    mask(skipList)=1;
+    idx=find(mask);
+    for j=5:size(trialsTable,2)
+        if ~isempty(find(strcmp({'goCueTime','tgtOnTime','bumpTime','tgtID','bumpID'},trialsTable.Properties.VariableNames{j}),1))
+            %skip things that are based on the words, not the databurst
+            continue
+        end
+        if islogical(trialsTable{1,j})
+            trialsTable{idx,j}=false;
+        else
+            trialsTable{idx,j}=nan(size(trialsTable{1,j}));
+        end
+    end
+    set(cds,'trials',trialsTable)
     evntData=loggingListenerEventData('getCOTaskTable',[]);
     notify(cds,'ranOperation',evntData)
 end
