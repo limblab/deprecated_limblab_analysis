@@ -1,4 +1,4 @@
-function [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2, z_min )
+function [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func3(t, extra_clust, loc, num_clust, prev_num_clust, dist_min, prev_meds, medians, medians2 )
 %This function clusters the points, and assigns them to markers.
 
 %Inputs:
@@ -13,9 +13,6 @@ function [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, lo
 %markers have NaN values.
 %medians2: The locations of the markers at all previous times. Missing
 %markers have the location at the last known time.
-%z_min: Whether to sometimes take the minimum of the z-coordinate instead
-%of the median (for times with the elbow points when there are Kinect
-%issues with the depth).
 
 %Outputs:
 %prev_num_clust: The number of markers detected in the current frame (which
@@ -26,12 +23,6 @@ function [ prev_num_clust, prev_meds, medians, medians2  ] = cluster_func2(t, lo
 %medians/medians2: The locations of the markers at all times up through the current
 %frame (the inputs are updated to include the current frame). The
 %difference between medians and medians2 is the same as for the inputs.
-
-%Check number of inputs
-narginchk(8,9);
-if nargin<9
-    z_min=0;
-end
 
 
 %If there are no points (pixels of the color being looked at), set medians
@@ -47,7 +38,7 @@ else
     %extra cluster, and can then be removed. Without the extra cluster,
     %there are times when the noise is included as a cluster, and the true
     %marker is not included.
-    curr_num_clust=num_clust+1;
+    curr_num_clust=num_clust+extra_clust;
     med_dist=zeros(1,num_clust); %Initialize med_dist so that  we will enter the while loop below
     
     if size(loc,1)<curr_num_clust %In case there are fewer points than clusters I'm fitting
@@ -76,13 +67,17 @@ else
             %When curr_num_clust is 1 greater than prev_num_clust, we
             %cluster using the previous markers as starting points, with the
             %addition of an extra starting point at the first marker's location.
-            if curr_num_clust==prev_num_clust+1 
+            if curr_num_clust==prev_num_clust+1
                 prev_meds2=[prev_meds(1,:); prev_meds];
                 clust=kmeans(loc,curr_num_clust,'Start',prev_meds2);
-            else
-            %If curr_num_clust is >1 greater than prev_num_clust, we
-            %cluster w/o starting points
-                clust=kmedoids(loc,curr_num_clust);
+            else if curr_num_clust==prev_num_clust+2
+                    prev_meds2=[prev_meds(1,:); prev_meds(2,:); prev_meds];
+                    clust=kmeans(loc,curr_num_clust,'Start',prev_meds2);
+                else
+                    %If curr_num_clust is >1 greater than prev_num_clust, we
+                    %cluster w/o starting points
+                    clust=kmedoids(loc,curr_num_clust);
+                end
             end
         else %When curr_num_clust <=num_clust 
         %If the curr_num_clust doesn't equal prev_num_clust cluster w/o
@@ -103,23 +98,6 @@ else
         for j=1:curr_num_clust %Loop through the clusters
             if nnz(clust==j)>1 %If there are more than 1 point in a cluster, find the median
                 meds(j,:)=median(loc(clust==j,:));
-                
-                %The Kinect has an issue occasionally (mainly with the
-                %elbow points) where the depths will be off. There are
-                %several points that keep going farther back, when the
-                %closest (minimum depth point) is relatively accurate.
-                %To deal with that, in cases where there's a lot of spread
-                %in the depth (z coordinate), we can take the minimum rather than the median of the depth.
-                if z_min
-                    std_x=std(loc(clust==j,1));
-                    std_y=std(loc(clust==j,2));
-                    std_z=std(loc(clust==j,3));
-                    if std_z > std_x && std_z > std_y;
-    %                 dist_xy=pdist2(loc(clust==j,1:2),loc(clust==j,1:2));
-    %                 if mean(dist_xy(:)<.01)
-                        meds(j,3)=min(loc(clust==j,3));
-                    end
-                end
             else if nnz(clust==j)==1 %If there is 1 point in a cluster, the median is that point's location
                     meds(j,:)=loc(clust==j,:);
                 else %If there are no points in a cluster, set the median to NaNs.

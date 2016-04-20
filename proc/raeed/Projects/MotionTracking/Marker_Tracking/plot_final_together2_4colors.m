@@ -9,8 +9,8 @@ all_medians_aligned(:,:,start:finish)=all_medians;
 markers=1:10;%[6 7 8 9 10];%1:11;
 pause_manually=0;
 plot_original=0;
-start_frame=75000+start-1;
-finish_frame=75100+start-1;
+start_frame=80000+start-1;
+finish_frame=81000+start-1;
 
 %% Plot
 
@@ -21,9 +21,9 @@ xlims=[min(min(medians(markers,1,:))) max(max(medians(markers,1,:)))];
 ylims=[min(min(medians(markers,2,:))) max(max(medians(markers,2,:)))];
 zlims=[min(min(medians(markers,3,:))) max(max(medians(markers,3,:)))];
 
-    xlims=[-.2 .5];
-    ylims=[-.4 .4];
-    zlims=[.9 1.4];
+%     xlims=[-.5 .5];
+%     ylims=[-.4 .4];
+%     zlims=[.7 1.3];
 
 %Initialize figure
 figure;

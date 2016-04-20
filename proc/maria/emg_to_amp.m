@@ -7,22 +7,30 @@ load(emg_file); %imports an 8x135 cell called rawCycleData
 %SO to extract an individual muscle over one step, follow this format:
 %rawCycleData{1}(:, 1)
 
-stepnum = 1; 
-musclenum = 2; 
-step = rawCycleData{stepnum}(:, musclenum); 
+%choose which step and which muscle(s) to use
+stepnum = 2; 
+musclenum = [2 3]; 
+%TODO add a "repeat" and "delay" option here
 
-plot(step)
+%define limits in this order: emglow_limit, emghigh_limit, amplow_limit,
+%amphigh_limit
+emglow_limit = .35; %get rid of low noise
+emghigh_limit = 2; %get rid of excessively high spikes
+amplow_limit = 1.2; %lowest level of stim to twitch
+amphigh_limit = 4;  %highest level of stim to use
 
+%define stim parameters
+pw = 200;
+ch = 2;
+
+step = rawCycleData{stepnum}(:, musclenum);
 %do absolute value of the whole thing
 
 %do a little bit of smoothing?
 
 %create min and max stim levels
 %NOTE: these will depend on the different muscles
-emglow_limit = .35; 
-emghigh_limit = 2; 
-amplow_limit = 1.2; %lowest level of stim to twitch
-amphigh_limit = 4;  %highest level of stim to use
+
 for i=1:length(step)
     step(i) = abs(step(i)); 
     if step(i)<emglow_limit
@@ -70,13 +78,12 @@ plot(step)
 
 %if the stimulator object doesn't exist yet, set it up: 
 if ~exist('ws', 'var')
-    serial_string = 'COM6'; %this is different via mac and windows; use instrfind to check location
+    serial_string = 'COM7'; %use instrfind to check location
     ws = wireless_stim(serial_string, 1); %the number has to do with verbosity of running feedback
     ws.init(1, ws.comm_timeout_disable);
 end
 
-pw = 200;
-ch = 2;
+
 command{1} = struct('Freq', 30, ...        % Hz
     'CathDur', pw, ...    % us
     'AnodDur', pw ...    % us
@@ -87,30 +94,33 @@ ws.set_stim(command, ch);
 
 delta = .5; 
 timing = 0; 
-amp = 2;
 tic
 for i=2:length(step)
     if abs(step(i)-step(i-1))>delta
-        disp('large delta, stim now');
-        command{1} = struct('CathAmp', amp+32768, ... % uA
-            'AnodAmp', 32768-amp, ... % uA
+        %disp('large delta, stim now');
+        %choose new amp TODO but right now just do this. 
+        amp = step(i); 
+        command{1} = struct('CathAmp', amp*1000+32768, ... % uA
+            'AnodAmp', 32768-amp*1000, ... % uA
             'Run', ws.run_cont);
         ws.set_stim(command, ch);
-        timing=0; tic
+        timing=0; tic;
     else
         %disp('do nothing/keep stim constant');
         step(i) = step(i-1);
-        timing = timing + 1/5000
-        toc
+        timing = timing + 1/5000;
+        toc;
         if toc<timing
-            pause(timing-toc)
+            %disp('pausing');
+            pause(timing-toc);
         end
         
     end
 end
 plot(step)
 %timing for 5000 Hz sample - take ???? no of samples/5000 
-
+command{1} = struct('Run', ws.run_stop);
+ws.set_stim(command, ch);
 
 %NOTE: sampling happened at 5000 hz
 %we want to stim at ?? hz
