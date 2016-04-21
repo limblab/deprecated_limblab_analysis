@@ -5,7 +5,7 @@
 %% load test data into cds
     if ~exist('cds','var')
         cds=commonDataStructure();
-        cds.file2cds('E:\local processing\Han\20160411_COBump_ctrHold_Delay\Han_20160411_COBump_area2_001.nev','arrayS1Area2','monkeyHan',3,'ignoreJumps','taskCObump');
+        cds.file2cds('E:\local processing\Han\20160411_COBump_ctrHold_Delay\Han_20160411_COBump_area2_001.nev','arrayS1Area2','monkeyHan',6,'ignoreJumps','taskCObump');
         save('E:\local processing\Han\20160411_COBump_ctrHold_Delay\cds.mat','cds','-v7.3')
     end
     %
@@ -41,7 +41,7 @@
         
 % set firingRateConfig parameters
     ex.firingRateConfig.cropType='tightCrop';
-    ex.firingRateConfig.offset=-15;
+    ex.firingRateConfig.offset=-.015;
     %ex.firingRateConfig.lags=[-2 3];
     
 % load experiment from cds:

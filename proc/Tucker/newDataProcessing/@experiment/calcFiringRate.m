@@ -60,9 +60,10 @@ function calcFiringRate(ex,varargin)
     
     if offset==0
         warning('calcFiringRate:zeroOffset','There is no offset between neural and external data. Normally you want some offset to account for effernt/affernt latency')
+    elseif offset>.1
+        warning('calcFiringRate:largeOffset',['The offset specified is very large: (',num2str(offset),'). Normal offsets are .015s to .05s. It is possible that the offset is entered in ms rather than s'])
     end
-    %build time vector from sampleRate
-    ti=ex.meta.dataWindow(1):1/sampleRate:ex.meta.dataWindow(2);
+    
     %loop through units and get FR for each one:
     FR=zeros(length(ti),length(ex.units.data));
     for j=1:length(ex.units.data)
@@ -76,6 +77,8 @@ function calcFiringRate(ex,varargin)
         switch method,
             case 'boxcar',
                 %standard rate histogram method
+                %build time vector from sampleRate
+                ti=ex.meta.dataWindow(1):1/sampleRate:ex.meta.dataWindow(2);
         %         rate = hist( ts, ti ) ./ kw;
                 for i = 1:length(ti),
                     tStart = ti(i) - kw/2;
@@ -83,7 +86,8 @@ function calcFiringRate(ex,varargin)
                     rate(i) = sum(ts >= tStart & ts < tEnd)/kw;
                 end
             case 'gaussian',
-                
+                %build time vector from sampleRate
+                ti=ex.meta.dataWindow(1):1/sampleRate:ex.meta.dataWindow(2);
                 sigma = kw/pi;
                 for i = 1:length( ti ),
                     curT = ti(i);
@@ -108,7 +112,12 @@ function calcFiringRate(ex,varargin)
 %                 tmp=decimateData([t',rate'],filterConfig('poles',8,'cutoff',sampleRate/2,'sampleRate',sampleRate));
 %                 rate=tmp(:,2);
             case 'bin'
-                rate=hist(ts,ti)*sampleRate;
+                %build time vector from sampleRate:
+                %to do this we must shift ti so that bins are centered on 
+                %sample times (hence padding the ends with 1/2 the 
+                %sample frequency):
+                ti=ex.meta.dataWindow(1)-1/(sampleRate*2):1/sampleRate:ex.meta.dataWindow(2)+1/(sampleRate*2);
+                rate=histc(ts,ti)*sampleRate;
             otherwise
                 error('calcFiringRate:methodNotImplemented',['the ',method,' method of firing rate computation is not implemented in calcFiringRate'])
         end
