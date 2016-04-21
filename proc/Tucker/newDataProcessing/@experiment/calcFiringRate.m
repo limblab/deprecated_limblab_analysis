@@ -118,8 +118,9 @@ function calcFiringRate(ex,varargin)
                 %sample frequency):
                 ti=ex.meta.dataWindow(1)-1/(sampleRate*2):1/sampleRate:ex.meta.dataWindow(2)+1/(sampleRate*2);
                 rate=histc(ts,ti)*sampleRate;
-                %remove the odd extra sample from histc
+                %remove the odd extra sample from histc and re- align time:
                 rate=rate(1:end-1);
+                ti=ti(1:end-1) +1/(sampleRate*2);
             otherwise
                 error('calcFiringRate:methodNotImplemented',['the ',method,' method of firing rate computation is not implemented in calcFiringRate'])
         end
