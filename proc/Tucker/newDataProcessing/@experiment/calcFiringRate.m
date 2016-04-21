@@ -65,7 +65,7 @@ function calcFiringRate(ex,varargin)
     end
     
     %loop through units and get FR for each one:
-    FR=zeros(length(ti),length(ex.units.data));
+    FR=zeros(length(ex.meta.dataWindow(1):1/sampleRate:ex.meta.dataWindow(2)),length(ex.units.data));
     for j=1:length(ex.units.data)
         %if this unit is invalid, skip it:
         if ex.units.data(j).ID==255
