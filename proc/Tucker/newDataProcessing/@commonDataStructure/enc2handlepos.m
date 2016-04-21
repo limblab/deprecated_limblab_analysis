@@ -17,13 +17,14 @@ function [pos]=enc2handlepos(cds,dateTime,lab)
         else
             l1 = 24.765; l2 = 23.8125;
         end
-    elseif lab==6 %If lab6 was used for data collection        
+    elseif lab==6 %If lab6 was used for data collection
         if datenum(dateTime) < datenum('01-Jan-2015')
             l1=27; l2=36.8;
-        elseif datenum(dateTime) < datenum('07-Mar-2016')
-            l1=46.8; l2=45;
         else
-            l1=24; l2=27;
+            l1=46.8; l2=45;
+        end
+    else
+        l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
     end 
     % convert encoder angles to x and y
     
