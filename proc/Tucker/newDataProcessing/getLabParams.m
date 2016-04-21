@@ -61,13 +61,34 @@ function [fhcal,rotcal,Fy_invert]=getLabParams(labnum,dateTime,rothandle)
         % fhcal = [Fx;Fy]./[scaleX;scaleY]
         % force_offsets acquired empirically by recording static
         % handle.
-        fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
-                0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
-        Fy_invert = 1;    
+        if datenum(out_struct.meta.datetime) < datenum('6/28/2011')
+            fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
+                    0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
+            Fy_invert = 1;    
         if rothandle
-            rotcal = [-1 0; 0 1];  
+            rotcal = [-1 0; 0 1];
         else
-            rotcal = [1 0; 0 1];  
+            rotcal = [1 0; 0 1];
+        end
+        else
+            fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
+                    0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508;...
+                    10.01343 0.36172 10.30551 0.39552 10.46860 0.38238]'./1000;
+            if datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
+                rotcal = eye(3);
+                force_offsets = []; %NEEDS TO BE MEASURED EMPIRICALLY
+            else
+                % rotation of the load cell to match forearm frame
+                % (load cell is upside down and slightly rotated)
+                theta_off = atan2(3,27); %angle offset of load cell to forearm frame
+%                         theta_off = 0;
+                rotcal = [-cos(theta_off) -sin(theta_off) 0;...
+                          -sin(theta_off) cos(theta_off)  0;...
+                          0               0               1]'; 
+                force_offsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
+%                         force_offsets = [];
+            end
+            Fy_invert = 1;
         end
     else
         error('getLabParams:BadLab',['lab: ',labnum,' is not configured properly']);

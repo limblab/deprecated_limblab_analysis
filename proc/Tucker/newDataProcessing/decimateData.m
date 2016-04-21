@@ -29,8 +29,8 @@ function [dataD]=decimateData(data,fc)
     %convert our cutoff into a fraction of the upsampled frequency. SF is
     %in s, filter_config.cutoff is expcted in hz
     %butter builds a filter with a cutoff using 1/2 the specified frequency for some reason so we multiply our cutoff by 2
-    cutoff=fc.cutoff*(SF*q)*2;
+    cutoff=fc.cutoff*(DF)*2;
     [b, a] = butter(fc.poles, cutoff);%butterworth uses cutoff/(samplerate/2), or 2*cutoff/samplerate to specify cutoff
     dataD=filtfilt(b,a,dataD);
-    dataD=[(data(1,1):DF:data(end,1))',dataD(1:p:end,:)];
+    dataD=[(data(1,1):DF:data(end,1))',dataD(1:p:end-q+1,:)]; %Remove trailing zeros, upsample pads ending with q-1 zeros, remove them.
 end
