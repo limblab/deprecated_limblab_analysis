@@ -74,9 +74,8 @@ function [fhcal,rotcal,Fy_invert, forceOffsets]=getLabParams(labnum,dateTime,rot
             % (load cell is upside down and slightly rotated)
             theta_off = atan2(3,27); %angle offset of load cell to forearm frame
 %                         theta_off = 0;
-            rotcal = [-cos(theta_off) -sin(theta_off) 0;...
-                      -sin(theta_off) cos(theta_off)  0;...
-                      0               0               1]'; 
+            rotcal = [-cos(theta_off) -sin(theta_off);...
+                      -sin(theta_off) cos(theta_off)]'; 
             forceOffsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
 %                         force_offsets = [];
         end
