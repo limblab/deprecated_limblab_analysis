@@ -64,7 +64,7 @@ function varargout=getGitLog(obj,path,varargin)
         end
         gitLog=strsplit(gitLogString,'\n');
         if ~isempty(gitLogString)
-            for i=1:length(fileLog)
+            for i=1:length(gitLog)
                 %get the commit hash
                 if strfind(gitLog{i},'commit ')
                     gitLogStruct.hash=gitLog{i}(8:end);
