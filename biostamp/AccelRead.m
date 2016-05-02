@@ -38,6 +38,27 @@ end
 
 
 
+%% Creating a UI to input the files etc.
+Read_in = figure('ToolBar','none','Visible','off','Position',[360,500,200,285],'Name','Biostamp File Importer');
+Read_in.Units = 'normalized';
+Ac_name = uicontrol('Style','text','String','Acceleration File','Position',[15,240,300,15]);
+Ac_Br = uicontrol('Style','pushbutton','String','Browse','Position',[350,245,70,25],'Callback',{@Ac_Br_callback});
+Gy_name = uicontrol('Style','text','String','Gyro File','Position',[15,200,300,15]);
+Gy_Br = uicontrol('Style','pushbutton','String','Browse','Position',[350,205,70,25],'Callback',{@Gy_Br_callback});
+
+
+Ac_name.Units = 'normalized';
+Ac_Br.Units = 'normalized';
+Gy_name.Units = 'normalized';
+Gy_Br.Units = 'normalized';
+
+% Read_in.Name = 'Biostamp File Importer';
+movegui(Read_in,'center')
+
+Read_in.Visible = 'on';
+
+
+%%
 % Setting up all of the labels for biostamp data in
 labels(1,:) = {'Time','X Axis Acceleration','Y Axis Acceleration',...
     'Z Axis Acceleration','Roll Velocity','Pitch Velocity','Yaw Velocity'};
@@ -47,12 +68,31 @@ labels(2,:) = {'seconds' 'g' 'g' 'g' 'deg/s' 'deg/s' 'deg/s'};
 % everything read out, without any coordinate changes, Location is
 % everything in terms of a space frame -> that's basically just the first
 % point where accel = gravity;
-data.num = xlsread(FileName,'','','basic');
-Biostamp = struct('time',data.num(StartPoint:end,1),'accel',[],'gyro',[],'roll',[],'pitch',[],'yaw',[]);
+import = importdata(FileName);
+Biostamp = struct('time',import.data(StartPoint:end,1),'accel',[],'gyro',[]);
 
-% 2^16 -> 2000 deg/sec and 4G, correcting labels
-Biostamp.accel = 4*(data.num(StartPoint:end,2:4))/2^15;
-Biostamp.gyro = 2000*(data.num(StartPoint:end,5:7))/2^15;
+% It looks like this section is no longer important, since the new
+% "investigator portal" takes care of converting everything into deg/s and
+% Gs
+% % 2^16 -> 2000 deg/sec and 4G, correcting labels
+% Biostamp.accel = 9.8*import.data(StartPoint:end,2:4);
+% Biostamp.gyro = (pi/180)*import.data(StartPoint:end,5:7);
 
 
+end
+
+function Ac_Br_callback(source,eventdata)
+    
+end
+
+function Gy_Br_callback(source,eventdata)
+    
+end
+
+function Ac_File_callback(source,eventdata)
+    
+end
+
+function Gy_File_callback(source,eventdata)
+    
 end
