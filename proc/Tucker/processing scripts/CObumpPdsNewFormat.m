@@ -5,12 +5,13 @@
 %% load test data into cds
     if ~exist('cds','var')
         cds=commonDataStructure();
-        cds.file2cds('E:\local processing\Han\20160411_COBump_ctrHold_Delay\Han_20160411_COBump_area2_001.nev','arrayS1Area2','monkeyHan',6,'ignoreJumps','taskCObump');
-        save('E:\local processing\Han\20160411_COBump_ctrHold_Delay\cds.mat','cds','-v7.3')
+        cds.file2cds('E:\local processing\chips\experiment_20160421_COBump_bumpTuning','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
+        save('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\cds.mat','cds','-v7.3')
     end
     %
     
 %% create new experiment object
+if ~exist('ex','var')
     ex=experiment();
 
 % set which variables to load from cds
@@ -52,3 +53,6 @@ ex.addSession(cds)
 % bin the data
     ex.binData()
     save('E:\local processing\Han\20160411_COBump_ctrHold_Delay\ex.mat','ex','-v7.3')
+end
+    %% PDs:
+    ex.bin.fitPds

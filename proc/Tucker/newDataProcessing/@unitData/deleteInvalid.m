@@ -1,4 +1,4 @@
-function deleteUnsorted(units)
+function deleteInvalid(units)
     %deleteUnsorted is a method of the unitData class and should be saved
     %in the @unitData folder
     %
@@ -6,5 +6,5 @@ function deleteUnsorted(units)
     %invalid, leaving only units with sort codes >0 and <255. If we can
     %figure out a way to analytically test units we should use a real flag
     %instead of the sort code.
-    units.data([units.data.ID]==0 | [units.data.ID]==255)=[];
+    units.data([units.data.ID]==255)=[];
 end
