@@ -92,7 +92,7 @@ function binData(ex,varargin)
             ex.calcFiringRate;
         end
         %get indices of columns in the FR matrix that we want:
-        unitCols=[0,ex.binConfig.include(unitIDx).which]+1;%shift by 1 since the firing rate matrix has time as the first column but otherwise follows the units in order. including zero before the shift means we include the time column
+        unitCols=[0,ex.binConfig.include(unitIdx).which]+1;%shift by 1 since the firing rate matrix has time as the first column but otherwise follows the units in order. including zero before the shift means we include the time column
         %decimate the Fr data if necessary:
         if ex.binConfig.filterConfig.sampleRate<ex.firingRate.meta.sampleRate
             temp=decimateData(ex.firingRate.data{:,unitCols},ex.binConfig.filterConfig);

@@ -44,7 +44,7 @@ function forceFromNSx(cds,opts)
                 %truncate to handle the fact that encoder data doesn't start
                 %recording until 1 second into the file and convert load cell 
                 %voltage data into forces
-                handleforce=cds.handleForceFromRaw(loadCellData(t>=1,:),opts);
+                handleforce=cds.handleForceFromRaw(loadCellData(t>=1 & t<=max(cds.enc.t),:),opts);
             end
         else
             handleforce=[];
@@ -54,7 +54,7 @@ function forceFromNSx(cds,opts)
         end
     end
     %write temp into the cds
-    forces=[table(t(t>=1),'VariableNames',{'t'}),handleforce,force];
+    forces=[table(t(t>=1& t<=max(cds.enc.t)),'VariableNames',{'t'}),handleforce,force];
     if ~isempty(forces)
         forces.Properties.VariableUnits=[{'s'} repmat({'N'},1,size(handleforce,2)+size(force,2))];
         forces.Properties.Description='a table containing force data. First column is time, all other columns will be forces. If possible forces in x and y are identified and labeled fx and fy';

@@ -261,7 +261,7 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
                     error('binConfig:BadIncludeFormat','the include field must have a sub-field called include.which')
             else
                 for i=1:length(binConfig)
-                    if ~isempty(binConfig.include(i).which) && ~iscellstr(binConfig.include(i).which) && ~isnumeric(binConfig.include(i).which{1})
+                    if ~isempty(binConfig.include(i).which) && ~iscellstr(binConfig.include(i).which) && ~isnumeric(binConfig.include(i).which)
                         error('binConfig:badIncludedFormat','the binConfig.included.which field must be either a cell array of column labels, or a cell containing a numeric matrix')
                     end
                 end
