@@ -91,15 +91,17 @@ function binData(ex,varargin)
             end
             ex.calcFiringRate;
         end
+        %get indices of columns in the FR matrix that we want:
+        unitCols=[0,ex.binConfig.include(unitIDx).which]+1;%shift by 1 since the firing rate matrix has time as the first column but otherwise follows the units in order. including zero before the shift means we include the time column
         %decimate the Fr data if necessary:
         if ex.binConfig.filterConfig.sampleRate<ex.firingRate.meta.sampleRate
-            temp=decimateData(ex.firingRate.data{:,:},ex.binConfig.filterConfig);
-            temp=table2mat(temp,'VariableNames',ex.firingRate.data.Properties.VariableNames);
-            temp.Properties.VariableUnits=ex.firingRate.data.Properties.VariableUnits;
-            temp.Properties.VariableDescriptions=ex.firingRate.data.Properties.VariableDescriptions;
+            temp=decimateData(ex.firingRate.data{:,unitCols},ex.binConfig.filterConfig);
+            temp=table2mat(temp,'VariableNames',ex.firingRate.data.Properties.VariableNames(unitCols));
+            temp.Properties.VariableUnits=ex.firingRate.data.Properties.VariableUnits(unitCols);
+            temp.Properties.VariableDescriptions=ex.firingRate.data.Properties.VariableDescriptions(unitCols);
             temp.Properties.Description=ex.firingRate.data.Properties.Description;
         else
-            temp=ex.firingRate.data;
+            temp=ex.firingRate.data(:,unitCols);
         end
         %now find the common time range:
         tFR=temp.t(find(sum(isnan(temp{:,:}),2),1));%first row without nans- nans will be from lags and should occur at start and end

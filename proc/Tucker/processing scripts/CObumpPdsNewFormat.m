@@ -5,7 +5,7 @@
 %% load test data into cds
     if ~exist('cds','var')
         cds=commonDataStructure();
-        cds.file2cds('E:\local processing\chips\experiment_20160421_COBump_bumpTuning','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
+        cds.file2cds('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\Chips_20160421_COBump_area2_tucker_001','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
         save('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\cds.mat','cds','-v7.3')
     end
     %
@@ -34,7 +34,6 @@ if ~exist('ex','var')
 %     ex.binConfig.include(1).field='lfp';
 %         ex.binConfig.include(1).which={};
     ex.binConfig.include(1).field='units';
-        ex.binConfig.include(1).which=find([ex.units.data.ID]>0 & [ex.units.data.ID]<255);
     ex.binConfig.include(2).field='kin';
         ex.binConfig.include(2).which={};
     ex.binConfig.include(3).field='force';
@@ -47,7 +46,7 @@ if ~exist('ex','var')
     
 % load experiment from cds:
 ex.addSession(cds)
-
+ex.binConfig.include(1).which=find([ex.units.data.ID]>0 & [ex.units.data.ID]<255);
 % calculate the firing rate
     %ex.calcFiringRate()
 % bin the data

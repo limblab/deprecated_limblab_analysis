@@ -32,8 +32,26 @@ function nev2NEVNSx(cds,fname)
             NEVpath=dir([folderPath filesep fileName '_nodigital*.nev']);
             digitalPath=dir([folderPath filesep fileName '_nospikes.mat']);
             if ~isempty(NEVpath) && ~isempty(digitalPath)
+                    if numel(NEVpath)>1
+                        warning('nev2NEVNSx:multipleNodigitalFiles','found multiple files matching the *_nodigital.nev format. Attempting to identify the correct file')
+                        nameLengths=cellfun(@length,{NEVpath.name});
+                        NEVpath=NEVpath(nameLengths==max(nameLengths));
+                        %now try to extract a number from the end of the
+                        %path as we would see from the automatic
+                        %save-scheme from plexon's offline sorter:
+                        for i=1:numel(NEVpath)
+                            fileNum=str2num(NEVpath(i).name(end-5:end-4));
+                            if ~isempty(fileNum)
+                                fileNumList(i)=fileNum;
+                            else
+                                fileNumList(i)=-10000;
+                            end
+                        end
+                        NEVpath=NEVpath(find(fileNumList==max(fileNumList)));
+                        disp(['continuing using file: ',NEVpath.name])
+                    end
                     spikeNEV=openNEVLimblab('read', [folderPath filesep NEVpath.name],'nosave');
-                    oldNEV=load([folderpath filesep digitalPath.name]);
+                    oldNEV=load([folderPath filesep digitalPath.name]);
                     oldNEVName=fieldnames(oldNEV);
                     oldNEV.(oldNEVName{1}).Data.Spikes=spikeNEV.Data.Spikes;
             else
@@ -49,6 +67,8 @@ function nev2NEVNSx(cds,fname)
         %if we didn't load the NEV specially to merge digital data, load
         %the nev directly into the cds:
         set(cds,'NEV',openNEVLimblab('read', [folderPath filesep NEVpath.name],'nosave'));
+    else
+        set(cds,'NEV',oldNEV.(oldNEVName{1}));
     end
     %% populate the cds.NSx fields
     for i=1:length(NSxList)
