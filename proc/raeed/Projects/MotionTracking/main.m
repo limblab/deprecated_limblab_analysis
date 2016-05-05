@@ -7,11 +7,14 @@
 
 %Output will be all the markers in handle coordinates, and in cerebus time
 %% 1. LOAD CEREBUS FILE
-folder = 'C:\Users\rhc307\Documents\Data\Biostamp test\';
-prefix = 'Kinect_accel_handle_test_001';
-bdf = get_nev_mat_data([folder prefix],3);
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
+prefix = 'Chips_20151120_RW_003';
+labnum = 6;
+
+bdf = get_nev_mat_data([folder prefix],labnum);
 
 bdf.meta.task = 'RW';
+
 opts.binsize=0.05;
 opts.offset=-.015;
 opts.do_trial_table=1;
@@ -31,7 +34,7 @@ title('Kinect LED vals')
 
 %% 3b. Enter kinect start time estimate
 
-kinect_start_guess=6;
+kinect_start_guess=7.5;
 
 %% 3c. Align kinect led values with cerebus squarewave
 

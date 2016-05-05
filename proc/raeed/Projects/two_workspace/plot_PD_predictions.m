@@ -2,7 +2,12 @@
 
 %% load bdf
 % bdf = get_nev_mat_data([folder options.prefix],options.labnum);
-bdf = get_nev_mat_data('C:\Users\rhc307\Box Sync\Research\Arm Model\Chips_20151203_RWchaos_001\Chips_20151203_RWchaos',6);
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
+prefix = 'Chips_20151120_RW_003';
+labnum = 6;
+opensim_prefix = 'Chips_20151120_scaled';
+
+bdf = get_nev_mat_data([folder prefix],labnum);
 bdf.meta.task = 'RW';
 opts.binsize=0.05;
 opts.offset=-.015;
@@ -13,12 +18,12 @@ which_units = [];
 behaviors = parse_for_tuning(bdf,'continuous','units',which_units);
 
 %% load joint kinematics
-joint_pos_mat = csvread('C:\Users\rhc307\Box Sync\Research\Arm Model\Chips_20151203_RWchaos_001\Muscle analysis\Chips_20151203_RWchaos_001_scaled_Kinematics_q.sto',11,0);
+joint_pos_mat = csvread([folder 'Analysis/' opensim_prefix '_Kinematics_q.sto'],11,0);
 joint_pos = array2table(joint_pos_mat,'VariableNames',{'time','shoulder_adduction','shoulder_rotation','shoulder_flexion','elbow_flexion','radial_pronation','wrist_flexion','wrist_abduction'});
 clear joint_kin_mat
 
 %% load muscle kinematics
-muscle_pos_mat = csvread('C:\Users\rhc307\Box Sync\Research\Arm Model\Chips_20151203_RWchaos_001\Muscle analysis\Chips_20151203_RWchaos_001_scaled_MuscleAnalysis_Length.sto',12,0);
+muscle_pos_mat = csvread([folder 'Analysis/' opensim_prefix '_MuscleAnalysis_Length.sto'],12,0);
 muscle_pos = array2table(muscle_pos_mat,'VariableNames',{'time','abd_poll_longus','anconeus','bicep_lh','bicep_sh','brachialis','brachioradialis','coracobrachialis','deltoid_ant','deltoid_med','deltoid_pos','dorsoepitrochlearis','ext_carpi_rad_longus','ext_carp_rad_brevis','ext_carpi_ulnaris','ext_digitorum','ext_digiti','ext_indicis','flex_carpi_radialis','flex_carpi_ulnaris','flex_digit_profundus','flex_digit_superficialis','flex_poll_longus','infraspinatus','lat_dorsi_sup','lat_dorsi_cen','lat_dorsi_inf','palmaris_longus','pectoralis_sup','pectoralis_inf','pronator_quad','pronator_teres','subscapularis','supinator','supraspinatus','teres_major','teres_minor','tricep_lat','tricep_lon','tricep_sho'});
 clear muscle_kin_mat
 
@@ -99,7 +104,7 @@ end
 clear i
 
 %% make fake "neurons"
-num_neurons = 50;
+num_neurons = 100;
 joint_weights = randn(7,num_neurons);
 joint_neur_PM = joint_vel_PM{:,2:end}*joint_weights;
 joint_neur_DL = joint_vel_DL{:,2:end}*joint_weights;
@@ -108,6 +113,26 @@ muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
 % muscle_weights = eye(num_neurons);
 muscle_neur_PM = muscle_vel_PM{:,2:end}*muscle_weights;
 muscle_neur_DL = muscle_vel_DL{:,2:end}*muscle_weights;
+
+%% condense real neurons into one table (UNFINISHED!!)
+for unit_ctr = 1:length(bdf.units)
+    % PM first
+    real_neur_PM = [];
+    for i = 1:length(times_PM)
+        reach_ind = muscle_pos.time>times_PM(i,1) & muscle_pos.time<times_PM(i,2);
+        muscle_kin_PM = [muscle_kin_PM; muscle_pos(reach_ind,:)];
+        muscle_vel_PM = [muscle_vel_PM; muscle_vel(reach_ind,:)];
+    end
+    % then DL
+    real_neur_DL = [];
+    for i = 1:length(times_DL)
+        reach_ind = muscle_pos.time>times_DL(i,1) & muscle_pos.time<times_DL(i,2);
+        muscle_kin_DL = [muscle_kin_DL; muscle_pos(reach_ind,:)];
+        muscle_vel_DL = [muscle_vel_DL; muscle_vel(reach_ind,:)];
+    end
+
+    clear i
+end
 
 %% Calculate PDs of velocities
 bootfunc = @(X,y) LinearModel.fit(X,y);
@@ -297,60 +322,64 @@ for i = 1:num_neurons
     muscle_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
 end
 
-%% plot joint PDs
+%% Actual PDs
+
+% 
+
+%% plot joint and muscle PDs
 angs_PM = [joint_tuning_PM.dir];
 rad_PM = [joint_tuning_PM.moddepth];
 dir_CI_PM = [joint_tuning_PM.dir_CI]';
 angs_DL = [joint_tuning_DL.dir];
 rad_DL = [joint_tuning_DL.moddepth];
 dir_CI_DL = [joint_tuning_DL.dir_CI]';
-for i = 1:length(angs_DL)
-    figure
-    
-    h=polar(repmat(angs_PM(:,i),2,1),[0;1]*rad_PM(i));
-    set(h,'linewidth',2,'color',[0.6 0.5 0.7])
-    th_fill = [dir_CI_PM(i,2) angs_PM(i) dir_CI_PM(i,1) 0];
-    r_fill = [rad_PM(i) rad_PM(i) rad_PM(i) 0];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
-    
-    hold on
-    
-    h=polar(repmat(angs_DL(:,i),2,1),[0;1]*rad_DL(i));
-    set(h,'linewidth',2,'color',[1 0 0])
-    th_fill = [dir_CI_DL(i,2) angs_DL(i) dir_CI_DL(i,1) 0];
-    r_fill = [rad_DL(i) rad_DL(i) rad_DL(i) 0];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
-end
-
+% for i = 1:length(angs_DL)
+%     figure
+%     
+%     h=polar(repmat(angs_PM(:,i),2,1),[0;1]*rad_PM(i));
+%     set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+%     th_fill = [dir_CI_PM(i,2) angs_PM(i) dir_CI_PM(i,1) 0];
+%     r_fill = [rad_PM(i) rad_PM(i) rad_PM(i) 0];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
+%     
+%     hold on
+%     
+%     h=polar(repmat(angs_DL(:,i),2,1),[0;1]*rad_DL(i));
+%     set(h,'linewidth',2,'color',[1 0 0])
+%     th_fill = [dir_CI_DL(i,2) angs_DL(i) dir_CI_DL(i,1) 0];
+%     r_fill = [rad_DL(i) rad_DL(i) rad_DL(i) 0];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
+% end
+% 
 angs_muscle_PM = [muscle_tuning_PM.dir];
 rad_muscle_PM = [muscle_tuning_PM.moddepth];
 dir_muscle_CI_PM = [muscle_tuning_PM.dir_CI]';
 angs_muscle_DL = [muscle_tuning_DL.dir];
 rad_muscle_DL = [muscle_tuning_DL.moddepth];
 dir_muscle_CI_DL = [muscle_tuning_DL.dir_CI]';
-for i = 1:length(angs_DL)
-    figure
-    
-    h=polar(repmat(angs_muscle_PM(:,i),2,1),[0;1]*rad_muscle_PM(i));
-    set(h,'linewidth',2,'color',[0.6 0.5 0.7])
-    th_fill = [dir_muscle_CI_PM(i,2) angs_muscle_PM(i) dir_muscle_CI_PM(i,1) 0];
-    r_fill = [rad_muscle_PM(i) rad_muscle_PM(i) rad_muscle_PM(i) 0];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
-    
-    hold on
-    
-    h=polar(repmat(angs_muscle_DL(:,i),2,1),[0;1]*rad_muscle_DL(i));
-    set(h,'linewidth',2,'color',[1 0 0])
-    th_fill = [dir_muscle_CI_DL(i,2) angs_muscle_DL(i) dir_muscle_CI_DL(i,1) 0];
-    r_fill = [rad_muscle_DL(i) rad_muscle_DL(i) rad_muscle_DL(i) 0];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
-end
+% for i = 1:length(angs_DL)
+%     figure
+%     
+%     h=polar(repmat(angs_muscle_PM(:,i),2,1),[0;1]*rad_muscle_PM(i));
+%     set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+%     th_fill = [dir_muscle_CI_PM(i,2) angs_muscle_PM(i) dir_muscle_CI_PM(i,1) 0];
+%     r_fill = [rad_muscle_PM(i) rad_muscle_PM(i) rad_muscle_PM(i) 0];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
+%     
+%     hold on
+%     
+%     h=polar(repmat(angs_muscle_DL(:,i),2,1),[0;1]*rad_muscle_DL(i));
+%     set(h,'linewidth',2,'color',[1 0 0])
+%     th_fill = [dir_muscle_CI_DL(i,2) angs_muscle_DL(i) dir_muscle_CI_DL(i,1) 0];
+%     r_fill = [rad_muscle_DL(i) rad_muscle_DL(i) rad_muscle_DL(i) 0];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
+% end
 
-%% Plot joint iris plot
+%% Iris plots
 DL_CI_width = diff(dir_CI_DL,1,2); % get CI widths
 PM_CI_width = diff(dir_CI_PM,1,2);
 DL_CI_width(DL_CI_width<0) = DL_CI_width(DL_CI_width<0)+2*pi;

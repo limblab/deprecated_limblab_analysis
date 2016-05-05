@@ -1,4 +1,6 @@
 function [figure_handles, output_data]=compare_workspace_PDs(folder,options)
+% Evaluate changes in tuning between two workspaces (PM and DL)
+
 %     try
         figure_handles=[];
 
