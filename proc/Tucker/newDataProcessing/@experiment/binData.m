@@ -61,7 +61,7 @@ function binData(ex,varargin)
         end
         if isempty(bins)
             %if we don't have a time column yet
-            bins=table(temp(:,1),'VariableNames',{'t'});
+            bins=table(roundTime(temp(:,1)),'VariableNames',{'t'});
         end
         %now append the non-time columns of the current data set to the
         %continousBins:
@@ -91,15 +91,27 @@ function binData(ex,varargin)
             end
             ex.calcFiringRate;
         end
+        %get indices of columns in the FR matrix that we want:
+        if ~isempty(ex.binConfig.include(unitIdx).which)
+            unitCols=zeros(1,numel(ex.binConfig.include(unitIdx).which)+1);
+            unitCols(1)=find(strcmp('t',ex.firingRate.data.Properties.VariableNames));
+            for i=1:numel(ex.binConfig.include(unitIdx).which)
+                unitNum=ex.binConfig.include(unitIdx).which(i);
+                unitCols(i+1)=find(strcmp(ex.units.getUnitName(unitNum),ex.firingRate.data.Properties.VariableNames));
+            end
+        else
+            unitCols=1:size(ex.firingRate.data,2);
+        end
+        
         %decimate the Fr data if necessary:
         if ex.binConfig.filterConfig.sampleRate<ex.firingRate.meta.sampleRate
-            temp=decimateData(ex.firingRate.data{:,:},ex.binConfig.filterConfig);
-            temp=table2mat(temp,'VariableNames',ex.firingRate.data.Properties.VariableNames);
-            temp.Properties.VariableUnits=ex.firingRate.data.Properties.VariableUnits;
-            temp.Properties.VariableDescriptions=ex.firingRate.data.Properties.VariableDescriptions;
+            temp=decimateData(ex.firingRate.data{:,unitCols},ex.binConfig.filterConfig);
+            temp=table2mat(temp,'VariableNames',ex.firingRate.data.Properties.VariableNames(unitCols));
+            temp.Properties.VariableUnits=ex.firingRate.data.Properties.VariableUnits(unitCols);
+            temp.Properties.VariableDescriptions=ex.firingRate.data.Properties.VariableDescriptions(unitCols);
             temp.Properties.Description=ex.firingRate.data.Properties.Description;
         else
-            temp=ex.firingRate.data;
+            temp=ex.firingRate.data(:,unitCols);
         end
         %now find the common time range:
         tFR=temp.t(find(sum(isnan(temp{:,:}),2),1));%first row without nans- nans will be from lags and should occur at start and end
@@ -128,21 +140,9 @@ function binData(ex,varargin)
         contEnd=find(bins.t<=tEnd,1,'last');
         FRStart=find(temp.t>=tStart,1);
         FREnd=find(temp.t<=tEnd,1,'last');
-        %get the indicees of units that we want to include in the bin
-        %table:
-        if isempty(ex.binConfig.include(unitIdx).which)
-            incMask=true(numel(ex.units.data),1);
-        else
-            incMask=false(numel(ex.units.data),1);
-            incMask(ex.binConfig.include(unitIdx).which)=true;
-        end
-        %strip rows from the mask that would be invalidated spikes:
-        incMask([ex.units.data.ID]==255)=[];
-        %get indexes and shift by 1 to account for the time column in the
-        %temp table:
-        incMask=find(incMask)+1;
+        
         %put the joint continuous and unit bins into ex.bin.data
-        ex.bin.updateBins([bins(contStart:contEnd,:),temp(FRStart:FREnd,incMask)])
+        ex.bin.updateBins([bins(contStart:contEnd,:),temp(FRStart:FREnd,~strcmp('t',temp.Properties.VariableNames))])
     else
         %if no units flag was evident, just put the analog data into bins
         ex.bin.updateBins(bins);

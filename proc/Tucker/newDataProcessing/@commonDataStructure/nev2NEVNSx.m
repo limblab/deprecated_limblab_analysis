@@ -12,28 +12,64 @@ function nev2NEVNSx(cds,fname)
     %this method is inteneded to be used internally during cds object
     %initiation, not called to generate NEVNSx objects in general.
     
-    [folderPath,fileName,ext]=fileparts(fname);
-    if ~strcmp('.nev',ext)
-        %this is a cheat, it only catches when people try to use match
-        %strings like they would with cerebus2NEVNSx
-        error('nev2NEVNSx:badFilePath','the file name must be specified as a full file path including the file extension')
-    end
+    [folderPath,fileName,~]=fileparts(fname);
+    
     %get the path for files matching the filename
     NEVpath = dir([folderPath filesep fileName '*.nev']);
-    NSxList{1} = dir([folderPath filesep fileName '*.ns1']);
-    NSxList{2} = dir([folderPath filesep fileName '*.ns2']);
-    NSxList{3} = dir([folderPath filesep fileName '*.ns3']);
-    NSxList{4} = dir([folderPath filesep fileName '*.ns4']);
-    NSxList{5} = dir([folderPath filesep fileName '*.ns5']);
+    NSxList{1} = dir([folderPath filesep fileName '.ns1']);
+    NSxList{2} = dir([folderPath filesep fileName '.ns2']);
+    NSxList{3} = dir([folderPath filesep fileName '.ns3']);
+    NSxList{4} = dir([folderPath filesep fileName '.ns4']);
+    NSxList{5} = dir([folderPath filesep fileName '.ns5']);
     frequencies=[500 1000 2000 10000 30000];%vector of frequencies in the order that the NSx entries appear in NSxList
     
     %% populate cds.NEV
     if isempty(NEVpath)
         error('nev2NEVNSx:fileNotFound',['did not find a file with the path: ' fname])
     else
-        set(cds,'NEV',openNEVLimblab('read', [folderPath filesep NEVpath.name],'nosave'));
+        if numel(NEVpath)>1
+            %check to see if we have a sorted file with no digital:
+            NEVpath=dir([folderPath filesep fileName '_nodigital*.nev']);
+            digitalPath=dir([folderPath filesep fileName '_nospikes.mat']);
+            if ~isempty(NEVpath) && ~isempty(digitalPath)
+                    if numel(NEVpath)>1
+                        warning('nev2NEVNSx:multipleNodigitalFiles','found multiple files matching the *_nodigital.nev format. Attempting to identify the correct file')
+                        nameLengths=cellfun(@length,{NEVpath.name});
+                        NEVpath=NEVpath(nameLengths==max(nameLengths));
+                        %now try to extract a number from the end of the
+                        %path as we would see from the automatic
+                        %save-scheme from plexon's offline sorter:
+                        for i=1:numel(NEVpath)
+                            fileNum=str2num(NEVpath(i).name(end-5:end-4));
+                            if ~isempty(fileNum)
+                                fileNumList(i)=fileNum;
+                            else
+                                fileNumList(i)=-10000;
+                            end
+                        end
+                        NEVpath=NEVpath(find(fileNumList==max(fileNumList)));
+                        disp(['continuing using file: ',NEVpath.name])
+                    end
+                    spikeNEV=openNEVLimblab('read', [folderPath filesep NEVpath.name],'nosave');
+                    oldNEV=load([folderPath filesep digitalPath.name]);
+                    oldNEVName=fieldnames(oldNEV);
+                    oldNEV.(oldNEVName{1}).Data.Spikes=spikeNEV.Data.Spikes;
+            else
+                warning('nev2NEVNSx:multipleNEVFiles',['Found multiple files that start with the name given, but could not find files matching the pattern: ',fname,'_nodigital*.nev + ',fname,'_nospikes.mat'])
+                disp(['continuing by loading the NEV that is an exact match for: ',fname,'.nev'])
+                NEVpath = dir([folderPath filesep fileName '.nev']);
+            end
+        else
+            set(cds,'NEV',openNEVLimblab('read', [folderPath filesep NEVpath.name],'nosave'));
+        end
     end
-    
+    if ~exist('spikeNEV','var')
+        %if we didn't load the NEV specially to merge digital data, load
+        %the nev directly into the cds:
+        set(cds,'NEV',openNEVLimblab('read', [folderPath filesep NEVpath.name],'nosave'));
+    else
+        set(cds,'NEV',oldNEV.(oldNEVName{1}));
+    end
     %% populate the cds.NSx fields
     for i=1:length(NSxList)
         fieldName=['NS',num2str(i)];

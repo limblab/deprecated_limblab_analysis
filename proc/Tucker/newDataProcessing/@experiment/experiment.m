@@ -108,6 +108,9 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
                 %when we insert data
                 addlistener(ex.trials,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
                 addlistener(ex.units,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                addlistener(ex.bin,'updatedBins',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+                %listeners on analysis:
+                addlistener(ex.bin,'ranPDFit',@(src,evnt)ex.binAnalysisLoggingCallback(src,evnt));
         end
     end
     methods
@@ -261,7 +264,7 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
                     error('binConfig:BadIncludeFormat','the include field must have a sub-field called include.which')
             else
                 for i=1:length(binConfig)
-                    if ~isempty(binConfig.include(i).which) && ~iscellstr(binConfig.include(i).which) && ~isnumeric(binConfig.include(i).which{1})
+                    if ~isempty(binConfig.include(i).which) && ~iscellstr(binConfig.include(i).which) && ~isnumeric(binConfig.include(i).which)
                         error('binConfig:badIncludedFormat','the binConfig.included.which field must be either a cell array of column labels, or a cell containing a numeric matrix')
                     end
                 end
@@ -276,27 +279,30 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
             end
         end
         function set.analysis(ex,anal)
-            if ~isempty(anal) 
-                if ~isstruct(anal)
-                    error('analysis:notAStructure','the analysis field must be a structure with the following fields: ID, date, type, data')
-                elseif ~isfield(anal,'ID')
-                    error('analysis:missingIDField','the analyssis struct array must have an ID field')
-                elseif ~isfield(anal,'date')
-                    error('analysis:missingDateField','the analyssis struct array must have a date field')
-                elseif ~isfield(anal,'type')
-                    error('analysis:missingTypeField','the analyssis struct array must have a type field')
-                elseif ~isfield(anal,'data')
-                    error('analysis:missingDataField','the analyssis struct array must have a data field')
-                elseif ~isfield(anal,'user')
-                    error('analysis:missingUserField','the analyssis struct array must have a user field')
-                elseif ~isfield(anal,'PCName')
-                    error('analysis:missingPCNameField','the analyssis struct array must have a PCName field')
-                else
-                    ex.analysis=anal;
-                end
-            else
-                ex.analysis=anal;
-            end
+%             if ~isempty(anal) 
+%                 if ~isstruct(anal)
+%                     error('analysis:notAStructure','the analysis field must be a structure with the following fields: ID, date, type, data')
+%                 elseif ~isfield(anal,'notes')
+%                     error('analysis:missingNotesField','the analyssis struct array must have an Notes field')
+%                 elseif ~isfield(anal,'date')
+%                     error('analysis:missingDateField','the analyssis struct array must have a date field')
+%                 elseif ~isfield(anal,'type')
+%                     error('analysis:missingTypeField','the analyssis struct array must have a type field')
+%                 elseif ~isfield(anal,'data')
+%                     error('analysis:missingDataField','the analyssis struct array must have a data field')
+%                 elseif ~isfield(anal,'config')
+%                     error('analysis:missingConfigField','the analyssis struct array must have a config field')
+%                 elseif ~isfield(anal,'userName')
+%                     error('analysis:missingUserField','the analyssis struct array must have a userName field')
+%                 elseif ~isfield(anal,'PCName')
+%                     error('analysis:missingPCNameField','the analyssis struct array must have a PCName field')
+%                 else
+%                     ex.analysis=anal;
+%                 end
+%             else
+%                 ex.analysis=anal;
+%             end
+ex.analysis=anal;
         end
         %end of set methods    
     end
@@ -334,6 +340,45 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
             %loggingListnerEventData subclass to event.EventData so that
             %the operation name and operation data properties are available
             ex.addOperation([class(src),'.',evnt.operationName],ex.locateMethod(class(src),evnt.operationName),evnt.operationData)
+        end
+        function binAnalysisLoggingCallback(ex,src,evnt)
+           %this method is a callback so the experiment is passed as the 
+           %primary input and the source class of the event is passed as
+           %the second input.
+           %
+           %this method copies the results of an analysis run on the binned
+           %data in ex.bin into ex.analysis. The point of this is to allow
+           %the user to run serial analyses and have them logged in a cell
+           %array automatically for later comparison. For example, the user
+           %could comput PDs during the instructed delay, and then again
+           %during the move and have both sets of PDs stored as cells in
+           %the ex.analysis structure
+           idx=numel(ex.analysis)+1;
+           
+           switch evnt.operationName
+               case 'fitPds'
+                   analysis.type='fitPDs';
+                   analysis.config=ex.bin.pdConfig;
+                   analysis.date=date;
+                   [analysis.userName,analysis.PCName]=ex.getUserHost;
+                   analysis.data=ex.bin.pdData;
+                   analysis.notes='no notes entered';
+               case 'fitGLM'
+                   error('binAnalysisLoggingCallback:UnrecognizedAnalysisName',[evnt.operationName, ' is not yet implemented'])
+               case 'fitGPFA'
+                   error('binAnalysisLoggingCallback:UnrecognizedAnalysisName',[evnt.operationName, ' is not yet implemented'])
+               case 'fitKalman'
+                   error('binAnalysisLoggingCallback:UnrecognizedAnalysisName',[evnt.operationName, ' is not yet implemented'])
+               case 'fitWeiner'
+                   error('binAnalysisLoggingCallback:UnrecognizedAnalysisName',[evnt.operationName, ' is not yet implemented'])
+               otherwise
+                   error('binAnalysisLoggingCallback:UnrecognizedAnalysisName',['Did not recognize: ',evnt.operationName, ' as a valid analysis'])
+           end
+           if isempty(ex.analysis)
+               ex.analysis=analysis;
+           else
+               ex.analysis(idx)=analysis;
+           end
         end
     end
 end

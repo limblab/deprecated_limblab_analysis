@@ -132,7 +132,7 @@ function calcFiringRate(ex,varargin)
         end
         clear rate
         %now make our variable names for each unit:
-        unitNames{j}=[ex.units.data(j).array,'CH',num2str(ex.units.data(j).chan),'ID',num2str(ex.units.data(j).ID)];
+        unitNames{j}=ex.units.getUnitName(j);%[ex.units.data(j).array,'CH',num2str(ex.units.data(j).chan),'ID',num2str(ex.units.data(j).ID)];
     end
     %clear out columns that were due to invalid units:
     mask=([ex.units.data.ID]==255);
@@ -144,6 +144,8 @@ function calcFiringRate(ex,varargin)
         for i=1:length(unitNames)
             [temp{i},lagRange,t]=ex.timeShiftBins(FR(:,i),lags,'time',ti,'lagSteps',lagSteps,'cropType',cropType);
         end
+        %round t to appropriate sig figs:
+        t=roundTime(t);
         FRTable=table(temp{:},'VariableNames',unitNames);
         FRTable=[table(t,'VariableNames',{'t'}),FRTable];
         FRTable.Properties.VariableUnits=[{'s'},repmat({'hz'},1,length(unitNames))];
