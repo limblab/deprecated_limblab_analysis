@@ -36,6 +36,6 @@ function mask=windows2mask(time,windows)
     %casting as logical converts points that might have occurred in
     %   multiple windows and thus summed to >1, back to true for the final
     %   mask
-    mask=logical(sum((testTime>=lowWindow && testTime<=highWindow),2));
+    mask=logical(sum((testTime>=lowWindow & testTime<=highWindow),2));
     
 end

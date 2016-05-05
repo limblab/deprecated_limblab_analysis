@@ -20,6 +20,8 @@ classdef binnedData < matlab.mixin.SetGet
         ranWeinerFit
         ranGPFAFit
         ranKalmanFit
+        ranPDFit
+        updatedBins
     end
     methods (Static = true)
         %constructor
@@ -45,9 +47,7 @@ classdef binnedData < matlab.mixin.SetGet
             set(binned,'pdConfig',pdc);
             %output data
             set(binned,'weinerData',struct('structData','this is a stub struct that needs to be coded'));
-            PDs={cell2table(cell(0,8),'VariableNames',{'chan','ID','array','posDir','posDirCI','posModdepth','posModdepthCI','isTuned'}),...
-                    cell2table(cell(0,8),'VariableNames',{'chan','ID','array','velDir','velDirCI','velModdepth','velModdepthCI','isTuned'}),...
-                    cell2table(cell(0,8),'VariableNames',{'chan','ID','array','forceDir','forceDirCI','forceModdepth','forceModdepthCI','isTuned'})};
+            PDs=[];
             set(binned,'pdData',PDs);
             set(binned,'glmData',[]);
             set(binned,'gpfaData',[]);
@@ -133,12 +133,10 @@ classdef binnedData < matlab.mixin.SetGet
             binned.weinerData=[];
         end
         function set.pdData(binned,pdData)
-            if ~iscell(pdData)
-                error('pdData:notCellArray','pdData must be a cell array')
+            if ~isempty(pdData) && ~istable(pdData)
+                error('pdData:notTable','pdData must be a table')
             end
-            if numel(find(cellfun(@istable,pdData)))<numel(pdData)
-                error('pdData:notATable','all cells of pdData must contain tables')
-            end
+            binned.pdData=pdData;
         end
         function set.glmData(binned,glmData)
             warning('glmData:SetNotImplemented','set method for the glmData field of the binnedData class is not implemented')
