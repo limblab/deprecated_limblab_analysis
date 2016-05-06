@@ -8,6 +8,11 @@ labnum = 6;
 opensim_prefix = 'Chips_20151120_scaled';
 
 bdf = get_nev_mat_data([folder prefix],labnum);
+
+% extract separate workspaces
+[bdf_PM,times_PM] = extract_workspace(bdf,[-10 -55],[0 -45]);
+[bdf_DL,times_DL] = extract_workspace(bdf,[0 -45],[10 -35]);
+
 bdf.meta.task = 'RW';
 opts.binsize=0.05;
 opts.offset=-.015;
@@ -16,6 +21,9 @@ opts.do_firing_rate=1;
 bdf=postprocess_bdf(bdf,opts);
 which_units = [];
 behaviors = parse_for_tuning(bdf,'continuous','units',which_units);
+
+% extract workspaces out of behaviors
+
 
 %% load joint kinematics
 joint_pos_mat = csvread([folder 'Analysis/' opensim_prefix '_Kinematics_q.sto'],11,0);
@@ -60,8 +68,7 @@ end
 clear i
 
 %% extract times of workspaces
-[bdf_PM,times_PM] = extract_workspace(bdf,[-10 -55],[0 -45]);
-[bdf_DL,times_DL] = extract_workspace(bdf,[0 -45],[10 -35]);
+
 
 %% joint kinematics for each workspace
 % PM first
@@ -313,8 +320,8 @@ clear mean_dir
 clear centered_boot_dirs
 clear dir_CI
 clear i
-clear endpoint_kin_sim_PM
-clear endpoint_kin_sim_DL
+% clear endpoint_kin_sim_PM
+% clear endpoint_kin_sim_DL
 clear bootfunc
 
 %% Do som real neuron accounting
@@ -566,6 +573,35 @@ angs_real_DL = [real_tuning_DL.dir];
 rad_real_DL = [real_tuning_DL.moddepth];
 dir_real_CI_DL = [real_tuning_DL.dir_CI]';
 
+for i = 1:length(angs_real_DL)
+    figure(12345)
+    clf
+    
+    h=polar(repmat(angs_real_PM(:,i),2,1),[0;1]*rad_real_PM(i));
+    set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+    th_fill = [dir_real_CI_PM(i,2) angs_real_PM(i) dir_real_CI_PM(i,1) 0];
+    r_fill = [rad_real_PM(i) rad_real_PM(i) rad_real_PM(i) 0];
+    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+    patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
+    
+    hold on
+    
+    h=polar(repmat(angs_real_DL(:,i),2,1),[0;1]*rad_real_DL(i));
+    set(h,'linewidth',2,'color',[1 0 0])
+    th_fill = [dir_real_CI_DL(i,2) angs_real_DL(i) dir_real_CI_DL(i,1) 0];
+    r_fill = [rad_real_DL(i) rad_real_DL(i) rad_real_DL(i) 0];
+    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+    patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
+    
+    waitforbuttonpress
+end
+
+clear x_fill
+clear y_fill
+clear th_fill
+clear r_fill
+clear h
+
 DL_real_CI_width = diff(dir_real_CI_DL,1,2); % get CI widths
 PM_real_CI_width = diff(dir_real_CI_PM,1,2);
 DL_real_CI_width(DL_real_CI_width<0) = DL_real_CI_width(DL_real_CI_width<0)+2*pi;
@@ -640,21 +676,21 @@ r_fill = [flipud(binned_CI_high_spd); binned_CI_high_spd(end); binned_CI_low_spd
 [x_fill,y_fill] = pol2cart(th_fill,r_fill);
 patch(x_fill,y_fill,[0 0 1],'facealpha',0.3,'edgealpha',0);
 
-% plot unit tuning curves
-unit_ids = behaviors.unit_ids;
-for i=1:length(figure_handles)
-    figure_handles(i+1) = figure('name',['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot']);
-
-    % plot tuning curve
-%     polar(repmat(bins,2,1),repmat(binned_FR(:,i),2,1))
-
-    % plot confidence intervals 
-    th_fill = [flipud(bins); bins(end); bins(end); bins];
-    r_fill = [flipud(binned_CI_high(:,i)); binned_CI_high(end,i); binned_CI_low(end,i); binned_CI_low(:,i)];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[0 0 1],'facealpha',0.3,'edgealpha',0);
-    
-    plot(bins,binned_FR(:,i))
-end
+% % plot unit tuning curves (WHAT IS THIS??)
+% unit_ids = behaviors.unit_ids;
+% for i=1:length(figure_handles)
+%     figure_handles(i+1) = figure('name',['channel_' num2str(unit_ids(i,1)) '_unit_' num2str(unit_ids(i,2)) '_tuning_plot']);
+% 
+%     % plot tuning curve
+% %     polar(repmat(bins,2,1),repmat(binned_FR(:,i),2,1))
+% 
+%     % plot confidence intervals 
+%     th_fill = [flipud(bins); bins(end); bins(end); bins];
+%     r_fill = [flipud(binned_CI_high(:,i)); binned_CI_high(end,i); binned_CI_low(end,i); binned_CI_low(:,i)];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[0 0 1],'facealpha',0.3,'edgealpha',0);
+%     
+%     plot(bins,binned_FR(:,i))
+% end
 
 %% plot PD change prediction assuming joint-based neurons
