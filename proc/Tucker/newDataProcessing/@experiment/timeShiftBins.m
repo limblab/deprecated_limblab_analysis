@@ -1,4 +1,9 @@
-function [lagData, lagPts, t]=timeShiftBins(data,lags,varargin)
+function [lagData, lagPts, t]=timeShiftBins(ex,data,lags,varargin)
+    %timeShiftBins is a method of the experiment class and should be saved
+    %in the @experiment folder with the other class methods.
+    %
+    %This method is intended to be called only by calcFiringRate in order
+    %to generate lagged firing rate data.
     %lagData=timeShiftBins(data,lags)
     %takes in a vector 'data' and returns a matrix where each column
     %contains a shifted version of the original vector. By default data is

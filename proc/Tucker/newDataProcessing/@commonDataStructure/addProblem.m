@@ -8,4 +8,8 @@ function addProblem(cds,problem)
     meta=cds.meta;
     meta.knownProblems(end+1)={problem};
     set(cds,'meta',meta)
+    
+    
+    evntData=loggingListenerEventData('addProblem',[]);
+    notify(cds,'ranOperation',evntData)
 end

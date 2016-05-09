@@ -20,6 +20,8 @@ classdef binnedData < matlab.mixin.SetGet
         ranWeinerFit
         ranGPFAFit
         ranKalmanFit
+        ranPDFit
+        updatedBins
     end
     methods (Static = true)
         %constructor
@@ -45,9 +47,7 @@ classdef binnedData < matlab.mixin.SetGet
             set(binned,'pdConfig',pdc);
             %output data
             set(binned,'weinerData',struct('structData','this is a stub struct that needs to be coded'));
-            PDs={cell2table(cell(0,8),'VariableNames',{'chan','ID','array','posDir','posDirCI','posModdepth','posModdepthCI','isTuned'}),...
-                    cell2table(cell(0,8),'VariableNames',{'chan','ID','array','velDir','velDirCI','velModdepth','velModdepthCI','isTuned'}),...
-                    cell2table(cell(0,8),'VariableNames',{'chan','ID','array','forceDir','forceDirCI','forceModdepth','forceModdepthCI','isTuned'})};
+            PDs=[];
             set(binned,'pdData',PDs);
             set(binned,'glmData',[]);
             set(binned,'gpfaData',[]);
@@ -122,8 +122,8 @@ classdef binnedData < matlab.mixin.SetGet
                 error('pdConfig:badspeedConfiguration','pdConfig must have a speed field that must have a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
             elseif ~isfield(pdc,'useParallel') || ~islogical(pdc.useParallel)
                 error('pdConfic:badUseParallelConfig','pdConfig must have a field useParalle that contains a logical value. Note that 0 or 1 do not count as logicals, you must use the true/false keywords')
-            elseif ~isfield(pdc,'windows') || ~isnumeric(pdc.windows) || size(pdc.windows,2)~=2
-                error('pdConfig:badWindowConfiguration','pdConfig must have a windows field that contains the 
+            elseif ~isfield(pdc,'windows') || (~isempty(pdc.windows) && (~isnumeric(pdc.windows) || size(pdc.windows,2)~=2))
+                error('pdConfig:badWindowConfiguration','pdConfig must have a windows field that contains the time windows for PD computation')
             else
                 binned.pdConfig=pdc;
             end
@@ -133,12 +133,10 @@ classdef binnedData < matlab.mixin.SetGet
             binned.weinerData=[];
         end
         function set.pdData(binned,pdData)
-            if ~iscell(pdData)
-                error('pdData:notCellArray','pdData must be a cell array')
+            if ~isempty(pdData) && ~istable(pdData)
+                error('pdData:notTable','pdData must be a table')
             end
-            if ~istable(pdData)
-                error('pdData:notATable',['pdData must contain a table. Instead a variabley of type: ',class(pdData),' was passed'])
-            end
+            binned.pdData=pdData;
         end
         function set.glmData(binned,glmData)
             warning('glmData:SetNotImplemented','set method for the glmData field of the binnedData class is not implemented')

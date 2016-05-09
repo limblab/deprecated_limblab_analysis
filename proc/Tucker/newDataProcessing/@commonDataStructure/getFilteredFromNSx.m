@@ -10,22 +10,22 @@ function [adata,t]=getFilteredFromNSx(cds,fc,achan_index)
     
     adata = [];%will preallocate below once we know how long the data is
     for c=1:length(achan_index)
-        freq=cds.NSx_info.NSx_sampling(achan_index(c));
+        freq=cds.NSxInfo.NSx_sampling(achan_index(c));
         if freq==500
-            a=double(cds.NS1.Data(cds.NSx_info.NSx_idx(achan_index(c)),:))';
+            a=double(cds.NS1.Data(cds.NSxInfo.NSx_idx(achan_index(c)),:))';
         elseif freq==1000
-            a = double(cds.NS2.Data(cds.NSx_info.NSx_idx(achan_index(c)),:))';
+            a = double(cds.NS2.Data(cds.NSxInfo.NSx_idx(achan_index(c)),:))';
         elseif freq==2000
-            a = double(cds.NS3.Data(cds.NSx_info.NSx_idx(achan_index(c)),:))';
+            a = double(cds.NS3.Data(cds.NSxInfo.NSx_idx(achan_index(c)),:))';
         elseif freq==10000
-            a = double(cds.NS4.Data(cds.NSx_info.NSx_idx(achan_index(c)),:))';
+            a = double(cds.NS4.Data(cds.NSxInfo.NSx_idx(achan_index(c)),:))';
         elseif freq==30000
-            a = double(cds.NS5.Data(cds.NSx_info.NSx_idx(achan_index(c)),:))';
+            a = double(cds.NS5.Data(cds.NSxInfo.NSx_idx(achan_index(c)),:))';
         end
         %recalculate time. allows force to be collected at
         %different frequencies on different channels at the
         %expense of execution speed
-        t = (0:length(a)-1)' / cds.NSx_info.NSx_sampling(achan_index(c));
+        t = (0:length(a)-1)' / cds.NSxInfo.NSx_sampling(achan_index(c));
 
         %decimate and filter the raw force signals so they are all at the
         %same frequency, no matter what the collection frequency was

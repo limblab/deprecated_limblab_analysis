@@ -1,4 +1,7 @@
-function varargout=getGitLog(path,varargin)
+function varargout=getGitLog(obj,path,varargin)
+    %getGitLog is a method of the operationLogger superclass and should be
+    %saved in the @operationLogger folder with the other class methods
+    %
     %takes the full path to an m-file and searches all the parent folders
     %to see if the file is in a git repository. At the first git repository
     % getGitLog will pull the git log into a string and then  break it into
@@ -9,6 +12,11 @@ function varargout=getGitLog(path,varargin)
     else
         fullLog=0;
     end
+    
+    %This method needs the working directory to be somewhere in the git
+    %repo if it is to work.
+    workingDir=pwd;
+    cd(fileparts(path));
     
     gitLogString=[];
     temp=path;
@@ -39,8 +47,6 @@ function varargout=getGitLog(path,varargin)
         else
             varargout{2}='not in git';
         end
-        
-        
     end
     if ~isempty( fileLogString)
         %if our file is in a git repo, find the home directory for the git repo
@@ -58,7 +64,7 @@ function varargout=getGitLog(path,varargin)
         end
         gitLog=strsplit(gitLogString,'\n');
         if ~isempty(gitLogString)
-            for i=1:length(fileLog)
+            for i=1:length(gitLog)
                 %get the commit hash
                 if strfind(gitLog{i},'commit ')
                     gitLogStruct.hash=gitLog{i}(8:end);
@@ -75,10 +81,12 @@ function varargout=getGitLog(path,varargin)
         end
     
         varargout{1}=gitLogStruct;
+        cd(workingDir)
         return
     else
         %if the file was not in a repo, set the logString as empty
         varargout{1}=[];
+        cd(workingDir)
         return
     end
     

@@ -4,14 +4,15 @@ function analogFromNSx(cds)
     %establish lists for force, emg, lfp
     forceList = [find(~cellfun('isempty',strfind(lower(cds.NSxInfo.NSx_labels),'force_'))),...
                 find(~cellfun('isempty',strfind(cds.NSxInfo.NSx_labels,'ForceHandle')))];
-    lfpList=find(~cellfun('isempty',strfind(lower(cds.NSxInfo.NSx_labels),'chan')));
+    lfpList=find(~cellfun('isempty',strfind(lower(cds.NSxInfo.NSx_labels),'elec')));
     emgList=find(~cellfun('isempty',strfind(lower(cds.NSxInfo.NSx_labels),'emg_')));
     %get lists of the analog data for each frequency & remove those we have already handled
     analogList=setxor(1:length(cds.NSxInfo.NSx_labels),emgList);
     analogList=setxor(analogList,forceList);
     analogList=setxor(analogList,lfpList);
     if ~isempty(analogList)
-        frequencies=unique(cds.NSxInfo.NSx_sampling);
+        %get our list of frequencies:
+        frequencies=unique(cds.NSxInfo.NSx_sampling(analogList));
         if ~isempty(cds.analog)
             %get a list of the frequencies already in the cds so that we
             %can merge or add the fields from the cds to the new analog
@@ -26,53 +27,38 @@ function analogFromNSx(cds)
         for i=1:length(frequencies)
             %find the channels that area actually at this frequency:
             subset=find(cds.NSxInfo.NSx_sampling(analogList)==frequencies(i));
+            analogIdx=analogList(subset);
             %append data in the subset into a single matrix:
             a=[];
             for c=1:numel(subset)
                 switch frequencies(i)
                     case 500
-                        if isempty(a)
-                            %initialize a to the correct size
-                            a=zeros(size(cds.NS1.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:),2),numel(subset));
-                        end
-                        a(:,c)=double(cds.NS1.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:))';
+                    nsLabel='NS1';
                     case 1000
-                        if isempty(a)
-                            %initialize a to the correct size
-                            a=zeros(size(cds.NS2.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:),2),numel(subset));
-                        end
-                        a(:,c)=double(cds.NS2.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:))';
+                        nsLabel='NS2';
                     case 2000
-                        if isempty(a)
-                            %initialize a to the correct size
-                            a=zeros(size(cds.NS3.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:),2),numel(subset));
-                        end
-                        a(:,c)=double(cds.NS3.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:))';
+                        nsLabel='NS3';
                     case 10000
-                        if isempty(a)
-                            %initialize a to the correct size
-                            a=zeros(size(cds.NS4.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:),2),numel(subset));
-                        end
-                        a(:,c)=double(cds.NS4.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:))';
+                        nsLabel='NS4';
                     case 30000
-                        if isempty(a)
-                            %initialize a to the correct size
-                            a=zeros(size(cds.NS5.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:),2),numel(subset));
-                        end
-                        a(:,c)=double(cds.NS5.Data(cds.NSxInfo.NSx_idx(analogList(subset(c))),:))';
+                        nsLabel='NS5';
+                    otherwise
+                        error('analogFromNSx:unexpectedFrequency',['this function is not set up to handle data with collection frequency: ',num2str(frequencies(i))])
                 end
+                numPts=numel(cds.(nsLabel).Data(cds.NSxInfo.NSx_idx(analogIdx(c)),:));
+                a{c+1}=double(cds.(nsLabel).Data(cds.NSxInfo.NSx_idx(analogIdx(c)),:))';
             end
             %get a time vector t for this sampling frequency
-            t = ([0:length(a(:,1))-1]' / frequencies(i));
+            a{1} = ([0:length(a{2})-1]' / frequencies(i));
             %convert the matrix of data into a table:
             match=find(cdsFrequencies==frequencies(i),1);
             if ~isempty(match)
-                temp=array2table([t,a],'VariableNames',[{'t'};cds.NSxInfo.NSx_labels(analogList(subset))]);
+                temp=table(a{:},'VariableNames',[{'t'};cds.NSxInfo.NSx_labels(analogList(subset))]);
                 temp.Properties.VariableDescriptions=[{'time'},repmat({'analog data'},1,numel(subset))];
                 temp.Properties.Description=['table of analog data with collection frequency of: ', num2str(frequencies(i))];
                 analogData{i}=mergeAnalogTables(a,cds.analog{match});
             else
-                analogData{i}=array2table([t,a],'VariableNames',[{'t'},reshape(cds.NSxInfo.NSx_labels(analogList(subset)),1,numel(cds.NSxInfo.NSx_labels(analogList(subset))))]);
+                analogData{i}=table(a{:},'VariableNames',[{'t'},reshape(cds.NSxInfo.NSx_labels(analogList(subset)),1,numel(cds.NSxInfo.NSx_labels(analogList(subset))))]);
                 analogData{i}.Properties.VariableDescriptions=[{'time'},repmat({'analog data'},1,numel(subset))];
                 analogData{i}.Properties.Description=['table of analog data with collection frequency of: ', num2str(frequencies(i))];
             end
@@ -93,7 +79,7 @@ function analogFromNSx(cds)
         else
             set(cds,'analog',analogData)
         end
-        %cds.addOperation(mfilename('fullpath'))
+        
         evntData=loggingListenerEventData('analogFromNSx',[]);
         notify(cds,'ranOperation',evntData)
     end

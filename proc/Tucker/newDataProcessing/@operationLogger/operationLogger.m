@@ -40,8 +40,11 @@ classdef operationLogger < matlab.mixin.SetGet
             end
         end
     end
-    methods
+    methods (Static = false, Access = protected, Hidden=true)
         %general methods
         addOperation(obj,operation,opPath,varargin)
+        methodPath=locateMethod(obj,className,methodName)
+        varargout=getGitLog(obj,opPath)
+        [uName,hName]=getUserHost(obj)
     end
 end

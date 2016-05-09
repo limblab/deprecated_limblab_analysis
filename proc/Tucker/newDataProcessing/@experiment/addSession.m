@@ -34,7 +34,6 @@ function addSession(ex,cds)
             m.fileSepShift=ex.meta.fileSepShift;
         end
         timeShift=ex.meta.duration+ex.meta.fileSepShift-cds.meta.dataWindow(1);
-        m.fileSepTime=[ex.meta.fileSepTime;cds.meta.fileSepTime+timeShift];
         m.duration=cds.meta.dataWindow(2)+timeShift;
         if ex.meta.dataWindow(2)==0
             m.dataWindow=cds.meta.dataWindow;

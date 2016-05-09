@@ -1,4 +1,8 @@
-function methodPath=locateMethod(className,methodName)
+function methodPath=locateMethod(obj,className,methodName)
+    %locateMethod is a method of the operationLogger superclass, and should
+    %be saved in the @operationLogger folder
+    %
+    %methodPath=locateMethod(className,methodName)
     %locateMethod returns the path to the method definition file if it is
     %in the matlab command path. This function only works for methods that
     %are defined in stand-alone files, and will NOT find functions that are

@@ -1,14 +1,17 @@
-function [fhcal,rotcal,Fy_invert]=getLabParams(labnum,dateTime,rothandle)
+function [fhcal,rotcal,Fy_invert, forceOffsets]=getLabParams(labnum,dateTime,rothandle)
     %wrapper function to contain the logic that selects load cell calibrations
     %and rotation data. Intended for use when converting robot handle load cell
     %data from raw form into room coordinates. Provides load cell calibration
     %matrices, rotation matrices, and a variable used to invert the y axis in
     %the case of data where the load cell was installed upside down. This
     %function is called when preprocessing data as it is loaded into
-    %matlab. It is not intended for end user use.
+    %matlab. It is not intended for end user use. Measured force offsets
+    %for lab 6 are included as an output, but not handled in calling
+    %functions.
     %
     %Each lab with a robot should have a block dedicated to it
     %every time the lab 
+    forceOffsets = [];
     if labnum==3 %If lab3 was used for data collection
         % Check date of recording to see if it's before or after the
         % change to force handle mounting.
@@ -63,11 +66,22 @@ function [fhcal,rotcal,Fy_invert]=getLabParams(labnum,dateTime,rothandle)
         % handle.
         fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
                 0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
+        if datenum(dateTime) < datenum('07-Mar-2016')
+            rotcal = eye(3);
+            forceOffsets = [];
+        else
+            % rotation of the load cell to match forearm frame
+            % (load cell is upside down and slightly rotated)
+            theta_off = atan2(3,27); %angle offset of load cell to forearm frame
+%                         theta_off = 0;
+            rotcal = [-cos(theta_off) -sin(theta_off);...
+                      -sin(theta_off) cos(theta_off)]'; 
+            forceOffsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
+%                         force_offsets = [];
+        end
         Fy_invert = 1;    
         if rothandle
-            rotcal = [-1 0; 0 1];  
-        else
-            rotcal = [1 0; 0 1];  
+            error('getLabParams:HandleRotated','Handle rotation not implemented for lab 6')  
         end
     else
         error('getLabParams:BadLab',['lab: ',labnum,' is not configured properly']);

@@ -104,7 +104,7 @@ function NEVNSx2cds(cds,varargin)
             end
         end
         %set the robot flag if we are using one of the robot labs:
-        if opts.labNum == 2 || opts.labNum == 3 || opts.LabNum ==6
+        if opts.labNum == 2 || opts.labNum == 3 || opts.labNum ==6
             opts.robot=true;
         end
         %get the date of the file so processing that depends on when the
@@ -171,7 +171,7 @@ function NEVNSx2cds(cds,varargin)
     %% sanitize times so that all our data is in the same window.
         cds.sanitizeTimeWindows
     %% Set metadata. Some metadata will already be set, but this should finish the job
-        cds.metaFromNEVNSx(NEVNSx,opts)
+        cds.metaFromNEVNSx(opts)
     %% write metadata to database
         %cds.upload2DB
     %% save to fsmres if possible

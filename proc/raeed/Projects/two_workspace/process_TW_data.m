@@ -16,9 +16,9 @@ output_data_20151202 = run_data_processing(function_name,folder,options);
 dbclear if error
 
 %% rotate empirical tuning curves
-folder='F:\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
+folder='/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
 clear options
-options.prefix='Chips_20151202_RW';
+options.prefix='Chips_20151120_RW_003';
 options.only_sorted=1;
 function_name='rotate_tuning_curves';
 options.labnum=6;

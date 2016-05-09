@@ -17,7 +17,6 @@ function metaFromNEVNSx(cds,opts)
     meta.array=opts.array;
 
     meta.knownProblems=cds.meta.knownProblems;
-    meta.processedWith=cds.meta.processedWith;
 
     %timing
     meta.dateTime=opts.dateTime;
@@ -37,6 +36,19 @@ function metaFromNEVNSx(cds,opts)
     meta.hasTriggers=~isempty(cds.triggers);
     meta.hasBumps=~isempty(find(strcmp('bumpTime',cds.trials.Properties.VariableNames),1));
     meta.hasChaoticLoad=logical(opts.hasChaoticLoad);
+    
+    sortedMask=[cds.units.ID]>0 & [cds.units.ID]<255;
+    meta.numSorted=sum(sortedMask);
+    meta.hasSorting=meta.numSorted>0;
+    wellSortedMask=[cds.units.wellSorted];
+    meta.numWellSorted=sum(wellSortedMask);
+    meta.numDualUnits=0;
+    chanList=unique([cds.units.chan]);
+    for i=1:numel(chanList)
+        if find([cds.units.chan]==chanList(i) & sortedMask) %%add well sorted check later...
+            meta.numDualUnits=meta.numDualUnits+1;
+        end
+    end
     
     meta.percentStill=sum(cds.kin.still)/size(cds.kin.still,1);
     meta.stillTime=meta.percentStill*meta.duration;
@@ -67,9 +79,10 @@ function metaFromNEVNSx(cds,opts)
     meta.numIncomplete=numel(strmatch('I',cds.trials.result));
     
     meta.aliasList=cds.aliasList;
-    
+
+    %put new meta structure into cds.meta
     set(cds,'meta',meta)
-    %cds.setField('meta',meta)
-    evntData=loggingListenerEventData('metaFromNEVNSx',opData);
+    %log the update to cds.meta
+    evntData=loggingListenerEventData('metaFromNEVNSx',[]);
     notify(cds,'ranOperation',evntData)
 end

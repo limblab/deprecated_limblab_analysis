@@ -1,4 +1,4 @@
-function file2cds(cds,folderPath,fileName,varargin)
+function file2cds(cds,filePath,varargin)
     %this is a method function for the common_data_structure (cds) class, and
     %should be located in a folder '@common_data_structure' with the class
     %definition file and other method files
@@ -20,7 +20,7 @@ function file2cds(cds,folderPath,fileName,varargin)
 %     dataFromDB=0;
 %     if ~noDB
 %         try
-%             conn=database('LLSessionsDB','LLMatlabScript','mvemjlht','Vendor','PostgreSQL','Server','vfsmmillerwiki.fsm.northwestern.edu');
+%             conn=database('LLTestingDB','LLMatlabScript','mvemjlht','Vendor','PostgreSQL','Server','vfsmmillerwiki.fsm.northwestern.edu');
 %             data=fetch(conn,['select *** from session where sourceFile = ',fileName]
 %             if ~isempty(data)
 %                 %load from database
@@ -35,8 +35,10 @@ function file2cds(cds,folderPath,fileName,varargin)
 %     end
 %     if ~dataFromDB
 %         varargin=[varargin,{'dbEmpty'}];
-        NEVNSx=cerebus2NEVNSx(folderPath,fileName);
-        cds.NEVNSx2cds(NEVNSx,varargin{:});
-        cds.addOperation(mfilename('fullpath'))
+        cds.nev2NEVNSx(filePath);
+        cds.NEVNSx2cds(varargin{:});
+        cds.clearTempFields()
+        evntData=loggingListenerEventData('file2cds',[]);
+        notify(cds,'ranOperation',evntData)
 %     end
 end

@@ -13,38 +13,40 @@ function lfpFromNSx(cds)
         
         subset=find(cds.NSxInfo.NSx_sampling(lfpList)==freq);
         achanIndex=lfpList(subset);
-        adata = [];%will preallocate below once we know how long the data is
+        lfp = [];%will preallocate below once we know how long the data is
+        switch freq
+            case 500
+            nsLabel='NS1';
+            case 1000
+                nsLabel='NS2';
+            case 2000
+                nsLabel='NS3';
+            case 10000
+                nsLabel='NS4';
+            case 30000
+                nsLabel='NS5';
+            otherwise
+                error('analogFromNSx:unexpectedFrequency',['this function is not set up to handle data with collection frequency: ',num2str(freq)])
+        end
         for c=1:length(achanIndex)
-            if freq==500
-                a = double(cds.NS1.Data(cds.NSxInfo.NSx_idx(achanIndex(c)),:))';
-            elseif freq==1000
-                a = double(cds.NS2.Data(cds.NSxInfo.NSx_idx(achanIndex(c)),:))';
-            elseif freq==2000
-                a = double(cds.NS3.Data(cds.NSxInfo.NSx_idx(achanIndex(c)),:))';
-            elseif freq==10000
-                a = double(cds.NS4.Data(cds.NSxInfo.NSx_idx(achanIndex(c)),:))';
-            elseif freq==30000
-                a = double(cds.NS5.Data(cds.NSxInfo.NSx_idx(achanIndex(c)),:))';
-            end
+            
             %recalculate time. allows force to be collected at
             %different frequencies on different channels at the
             %expense of execution speed
-            t = (0:length(a)-1)' / cds.NSxInfo.NSx_sampling(achanIndex(c));
 
-            %decimate and filter the raw force signals
-            temp=decimateData([t a],filterConfig);
-            %allocate the adata matrix if it doesn't exist yet
-            if isempty(adata)
-                adata=zeros(size(temp,1),numel(achanIndex));
-            end
-            adata(:,c)= temp(:,2);
+%             %allocate the adata matrix if it doesn't exist yet
+%             if isempty(lfp)
+%                 lfp=repmat({zeros(numPts,1)},1,numel(achanIndex)+1);
+%             end
+            lfp{c+1}= double(cds.(nsLabel).Data(cds.NSxInfo.NSx_idx(achanIndex(c)),:))';
         end    
-        lfp=[temp(:,1),adata];
+        %now stick time on the front of lfp
+        lfp{1}=(0:size(lfp{2},1)-1)' / cds.NSxInfo.NSx_sampling(achanIndex(c));
         labels=[{'t'},reshape(cds.NSxInfo.NSx_labels(lfpList(subset)),1,numel(cds.NSxInfo.NSx_labels(lfpList(subset))))];
         
         if ~isempty(lfp)
-            %convert array to table:
-            lfp=array2table(lfp,'VariableNames',labels);
+            %convert lfp array to table:
+            lfp=table(lfp{:},'VariableNames',labels);
             lfp.Properties.VariableUnits=[{'s'},repmat({'mV'},1,numel(lfpList))];
             lfp.Properties.VariableDescriptions=[{'time'},repmat({'LFP in mV'},1,numel(lfpList))];
             lfp.Properties.Description='Filtered LFP in raw collection voltage. Voltage scale is presumed to be mV';

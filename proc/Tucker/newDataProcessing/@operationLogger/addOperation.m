@@ -32,10 +32,10 @@ function addOperation(obj,operation,opPath,varargin)
         end
     
     %get the host computer name, and the user name
-        [username,hostname]=getUserHost();
+        [username,hostname]=obj.getUserHost();
     
     %get git log information for the specified operation file
-        [gitLog, fileLog]=getGitLog(opPath);
+        [gitLog, fileLog]=obj.getGitLog(opPath);
     %append the current data to the cds.meta.processedWith field
         [~,fname,~]=fileparts(opPath);
         tmp=obj.operationLog;
