@@ -1,10 +1,11 @@
 %% Figure 4 (used unit number 11, corresponding to i=5 here)
+% (use unit number 43, corresponding to i=19 here, for more representative)
 best_act_ind = VAF_cart_unc>0.4;
 best_act = activity_unc(best_act_ind,:);
 best_PD = yupd(best_act_ind);
 best_PD_con = ycpd(best_act_ind);
 best_nonlog_ind = find(best_act_ind);
-for i = 1:5
+for i = 19
     figure(1234)
     clf
     plot_heat_map(base_leg,best_act(i,:),endpoint_positions',best_PD(i))

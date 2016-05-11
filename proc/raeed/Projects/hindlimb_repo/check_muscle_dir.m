@@ -161,6 +161,10 @@ end
 legend(handles,'BFA','IP','RF','BFP','VL','MG','SOL','TA')
 title 'Global pulling directions of muscles (Con)'
 
+%% find expected axis of neural GD distribution
+clear i
+mean_axis = angle(sum(moddepth_unc.*exp(i*yupd*2)))/2;
+
 %% plot distribution
 figure
 subplot(121)
