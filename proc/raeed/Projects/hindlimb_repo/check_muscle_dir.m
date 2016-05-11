@@ -164,6 +164,16 @@ title 'Global pulling directions of muscles (Con)'
 %% find expected axis of neural GD distribution
 clear i
 mean_axis = angle(sum(moddepth_unc.*exp(i*yupd*2)))/2;
+mean_vect = [cos(mean_axis);sin(mean_axis)];
+perp_vect = [-sin(mean_axis);cos(mean_axis)];
+
+%% find changes in vectors along main axis and normal to main axis
+axis_tuning_unc = [mean_vect perp_vect]'*yu(2:3,:);
+axis_tuning_con = [mean_vect perp_vect]'*yc(2:3,:);
+
+axis_changes = axis_tuning_con-axis_tuning_unc;
+
+relative_axis_changes = axis_changes./repmat(moddepth_unc,2,1);
 
 %% plot distribution
 figure

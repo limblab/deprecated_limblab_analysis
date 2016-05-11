@@ -1,4 +1,4 @@
-%% Figure 4 (used unit number 11, corresponding to i=5 here)
+%% Figure 3 (used unit number 11, corresponding to i=5 here)
 % (use unit number 43, corresponding to i=19 here, for more representative)
 best_act_ind = VAF_cart_unc>0.4;
 best_act = activity_unc(best_act_ind,:);
@@ -15,7 +15,7 @@ for i = 19
     waitforbuttonpress
 end
 
-%% Figure 5 Plane regression figures (Cartesian)
+%% Figure _ Plane regression figures (Cartesian)
 x_list = zerod_ep(:,1);
 y_list = zerod_ep(:,2);
 x_corners = [min(x_list) min(x_list) max(x_list) max(x_list)]';
@@ -24,7 +24,7 @@ y_corners = [min(y_list) max(y_list) max(y_list) min(y_list)]';
 % elastic
 figure(1)
 clf
-for i = [11]
+for i = [43]
     plane_list = predict(cart_fit_unc{i},[x_list y_list]);
     plane_corners = predict(cart_fit_unc{i},[x_corners y_corners]);
     figure(1)
