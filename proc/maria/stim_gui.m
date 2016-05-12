@@ -22,7 +22,7 @@ function varargout = stim_gui(varargin)
 
 % Edit the above text to modify the response to help stim_gui
 
-% Last Modified by GUIDE v2.5 30-Mar-2016 15:52:16
+% Last Modified by GUIDE v2.5 09-May-2016 09:54:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1360,21 +1360,47 @@ channels = {get(handles.checkbox1, 'Value'), get(handles.checkbox2, 'Value'), ge
     get(handles.checkbox5, 'Value'), get(handles.checkbox6, 'Value'), get(handles.checkbox7, 'Value'), get(handles.checkbox8, 'Value')};
 muscles = {get(handles.muscle1, 'String'), get(handles.muscle2, 'String'), get(handles.muscle3, 'String'), get(handles.muscle4, 'String'),...
     get(handles.muscle5, 'String'), get(handles.muscle6, 'String'), get(handles.muscle7, 'String'), get(handles.muscle8, 'String')}; %must use cell array or strings get concatenated
-amps = {str2num(get(handles.amp1, 'String')), str2num(get(handles.amp2, 'String')), str2num(get(handles.amp3, 'String')), str2num(get(handles.amp4, 'String')), ...
-    str2num(get(handles.amp5, 'String')), str2num(get(handles.amp6, 'String')), str2num(get(handles.amp7, 'String')), str2num(get(handles.amp8, 'String'))};
-pws = {str2num(get(handles.pw1, 'String')), str2num(get(handles.pw2, 'String')), str2num(get(handles.pw3, 'String')), str2num(get(handles.pw4, 'String')), ...
-    str2num(get(handles.pw5, 'String')), str2num(get(handles.pw6, 'String')), str2num(get(handles.pw7, 'String')), str2num(get(handles.pw8, 'String'))};
-tls = {str2num(get(handles.tl1, 'String')), str2num(get(handles.tl2, 'String')), str2num(get(handles.tl3, 'String')), str2num(get(handles.tl4, 'String')), ...
-    str2num(get(handles.tl5, 'String')), str2num(get(handles.tl6, 'String')), str2num(get(handles.tl7, 'String')), str2num(get(handles.tl8, 'String'))};
-starts = {str2num(get(handles.start1, 'String')), str2num(get(handles.start2, 'String')), str2num(get(handles.start3, 'String')), str2num(get(handles.start4, 'String')), ...
-    str2num(get(handles.start5, 'String')), str2num(get(handles.start6, 'String')), str2num(get(handles.start7, 'String')), str2num(get(handles.start8, 'String'))};
+amps = {str2double(get(handles.amp1, 'String')), str2double(get(handles.amp2, 'String')), str2double(get(handles.amp3, 'String')), str2double(get(handles.amp4, 'String')), ...
+    str2double(get(handles.amp5, 'String')), str2double(get(handles.amp6, 'String')), str2double(get(handles.amp7, 'String')), str2double(get(handles.amp8, 'String'))};
+pws = {str2double(get(handles.pw1, 'String')), str2double(get(handles.pw2, 'String')), str2double(get(handles.pw3, 'String')), str2double(get(handles.pw4, 'String')), ...
+    str2double(get(handles.pw5, 'String')), str2double(get(handles.pw6, 'String')), str2double(get(handles.pw7, 'String')), str2double(get(handles.pw8, 'String'))};
+tls = {str2double(get(handles.tl1, 'String')), str2double(get(handles.tl2, 'String')), str2double(get(handles.tl3, 'String')), str2double(get(handles.tl4, 'String')), ...
+    str2double(get(handles.tl5, 'String')), str2double(get(handles.tl6, 'String')), str2double(get(handles.tl7, 'String')), str2double(get(handles.tl8, 'String'))};
+starts = {str2double(get(handles.start1, 'String')), str2double(get(handles.start2, 'String')), str2double(get(handles.start3, 'String')), str2double(get(handles.start4, 'String')), ...
+    str2double(get(handles.start5, 'String')), str2double(get(handles.start6, 'String')), str2double(get(handles.start7, 'String')), str2double(get(handles.start8, 'String'))};
+
+
+%check which channels are supposed to be stimulated
+index = [];
+for i=1:length(channels)
+    if channels{i}==true
+        index(end+1) = i; %#ok<AGROW>
+    end
+end
+
+%sort the channels by start time so train stagger is grouped by channels
+%stimulated together
+[sorted_starts, ind] = sort(cell2mat(starts)); 
+tds = {0, 0, 0, 0, 0, 0, 0, 0};
+j=0; 
+
+%for each channel that will be stimulated, make a train delay variable
+for i=1:length(sorted_starts)
+    if ismember(ind(i), index) %check if the channel is stimulated
+        j = j+1; %inc arbitrary var that determines the stagger amt
+        
+        %make the train delay variable: 50 us minimum, stagger channels
+        tds{ind(i)} = 50 + 500*j + sorted_starts(i)*1000; %tds are in us
+    end
+end
 
 %if saving, write all of these cells to a .mat file: 
+save_path = fileparts(mfilename('fullpath')); 
 if get(handles.save, 'Value')
     file_name = get(handles.filename, 'String'); %must make a new file name every time
     disp(file_name)
     %file_name = file_name{1}
-    if exist(strcat(file_name, '.mat'), 'file')
+    if exist(fullfile(save_path, strcat('data_files/', file_name, '.mat')), 'file')
         overwrite = questdlg('This file already exists. Are you sure you want to overwrite it?', ...
             'Choices', 'Okay', 'Cancel', 'Cancel'); 
         switch overwrite
@@ -1385,15 +1411,9 @@ if get(handles.save, 'Value')
                 return; 
         end
     end
-    save(file_name, 'channels', 'muscles', 'amps', 'pws', 'tls', 'starts'); 
+    save(fullfile(save_path, strcat('data_files/', file_name)), 'muscles', 'channels', 'amps', 'pws', 'tls', 'tds'); 
 end
-%once variables are saved, check which channels are true.
-index = [];
-for i=1:length(channels)
-    if channels{i}==true
-        index(end+1) = i;
-    end
-end
+
 
 %if the stimulator object doesn't exist yet, set it up: 
 if ~exist('ws', 'var')
@@ -1402,22 +1422,19 @@ if ~exist('ws', 'var')
     ws.init(1, ws.comm_timeout_disable);
 end
 
-%then get the 'on'-indexed 
-%elements out of every other array and send those stimuli.
-%do for loop? make command struct or just set_stim a bunch? or combination.
-%set stim for each channel, then after the for loop, do Run as many times
-%as specified in 'num cycles' - also, there will be some complicated timing
-%there...
+%get commands for every channel being used and set up the 
 for element=1:length(index)
     ch = index(element); 
     tl = tls{ch}; % ms
-    freq = str2num(get(handles.freq, 'String')); %Hz
+    freq = str2double(get(handles.freq, 'String')); %Hz
     pw = pws{ch}*1000; % us, converted from input in ms
     amp = amps{ch}*1000; %input in mA, gets programmed in uA
+    td = tds{ch}; %us
     
     %Can add parameters for train delay (TD) and polarity (PL; 1 is
     %cathodic first)
     command{1} = struct('TL', tl, ...%ms
+        'TD', td, ... % us; this includes both stim stagger and delayed start 
         'Freq', freq, ...        % Hz
         'CathDur', pw, ...    % us
         'AnodDur', pw, ...    % us
@@ -1428,77 +1445,28 @@ for element=1:length(index)
     ws.set_stim(command, ch); 
 end
 
-%now run all of the things you just set. must now get things from the
-%starts array to stagger them correctly. TIMING SUXXXX
-
-% %to run them all simultaneously: 
-% command{1} = struct('Run', ws.run_cont);
-% ws.set_stim(command, index); %check that this actually works tho!
-
-%now to deal with TIMINGGGGG
-%okay, two parameters: start time, length of time to stimulate (det by
-%train but I need to pause it for long enough to finish), cycle delay, num
-%cycles
 
 %start time for each is stored in starts{index(element)}
 %tl for each is in tls{index(element)}
-cycle_del = str2num(get(handles.cycdelay, 'String')); %get cycle delay
-num_cycles = str2num(get(handles.numcyc, 'String')); %number of cycles
+cycle_del = str2double(get(handles.cycdelay, 'String')); %get cycle delay in ms
+num_cycles = str2double(get(handles.numcyc, 'String')); %number of cycles
 
-%remove unchecked rows from "starts" 
-for j=1:length(index)
-    temp{j} = starts{index(j)};
+%add delay so the code pauses until stim is completed for a cycle
+
+%find length of time needed to pause so stimulation can complete a cycle: 
+stim_lens = zeros([1 length(tds)]); 
+for i=1:length(tds)
+    stim_lens(i) = tds{i} + tls{i}*1000; 
 end
-starts = temp; %TODO: check this
+time_to_stim = max(stim_lens)/1000; % this val is returned in ms 
 
-j=0; %increment while loop
-while ~isempty(temp)
-    j = j+1;
-    a = min(cell2mat(temp)); %find min in start times
-    i = find([starts{:}] == a); %find out which channels it runs on
-    ch_times(j, :) = {a, index(i)}; %store channels that start at time a: {row, col} = {starttime, [value channels]}
-    temp(find([temp{:}] == a)) = []; %remove the min from the starts array
-end    
-%now I have ch_times. so I need to do timing. with tic and pause for now...
-
-cycle_len = 0; %set up a variable to track cycle length
-cur_time = 0; %track sum of pause times
-for i=1:num_cycles %for as many steps as necessary
-    tic
-    disp('begin step cycle'); 
-    for j=1:size(ch_times, 1) %for as many channels as necessary, stagger start times
-        if j==1 %pause time before the first one is just the first value
-            ptime = ch_times{1, 1}; %set pause time to beginning of first channel
-            cur_time = cur_time + ptime; 
-            %disp(['set pause time for first channel at ' num2str(ptime)]); 
-        else %pause time for following cycles is subtractive from previous start time
-            ptime = ch_times{j, 1}-ch_times{j-1, 1};
-            cur_time = cur_time + ptime;
-            %disp(['set pause time for channel ' num2str(j) ' at ' num2str(ptime)])
-            %disp(['cur_time is now ' num2str(cur_time)]); 
-        end
-        pause(ptime/1000); %pause (convert to ms) to reach the time we should stimulate
-        toc
-        %TODO: add start and stop signals (not sure about timing of these)
-        
-        cl = max(ws.get_TL(ch_times{j, 2}))+cur_time;
-        if cl>cycle_len
-            cycle_len = cl;
-        end
-        command{1} = struct('Run', ws.run_once_go);
-        ws.set_stim(command, ch_times{j, 2}); %stim the channels listed for this time
-    end
-    
-    %after all of the channels have started stimulation, pause until
-    %they're done stimulating (cycle_len) but subtract time already paused
-    %(cur_time)
-    disp(['end of cycle ' num2str(i)]);
-    pause((cycle_del+cycle_len-cur_time)/1000); %pause for length of cycle_del and calculated time of train?
-    toc
-    cur_time = 0; 
+%run everything as many times as specified, with appropriate delays in the
+%cycle
+for i=1:num_cycles
+    command{1} = struct('Run', ws.run_once_go); 
+    ws.set_stim(command, index); %run stimulation commands for all muscles being used
+    pause((time_to_stim+cycle_del)/1000) %pause until time for next step cycle
 end
 
 disp('done stimulating'); 
-%TODO: cleanup. does this still run fine if I get rid of all the extra
-%functions above?
-
+%TODO: cleanup. 
