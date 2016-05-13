@@ -1,10 +1,6 @@
 function FrameShifter(Biostamp,vargin)
 %---FRAMESHIFTER---
 % 
-% Reads in data from the biostamp reader, and puts it in the correct format
-% for FrameShifter, which takes care of doing all of the extrinsic frame
-% transformations etc.
-% 
 % ---Required Inputs---
 %   Biostamp = struct with biostamp data formatted from AccelRead
 % 
@@ -27,11 +23,13 @@ plotson = 0;
 
 
 % Finding all doz arithmatic means
-AccelMean = sqrt(Biostamp.accel(11:end,1).^2 + ...
+% AccelMag is being used to calculate points with no movement
+% The means are calculated as a 
+AccelMag = sqrt(Biostamp.accel(11:end,1).^2 + ...
     Biostamp.accel(11:end,2).^2 + Biostamp.accel(11:end,3).^2);
-RollVelMean = sum(Biostamp.gyro(11:end,1))/len_el
-PitchVelMean = sum(Biostamp.gyro(11:end,2))/len_el
-YawVelMean = sum(Biostamp.gyro(11:end,3))/len_el
+RollVelMean = sum(Biostamp.gyro(11:end,1))/len_el;
+PitchVelMean = sum(Biostamp.gyro(11:end,2))/len_el;
+YawVelMean = sum(Biostamp.gyro(11:end,3))/len_el;
 
 
 
@@ -45,7 +43,7 @@ end
 
 % Finding indices of locations where magnitude of acceleration is under a
 % certain threshold and ang vel is ~ 0
-AMinInd = uint16(find(abs(AccelMean-1) < athreshold));
+AMinInd = uint16(find(abs(AccelMag-1) < athreshold));
 WMinInd = find(((Biostamp.gyro(:,1)-RollVelMean).^2 + (Biostamp.gyro(:,2)-PitchVelMean).^2 ...
     + (Biostamp.gyro(:,3)-YawVelMean).^2)<wthreshold);
 AnotherIndVector = [];
