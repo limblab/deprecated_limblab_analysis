@@ -8,39 +8,73 @@ function removeSorting(units,varargin)
     %will be a pair of cells indicating the array ID and list of
     %channels to remove sorting, e.g.: [{'Rt_M1},{[1:96]}]
 
-    if ~isempty(varargin)
-        temp=varargin{1};
-        arrayIDs=temp(:,1);
-        chans=temp(:,2);
-    else
-        arrayIDs=unique({units.data.array});
-        for i=1:length(arrayIDs)
-            arrayMask=strcmp({units.array},arrayIDs{i});
-            chans(i,1)={unique(units(arrayMask).chan)};
+    for i=1:2:numel(varargin)
+        switch varargin{i}
+            case 'IDs'
+                if iscell(varargin{i+1})
+                    arrayIDs=varargin{i+1};
+                else
+                    arrayIDs={varargin{i+1}};
+                end
+            case 'chans'
+                if iscell(varargin{i+1})
+                    chans=varargin{i+1};
+                else
+                    chans={varargin{i+1}};
+                end
+            case 'ignoreInvalid'
+                ignoreInvalid=varargin{i+1};
+            otherwise
+                if ~ischar(varargin{i})
+                    error('removeSorting:badKey',['all keys must be strings. Input #:',num2str(i),' should be a key, but is not a string'])
+                else
+                    error('removeSorting:invalidKey',['the key: ',varargin{i},' is not recognized'])
+                end
         end
-        chans=unique(cell2mat({units.data.chan}));
     end
+    if ~exist('ignoreInvalid','var')
+        ignoreInvalid=true;
+    end
+    if ~exist('arrayIDs','var')
+        arrayIDs=unique({units.data.array});
+    end
+    if ~exist('chans','var')
+        for i=1:length(arrayIDs)
+            arrayMask=strcmp({units.data.array},arrayIDs{i});
+            chans{i,1}=unique([units.data(arrayMask).chan]);
+        end
+        %chans=unique(cell2mat({units.data.chan}));
+    end
+    removeIdx=[];
     for i=1:length(arrayIDs)
+        chanList=chans{i};
+        arrayMask=strcmp({units.data.array},arrayIDs{i});
         for j=1:length(chans{i})
-            chanList=chans{i};
             %find a list of indexes with this arrayID and channel
-            arrayMask=strcmp({units.array},arrayIDs{i});
-            chanMask=cell2mat({units.chan}==chanList{j});
+            chanMask=[units.data.chan]==chanList(j);
             mask=arrayMask & chanMask;
             %now merge these into one entry in the units field and
             %then delete the original entries:
-            unsortedUnit.chan=chanList{j};
-            unsortedUnit.ID=0;
-            unsortedUnit.arrayID=arrayIDs{i};
-            unsortedUnit.spikes=[];
             idx=find(mask);
+            saveIdx=[];
+            spikes=[];
             for k=1:length(idx)
-                unsortedUnit.spikes=[unsortedUnits.spikes; units.spikes(idx(k))];
-                units.spikes(idx(k))=[];
+                if units.data(idx(k)).ID==255 && ignoreInvalid
+                    continue
+                end
+                spikes=[spikes;units.data(idx(k)).spikes];
+                if units.data(idx(k)).ID~=0;
+                    removeIdx=[removeIdx,idx(k)];
+                else
+                    saveIdx=idx(k);
+                end
             end
-            units=[units;unsortedUnit];
+            if ~isempty(saveIdx)
+                units.data(saveIdx).spikes=spikes;
+            end
         end
     end
+    units.data(removeIdx)=[];
     %% notify the event so listners can log this operation:
     evntData=loggingListenerEventData('removeSorting',[]);
     notify(units,'removedSorting',evntData)

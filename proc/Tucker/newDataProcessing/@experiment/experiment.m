@@ -91,7 +91,10 @@ classdef experiment < matlab.mixin.SetGet & operationLogger %matlab.mixin.SetGet
             %% analysis
                 set(ex,'analysis',[]);%empty analysis structure
             %% listners  
-                %experiment event listners
+                %experiment event listners.
+                %LISTENERS SHOULD ALSO BE INSTANTIATED IN THE ex.loadobj
+                %METHOD, OR THEY WILL NOT BE RE-CREATED WHEN LOADING AN
+                %EXPERIMENT FROM A FILE
                 addlistener(ex,'ranOperation',@(src,evnt)ex.experimentLoggingEventCallback(src,evnt));
                 %data event listners
                 addlistener(ex.kin,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
@@ -315,6 +318,30 @@ ex.analysis=anal;
     end
     methods (Static = false, Access = protected, Hidden=true)
         [lagData,lagPts,time]=timeShiftBins(ex,data,lags,varargin)
+    end
+    methods (Static=true)
+        function ex=loadobj(ex)
+            %re-creates listeners on loading experiment from saved file:
+            addlistener(ex,'ranOperation',@(src,evnt)ex.experimentLoggingEventCallback(src,evnt));
+                %data event listners
+            addlistener(ex.kin,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.kin,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.force,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.force,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.lfp,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.lfp,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.emg,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.emg,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.triggers,'refiltered',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.triggers,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            %no listners on analog since its empty. we will add them
+            %when we insert data
+            addlistener(ex.trials,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.units,'appended',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            addlistener(ex.bin,'updatedBins',@(src,evnt)ex.dataLoggingCallback(src,evnt));
+            %listeners on analysis:
+            addlistener(ex.bin,'ranPDFit',@(src,evnt)ex.binAnalysisLoggingCallback(src,evnt));
+        end
     end
     methods
         %callbacks

@@ -1,17 +1,20 @@
-%% %% Plot PD change predictions based on different coordinate frame neurons
+function [figure_handles, output_data] = plot_PD_predictions(folder,options)
+% Plot PD predictions based on different coordinate frames for neurons. Use
+% only RW tasks for this function.
 
 %% load bdf
 % bdf = get_nev_mat_data([folder options.prefix],options.labnum);
-folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
-prefix = 'Chips_20151120_RW_003';
-labnum = 6;
-opensim_prefix = 'Chips_20151120_scaled';
+% folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
+% prefix = 'Chips_20151120_RW_003';
+% labnum = 6;
+% opensim_prefix = 'Chips_20151120_scaled';
+opensim_prefix = options.opensim_prefix;
 
-bdf = get_nev_mat_data([folder prefix],labnum);
+bdf = get_nev_mat_data([folder options.prefix],options.labnum);
 
 % extract separate workspaces
-[bdf_PM,times_PM] = extract_workspace(bdf,[-10 -55],[0 -45]);
-[bdf_DL,times_DL] = extract_workspace(bdf,[0 -45],[10 -35]);
+times_PM = extract_workspace_times(bdf,[-10 -55],[0 -45]);
+times_DL = extract_workspace_times(bdf,[0 -45],[10 -35]);
 
 bdf.meta.task = 'RW';
 opts.binsize=0.05;
@@ -23,7 +26,8 @@ which_units = [];
 behaviors = parse_for_tuning(bdf,'continuous','units',which_units);
 
 % extract workspaces out of behaviors
-
+% behaviors_PM = extract_behaviors(behaviors,times_PM);
+% behaviors_DL = extract_behaviors(behaviors,times_DL);
 
 %% load joint kinematics
 joint_pos_mat = csvread([folder 'Analysis/' opensim_prefix '_Kinematics_q.sto'],11,0);
@@ -139,87 +143,89 @@ endpoint_kin_sim_PM = interp1(t,endpoint_kin,joint_vel_PM.time);
 % do joint velocity regression
 tic;
 for i = 1:num_neurons
-%     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_PM, joint_neur_PM(:,i));
-    %Display verbose information
-    disp(['Processed Joint PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
-    
-    %extract coefficiencts from boot_tuning
-    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
-    
-    %coefficient covariance
-%     coef_cov = cov(boot_coef);
-    
-    %get coefficient means
-    coef_means = mean(boot_coef);
-    
-    %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
-    
-    % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
-    % recenter boot_dirs
-    mean_dir = atan2(coef_means(5),coef_means(4));
-    centered_boot_dirs = boot_dirs-mean_dir;
-    while(sum(centered_boot_dirs<-pi))
-        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
-    end
-    while(sum(centered_boot_dirs>pi))
-        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
-    end
-
-    % Calculate dir CI
-    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
-
-    % uncenter CI
-    dir_CI = dir_CI+mean_dir;
-
-    joint_tuning_PM(i).dir = mean_dir;
-    joint_tuning_PM(i).dir_CI = dir_CI';
-%     joint_tuning_PM(i).name = joint_vel_PM.Properties.VariableNames{i};
-    joint_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+% %     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
+%     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_PM, joint_neur_PM(:,i));
+%     %Display verbose information
+%     disp(['Processed Joint PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
+%     
+%     %extract coefficiencts from boot_tuning
+%     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+%     
+%     %coefficient covariance
+% %     coef_cov = cov(boot_coef);
+%     
+%     %get coefficient means
+%     coef_means = mean(boot_coef);
+%     
+%     %get 95% CIs for coefficients
+%     coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+%     
+%     % bootstrap directions
+%     boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+%     % recenter boot_dirs
+%     mean_dir = atan2(coef_means(5),coef_means(4));
+%     centered_boot_dirs = boot_dirs-mean_dir;
+%     while(sum(centered_boot_dirs<-pi))
+%         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+%     end
+%     while(sum(centered_boot_dirs>pi))
+%         centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+%     end
+% 
+%     % Calculate dir CI
+%     dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+% 
+%     % uncenter CI
+%     dir_CI = dir_CI+mean_dir;
+% 
+%     joint_tuning_PM(i).dir = mean_dir;
+%     joint_tuning_PM(i).dir_CI = dir_CI';
+% %     joint_tuning_PM(i).name = joint_vel_PM.Properties.VariableNames{i};
+%     joint_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+    joint_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,joint_neur_PM(:,i),['Processed Joint PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 for i = 1:num_neurons
-%     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_PM, muscle_neur_PM(:,i));
-    %Display verbose information
-    disp(['Processed Muscle PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
-    
-    %extract coefficiencts from boot_tuning
-    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
-    
-    %coefficient covariance
-%     coef_cov = cov(boot_coef);
-    
-    %get coefficient means
-    coef_means = mean(boot_coef);
-    
-    %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
-    
-    % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
-    % recenter boot_dirs
-    mean_dir = atan2(coef_means(5),coef_means(4));
-    centered_boot_dirs = boot_dirs-mean_dir;
-    while(sum(centered_boot_dirs<-pi))
-        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
-    end
-    while(sum(centered_boot_dirs>pi))
-        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
-    end
-
-    % Calculate dir CI
-    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
-
-    % uncenter CI
-    dir_CI = dir_CI+mean_dir;
-
-    muscle_tuning_PM(i).dir = mean_dir;
-    muscle_tuning_PM(i).dir_CI = dir_CI';
-%     joint_tuning_PM(i).name = joint_vel_PM.Properties.VariableNames{i};
-    muscle_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+% %     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
+%     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_PM, muscle_neur_PM(:,i));
+%     %Display verbose information
+%     disp(['Processed Muscle PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
+%     
+%     %extract coefficiencts from boot_tuning
+%     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+%     
+%     %coefficient covariance
+% %     coef_cov = cov(boot_coef);
+%     
+%     %get coefficient means
+%     coef_means = mean(boot_coef);
+%     
+%     %get 95% CIs for coefficients
+%     coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+%     
+%     % bootstrap directions
+%     boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+%     % recenter boot_dirs
+%     mean_dir = atan2(coef_means(5),coef_means(4));
+%     centered_boot_dirs = boot_dirs-mean_dir;
+%     while(sum(centered_boot_dirs<-pi))
+%         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+%     end
+%     while(sum(centered_boot_dirs>pi))
+%         centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+%     end
+% 
+%     % Calculate dir CI
+%     dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+% 
+%     % uncenter CI
+%     dir_CI = dir_CI+mean_dir;
+% 
+%     muscle_tuning_PM(i).dir = mean_dir;
+%     muscle_tuning_PM(i).dir_CI = dir_CI';
+% %     joint_tuning_PM(i).name = joint_vel_PM.Properties.VariableNames{i};
+%     muscle_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+    muscle_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,muscle_neur_PM(:,i),['Processed Muscle PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 % interpolate endpoint kinematics to joint times
@@ -227,87 +233,89 @@ endpoint_kin_sim_DL = interp1(t,endpoint_kin,joint_vel_DL.time);
 
 % do joint velocity regression
 for i = 1:num_neurons
-%     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_DL, joint_neur_DL(:,i));
-    %Display verbose information
-    disp(['Processed Joint DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
-    
-    %extract coefficiencts from boot_tuning
-    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
-    
-    %coefficient covariance
-%     coef_cov = cov(boot_coef);
-    
-    %get coefficient means
-    coef_means = mean(boot_coef);
-    
-    %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
-    
-    % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
-    % recenter boot_dirs
-    mean_dir = atan2(coef_means(5),coef_means(4));
-    centered_boot_dirs = boot_dirs-mean_dir;
-    while(sum(centered_boot_dirs<-pi))
-        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
-    end
-    while(sum(centered_boot_dirs>pi))
-        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
-    end
-
-    % Calculate dir CI
-    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
-
-    % uncenter CI
-    dir_CI = dir_CI+mean_dir;
-
-    joint_tuning_DL(i).dir = mean_dir;
-    joint_tuning_DL(i).dir_CI = dir_CI';
-%     joint_tuning_DL(i).name = joint_vel_DL.Properties.VariableNames{i};
-    joint_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+% %     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
+%     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_DL, joint_neur_DL(:,i));
+%     %Display verbose information
+%     disp(['Processed Joint DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+%     
+%     %extract coefficiencts from boot_tuning
+%     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+%     
+%     %coefficient covariance
+% %     coef_cov = cov(boot_coef);
+%     
+%     %get coefficient means
+%     coef_means = mean(boot_coef);
+%     
+%     %get 95% CIs for coefficients
+%     coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+%     
+%     % bootstrap directions
+%     boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+%     % recenter boot_dirs
+%     mean_dir = atan2(coef_means(5),coef_means(4));
+%     centered_boot_dirs = boot_dirs-mean_dir;
+%     while(sum(centered_boot_dirs<-pi))
+%         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+%     end
+%     while(sum(centered_boot_dirs>pi))
+%         centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+%     end
+% 
+%     % Calculate dir CI
+%     dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+% 
+%     % uncenter CI
+%     dir_CI = dir_CI+mean_dir;
+% 
+%     joint_tuning_DL(i).dir = mean_dir;
+%     joint_tuning_DL(i).dir_CI = dir_CI';
+% %     joint_tuning_DL(i).name = joint_vel_DL.Properties.VariableNames{i};
+%     joint_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+    joint_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,joint_neur_DL(:,i),['Processed Joint DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 for i = 1:num_neurons
-%     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_DL, muscle_neur_DL(:,i));
-    %Display verbose information
-    disp(['Processed Muscle DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
-    
-    %extract coefficiencts from boot_tuning
-    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
-    
-    %coefficient covariance
-%     coef_cov = cov(boot_coef);
-    
-    %get coefficient means
-    coef_means = mean(boot_coef);
-    
-    %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
-    
-    % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
-    % recenter boot_dirs
-    mean_dir = atan2(coef_means(5),coef_means(4));
-    centered_boot_dirs = boot_dirs-mean_dir;
-    while(sum(centered_boot_dirs<-pi))
-        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
-    end
-    while(sum(centered_boot_dirs>pi))
-        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
-    end
-
-    % Calculate dir CI
-    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
-
-    % uncenter CI
-    dir_CI = dir_CI+mean_dir;
-
-    muscle_tuning_DL(i).dir = mean_dir;
-    muscle_tuning_DL(i).dir_CI = dir_CI';
-%     joint_tuning_DL(i).name = joint_vel_DL.Properties.VariableNames{i};
-    muscle_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+% %     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
+%     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_sim_DL, muscle_neur_DL(:,i));
+%     %Display verbose information
+%     disp(['Processed Muscle DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+%     
+%     %extract coefficiencts from boot_tuning
+%     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+%     
+%     %coefficient covariance
+% %     coef_cov = cov(boot_coef);
+%     
+%     %get coefficient means
+%     coef_means = mean(boot_coef);
+%     
+%     %get 95% CIs for coefficients
+%     coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+%     
+%     % bootstrap directions
+%     boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+%     % recenter boot_dirs
+%     mean_dir = atan2(coef_means(5),coef_means(4));
+%     centered_boot_dirs = boot_dirs-mean_dir;
+%     while(sum(centered_boot_dirs<-pi))
+%         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+%     end
+%     while(sum(centered_boot_dirs>pi))
+%         centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+%     end
+% 
+%     % Calculate dir CI
+%     dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+% 
+%     % uncenter CI
+%     dir_CI = dir_CI+mean_dir;
+% 
+%     muscle_tuning_DL(i).dir = mean_dir;
+%     muscle_tuning_DL(i).dir_CI = dir_CI';
+% %     joint_tuning_DL(i).name = joint_vel_DL.Properties.VariableNames{i};
+%     muscle_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+    muscle_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,muscle_neur_DL(:,i),['Processed Muscle DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 clear boot_tuning
@@ -359,88 +367,90 @@ bootfunc = @(X,y) GeneralizedLinearModel.fit(X,y);
 endpoint_kin_real_PM = interp1(t,endpoint_kin,bin_times(is_PM_time));
 
 for i = 1:size(real_neur,2)
-%     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_real_PM, real_neur(is_PM_time,i));
-    %Display verbose information
-    disp(['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
-    
-    %extract coefficiencts from boot_tuning
-    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
-    
-    %coefficient covariance
-    coef_cov = cov(boot_coef);
-    
-    %get coefficient means
-    coef_means = mean(boot_coef);
-    
-    %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
-    
-    % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
-    % recenter boot_dirs
-    mean_dir = atan2(coef_means(5),coef_means(4));
-    centered_boot_dirs = boot_dirs-mean_dir;
-    while(sum(centered_boot_dirs<-pi))
-        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
-    end
-    while(sum(centered_boot_dirs>pi))
-        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
-    end
-
-    % Calculate dir CI
-    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
-
-    % uncenter CI
-    dir_CI = dir_CI+mean_dir;
-
-    real_tuning_PM(i).dir = mean_dir;
-    real_tuning_PM(i).dir_CI = dir_CI';
-    real_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+% %     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
+%     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_real_PM, real_neur(is_PM_time,i));
+%     %Display verbose information
+%     disp(['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
+%     
+%     %extract coefficiencts from boot_tuning
+%     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+%     
+%     %coefficient covariance
+%     coef_cov = cov(boot_coef);
+%     
+%     %get coefficient means
+%     coef_means = mean(boot_coef);
+%     
+%     %get 95% CIs for coefficients
+%     coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+%     
+%     % bootstrap directions
+%     boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+%     % recenter boot_dirs
+%     mean_dir = atan2(coef_means(5),coef_means(4));
+%     centered_boot_dirs = boot_dirs-mean_dir;
+%     while(sum(centered_boot_dirs<-pi))
+%         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+%     end
+%     while(sum(centered_boot_dirs>pi))
+%         centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+%     end
+% 
+%     % Calculate dir CI
+%     dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+% 
+%     % uncenter CI
+%     dir_CI = dir_CI+mean_dir;
+% 
+%     real_tuning_PM(i).dir = mean_dir;
+%     real_tuning_PM(i).dir_CI = dir_CI';
+%     real_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+    real_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_real_PM,real_neur_PM(is_PM_time,i),['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 % interpolate endpoint kinematics to joint times
 endpoint_kin_real_DL = interp1(t,endpoint_kin,bin_times(is_DL_time));
 
 for i = 1:size(real_neur,2)
-%     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_real_DL, real_neur(is_DL_time,i));
-    %Display verbose information
-    disp(['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
-    
-    %extract coefficiencts from boot_tuning
-    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
-    
-    %coefficient covariance
-    coef_cov = cov(boot_coef);
-    
-    %get coefficient means
-    coef_means = mean(boot_coef);
-    
-    %get 95% CIs for coefficients
-    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
-    
-    % bootstrap directions
-    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
-    % recenter boot_dirs
-    mean_dir = atan2(coef_means(5),coef_means(4));
-    centered_boot_dirs = boot_dirs-mean_dir;
-    while(sum(centered_boot_dirs<-pi))
-        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
-    end
-    while(sum(centered_boot_dirs>pi))
-        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
-    end
-
-    % Calculate dir CI
-    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
-
-    % uncenter CI
-    dir_CI = dir_CI+mean_dir;
-
-    real_tuning_DL(i).dir = mean_dir;
-    real_tuning_DL(i).dir_CI = dir_CI';
-    real_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+% %     mdl = LinearModel.fit(endpoint_kin_PM,joint_vel_PM{:,i});
+%     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin_real_DL, real_neur(is_DL_time,i));
+%     %Display verbose information
+%     disp(['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+%     
+%     %extract coefficiencts from boot_tuning
+%     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+%     
+%     %coefficient covariance
+%     coef_cov = cov(boot_coef);
+%     
+%     %get coefficient means
+%     coef_means = mean(boot_coef);
+%     
+%     %get 95% CIs for coefficients
+%     coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+%     
+%     % bootstrap directions
+%     boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+%     % recenter boot_dirs
+%     mean_dir = atan2(coef_means(5),coef_means(4));
+%     centered_boot_dirs = boot_dirs-mean_dir;
+%     while(sum(centered_boot_dirs<-pi))
+%         centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+%     end
+%     while(sum(centered_boot_dirs>pi))
+%         centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+%     end
+% 
+%     % Calculate dir CI
+%     dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+% 
+%     % uncenter CI
+%     dir_CI = dir_CI+mean_dir;
+% 
+%     real_tuning_DL(i).dir = mean_dir;
+%     real_tuning_DL(i).dir_CI = dir_CI';
+%     real_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
+    real_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_real_DL,real_neur_DL(is_DL_time,i),['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 clear boot_tuning
@@ -693,4 +703,45 @@ patch(x_fill,y_fill,[0 0 1],'facealpha',0.3,'edgealpha',0);
 %     plot(bins,binned_FR(:,i))
 % end
 
-%% plot PD change prediction assuming joint-based neurons
+end
+%% helper functions
+
+function [out_tuning] = calc_PD_helper(bootfunc,endpoint_kin,neur,message)
+    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin, neur);
+    %Display verbose information
+    disp(message);
+    
+    %extract coefficiencts from boot_tuning
+    boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));
+    
+    %coefficient covariance
+%     coef_cov = cov(boot_coef);
+    
+    %get coefficient means
+    coef_means = mean(boot_coef);
+    
+    %get 95% CIs for coefficients
+    coef_CIs = prctile(boot_coef,[2.5 97.5]); 
+    
+    % bootstrap directions
+    boot_dirs = atan2(boot_coef(:,5),boot_coef(:,4));
+    % recenter boot_dirs
+    mean_dir = atan2(coef_means(5),coef_means(4));
+    centered_boot_dirs = boot_dirs-mean_dir;
+    while(sum(centered_boot_dirs<-pi))
+        centered_boot_dirs(centered_boot_dirs<-pi) = centered_boot_dirs(centered_boot_dirs<-pi)+2*pi;
+    end
+    while(sum(centered_boot_dirs>pi))
+        centered_boot_dirs(centered_boot_dirs>pi) = centered_boot_dirs(centered_boot_dirs>pi)-2*pi;
+    end
+
+    % Calculate dir CI
+    dir_CI = prctile(centered_boot_dirs,[2.5 97.5]);
+
+    % uncenter CI
+    dir_CI = dir_CI+mean_dir;
+    
+    out_tuning.dir = mean_dir;
+    out_tuning.dir_CI = dir_CI';
+    out_tuning.moddepth = sqrt(sum(coef_means(4:5).^2));
+end
