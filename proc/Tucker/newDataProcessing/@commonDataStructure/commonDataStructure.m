@@ -1,6 +1,5 @@
 classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
     properties (SetAccess = private, GetAccess=public)%anybody can read these, but only class methods can write to them
-        kinFilterConfig
         meta
         kin
         force
@@ -11,9 +10,10 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         units
         trials
     end
-    properties (Transient = true, SetAccess = private)
+    properties (Transient = true, SetAccess = private, Hidden=true)
         %Not saved with the common_data_structure. used to store transient
         %data during loading
+        kinFilterConfig
         NEV
         NS1
         NS2
@@ -367,7 +367,13 @@ classdef commonDataStructure < matlab.mixin.SetGet & operationLogger
         S=saveobj(cds)
     end
     methods (Static = true)
-        cds=loadobj()
+        function cds=loadobj(cds)
+            %stub function. If the CDS is extended to require listeners
+            %after re-loading then this section can be used to
+            %re-instantiate those listeners. Similarly this function can be
+            %used to perform a version check on load and throw a warning if
+            %the current version is newer than the cds loaded
+        end
     end
     methods (Static = false, Access = protected, Hidden=true)
         %the following methods are all hidden from the user and may only be
