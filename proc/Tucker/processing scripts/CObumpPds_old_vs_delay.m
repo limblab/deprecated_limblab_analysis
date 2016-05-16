@@ -19,14 +19,6 @@ ex=experiment();
     ex.meta.hasUnits=true;
     ex.meta.hasTrials=true;
 
-% set configuration parameters that are not default 
-%pdConfig setup:
-    ex.bin.pdConfig.pos=false;
-    ex.bin.pdConfig.vel=false;
-    ex.bin.pdConfig.force=true;
-    ex.bin.pdConfig.speed=true;
-    ex.bin.pdConfig.units={};%just use all of them
-    ex.bin.pdConfig.bootstrapReps=100;
 % set binConfig parameters:
 %     ex.binConfig.include(1).field='lfp';
 %         ex.binConfig.include(1).which={};
@@ -57,6 +49,13 @@ abortMask(strmatch('A',ex.trials.data.result,'exact'))=false;
 %do bumps:
 %get bump windows:
 ex.bin.pdConfig.windows=[ex.trials.data.bumpTime(abortMask),ex.trials.data.bumpTime(abortMask)+.125];
+% set configuration parameters that are not default 
+    ex.bin.pdConfig.pos=true;
+    ex.bin.pdConfig.vel=false;
+    ex.bin.pdConfig.force=true;
+    ex.bin.pdConfig.speed=true;
+    ex.bin.pdConfig.units={};%just use all of them
+    ex.bin.pdConfig.bootstrapReps=100;
 ex.bin.fitPds
 ex.analysis(end).notes='pds during bump';
 

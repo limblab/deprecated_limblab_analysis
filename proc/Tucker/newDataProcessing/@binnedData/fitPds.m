@@ -11,11 +11,14 @@ function fitPds(binned)
     if isempty(binned.pdConfig.units)
         %find all our units and make a cell array containing the whole list
         unitMask=~cellfun(@(x)isempty(strfind(x,'CH')),binned.bins.Properties.VariableNames) & ~cellfun(@(x)isempty(strfind(x,'ID')),binned.bins.Properties.VariableNames);
+        uList=binned.bins.Properties.VariableNames(unitMask);
     else
         %use the list the user supplied
-        unitMask=binned.pdConfig.units;
+        uList=binned.pdConfig.units;
+        if ~iscellstring(uList)
+            error('fitPds:unitListNotCellString','the list of units in binnedData.pdConfig.units must be a cell array of strings, where each string is the name of a unit column in binnedData.bins')
+        end
     end
-    uList=binned.bins.Properties.VariableNames(unitMask);
     %get the mask for the rows of 
     if isempty(binned.pdConfig.windows)
         rowMask=true(size(binned.bins.t));
@@ -36,8 +39,11 @@ function fitPds(binned)
             end
             noiseModel=binned.pdConfig.glmNoiseModel;%if you don't abstract the noise model into a variable, then bootstrp will create copies of the whole binned object at each iteration.
             %% set up the modelSpec string that contains the wilkinson notation describing the model to fit
-            fullInput={'x+y','vx+vy','fx+fy'};%,'speed'};
-            inputMask=[binned.pdConfig.pos,binned.pdConfig.vel,binned.pdConfig.force];%,binned.pdConfig.speed];
+            fullInput={'x+y','vx+vy','fx+fy','speed'};
+            inputMask=[binned.pdConfig.pos,binned.pdConfig.vel,binned.pdConfig.force,binned.pdConfig.speed];
+            if binned.pdConfig.speed
+                speedTable=table(sqrt(binned.bins.vx(rowMask).^2+binned.bins.vy(rowMask).^2),'VariableNames',{'speed'});
+            end
             inputList=[];
             if binned.pdConfig.pos
                 inputList=[inputList,{'x','y'}];
@@ -72,7 +78,12 @@ function fitPds(binned)
                 end
                 %% get subset of the data we will use for fitting:
                 colMask=colMask | strcmp(uList{i},binned.bins.Properties.VariableNames);
-                dataTable=binned.bins(rowMask,colMask);%if you don't make this sub-table, then bootstrp will include a copy of the WHOLE binned.bins table in the output for EVERY iteration
+                %if you don't make a sub-table, then bootstrp will include a copy of the WHOLE binned.bins table in the output for EVERY iteration
+                if binned.pdConfig.speed
+                    dataTable=[binned.bins(rowMask,colMask),speedTable];
+                else
+                    dataTable=binned.bins(rowMask,colMask);
+                end
                 %% run GLM
                 fprintf(['  Bootstrapping GLM PD computation(ET=',num2str(toc),'s).'])
                 %bootstrap for firing rates to get output parameters
@@ -129,7 +140,7 @@ function fitPds(binned)
                             data.(pdType{j}).allModdepthCI(i,:)=prctile(temp,[2.5 97.5]);
                             %check tuning:
                             if ~isempty(find(reducedInputMask,1))
-                                reducedModelSpec=[uList{i},'~',strjoin(fullInput(inputMask),'+')];
+                                reducedModelSpec=[uList{i},'~',strjoin(fullInput(reducedInputMask),'+')];
                                 reducedModel=fitglme(dataTable,reducedModelSpec,'Distribution',noiseModel);
                                 log_LR = 2*(fullModel.LogLikelihood-reducedModel.LogLikelihood);
                                 df_partial = fullModel.NumCoefficients-reducedModel.NumCoefficients;
@@ -159,7 +170,16 @@ function fitPds(binned)
             end
             %now compose table for the full set of tuning data:
             fprintf(['  Inserting PD data into binned.pdTable(',num2str(toc),').'])
-            pdTable=[];
+            %get our columns describing the units in the output table:
+            for i=1:numel(temp)
+                %get position of 'CH' in the name string:
+                CHLoc=strfind(temp{i},'CH');
+                IDLoc=strfind(temp{i},'ID');
+                arrayName(i)={temp{i}(1:CHLoc-1)};
+                chan(i)={temp{i}(CHLoc+2:IDLoc-1)};
+                ID(i)={temp{i}(IDLoc+2:end)};
+            end
+            pdTable=table(arrayName',chan',ID','VariableNames',{'array','chan','ID'});
             for i=1:numel(pdType)
                 type=pdType{i};
                 if(binned.pdConfig.(type))

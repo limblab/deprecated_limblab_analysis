@@ -1,6 +1,6 @@
 WaterSheetFile = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\';
 % WaterSheetFile = [WaterSheetFile '2016-01-30 weekend water and food Miller-Slutzky.xlsx'];
-WaterSheetFile = [WaterSheetFile '2016-04-16 weekend water and food Miller-Slutzky.xlsx'];
+WaterSheetFile = [WaterSheetFile '2016-05-14 weekend water and food Miller-Slutzky.xlsx'];
 % WaterSheetFile = [WaterSheetFile 'Weekend water and food Miller-HPs.xlsx'];
 WeekendWateringFile = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
 [~,WeekendWatering] = xlsread(WeekendWateringFile,3);
