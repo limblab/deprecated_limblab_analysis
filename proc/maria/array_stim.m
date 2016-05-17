@@ -6,12 +6,12 @@ function array_stim(current_array, freq, pw, channels, com_port)
 %TODO: deal with losing resolution - say, a spike at the end doesn't
 %necessarily show up
 for i=1:size(current_array, 2)
-    %figure; hold on; 
+    figure; hold on; 
     conv_fact = freq*3/2; %this will lead to a slight "stretching" effect of the step over time
     x = 1/5000:1/5000:length(current_array{i})/5000;
     xq = 1/conv_fact:1/conv_fact:length(current_array{i})/5000;
     ds_array{i} = interp1(x, current_array{i}, xq);
-    hold on;
+    %hold on;
     plot(x, current_array{i})
     plot(xq, ds_array{i});
     disp(length(ds_array{i})); %NOTE: if these aren't all the same length it'll be a nuisance
@@ -23,16 +23,24 @@ if ~exist('ws', 'var')
     ws.init(1, ws.comm_timeout_disable);
 end
 
+%set train delay so I have staggered pulses
+for i=length(channels)
+    ws.set_TD(50+500*i, channels(i)); 
+end
+
 %set constant parameters for stimulator
 command{1} = struct('Freq', freq, ...        % Hz
     'CathDur', pw*1000, ...    % us
     'AnodDur', pw*1000 ...    % us
-    );
+    ); %kind of strange to put this here, need to define the amps to all be zero first TODO
 ws.set_stim(command, channels);
+
+ws.set_Run(ws.run_cont, channels); 
 
 %stimulate at appropriate channels in loop
 %now that this is converted to an array of only the values I'll be sending,
 %I need to actually stimulate! using a while loop with tic and toc ugh.
+timearray = zeros(1, 2000); 
 for i=1:length(ds_array{1})%for every data point
     a = tic;
     for j = 1:size(current_array, 2) %for every muscle
@@ -42,10 +50,12 @@ for i=1:length(ds_array{1})%for every data point
     end
     %wait until it's time to do the next data point
     while toc(a)<(1/freq)
-        pause(.001);
+        toc(a);
     end
+    timearray(i) = toc(a); 
 end
 
+ws.set_Run(ws.run_stop, channels); 
 %TODO: pause long enough for stim to end??
 end
     

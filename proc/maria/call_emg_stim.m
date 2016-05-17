@@ -72,14 +72,14 @@ for i=1:length(muscles)
     a = a(~cellfun('isempty', a));
     ds_mat = dnsamp(a).'; 
     clear('a'); 
-    hold on; plot(ds_mat); 
+    figure(channels(i)); hold on; plot(ds_mat); 
     ds_mean = mean(ds_mat.'); 
     plot(ds_mean, 'color', [.5 .5 .5], 'linewidth', 2); %use these plots to help choose thresholds
     current_arr{i} = emg2amp(ds_mean, emglow_limit(i), emghigh_limit(i), amplow_limit(i), amphigh_limit(i));
     plot(current_arr{i}, 'k', 'linewidth', 2); 
 end
 
-array_stim(current_arr, freq, pw, channels, 'COM7'); 
+array_stim(current_arr, freq, pw, channels, 'COM3'); 
 %TODO: array-based stim fxn with freq modulation
 
 %THEN, quickly write array_stim (needs to iterate
