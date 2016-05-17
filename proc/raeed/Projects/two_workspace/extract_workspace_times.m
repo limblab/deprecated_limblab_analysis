@@ -1,4 +1,4 @@
-function [bdf_new,times] = extract_workspace(bdf,bottom_left,top_right)
+function [times] = extract_workspace_times(bdf,bottom_left,top_right)
 % Extract workspace from BDF with corners given by bottom_left and
 % top_right (coordinates are in [x y] format). Outputs new bdf and set of
 % times [start_times stop_times] for reaches in workspace
@@ -41,44 +41,44 @@ function [bdf_new,times] = extract_workspace(bdf,bottom_left,top_right)
     iStart = iStart(keepers);
     iStop = iStop(keepers);
     
-    % compile new fields for bdf_new
-    fr = zeros(length(iStart),length(unit_list(bdf)));
-    new_pos = [];
-    new_vel = [];
-    new_acc = [];
-    new_force = [];
-    new_good_flag = [];
-    for i=1:length(iStart)
-        new_pos = [new_pos;bdf.pos(iStart(i):iStop(i),:)];
-        new_vel = [new_vel;bdf.vel(iStart(i):iStop(i),:)];
-        new_acc = [new_acc;bdf.acc(iStart(i):iStop(i),:)];
-        if(isfield(bdf,'force'))
-            new_force = [new_force;bdf.force(iStart(i):iStop(i),:)];
-        end
-        if(isfield(bdf,'good_kin_data'))
-            new_good_flag = [new_good_flag;bdf.good_kin_data(iStart(i):iStop(i),:)];
-        end
-    end
-    bdf_new.pos = new_pos;
-    bdf_new.vel = new_vel;
-    bdf_new.acc = new_acc;
-    if(isfield(bdf,'force'))
-        bdf_new.force = new_force;
-    end
-    if(isfield(bdf,'good_kin_data'))
-        bdf_new.good_kin_data = new_good_flag;
-    end
-    
-    % get new spikes
-    for uid = 1:length(bdf.units)
-        spikes = [];
-        s = bdf.units(uid).ts;
-        for i=1:length(iStart)
-            spikes = [spikes;s(s < t(iStop(i)) & s > t(iStart(i)))];
-        end
-        bdf_new.units(uid).ts = spikes;
-    end % foreach unit
+%     % compile new fields for bdf_new
+%     fr = zeros(length(iStart),length(unit_list(bdf)));
+%     new_pos = [];
+%     new_vel = [];
+%     new_acc = [];
+%     new_force = [];
+%     new_good_flag = [];
+%     for i=1:length(iStart)
+%         new_pos = [new_pos;bdf.pos(iStart(i):iStop(i),:)];
+%         new_vel = [new_vel;bdf.vel(iStart(i):iStop(i),:)];
+%         new_acc = [new_acc;bdf.acc(iStart(i):iStop(i),:)];
+%         if(isfield(bdf,'force'))
+%             new_force = [new_force;bdf.force(iStart(i):iStop(i),:)];
+%         end
+%         if(isfield(bdf,'good_kin_data'))
+%             new_good_flag = [new_good_flag;bdf.good_kin_data(iStart(i):iStop(i),:)];
+%         end
+%     end
+%     bdf_new.pos = new_pos;
+%     bdf_new.vel = new_vel;
+%     bdf_new.acc = new_acc;
+%     if(isfield(bdf,'force'))
+%         bdf_new.force = new_force;
+%     end
+%     if(isfield(bdf,'good_kin_data'))
+%         bdf_new.good_kin_data = new_good_flag;
+%     end
+%     
+%     % get new spikes
+%     for uid = 1:length(bdf.units)
+%         spikes = [];
+%         s = bdf.units(uid).ts;
+%         for i=1:length(iStart)
+%             spikes = [spikes;s(s < t(iStop(i)) & s > t(iStart(i)))];
+%         end
+%         bdf_new.units(uid).ts = spikes;
+%     end % foreach unit
     
     % extract actual times of workspaces [start_times stop_times]
-    times = [bdf.pos(iStart,1) bdf.pos(iStop,1)];
+    times = [t(iStart,1) t(iStop,1)];
 end

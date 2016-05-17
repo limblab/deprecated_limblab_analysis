@@ -1,6 +1,6 @@
 %script to set input data and execute data processing
 %% process psyhcometrics
-folderpath='F:\local processing\experiment_20160226-27_BD_158degPD';
+folderpath='E:\local processing\chips\experiment_20160513-15_BD_310degmovePD_4chStim_5-20ua';
 function_name='quickscript_function_looped';
 input_data.matchstring='Chips';
 input_data.labnum=6;

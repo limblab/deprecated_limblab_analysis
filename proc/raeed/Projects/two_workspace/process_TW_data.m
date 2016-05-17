@@ -86,3 +86,14 @@ options.bdf_DL = bdf_DL;
 options.bdf_PM = bdf_PM;
 
 output_data_rotate=run_data_processing(function_name,folder,options);
+
+%% check predicted iris plots
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
+clear options
+options.prefix = 'Chips_20151120_RW_003';
+options.opensim_prefix = 'Chips_20151120_scaled';
+options.labnum = 6;
+options.dual_array = 0;
+function_name = 'plot_PD_predictions';
+
+output_data_pred = run_data_processing(function_name,folder,options);

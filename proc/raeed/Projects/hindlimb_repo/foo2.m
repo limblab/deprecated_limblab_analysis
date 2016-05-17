@@ -44,7 +44,6 @@ polpoints = [reshape(rsg,[1,num_positions]); reshape(asg,[1,num_positions])];
 [x, y] = pol2cart(polpoints(2,:), polpoints(1,:));
 endpoint_positions = [x;y];
 
-
 %% %%%%%%%%%%%
 % Find kinematics of limb in endpoint positions
 %%%%%%%%%%%
@@ -192,7 +191,15 @@ if(plotflag)
     axis([0 1 0 1 -1 1])
 end
 
-%%
+%% extract F stats for each neuron
+for i = 1:length(neurons)
+    anova_table_unc = anova(cart_fit_unc{i},'summary');
+    anova_table_con = anova(cart_fit_con{i},'summary');
+    
+    F_test_p_unc(i) = anova_table_unc.pValue(2);
+    F_test_p_con(i) = anova_table_con.pValue(2);
+end
+%% PVAL ANALYSIS DIDN'T WORK
 sum(VAF_unc>0.4 & VAF_con>0.4)
 sum(VAF_unc>0.4 & VAF_con>0.4 & pVal_neuron'>0.01)/sum(VAF_unc>0.4 & VAF_con>0.4)
 acosd(median(cosdthetay(VAF_cart_unc>0.4 & VAF_cart_con>0.4)))

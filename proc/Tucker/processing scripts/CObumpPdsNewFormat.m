@@ -5,8 +5,8 @@
 %% load test data into cds
     if ~exist('cds','var')
         cds=commonDataStructure();
-        cds.file2cds('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\Chips_20160421_COBump_area2_tucker_001','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
-        save('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\cds.mat','cds','-v7.3')
+        cds.file2cds('E:\local processing\chips\experiment_20160509_COBump_bumptuning\Chips_20160509_COBump_area2_tucker_001','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
+        save('E:\local processing\chips\experiment_20160509_COBump_bumptuning\cds.mat','cds','-v7.3')
     end
     %
     
@@ -24,8 +24,8 @@ if ~exist('ex','var')
 % set configuration parameters that are not default 
 %pdConfig setup:
     ex.bin.pdConfig.useParallel=true;
-    ex.bin.pdConfig.pos=true;
-    ex.bin.pdConfig.vel=true;
+    ex.bin.pdConfig.pos=false;
+    ex.bin.pdConfig.vel=false;
     ex.bin.pdConfig.force=true;
     ex.bin.pdConfig.speed=true;
     ex.bin.pdConfig.units={};%just use all of them
@@ -54,10 +54,11 @@ ex.binConfig.include(1).which=find([ex.units.data.ID]>0 & [ex.units.data.ID]<255
     save('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\ex.mat','ex','-v7.3')
 end
     %% PDs:
-    
+    abortMask=true(size(ex.trials.data,1),1);
+    abortMask(strmatch('A',ex.trials.data.result,'exact'))=false;
     %do hold bumps:
     %get trials with hold period bumps:
-    CHBumpTrials=ex.trials.data.ctrHoldBump;
+    CHBumpTrials=ex.trials.data.ctrHoldBump & abortMask;
     ex.bin.pdConfig.windows=[ex.trials.data.bumpTime(CHBumpTrials),ex.trials.data.bumpTime(CHBumpTrials)+.125];
     ex.bin.fitPds
     ex.analysis(end).notes='pds during center hold';
@@ -65,7 +66,7 @@ end
     targetDirs=unique(ex.trials.data.tgtDir);
     targetDirs=targetDirs(~isnan(targetDirs));
     for i=1:numel(targetDirs)
-        delayTrials=ex.trials.data.delayBump & ex.trials.data.tgtDir==targetDirs(i);
+        delayTrials=ex.trials.data.delayBump & ex.trials.data.tgtDir==targetDirs(i) & abortMask;
         ex.bin.pdConfig.windows=[ex.trials.data.bumpTime(CHBumpTrials),ex.trials.data.bumpTime(CHBumpTrials)+.125];
         ex.bin.fitPds
         ex.analysis(end).notes=['pds during delay, with target at: ',num2str(targetDirs(i))];
@@ -101,9 +102,9 @@ dPD=abs(dPD);
 testTable=table(tgtDir(mask),relPD(mask),moddepth(mask),dPD(mask),dModdepth(mask),'VariableNames',{'targetDir','initialPDDeviation','initialModdepth','PDChange','moddepthChange'});
 testTable.targetDir=categorical(testTable.targetDir);
 testTable.initialModdepth=double(testTable.initialModdepth);
-%glmePD=fitglme(testTable,'PDChange~targetDir+initialPDDeviation+initialModdepth');
-glmePD=fitglme(testTable,'PDChange~targetDir+initialPDDeviation');
+glmePD=fitglme(testTable,'PDChange~targetDir+initialPDDeviation+initialModdepth');
+%glmePD=fitglme(testTable,'PDChange~targetDir+initialPDDeviation');
 testStatsPD=anova(glmePD);
-%glmeModdepth=fitglme(testTable,'moddepthChange~targetDir+initialPDDeviation+initialModdepth');
-glmeModdepth=fitglme(testTable,'moddepthChange~targetDir+initialPDDeviation');
+glmeModdepth=fitglme(testTable,'moddepthChange~targetDir+initialPDDeviation+initialModdepth');
+%glmeModdepth=fitglme(testTable,'moddepthChange~targetDir+initialPDDeviation');
 testStatsModdepth=anova(glmeModdepth);
