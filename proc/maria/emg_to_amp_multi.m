@@ -118,7 +118,7 @@ for j=1:lm %get stim arrays for all the muscles
 end
 %timing for 5000 Hz sample - take ???? no of samples/5000
 
-%% Do stimulation (run arrays concurrently)
+% Do stimulation (run arrays concurrently)
 
 %if the stimulator object doesn't exist yet, set it up:
 if ~exist('ws', 'var')
