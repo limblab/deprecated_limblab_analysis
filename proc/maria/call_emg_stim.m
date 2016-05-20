@@ -24,11 +24,11 @@ goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0
     1 ,  0 ,  1 , 1 , 0 , 1 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ];
 
 animals = [1:8];
-muscles = [1 2];
+muscles = [1 3 4 5 6 8 12];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
-channels = [1 2];
-freq = 40; %hz
+channels = [1 2 3 4 5 6 7];
+freq = 20; %hz
 pw = .2; %ms
 
 mus_mean = {};
@@ -51,35 +51,37 @@ end
 
 
 %define thresholds
-emglow_limit = [.15 .13]; %get rid of low noise
-emghigh_limit = [2 .4]; %get rid of excessively high spikes
-amplow_limit = [1.2 1.2]; %lowest level of stim to twitch
-amphigh_limit = [4 4];  %highest level of stim to use
+emglow_limit = [.15 .13 .14 .2 .1 .1 .2]; %get rid of low noise
+emghigh_limit = [1 1 1 1 1 1 1]; %get rid of excessively high spikes
+amplow_limit = [1 1 1 1 1 1 1]; %lowest level of stim to twitch (err on low side)
+amphigh_limit = [4 4 4 4 4 4 4];  %highest level of stim to use
 
 %check that limits are all defined
 lm = length(channels);
-if lm~=length(emglow_limit) || lm~=length(emghigh_limit) || lm~=length(amplow_limit) || lm~=length(amphigh_limit)
-    error('Incorrect number of values in arrays for EMG and current thresholds; check that there is one value per muscle.')
+if lm~=length(emglow_limit) || lm~=length(emghigh_limit) || lm~=length(amplow_limit) || lm~=length(amphigh_limit) || lm~=length(muscles)
+    error('Number of muscles does not match number of channels or incorrect number of values in arrays for EMG and current thresholds; check that there is one value per muscle.')
 end
 
 %TODO: deal with confusing numbering system for emgs here. should I average
 %together different muscles before stimulation? YES
+
+clear('current_arr'); 
 
 for i=1:length(muscles)
     %cycle through each muscle we'll be stimulating, find the mean of the
     %filtered EMGs, and find the conversion to amplitude of current
     a = mus_mean(i, :);
     a = a(~cellfun('isempty', a));
-    ds_mat = dnsamp(a).'; 
+    ds_mat = norm_mat(dnsamp(a).'); 
     clear('a'); 
-    figure(channels(i)); hold on; plot(ds_mat); 
+    %figure(channels(i)); hold on; plot(ds_mat); 
     ds_mean = mean(ds_mat.'); 
-    plot(ds_mean, 'color', [.5 .5 .5], 'linewidth', 2); %use these plots to help choose thresholds
+    %plot(ds_mean, 'color', [.5 .5 .5], 'linewidth', 2); %use these plots to help choose thresholds
     current_arr{i} = emg2amp(ds_mean, emglow_limit(i), emghigh_limit(i), amplow_limit(i), amphigh_limit(i));
-    plot(current_arr{i}, 'k', 'linewidth', 2); 
+    %plot(current_arr{i}, 'k', 'linewidth', 2); 
 end
 
-array_stim(current_arr, freq, pw, channels, 'COM3'); 
+array_stim(current_arr, freq, 60, pw, channels, 'COM3'); 
 %TODO: array-based stim fxn with freq modulation
 
 %THEN, quickly write array_stim (needs to iterate
