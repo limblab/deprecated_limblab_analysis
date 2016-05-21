@@ -1393,7 +1393,7 @@ for i=1:length(sorted_starts)
         tds{ind(i)} = 50 + 500*j + sorted_starts(i)*1000; %tds are in us
     end
 end
-
+tds
 %if saving, write all of these cells to a .mat file: 
 save_path = fileparts(mfilename('fullpath')); 
 if get(handles.save, 'Value')
@@ -1417,7 +1417,7 @@ end
 
 %if the stimulator object doesn't exist yet, set it up: 
 if ~exist('ws', 'var')
-    serial_string = 'COM6'; %this is different via mac and windows; use instrfind to check location
+    serial_string = 'COM4'; %this is different via mac and windows; use instrfind to check location
     ws = wireless_stim(serial_string, 1); %the number has to do with verbosity of running feedback
     ws.init(1, ws.comm_timeout_disable);
 end
@@ -1429,7 +1429,7 @@ for element=1:length(index)
     freq = str2double(get(handles.freq, 'String')); %Hz
     pw = pws{ch}*1000; % us, converted from input in ms
     amp = amps{ch}*1000; %input in mA, gets programmed in uA
-    td = tds{ch}; %us
+    td = tds{ch} %us
     
     %Can add parameters for train delay (TD) and polarity (PL; 1 is
     %cathodic first)

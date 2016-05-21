@@ -8,7 +8,7 @@ function array_stim(current_array, freq, sample_freq, pw, channels, com_port)
 musc_names = {'gluteus max', 'gluteus med', 'gastroc', 'vastus lat', 'biceps fem A',...
     'biceps fem PR', 'biceps fem PC', 'tib ant', 'rect fem', 'vastus med', 'adduct mag', ...
     'semimemb', 'gracilis R', 'gracilis C', 'semitend'};
-muscles = [1 3 4 5 6 8 12];
+muscles = [1 3 5 7 8 12];
 
 
 for i=1:size(current_array, 2)
@@ -55,7 +55,7 @@ pause(2); %wait for the Vicon to be activated
 
 
 %set constant parameters for stimulator
-command{1} = struct('Freq', freq, ...        % Hz
+command{1} = struct('Freq', 40, ...        % Hz
     'CathDur', pw*1000, ...    % us
     'AnodDur', pw*1000 ...    % us
     ); %kind of strange to put this here, need to define the amps to all be zero first TODO
@@ -68,7 +68,11 @@ ws.set_Run(ws.run_cont, channels);
 %I need to actually stimulate! using a while loop with tic and toc ugh.
 %timearray = zeros(1, 2000); %for troubleshooting: if I want to see how
 %long it actually took to stimulate, use this
+%for num_steps = 1:3 %how many steps?
 for i=1:length(ds_array{1})%for every data point
+%     if i==2
+%         pause(.2);
+%     end
     a = tic;
     for j = 1:size(current_array, 2) %for every muscle
         command{1} = struct('CathAmp', current_array{j}(i)*1000+32768,... %in uA
@@ -81,6 +85,7 @@ for i=1:length(ds_array{1})%for every data point
     end
     timearray(i) = toc(a); 
 end
+%end
 
 ws.set_Run(ws.run_stop, channels); 
 %TODO: pause long enough for stim to end??

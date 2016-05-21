@@ -24,10 +24,10 @@ goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0
     1 ,  0 ,  1 , 1 , 0 , 1 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ];
 
 animals = [1:8];
-muscles = [1 3 4 5 6 8 12];
+muscles = [1 3 5 7 8 12];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
-channels = [1 2 3 4 5 6 7];
+channels = [1 6 3 4 5 7];
 freq = 20; %hz
 pw = .2; %ms
 
@@ -51,10 +51,10 @@ end
 
 
 %define thresholds
-emglow_limit = [.15 .13 .14 .2 .1 .1 .2]; %get rid of low noise
-emghigh_limit = [1 1 1 1 1 1 1]; %get rid of excessively high spikes
-amplow_limit = [1 1 1 1 1 1 1]; %lowest level of stim to twitch (err on low side)
-amphigh_limit = [4 4 4 4 4 4 4];  %highest level of stim to use
+emglow_limit = [.15 .13 .2 .1 .1 .2]; %get rid of low noise
+emghigh_limit = [1 1 1 1 1 1]; %get rid of excessively high spikes
+amplow_limit = [.7 .6 .9 .5 .2 .8]; %lowest level of stim to twitch (err on low side)
+amphigh_limit = [3 2 1.8 1.7 1 2.7];  %highest level of stim to use
 
 %check that limits are all defined
 lm = length(channels);
@@ -81,7 +81,7 @@ for i=1:length(muscles)
     %plot(current_arr{i}, 'k', 'linewidth', 2); 
 end
 
-array_stim(current_arr, freq, 60, pw, channels, 'COM3'); 
+array_stim(current_arr, freq, 100, pw, channels, 'COM4'); 
 %TODO: array-based stim fxn with freq modulation
 
 %THEN, quickly write array_stim (needs to iterate
