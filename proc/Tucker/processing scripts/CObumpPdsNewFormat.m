@@ -4,9 +4,9 @@
 %     end
 %% load test data into cds
     if ~exist('cds','var')
-        cds=commonDataStructure();
-        cds.file2cds('E:\local processing\chips\experiment_20160509_COBump_bumptuning\Chips_20160509_COBump_area2_tucker_001','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
-        save('E:\local processing\chips\experiment_20160509_COBump_bumptuning\cds.mat','cds','-v7.3')
+        cds2=commonDataStructure();
+        cds2.file2cds('F:\local processing\chips\experiment_20160517_COBump_PD\Chips_20160517_COBump_area2_tucker_002','ranByTucker','arrayS1Area2','monkeyChips',6,'ignoreJumps','taskCObump');
+        save('F:\local processing\chips\experiment_20160517_COBump_PD\cds1.mat','cds2','-v7.3')
     end
     %
     

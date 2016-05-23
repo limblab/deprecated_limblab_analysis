@@ -41,6 +41,16 @@ input_data.binsize=.05;%bin size to compute firing rate
 input_data.vel_pd=1;%default flag is 1
 input_data.force_pd=0;%default flag is 0
 data_struct2 = run_data_processing(function_name,folderpath,input_data);
+%% actVSpass pd comparison
+folderpath='F:\local processing\chips\experiment_20160518_COBump_PD';
+functionName='comparePD_actpass';
+inputData.fileName='Chips_20160518_COBump_area2_tucker_001';
+inputData.task='taskCObump';
+inputData.ranBy='ranByTucker';
+inputData.array='arrayS1Area2';
+inputData.monkey='monkeyChips';
+inputData.lab=6;
+data_struct=run_data_processing(functionName,folderpath,inputData);
 %% bump PDs from bump-direction/psychophysics task
 folderpath='E:\local processing\chips\experiment_20160225_BD_bumpPDs';
 input_data.prefix='Chips';

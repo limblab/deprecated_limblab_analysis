@@ -32,9 +32,13 @@ function DVMax_checker()
         food_restriction_start_code = 'EP9300';
         time = clock;
         time = time(4);
-
+% old database:
         conn = database('OR','dvmax_lmiller','dvmax','Vendor','Oracle',...
-            'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521);    
+            'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521); 
+% % new database:
+%         conn = database('OR','dvmax_lmiller','dvmax','Vendor','Oracle',...
+%             'DriverType','thin','Server','risdattst.ci.northwestern.edu','PortNumber',1521);    
+        
         try
             load('animalList')
             oldAnimalList = animalList;
