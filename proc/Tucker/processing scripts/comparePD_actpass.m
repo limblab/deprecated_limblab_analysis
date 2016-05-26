@@ -76,7 +76,7 @@ ex.binConfig.include(1).which=find([ex.units.data.ID]>0 & [ex.units.data.ID]<255
     %get move onsets:
     
     moveTrials=~isnan(ex.trials.data.goCueTime) & abortMask;
-    ex.bin.pdConfig.windows=[ex.trials.data.bumpTime(moveTrials),ex.trials.data.bumpTime(moveTrials)+.125];
+    ex.bin.pdConfig.windows=[ex.trials.data.goCueTime(moveTrials),ex.trials.data.goCueTime(moveTrials)+.125];
     %get force pds
     ex.bin.pdConfig.pos=false;
     ex.bin.pdConfig.vel=false;
@@ -143,6 +143,6 @@ ex.binConfig.include(1).which=find([ex.units.data.ID]>0 & [ex.units.data.ID]<255
     xlabel('PD during bump')
     format_for_lee(figureList(end))
     
-    
+    save('E:\local processing\chips\experiment_20160421_COBump_bumpTuning\ex.mat','ex','-v7.3')
     
     

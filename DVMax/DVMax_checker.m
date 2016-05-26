@@ -35,10 +35,6 @@ function DVMax_checker()
 % old database:
         conn = database('OR','dvmax_lmiller','dvmax','Vendor','Oracle',...
             'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521); 
-% % new database:
-%         conn = database('OR','dvmax_lmiller','dvmax','Vendor','Oracle',...
-%             'DriverType','thin','Server','risdattst.ci.northwestern.edu','PortNumber',1521);    
-        
         try
             load('animalList')
             oldAnimalList = animalList;
@@ -69,24 +65,6 @@ function DVMax_checker()
         weekendFoodList = weekend_food_xls(2:end,2:end);
 
         todaysDate = datenum(date);
-        %%%%%%%% troubleshooting code 
-        for q=2:size(weekendWaterList,2)
-            try
-                tmp_test=datenum(weekendWaterList(1,q));
-            catch ME
-                recepients = maintainer_email_address;    
-                subject = 'DVMax checker crashed.';
-                message = {ME.identifier;ME.message};
-                for i=1:numel(ME.stack)
-                    message=[message;{ME.stack(i).file;['line: ' num2str(ME.stack(i).line)]}]; 
-                end
-                message=[message;['crashed on column: ',num2str(q)]];
-                message=[message;['column: ',num2str(q),' is a: ',class(weekendWaterList{1,q})]];
-                send_mail_message(recepients,subject,message)  
-                return
-            end
-        end
-        %%%%%%%%%% end troubleshooting code
     
         weekendDates = datenum(weekendWaterList(1,2:end));
         today_is_a_holiday = find(todaysDate == weekendDates)+1;

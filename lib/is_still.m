@@ -82,7 +82,11 @@ function [still,stats]=is_still(x,varargin)
     end
     %pad the end so the output is the same length as the input and the
     %still period shifts to compensate for the shifts associated with diff
-    still=[still(1);still];
+    if isrow(x)
+        still=[still(1),reshape(still,1,numel(still))];
+    else
+        still=[still(1);reshape(still,numel(still),1)];
+    end
     if nargout==2
         stats.still_range=[min(x(still)) max(x(still))];
         stats.still_mean=mean(x(still));
