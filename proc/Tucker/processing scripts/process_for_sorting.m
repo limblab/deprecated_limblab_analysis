@@ -1,6 +1,6 @@
 %% strip digital data from NEV
-basepath='F:\local processing\chips\experiment_20160518_COBump_PD';
-basename='Chips_20160518_COBump_area2_tucker_001';
+basepath='F:\local processing\chips\experiment_20160526_CObump_PD';
+basename='Chips_20160526_COBump_area2_tucker_001';
 basefilename=[basename,'.nev'];
 nodigitalfilename=[basename,'_nodigital.nev'];
 spikelessfilename=[basename,'_nospikes.mat'];
