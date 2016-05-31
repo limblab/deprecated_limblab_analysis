@@ -1,5 +1,5 @@
 function DVMax_checker()
-    testing = 0;    
+    testing = 1;    
     maintainer_email_address = 'tuckertomlinson@gmail.com';
     
     try
@@ -58,10 +58,10 @@ function DVMax_checker()
             send_monkey_person_email(animalList,peopleList,ccmList,maintainer_email_address)
         end
 
-        [~,weekend_water_xls,~] = xlsread(MonkeyWaterLocation,3);   
+        [~,weekend_water_xls,~] = xlsread(MonkeyWaterLocation,3,'','basic');   
         weekendWaterList = weekend_water_xls(2:end,2:end);
 
-        [~,weekend_food_xls,~] = xlsread(MonkeyWaterLocation,4); 
+        [~,weekend_food_xls,~] = xlsread(MonkeyWaterLocation,4,'','basic'); 
         weekendFoodList = weekend_food_xls(2:end,2:end);
 
         todaysDate = datenum(date);
@@ -327,8 +327,8 @@ function DVMax_checker()
 end
 
 function animalList = load_animal_list(MonkeyWaterLocation)    
-    [animal_xls_num,animal_xls,~] = xlsread(MonkeyWaterLocation,1);
-    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2);
+    [animal_xls_num,animal_xls,~] = xlsread(MonkeyWaterLocation,1,'','basic');
+    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2,'','basic');
     for iMonkey = 2:size(animal_xls,1)
         for iCol = 1:size(animal_xls,2)
             if isempty(animal_xls{iMonkey,iCol})
@@ -357,7 +357,7 @@ function animalList = load_animal_list(MonkeyWaterLocation)
 end
 
 function peopleList = load_people_list(MonkeyWaterLocation)    
-    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2);
+    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2,'','basic');
     for iPerson = 2:size(people_xls,1)
         for iCol = 1:size(people_xls,2)
             eval(['peopleList(iPerson-1).' people_xls{1,iCol} ' = ''' people_xls{iPerson,iCol} ''';'])
@@ -366,7 +366,7 @@ function peopleList = load_people_list(MonkeyWaterLocation)
 end
 
 function ccmList = load_ccm_list(MonkeyWaterLocation)
-    [~,ccm_xls,~] = xlsread(MonkeyWaterLocation,5);
+    [~,ccm_xls,~] = xlsread(MonkeyWaterLocation,5,'','basic');
     for iPerson = 2:size(ccm_xls,1)
         for iCol = 1:size(ccm_xls,2)
             eval(['ccmList(iPerson-1).' ccm_xls{1,iCol} ' = ''' ccm_xls{iPerson,iCol} ''';'])
