@@ -25,7 +25,7 @@ plotflag = false;
 %% %%%%
 % Get endpoint positions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-num_positions = 100;
+num_positions = 150;
 
 mp = get_legpts(base_leg,[pi/4 -pi/4 pi/6]);
 mtp = mp(:,base_leg.segment_idx(end,end));
@@ -33,7 +33,7 @@ mtp = mp(:,base_leg.segment_idx(end,end));
 [a,r]=cart2pol(mtp(1), mtp(2));
 
 % get polar points
-rs = linspace(-4,-0.5,10) + r;
+rs = linspace(-4,0.5,15) + r;
 %rs = r;
 as = pi/16 * linspace(-2,4,10) + a;
 %as = a;
@@ -201,12 +201,12 @@ for i = 1:length(neurons)
 end
 %% PVAL ANALYSIS DIDN'T WORK
 sum(VAF_unc>0.4 & VAF_con>0.4)
-sum(VAF_unc>0.4 & VAF_con>0.4 & pVal_neuron'>0.01)/sum(VAF_unc>0.4 & VAF_con>0.4)
+sum(VAF_cart_unc>0.4 & VAF_cart_con>0.4)
 acosd(median(cosdthetay(VAF_cart_unc>0.4 & VAF_cart_con>0.4)))
 figure; hist(cosdthetay(VAF_cart_unc>0.4 & VAF_cart_con>0.4),40)
 set(gca,'xlim',[0 1])
-figure; hist(abs(tStat_neuron(VAF_unc>0.4 & VAF_con>0.4)),20)
-figure; hist(pVal_neuron(VAF_unc>0.4 & VAF_con>0.4),20)
+% figure; hist(abs(tStat_neuron(VAF_unc>0.4 & VAF_con>0.4)),20)
+% figure; hist(pVal_neuron(VAF_unc>0.4 & VAF_con>0.4),20)
 
 %%
 sum(VAF_cart_unc>0.4 & VAF_cart_con>0.4 & pVal_neuron'>0.01)/sum(VAF_cart_unc>0.4 & VAF_cart_con>0.4)
