@@ -3,7 +3,21 @@
 
 %Note that yellow is plotted in cyan for visibility
 
-%% All colors at once
+%% User input (set frames you're looking at)
+
+frames=1:5;
+
+
+%% Rename data from loaded file (if it's in the new format)
+if exist('color_coords_allframes','var')
+    color1=color_coords_allframes(:,1)';
+    color2=color_coords_allframes(:,2)';
+    color3=color_coords_allframes(:,3)';
+    color4=color_coords_allframes(:,4)';
+end
+
+
+%% Plot
 
 n=length(color1);
 xlims=[-.4 .5];
@@ -18,7 +32,7 @@ zlim(ylims)
 set(gca,'NextPlot','replacechildren');
 
 
-for i=20000:21000%70000:70100 %536
+for i=frames
     temp=color1{i};
     x=temp(1:end/3);
     y=temp(end/3+1:2*end/3);
