@@ -61,6 +61,7 @@ end
 %Plot Markers
 scatter3(medians(markers,3,i),medians(markers,1,i),medians(markers,2,i),200,plot_colors,'filled')
 
+%Label markers
 text_str=cell(1,length(text_markers));
 for j=1:length(text_markers)
     text_str{j}=num2str(text_markers(j));
