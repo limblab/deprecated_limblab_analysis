@@ -18,7 +18,7 @@ zlim(ylims)
 set(gca,'NextPlot','replacechildren');
 
 
-for i=1:100%70000:70100 %536
+for i=20000:21000%70000:70100 %536
     temp=color1{i};
     x=temp(1:end/3);
     y=temp(end/3+1:2*end/3);

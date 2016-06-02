@@ -1,4 +1,4 @@
-%Script to track the color markers over time
+%Script to track the color markers over time 
 
 %This script loads a file that contains the locations of the color pixels of each frame, and
 %uses that to determine the marker locations at every frame
@@ -41,9 +41,9 @@
 %File to load
 main_dir='/Users/jig289/Box Sync/Tracking_Data/';
 monkey='Han';
-date='03-25-16'; %mo-day-yr
-exp='RW_hold';
-num='001';
+date='03-17-16'; %mo-day-yr
+exp='RW_PM';
+num='002';
 
 % Load ColorTracking File and Settings
 fname_load=ls([main_dir monkey '/Color_Tracking/' date '/Tracking/color_tracking ' exp '_' num '*']);
@@ -58,6 +58,12 @@ if exist('color_coords_allframes','var')
 end
 
 %% User Options / Initializations
+
+%Save the output?
+savefile=1;
+
+%Use all default values for constraints (mostly for distances between markers)
+use_defaults=1;
 
 %If this is the first file from a date, set equal to 1 (there are more initializations)
 first_time=1;
@@ -80,7 +86,9 @@ n=length(color1);
 finish=n; %Time point we're finishing at
 n_times=finish-start+1; %Number of time points (frames)
 
-n_times_prelim=3000; %Number of time points to run in order to set distance limits (using all frames is not necessary and will take longer)
+n_times_prelim=round(3*n/4); %Number of time points to run in order to set distance limits (using all frames is not necessary and will take longer)
+%If you set "use_defaults" to 1, it's better to make this larger, so it has
+%more data to accurately set the defaults.
 finish_prelim=start+n_times_prelim-1;
 
 %Plot figure of schematic of marker locations?
@@ -161,7 +169,6 @@ if plot_marker_locs
     ylim([-5 15]);
 end
 
-
 %% Marker location initializations (interactive)
 
 %We here set the locations of the markers in the "start" rame
@@ -217,7 +224,7 @@ if ~marker_init_manual
     end
     
     %Get the 3d marker locations. To do so, we find the point (of the appropriate color) with the
-    %closest x/y coordinate. We then get the x/y/z coordinates of that point.   
+    %closest x/y coordinate. We then get the x/y/z coordinates of that point.
     marker_inits=NaN(11,3); %Made large enough for an 11th marker (which we used at one point)
     for m=1:num_markers
         if marker_colors{1}=='r'
@@ -237,7 +244,7 @@ if ~marker_init_manual
             marker_inits(m,:)=[x4(closest_point) y4(closest_point) z4(closest_point)];
         end
     end
-        
+    
 end
 
 %% Marker location initializations (if you'd prefer to type it in)
@@ -264,6 +271,7 @@ if marker_init_manual
     marker_inits(:,2)=marker_inits_temp(:,3);
     marker_inits(:,3)=marker_inits_temp(:,1);
 end
+
 
 
 %% 3. TRACK ARM MARKERS (GET THE LOCATION OF ARM MARKERS)
@@ -406,52 +414,59 @@ if first_time %If this is not the first file from a date, we don't need to run t
         dists2(i)=pdist2(all_medians(8,:,i),all_medians(7,:,i)); %Distance between markers 7 and 8 (blue arm and red arm)
     end
     
-    %Plot
-    figure; plot(dists);
-    hold on;
-    plot(dists2)
-    legend('7-10','7-8')
-    title('Distance between blue arm marker (7) and red arm markers (8 and 10)');
-    
-    %VISUALIZE FRAMES
-    user_input=1; %A value so that it enters the while loop below
-    while ~isempty(user_input)
-        str1='Next, you will set maximum values of distances between the blue and red arm markers';
-        str2='First, to help make this decision, enter time point you want to visualize (or just press enter to continue) \n';
-        user_input=input([str1 str2]);
-        %Make sure the input was valid (an integer between start and finish)
-        if ~isempty(user_input)
-            while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
-                user_input=input('Re-enter valid time point \n');
+    if use_defaults %User defaults
+        red_elbow_dist_from_blue=nanmean(dists)+4*nanstd(dists);
+        red_blue_arm_dist_max=nanmean(dists2)+4*nanstd(dists2);
+        
+    else %If not using defaults
+        
+        %Plot
+        figure; plot(dists);
+        hold on;
+        plot(dists2)
+        legend('7-10','7-8')
+        title('Distance between blue arm marker (7) and red arm markers (8 and 10)');
+        
+        %VISUALIZE FRAMES
+        user_input=1; %A value so that it enters the while loop below
+        while ~isempty(user_input)
+            str1='Next, you will set maximum values of distances between the blue and red arm markers';
+            str2='First, to help make this decision, enter time point you want to visualize (or just press enter to continue) \n';
+            user_input=input([str1 str2]);
+            %Make sure the input was valid (an integer between start and finish)
+            if ~isempty(user_input)
+                while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+                    user_input=input('Re-enter valid time point \n');
+                end
+            end
+            if ~isempty(user_input)
+                plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
             end
         end
-        if ~isempty(user_input)
-            plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+        
+        % SET RED ARM TO BLUE ARM DISTANCES
+        str1='Input red_elbow_dist_from_blue \n';
+        str2='The blue values in the above plot should be generally be below this value (the red elbow should be within this distance of the blue arm)\n';
+        str3='The purpose of this is to keep all points w/in this distance of the blue as marker candidates (useful if the red elbow marker was gone the previous frame) \n';
+        str4='Value is generally ~ .05-.1 \n';
+        red_elbow_dist_from_blue=input([str1 str2 str3 str4]);
+        %Make sure it's a valid entry
+        while ~(isnumeric(red_elbow_dist_from_blue))
+            red_elbow_dist_from_blue=input('Re-enter valid value');
         end
+        
+        
+        str1='Input red_blue_arm_dist_max \n';
+        str2='All values in above plot should be below this value (Maximum distance from a red arm point to the blue)\n';
+        str3='The purpose of this is to remove all points farther than this from the blue marker (to get rid of noise)\n';
+        str4='Value is generally ~ .05-.1 \n';
+        red_blue_arm_dist_max=input([str1 str2 str3 str4]);
+        %Make sure it's a valid entry
+        while ~(isnumeric(red_blue_arm_dist_max))
+            red_blue_arm_dist_max=input('Re-enter valid value');
+        end
+        
     end
-    
-    % SET RED ARM TO BLUE ARM DISTANCES
-    str1='Input red_elbow_dist_from_blue \n';
-    str2='The blue values in the above plot should be generally be below this value (the red elbow should be within this distance of the blue arm)\n';
-    str3='The purpose of this is to keep all points w/in this distance of the blue as marker candidates (useful if the red elbow marker was gone the previous frame) \n';
-    str4='Value is generally ~ .05-.1 \n';
-    red_elbow_dist_from_blue=input([str1 str2 str3 str4]);
-    %Make sure it's a valid entry
-    while ~(isnumeric(red_elbow_dist_from_blue))
-        red_elbow_dist_from_blue=input('Re-enter valid value');
-    end
-    
-    
-    str1='Input red_blue_arm_dist_max \n';
-    str2='All values in above plot should be below this value (Maximum distance from a red arm point to the blue)\n';
-    str3='The purpose of this is to remove all points farther than this from the blue marker (to get rid of noise)\n';
-    str4='Value is generally ~ .05-.1 \n';
-    red_blue_arm_dist_max=input([str1 str2 str3 str4]);
-    %Make sure it's a valid entry
-    while ~(isnumeric(red_blue_arm_dist_max))
-        red_blue_arm_dist_max=input('Re-enter valid value');
-    end
-    
 end
 
 %% Red Arm (Redo)
@@ -553,33 +568,37 @@ red_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle bel
 title(['Red Elbow Angles: Default Threshold=' num2str(red_elbow_angle_thresh)]);
 
 
-%VISUALIZE FRAMES
-user_input=1; %A value so that it enters the while loop below
-while ~isempty(user_input)
-    str1='Next, you will enter a minimum threshold for the red elbow angle \n';
-    str2='First, to decide how to set this threshold, you can enter a time point you want to visualize (or just press enter to continue) \n';
-    user_input=input([str1 str2]);
-    %Make sure the input was valid (an integer between start and finish)
-    if ~isempty(user_input)
-        while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
-            user_input=input('Re-enter valid time point \n');
+if ~use_defaults %Default was set above: nanmean(angle)-4*nanstd(angle). If you're not using the default:
+    
+    %VISUALIZE FRAMES
+    user_input=1; %A value so that it enters the while loop below
+    while ~isempty(user_input)
+        str1='Next, you will enter a minimum threshold for the red elbow angle \n';
+        str2='First, to decide how to set this threshold, you can enter a time point you want to visualize (or just press enter to continue) \n';
+        user_input=input([str1 str2]);
+        %Make sure the input was valid (an integer between start and finish)
+        if ~isempty(user_input)
+            while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+                user_input=input('Re-enter valid time point \n');
+            end
+        end
+        if ~isempty(user_input)
+            plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
         end
     end
-    if ~isempty(user_input)
-        plot_together_4colors_func(user_input, [7 8 10], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+    
+    %SET ANGLE THRESHOLD FOR RED ELBOW REMOVAL
+    str1='Enter angle threshold for red elbow removal. Press enter for default. \n';
+    temp=input(str1);
+    %Make sure it's a valid entry
+    while ~(isnumeric(temp) || isempty(temp))
+        temp=input('Re-enter valid value');
     end
-end
-
-%SET ANGLE THRESHOLD FOR RED ELBOW REMOVAL
-str1='Enter angle threshold for red elbow removal. Press enter for default. \n';
-temp=input(str1);
-%Make sure it's a valid entry
-while ~(isnumeric(temp) || isempty(temp))
-    temp=input('Re-enter valid value');
-end
-
-if ~isempty(temp)
-    red_elbow_angle_thresh=temp;
+    
+    if ~isempty(temp)
+        red_elbow_angle_thresh=temp;
+    end
+    
 end
 
 %Remove red elbow points (based on angle)
@@ -736,33 +755,35 @@ figure; plot(angle)
 green_elbow_angle_thresh=nanmean(angle)-4*nanstd(angle); %Frames with an angle below this will have marker 6 removed
 title(['Green Elbow Angles: Default Threshold=' num2str(green_elbow_angle_thresh)]);
 
-
-% VISUALIZE FRAMES
-%VISUALIZE FRAMES
-user_input=1; %A value so that it enters the while loop below
-while ~isempty(user_input)
-    str1='Next, you will enter a minimum threshold for the green elbow angle \n';
-    str2='First, to decide how to set this threshold, you can enter a time point you want to visualize (or just press enter to continue) \n';
-    user_input=input([str1 str2]);
-    %Make sure the input was valid (an integer between start and finish)
-    if ~isempty(user_input)
-        while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
-            user_input=input('Re-enter valid time point \n');
+if ~use_defaults %Default was set above: nanmean(angle)-4*nanstd(angle). If you're not using the default:
+    
+    %VISUALIZE FRAMES
+    user_input=1; %A value so that it enters the while loop below
+    while ~isempty(user_input)
+        str1='Next, you will enter a minimum threshold for the green elbow angle \n';
+        str2='First, to decide how to set this threshold, you can enter a time point you want to visualize (or just press enter to continue) \n';
+        user_input=input([str1 str2]);
+        %Make sure the input was valid (an integer between start and finish)
+        if ~isempty(user_input)
+            while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+                user_input=input('Re-enter valid time point \n');
+            end
+        end
+        if ~isempty(user_input)
+            plot_together_4colors_func(user_input, [6 7 8], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
         end
     end
-    if ~isempty(user_input)
-        plot_together_4colors_func(user_input, [6 7 8], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+    
+    % SET ANGLE THRESHOLD FOR GREEN ELBOW REMOVAL
+    str1='Enter angle threshold for green elbow removal. Press enter for default. \n';
+    temp=input(str1);
+    while ~(isnumeric(temp) || isempty(temp))
+        temp=input('Re-enter valid value');
     end
-end
-
-% SET ANGLE THRESHOLD FOR GREEN ELBOW REMOVAL
-str1='Enter angle threshold for green elbow removal. Press enter for default. \n';
-temp=input(str1);
-while ~(isnumeric(temp) || isempty(temp))
-    temp=input('Re-enter valid value');
-end
-if ~isempty(temp)
-    green_elbow_angle_thresh=temp;
+    if ~isempty(temp)
+        green_elbow_angle_thresh=temp;
+    end
+    
 end
 
 % Remove green elbow points (based on angle)
@@ -1036,7 +1057,7 @@ end
 
 
 
-%% 5. SET DISTANCE CONSTRAINTS OF HAND MARKERS TO ARM MARKERS 
+%% 5. SET DISTANCE CONSTRAINTS OF HAND MARKERS TO ARM MARKERS
 
 %% Set distance limits of hand markers to red elbow marker (after plotting the distances first)
 
@@ -1064,70 +1085,98 @@ if first_time
     title('Distance between red elbow marker (10) and hand markers');
     legend('10-1','10-2','10-3','10-4','10-5');
     
-    %Visualize Frames
-    user_input=1; %A value so that it enters the while loop below
-    while ~isempty(user_input)
-        str1='Below you will enter limits for the distances between the red elbow marker and hand markers \n';
-        str2='First, to help set these limits, you can enter a time point you want to visualize (or just press enter to continue) \n';
-        user_input=input([str1 str2]);
-        %Make sure the input was valid (an integer between start and finish)
-        if ~isempty(user_input)
-            while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
-                user_input=input('Re-enter valid time point \n');
+    
+    if use_defaults %If you use the defaults
+        
+        str1='Enter vector of times to calculate default distances (e.g. 1:20000) \n';
+        str2='Or just press enter to use all times \n';
+        times_inc=input([str1 str2]);
+        if isempty(times_inc)
+            times_inc=1:n_times_prelim;
+        end 
+        
+        %Get the distances at the times you include
+        dists1=dists1(times_inc);
+        dists2=dists2(times_inc);
+        dists3=dists2(times_inc);
+        dists4=dists2(times_inc);
+        dists5=dists2(times_inc);
+        
+        green_hand_dists_elbow=[nanmean(dists5)-5*nanstd(dists5) nanmean(dists1)+5*nanstd(dists1)];
+        red_hand_dists_elbow=[nanmean(dists3)-5*nanstd(dists3) nanmean(dists3)+5*nanstd(dists3)];
+        blue_hand_dists_elbow=[nanmean(dists2)-5*nanstd(dists2) nanmean(dists2)+5*nanstd(dists2)];
+        yellow_hand_dists_elbow=[nanmean(dists4)-5*nanstd(dists4) nanmean(dists4)+5*nanstd(dists4)];
+        green_separator=(nanmean(dists5)+nanmean(dists1))/2; 
+        
+    else %If you don't use the defaults
+        
+  
+        %Visualize Frames
+        user_input=1; %A value so that it enters the while loop below
+        while ~isempty(user_input)
+            str1='Below you will enter limits for the distances between the red elbow marker and hand markers \n';
+            str2='First, to help set these limits, you can enter a time point you want to visualize (or just press enter to continue) \n';
+            user_input=input([str1 str2]);
+            %Make sure the input was valid (an integer between start and finish)
+            if ~isempty(user_input)
+                while ~(isnumeric(user_input) && mod(user_input,1)==0 && user_input>=start && user_input<=finish)
+                    user_input=input('Re-enter valid time point \n');
+                end
+            end
+            if ~isempty(user_input)
+                plot_together_4colors_func(user_input, [1:5], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
             end
         end
-        if ~isempty(user_input)
-            plot_together_4colors_func(user_input, [1:5], [1:10], all_medians, color1, color2, color3, color4, start, finish, 1)
+        
+        
+        
+        % Enter hand distance limits from red elbow
+        
+        str1='Input green_hand_dists_elbow \n';
+        str2='Lower and upper limits of distances of the green hand markers to the red elbow marker\n';
+        str3='Value is generally ~ [.15,.26] (around 2 or 3 cm from most points) \n';
+        green_hand_dists_elbow=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(green_hand_dists_elbow)==2)
+            green_hand_dists_elbow=input('Re-enter valid values');
         end
-    end
-    
-    
-    
-    % Enter hand distance limits from red elbow
-    
-    str1='Input green_hand_dists_elbow \n';
-    str2='Lower and upper limits of distances of the green hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.15,.26] \n';
-    green_hand_dists_elbow=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(green_hand_dists_elbow)==2)
-        green_hand_dists_elbow=input('Re-enter valid values');
-    end
-    
-    str1='Input red_hand_dists_elbow \n';
-    str2='Lower and upper limits of distances of the red hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.17,.23] \n';
-    red_hand_dists_elbow=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(red_hand_dists_elbow)==2)
-        red_hand_dists_elbow=input('Re-enter valid values');
-    end
-    
-    str1='Input blue_hand_dists_elbow \n';
-    str2='Lower and upper limits of distances of the blue hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.17,.23] \n';
-    blue_hand_dists_elbow=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(blue_hand_dists_elbow)==2)
-        blue_hand_dists_elbow=input('Re-enter valid values');
-    end
-    
-    str1='Input yellow_hand_dists_elbow \n';
-    str2='Lower and upper limits of distances of the yellow hand markers to the red elbow marker\n';
-    str3='Value is generally ~ [.15,.21] \n';
-    yellow_hand_dists_elbow=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(yellow_hand_dists_elbow)==2)
-        yellow_hand_dists_elbow=input('Re-enter valid values');
-    end
-    
-    str1='Input green_separator \n';
-    str2='Distance that separates the green hand points\n';
-    str3='Value is generally ~ .2 \n';
-    green_separator=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(isnumeric(green_separator))
-        green_separator=input('Re-enter valid values');
+        
+        str1='Input red_hand_dists_elbow \n';
+        str2='Lower and upper limits of distances of the red hand markers to the red elbow marker\n';
+        str3='Value is generally ~ [.17,.23] (around 2 or 3 cm from most points) \n';
+        red_hand_dists_elbow=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(red_hand_dists_elbow)==2)
+            red_hand_dists_elbow=input('Re-enter valid values');
+        end
+        
+        str1='Input blue_hand_dists_elbow \n';
+        str2='Lower and upper limits of distances of the blue hand markers to the red elbow marker\n';
+        str3='Value is generally ~ [.17,.23] (around 2 or 3 cm from most points) \n';
+        blue_hand_dists_elbow=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(blue_hand_dists_elbow)==2)
+            blue_hand_dists_elbow=input('Re-enter valid values');
+        end
+        
+        str1='Input yellow_hand_dists_elbow \n';
+        str2='Lower and upper limits of distances of the yellow hand markers to the red elbow marker\n';
+        str3='Value is generally ~ [.15,.21] (around 2 or 3 cm from most points) \n';
+        yellow_hand_dists_elbow=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(yellow_hand_dists_elbow)==2)
+            yellow_hand_dists_elbow=input('Re-enter valid values');
+        end
+        
+        str1='Input green_separator \n';
+        str2='Distance that separates the green hand points (marker 1 and 5) \n';
+        str3='Value is generally ~ .2\n';
+        green_separator=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(isnumeric(green_separator))
+            green_separator=input('Re-enter valid values');
+        end
+        
     end
     
 end
@@ -1152,63 +1201,83 @@ if first_time
         dists5(i)=pdist2(all_medians(7,:,i),all_medians(5,:,i));
     end
     
-    %Plot
-    figure; %Yellow
-    plot(dists4,'y-x');
-    title('Distance from blue arm marker to yellow hand marker');
-    figure; %Blue
-    plot(dists2,'b-x');
-    title('Distance from blue arm marker to blue hand marker');
-    figure; %Red
-    plot(dists3,'r-x');
-    title('Distance from blue arm marker to red hand marker');
-    figure; %Green
-    plot(dists1,'g-x');
-    hold on;
-    plot(dists5,'c-x');
-    title('Distance from blue arm marker to green hand markers');
-    legend('Dist to pt1','Dist to pt5');
     
-
-    
-    % Enter hand distance limits from blue arm
-
-    str1='Input green_hand_dists_bluearm \n';
-    str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the blue arm marker\n';
-    str3='Value is generally ~ [.15,.30] \n';
-    green_hand_dists_bluearm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(green_hand_dists_bluearm)==2)
-        green_hand_dists_bluearm=input('Re-enter valid values');
+    if use_defaults %If you use the defaults
+        
+        %Get the distances at the times you include (specified when setting
+        %distances to red elbow marker)
+        dists1=dists1(times_inc);
+        dists2=dists2(times_inc);
+        dists3=dists2(times_inc);
+        dists4=dists2(times_inc);
+        dists5=dists2(times_inc);
+        
+        green_hand_dists_bluearm=[nanmean(dists5)-6*nanstd(dists5) nanmean(dists1)+6*nanstd(dists1)];
+        red_hand_dists_bluearm=[nanmean(dists3)-6*nanstd(dists3) nanmean(dists3)+6*nanstd(dists3)];
+        blue_hand_dists_bluearm=[nanmean(dists2)-6*nanstd(dists2) nanmean(dists2)+6*nanstd(dists2)];
+        yellow_hand_dists_bluearm=[nanmean(dists4)-6*nanstd(dists4) nanmean(dists4)+6*nanstd(dists4)];
+        
+    else %If you don't use the defaults
+        
+        
+        %Plot
+        figure; %Yellow
+        plot(dists4,'y-x');
+        title('Distance from blue arm marker to yellow hand marker');
+        figure; %Blue
+        plot(dists2,'b-x');
+        title('Distance from blue arm marker to blue hand marker');
+        figure; %Red
+        plot(dists3,'r-x');
+        title('Distance from blue arm marker to red hand marker');
+        figure; %Green
+        plot(dists1,'g-x');
+        hold on;
+        plot(dists5,'c-x');
+        title('Distance from blue arm marker to green hand markers');
+        legend('Dist to pt1','Dist to pt5');
+        
+        
+        
+        % Enter hand distance limits from blue arm
+        
+        str1='Input green_hand_dists_bluearm \n';
+        str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the blue arm marker\n';
+        str3='Value is generally ~ [.15,.30] (around 4 cm from most points) \n';
+        green_hand_dists_bluearm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(green_hand_dists_bluearm)==2)
+            green_hand_dists_bluearm=input('Re-enter valid values');
+        end
+        
+        str1='Input red_hand_dists_bluearm \n';
+        str2='Lower and upper limits of distances of the red hand markers (red above) to the blue arm marker\n';
+        str3='Value is generally ~ [.16,.28] (around 4 cm from most points) \n';
+        red_hand_dists_bluearm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(red_hand_dists_bluearm)==2)
+            red_hand_dists_bluearm=input('Re-enter valid values');
+        end
+        
+        str1='Input blue_hand_dists_bluearm \n';
+        str2='Lower and upper limits of distances of the blue hand markers (blue above) to the blue arm marker\n';
+        str3='Value is generally ~ [.16,.28] (around 4 cm from most points) \n';
+        blue_hand_dists_bluearm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(blue_hand_dists_bluearm)==2)
+            blue_hand_dists_bluearm=input('Re-enter valid values');
+        end
+        
+        str1='Input yellow_hand_dists_bluearm \n';
+        str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the blue arm marker\n';
+        str3='Value is generally ~ [.14,.26] (around 4 cm from most points) \n';
+        yellow_hand_dists_bluearm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(yellow_hand_dists_bluearm)==2)
+            yellow_hand_dists_bluearm=input('Re-enter valid values');
+        end
+        
     end
-    
-    str1='Input red_hand_dists_bluearm \n';
-    str2='Lower and upper limits of distances of the red hand markers (red above) to the blue arm marker\n';
-    str3='Value is generally ~ [.16,.28] \n';
-    red_hand_dists_bluearm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(red_hand_dists_bluearm)==2)
-        red_hand_dists_bluearm=input('Re-enter valid values');
-    end
-    
-    str1='Input blue_hand_dists_bluearm \n';
-    str2='Lower and upper limits of distances of the blue hand markers (blue above) to the blue arm marker\n';
-    str3='Value is generally ~ [.16,.28] \n';
-    blue_hand_dists_bluearm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(blue_hand_dists_bluearm)==2)
-        blue_hand_dists_bluearm=input('Re-enter valid values');
-    end
-    
-    str1='Input yellow_hand_dists_bluearm \n';
-    str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the blue arm marker\n';
-    str3='Value is generally ~ [.14,.26] \n';
-    yellow_hand_dists_bluearm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(yellow_hand_dists_bluearm)==2)
-        yellow_hand_dists_bluearm=input('Re-enter valid values');
-    end
-    
 end
 
 %% Set distance limits of hand markers to red arm marker (after plotting the distances first)
@@ -1229,68 +1298,89 @@ if first_time
         dists4(i)=pdist2(all_medians(8,:,i),all_medians(4,:,i));
         dists5(i)=pdist2(all_medians(8,:,i),all_medians(5,:,i));
     end
-    %Plot
-    figure; %Yellow
-    plot(dists4,'y-x');
-    title('Distance from red arm marker to yellow hand markers');
-    figure; %Blue
-    plot(dists2,'b-x');
-    title('Distance from red arm marker to blue hand markers');
-    figure; %Red
-    plot(dists3,'r-x');
-    title('Distance from red arm marker to red hand markers');
-    figure; %Green
-    plot(dists1,'g-x');
-    hold on;
-    plot(dists5,'c-x');
-    title('Distance from red arm marker to green hand markers');
-    legend('Dist to pt1','Dist to pt5');
-
     
     
-    % Enter hand distance limits from red arm
-    
-    str1='Input green_hand_dists_redarm \n';
-    str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the red arm marker\n';
-    str3='Value is generally ~ [.15,.35] \n';
-    green_hand_dists_redarm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(green_hand_dists_redarm)==2)
-        green_hand_dists_redarm=input('Re-enter valid values');
+    if use_defaults %If you use the defaults
+        
+        %Get the distances at the times you include (specified when setting
+        %distances to red elbow marker)
+        dists1=dists1(times_inc);
+        dists2=dists2(times_inc);
+        dists3=dists2(times_inc);
+        dists4=dists2(times_inc);
+        dists5=dists2(times_inc);
+        
+        green_hand_dists_redarm=[nanmean(dists5)-6*nanstd(dists5) nanmean(dists1)+6*nanstd(dists1)];
+        red_hand_dists_redarm=[nanmean(dists3)-6*nanstd(dists3) nanmean(dists3)+6*nanstd(dists3)];
+        blue_hand_dists_redarm=[nanmean(dists2)-6*nanstd(dists2) nanmean(dists2)+6*nanstd(dists2)];
+        yellow_hand_dists_redarm=[nanmean(dists4)-6*nanstd(dists4) nanmean(dists4)+6*nanstd(dists4)];
+        
+    else %If you don't use the defaults
+        
+        
+        %Plot
+        figure; %Yellow
+        plot(dists4,'y-x');
+        title('Distance from red arm marker to yellow hand markers');
+        figure; %Blue
+        plot(dists2,'b-x');
+        title('Distance from red arm marker to blue hand markers');
+        figure; %Red
+        plot(dists3,'r-x');
+        title('Distance from red arm marker to red hand markers');
+        figure; %Green
+        plot(dists1,'g-x');
+        hold on;
+        plot(dists5,'c-x');
+        title('Distance from red arm marker to green hand markers');
+        legend('Dist to pt1','Dist to pt5');
+        
+        
+        
+        % Enter hand distance limits from red arm
+        
+        str1='Input green_hand_dists_redarm \n';
+        str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the red arm marker\n';
+        str3='Value is generally ~ [.15,.35] (around 5 cm from most points) \n';
+        green_hand_dists_redarm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(green_hand_dists_redarm)==2)
+            green_hand_dists_redarm=input('Re-enter valid values');
+        end
+        
+        str1='Input red_hand_dists_redarm \n';
+        str2='Lower and upper limits of distances of the red hand markers (red above) to the red arm marker\n';
+        str3='Value is generally ~ [.15,.34] (around 5 cm from most points) \n';
+        red_hand_dists_redarm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(red_hand_dists_redarm)==2)
+            red_hand_dists_redarm=input('Re-enter valid values');
+        end
+        
+        str1='Input blue_hand_dists_redarm \n';
+        str2='Lower and upper limits of distances of the blue hand markers (blue above) to the red arm marker\n';
+        str3='Value is generally ~ [.15,.34] (around 5 cm from most points) \n';
+        blue_hand_dists_redarm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(blue_hand_dists_redarm)==2)
+            blue_hand_dists_redarm=input('Re-enter valid values');
+        end
+        
+        str1='Input yellow_hand_dists_redarm \n';
+        str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the red arm marker\n';
+        str3='Value is generally ~ [.15,.34] (around 5 cm from most points) \n';
+        yellow_hand_dists_redarm=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(yellow_hand_dists_redarm)==2)
+            yellow_hand_dists_redarm=input('Re-enter valid values');
+        end
+        
     end
-    
-    str1='Input red_hand_dists_redarm \n';
-    str2='Lower and upper limits of distances of the red hand markers (red above) to the red arm marker\n';
-    str3='Value is generally ~ [.15,.34] \n';
-    red_hand_dists_redarm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(red_hand_dists_redarm)==2)
-        red_hand_dists_redarm=input('Re-enter valid values');
-    end
-    
-    str1='Input blue_hand_dists_redarm \n';
-    str2='Lower and upper limits of distances of the blue hand markers (blue above) to the red arm marker\n';
-    str3='Value is generally ~ [.15,.34] \n';
-    blue_hand_dists_redarm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(blue_hand_dists_redarm)==2)
-        blue_hand_dists_redarm=input('Re-enter valid values');
-    end
-    
-    str1='Input yellow_hand_dists_redarm \n';
-    str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the red arm marker\n';
-    str3='Value is generally ~ [.15,.34] \n';
-    yellow_hand_dists_redarm=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(yellow_hand_dists_redarm)==2)
-        yellow_hand_dists_redarm=input('Re-enter valid values');
-    end
-    
 end
 
 %% Set distance limits between green hand markers
 
-%Plots the distances of the green hand markers to each other, in order to 
+%Plots the distances of the green hand markers to each other, in order to
 %determine what distances are allowed (for rerunning the hand marker tracking)
 
 if first_time
@@ -1298,24 +1388,43 @@ if first_time
     for i=1:n_times_prelim
         dists1(i)=pdist2(all_medians(5,:,i),all_medians(1,:,i)); %Distances between green hand markers
     end
-    %Plot
-    figure; plot(dists1,'g');
-    title('Distance between green hand markers');
     
     
-    % Enter minimum hand distances from each other
- 
-    str1='Input green_dist_min \n';
-    str2='Minimum distance allowed between green hand markers (green above)\n';
-    str3='Value is generally ~ .03 \n';
-    green_dist_min=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(isnumeric(green_dist_min))
-        green_dist_min=input('Re-enter valid values');
-    end
+    if use_defaults %If you use the defaults
         
+        %Get the distances at the times you include (specified when setting
+        %distances to red elbow marker)
+        dists1=dists1(times_inc);
+        
+        green_dist_min=nanmean(dists1)-5*nanstd(dists1);
+        
+        if green_dist_min<.02 %Should never be less than this value
+            green_dist_min=.02;
+        end
+        
+    else %If you don't use the defaults
+        
+        
+        
+        %Plot
+        figure; plot(dists1,'g');
+        title('Distance between green hand markers');
+        
+        
+        % Enter minimum hand distances from each other
+        
+        str1='Input green_dist_min \n';
+        str2='Minimum distance allowed between green hand markers (green above)\n';
+        str3='Value is generally ~ .03 \n';
+        green_dist_min=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(isnumeric(green_dist_min))
+            green_dist_min=input('Re-enter valid values');
+        end
+        
+    end
+    
 end
-
 
 
 %% 6. TRACK HAND MARKERS (USING DISTANCE CONSTRAINTS FROM ABOVE), EXCEPT YELLOW
@@ -2152,59 +2261,78 @@ for i=1:n_times
 end
 
 
+
+
 if first_time
-    %Plot
     
-    figure; % Yellow
-    plot(dists4,'y-x');
-    figure; %Blue
-    plot(dists2,'b-x');
-    figure; %Red
-    plot(dists3,'r-x');
-    figure; %Green
-    plot(dists1,'g-x');
-    hold on;
-    plot(dists5,'c-x');
-
-
-    % Enter hand distance limits from the shoulder
-    
-    str1='Input green_keep \n';
-    str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the green shoulder marker\n';
-    str3='Value is generally ~ [.15,.45] \n';
-    green_keep=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(green_keep)==2)
-        green_keep=input('Re-enter valid values');
+    if use_defaults %If you use the defaults
+        
+        %Get the distances at the times you include (specified when setting
+        %distances to red elbow marker)
+        dists1=dists1(times_inc);
+        dists2=dists2(times_inc);
+        dists3=dists2(times_inc);
+        dists4=dists2(times_inc);
+        dists5=dists2(times_inc);
+        
+        green_keep=[nanmean(dists5)-6*nanstd(dists5) nanmean(dists1)+6*nanstd(dists1)];
+        red_keep=[nanmean(dists3)-6*nanstd(dists3) nanmean(dists3)+6*nanstd(dists3)];
+        blue_keep=[nanmean(dists2)-6*nanstd(dists2) nanmean(dists2)+6*nanstd(dists2)];
+        yellow_keep=[nanmean(dists4)-6*nanstd(dists4) nanmean(dists4)+6*nanstd(dists4)];
+        
+    else %If you don't use the defaults
+        
+        %Plot
+        figure; % Yellow
+        plot(dists4,'y-x');
+        figure; %Blue
+        plot(dists2,'b-x');
+        figure; %Red
+        plot(dists3,'r-x');
+        figure; %Green
+        plot(dists1,'g-x');
+        hold on;
+        plot(dists5,'c-x');
+        
+        
+        % Enter hand distance limits from the shoulder
+        
+        str1='Input green_keep \n';
+        str2='Lower and upper limits of distances of the green hand markers (green and cyan above) to the green shoulder marker\n';
+        str3='Value is generally ~ [.15,.45] \n';
+        green_keep=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(green_keep)==2)
+            green_keep=input('Re-enter valid values');
+        end
+        
+        str1='Input red_keep \n';
+        str2='Lower and upper limits of distances of the red hand markers (red above) to the green shoulder marker\n';
+        str3='Value is generally ~ [.15,.45] \n';
+        red_keep=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(red_keep)==2)
+            red_keep=input('Re-enter valid values');
+        end
+        
+        str1='Input blue_keep \n';
+        str2='Lower and upper limits of distances of the blue hand markers (blue above) to the green shoulder marker\n';
+        str3='Value is generally ~ [.15,.45] \n';
+        blue_keep=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(blue_keep)==2)
+            blue_keep=input('Re-enter valid values');
+        end
+        
+        str1='Input yellow_keep \n';
+        str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the green shoulder marker\n';
+        str3='Value is generally ~ [.15,.45] \n';
+        yellow_keep=input([str1 str2 str3]);
+        %Make sure entry was valid
+        while ~(length(yellow_keep)==2)
+            yellow_keep=input('Re-enter valid values');
+        end
     end
-    
-    str1='Input red_keep \n';
-    str2='Lower and upper limits of distances of the red hand markers (red above) to the green shoulder marker\n';
-    str3='Value is generally ~ [.15,.45] \n';
-    red_keep=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(red_keep)==2)
-        red_keep=input('Re-enter valid values');
-    end
-    
-    str1='Input blue_keep \n';
-    str2='Lower and upper limits of distances of the blue hand markers (blue above) to the green shoulder marker\n';
-    str3='Value is generally ~ [.15,.45] \n';
-    blue_keep=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(blue_keep)==2)
-        blue_keep=input('Re-enter valid values');
-    end
-    
-    str1='Input yellow_keep \n';
-    str2='Lower and upper limits of distances of the yellow hand markers (yellow above) to the green shoulder marker\n';
-    str3='Value is generally ~ [.15,.45] \n';
-    yellow_keep=input([str1 str2 str3]);
-    %Make sure entry was valid
-    while ~(length(yellow_keep)==2)
-        yellow_keep=input('Re-enter valid values');
-    end
-    
 end
 
 
@@ -2265,7 +2393,6 @@ all_medians2(:,:,start:finish)=temp2;
 % end
 
 %% Save
-savefile=1;
 if savefile
     date2=['20' num2str(date(7:8)) num2str(date(1:2)) num2str(date(4:5))];
     fname_save=[main_dir monkey '/Color_Tracking/' date '/Markers/markers_' monkey '_' date2 '_' exp '_' num];
