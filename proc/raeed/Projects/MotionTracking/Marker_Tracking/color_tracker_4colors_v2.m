@@ -1,4 +1,5 @@
 %Script to track the color markers over time 
+%Originally written by Joshua Glaser
 
 %This script loads a file that contains the locations of the color pixels of each frame, and
 %uses that to determine the marker locations at every frame
@@ -66,6 +67,7 @@ savefile=1;
 use_defaults=1;
 
 %If this is the first file from a date, set equal to 1 (there are more initializations)
+%Also, if you have use_defaults=1, set this equal to 1
 first_time=1;
 
 %Load all of the settings if it's not the first file
