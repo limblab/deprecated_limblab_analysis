@@ -24,7 +24,7 @@ goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0
     1 ,  0 ,  1 , 1 , 0 , 1 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ];
 
 animals = [1:8];
-muscles = [1 3 4 5 6 8 12];
+muscles = [1 3 4 9 6 8 12];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
 channels = [1 2 3 4 5 6 7];
@@ -66,7 +66,7 @@ end
 %together different muscles before stimulation? YES
 
 clear('current_arr'); 
-
+%figure; hold on; 
 for i=1:length(muscles)
     %cycle through each muscle we'll be stimulating, find the mean of the
     %filtered EMGs, and find the conversion to amplitude of current
@@ -78,10 +78,15 @@ for i=1:length(muscles)
     ds_mean = mean(ds_mat.'); 
     %plot(ds_mean, 'color', [.5 .5 .5], 'linewidth', 2); %use these plots to help choose thresholds
     current_arr{i} = emg2amp(ds_mean, emglow_limit(i), emghigh_limit(i), amplow_limit(i), amphigh_limit(i));
-    %plot(current_arr{i}, 'k', 'linewidth', 2); 
+    %plot(ds_mean, 'linewidth', 2); 
+    legendinfo{i} = musc_names{muscles(i)}; 
 end
 
-array_stim(current_arr, freq, 60, pw, channels, 'COM3'); 
+legend(legendinfo);
+
+%TODO: figure out best stretch factor
+repeats = 1; %number of times to repeat the cycle
+array_stim(current_arr, 20, freq, 5000, 4, pw, channels, repeats, legendinfo, 'COM3'); 
 %TODO: array-based stim fxn with freq modulation
 
 %THEN, quickly write array_stim (needs to iterate

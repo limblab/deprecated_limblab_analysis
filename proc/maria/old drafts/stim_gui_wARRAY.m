@@ -119,22 +119,19 @@ for i=1:length(index) %for all channels that are supposed to be stimulated
     stim_values = amps{i}*ones(1, tls{i}*freq/1000);     
     %get zero values after stimulation
     end_zeros = zeros(1, cycle_del*freq/1000); 
-    current_arr{i} = [initial_zeros, stim_values, end_zeros];
+    current_arr{i} = [initial_zeros, stim_values, end_zeros]; 
 end
 
 %get zero values so all channels are the same length
-total_len = max(cellfun('length', current_arr)); 
-figure; hold on;
-for i=1:length(current_arr)
-    current_arr{i} = [current_arr{i} zeros(1, total_len-length(current_arr{i}))]; 
-    %plot(current_arr{i}); 
-end
 
-%TODO: add serial port chooser to the gui 
-%TODO: remove save button from gui
+plot(current_arr); 
+
+
+
+%TODO: delete all of this - tds are taken care of in array_stim
+%TODO: add serial port chooser to the gui
 %find length of time needed to pause so stimulation can complete a cycle: 
 
-array_stim(current_arr, 20, 40, 40, 2, pws{1}, index, muscles(index), 'COM4'); 
 
 disp('done stimulating'); 
 %TODO: cleanup. 
