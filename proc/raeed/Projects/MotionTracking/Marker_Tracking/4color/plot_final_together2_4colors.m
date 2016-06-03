@@ -1,16 +1,17 @@
+% This script will show a video of the marker locations
+
+
 %% Align
 
 all_medians_aligned=NaN(11,3,finish);
-
 all_medians_aligned(:,:,start:finish)=all_medians;
 
-
-%% Set things
-markers=1:10;%[6 7 8 9 10];%1:11;
-pause_manually=0;
-plot_original=0;
-start_frame=1000+start-1;
-finish_frame=2000+start-1;
+%% User initializations
+markers=1:10; %The markers you want to plot
+pause_manually=0; %Whether you want it to pause until you click after each frame
+plot_original=0; %Whether the original points (pixels) should be plotted
+start_frame=1000+start-1; %Frame you want to start at
+finish_frame=2000+start-1; %Frame you want to end at
 
 %% Plot
 
