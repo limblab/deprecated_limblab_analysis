@@ -15,8 +15,8 @@ function array_stim(current_array, sending_freq, stim_freq, sampled_freq, stretc
 
 for i=1:size(current_array, 2)
     conv_fact = stretch_factor*sending_freq; %this will lead to a slight "stretching" effect of the step over time
-    x = 1/sampled_freq:1/sampled_freq:length(current_array{i})/5000;
-    xq = 1/conv_fact:1/conv_fact:length(current_array{i})/5000;
+    x = 1/sampled_freq:1/sampled_freq:length(current_array{i})/sampled_freq;
+    xq = 1/conv_fact:1/conv_fact:length(current_array{i})/sampled_freq;
     ds_array{i} = interp1(x, current_array{i}, xq);
     %hold on;
     figure(1); hold on;

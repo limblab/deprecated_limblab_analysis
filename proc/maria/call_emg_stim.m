@@ -27,7 +27,7 @@ animals = [1:8];
 muscles = [1 3 4 9 6 8 12];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
-channels = [1 6 3 4 5 7];
+channels = [1 2 3 4 5 6 7];
 freq = 20; %hz
 pw = .2; %ms
 
