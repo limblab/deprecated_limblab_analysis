@@ -94,9 +94,12 @@ for steps=1:repeats %take as many steps as is specified
         while toc(a)<(1/sending_freq)
             toc(a);
         end
-        timearray(i) = toc(a);
+        %timearray(i) = toc(a);
     end
 end
+
+%stop all stimulation before ending program
 ws.set_Run(ws.run_stop, channels);
+
 %TODO: pause long enough for stim to end??
 end

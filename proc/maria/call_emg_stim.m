@@ -27,7 +27,7 @@ animals = [1:8];
 muscles = [1 3 4 9 6 8 12];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
-channels = [1 2 3 4 5 6 7];
+channels = [1 6 3 4 5 7];
 freq = 20; %hz
 pw = .2; %ms
 
@@ -51,10 +51,10 @@ end
 
 
 %define thresholds
-emglow_limit = [.15 .13 .14 .2 .1 .1 .2]; %get rid of low noise
-emghigh_limit = [1 1 1 1 1 1 1]; %get rid of excessively high spikes
-amplow_limit = [1 1 1 1 1 1 1]; %lowest level of stim to twitch (err on low side)
-amphigh_limit = [4 4 4 4 4 4 4];  %highest level of stim to use
+emglow_limit = [.15 .13 .2 .1 .1 .2]; %get rid of low noise
+emghigh_limit = [1 1 1 1 1 1]; %get rid of excessively high spikes
+amplow_limit = [.7 .6 .9 .5 .2 .8]; %lowest level of stim to twitch (err on low side)
+amphigh_limit = [3 2 1.8 1.7 1 2.7];  %highest level of stim to use
 
 %check that limits are all defined
 lm = length(channels);
@@ -87,6 +87,7 @@ legend(legendinfo);
 %TODO: figure out best stretch factor
 repeats = 1; %number of times to repeat the cycle
 array_stim(current_arr, 20, freq, 5000, 4, pw, channels, repeats, legendinfo, 'COM3'); 
+
 %TODO: array-based stim fxn with freq modulation
 
 %THEN, quickly write array_stim (needs to iterate

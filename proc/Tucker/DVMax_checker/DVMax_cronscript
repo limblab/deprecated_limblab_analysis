@@ -1,0 +1,4 @@
+
+cd /home/tucker/Desktop/GIT/limblab_analysis/proc/Tucker/unit\ tests/testCronjob
+matlab -nosplash -nodesktop -logfile /home/tucker/Desktop/GIT/limblab_analysis/proc/Tucker/unit\ tests/testCronjob/matlab.log -r "cd('/home/tucker/Desktop/GIT/limblab_analysis/DVMax');DVMax_checker;quit"
+

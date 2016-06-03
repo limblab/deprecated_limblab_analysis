@@ -137,35 +137,10 @@ function data_struct = run_data_processing(main_function_name,target_directory,v
             fclose(fid);
         else
             eval([data_list{i} '= data_struct.(data_list{i});'])            
-            save(strcat(target_directory,['Output_Data' filesep],data_list{i},'.mat'),data_list{i},'-mat')
-            warn_message = lastwarn;
-            %% Check to make sure that Matlab saved the data, if not, save as v7.3
-            if strfind(warn_message,'Variable ')
-                disp('Ignore previous warning, data is being saved')
-                dummy_var = [];  % Matlab will compress the first variable saved, making it slower to load, so we compress an empty array.
-                save(strcat(target_directory,['Output_Data' filesep],data_list{i},'.mat'),'dummy_var',data_list{i},'-mat','-v7.3')
-                lastwarn('')
-            end
-                    
-        end
-    end
-end
-function functionlist=get_user_dependencies(fname)
-    %returns a cell array with strings containing the functions that the
-    %function fname depends on
-    functionlist={};
-    command_list=depfun_limblab(fname,'-toponly','-quiet');
-    functionlist=command_list(1);
-    for i=2:length(command_list)%skip the first element since that is the calling function
-        if strfind(command_list{i},matlabroot)
-            continue
-        else
-            temp=get_user_dependencies(command_list{i});
-            if isempty(temp)
-                functionlist(length(functionlist)+1)=command_list(i);
-            else
-                functionlist=[functionlist;temp];
-            end
+            %save(strcat(target_directory,['Output_Data' filesep],data_list{i},'.mat'),data_list{i},'-mat')
+            dummy_var = [];  % Matlab will compress the first variable saved, making it slower to load, so we compress an empty array.
+            save(strcat(target_directory,['Output_Data' filesep],data_list{i},'.mat'),'dummy_var',data_list{i},'-mat','-v7.3')
+                   
         end
     end
 end
