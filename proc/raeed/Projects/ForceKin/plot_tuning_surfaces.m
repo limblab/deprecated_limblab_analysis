@@ -4,7 +4,7 @@
 %%%
 
 %% read csv files
-file = '/home/raeed/Dropbox/ForceKin Paper/Data/tiki_rw026_s';
+file = '/home/raeed/Dropbox/ForceKin Paper/Data/Arthur_S1_012';
 reaches_mat = csvread([file '.csv']);
 % reaches_mat = csvread('/home/raeed/Dropbox/ForceKin Paper/Data/Arthur_S1_016.csv');
 thv = reaches_mat(:,1);
