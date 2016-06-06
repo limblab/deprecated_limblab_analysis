@@ -103,38 +103,96 @@ for i=1:length(channels)
     end
 end
 
+%sort the channels by start time so train stagger is grouped by channels
+%stimulated together
+[sorted_starts, ind] = sort(cell2mat(starts)); 
+tds = num2cell(zeros(1, length(sorted_starts)));
+j=0; 
+
+%for each channel that will be stimulated, make a train delay variable
+for i=1:length(sorted_starts)
+    if ismember(ind(i), index) %check if the channel is stimulated
+        j = j+1; %inc arbitrary var that determines the stagger amt
+        
+        %TODO: delete this line
+        %make the train delay variable: 50 us minimum, stagger channels
+        tds{ind(i)} = 50 + 500*j + sorted_starts(i)*1000; %tds are in us
+    end
+end
+
+%if saving, write all of these cells to a .mat file: 
+save_path = fileparts(mfilename('fullpath')); 
+if get(handles.save, 'Value')
+    file_name = get(handles.filename, 'String'); %must make a new file name every time
+    disp(file_name)
+    %file_name = file_name{1}
+    if exist(fullfile(save_path, strcat('data_files/', file_name, '.mat')), 'file')
+        overwrite = questdlg('This file already exists. Are you sure you want to overwrite it?', ...
+            'Choices', 'Okay', 'Cancel', 'Cancel'); 
+        switch overwrite
+            case 'Okay'
+                disp(['Overwriting file ', file_name]);
+            case 'Cancel'
+                disp('Canceled operation, rename variable file')
+                return; 
+        end
+    end
+    save(fullfile(save_path, strcat('data_files/', file_name)), 'muscles', 'channels', 'amps', 'pws', 'tls', 'tds'); 
+end
+
 %start time for each is stored in starts{index(element)}
 %tl for each is in tls{index(element)}
 cycle_del = str2double(get(handles.cycdelay, 'String')); %get cycle delay in ms
 num_cycles = str2double(get(handles.numcyc, 'String')); %number of cycles
-freq = str2double(get(handles.freq, 'String')); %Hz
 
+%add delay so the code pauses until stim is completed for a cycle
 
-current_arr = cell(1, length(index)); 
-%get array of values to stimulate
-for i=1:length(index) %for all channels that are supposed to be stimulated
-    %get zero values before the stimulation starts
-    initial_zeros = zeros(1, starts{i}*freq/1000); 
-    %get values during stimulation
-    stim_values = amps{i}*ones(1, tls{i}*freq/1000);     
-    %get zero values after stimulation
-    end_zeros = zeros(1, cycle_del*freq/1000); 
-    current_arr{i} = [initial_zeros, stim_values, end_zeros];
-end
-
-%get zero values so all channels are the same length
-total_len = max(cellfun('length', current_arr)); 
-figure; hold on;
-for i=1:length(current_arr)
-    current_arr{i} = [current_arr{i} zeros(1, total_len-length(current_arr{i}))]; 
-    %plot(current_arr{i}); 
-end
-
-%TODO: add serial port chooser to the gui 
-%TODO: remove save button from gui
+%TODO: delete all of this - tds are taken care of in array_stim
+%TODO: add serial port chooser to the gui
 %find length of time needed to pause so stimulation can complete a cycle: 
+stim_lens = zeros([1 length(tds)]); 
+for i=1:length(tds)
+    stim_lens(i) = tds{i} + tls{i}*1000; 
+end
+time_to_stim = max(stim_lens)/1000; % this val is returned in ms 
 
-array_stim(current_arr, 20, 40, 40, 1, pws{1}, index, num_cycles, muscles(index), 'COM4'); 
+%if the stimulator object doesn't exist yet, set it up: 
+if ~exist('ws', 'var')
+    serial_string = 'COM6'; %this is different via mac and windows; use instrfind to check location
+    ws = wireless_stim(serial_string, 1); %the number has to do with verbosity of running feedback
+    ws.init(1, ws.comm_timeout_disable);
+end
+
+%get commands for every channel being used and set up the 
+for element=1:length(index)
+    ch = index(element); 
+    tl = tls{ch}; % ms
+    freq = str2double(get(handles.freq, 'String')); %Hz
+    pw = pws{ch}*1000; % us, converted from input in ms
+    amp = amps{ch}*1000; %input in mA, gets programmed in uA
+    td = tds{ch}; %us
+    
+    %Can add parameters for train delay (TD) and polarity (PL; 1 is
+    %cathodic first)
+    command{1} = struct('TL', tl, ...%ms
+        'TD', td, ... % us; this includes both stim stagger and delayed start 
+        'Freq', freq, ...        % Hz
+        'CathDur', pw, ...    % us
+        'AnodDur', pw, ...    % us
+        'CathAmp', amp+32768, ... % uA
+        'AnodAmp', 32768-amp, ... % uA
+        'Run', ws.run_once ... % Single train mode
+        );
+    ws.set_stim(command, ch); 
+end
+
+%run everything as many times as specified, with appropriate delays in the
+%cycle
+for i=1:num_cycles
+    command{1} = struct('Run', ws.run_once_go); 
+    ws.set_stim(command, index); %run stimulation commands for all muscles being used
+    pause((time_to_stim+cycle_del)/1000) %pause until time for next step cycle
+end
 
 disp('done stimulating'); 
 %TODO: cleanup. 
@@ -1479,6 +1537,7 @@ function amp9_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
 
 
 function pw9_Callback(hObject, eventdata, handles)
