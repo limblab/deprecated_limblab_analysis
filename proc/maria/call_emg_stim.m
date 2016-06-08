@@ -24,11 +24,10 @@ goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0
     1 ,  0 ,  1 , 1 , 0 , 1 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ];
 
 animals = [1:8];
-muscles = [1 3 4 6 8 9 12 15];
+muscles = [1 4 5 6 3 8 9 12 15];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
-channels = [1 2 3 4 5 6 7 8];
-freq = 20; %hz
+channels = [1 3 5 2 4 7 6 8 9];
 pw = .2; %ms
 
 mus_mean = {};
@@ -51,10 +50,10 @@ end
 
 
 %define thresholds
-emglow_limit = [.15 .13 .13 .13 .13 .13 .13 .13]; %get rid of low noise
-emghigh_limit = [1 1 1 1 1 1 1 1]; %get rid of excessively high spikes
-amplow_limit = [.5 .5 .5 .5 .5 .5 .5 .5]; %lowest level of stim to twitch (err on low side)
-amphigh_limit = [3 3 3 3 3 3 3 3];  %highest level of stim to use
+emglow_limit = [.15 .13 .13 .13 .13 .13 .13 .13 .13]; %get rid of low noise
+emghigh_limit = [1 1 1 1 1 1 1 1 1]; %get rid of excessively high spikes
+amplow_limit = [.4 2 1.1 1.3 .3 .8 2.4 .9 1.6]; %lowest level of stim to twitch (err on low side)
+amphigh_limit = [2.3 3.5 1.25 1.9 1.3 1.8 3.5 1.7 2.4];  %highest level of stim to use
 
 %check that limits are all defined
 lm = length(channels);
@@ -82,13 +81,14 @@ for i=1:length(muscles)
     legendinfo{i} = musc_names{muscles(i)}; 
 end
 
-legend(legendinfo);
+%legend(legendinfo);
 
 %TODO: figure out best stretch factor
 repeats = 1; %number of times to repeat the cycle
-slowdown_factor = 4; 
-amp_adjust = 1; 
-array_stim(current_arr*amp_adjust, 20, freq, 5000, slowdown_factor, pw, channels, repeats, legendinfo, 'COM4'); 
+slowdown_factor = 16; 
+amp_adjust = .5; 
+current_arr = cellfun(@(x) x*amp_adjust, current_arr, 'un', 0); 
+array_stim(current_arr, 20, 40, 5000, slowdown_factor, pw, channels, repeats, legendinfo, 'COM4'); 
 
 %TODO: array-based stim fxn with freq modulation
 

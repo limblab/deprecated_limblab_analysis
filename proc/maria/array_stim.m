@@ -19,17 +19,17 @@ for i=1:size(current_array, 2)
     xq = 1/conv_fact:1/conv_fact:length(current_array{i})/sampled_freq;
     ds_array{i} = interp1(x, current_array{i}, xq);
     %hold on;
-    figure(1); hold on;
-    plot(x, current_array{i})
-    figure(2); hold on;
-    plot(xq, ds_array{i}, 'linewidth', 2);
+%     figure(1); hold on;
+%     plot(x, current_array{i})
+%     figure(2); hold on;
+%     plot(xq, ds_array{i}, 'linewidth', 2);
     %disp(length(ds_array{i})); %NOTE: if these aren't all the same length it'll be a nuisance
 end
 %TODO: figure out a way to plot this so it shows the intermediate points
 %(so if it's stimulating at 40Hz, and the sample is assumed to be at 100
 %hz, it shows the point in between. wait. uhm.)
-
-legend(muscle_names);
+% 
+% legend(muscle_names);
 
 length_stim = size(ds_array{1}, 2)/sending_freq; %gets the number of seconds being spent stimulating
 disp(['The total time spent stimulating is ' num2str(length_stim)]);
@@ -74,7 +74,13 @@ command{1} = struct('Freq', stim_freq, ...        % Hz
     'CathDur', pw*1000, ...    % us
     'AnodDur', pw*1000 ...    % us
     ); %kind of strange to put this here, need to define the amps to all be zero first TODO
-ws.set_stim(command, channels);
+
+if length(channels>8)
+    ws.set_stim(command, channels(1:7));
+    ws.set_stim(command, channels(8:end));
+else
+    ws.set_stim(command, channels);
+end
 
 ws.set_Run(ws.run_cont, channels);
 

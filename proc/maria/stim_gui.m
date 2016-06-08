@@ -114,9 +114,9 @@ current_arr = cell(1, length(index));
 %get array of values to stimulate
 for i=1:length(index) %for all channels that are supposed to be stimulated
     %get zero values before the stimulation starts
-    initial_zeros = zeros(1, starts{i}*freq/1000); 
+    initial_zeros = zeros(1, starts{index(i)}*freq/1000); 
     %get values during stimulation
-    stim_values = amps{i}*ones(1, tls{i}*freq/1000);     
+    stim_values = amps{index(i)}*ones(1, tls{index(i)}*freq/1000);     
     %get zero values after stimulation
     end_zeros = zeros(1, cycle_del*freq/1000); 
     current_arr{i} = [initial_zeros, stim_values, end_zeros];
@@ -124,7 +124,7 @@ end
 
 %get zero values so all channels are the same length
 total_len = max(cellfun('length', current_arr)); 
-figure; hold on;
+%figure; hold on;
 for i=1:length(current_arr)
     current_arr{i} = [current_arr{i} zeros(1, total_len-length(current_arr{i}))]; 
     %plot(current_arr{i}); 
