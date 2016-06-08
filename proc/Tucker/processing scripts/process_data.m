@@ -42,7 +42,7 @@ input_data.vel_pd=1;%default flag is 1
 input_data.force_pd=0;%default flag is 0
 data_struct2 = run_data_processing(function_name,folderpath,input_data);
 %% actVSpass pd comparison
-folderpath='F:\local processing\chips\experiment_20160526_CObump_PD';
+folderpath='/media/tucker/My Passport/local processing/chips/experiment_20160526_CObump_PD/';
 functionName='comparePD_actpass';
 inputData.fileName='Chips_20160526_COBump_area2_tucker_001';
 inputData.task='taskCObump';
