@@ -86,7 +86,9 @@ legend(legendinfo);
 
 %TODO: figure out best stretch factor
 repeats = 1; %number of times to repeat the cycle
-array_stim(current_arr, 20, freq, 5000, 4, pw, channels, repeats, legendinfo, 'COM3'); 
+slowdown_factor = 4; 
+amp_adjust = 1; 
+array_stim(current_arr*amp_adjust, 20, freq, 5000, slowdown_factor, pw, channels, repeats, legendinfo, 'COM4'); 
 
 %TODO: array-based stim fxn with freq modulation
 
