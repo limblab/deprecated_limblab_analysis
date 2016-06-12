@@ -7,6 +7,7 @@
 % stimulate based on current arrays
 %TODO make this work for many animals
 
+
 %load data file
 emg_file = 'EMGdata';
 load(emg_file);
@@ -64,31 +65,33 @@ end
 %TODO: deal with confusing numbering system for emgs here. should I average
 %together different muscles before stimulation? YES
 
-clear('current_arr'); 
-%figure; hold on; 
+clear('current_arr');
+%figure; hold on;
 for i=1:length(muscles)
     %cycle through each muscle we'll be stimulating, find the mean of the
     %filtered EMGs, and find the conversion to amplitude of current
     a = mus_mean(i, :);
     a = a(~cellfun('isempty', a));
-    ds_mat = norm_mat(dnsamp(a).'); 
-    clear('a'); 
-    %figure(channels(i)); hold on; plot(ds_mat); 
-    ds_mean = mean(ds_mat.'); 
+    ds_mat = norm_mat(dnsamp(a).');
+    clear('a');
+    %figure(channels(i)); hold on; plot(ds_mat);
+    ds_mean = mean(ds_mat.');
     %plot(ds_mean, 'color', [.5 .5 .5], 'linewidth', 2); %use these plots to help choose thresholds
     current_arr{i} = emg2amp(ds_mean, emglow_limit(i), emghigh_limit(i), amplow_limit(i), amphigh_limit(i));
-    %plot(ds_mean, 'linewidth', 2); 
-    legendinfo{i} = musc_names{muscles(i)}; 
+    %plot(ds_mean, 'linewidth', 2);
+    legendinfo{i} = musc_names{muscles(i)};
 end
 
 %legend(legendinfo);
 
 %TODO: figure out best stretch factor
 repeats = 1; %number of times to repeat the cycle
-slowdown_factor = 16; 
-amp_adjust = .5; 
-current_arr = cellfun(@(x) x*amp_adjust, current_arr, 'un', 0); 
-array_stim(current_arr, 20, 40, 5000, slowdown_factor, pw, channels, repeats, legendinfo, 'COM4'); 
+slowdown_factor = 16;
+amp_adjust = .5;
+current_arr = cellfun(@(x) x*amp_adjust, current_arr, 'UniformOutput', false);
+
+
+array_stim(current_arr, 20, 40, 5000, slowdown_factor, pw, channels, repeats, legendinfo, 'COM4');
 
 %TODO: array-based stim fxn with freq modulation
 

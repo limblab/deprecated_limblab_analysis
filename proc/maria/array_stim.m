@@ -33,15 +33,6 @@ end
 
 length_stim = size(ds_array{1}, 2)/sending_freq; %gets the number of seconds being spent stimulating
 disp(['The total time spent stimulating is ' num2str(length_stim)]);
-save([datestr(now, 'yyyymmdd_HHMMSS'), '.mat'], 'current_array', 'ds_array', 'muscle_names', 'length_stim', 'sending_freq', 'stim_freq', 'pw');
-
-%repeating_array{i} = 0; %somehow get the number of times to repeat each variable and then
-%use that to make a repeating array and then I can plot.
-%TODO: now is a good time to save workspace variables: I should save all
-%the amplitude data I just plotted, do a calculation with the sample_freq and the
-%frequency of stimulation so I know the actual timing (of each pulse and of
-%total length of stimulation), correlate that with muscle names and stick
-%pw on the end of the whole file. hmm.
 
 %if the stimulator object doesn't exist yet, set it up:
 if ~exist('ws', 'var')
@@ -106,6 +97,10 @@ end
 
 %stop all stimulation before ending program
 ws.set_Run(ws.run_stop, channels);
+
+%save the important variables (this happens after stimulation so if there
+%is a stimulator error, it doesn't still save a junk file)
+save([datestr(now, 'yyyymmdd_HHMM'), '.mat'], 'current_array', 'ds_array', 'muscle_names', 'length_stim', 'sending_freq', 'stim_freq', 'pw');
 
 %TODO: pause long enough for stim to end??
 end
