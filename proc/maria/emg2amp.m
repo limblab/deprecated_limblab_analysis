@@ -8,7 +8,7 @@ function ret = emg2amp(emg_array, emglow_limit, emghigh_limit, amplow_limit, amp
         elseif emg_array(i)>emghigh_limit
             ret(i)=amphigh_limit; %don't do a higher amperage stim than the threshold
         else
-            ret(i)=amplow_limit+emg_array(i)*(amphigh_limit-amplow_limit)/(emghigh_limit-emglow_limit); %same as format from monkey FES
+            ret(i)=amplow_limit+(emg_array(i)-emglow_limit)*(amphigh_limit-amplow_limit)/(emghigh_limit-emglow_limit); %same as format from monkey FES
             if ret(i)>amphigh_limit
                 ret(i)=amphigh_limit; 
             end

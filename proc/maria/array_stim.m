@@ -12,6 +12,7 @@ function array_stim(current_array, sending_freq, stim_freq, sampled_freq, stretc
 %TODO: deal with losing resolution - say, a spike at the end doesn't
 %necessarily show up
 
+colors = {[204 0 0], [255 125 37], [153 84 255],  [106 212 0], [0 102 51], [0 171 205], [0 0 153], [102 0 159], [64 64 64], [255 51 153], [253 203 0]};
 
 for i=1:size(current_array, 2)
     conv_fact = stretch_factor*sending_freq; %this will lead to a slight "stretching" effect of the step over time
@@ -19,17 +20,27 @@ for i=1:size(current_array, 2)
     xq = 1/conv_fact:1/conv_fact:length(current_array{i})/sampled_freq;
     ds_array{i} = interp1(x, current_array{i}, xq);
     %hold on;
-%     figure(1); hold on;
-%     plot(x, current_array{i})
-%     figure(2); hold on;
-%     plot(xq, ds_array{i}, 'linewidth', 2);
+    %figure(1); hold on;
+    %plot(x, current_array{i})
+    %figure(2); hold on;
+    %plot(xq, ds_array{i}, 'color', colors{i}/255, 'linewidth', 2.5);
     %disp(length(ds_array{i})); %NOTE: if these aren't all the same length it'll be a nuisance
 end
 %TODO: figure out a way to plot this so it shows the intermediate points
 %(so if it's stimulating at 40Hz, and the sample is assumed to be at 100
 %hz, it shows the point in between. wait. uhm.)
 % 
-% legend(muscle_names);
+
+
+%plotting info
+for i=1:size(ds_array, 2)
+    temp{i} = repmat(ds_array{i}',1, 2)';
+    temp{i} = temp{i}(:)'
+    hold on; 
+    plot(temp{i}, 'color', colors{i}/255, 'linewidth', 2.5); 
+end
+aleg = legend(muscle_names); 
+set(aleg,'FontSize',18);
 
 length_stim = size(ds_array{1}, 2)/sending_freq; %gets the number of seconds being spent stimulating
 disp(['The total time spent stimulating is ' num2str(length_stim)]);
@@ -97,10 +108,6 @@ end
 
 %stop all stimulation before ending program
 ws.set_Run(ws.run_stop, channels);
-
-%save the important variables (this happens after stimulation so if there
-%is a stimulator error, it doesn't still save a junk file)
-save([datestr(now, 'yyyymmdd_HHMM'), '.mat'], 'current_array', 'ds_array', 'muscle_names', 'length_stim', 'sending_freq', 'stim_freq', 'pw');
 
 %TODO: pause long enough for stim to end??
 end

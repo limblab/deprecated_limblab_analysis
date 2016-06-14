@@ -18,6 +18,9 @@ if array_pref==0
     musc_names = {'gluteus max', 'gluteus med', 'gastroc', 'vastus lat', 'biceps fem A',...
         'biceps fem PR', 'biceps fem PC', 'tib ant', 'rect fem', 'vastus med', 'adduct mag', ...
         'semimemb', 'gracilis R', 'gracilis C', 'semitend'};
+    musc_names = {'GS', 'Gmed', 'LG', 'VL', 'BFa',...
+        'BFpr', 'BFpc', 'TA', 'RF', 'VM', 'AM', ...
+        'SM', 'GRr', 'GRc', 'ST'};
     %good and bad channels (1 is good, 0 is bad)
     goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ;...
         0 ,  1 ,  1 , 1 , 1 , 1 ,  1 ,  1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 ;...
@@ -29,10 +32,10 @@ if array_pref==0
         1 ,  0 ,  1 , 1 , 0 , 1 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ];
     
     animals = [1:8];
-    muscles = [1 4 5 6 3 8 9 12 15];
+    muscles = [1 4 5 6 7 3 8 9 12 14 15];
     n = 4;
     Wn = 30/(5000/2); %butter parameters (30 Hz)
-    channels = [1 3 5 2 4 7 6 8 9];
+    channels = [1 2 3 4 5 6 7 8 9 10 11];
     pw = .2; %ms
     
     mus_mean = {};
@@ -55,10 +58,10 @@ if array_pref==0
     
     
     %define thresholds
-    emglow_limit = [.15 .13 .13 .13 .13 .13 .13 .13 .13]; %get rid of low noise
-    emghigh_limit = [1 1 1 1 1 1 1 1 1]; %get rid of excessively high spikes
-    amplow_limit = [.4 2 1.1 1.3 .3 .8 2.4 .9 1.6]; %lowest level of stim to twitch (err on low side)
-    amphigh_limit = [2.3 3.5 1.25 1.9 1.3 1.8 3.5 1.7 2.4];  %highest level of stim to use
+    emglow_limit = [.13 .13 .13 .13 .13 .13 .13 .13 .13 .13 .13]; %get rid of low noise
+    emghigh_limit = [1 1 1 1 1 1 1 1 1 1 1]; %get rid of excessively high spikes
+    amplow_limit = [.2 .8 .5 .4 1.1 .5 .6 1.2 .9 .7 .9]; %lowest level of stim to twitch (err on low side)
+    amphigh_limit = [1.9 3.0 1.7 2.5 2.8 2.9 2.7 2.4 3.2 3.4 2.8];  %highest level of stim to use
     
     %check that limits are all defined
     lm = length(channels);
@@ -71,6 +74,7 @@ if array_pref==0
     
     clear('current_arr');
     %figure; hold on;
+    colors = {[204 0 0], [255 125 37], [153 84 255],  [106 212 0], [0 102 51], [0 171 205], [0 0 153], [102 0 159], [64 64 64], [255 51 153], [253 203 0]};
     for i=1:length(muscles)
         %cycle through each muscle we'll be stimulating, find the mean of the
         %filtered EMGs, and find the conversion to amplitude of current
@@ -80,12 +84,14 @@ if array_pref==0
         clear('a');
         %figure(channels(i)); hold on; plot(ds_mat);
         ds_mean = mean(ds_mat.');
-        %plot(ds_mean, 'color', [.5 .5 .5], 'linewidth', 2); %use these plots to help choose thresholds
+        %hold on; plot(ds_mean, 'color', colors{i}/255, 'linewidth', 2.5); %use these plots to help choose thresholds
         current_arr{i} = emg2amp(ds_mean, emglow_limit(i), emghigh_limit(i), amplow_limit(i), amphigh_limit(i));
-        %plot(ds_mean, 'linewidth', 2);
+        %hold on; plot(current_arr{i}, 'color', colors{i}/255, 'linewidth', 2.5);
         legendinfo{i} = musc_names{muscles(i)};
     end
     
+%     aleg = legend(legendinfo); 
+%     set(aleg,'FontSize',18);
     %to stimulate based on a saved array:
 else
     %load the file
@@ -103,8 +109,8 @@ end
 
 %TODO: figure out best stretch factor
 repeats = 1; %number of times to repeat the cycle
-slowdown_factor = 16;
-amp_adjust = .5;
+slowdown_factor = 4;
+amp_adjust = 1;
 current_arr = cellfun(@(x) x*amp_adjust, current_arr, 'UniformOutput', false);
 
 %If saving current array for later stimulus possibilities
