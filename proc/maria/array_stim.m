@@ -31,16 +31,16 @@ end
 %hz, it shows the point in between. wait. uhm.)
 % 
 
-
-%plotting info
-for i=1:size(ds_array, 2)
-    temp{i} = repmat(ds_array{i}',1, 2)';
-    temp{i} = temp{i}(:)'
-    hold on; 
-    plot(temp{i}, 'color', colors{i}/255, 'linewidth', 2.5); 
-end
-aleg = legend(muscle_names); 
-set(aleg,'FontSize',18);
+% 
+% %plotting info
+% for i=1:size(ds_array, 2)
+%     temp{i} = repmat(ds_array{i}',1, 2)';
+%     temp{i} = temp{i}(:)'
+%     %hold on; 
+%     %plot(temp{i}, 'color', colors{i}/255, 'linewidth', 2.5); 
+% end
+% %aleg = legend(muscle_names); 
+% %set(aleg,'FontSize',18);
 
 length_stim = size(ds_array{1}, 2)/sending_freq; %gets the number of seconds being spent stimulating
 disp(['The total time spent stimulating is ' num2str(length_stim)]);
@@ -55,6 +55,8 @@ end
 for i=length(channels)
     ws.set_TD(50+500*i, channels(i));
 end
+
+ws.set_Run(ws.run_stop, channels);
 
 %TODO: check this
 %send timing pulse
@@ -77,9 +79,9 @@ command{1} = struct('Freq', stim_freq, ...        % Hz
     'AnodDur', pw*1000 ...    % us
     ); %kind of strange to put this here, need to define the amps to all be zero first TODO
 
-if length(channels>8)
-    ws.set_stim(command, channels(1:7));
-    ws.set_stim(command, channels(8:end));
+if length(channels)>7
+    ws.set_stim(command, channels(1:6)); 
+    ws.set_stim(command, channels(7:end)); 
 else
     ws.set_stim(command, channels);
 end
