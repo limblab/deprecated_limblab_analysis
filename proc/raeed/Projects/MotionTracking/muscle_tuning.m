@@ -14,9 +14,13 @@ muscle_scores = score(:,1:5);
 times = muscle_pos.time;
 
 %% Get muscle velocities
-% filter muscle lengths
-muscle_vel = muscle_pos;
-for i=2:size(muscle_pos,2)
+% interpolate muscle lengths
+interp_times = times(1):0.03:times(end);
+interp_muscle_scores = interp1(times,muscle_scores,interp_times);
+
+% get muscle velocities
+muscle_vel = interp_muscle_scores;
+for i=1:size(interp_muscle_scores,2)
     muscle_vel{:,i} = gradient(muscle_pos{:,i},muscle_pos.time);
 end
 
