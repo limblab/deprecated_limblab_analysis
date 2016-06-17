@@ -14,9 +14,21 @@ load(emg_file);
 %musc_names = {'gluteus max', 'gluteus med', 'gastroc', 'vastus lat', 'biceps fem A',...
 %    'biceps fem PR', 'biceps fem PC', 'tib ant', 'rect fem', 'vastus med', 'adduct mag', ...
 %    'semimemb', 'gracilis R', 'gracilis C', 'semitend'};
-musc_names = {'GS', 'Gmed', 'LG', 'VL', 'BFa',...
-        'BFpr', 'BFpc', 'TA', 'RF', 'VM', 'AM', ...
-        'SM', 'GRr', 'GRc', 'ST'};
+musc_names = {'GS', ... %1
+    'Gmed',...%2
+    'LG',...%3
+    'VL',...%4
+    'BFa',...%5
+        'BFpr',...%6
+        'BFpc',...%7
+        'TA',...%8
+        'RF',...%9
+        'VM',...%10
+        'AM', ...%11
+        'SM',...%12
+        'GRr',...%13
+        'GRc',...%14
+        'ST'}; %15
 %good and bad channels (1 is good, 0 is bad)
 goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ;...
     0 ,  1 ,  1 , 1 , 1 , 1 ,  1 ,  1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 ;...
@@ -28,10 +40,10 @@ goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0
     1 ,  0 ,  1 , 1 , 0 , 1 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ];
 
 animals = [1:8];
-muscles = [1 4 5 6 8 3 12 9 15];
+muscles = [1 4 6 8 3 12 15];
 n = 4;
 Wn = 30/(5000/2); %butter parameters (30 Hz)
-channels = [1 2 3 4 5 6 9 8 10];
+channels = [2 6 8 7 9 3 5];
 pw = .2; %ms
 
 mus_mean = {};
@@ -54,10 +66,10 @@ end
 
 
 %% define thresholds and convert EMG to amplitude
-emglow_limit = [.15 .13 .13 .13 .13 .13 .13 .13 .13]; %get rid of low noise
-emghigh_limit = [1 1 1 1 1 1 1 1 1]; %get rid of excessively high spikes
-amplow_limit = [.3 1.4 .7 1.8 .7 .2 1.2 1.2 .2]; %lowest level of stim to twitch (err on low side)
-amphigh_limit = [1.9 3.0 2.2 2.4 1.2 .9 2.6 2.6 .9];  %highest level of stim to use
+emglow_limit = [.15 .13 .13 .13 .13 .13 .13]; %get rid of low noise
+emghigh_limit = [1 1 1 1 1 1 1]; %get rid of excessively high spikes
+amplow_limit = [1 1 1.4 .5 .5 .8 1.2]; %lowest level of stim to twitch (err on low side)
+amphigh_limit = [2 2.3 2 1 1.4 2 2];  %highest level of stim to use
 
 %check that limits are all defined
 %NOTE: this doesn't check number of channels because I might need to make
@@ -93,14 +105,14 @@ end
 % legendinfo{length(channels)} = 'IP';
 %plot(ip_arr, 'k', 'linewidth', 2); 
 %add legend
-legend(legendinfo);
+%legend(legendinfo);
 
 %% Define parameters to be used to run the stimulation cycle (number of runs, length of runs, etc)
 %TODO: figure out best stretch factor
 %choose number of time
 repeats = 11; %number of times to repeat the cycle
 slowdown_factor = 6; %three seems to be pretty much a normal length step. Kind of.
-amp_adjust = .65;
+amp_adjust = [1.7 1 .9 1.4 1 1.3 1.3];
 if length(amp_adjust)>1 %if using an array of amplitude adjustment
     for i=1:length(current_arr)
         %plot(current_arr{i}); hold on;
