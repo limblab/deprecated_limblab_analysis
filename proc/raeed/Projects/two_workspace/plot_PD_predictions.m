@@ -116,13 +116,14 @@ clear i
 clear reach_ind
 
 %% make fake "neurons"
-num_neurons = 100;
+num_neurons = size(muscle_vel,2)-1;
+% num_neurons = 100;
 joint_weights = randn(7,num_neurons);
 joint_neur_PM = joint_vel_PM{:,2:end}*joint_weights;
 joint_neur_DL = joint_vel_DL{:,2:end}*joint_weights;
 
-muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
-% muscle_weights = eye(num_neurons);
+% muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
+muscle_weights = eye(num_neurons);
 muscle_neur_PM = muscle_vel_PM{:,2:end}*muscle_weights;
 muscle_neur_DL = muscle_vel_DL{:,2:end}*muscle_weights;
 
@@ -361,7 +362,7 @@ clear unit_ctr
 %% Calculate actual PDs
 
 % use GLM for actual neurons
-bootfunc = @(X,y) GeneralizedLinearModel.fit(X,y);
+bootfunc = @(X,y) LinearModel.fit(X,y);
 
 % interpolate endpoint kinematics to joint times
 endpoint_kin_real_PM = interp1(t,endpoint_kin,bin_times(is_PM_time));
@@ -405,7 +406,7 @@ for i = 1:size(real_neur,2)
 %     real_tuning_PM(i).dir = mean_dir;
 %     real_tuning_PM(i).dir_CI = dir_CI';
 %     real_tuning_PM(i).moddepth = sqrt(sum(coef_means(4:5).^2));
-    real_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_real_PM,real_neur_PM(is_PM_time,i),['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
+    real_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_real_PM,real_neur(is_PM_time,i),['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 % interpolate endpoint kinematics to joint times
@@ -450,7 +451,7 @@ for i = 1:size(real_neur,2)
 %     real_tuning_DL(i).dir = mean_dir;
 %     real_tuning_DL(i).dir_CI = dir_CI';
 %     real_tuning_DL(i).moddepth = sqrt(sum(coef_means(4:5).^2));
-    real_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_real_DL,real_neur_DL(is_DL_time,i),['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+    real_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_real_DL,real_neur(is_DL_time,i),['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
 end
 
 clear boot_tuning
@@ -525,7 +526,7 @@ DL_CI_width = diff(dir_CI_DL,1,2); % get CI widths
 PM_CI_width = diff(dir_CI_PM,1,2);
 DL_CI_width(DL_CI_width<0) = DL_CI_width(DL_CI_width<0)+2*pi;
 PM_CI_width(PM_CI_width<0) = PM_CI_width(PM_CI_width<0)+2*pi;
-tuned_neurons = DL_CI_width<pi/8 & PM_CI_width<pi/8;
+tuned_neurons = DL_CI_width<pi/4 & PM_CI_width<pi/4;
 angs_PM_tuned = angs_PM(tuned_neurons);
 angs_DL_tuned = angs_DL(tuned_neurons);
 
@@ -552,7 +553,7 @@ DL_muscle_CI_width = diff(dir_muscle_CI_DL,1,2); % get CI widths
 PM_muscle_CI_width = diff(dir_muscle_CI_PM,1,2);
 DL_muscle_CI_width(DL_muscle_CI_width<0) = DL_muscle_CI_width(DL_muscle_CI_width<0)+2*pi;
 PM_muscle_CI_width(PM_muscle_CI_width<0) = PM_muscle_CI_width(PM_muscle_CI_width<0)+2*pi;
-tuned_muscle_neurons = DL_muscle_CI_width<pi/8 & PM_muscle_CI_width<pi/8;
+tuned_muscle_neurons = DL_muscle_CI_width<pi/4 & PM_muscle_CI_width<pi/4;
 angs_muscle_PM_tuned = angs_muscle_PM(tuned_muscle_neurons);
 angs_muscle_DL_tuned = angs_muscle_DL(tuned_muscle_neurons);
 
@@ -583,28 +584,28 @@ angs_real_DL = [real_tuning_DL.dir];
 rad_real_DL = [real_tuning_DL.moddepth];
 dir_real_CI_DL = [real_tuning_DL.dir_CI]';
 
-for i = 1:length(angs_real_DL)
-    figure(12345)
-    clf
-    
-    h=polar(repmat(angs_real_PM(:,i),2,1),[0;1]*rad_real_PM(i));
-    set(h,'linewidth',2,'color',[0.6 0.5 0.7])
-    th_fill = [dir_real_CI_PM(i,2) angs_real_PM(i) dir_real_CI_PM(i,1) 0];
-    r_fill = [rad_real_PM(i) rad_real_PM(i) rad_real_PM(i) 0];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
-    
-    hold on
-    
-    h=polar(repmat(angs_real_DL(:,i),2,1),[0;1]*rad_real_DL(i));
-    set(h,'linewidth',2,'color',[1 0 0])
-    th_fill = [dir_real_CI_DL(i,2) angs_real_DL(i) dir_real_CI_DL(i,1) 0];
-    r_fill = [rad_real_DL(i) rad_real_DL(i) rad_real_DL(i) 0];
-    [x_fill,y_fill] = pol2cart(th_fill,r_fill);
-    patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
-    
-    waitforbuttonpress
-end
+% for i = 1:length(angs_real_DL)
+%     figure(12345)
+%     clf
+%     
+%     h=polar(repmat(angs_real_PM(:,i),2,1),[0;1]*rad_real_PM(i));
+%     set(h,'linewidth',2,'color',[0.6 0.5 0.7])
+%     th_fill = [dir_real_CI_PM(i,2) angs_real_PM(i) dir_real_CI_PM(i,1) 0];
+%     r_fill = [rad_real_PM(i) rad_real_PM(i) rad_real_PM(i) 0];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[0.6 0.5 0.7],'facealpha',0.3);
+%     
+%     hold on
+%     
+%     h=polar(repmat(angs_real_DL(:,i),2,1),[0;1]*rad_real_DL(i));
+%     set(h,'linewidth',2,'color',[1 0 0])
+%     th_fill = [dir_real_CI_DL(i,2) angs_real_DL(i) dir_real_CI_DL(i,1) 0];
+%     r_fill = [rad_real_DL(i) rad_real_DL(i) rad_real_DL(i) 0];
+%     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
+%     patch(x_fill,y_fill,[1 0 0],'facealpha',0.3);
+%     
+%     waitforbuttonpress
+% end
 
 clear x_fill
 clear y_fill
@@ -616,7 +617,7 @@ DL_real_CI_width = diff(dir_real_CI_DL,1,2); % get CI widths
 PM_real_CI_width = diff(dir_real_CI_PM,1,2);
 DL_real_CI_width(DL_real_CI_width<0) = DL_real_CI_width(DL_real_CI_width<0)+2*pi;
 PM_real_CI_width(PM_real_CI_width<0) = PM_real_CI_width(PM_real_CI_width<0)+2*pi;
-tuned_real_neurons = DL_real_CI_width<pi/8 & PM_real_CI_width<pi/8;
+tuned_real_neurons = DL_real_CI_width<pi/4 & PM_real_CI_width<pi/4;
 angs_real_PM_tuned = angs_real_PM(tuned_real_neurons);
 angs_real_DL_tuned = angs_real_DL(tuned_real_neurons);
 

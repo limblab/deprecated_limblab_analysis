@@ -7,8 +7,9 @@
 
 %Output will be all the markers in handle coordinates, and in cerebus time
 %% 1. LOAD CEREBUS FILE
-folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
-prefix = 'Chips_20151120_RW_003';
+% folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151203_RW_002/';
+prefix = 'Chips_20151203_RW_002';
 labnum = 6;
 
 bdf = get_nev_mat_data([folder prefix],labnum);
@@ -34,7 +35,7 @@ title('Kinect LED vals')
 
 %% 3b. Enter kinect start time estimate
 
-kinect_start_guess=7.5;
+kinect_start_guess=3.5;
 
 %% 3c. Align kinect led values with cerebus squarewave
 
@@ -150,16 +151,20 @@ if length(marker_loss_points)>length(marker_reappear_points) || marker_loss_poin
 end
 if length(marker_loss_points)<length(marker_reappear_points) || marker_loss_points(1)>marker_reappear_points(1)
     %Means that a marker was lost to start
-    %Dont know what to do here other than throw a warning and toss first
-    %reappearance
-    marker_reappear_points(1) = [];
-    warning('Shoulder position marker not found at start of file. May lead to unpredictable results')
+    %Dont know what to do here other than put a zero at start off loss
+%     marker_reappear_points(1) = [];
+    marker_loss_points = [0;marker_loss_points];
+    warning('Shoulder position marker not found at start of file. Replacing missing start points with first reappearance position')
 end
 for i=1:length(marker_loss_points)
     marker_loss = marker_loss_points(i);
     marker_reappear = marker_reappear_points(i);
     num_lost = marker_reappear-marker_loss;
-    rep_coord = repmat(shoulder_pos(marker_loss,:),num_lost,1);
+    if marker_loss~=0
+        rep_coord = repmat(shoulder_pos(marker_loss,:),num_lost,1);
+    else
+        rep_coord = repmat(shoulder_pos(marker_reappear,:),num_lost,1);
+    end
     shoulder_pos(marker_loss+1:marker_reappear,:) = rep_coord;
 end
 

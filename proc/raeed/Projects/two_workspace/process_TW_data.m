@@ -1,6 +1,7 @@
 %% process Chips two workspace data
 % folder='F:\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
-folder = 'C:\Users\rhc307\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
+% folder = 'C:\Users\rhc307\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/20151202';
 clear options
 options.prefix='Chips_20151202_RW';
 options.only_sorted=1;
@@ -8,8 +9,8 @@ function_name='compare_workspace_PDs';
 options.labnum=6;
 options.dual_array = 0;
 
-options.bdf_DL = bdfpost_DL;
-options.bdf_PM = bdfpost_PM;
+% options.bdf_DL = bdfpost_DL;
+% options.bdf_PM = bdfpost_PM;
 
 dbstop if error
 output_data_20151202 = run_data_processing(function_name,folder,options);
@@ -95,5 +96,18 @@ options.opensim_prefix = 'Chips_20151120_scaled';
 options.labnum = 6;
 options.dual_array = 0;
 function_name = 'plot_PD_predictions';
+
+output_data_pred = run_data_processing(function_name,folder,options);
+
+%% get full raw tuning curves
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
+clear options
+options.prefix = 'Chips_20151120_RW_003';
+options.opensim_prefix = 'Chips_20151120_scaled';
+options.labnum = 6;
+options.dual_array = 0;
+options.only_sorted=1;
+options.plot_curves=1;
+function_name = 'get_tuning_curves';
 
 output_data_pred = run_data_processing(function_name,folder,options);
