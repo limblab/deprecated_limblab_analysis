@@ -43,7 +43,7 @@ function NEVNSx = cerebus2NEVNSx(varargin)
         NS4list = dir([filepath filesep file_prefix '*.ns4']);
         NS5list = dir([filepath filesep file_prefix '*.ns5']);
     else
-        NS1list = []
+        NS1list = [];
         NS2list = [];
         NS3list = [];
         NS4list = [];

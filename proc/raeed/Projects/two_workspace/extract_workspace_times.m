@@ -1,13 +1,12 @@
 function [times] = extract_workspace_times(bdf,bottom_left,top_right)
 % Extract workspace from BDF with corners given by bottom_left and
-% top_right (coordinates are in [x y] format). Outputs new bdf and set of
+% top_right (coordinates are in [x y] format). Outputs set of
 % times [start_times stop_times] for reaches in workspace
 
     if(length(bottom_left(:))~=2 || length(top_right(:))~=2)
         error('Coordinates are not in correct format')
     end
     
-    bdf_new = bdf;
     t = bdf.pos(:,1);
     
     ind = bdf.pos(:,2)>bottom_left(1) & bdf.pos(:,2)<top_right(1) & bdf.pos(:,3)>bottom_left(2) & bdf.pos(:,3)<top_right(2);
@@ -29,7 +28,7 @@ function [times] = extract_workspace_times(bdf,bottom_left,top_right)
     lMin = 3;
     keepers = true(size(iStart));
     for i = 1:length(keepers)
-        snip = bdf_new.pos(iStart(i):iStop(i), 2:3);
+        snip = bdf.pos(iStart(i):iStop(i), 2:3);
 
         % Reject paths that are too short
         steps = diff(snip);
