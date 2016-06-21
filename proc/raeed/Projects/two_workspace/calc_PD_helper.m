@@ -1,7 +1,7 @@
-function [out_tuning] = calc_PD_helper(bootfunc,endpoint_kin,neur,message)
+function [out_tuning] = calc_PD_helper(bootfunc,endpoint_kin,FR,message)
 % Helper function for plot_PD_predictions and iris plots
 
-    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin, neur);
+    boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin, FR);
     %Display verbose information
     disp(message);
     
@@ -36,6 +36,6 @@ function [out_tuning] = calc_PD_helper(bootfunc,endpoint_kin,neur,message)
     dir_CI = dir_CI+mean_dir;
     
     out_tuning.dir = mean_dir;
-    out_tuning.dir_CI = dir_CI';
+    out_tuning.dir_CI = dir_CI;
     out_tuning.moddepth = sqrt(sum(coef_means(4:5).^2));
 end

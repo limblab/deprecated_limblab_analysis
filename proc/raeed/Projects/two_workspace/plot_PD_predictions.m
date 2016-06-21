@@ -274,12 +274,14 @@ clear bootfunc
 % end
 
 %% Iris plots
-h = iris_plot(joint_tuning_PM,joint_tuning_DL,'joint_PD_diff');
+h = figure('name','joint_PD_diff');
 figure_handles = [figure_handles;h];
+iris_plot(joint_tuning_PM,joint_tuning_DL)
 title('Plot of PD changes (joint)')
 
-h = iris_plot(muscle_tuning_PM,muscle_tuning_DL,'muscle_PD_diff');
+h = figure('name','muscle_PD_diff');
 figure_handles = [figure_handles;h];
+iris_plot(muscle_tuning_PM,muscle_tuning_DL)
 title('Plot of PD changes (muscle)')
 
 %% Real iris plot 
@@ -312,8 +314,9 @@ title('Plot of PD changes (muscle)')
 % clear r_fill
 % clear h
 
-h = iris_plot(real_tuning_PM,real_tuning_DL,'real_PD_diff');
+h = figure('name','real_PD_diff');
 figure_handles = [figure_handles;h];
+iris_plot(real_tuning_PM,real_tuning_DL)
 title('Plot of PD changes (real)')
 
 %% Check kinematics
