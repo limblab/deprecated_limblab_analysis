@@ -1,9 +1,7 @@
-function [out_tuning] = calc_PD_helper(bootfunc,endpoint_kin,FR,message)
+function [out_tuning] = calc_PD_helper(bootfunc,endpoint_kin,FR)
 % Helper function for plot_PD_predictions and iris plots
 
     boot_tuning = bootstrp(100,@(X,y) {bootfunc(X,y)}, endpoint_kin, FR);
-    %Display verbose information
-    disp(message);
     
     %extract coefficiencts from boot_tuning
     boot_coef = cell2mat(cellfun(@(x) x.Coefficients.Estimate',boot_tuning,'uniformoutput',false));

@@ -5,11 +5,6 @@ function [figure_handles, output_data] = plot_PD_predictions(folder,options)
 figure_handles = [];
 output_data = struct;
 
-%% choose fake neural weights
-num_neurons = 100;
-joint_weights = randn(7,num_neurons);
-muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
-% muscle_weights = eye(num_neurons);
 
 %% load bdf
 opensim_prefix = options.opensim_prefix;
@@ -68,6 +63,12 @@ for i=2:size(muscle_pos,2)
 end
 
 clear i
+
+%% choose fake neural weights
+num_neurons = 100;
+joint_weights = randn(7,num_neurons);
+muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
+% muscle_weights = eye(num_neurons);
 
 %% joint kinematics for each workspace
 % PM first
