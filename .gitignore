@@ -6,7 +6,11 @@
 *.exe
 *.o
 *.so
+
+# Vim editor things #
+#####################
 *.un~
+*~
 
 # Packages #
 ############
