@@ -1,8 +1,8 @@
 % fit to each coordinate in one workspace and predict the PD in the next
 
 %% read files in
-% folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151203_RW_002/';
-folder = 'Z:\limblab\User_folders\Raeed\Arm Model\Data\Chips\experiment_20151203_RW_002\';
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151203_RW_002/';
+% folder = 'Z:\limblab\User_folders\Raeed\Arm Model\Data\Chips\experiment_20151203_RW_002\';
 prefix =  'Chips_20151203_RW_002';
 labnum =  6;
 opensim_prefix = 'Chips_20151203_0-320';
@@ -42,8 +42,22 @@ vel = bdf.vel(:,2:3);
 spd = sqrt(sum(vel.^2,2));
 endpoint_kin = [pos vel spd];
 
-% toss everything outside of time window
-endpoint_kin( t<time_window(1) | t>time_window(2), :) = [];
+% interpolate to FR and toss everything outside of time window
+bin_times = bdf.units(1).FR(:,1);
+bin_times( bin_times<time_window(1) | bin_times>time_window(2), :) = [];
+endpoint_kin_full = interp1(t,endpoint_kin,bin_times);
+
+% find time bins to look in for PM and DL
+% PM first
+is_PM_time = zeros(size(bin_times));
+for i = 1:length(times_PM)
+    is_PM_time = is_PM_time | (bin_times>times_PM(i,1) & bin_times<times_PM(i,2));
+end
+% then DL
+is_DL_time = zeros(size(bin_times));
+for i = 1:length(times_DL)
+    is_DL_time = is_DL_time | (bin_times>times_DL(i,1) & bin_times<times_DL(i,2));
+end
 
 % clear unneeded things
 clear t
@@ -65,14 +79,36 @@ for unit_ctr = 1:length(bdf.units)
     uid = bdf.units(unit_ctr).id;
     
     % get firing rate
-    FR = bdf.units(unit_ctr).FR(:,2);
-    FR_t = bdf.units(unit_ctr).FR(:,1);
-    FR(FR_t<time_window(1) | FR_t>time_window(2)) = [];
+    FR = bdf.units(unit_ctr).FR(:,2)/0.05;
+    bin_times = bdf.units(unit_ctr).FR(:,1);
+    FR(bin_times<time_window(1) | bin_times>time_window(2)) = [];
     
-    endpoint_tuning = calc_PD_helper(bootfunc,endpoint_kin,FR,['Calculating endpoint chan ' num2str(uid(1)) ', unit ' num2str(uid(2)) ' (Time: ' num2str(toc) ')']);
-    endpoint_curve = get_single_tuning_curve(endpoint_kin(:,3:4),FR);
+    endpoint_tuning = calc_PD_helper(bootfunc,endpoint_kin_full,FR,['Calculating endpoint chan ' num2str(uid(1)) ', unit ' num2str(uid(2)) ' (Time: ' num2str(toc) ')']);
+    endpoint_curve = get_single_tuning_curve(endpoint_kin_full(:,3:4),FR);
     
-    plot_tuning(endpoint_tuning,endpoint_curve,max(FR),[0 0 0],['chan ' num2str(uid(1)) ', unit ' num2str(uid(2)) 'tuning curve'])
+    endpoint_tuning_PM = calc_PD_helper(bootfunc,endpoint_kin_full(is_PM_time,:),FR(is_PM_time),'PM tuning');
+    endpoint_curve_PM = get_single_tuning_curve(endpoint_kin_full(is_PM_time,3:4),FR(is_PM_time));
+    
+    endpoint_tuning_DL = calc_PD_helper(bootfunc,endpoint_kin_full(is_DL_time,:),FR(is_DL_time),'DL tuning');
+    endpoint_curve_DL = get_single_tuning_curve(endpoint_kin_full(is_DL_time,3:4),FR(is_DL_time));
+    
+    % set up figure
+    handle = figure('name',['chan ' num2str(uid(1)) ', unit ' num2str(uid(2)) 'tuning curve']);
+    
+    % find maximum curve for plot
+    max_curve = max([endpoint_curve.CI_high;endpoint_curve_PM.CI_high;endpoint_curve_DL.CI_high]);
+    
+    % plot all three tunings
+    subplot(2,2,1)
+    plot_tuning(endpoint_tuning,endpoint_curve,max_curve,[0 0 0])
+    subplot(2,2,2)
+    plot_tuning(endpoint_tuning_PM,endpoint_curve_PM,max_curve,[0.6 0.5 0.7]);
+    subplot(2,2,3)
+    plot_tuning(endpoint_tuning_DL,endpoint_curve_DL,max_curve,[1 0 0]);
+    subplot(2,2,4)
+    plot_tuning(endpoint_tuning,endpoint_curve,max_curve,[0 0 0])
+    plot_tuning(endpoint_tuning_PM,endpoint_curve_PM,max_curve,[0.6 0.5 0.7]);
+    plot_tuning(endpoint_tuning_DL,endpoint_curve_DL,max_curve,[1 0 0]);
 end
 
 %% Fit neuron to muscle in one workspace (bootstrap)
