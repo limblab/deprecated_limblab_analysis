@@ -39,17 +39,22 @@ bdf_DL.muscle_pos = array2table(muscle_pos_mat,'VariableNames',{'time','abd_poll
 clear muscle_kin_mat
 
 %% choose fake neural weights
-num_neurons = 100;
-joint_weights = randn(size(bdf_PM.joint_pos,2),num_neurons);
+num_neurons = 8;
+% joint_weights = randn(size(bdf_PM.joint_pos,2),num_neurons);
 muscle_weights = randn(size(bdf_PM.muscle_pos,2),num_neurons);
+joint_weights = eye(size(bdf_PM.joint_pos,2));
 % muscle_weights = eye(num_neurons);
 
-%% predict tunings
-[joint_tuning_PM,~] = get_predicted_tuning(bdf_PM,[],[],joint_weights,'joint','linear','linear');
-[joint_tuning_DL,~] = get_predicted_tuning(bdf_DL,[],[],joint_weights,'joint','linear','linear');
+% zero out first column of both
+joint_weights(1,:) = 0;
+muscle_weights(1,:) = 0;
 
-[muscle_tuning_PM,~] = get_predicted_tuning(bdf_PM,[],[],muscle_weights,'muscle','linear','linear');
-[muscle_tuning_DL,~] = get_predicted_tuning(bdf_DL,[],[],muscle_weights,'muscle','linear','linear');
+%% predict tunings
+[joint_tuning_PM,joint_curves_PM] = get_predicted_tuning(bdf_PM,[],[],joint_weights,'joint','linear','linear');
+[joint_tuning_DL,joint_curves_DL] = get_predicted_tuning(bdf_DL,[],[],joint_weights,'joint','linear','linear');
+
+[muscle_tuning_PM,muscle_curves_PM] = get_predicted_tuning(bdf_PM,[],[],muscle_weights,'muscle','linear','linear');
+[muscle_tuning_DL,muscle_curves_DL] = get_predicted_tuning(bdf_DL,[],[],muscle_weights,'muscle','linear','linear');
 
 %% iris plots
 h = figure('name','joint_PD_diff');
@@ -61,6 +66,14 @@ h = figure('name','muscle_PD_diff');
 figure_handles = [figure_handles;h];
 iris_plot(muscle_tuning_PM,muscle_tuning_DL)
 title('Plot of PD changes (muscle)')
+
+%% tuning curve plots
+for i = 1:num_neurons
+    figure
+    maxFR = max([joint_curves_PM.FR{i};joint_curves_DL.FR{i}]);
+    plot_tuning(joint_tuning_PM(i,:),joint_curves_PM(i,:),maxFR,[0.6 0.5 0.7])
+    plot_tuning(joint_tuning_DL(i,:),joint_curves_PM(i,:),maxFR,[1 0 0])
+end
 
 %% Do some real neuron accounting
 % 
@@ -185,5 +198,10 @@ output_data.bdf_PM = bdf_PM;
 output_data.bdf_DL = bdf_DL;
 output_data.joint_weights = joint_weights;
 output_data.muscle_weights = muscle_weights;
+
+output_data.joint_tuning_PM = joint_tuning_PM;
+output_data.joint_tuning_DL = joint_tuning_DL;
+output_data.muscle_tuning_PM = muscle_tuning_PM;
+output_data.muscle_tuning_DL = muscle_tuning_DL;
 
 end

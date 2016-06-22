@@ -30,7 +30,7 @@ for i = 1:length(bins)
     binned_CI_low(i,:) = binned_FR(i,:)-tscore*binned_stderr; %low CI
 end
 
-curve.bins = bins;
-curve.FR = binned_FR;
-curve.CI_high = binned_CI_high;
-curve.CI_low = binned_CI_low;
+curve.bins = {bins};
+curve.FR = {binned_FR};
+curve.CI_high = {binned_CI_high};
+curve.CI_low = {binned_CI_low};

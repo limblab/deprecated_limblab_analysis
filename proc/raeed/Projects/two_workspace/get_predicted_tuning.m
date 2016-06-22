@@ -84,13 +84,15 @@ else
     error('Invalid fitting model')
 end
 
+modeled_tuning = table;
 tic;
 for i = 1:num_neurons
-    modeled_tuning(i) = calc_PD_helper(bootfunc,endpoint_kin_sim,sim_FR(:,i));
-    disp(['Processed Intrinsic Neuron ' num2str(i) ' (Time: ' num2str(toc) ')'])
+    modeled_tuning(i,:) = struct2table(calc_PD_helper(bootfunc,endpoint_kin_sim,sim_FR(:,i)));
+    disp(['Processed ' frame ' neuron ' num2str(i) ' (Time: ' num2str(toc) ')'])
 end
 
 %% Calculate simulated tuning curves
+curves = table;
 for i = 1:num_neurons
-    curves(i) = get_single_tuning_curve(endpoint_kin_sim,sim_FR(:,i));
+    curves(i,:) = struct2table(get_single_tuning_curve(endpoint_kin_sim(:,3:4),sim_FR(:,i)));
 end

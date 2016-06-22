@@ -2,6 +2,7 @@
 % folder='F:\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
 % folder = 'C:\Users\rhc307\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
 folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Han/experiment_20160322_TW_RW/';
+% folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20160322_TW_RW/';
 clear options
 options.prefix='Han_20160322_RW';
 options.only_sorted=1;

@@ -10,10 +10,10 @@ hold all
 
 % tuning curve
 if(~isempty(curve))
-    h=polar(repmat(curve.bins,2,1),repmat(curve.FR,2,1));
+    h=polar(repmat(curve.bins{1},2,1),repmat(curve.FR{1},2,1));
     set(h,'linewidth',2,'color',color)
-    th_fill = [flipud(curve.bins); curve.bins(end); curve.bins(end); curve.bins];
-    r_fill = [flipud(curve.CI_high); curve.CI_high(end); curve.CI_low(end); curve.CI_low];
+    th_fill = [flipud(curve.bins{1}); curve.bins{1}(end); curve.bins{1}(end); curve.bins{1}];
+    r_fill = [flipud(curve.CI_high{1}); curve.CI_high{1}(end); curve.CI_low{1}(end); curve.CI_low{1}];
     [x_fill,y_fill] = pol2cart(th_fill,r_fill);
     patch(x_fill,y_fill,color,'facealpha',0.3,'edgealpha',0);
 end
