@@ -1,4 +1,4 @@
-function [modeled_tuning,curves] = get_predicted_tuning(bdf,bottom_left,top_right,weights,frame,gen_model,fit_model)
+function [modeled_tuning,curves] = get_predicted_tuning(bdf,xlim,ylim,weights,frame,gen_model,fit_model)
 % GET_MUSCLE_PREDICTED_TUNING Get predicted tuning, assuming neurons draw
 % directly from muscle inputs. Assumes GLM for generative model and tuning.
 %   Inputs:
@@ -37,8 +37,8 @@ spd = sqrt(sum(vel.^2,2));
 endpoint_kin = [pos vel spd];
 
 % Get times in workspace
-if(~isempty(bottom_left) && ~isempty(top_right))
-    times = extract_workspace_times(bdf,bottom_left,top_right);
+if(~isempty(xlim) && ~isempty(ylim))
+    times = extract_workspace_times(bdf,xlim,ylim);
 else
     warning('No workspace corners provided. Using full workspace')
     times = [t(1) t(end)];

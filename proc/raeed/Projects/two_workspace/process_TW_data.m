@@ -99,6 +99,21 @@ function_name = 'plot_PD_predictions';
 
 output_data_pred = run_data_processing(function_name,folder,options);
 
+%% check predicted iris plots
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Han/experiment_20160322_RW_pred/';
+clear options
+options.prefix = 'Han_20160322_RW';
+options.opensim_prefix = 'Han_20160322_RW';
+options.labnum = 6;
+options.dual_array = 0;
+options.xlim_PM = [-10 0];
+options.xlim_DL = [0 10];
+options.ylim_PM = [-43 -33];
+options.ylim_DL = [-33 -23];
+function_name = 'plot_PD_predictions';
+
+output_data_pred = run_data_processing(function_name,folder,options);
+
 %% get full raw tuning curves
 folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
 clear options

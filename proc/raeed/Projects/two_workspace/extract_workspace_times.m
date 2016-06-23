@@ -1,15 +1,15 @@
-function [times] = extract_workspace_times(bdf,bottom_left,top_right)
-% Extract workspace from BDF with corners given by bottom_left and
-% top_right (coordinates are in [x y] format). Outputs set of
+function [times] = extract_workspace_times(bdf,x_lim,y_lim)
+% Extract workspace from BDF with corners given by x_lim and
+% y_lim (coordinates are in [min max] format). Outputs set of
 % times [start_times stop_times] for reaches in workspace
 
-    if(length(bottom_left(:))~=2 || length(top_right(:))~=2)
+    if(length(x_lim(:))~=2 || length(y_lim(:))~=2)
         error('Coordinates are not in correct format')
     end
     
     t = bdf.pos(:,1);
     
-    ind = bdf.pos(:,2)>bottom_left(1) & bdf.pos(:,2)<top_right(1) & bdf.pos(:,3)>bottom_left(2) & bdf.pos(:,3)<top_right(2);
+    ind = bdf.pos(:,2)>x_lim(1) & bdf.pos(:,2)<x_lim(2) & bdf.pos(:,3)>y_lim(1) & bdf.pos(:,3)<y_lim(2);
     
     % find starts and stops of all reaches in each workspace
     iStart = find(diff(ind)>0);

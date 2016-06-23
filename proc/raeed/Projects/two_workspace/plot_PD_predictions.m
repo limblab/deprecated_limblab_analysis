@@ -12,8 +12,20 @@ opensim_prefix = options.opensim_prefix;
 bdf = get_nev_mat_data([folder options.prefix],options.labnum);
 
 % extract separate workspaces
-times_PM = extract_workspace_times(bdf,[-10 -55],[0 -45]);
-times_DL = extract_workspace_times(bdf,[0 -45],[10 -35]);
+if(isfield(options,'xlim_PM') && isfield(options,'ylim_PM') && isfield(options,'xlim_DL') && isfield(options,'ylim_DL'))
+    xlim_PM = options.xlim_PM;
+    xlim_DL = options.xlim_DL;
+    ylim_PM = options.ylim_PM;
+    ylim_DL = options.ylim_DL;
+else
+    warning('No workspace limits specified; using defaults of [-10 10] and [-55 -35]')
+    xlim_PM = [-10 0];
+    xlim_DL = [0 10];
+    ylim_PM = [-55 -45];
+    ylim_DL = [-45 -35];
+end
+times_PM = extract_workspace_times(bdf,xlim_PM,ylim_PM);
+times_DL = extract_workspace_times(bdf,xlim_DL,ylim_DL);
 
 bdf.meta.task = 'RW';
 opts.binsize=0.05;
