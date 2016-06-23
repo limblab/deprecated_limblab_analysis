@@ -32,7 +32,8 @@ Wn = 30/(5000/2); %butter parameters (30 Hz)
 colors = {[204 0 0], [255 125 37], [153 84 255],  [106 212 0], [0 102 51], [0 171 205], [0 0 153], [102 0 159], [64 64 64], [255 51 153], [253 203 0]};
 mus_mean = {};
 %rawCycleData{animal, step}(:, muscle)
-
+clear('emg_array'); 
+clear('legendinfo');
 %get average of low pass filtered emgs
 for i=1:length(muscles)
     %figure; hold on;
@@ -67,19 +68,19 @@ end
 
 
 %% make IP array
-emg_array{length(channels)} = mean([emg_array{1}; emg_array{6}; emg_array{10}]); 
-legendinfo{length(channels)} = 'IP';
+emg_array{end+1} = mean([emg_array{1}; emg_array{6}; emg_array{10}]); 
+legendinfo{end+1} = 'IP';
 %plot(ip_arr, 'k', 'linewidth', 2); 
 %add legend
 
 %% choose only a certain segment of the array for a given muscle
 
 %for example, RF: 
-emg_array{8}(600:end) = 0; 
+%emg_array{8}(600:end) = 0; 
 
 
 %% Translate a muscle's curve (wrap around the end of the array)
-emg_array{1} = circshift(emg_array{1}.', 100).'; 
+%emg_array{1} = circshift(emg_array{1}.', 100).'; 
 
 
 %% Add in a gaussian curve to one of the muscles
@@ -87,9 +88,9 @@ emg_array{1} = circshift(emg_array{1}.', 100).';
 %y-value of the gaussian is greater than the y-value of the emg array)
 
 %calculate the curve itself
-c = 2; %1/c = height of peak
-mu = 200; %mu is the x-location of the peak
-peakwidth = 200; %width from peak to intercept with emglow_limit (noise threshold)
+c = 1.2; %1/c = height of peak
+mu = 1400; %mu is the x-location of the peak
+peakwidth = 150; %width from peak to intercept with emglow_limit (noise threshold)
 emglow_limit = .13; %to set omega so that the graph intercepts at the emg threshold
 omega = sqrt(-peakwidth^2/log(emglow_limit/c)); 
 x = linspace(0, length(emg_array{2}), length(emg_array{2})).'; %values of x
@@ -102,8 +103,8 @@ y = (1/c * exp(-((x-mu).^2)/omega^2)).';
 %emg_array{2} = mean([emg_array{2}; y]); 
 
 %or I can only insert the gaussian where it's greater than the original
-indices = find(emg_array{2}<y); 
-emg_array{2}(indices) = y(indices); 
+indices = find(emg_array{10}<y); 
+emg_array{10}(indices) = y(indices); 
 
 %% Plot
 
@@ -117,6 +118,6 @@ legend(legendinfo);
 %plot(mus_mean{1,1}); hold on;
 
 %% Save array in format that is easily useable by call_emg_stim
-save('emg_array_test', 'legendinfo', 'emg_array'); 
+save('emg_array_stgauss', 'legendinfo', 'emg_array'); 
 
 

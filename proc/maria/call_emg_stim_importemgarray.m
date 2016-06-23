@@ -11,20 +11,21 @@
 %% load data file
 %load legendinfo
 %load emg_array (aka emg array)
-load('emg_array_test.mat'); 
-
+load('emg_array_std.mat'); 
+legendinfo = {legendinfo{1:4} legendinfo{6:end}};
+emg_array = {emg_array{1:4} emg_array{6:end}};
 muscles = 1:length(emg_array); %can also pick and choose muscles to implement
 
 %define non-given parameters:
-channels = [1 2 3 4 5 6 7 8 9 10];
+channels = [5 6 7 8 9 10 2 3 4 1];
 pw = .2; %ms
 %colors = {[204 0 0], [255 125 37], [153 84 255],  [106 212 0], [0 102 51], [0 171 205], [0 0 153], [102 0 159], [64 64 64], [255 51 153], [253 203 0]};
 
 %% define thresholds and convert EMG to amplitude
 emglow_limit = [.15 .13 .13 .13 .13 .13 .13 .13 .13 .13]; %get rid of low noise
 emghigh_limit = [1 1 1 1 1 1 1 1 1 1]; %get rid of excessively high spikes
-amplow_limit = [.3 1.4 .7 1.8 .7 .2 1.2 1.2 .2 .3]; %lowest level of stim to twitch (err on low side)
-amphigh_limit = [1.9 3.0 2.2 2.4 1.2 .9 2.6 2.6 .9 .8];  %highest level of stim to use
+amplow_limit = [1.1 1.2 1.4 1.5 .3 .1 0 1 1 1]; %lowest level of stim to twitch (err on low side)
+amphigh_limit = [2.3 2.2 2 2.4 .9 .6 0 2.4 2 2.8];  %highest level of stim to use
 
 %check that limits are all defined
 
@@ -37,12 +38,12 @@ end
 
 clear('current_arr');
 
-figure; hold on;
+%figure; hold on;
 for i=1:length(muscles)
     %cycle through each muscle we'll be stimulating, find the mean of the
     %filtered EMGs, and find the conversion to amplitude of current
     current_arr{i} = emg2amp(emg_array{i}, emglow_limit(i), emghigh_limit(i), amplow_limit(i), amphigh_limit(i));
-    plot(current_arr{i}); 
+    %plot(current_arr{i}); 
 end
 
 
@@ -50,8 +51,8 @@ end
 %TODO: figure out best stretch factor
 %choose number of time
 repeats = 11; %number of times to repeat the cycle
-slowdown_factor = 6; %three seems to be pretty much a normal length step. Kind of.
-amp_adjust = .65;
+slowdown_factor = 5; %three seems to be pretty much a normal length step. Kind of.
+amp_adjust = [.8 .8 .8 .8 .8 .8 .8 .8 .8 .8 1.3];
 
 if length(amp_adjust)>1 %if using an array of amplitude adjustment
     for i=1:length(current_arr)
