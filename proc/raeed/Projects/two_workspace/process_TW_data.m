@@ -1,9 +1,10 @@
 %% process Chips two workspace data
 % folder='F:\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
 % folder = 'C:\Users\rhc307\Box Sync\Research\Multiworkspace\Data\Chips_20151202\';
-folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/20151202';
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Han/experiment_20160322_TW_RW/';
+% folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20160322_TW_RW/';
 clear options
-options.prefix='Chips_20151202_RW';
+options.prefix='Han_20160322_RW';
 options.only_sorted=1;
 function_name='compare_workspace_PDs';
 options.labnum=6;
@@ -13,7 +14,7 @@ options.dual_array = 0;
 % options.bdf_PM = bdfpost_PM;
 
 dbstop if error
-output_data_20151202 = run_data_processing(function_name,folder,options);
+output_data = run_data_processing(function_name,folder,options);
 dbclear if error
 
 %% rotate empirical tuning curves

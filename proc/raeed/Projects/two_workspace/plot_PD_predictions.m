@@ -5,11 +5,6 @@ function [figure_handles, output_data] = plot_PD_predictions(folder,options)
 figure_handles = [];
 output_data = struct;
 
-%% choose fake neural weights
-num_neurons = 100;
-joint_weights = randn(7,num_neurons);
-muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
-% muscle_weights = eye(num_neurons);
 
 %% load bdf
 opensim_prefix = options.opensim_prefix;
@@ -69,6 +64,13 @@ end
 
 clear i
 
+%% choose fake neural weights
+num_neurons = 100;
+joint_weights = randn(7,num_neurons);
+muscle_weights = randn(size(muscle_vel,2)-1,num_neurons);
+end_weights = randn(2,num_neurons);
+% muscle_weights = eye(num_neurons);
+
 %% joint kinematics for each workspace
 % PM first
 joint_pos_PM = table;
@@ -110,13 +112,6 @@ end
 clear i
 clear reach_ind
 
-%% get fake neural activity
-% num_neurons = size(muscle_vel,2)-1;
-joint_neur_PM = joint_vel_PM{:,2:end}*joint_weights;
-joint_neur_DL = joint_vel_DL{:,2:end}*joint_weights;
-
-muscle_neur_PM = muscle_vel_PM{:,2:end}*muscle_weights;
-muscle_neur_DL = muscle_vel_DL{:,2:end}*muscle_weights;
 
 %% set up kinematics
 t = bdf.pos(:,1);
@@ -125,33 +120,62 @@ vel = bdf.vel(:,2:3);
 spd = sqrt(sum(vel.^2,2));
 endpoint_kin = [pos vel spd];
 
-%% Calculate simulated PDs
-bootfunc = @(X,y) LinearModel.fit(X,y);
-
 % PM first
 % interpolate endpoint kinematics to joint times
 endpoint_kin_sim_PM = interp1(t,endpoint_kin,joint_vel_PM.time);
-
-% do joint velocity regression
-tic;
-for i = 1:num_neurons
-    joint_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,joint_neur_PM(:,i),['Processed Joint PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
-end
-
-for i = 1:num_neurons
-    muscle_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,muscle_neur_PM(:,i),['Processed Muscle PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
-end
-
 % interpolate endpoint kinematics to joint times
 endpoint_kin_sim_DL = interp1(t,endpoint_kin,joint_vel_DL.time);
 
+%% get fake neural activity
+% num_neurons = size(muscle_vel,2)-1;
+joint_neur_PM = joint_vel_PM{:,2:end}*joint_weights;
+joint_neur_DL = joint_vel_DL{:,2:end}*joint_weights;
+
+muscle_neur_PM = muscle_vel_PM{:,2:end}*muscle_weights;
+muscle_neur_DL = muscle_vel_DL{:,2:end}*muscle_weights;
+
+end_neur_PM = endpoint_kin_sim_PM(:,3:4)*end_weights;
+end_neur_DL = endpoint_kin_sim_DL(:,3:4)*end_weights;
+
+%% Calculate simulated PDs
+bootfunc = @(X,y) LinearModel.fit(X,y);
+
+
+
 % do joint velocity regression
+tic;
+% for i = 1:num_neurons
+%     joint_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,joint_neur_PM(:,i));
+%     disp(['Processed Joint PM ' num2str(i) ' (Time: ' num2str(toc) ')'])
+% end
+% 
+% for i = 1:num_neurons
+%     muscle_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,muscle_neur_PM(:,i));
+%     disp(['Processed Muscle PM ' num2str(i) ' (Time: ' num2str(toc) ')'])
+% end
+
+% do end velocity regression
 for i = 1:num_neurons
-    joint_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,joint_neur_DL(:,i),['Processed Joint DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+    end_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_PM,end_neur_PM(:,i));
+    disp(['Processed End PM ' num2str(i) ' (Time: ' num2str(toc) ')'])
 end
 
+
+% do joint velocity regression
+% for i = 1:num_neurons
+%     joint_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,joint_neur_DL(:,i));
+%     disp(['Processed Joint DL ' num2str(i) ' (Time: ' num2str(toc) ')'])
+% end
+% 
+% for i = 1:num_neurons
+%     muscle_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,muscle_neur_DL(:,i));
+%     disp(['Processed Muscle DL ' num2str(i) ' (Time: ' num2str(toc) ')'])
+% end
+
+% do end velocity regression
 for i = 1:num_neurons
-    muscle_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,muscle_neur_DL(:,i),['Processed Muscle DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+    end_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_sim_DL,end_neur_DL(:,i));
+    disp(['Processed End DL ' num2str(i) ' (Time: ' num2str(toc) ')'])
 end
 
 clear i
@@ -162,63 +186,63 @@ clear bootfunc
 %% Do som real neuron accounting
 
 %condense real neurons into one matrix
-bin_times = bdf.units(1).FR(:,1); %time vector
-
-% remove times outside of specific window
-if(isfield(options,'time_window'))
-    if(length(options.time_window(:))==2)
-        bin_times(bin_times>options.time_window(2)) = [];
-        bin_times(bin_times<options.time_window(1)) = [];
-    else
-        warning('Invalid time window; using full file')
-    end
-end
-
-real_neur = [];
-for unit_ctr = 1:length(bdf.units)
-    if bdf.units(unit_ctr).id(2)~=0 && bdf.units(unit_ctr).id(2)~=255
-        real_neur = [real_neur bdf.units(unit_ctr).FR(:,2)/0.05]; % append firing rates for all sorted neurons (DIVIDE BY BINSIZE)
-    end
-end
-
-% find time bins to look in for PM and DL
-% PM first
-is_PM_time = zeros(size(bin_times));
-for i = 1:length(times_PM)
-    is_PM_time = is_PM_time | (bin_times>times_PM(i,1) & bin_times<times_PM(i,2));
-end
-% then DL
-is_DL_time = zeros(size(bin_times));
-for i = 1:length(times_DL)
-    is_DL_time = is_DL_time | (bin_times>times_DL(i,1) & bin_times<times_DL(i,2));
-end
-
-clear i
-clear unit_ctr
-
-%% Calculate actual PDs
-
-% use GLM for actual neurons
-bootfunc = @(X,y) GeneralizedLinearModel.fit(X,y,'Distribution','poisson');
-
-% interpolate endpoint kinematics to joint times
-endpoint_kin_real_PM = interp1(t,endpoint_kin,bin_times(is_PM_time));
-
-for i = 1:size(real_neur,2)
-    real_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_real_PM,real_neur(is_PM_time,i),['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
-end
-
-% interpolate endpoint kinematics to joint times
-endpoint_kin_real_DL = interp1(t,endpoint_kin,bin_times(is_DL_time));
-
-for i = 1:size(real_neur,2)
-    real_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_real_DL,real_neur(is_DL_time,i),['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
-end
-
-clear i
-clear endpoint_kin_real_PM
-clear endpoint_kin_real_DL
-clear bootfunc
+% bin_times = bdf.units(1).FR(:,1); %time vector
+% 
+% % remove times outside of specific window
+% if(isfield(options,'time_window'))
+%     if(length(options.time_window(:))==2)
+%         bin_times(bin_times>options.time_window(2)) = [];
+%         bin_times(bin_times<options.time_window(1)) = [];
+%     else
+%         warning('Invalid time window; using full file')
+%     end
+% end
+% 
+% real_neur = [];
+% for unit_ctr = 1:length(bdf.units)
+%     if bdf.units(unit_ctr).id(2)~=0 && bdf.units(unit_ctr).id(2)~=255
+%         real_neur = [real_neur bdf.units(unit_ctr).FR(:,2)/0.05]; % append firing rates for all sorted neurons (DIVIDE BY BINSIZE)
+%     end
+% end
+% 
+% % find time bins to look in for PM and DL
+% % PM first
+% is_PM_time = zeros(size(bin_times));
+% for i = 1:length(times_PM)
+%     is_PM_time = is_PM_time | (bin_times>times_PM(i,1) & bin_times<times_PM(i,2));
+% end
+% % then DL
+% is_DL_time = zeros(size(bin_times));
+% for i = 1:length(times_DL)
+%     is_DL_time = is_DL_time | (bin_times>times_DL(i,1) & bin_times<times_DL(i,2));
+% end
+% 
+% clear i
+% clear unit_ctr
+% 
+% %% Calculate actual PDs
+% 
+% % use GLM for actual neurons
+% bootfunc = @(X,y) GeneralizedLinearModel.fit(X,y,'Distribution','poisson');
+% 
+% % interpolate endpoint kinematics to joint times
+% endpoint_kin_real_PM = interp1(t,endpoint_kin,bin_times(is_PM_time));
+% 
+% for i = 1:size(real_neur,2)
+%     real_tuning_PM(i) = calc_PD_helper(bootfunc,endpoint_kin_real_PM,real_neur(is_PM_time,i),['Processed Real PM ' num2str(i) ' (Time: ' num2str(toc) ')']);
+% end
+% 
+% % interpolate endpoint kinematics to joint times
+% endpoint_kin_real_DL = interp1(t,endpoint_kin,bin_times(is_DL_time));
+% 
+% for i = 1:size(real_neur,2)
+%     real_tuning_DL(i) = calc_PD_helper(bootfunc,endpoint_kin_real_DL,real_neur(is_DL_time,i),['Processed Real DL ' num2str(i) ' (Time: ' num2str(toc) ')']);
+% end
+% 
+% clear i
+% clear endpoint_kin_real_PM
+% clear endpoint_kin_real_DL
+% clear bootfunc
 
 %% plot joint and muscle PDs
 % angs_PM = [joint_tuning_PM.dir];
@@ -274,13 +298,27 @@ clear bootfunc
 % end
 
 %% Iris plots
-h = iris_plot(joint_tuning_PM,joint_tuning_DL,'joint_PD_diff');
-figure_handles = [figure_handles;h];
-title('Plot of PD changes (joint)')
+% joint_tuning_PM = struct2table(joint_tuning_PM);
+% joint_tuning_DL = struct2table(joint_tuning_DL);
+% muscle_tuning_PM = struct2table(muscle_tuning_PM);
+% muscle_tuning_DL = struct2table(muscle_tuning_DL);
+end_tuning_PM = struct2table(end_tuning_PM);
+end_tuning_DL = struct2table(end_tuning_DL);
+% 
+% h = figure('name','joint_PD_diff');
+% figure_handles = [figure_handles;h];
+% iris_plot(joint_tuning_PM,joint_tuning_DL)
+% title('Plot of PD changes (joint)')
+% 
+% h = figure('name','muscle_PD_diff');
+% figure_handles = [figure_handles;h];
+% iris_plot(muscle_tuning_PM,muscle_tuning_DL)
+% title('Plot of PD changes (muscle)')
 
-h = iris_plot(muscle_tuning_PM,muscle_tuning_DL,'muscle_PD_diff');
+h = figure('name','end_PD_diff')
 figure_handles = [figure_handles;h];
-title('Plot of PD changes (muscle)')
+iris_plot(end_tuning_PM,end_tuning_DL)
+title('Plot of PD changes (end)')
 
 %% Real iris plot 
 % for i = 1:length(angs_real_DL)
@@ -312,9 +350,10 @@ title('Plot of PD changes (muscle)')
 % clear r_fill
 % clear h
 
-h = iris_plot(real_tuning_PM,real_tuning_DL,'real_PD_diff');
-figure_handles = [figure_handles;h];
-title('Plot of PD changes (real)')
+% h = figure('name','real_PD_diff');
+% figure_handles = [figure_handles;h];
+% iris_plot(real_tuning_PM,real_tuning_DL)
+% title('Plot of PD changes (real)')
 
 %% Check kinematics
 move_corr = endpoint_kin_sim_PM(:,3:4);

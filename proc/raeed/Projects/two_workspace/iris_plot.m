@@ -1,11 +1,11 @@
-function figure_handle = iris_plot(tuning_PM,tuning_DL,fig_name)
+function iris_plot(tuning_PM,tuning_DL)
 % make iris plot from tuning structure given by calc_PD_helper
 
 % extract relevant information
 angs_PM = [tuning_PM.dir];
-dir_CI_PM = [tuning_PM.dir_CI]';
+dir_CI_PM = [tuning_PM.dir_CI];
 angs_DL = [tuning_DL.dir];
-dir_CI_DL = [tuning_DL.dir_CI]';
+dir_CI_DL = [tuning_DL.dir_CI];
 
 % calculate CI widths
 DL_CI_width = diff(dir_CI_DL,1,2); % get CI widths
@@ -15,8 +15,6 @@ PM_CI_width(PM_CI_width<0) = PM_CI_width(PM_CI_width<0)+2*pi;
 tuned_neurons = DL_CI_width<pi/4 & PM_CI_width<pi/4;
 angs_PM_tuned = angs_PM(tuned_neurons);
 angs_DL_tuned = angs_DL(tuned_neurons);
-
-figure_handle=figure('name',fig_name);
 %plot circles
 h=polar(linspace(-pi,pi,1000),ones(1,1000));
 set(h,'linewidth',2,'color',[1 0 0])
