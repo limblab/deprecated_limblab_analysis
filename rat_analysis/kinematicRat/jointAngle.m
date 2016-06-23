@@ -2,8 +2,8 @@ clear all
 
 %% Load data
 
-pathName = '../../../vicondata/';
-filename = '16060309'; 
+pathName = '../../../vicondata/160614_files/';
+filename = '16061431'; 
 path     = [pathName filename '.csv'];
 
 ratName = 'two_spineMJ';
@@ -17,6 +17,37 @@ tdmMks  = {};
 [events,rat,treadmill] = ...
             importViconData(path,ratName,tdmName,ratMks,tdmMks);
          
+ %% XY positions       
+
+figure;
+subplot(2, 1, 1); 
+plot(rat.foot_mid(:, 1))
+subplot(2, 1, 2); 
+plot(rat.foot_mid(:, 2))
+
+
+pathName = '../../../vicondata/160614_files/';
+filename = '16061432'; 
+path     = [pathName filename '.csv'];
+
+ratName = 'two_spineMJ';
+tdmName = '';
+ratMks  = {'spine_top','spine_bottom',...
+            'hip_top','hip_bottom', ...
+            'hip_middle', 'knee', ...
+            'heel', 'foot_mid', 'toe'};
+tdmMks  = {};
+
+[events,rat,treadmill] = ...
+            importViconData(path,ratName,tdmName,ratMks,tdmMks);
+        
+figure;
+subplot(2, 1, 1); 
+plot(rat.foot_mid(:, 1))
+subplot(2, 1, 2); 
+plot(rat.foot_mid(:, 2))
+        
+        
 %% Joint angles
 
 rat.knee_ang = computeAngle(rat.hip_middle, rat.knee, rat.heel);
