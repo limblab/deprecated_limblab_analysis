@@ -1,51 +1,49 @@
-function FrameShifter(Biostamp,vargin)
+function FrameShifter(TDF,vargin)
 %---FRAMESHIFTER---
 % 
-% ---Required Inputs---
-%   Biostamp = struct with biostamp data formatted from AccelRead
+% Inputs:
+%   TDF - struct with biostamp data formatted from AccelRead; may be imput
+%         as a struct or a matlab file name 
 % 
-% ---Optional Inputs---
-%   athreshold = Noise threshold of accelerometers
-%   wthreshold = Noise threshold of gyroscopes
-%   plotson = plotting of acceleration, gyros, and location on[1]/off[0]
-%   vidon = video of biostamp movement in extrinsic fram on[1]/off[0]
+% options (options.xyz) [default]:
+%   athreshold - Noise threshold of accelerometers 
+%   wthreshold - Noise threshold of gyroscopes 
+%   plotson - plotting of acceleration, gyros, and location [off]
+%   vidon - video of biostamp movement in extrinsic frame [off]
 
+% To Do:
+%   * Support for TDF
+%   * add integration, check errors on static files
+%   * find reasonable thresholds for static moments
+%   * Identify all "zero" points
 
-
-% profile on
 
 % setting the default variables if not everything is set. May change this
 % later to be just a vargin where you have to specify the variable name,
 % yaknow?
 athreshold = 4/2^15;
 wthreshold = 2000/2^15;
-plotson = 0;
+plotson = 'off'
 
 
-% Finding all doz arithmatic means
-% AccelMag is being used to calculate points with no movement
-% The means are calculated as a 
-AccelMag = sqrt(Biostamp.accel(11:end,1).^2 + ...
-    Biostamp.accel(11:end,2).^2 + Biostamp.accel(11:end,3).^2);
-RollVelMean = sum(Biostamp.gyro(11:end,1))/len_el;
-PitchVelMean = sum(Biostamp.gyro(11:end,2))/len_el;
-YawVelMean = sum(Biostamp.gyro(11:end,3))/len_el;
-
-
-
-% Finding the roll, pitch, and yaw; without drift
-Biostamp.roll(1) = 0; Biostamp.pitch(1) = 0; Biostamp.yaw(1) = 0;
-for i=1:len_el-1
-    Biostamp.roll(i+1) = (Biostamp.gyro(i+10,1)-RollVelMean)*.004 + Biostamp.roll(i);
-    Biostamp.pitch(i+1) = (Biostamp.gyro(i+10,2)-PitchVelMean)*.004 + Biostamp.pitch(i);
-    Biostamp.yaw(i+1) = (Biostamp.gyro(i+10,3)-YawVelMean)*.004 + Biostamp.yaw(i);
+if ischar(TDF)
+    try
+        TDF = importfile(TDF);
+    catch
+        error('TDF file could not be imported. Check file and try again')
+    end
 end
+
+if ~isfield(TDF,'valTDF') || ~isstruct(TDF)
+    error('Input is not a valid TDF struct')
+end
+
 
 % Finding indices of locations where magnitude of acceleration is under a
 % certain threshold and ang vel is ~ 0
 AMinInd = uint16(find(abs(AccelMag-1) < athreshold));
-WMinInd = find(((Biostamp.gyro(:,1)-RollVelMean).^2 + (Biostamp.gyro(:,2)-PitchVelMean).^2 ...
-    + (Biostamp.gyro(:,3)-YawVelMean).^2)<wthreshold);
+WMinInd = uint16(find((TDF.gyro(:,1).^2 + TDF.gyro(:,2).^2 ...
+    + TDF.gyro(:,3).^2)<wthreshold));
 AnotherIndVector = [];
 for i=1:length(AMinInd)
     if any(WMinInd==AMinInd(i))
@@ -54,16 +52,16 @@ for i=1:length(AMinInd)
 end
 StartInd = min(AnotherIndVector);
 
-Location = SpaceFrameConverter(Biostamp,StartInd,RollVelMean,PitchVelMean,YawVelMean);
+Location = SpaceFrameConverter(TDF,StartInd,RollVelMean,PitchVelMean,YawVelMean);
 
 
 
 
 % Plotting the current roll, pitch and yaw from the body frame, and all of
 % the initial plots of accel and gyros
-if plotson == 1
-    PlotRollPitchYaw(Biostamp)
-    PlotInitData(Biostamp,labels)
+if strcmp(plotson,'on')
+    PlotRollPitchYaw(TDF)
+    PlotInitData(TDF,labels)
 end
 
 % profile viewer
@@ -177,10 +175,3 @@ S = fsolve(@mysys,[-1;-1;1;1]);
 
 disp('finally!');
 end
-
-
-
-
-
-end
-
