@@ -20,10 +20,11 @@ num_neurons = size(weights,2);
 
 % choose correct frame
 if(strcmp(frame,'muscle'))
-    intrinsic_pos = bdf.muscle_pos;
+    frame_pos = bdf.muscle_pos;
 elseif(strcmp(frame,'joint'))
-    intrinsic_pos = bdf.joint_pos;
-%elseif strcmp(frame,'endpoint')
+    frame_pos = bdf.joint_pos;
+elseif strcmp(frame,'endpoint')
+    frame_pos = array2table(bdf.pos,'VariableNames',{'time','x','y'});
 %elseif strcmp(frame,'egocentric')
 else
     error('Invalid frame chosen')
@@ -45,33 +46,39 @@ else
 end
 
 %% get intrinsic velocities
-% muscle velocities
-intrinsic_vel = intrinsic_pos;
-for i=2:size(intrinsic_pos,2)
-    intrinsic_vel{:,i} = gradient(intrinsic_pos{:,i},intrinsic_pos.time);
+% frame velocities
+frame_vel = frame_pos;
+for i=2:size(frame_pos,2)
+    frame_vel{:,i} = gradient(frame_pos{:,i},frame_pos.time);
 end
 
-%% muscle kinematics for the workspace
-intrinsic_pos_sub = table;
-intrinsic_vel_sub = table;
+%% interpolate everything to whatever firing rate bin size is at
+bin_times = bdf.units(1).FR(:,1);
+
+endpoint_kin_interp = interp1(t,endpoint_kin,bin_times);
+temp_arr = [bin_times interp1(frame_vel.time,frame_vel{:,2:end},bin_times)];
+frame_vel_interp = array2table(temp_arr,'VariableNames',frame_vel.Properties.VariableNames);
+
+%% frame kinematics for the workspace
+frame_vel_sub = table;
 for i = 1:size(times,1)
-    reach_ind = intrinsic_pos.time>times(i,1) & intrinsic_pos.time<times(i,2);
-    intrinsic_pos_sub = [intrinsic_pos_sub; intrinsic_pos(reach_ind,:)];
-    intrinsic_vel_sub = [intrinsic_vel_sub; intrinsic_vel(reach_ind,:)];
+    reach_ind = frame_vel_interp.time>times(i,1) & frame_vel_interp.time<times(i,2);
+    frame_vel_sub = [frame_vel_sub; frame_vel_interp(reach_ind,:)];
 end
 
 if(strcmp(gen_model,'linear'))
     % Linear model
-    sim_FR = [ones(size(intrinsic_vel_sub,1),1) intrinsic_vel_sub{:,2:end}]*weights;
+%     sim_FR = [ones(size(frame_vel_sub,1),1) frame_vel_sub{:,2:end}]*weights;
+    sim_FR = frame_vel_sub{:,2:end}*weights;
 elseif(strcmp(gen_model,'GLM'))
     % GLM Poisson model
-    sim_FR = exp([ones(size(intrinsic_vel_sub,1),1) intrinsic_vel_sub{:,2:end}]*weights);
+    sim_FR = exp([ones(size(frame_vel_sub,1),1) frame_vel_sub{:,2:end}]*weights);
 else
     error('Invalid generative model')
 end
 
 % interpolate endpoint kinematics to muscle times
-endpoint_kin_sim = interp1(t,endpoint_kin,intrinsic_vel_sub.time);
+endpoint_kin_sub = interp1(t,endpoint_kin,frame_vel_sub.time);
 
 %% Calculate simulated PDs
 if(strcmp(fit_model,'linear'))
@@ -87,12 +94,12 @@ end
 modeled_tuning = table;
 tic;
 for i = 1:num_neurons
-    modeled_tuning(i,:) = struct2table(calc_PD_helper(bootfunc,endpoint_kin_sim,sim_FR(:,i)));
+    modeled_tuning(i,:) = struct2table(calc_PD_helper(bootfunc,endpoint_kin_sub,sim_FR(:,i)));
     disp(['Processed ' frame ' neuron ' num2str(i) ' (Time: ' num2str(toc) ')'])
 end
 
 %% Calculate simulated tuning curves
 curves = table;
 for i = 1:num_neurons
-    curves(i,:) = struct2table(get_single_tuning_curve(endpoint_kin_sim(:,3:4),sim_FR(:,i)));
+    curves(i,:) = struct2table(get_single_tuning_curve(endpoint_kin_sub(:,3:4),sim_FR(:,i)));
 end
