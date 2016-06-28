@@ -25,16 +25,16 @@ opts.do_firing_rate=1;
 bdf_DL=postprocess_bdf(bdf_DL,opts);
 
 %% load joint kinematics
-joint_pos_mat = csvread([folder 'Analysis/' options.prefix '_PM_Kinematics_q.sto'],11,0);
+joint_pos_mat = dlmread([folder 'Analysis/' options.prefix '_PM_Kinematics_q.sto'],'\t',11,0);
 bdf_PM.joint_pos = array2table(joint_pos_mat,'VariableNames',{'time','shoulder_adduction','shoulder_rotation','shoulder_flexion','elbow_flexion','radial_pronation','wrist_flexion','wrist_abduction'});
-joint_pos_mat = csvread([folder 'Analysis/' options.prefix '_DL_Kinematics_q.sto'],11,0);
+joint_pos_mat = dlmread([folder 'Analysis/' options.prefix '_DL_Kinematics_q.sto'],'\t',11,0);
 bdf_DL.joint_pos = array2table(joint_pos_mat,'VariableNames',{'time','shoulder_adduction','shoulder_rotation','shoulder_flexion','elbow_flexion','radial_pronation','wrist_flexion','wrist_abduction'});
 clear joint_kin_mat
 
 %% load muscle kinematics
-muscle_pos_mat = csvread([folder 'Analysis/' options.prefix '_PM_MuscleAnalysis_Length.sto'],12,0);
+muscle_pos_mat = dlmread([folder 'Analysis/' options.prefix '_PM_MuscleAnalysis_Length.sto'],'\t',12,0);
 bdf_PM.muscle_pos = array2table(muscle_pos_mat,'VariableNames',{'time','abd_poll_longus','anconeus','bicep_lh','bicep_sh','brachialis','brachioradialis','coracobrachialis','deltoid_ant','deltoid_med','deltoid_pos','dorsoepitrochlearis','ext_carpi_rad_longus','ext_carp_rad_brevis','ext_carpi_ulnaris','ext_digitorum','ext_digiti','ext_indicis','flex_carpi_radialis','flex_carpi_ulnaris','flex_digit_profundus','flex_digit_superficialis','flex_poll_longus','infraspinatus','lat_dorsi_sup','lat_dorsi_cen','lat_dorsi_inf','palmaris_longus','pectoralis_sup','pectoralis_inf','pronator_quad','pronator_teres','subscapularis','supinator','supraspinatus','teres_major','teres_minor','tricep_lat','tricep_lon','tricep_sho'});
-muscle_pos_mat = csvread([folder 'Analysis/' options.prefix '_DL_MuscleAnalysis_Length.sto'],12,0);
+muscle_pos_mat = dlmread([folder 'Analysis/' options.prefix '_DL_MuscleAnalysis_Length.sto'],'\t',12,0);
 bdf_DL.muscle_pos = array2table(muscle_pos_mat,'VariableNames',{'time','abd_poll_longus','anconeus','bicep_lh','bicep_sh','brachialis','brachioradialis','coracobrachialis','deltoid_ant','deltoid_med','deltoid_pos','dorsoepitrochlearis','ext_carpi_rad_longus','ext_carp_rad_brevis','ext_carpi_ulnaris','ext_digitorum','ext_digiti','ext_indicis','flex_carpi_radialis','flex_carpi_ulnaris','flex_digit_profundus','flex_digit_superficialis','flex_poll_longus','infraspinatus','lat_dorsi_sup','lat_dorsi_cen','lat_dorsi_inf','palmaris_longus','pectoralis_sup','pectoralis_inf','pronator_quad','pronator_teres','subscapularis','supinator','supraspinatus','teres_major','teres_minor','tricep_lat','tricep_lon','tricep_sho'});
 clear muscle_kin_mat
 
@@ -42,12 +42,12 @@ clear muscle_kin_mat
 if(isfield(options,'joint_weights'))
     joint_weights = options.joint_weights;
 else
-    joint_weights = randn(size(bdf_PM.joint_pos,2),100);
+    joint_weights = randn(size(bdf_PM.joint_pos,2)-1,100);
 end
 if(isfield(options,'muscle_weights'))
     muscle_weights = options.muscle_weights;
 else
-    muscle_weights = randn(size(bdf_PM.muscle_pos,2),100);
+    muscle_weights = randn(size(bdf_PM.muscle_pos,2)-1,100);
 end
 % joint_weights = eye(size(bdf_PM.joint_pos,2));
 % muscle_weights = eye(num_neurons);
