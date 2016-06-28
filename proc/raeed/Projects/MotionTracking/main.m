@@ -8,8 +8,8 @@
 %Output will be all the markers in handle coordinates, and in cerebus time
 %% 1. LOAD CEREBUS FILE
 % folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151120_RW_003/';
-folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Chips/experiment_20151203_RW_002/';
-prefix = 'Chips_20151203_RW_002';
+folder = '/home/raeed/Projects/limblab/FSMRes/limblab/User_folders/Raeed/Arm Model/Data/Han/experiment_20160322_TW_RW/';
+prefix = 'Han_20160322_RW_PM_area2_002';
 labnum = 6;
 
 bdf = get_nev_mat_data([folder prefix],labnum);
@@ -35,7 +35,7 @@ title('Kinect LED vals')
 
 %% 3b. Enter kinect start time estimate
 
-kinect_start_guess=3.5;
+kinect_start_guess=5.6;
 
 %% 3c. Align kinect led values with cerebus squarewave
 
@@ -49,7 +49,7 @@ clear times
 
 %% 4. PUT KINECT MARKER LOCATIONS IN HANDLE COORDINATES
 
-rotation_known=0; %Whether the rotation matrix is already known (from another file from that day)
+rotation_known=1; %Whether the rotation matrix is already known (from another file from that day)
 
 %% 4a. Plot handle to determine some points to remove
 %We want to remove the time points when the monkey has thrown away the
@@ -61,8 +61,8 @@ end
 %% 4b. Set limits of handle points
 %We'll remove times when the handle is outside these limits
 if ~rotation_known
-    x_lim_handle=[-10,10]; %x limits (min and max)
-    y_lim_handle=[-55,-35]; %y limits (min and max)
+    x_lim_handle=[-10,0]; %x limits (min and max)
+    y_lim_handle=[-42,-32]; %y limits (min and max)
 end
 
 %% 4c. Get Translation and Rotation
@@ -144,28 +144,30 @@ clear k
 shoulder_pos = squeeze(kinect_pos_smooth(9,:,:))';
 marker_loss_points = find(diff(isnan(shoulder_pos(:,1)))>0);
 marker_reappear_points = find(diff(isnan(shoulder_pos(:,1)))<0);
-if length(marker_loss_points)>length(marker_reappear_points) || marker_loss_points(end)>marker_reappear_points(end)
-    %Means that a marker was lost but never found again at end of file
-    %append last index
-    marker_reappear_points(end+1) = length(shoulder_pos);
-end
-if length(marker_loss_points)<length(marker_reappear_points) || marker_loss_points(1)>marker_reappear_points(1)
-    %Means that a marker was lost to start
-    %Dont know what to do here other than put a zero at start off loss
-%     marker_reappear_points(1) = [];
-    marker_loss_points = [0;marker_loss_points];
-    warning('Shoulder position marker not found at start of file. Replacing missing start points with first reappearance position')
-end
-for i=1:length(marker_loss_points)
-    marker_loss = marker_loss_points(i);
-    marker_reappear = marker_reappear_points(i);
-    num_lost = marker_reappear-marker_loss;
-    if marker_loss~=0
-        rep_coord = repmat(shoulder_pos(marker_loss,:),num_lost,1);
-    else
-        rep_coord = repmat(shoulder_pos(marker_reappear,:),num_lost,1);
+if(~isempty(marker_loss_points) || ~isempty(marker_reappear_points))
+    if length(marker_loss_points)>length(marker_reappear_points) || marker_loss_points(end)>marker_reappear_points(end)
+        %Means that a marker was lost but never found again at end of file
+        %append last index
+        marker_reappear_points(end+1) = length(shoulder_pos);
     end
-    shoulder_pos(marker_loss+1:marker_reappear,:) = rep_coord;
+    if length(marker_loss_points)<length(marker_reappear_points) || marker_loss_points(1)>marker_reappear_points(1)
+        %Means that a marker was lost to start
+        %Dont know what to do here other than put a zero at start off loss
+    %     marker_reappear_points(1) = [];
+        marker_loss_points = [0;marker_loss_points];
+        warning('Shoulder position marker not found at start of file. Replacing missing start points with first reappearance position')
+    end
+    for i=1:length(marker_loss_points)
+        marker_loss = marker_loss_points(i);
+        marker_reappear = marker_reappear_points(i);
+        num_lost = marker_reappear-marker_loss;
+        if marker_loss~=0
+            rep_coord = repmat(shoulder_pos(marker_loss,:),num_lost,1);
+        else
+            rep_coord = repmat(shoulder_pos(marker_reappear,:),num_lost,1);
+        end
+        shoulder_pos(marker_loss+1:marker_reappear,:) = rep_coord;
+    end
 end
 
 % Recenter all markers on shoulder position
