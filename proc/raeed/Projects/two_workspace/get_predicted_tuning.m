@@ -55,6 +55,9 @@ end
 %% interpolate everything to whatever firing rate bin size is at
 bin_times = bdf.units(1).FR(:,1);
 
+% throw out times outside data
+bin_times(bin_times<frame_vel.time(1) | bin_times>frame_vel.time(end)) = [];
+
 endpoint_kin_interp = interp1(t,endpoint_kin,bin_times);
 temp_arr = [bin_times interp1(frame_vel.time,frame_vel{:,2:end},bin_times)];
 frame_vel_interp = array2table(temp_arr,'VariableNames',frame_vel.Properties.VariableNames);
