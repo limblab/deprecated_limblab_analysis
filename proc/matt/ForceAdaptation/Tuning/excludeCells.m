@@ -103,7 +103,7 @@ for unit = 1:size(master_sg,1)
     istuned(unit,4) = ~any(diff(tracking_chan(idx,:)));
 end
 
-% don't do this if the classifierBlocks input is empty
+%% don't do this if the classifierBlocks input is empty
 if ~isempty(classifierBlocks)
     if isfield(tuning(1),'pds') % this means it is regression/glm/etc
         %% Check confidence in PD estimates

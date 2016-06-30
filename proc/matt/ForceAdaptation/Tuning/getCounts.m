@@ -24,7 +24,7 @@ switch lower(doType)
         
     case 'none'
         % just give all percentages
-        counts1 = zeros(size(doFiles),numClasses);
+        counts1 = zeros(size(doFiles,1),numClasses);
         for j = 1:numClasses % loop along the classes
             counts1(:,j) = cellfun(@(x) 100*sum(x==j)/length(x==j),cellClasses);
             % counts1(:,j) = cellfun(@(x) sum(x==j),cellClasses);

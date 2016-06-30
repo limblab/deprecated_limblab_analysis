@@ -13,13 +13,14 @@ metric = slidingParams.metric;
 plotClasses = slidingParams.plotClasses;
 
 % how many blocks to expect
-numBlocks = 8;
+numBlocks = 15;
+useMasterTunedName = 'movement';
 
 colors = {'k','b','r'};
-doCirc = false;
+doCirc = true;
 
-metricInfo.PD.ymin = 10;
-metricInfo.PD.ymax = 120;
+metricInfo.PD.ymin = 20;
+metricInfo.PD.ymax = 80;
 metricInfo.PD.binSize = 10;
 metricInfo.PD.label = 'PD Change (Deg) ';
 
@@ -60,7 +61,7 @@ else
     plotMult = 180/pi;
 end
 
-monkeys = unique(allFiles(:,1))';
+monkeys = unique(doFiles(:,1))';
 
 h1 = figure();
 subplot1(1,length(monkeys));
@@ -99,7 +100,7 @@ for iMonkey = 1:length(monkeys)
         masterTuned = cell(size(doFiles,1),1);
         masterTunedClasses = cell(size(doFiles,1),1);
         for iFile = 1:size(doFiles,1)
-            c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,'movement','regression','onpeak');
+            c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,useMasterTunedName,'regression','onpeak');
             
             masterTunedSG{iFile} = c.tuned_cells;
             masterTuned{iFile} = all(c.istuned(:,whichTuned),2);
@@ -123,7 +124,12 @@ for iMonkey = 1:length(monkeys)
             dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
-            pertDir(iFile) = t(1).params.exp.angle_dir;
+            switch lower(t(1).params.exp.angle_dir)
+                case 'ccw'
+                    pertDir(iFile) = 1;
+                case 'cw'
+                    pertDir(iFile) = -1;
+            end
         else
             pertDir(iFile) = 1;
         end
@@ -379,6 +385,7 @@ for iMonkey = 1:length(monkeys)
     if iMonkey == 1
         ylabel('Mean dPD','FontSize',14);
     end
+    title(monkeys{iMonkey},'FontSize',14);
     title(['p = ' num2str(stats(3)) ' r2=' num2str(stats(1))],'FontSize',14);
     
     allMonkeydPDs{iMonkey} = alldPDs;
@@ -464,7 +471,7 @@ if length(monkeys) > 1
     allForce = [];
     allVel = [];
     alldPDs = [];
-    colors = {'r','b'};
+    colors = {'r','b','g'};
     figure;
     hold all;
     for iMonkey = 1:length(monkeys)

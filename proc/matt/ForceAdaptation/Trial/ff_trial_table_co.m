@@ -147,6 +147,16 @@ for trial = 1:num_trials-1
         peak = NaN;
     end
     
+    if isempty(offset)
+        offset = NaN;
+    end
+    if isempty(peak)
+        peak = NaN;
+    end
+    if isempty(onset)
+        onset = NaN;
+    end
+    
     % Build table
     if ot_dir ~= -1 % ignore trials that don't make it to target presentation
         if ot_dir < length(targ_angs)
