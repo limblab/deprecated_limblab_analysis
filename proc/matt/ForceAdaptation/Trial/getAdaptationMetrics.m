@@ -22,6 +22,8 @@ function adaptation = getAdaptationMetrics(params)
 %   - See "experimental_parameters_doc.m" for documentation on expParamFile
 %   - Analysis parameters file must exist (see "analysis_parameters_doc.m")
 
+procDirName = 'Processed';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get some of the experimental parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -30,11 +32,11 @@ useDate = params.exp.date;
 taskType = params.exp.task;
 adaptType = params.exp.adaptation_type;
 epochs = params.exp.epochs;
-rotationAngle = str2double(params.exp.rotation_angle);
-holdTime = str2double(params.exp.target_hold_high);
+rotationAngle = params.exp.rotation_angle;
+holdTime = params.exp.target_hold_high;
 monkey = params.exp.monkey;
 
-dataPath = fullfile(root_dir,useDate);
+dataPath = fullfile(root_dir,procDirName,useDate);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get some of the analysis parameters
@@ -47,6 +49,10 @@ moveThresh = params.behavior.movementThreshold;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 saveFile = fullfile(dataPath,[taskType '_' adaptType '_adaptation_' useDate '.mat']);
+
+if ~iscell(epochs) % if there's only one it will parse as a string
+    epochs = {epochs};
+end
 
 % load files
 for iEpoch = 1:length(epochs)

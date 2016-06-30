@@ -1,4 +1,4 @@
-function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
+function NEVNSx = cerebus2NEVNSx(varargin)
 % cerebus2NEVNSx creates NEVNSx structure containing all Cerebus data in the
 %   filepath folder that matches the file_prefix string.  NEVNSx is a
 %   structure with NEV, NS2, NS3, NS4 and NS5 fields, each containing data
@@ -7,15 +7,48 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
 %   spike data has been sorted (indicated by '*-s.mat' suffix), sorted files
 %   will be loaded.   
 
+    %initial setup
+    opts=struct('loadanalog',1); %default to loading everything
+   
+    % Parse arguments
+    if (nargin<2)
+        error('cerebus2NEVNSx:too_few_arguments','cerebus2NEVNSx requires filepath and file_prefix as arguments');
+    elseif (nargin == 2)
+        filepath = varargin{1};
+        file_prefix = varargin{2};
+    else
+        filepath = varargin{1};
+        file_prefix = varargin{2};
+        for i = 3:nargin
+            opt_str = char(varargin{i} + ...
+                (varargin{i} >= 65 & varargin{i} <= 90) * 32); % convert to lower case            
+            if strcmp(opt_str, 'noanalog')
+                opts.loadanalog = 0;             
+            else 
+                error('Unrecognized option: %s', opt_str);
+            end
+        end
+    end
+
     NEVlist_sorted = dir([filepath filesep file_prefix '*-s.mat']);
     NEVlist_nodigital = dir([filepath filesep file_prefix '*-nodigital.nev']);
     NEVlist_nodigital_sorted = dir([filepath filesep file_prefix '*-nodigital-s.nev']);
     NEVlist_nospikes= dir([filepath filesep file_prefix '*-nospikes.mat']);
     NEVlist = dir([filepath filesep file_prefix '*.nev']);
-    NS2list = dir([filepath filesep file_prefix '*.ns2']);
-    NS3list = dir([filepath filesep file_prefix '*.ns3']);
-    NS4list = dir([filepath filesep file_prefix '*.ns4']);
-    NS5list = dir([filepath filesep file_prefix '*.ns5']);
+    
+    if(opts.loadanalog)
+        NS1list = dir([filepath filesep file_prefix '*.ns1']);
+        NS2list = dir([filepath filesep file_prefix '*.ns2']);
+        NS3list = dir([filepath filesep file_prefix '*.ns3']);
+        NS4list = dir([filepath filesep file_prefix '*.ns4']);
+        NS5list = dir([filepath filesep file_prefix '*.ns5']);
+    else
+        NS1list = [];
+        NS2list = [];
+        NS3list = [];
+        NS4list = [];
+        NS5list = [];
+    end
 
     NEVlist_sorted = NEVlist_sorted(cellfun('isempty',(regexp({NEVlist_sorted(:).name},'-spikes'))));
     NEVlist = NEVlist(cellfun('isempty',(regexp({NEVlist(:).name},'-spikes'))));
@@ -24,7 +57,7 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
         disp('File(s) not found, aborting.')
         return
     end
-    NEVNSxstruct = struct('NEV',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
+    NEVNSxstruct = struct('NEV',[],'NS1',[],'NS2',[],'NS3',[],'NS4',[],'NS5',[]);
     
     if (length(NEVlist_nodigital_sorted)==length(NEVlist_nospikes) && ~isempty(NEVlist_nospikes))  || (length(NEVlist_nodigital)==length(NEVlist_nospikes) && ~isempty(NEVlist_nospikes))
        for iNEV = 1:length(NEVlist_nospikes)
@@ -54,19 +87,19 @@ function NEVNSx = cerebus2NEVNSx(filepath,file_prefix)
             end
         end
     end
-    fs = [0,1000,2000,10000,30000];
-    for iNS = 2:5        
+    fs = [500,1000,2000,10000,30000];
+    for iNS = 1:5        
         for iFile = 1:length(eval(['NS' num2str(iNS) 'list']))
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSxLimblab('read', [filepath filesep eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
             if ~isempty(NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec)
                 digital_file_length_sec = NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec(end);
-                num_zeros = fix((digital_file_length_sec-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)/fs(iNS))*1000);
+                num_zeros = fix((digital_file_length_sec*fs(iNS)-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)));
             else %no digital data was collected
                 num_zeros = 0; % no padding
             end
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data = [zeros(size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,1),num_zeros) NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data];
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints + num_zeros;
-            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints/fs(iNS) + num_zeros/1000;
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints/fs(iNS);
         end
     end    
 

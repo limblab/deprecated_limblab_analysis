@@ -1,0 +1,62 @@
+How to Read PLX and DDT Files Change Log
+****************************************
+
+Version 1.1.1	8/1/2007
+=========================
+
+Improvements:
+-------------
+- Updated Plexon.h file for PLX file version 106
+- Project and solution files are now compatible with Visual Studio 2005
+
+Note: The plx structure fields marked as new for version 106 in Plexon.h should be treated as 
+reserved fields for future use.  Applications that process plx files should not alter the contents
+of these fields.
+
+
+
+Version 1.1.0	11/18/2005
+==========================
+
+New Features:
+-------------
+- Added sample applications for decoding tracking coordinates from CinePlex
+- New version of Plexon.h
+
+
+
+Version 1.0.1	1/7/05
+=========================
+
+Improvements:
+-------------
+- Updated Plexon.h file for PLX file version 105
+- Added description of version 105 to documentation, updated
+- Change ddtReader console app to not use its own private copy of the DigFileHeader struct
+- Fix bug in plx reading samples concerning the display of channel SortWidths
+
+
+
+Version 1.0.0	8/18/2004
+=========================
+
+New Features:
+-------------
+- Added MFC sample application for reading PLX files
+- Added MFC sample application for reading DDT files
+
+Improvements:
+-------------
+- Upgraded and combined the documentation for reading
+  PLX and DDT files into a single document.  See
+  Readme.pdf
+- Upgraded C sample application for reading PLX files
+  and the C sample application for reading DDT files
+  to handle the new Plexon.h header file
+- Removed unnessary Visual Studio project files 
+  (.dsw and .aps) from the package
+
+Bug Fixes:
+----------
+- Tested sample projects using Visual Studio .NET 
+

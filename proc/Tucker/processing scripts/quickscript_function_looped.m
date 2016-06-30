@@ -15,60 +15,59 @@ if ~isempty(aggregate_bdf)
     clear aggregate_bdf;
 else
     file_list={};
-%     bdf_list={};
-%     for i=1:length(foldercontents)
-%         if (length(fnames{i})>3)
-%             if exist(strcat(fpath,fnames{i}),'file')~=2
-%                 continue
-%             end
-%             temppath=follow_links(strcat(fpath,fnames{i}));
-%             [tempfolder,tempname,tempext]=fileparts(temppath);
-%             if (strcmp(tempext,'.nev') & ~isempty(strfind(tempname,input_data.matchstring)))
-%                 file_list{end+1}=temppath;
-%                 try
-%                     disp(strcat('Working on: ',temppath))
-%                     if isempty(dir( [fpath,filesep,'Output_data',filesep,tempname, '.mat']))
-%                         %if we haven't found a .mat file to match the .nev then make
-%                         %one
-%                         NEVNSx=cerebus2NEVNSx(tempfolder, tempname);
-%                         bdf=get_nev_mat_data(NEVNSx,'verbose','noeye','noforce','nokin',input_data.labnum);
-%                         data_struct.(tempname)=bdf;
-%                         bdf_list{end+1}=bdf;
-%                     else
-%                         load([fpath,filesep,'Output_data',filesep,tempname, '.mat']);%loads a variable named bdf from the file
-%                         eval(['bdf_list{end+1}=',tempname,';']);
-%                         clear(tempname)
-%                     end
-%                 catch temperr
-%                     disp(strcat('Failed to process: ', temppath,filesep,tempname))
-%                     disp(temperr.identifier)
-%                     disp(temperr.message)
-%                     for k=1:length(temperr.stack)
-%                         disp(['in function: ',temperr.stack(k).name])
-%                         disp(['on line: ',num2str(temperr.stack(k).line)])
-%                     end
-%                 end
-%             end
-%         end
-%     end
-%     if length(bdf_list)==1
-%         bdf=bdf_list{1};
-%         clear bdf_list
-%     else
-%         for i=1:length(bdf_list)
-%             if i==1
-%                 %initialize the aggregate bdf
-%                 bdf=bdf_list{i};
-%             else
-%                 %if our new bdf already has something in it, append to
-%                 %the end of the new bdf
-%                 bdf=concatenate_bdfs(  bdf,   bdf_list{i},    30,     0,   0, 0);%concatenate bdfs with no kinematics, no units and no force
-%             end
-%         end
-%     end
-    NEVNSx=cerebus2NEVNSx(fpath,input_data.matchstring);
-    bdf=get_nev_mat_data(NEVNSx,'verbose','noeye','noforce','nokin',input_data.labnum);
-    bdf.meta.task='BC';
+    bdf_list={};
+    for i=1:length(foldercontents)
+        if (length(fnames{i})>3)
+            if exist(strcat(fpath,fnames{i}),'file')~=2
+                continue
+            end
+            temppath=follow_links(strcat(fpath,fnames{i}));
+            [tempfolder,tempname,tempext]=fileparts(temppath);
+            if (strcmp(tempext,'.nev') & ~isempty(strfind(tempname,input_data.matchstring)))
+                file_list{end+1}=temppath;
+                try
+                    disp(strcat('Working on: ',temppath))
+                    if isempty(dir( [fpath,filesep,'Output_data',filesep,tempname, '.mat']))
+                        %if we haven't found a .mat file to match the .nev then make
+                        %one
+                        NEVNSx=cerebus2NEVNSx(tempfolder, tempname);
+                        bdf=get_nev_mat_data(NEVNSx,'verbose','noeye','noforce','nokin',input_data.labnum);
+                        bdf.meta.task='BC';
+                        data_struct.(tempname(tempname~='-'))=bdf;
+                        bdf_list{end+1}=bdf;
+                    else
+                        load([fpath,filesep,'Output_data',filesep,tempname, '.mat']);%loads a variable named bdf from the file
+                        eval(['bdf_list{end+1}=',tempname,';']);
+                        clear(tempname)
+                    end
+                catch temperr
+                    disp(strcat('Failed to process: ', temppath,filesep,tempname))
+                    disp(temperr.identifier)
+                    disp(temperr.message)
+                    for k=1:length(temperr.stack)
+                        disp(['in function: ',temperr.stack(k).name])
+                        disp(['on line: ',num2str(temperr.stack(k).line)])
+                    end
+                end
+            end
+        end
+    end
+    if length(bdf_list)==1
+        bdf=bdf_list{1};
+        clear bdf_list
+    else
+        for i=1:length(bdf_list)
+            if i==1
+                %initialize the aggregate bdf
+                bdf=bdf_list{i};
+            else
+                %if our new bdf already has something in it, append to
+                %the end of the new bdf
+                bdf=concatenate_bdfs(  bdf,   bdf_list{i},    30,     0,   0, 0);%concatenate bdfs with no kinematics, no units and no force
+            end
+        end
+    end
+    
 end
 if ~isfield(bdf,'TT')
     [bdf.TT,bdf.TT_hdr]=bc_trial_table4(bdf);
@@ -101,28 +100,27 @@ data_struct.aggregate_bdf=bdf;
         data_struct.(strcat('reach_data_',str))=temp;
         figure(H_cartesian)
         set(H_cartesian,'Position',[100 100 1200 1200])
-        title_handle=title(['\fontsize{14}','Psychometric cartesian ',str,'\m',input_data.current_units,' inverted','\newline',...
-                '\fontsize{10}',...
-                str,input_data.current_units,':0-180,',...
+        title_handle=title({['\fontsize{14}','Psychometric cartesian ',str,'\m',input_data.current_units,' inverted'],...
+                ['\fontsize{10}',str,input_data.current_units,':0-180,',...
                     ' min=',num2str(fitdata.g_stim_lower(1)),...
                     ', max=',num2str(fitdata.g_stim_lower(2)),...
                     ', PSE=',num2str(fitdata.g_stim_lower(3)),...
-                    ', \tau=',num2str(fitdata.g_stim_lower(4)),'\newline',...
-                str,input_data.current_units,':180-360,',...
+                    ', \tau=',num2str(fitdata.g_stim_lower(4))]...
+                ['\fontsize{10}',str,input_data.current_units,':180-360,',...
                     ' min=',num2str(fitdata.g_stim_upper(1)),...
                     ', max=',num2str(fitdata.g_stim_upper(2)),...
                     ', PSE=',num2str(fitdata.g_stim_upper(3)),...
-                    ', \tau=',num2str(fitdata.g_stim_upper(4)),'\newline',...
-                str0,input_data.current_units,':0-180,',...
+                    ', \tau=',num2str(fitdata.g_stim_upper(4))],...
+                ['\fontsize{10}',str0,input_data.current_units,':0-180,',...
                     ' min=',num2str(fitdata.g_no_stim_lower(1)),...
                     ', max=',num2str(fitdata.g_no_stim_lower(2)),...
                     ', PSE=',num2str(fitdata.g_no_stim_lower(3)),...
-                    ', \tau=',num2str(fitdata.g_no_stim_lower(4)),'\newline',...
-                str0,input_data.current_units,':180-360,',...
+                    ', \tau=',num2str(fitdata.g_no_stim_lower(4))],...
+                ['\fontsize{10}',str0,input_data.current_units,':180-360,',...
                     ' min=',num2str(fitdata.g_no_stim_upper(1)),...
                     ', max=',num2str(fitdata.g_no_stim_upper(2)),...
                     ', PSE=',num2str(fitdata.g_no_stim_upper(3)),...
-                    ', \tau=',num2str(fitdata.g_no_stim_upper(4))]);
+                    ', \tau=',num2str(fitdata.g_no_stim_upper(4))]});
         set(title_handle,'interpreter','tex')
         set(H_cartesian,'Name',strcat('Psychometric cartesian ',str,input_data.current_units,' inverted'))
         figure_list(length(figure_list)+1)=H_cartesian;
@@ -134,18 +132,17 @@ data_struct.aggregate_bdf=bdf;
         data_struct.(strcat('reach_data_compressed_',str))=temp;
         figure(H_cartesian)
         set(H_cartesian,'Position',[100 100 1200 1200])
-        title_handle=title(['\fontsize{14}','Psychometric cartesian ',str,'\m',input_data.current_units,', inverted compressed','\newline',...
-                '\fontsize{10}',...
-                str,input_data.current_units,...
+        title_handle=title({['\fontsize{14}','Psychometric cartesian ',str,'\m',input_data.current_units,', inverted compressed'],...
+                ['\fontsize{10}',str,input_data.current_units,...
                     'min=',num2str(fitdata.g_stim(1)),...
                     ', max=',num2str(fitdata.g_stim(2)),...
                     ', PSE=',num2str(fitdata.g_stim(3)),...
-                    ', \tau=',num2str(fitdata.g_stim(4)),'\newline',...
-                str0,'\m',input_data.current_units,...
+                    ', \tau=',num2str(fitdata.g_stim(4))],...
+                ['\fontsize{10}',str0,'\m',input_data.current_units,...
                     ', min=',num2str(fitdata.g_no_stim(1)),...
                     ', max=',num2str(fitdata.g_no_stim(2)),...
                     ', PSE=',num2str(fitdata.g_no_stim(3)),...
-                    ', \tau=',num2str(fitdata.g_no_stim(4))]);
+                    ', \tau=',num2str(fitdata.g_no_stim(4))]});
         set(title_handle,'interpreter','tex')
 
         set(H_cartesian,'Name',strcat('Psychometric cartesian ',str,input_data.current_units,' inverted compressed'))

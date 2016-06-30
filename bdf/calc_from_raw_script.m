@@ -104,7 +104,9 @@
         last_analog_time=inf;
 
         for i = length(analog_list):-1:1
-            if NSx_info.NSx_sampling(analog_list(i))==1000
+            if NSx_info.NSx_sampling(analog_list(i))==500
+                last_analog_time = min(length(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(i)),:))/500,last_analog_time);
+            elseif NSx_info.NSx_sampling(analog_list(i))==1000
                 last_analog_time = min(length(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(i)),:))/1000,last_analog_time);
             elseif NSx_info.NSx_sampling(analog_list(i))==2000
                 last_analog_time = min(length(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(i)),:))/2000,last_analog_time);
@@ -191,7 +193,18 @@
 
         th_1_adj(isnan(th_1_adj)) = th_1_adj(find(~isnan(th_1_adj),1,'first')); % when datafile started before encoders were zeroed.
         th_2_adj(isnan(th_2_adj)) = th_2_adj(find(~isnan(th_2_adj),1,'first'));
-
+        % filter angles:
+        padTime=5;
+        pad=repmat(th_1_adj(1),1,padTime*adfreq);%build a pad to extend the data so we can avoid step artifacts at the beginning and end of the data
+        winLen=2*length(pad)+length(th_1_adj);%compute the length of the padded data series so we can make a window function with a smooth transition across the pads
+        tw=tukeywin(winLen,2*padTime*adfreq/winLen);%use a tukey window function to go from 0 to 1 in the pad region
+        [b, a] = butter(4, 2*15/adfreq);%we will use filtfilt, so this is effectively an 8 pole spec (4poles run twice). 15hz cutoff (butter(poles,cutoff) takes cutoff=Fc/(0.5*SR)=2*Fc/SR as cutoff definition)
+        th_1_adj=filtfilt(b,a,[pad,th_1_adj,pad].*tw'); %apply tukey window and filter padded data
+        th_1_adj=th_1_adj(length(pad)+1:end-length(pad));%remove pads
+        pad=repmat(th_2_adj(1),1,5*adfreq);%re-build the pad for the second encoder data
+        th_2_adj=filtfilt(b,a,[pad,th_2_adj,pad].*tw');%apply tukey window and filter padded data
+        th_2_adj=th_2_adj(length(pad)+1:end-length(pad));%remove pads from second encoder data
+        
         % convert encoder angles to x and y
         if isfield(opts,'labnum')&& opts.labnum==2 %If lab2 was used for data collection
             l1=24.0; l2=23.5;
@@ -206,8 +219,10 @@
         elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
             if datenum(out_struct.meta.datetime) < datenum('01-Jan-2015')
                 l1=27; l2=36.8;
-            else
+            elseif datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
                 l1=46.8; l2=45;
+            else
+                l1=24; l2=27;
             end
         else
             l1 = 25.0; l2 = 26.8;   %use lab1 robot arm lengths as default
@@ -217,16 +232,11 @@
         y = - l1 * cos( th_1_adj ) - l2 * sin( -th_2_adj );
 
         % get derivatives
-        [b, a] = butter(8, 100/adfreq);
         dx = gradient(x,1/adfreq);
-        dx = filtfilt(b,a,dx);
         dy = gradient(y,1/adfreq);
-        dy = filtfilt(b,a,dy);
 
         ddx = gradient(dx,1/adfreq);
-        ddx = filtfilt(b,a,ddx);
         ddy = gradient(dy,1/adfreq);
-        ddy = filtfilt(b,a,ddy);
 
         % write into structure
         out_struct.pos = [analog_time_base'   x'   y'];
@@ -272,9 +282,9 @@
 %% Robot_task:Force Handle and Analog Signals
     if robot_task && opts.force 
         if ( ~isempty(out_struct.raw.analog.channels))
-            force_channels = find( strncmp(out_struct.raw.analog.channels, 'ForceHandle', 11) );
+            force_channels = find( strncmpi(out_struct.raw.analog.channels, 'ForceHandle', 11) );
         elseif(isfield(opts,'delete_raw') && opts.delete_raw && exist('NEVNSx','var') )
-            force_channels = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'ForceHandle')));
+            force_channels = find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),'forcehandle')));
         end
         if (exist('force_channels','var') && length(force_channels)==6)
             raw_force = zeros(length(analog_time_base), 6);
@@ -282,7 +292,21 @@
             for c = 1:6
                 channame = sprintf('ForceHandle%d', c);
                 if ( ~isempty(out_struct.raw.analog))
-                    achan_index = find(strcmp(out_struct.raw.analog.channels, channame));
+%                     achan_index = find(strcmp(out_struct.raw.analog.channels, channame));
+%                     if isempty(achan_index)
+%                         warning('calc_from_raw:ChannelNotFound',['Could not find a force channel named: ', channame, '. Continuing leaving force for that column empty'])
+%                         a_data = [];
+%                     elseif length(achan_index)>1
+%                         warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
+%                         a_data = [];
+%                     else
+                        achan_index=force_channels(c);
+                        a = out_struct.raw.analog.data{achan_index};
+                        t = (0:length(a)-1)' / out_struct.raw.analog.adfreq(achan_index) + out_struct.raw.analog.ts{achan_index}(1);
+                        a_data = [t a];
+                    %end
+                else %we know that if out_struct.raw.analog is empty an NEVNSx structure exists, otherwise the force_channels vector would be empty
+                    achan_index=find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),['ForceHandle',num2str(c)])));
                     if isempty(achan_index)
                         warning('calc_from_raw:ChannelNotFound',['Could not find a force channel named: ', channame, '. Continuing leaving force for that column empty'])
                         a_data = [];
@@ -290,20 +314,9 @@
                         warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
                         a_data = [];
                     else
-                        a = out_struct.raw.analog.data{achan_index};
-                        t = (0:length(a)-1)' / out_struct.raw.analog.adfreq(achan_index) + out_struct.raw.analog.ts{achan_index}(1);
-                        a_data = [t a];
-                    end
-                else %we know that if out_struct.raw.analog is empty an NEVNSx structure exists, otherwise the force_channels vector would be empty
-                    achan_index=find(~cellfun('isempty',strfind(lower(NSx_info.NSx_labels),['ForceHandle',num2str(c)])));
-                    if isempty(achan_index)
-                        warning('calc_from_raw:ChannelNotFound',['Could not find a force channel named: ', channame, '. Continuing leaving force for that column empty'])
-                        a_data = [];
-                    elseif length(achan_index>1)
-                        warning('calc_from_raw:ExtraChannelFound',['Found extra channels matching the string: ', channame, '. Continuing leaving force for that column empty'])
-                        a_data = [];
-                    else
-                        if NSx_info.NSx_sampling(achan_index)==1000
+                        if NSx_info.NSx_sampling(achan_index)==500
+                            a = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(achan_index),:))';
+                        elseif NSx_info.NSx_sampling(achan_index)==1000
                             a = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(achan_index),:))';
                         elseif NSx_info.NSx_sampling(achan_index)==2000
                             a = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(achan_index),:))';
@@ -312,6 +325,13 @@
                         elseif NSx_info.NSx_sampling(achan_index)==30000
                             a = single(NEVNSx.NS5.Data(NSx_info.NSx_idx(achan_index),:))';
                         end
+                        
+                        % 6.5584993 is the ratio when comparing the output of 
+                        % get_cerebus_data to the one from this script. It must come
+                        % from the data type conversion that happens when pulling 
+                        % analog data.
+                        a = a/6.5584993;
+                        
                         t = (0:length(a)-1)' / NSx_info.NSx_sampling(achan_index);
                         a_data=[t a];
                     end
@@ -334,13 +354,15 @@
                     fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
                              -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
                     rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
-                    force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+%                     force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+                    force_offsets = [];
                     Fy_invert = -1; % old force setup was left hand coordnates.
                 elseif datenum(out_struct.meta.datetime) < datenum('6/28/2011')
                     fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
                             -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
                     rotcal = [1 0; 0 1];                
-                    force_offsets = [-.73 .08 .21 -.23 .25 .44];
+%                     force_offsets = [-.73 .08 .21 -.23 .25 .44];
+                    force_offsets = [];
                     Fy_invert = 1;
                 elseif opts.rothandle
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
@@ -351,8 +373,9 @@
                     fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
                             -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
                     rotcal = [-1 0; 0 1];  
-                    force_offsets = [306.5423 -847.5678 132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
-                    force_offsets = [373.2183 -1017.803 -87.8063 -107.1702 -709.7454 21.6321];
+%                     force_offsets = [306.5423 -847.5678 132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
+%                     force_offsets = [373.2183 -1017.803 -87.8063 -107.1702 -709.7454 21.6321];
+                    force_offsets = [];
                     Fy_invert = 1;
                 else
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
@@ -363,7 +386,8 @@
                     fhcal = [-0.0129 0.0254 -0.1018 -6.2876 -0.1127 6.2163;...
                             -0.2059 7.1801 -0.0804 -3.5910 0.0641 -3.6077]'./1000;
                     rotcal = [1 0; 0 1];  
-                    force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
+%                     force_offsets = [306.5423 -847.5678  132.1442 -177.3951 -451.7461 360.2517]; %these offsets computed Jan 14, 2013
+                    force_offsets = [];
                     Fy_invert = 1;
                 end
             elseif isfield(opts,'labnum') && opts.labnum==2 %if lab2 was used for data collection
@@ -372,13 +396,15 @@
                     fhcal = [ 0.1019 -3.4543 -0.0527 -3.2162 -0.1124  6.6517; ...
                              -0.1589  5.6843 -0.0913 -5.8614  0.0059  0.1503]';
                     rotcal = [0.8540 -0.5202; 0.5202 0.8540];                
-                    force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+%                     force_offsets = [-0.1388 0.1850 0.2288 0.1203 0.0043 0.2845];
+                    force_offsets = [];
                     Fy_invert = -1; % old force setup was left hand coordnates.
                 elseif datenum(out_struct.meta.datetime) < datenum('6/28/2011')
                     fhcal = [0.0039 0.0070 -0.0925 -5.7945 -0.1015  5.7592; ...
                             -0.1895 6.6519 -0.0505 -3.3328  0.0687 -3.3321]';
                     rotcal = [1 0; 0 1];                
-                    force_offsets = [-.73 .08 .21 -.23 .25 .44];
+%                     force_offsets = [-.73 .08 .21 -.23 .25 .44];
+                    force_offsets = [];
                     Fy_invert = 1;
                 elseif opts.rothandle
                     %included this section for consistency. Old Lab2 files 
@@ -386,7 +412,7 @@
                     error('calc_from_raw_script:Lab2RotHandle','the rotate handle option was never used in Lab2. If lab2 has been updated with a loadcell and you are using the handle in a rotated position you need to modify calc_from_raw_script to handle this')
                 end
             elseif isfield(opts,'labnum') && opts.labnum==6 %If lab6 was used for data collection
-                if opts.rothandle
+                if opts.rothandle % DEPRECATED
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
                     % \\citadel\limblab\Software\ATI FT\Calibration\Lab 6\FT16018.cal
                     % fhcal = [Fx;Fy]./[scaleX;scaleY]
@@ -395,8 +421,9 @@
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
                             0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
                     rotcal = [-1 0; 0 1];  % HANDLE IS SLIGHTLY ROTATED, SO THIS IS WRONG
-                    force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPRICALLY
-                    Fy_invert = 1;
+%                     force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPRICALLY
+                    force_offsets = [];
+                    Fy_invert = -1;
                     error('calc_from_raw_script:Lab6RotHandle','Upside down handle rotation matrix has not been calculated yet. Figure out actual rotation matrix and modify calc_from_raw_script')
                 else
                     % Fx,Fy,scaleX,scaleY from ATI calibration file:
@@ -405,33 +432,47 @@
                     % force_offsets acquired empirically by recording static
                     % handle.
                     fhcal = [0.02653 0.02045 -0.10720 5.94762 0.20011 -6.12048;...
-                            0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508]'./1000;
-                    rotcal = [1 0; 0 1];  
-                    force_offsets = zeros(1,6); %NEEDS TO BE MEASURED EMPIRICALLY
+                            0.15156 -7.60870 0.05471 3.55688 -0.09915 3.44508;...
+                            10.01343 0.36172 10.30551 0.39552 10.46860 0.38238]'./1000;
+                    if datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
+                        rotcal = eye(3);
+                        force_offsets = []; %NEEDS TO BE MEASURED EMPIRICALLY
+                    else
+                        % rotation of the load cell to match forearm frame
+                        % (load cell is upside down and slightly rotated)
+                        theta_off = atan2(3,27); %angle offset of load cell to forearm frame
+%                         theta_off = 0;
+                        rotcal = [-cos(theta_off) -sin(theta_off) 0;...
+                                  -sin(theta_off) cos(theta_off)  0;...
+                                  0               0               1]'; 
+                        force_offsets = [-240.5144  245.3220 -103.0073 -567.6240  332.3762 -591.9336]; %measured 3/17/16
+%                         force_offsets = [];
+                    end
                     Fy_invert = 1;
                 end
             else
                 error('calc_from_raw:LabNotSet','calc_from_raw needs the lab number in order to select the correct load cell calibration')
             end
             
-            % Calculate force offsets for this particular file
-            % Find longest time range of no movement
-            temp_d = diff(out_struct.pos(:,2))<.004 & diff(out_struct.pos(:,3))<.004;   
-            temp_d = abs(diff(raw_force(:,1)))<1 & abs(diff(raw_force(:,2)))<1 &...
-                abs(diff(raw_force(:,3)))<1 & abs(diff(raw_force(:,4)))<1 &...
-                abs(diff(raw_force(:,5)))<1 & abs(diff(raw_force(:,6)))<1;
-            q = diff([0 temp_d(:)' 0]);
-            v1 = find(q == 1); v2 = find(q == -1); 
-            v = v2-v1;
-            [max_v,max_v_ind] = max(v);
-            no_mov_idx = v1(max_v_ind):v2(max_v_ind);
-            force_offsets_temp = mean(raw_force(no_mov_idx,:));
-            
-            if max_v > 1000  % Only use if there are more than 
-                             % 1000 contiguous movement free samples                
-                force_offsets = force_offsets_temp;
-            else
-                force_offsets = mean(raw_force);
+            if isempty(force_offsets)
+                % Calculate force offsets for this particular file
+                % Find longest time range of no movement
+                temp_d = diff(out_struct.pos(:,2))<.004 & diff(out_struct.pos(:,3))<.004;   
+                temp_d = abs(diff(raw_force(:,1)))<1 & abs(diff(raw_force(:,2)))<1 &...
+                    abs(diff(raw_force(:,3)))<1 & abs(diff(raw_force(:,4)))<1 &...
+                    abs(diff(raw_force(:,5)))<1 & abs(diff(raw_force(:,6)))<1;
+                q = diff([0 temp_d(:)' 0]);
+                v1 = find(q == 1); v2 = find(q == -1); 
+                v = v2-v1;
+                [max_v,max_v_ind] = max(v);
+                no_mov_idx = v1(max_v_ind):v2(max_v_ind);
+                force_offsets_temp = mean(raw_force(no_mov_idx,:));
+
+                if max_v > adfreq  % Only use if there are more than 1 s
+                    force_offsets = force_offsets_temp;
+                else
+                    force_offsets = mean(raw_force);
+                end
             end
             
             [n,bin] = histc(zero_force,unique(zero_force));
@@ -458,22 +499,27 @@
                 out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
                 out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
             elseif isfield(opts,'labnum')&& opts.labnum==6 %If lab6 was used for data collection
-                % Four problems fixed in one line:
-                % 1) Load cell x axis is rotated pi/8 off of robot forearm
-                % axis
-                % 2) Robot arm encoder zero has elbow angle in the global y
-                % axis
-                % 3) Robot elbow and shoulder encoders are swapped with
-                % respect to other labs
-                % 4) Robot is left arm instead of right, unlike other labs
-                handle_rotation_angle = -(th_1_adj+13*pi/8);
-                
-                out_struct.force(:,1) = temp(:,1).*cos(-th_1_adj)' - temp(:,2).*sin(th_1_adj)';
-                out_struct.force(:,2) = temp(:,1).*sin(th_1_adj)' + temp(:,2).*cos(th_1_adj)';
+                if datenum(out_struct.meta.datetime) < datenum('07-Mar-2016')
+                    % Four problems fixed in one line:
+                    % 1) Load cell x axis is rotated pi/8 off of robot forearm
+                    % axis
+                    % 2) Robot arm encoder zero has elbow angle in the global y
+                    % axis
+                    % 3) Robot elbow and shoulder encoders are swapped with
+                    % respect to other labs
+                    % 4) Robot is left arm instead of right, unlike other labs
+                    handle_rotation_angle = -(th_1_adj+13*pi/8);
+
+                    out_struct.force(:,1) = temp(:,1).*cos(-th_1_adj)' - temp(:,2).*sin(th_1_adj)';
+                    out_struct.force(:,2) = temp(:,1).*sin(th_1_adj)' + temp(:,2).*cos(th_1_adj)';
+                else
+                    out_struct.force(:,1) = temp(:,1).*cos(-th_2_adj)' - temp(:,2).*sin(th_2_adj)';
+                    out_struct.force(:,2) = temp(:,1).*sin(th_2_adj)' + temp(:,2).*cos(th_2_adj)';
+                end
             end
             clear temp
             out_struct.force = [analog_time_base' out_struct.force];
-            out_struct.force(ia,2:3) = 0;
+            out_struct.force(ia,2:end) = 0;
            
         else
             warning('BDF:noForceSignal','No force handle signal found because calc_from_raw did not find 6 channels named ''ForceHandle*''');
@@ -510,7 +556,9 @@
                 out_struct.analog.channel = NSx_info.NSx_labels(analog_list);
                 out_struct.analog.ts = analog_time_base;
                 for c = length(analog_list):-1:1
-                    if NSx_info.NSx_sampling(analog_list(c))==1000
+                    if NSx_info.NSx_sampling(analog_list(c))==500
+                        a_data = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                    elseif NSx_info.NSx_sampling(analog_list(c))==1000
                         a_data = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(c)),:))';
                     elseif NSx_info.NSx_sampling(analog_list(c))==2000
                         a_data = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(c)),:))';
@@ -543,7 +591,9 @@
             out_struct.analog.channel = NSx_info.NSx_labels(analog_list);
             out_struct.analog.ts = analog_time_base;
             for c = length(analog_list):-1:1
-                if NSx_info.NSx_sampling(analog_list(c))==1000
+                if NSx_info.NSx_sampling(analog_list(c))==500
+                    a_data = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(analog_list(c)),:))';
+                elseif NSx_info.NSx_sampling(analog_list(c))==1000
                     a_data = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(analog_list(c)),:))';
                 elseif NSx_info.NSx_sampling(analog_list(c))==2000
                     a_data = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(analog_list(c)),:))';
@@ -593,7 +643,9 @@ if opts.eye
             if isempty(achan_index)
                 analog_data = [];
             else
-                if NSx_info.NSx_sampling(analog_list(i))==1000
+                if NSx_info.NSx_sampling(analog_list(i))==500
+                    a = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(achan_index),:))';
+                elseif NSx_info.NSx_sampling(analog_list(i))==1000
                     a = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(achan_index),:))';
                 elseif NSx_info.NSx_sampling(analog_list(i))==2000
                     a = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(achan_index),:))';
@@ -615,7 +667,9 @@ if opts.eye
             if isempty(achan_index)
                 analog_data = [];
             else
-                if NSx_info.NSx_sampling(analog_list(i))==1000
+                if NSx_info.NSx_sampling(analog_list(i))==500
+                    a = single(NEVNSx.NS1.Data(NSx_info.NSx_idx(achan_index),:))';
+                elseif NSx_info.NSx_sampling(analog_list(i))==1000
                     a = single(NEVNSx.NS2.Data(NSx_info.NSx_idx(achan_index),:))';
                 elseif NSx_info.NSx_sampling(analog_list(i))==2000
                     a = single(NEVNSx.NS3.Data(NSx_info.NSx_idx(achan_index),:))';
@@ -743,7 +797,7 @@ end             %ending "if opts.eye"
                     out_struct.targets.centers =[];
                     out_struct.meta.known_problems{end+1}='Possible malformed databurst (corrupt target positions)';
                 end
-            elseif out_struct.databursts{1,2}(2)==1
+            elseif out_struct.databursts{1,2}(2)==1 || out_struct.databursts{1,2}(2)==2 %HACK: DON'T KNOW WHAT'S DIFFERENT BETWEEN v1 AND v2
                 hdr_size=18;
                 num_targets = (burst_size - hdr_size)/8;
                 out_struct.targets.centers = zeros(num_trials,2+2*num_targets);
@@ -800,6 +854,9 @@ end             %ending "if opts.eye"
             temp=bad_times>analog_time_base(1) & bad_times<analog_time_base(end);
             bad_times=sort(bad_times(temp));
             %convert times into indices:
+            if ~exist('adfreq','var')
+                adfreq = 1/diff(analog_time_base(1:2));
+            end
             bad_ind=(bad_times-analog_time_base(1))*adfreq;
             %convert single indices into 1s range. note that adfreq is taken as
             %shorthand for 1s*adfreq here 

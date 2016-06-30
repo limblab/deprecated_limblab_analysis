@@ -48,6 +48,18 @@ addpath([dir '/bdf/lib_plx/core_files/']);
 addpath([dir '/bdf/NEVNSx']);
 addpath([dir '/BMI_analysis']);
 
+
+
+%the following loads the correct JDBC driver for accessing postgreSQL
+%databases based on the JRE version in use. This allows the common data
+%structure code to talk to the limblab database
+
+if strfind(version('-java'),'Java 1.7')
+    javaclasspath([dir,filesep,'database',filesep,'postgresql-9.4.1208.jre7.jar']);
+elseif strfind(version('-java'),'Java 1.8')
+    javaclasspath([dir,filesep,'database',filesep,'postgresql-9.4.1208.jar']);
+else
+    warning('loadPostgresqlPath:JDBCNotAvailable',['JDBC drivers not specced for JRE version: ',version('-java'), ' please find the correct driver at https://jdbc.postgresql.org/download.html dowload it to the limblab_analysis',filesep,'database',filesep,' folder and update this script to point to it'])
+end
+
 clear dir;
-
-

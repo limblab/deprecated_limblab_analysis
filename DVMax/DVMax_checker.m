@@ -1,6 +1,6 @@
 function DVMax_checker()
     testing = 0;    
-    maintainer_email_address = 'ricardort@gmail.com';
+    maintainer_email_address = 'tuckertomlinson@gmail.com';
     
     try
         % Add JDBC driver to path
@@ -22,8 +22,18 @@ function DVMax_checker()
             path_file_text = [path_file_text 10 uint8([current_folder filesep 'ojdbc6.jar'])];
             javaaddpath([current_folder filesep 'ojdbc6.jar'],'-end')
         end
-
-        MonkeyWaterLocation = '\\citadel\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
+        
+        if ispc
+            MonkeyWaterLocation = '\\fsmresfiles.fsm.northwestern.edu\fsmresfiles\Basic_Sciences\Phys\L_MillerLab\limblab\lab_folder\Lab-Wide Animal Info\WeekendWatering\MonkeyWaterData.xlsx';
+        elseif isunix 
+            [~,hostname]=unix('hostname');
+            if strcmp(strtrim(hostname),'tucker-pc')
+                %mount point for fsmresfiles on tucker's computer:
+                MonkeyWaterLocation='/media/fsmresfiles/limblab/lab_folder/Lab-Wide Animal Info/WeekendWatering/MonkeyWaterData.xlsx';
+            end
+        else
+            error('DVMax_checker:systemNotRecognized','This script only configured to run on PC workstations or Tuckers linux computer if you are using a mac or other linux pc you will need to modify the script')
+        end
         water_codes = {'EP8500','EP9000','EP2000','AC1091'};
         free_water_codes = {'EP9200 ','AC1093'};
         water_restriction_start_codes = {'EP9100','AC1092'};
@@ -32,9 +42,9 @@ function DVMax_checker()
         food_restriction_start_code = 'EP9300';
         time = clock;
         time = time(4);
-
+% old database:
         conn = database('OR','dvmax_lmiller','dvmax','Vendor','Oracle',...
-            'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521);    
+            'DriverType','thin','Server','risdatsvr3.itcs.northwestern.edu','PortNumber',1521); 
         try
             load('animalList')
             oldAnimalList = animalList;
@@ -55,17 +65,20 @@ function DVMax_checker()
         ccmList = load_ccm_list(MonkeyWaterLocation);    
 
         if ~isequal(animalList2,oldAnimalList2)
-            send_monkey_person_email(animalList,peopleList,ccmList)
+            send_monkey_person_email(animalList,peopleList,ccmList,maintainer_email_address)
         end
 
-        [~,weekend_water_xls,~] = xlsread(MonkeyWaterLocation,3);   
+
+        [weekend_water_xls_num,weekend_water_xls,~] = xlsread(MonkeyWaterLocation,3,'','basic');   
+        weekendDates=x2mdate(weekend_water_xls_num(3:end));
         weekendWaterList = weekend_water_xls(2:end,2:end);
 
-        [~,weekend_food_xls,~] = xlsread(MonkeyWaterLocation,4); 
+        [~,weekend_food_xls,~] = xlsread(MonkeyWaterLocation,4,'','basic'); 
         weekendFoodList = weekend_food_xls(2:end,2:end);
 
         todaysDate = datenum(date);
-        weekendDates = datenum(weekendWaterList(1,2:end));
+    
+%         weekendDates = datenum(weekendWaterList(1,2:end));
         today_is_a_holiday = find(todaysDate == weekendDates)+1;
 
         animals_who_got_water = {};
@@ -326,8 +339,8 @@ function DVMax_checker()
 end
 
 function animalList = load_animal_list(MonkeyWaterLocation)    
-    [animal_xls_num,animal_xls,~] = xlsread(MonkeyWaterLocation,1);
-    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2);
+    [animal_xls_num,animal_xls,~] = xlsread(MonkeyWaterLocation,1,'','basic');
+    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2,'','basic');
     for iMonkey = 2:size(animal_xls,1)
         for iCol = 1:size(animal_xls,2)
             if isempty(animal_xls{iMonkey,iCol})
@@ -356,7 +369,7 @@ function animalList = load_animal_list(MonkeyWaterLocation)
 end
 
 function peopleList = load_people_list(MonkeyWaterLocation)    
-    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2);
+    [~,people_xls,~] = xlsread(MonkeyWaterLocation,2,'','basic');
     for iPerson = 2:size(people_xls,1)
         for iCol = 1:size(people_xls,2)
             eval(['peopleList(iPerson-1).' people_xls{1,iCol} ' = ''' people_xls{iPerson,iCol} ''';'])
@@ -365,7 +378,7 @@ function peopleList = load_people_list(MonkeyWaterLocation)
 end
 
 function ccmList = load_ccm_list(MonkeyWaterLocation)
-    [~,ccm_xls,~] = xlsread(MonkeyWaterLocation,5);
+    [~,ccm_xls,~] = xlsread(MonkeyWaterLocation,5,'','basic');
     for iPerson = 2:size(ccm_xls,1)
         for iCol = 1:size(ccm_xls,2)
             eval(['ccmList(iPerson-1).' ccm_xls{1,iCol} ' = ''' ccm_xls{iPerson,iCol} ''';'])
@@ -518,7 +531,7 @@ function monkey_final_list(animalList,peopleList,testing,maintainer_email_addres
     end    
 end
 
-function send_monkey_person_email(animalList,peopleList,ccmList)
+function send_monkey_person_email(animalList,peopleList,ccmList,maintainer_email_address)
     subject = 'NHP caretaker list update';
     message_table = {};
     for iAnimal = 1:length(animalList)
@@ -595,6 +608,9 @@ end
 function dvmax_crash_email(maintainer_email_address,ME)
     recepients = maintainer_email_address;    
     subject = 'DVMax checker crashed.';
-    message = {ME.identifier;ME.message;ME.stack(1).file;['line: ' num2str(ME.stack(1).line)]}; 
+    message = {ME.identifier;ME.message};
+    for i=1:numel(ME.stack)
+        message=[message;{ME.stack(i).file;['line: ' num2str(ME.stack(i).line)]}]; 
+    end
     send_mail_message(recepients,subject,message)    
 end

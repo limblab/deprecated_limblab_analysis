@@ -33,12 +33,12 @@ metricInfo.FR.label = 'Mean Firing Rate (Hz) ';
 
 metricInfo.dPD.min = -180;
 metricInfo.dPD.max = 180;
-metricInfo.dPD.binSize = 10;
+metricInfo.dPD.binSize = 5;
 metricInfo.dPD.label = 'PD Change (Deg) ';
 
 if sComp.doPercent
-    metricInfo.dMD.min = -1;
-    metricInfo.dMD.max = 1;
+    metricInfo.dMD.min = -1.1;
+    metricInfo.dMD.max = 1.1;
     metricInfo.dMD.binSize = 0.05;
     metricInfo.dMD.label = 'MD Change';
     
@@ -156,9 +156,22 @@ for iAxis = 1:length(axisNames)
     cellFRs = cell(size(doFiles,1),1);
     cellR2 = cell(size(doFiles,1),1);
     count = 0;
+    
+    pertDir = zeros(1,size(doFiles,1));
     for iFile = 1:size(doFiles,1)
         % load tuning and class info
         [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuneMethod,tuneWindow);
+        
+        % get direction of perturbation to flip the clockwise ones to align
+        if flipClockwisePerts
+            % gotta hack it
+            dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
+            expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
+            t(1).params.exp = parseExpParams(expParamFile);
+            pertDir(iFile) = t(1).params.exp.angle_dir;
+        else
+            pertDir(iFile) = 1;
+        end
         
         classifierBlocks = c(whichBlock).params.classes.classifierBlocks;
         
@@ -188,9 +201,8 @@ for iAxis = 1:length(axisNames)
         end
         
         % first column is PD, second column is MD
-        cellClasses{iFile} = c(whichBlock).classes(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes,1);
-        
-        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes,:);
+        cellClasses{iFile} = c(whichBlock).classes(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes,1);
+        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes,:);
         
         sg_bl = t(classifierBlocks(1)).sg;
         sg_ad = t(classifierBlocks(2)).sg;
@@ -228,7 +240,7 @@ for iAxis = 1:length(axisNames)
         r2_ad = mean(t(classifierBlocks(2)).r_squared,2);
         r2_wo = mean(t(classifierBlocks(3)).r_squared,2);
         
-        cellWidths{iFile} = fileWidths(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes);
+        cellWidths{iFile} = fileWidths(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes);
         cellR2{iFile} = {r2_bl(idx_bl), r2_ad(idx_ad), r2_wo(idx_wo)};
     end
     
@@ -245,11 +257,14 @@ for iAxis = 1:length(axisNames)
     classes = [];
     r2s = [];
     widths = [];
+    all_pds = [];
     for iFile = 1:size(doFiles,1)
         pds = cellPDs{iFile};
         mds = cellMDs{iFile};
         bos = cellBOs{iFile};
         frs = cellFRs{iFile};
+        
+        all_pds = [all_pds; pds{1}];
         
         pd_bl = [pd_bl; pds{1}.*(180/pi)];
         pd_ad = [pd_ad; pds{2}.*(180/pi)];
@@ -277,9 +292,10 @@ for iAxis = 1:length(axisNames)
             fr_mean = ones(size(frs{1},1),1);
         end
         
-        pd_bl_ad = [pd_bl_ad; angleDiff(pds{1},pds{2},true,true).*(180/pi)];
-        pd_bl_wo = [pd_bl_wo; angleDiff(pds{1},pds{3},true,true).*(180/pi)];
-        pd_ad_wo = [pd_ad_wo; angleDiff(pds{2},pds{3},true,true).*(180/pi)];
+        % pertDir is perturbation direction... 1=counter-clockwise, -1=clockwise... so this flips clockwise perturbations to be counter-clockwise
+        pd_bl_ad = [pd_bl_ad; pertDir(iFile)*angleDiff(pds{1},pds{2},true,true).*(180/pi)];
+        pd_bl_wo = [pd_bl_wo; pertDir(iFile)*angleDiff(pds{1},pds{3},true,true).*(180/pi)];
+        pd_ad_wo = [pd_ad_wo; pertDir(iFile)*angleDiff(pds{2},pds{3},true,true).*(180/pi)];
         
         md_bl_ad = [md_bl_ad; (mds{2}-mds{1})./md_mean];
         md_bl_wo = [md_bl_wo; (mds{3}-mds{1})./md_mean];
@@ -304,9 +320,9 @@ for iAxis = 1:length(axisNames)
             
             for i = 1:length(idx)
                 % calculate the memory cell index
-                bl_wo = angleDiff( pd_wo(idx(i),1),pd_bl(idx(i),1),true,true );
-                bl_ad = angleDiff( pd_ad(idx(i),1), pd_bl(idx(i),1),true,true );
-                ad_wo = angleDiff(pd_wo(idx(i),1),pd_ad(idx(i),1),true,true);
+                bl_wo = pertDir(iFile)*angleDiff( pd_wo(idx(i),1),pd_bl(idx(i),1),true,true );
+                bl_ad = pertDir(iFile)*angleDiff( pd_ad(idx(i),1), pd_bl(idx(i),1),true,true );
+                ad_wo = pertDir(iFile)*angleDiff(pd_wo(idx(i),1),pd_ad(idx(i),1),true,true);
                 
                 mem_ind = abs(bl_wo) / min( abs(bl_ad) , abs(ad_wo) );
                 

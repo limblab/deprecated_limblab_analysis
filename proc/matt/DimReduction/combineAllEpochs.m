@@ -18,9 +18,10 @@ for iFile = 1:size(doFiles)
     
     data = loadResults(root_dir,doFiles(iFile,:),'data',[],'BL');
     
-    tuning = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning'},useArray,paramSetName,'regression','onpeak');
+    t = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning'},useArray,paramSetName,'regression','onpeak');
+    t = t.tuning;
     
-    [istuned, master_sg] = excludeCells(data.params,data,tuning,tracking,useArray);
+    [istuned, master_sg] = excludeCells(data.params,data,t,tracking,useArray);
     
     % don't care about tuning
     %   1) Waveform SNR
@@ -49,7 +50,7 @@ for iFile = 1:size(doFiles)
         
         if filterMT
             data = loadResults(root_dir,doFiles(iFile,:),'data',[],e);
-            [movement_table,~] = filterMovementTable(data,tuning(1).params,true,false);
+            [movement_table,~] = filterMovementTable(data,t(1).params,true,false);
             movement_table = movement_table{iBlock};
         else
             movement_table = loadResults(root_dir,doFiles(iFile,:),'data',{'movement_table'},e);
@@ -57,11 +58,11 @@ for iFile = 1:size(doFiles)
         
         n = loadResults(root_dir,doFiles(iFile,:),'data',{useArray},e);
         
-        [~,idx] = intersect(n.sg, master_sg,'rows');
+        [~,idx] = intersect(n.(useArray).sg, master_sg,'rows');
         
         % tack on the spikes
         for i = 1:length(idx)
-            ts = n.units(idx(i)).ts;
+            ts = n.(useArray).units(idx(i)).ts;
             
             spikes{i} = [spikes{i},ts+t_end];
         end

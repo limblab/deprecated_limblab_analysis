@@ -111,15 +111,20 @@ function varargout = ActualvsOLPred_Matt(ActualData, PredData, varargin)
         disp(sprintf('Averages:\t%1.3f\t%1.3f\t%.2f',aveR2,avevaf,avemse));
     end
         
-    if plotflag               
-        for i = 1:numPredSignals
+    if plotflag
+        figure;
+        subplot1(2,1);
+        for i = 1:2
+            ax(i) = subplot1(i);
             %Plot both Actual and Predicted signals
-            figure;
             plot(ActualData.timeframe,ActSignalsFull(:,i),'k');
             hold on;
             plot(PredData.timeframe,PredData.preddatabin(:,i),'r');
-            title(PredData.outnames(i,:));
+            %title(PredData.outnames(i,:));
             legend('Actual',['Predicted (vaf= ' num2str(vaf(i),3) ')']);
+            axis('tight');
+            set(gca,'TickDir','out','FontSize',14,'Box','off');
         end
+        linkaxes(ax);
     end
 end

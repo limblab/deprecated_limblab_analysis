@@ -25,7 +25,7 @@ Adapt.Enable = false;
 if nargin    >= 3
     FiltPredVar = varargin{3};
     if nargin > 3
-        Adapt = varargin{4};
+        Adapt.Enable = varargin{4};
         if nargin > 4
             numPCs = varargin{5};
         end

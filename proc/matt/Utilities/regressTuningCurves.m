@@ -25,7 +25,7 @@ function [tunCurves,confBounds,rs,boot_pds,boot_mds,boot_bos] = regressTuningCur
 %       Options:
 %           'doplots': (boolean) plot each unit with tuning curve? (default:false)
 %           'domeanfr': (boolean) find mean fr by direction for cosine fit (default: true)
-%           'doparallel: (boolean) whether to run bootstrap for loop in parallel (default: false)
+%           'doparallel: (boolean) whether to run bootstrap for loop in parallel (default: false) (run 'matlabpool' before starting)
 %
 % OUTPUTS
 %   tunCurves: tuning of each model using b0+b1*cos(theta+b2)
@@ -60,7 +60,7 @@ end
 % set defaults
 doPlots = false; % By default, don't plot
 doMeanFR = true; % by default find mean for fit at each unique fr (if binned)
-doParallel = false;
+doParallel = true;
 for i=1:2:length(varargin)
     switch lower(varargin{i})
         case 'doplots'
@@ -72,6 +72,12 @@ for i=1:2:length(varargin)
     end
 end
 %%%%%
+
+% Check to ensure the matlab pool is open if parallel is desired
+if doParallel && isempty(gcp('nocreate'))
+    disp('Matlab pool not found. Opening pool...');
+    parpool;
+end
 
 boot_pds = [];
 boot_mds = [];
@@ -88,7 +94,10 @@ switch lower(sigTest{1})
         rs = zeros(size(fr,2),numIters);
         
         if doParallel
+            disp('Parallel mode: ENGAGED!');
             parfor iter = 1:numIters
+%                 disp(['Iteration ' num2str(iter) '...']);
+                
                 tempfr = zeros(size(fr));
                 tempTheta = zeros(size(fr));
                 for unit = 1:size(fr,2)
@@ -232,25 +241,30 @@ for iN = 1:size(fr,2)
     X = [ones(size(theta(:,iN))) st ct];
     
     % model is b0+b1*cos(theta)+b2*sin(theta)
-    [b,~,~,~,temp] = regress(fr(:,iN),X);
-    r(iN) = temp(1);
-    
-    % convert to model b0 + b1*cos(theta+b2)
-    b  = [b(1); sqrt(b(2).^2 + b(3).^2); atan2(b(2),b(3))];
-    
-    if doPlots
-        figure;
-        temp = b(1) + b(2)*cos(theta(:,iN)-b(3));
-        [~,I] = sort(theta(:,iN));
-        plot(theta(I,iN).*(180/pi),temp(I),'b','LineWidth',2)
-        hold all
-        plot(theta(:,iN).*(180/pi),fr(:,iN),'r.')
-        plot([b(3) b(3)].*(180/pi),[0 max(fr(:,iN))],'k')
-        title(['r2 = ' num2str(r(iN))]);
-        pause;
-        close all
+    if size(X,1) > 1
+        [b,~,~,~,temp] = regress(fr(:,iN),X);
+        r(iN) = temp(1);
+        
+        % convert to model b0 + b1*cos(theta+b2)
+        b  = [b(1); sqrt(b(2).^2 + b(3).^2); atan2(b(2),b(3))];
+        
+        if doPlots
+            figure;
+            temp = b(1) + b(2)*cos(theta(:,iN)-b(3));
+            [~,I] = sort(theta(:,iN));
+            plot(theta(I,iN).*(180/pi),temp(I),'b','LineWidth',2)
+            hold all
+            plot(theta(:,iN).*(180/pi),fr(:,iN),'r.')
+            plot([b(3) b(3)].*(180/pi),[0 max(fr(:,iN))],'k')
+            title(['r2 = ' num2str(r(iN))]);
+            pause;
+            close all
+        end
+        tunCurves(iN,:) = b;
+    else
+        tunCurves(iN,:) = NaN(1,3);
+        r(iN) = NaN;
     end
-    tunCurves(iN,:) = b;
 end
 
 end

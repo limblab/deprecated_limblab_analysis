@@ -337,6 +337,25 @@ function [outstruct]=parse_for_tuning(bdf,method,varargin)
                     %clean up target onsets and go cues
                     go_cues(go_cues==-1) = [];
                     target_onsets(target_onsets==-1) = [];
+                case 'BC'
+                    go_cues=bdf.TT(:,bdf.TT_hdr.go_cue);
+                    trial_times=[trial_starts,trial_ends];
+                    target_onsets=go_cues;
+                    target_onsets(find(bdf.TT(:,bdf.TT_hdr.targets_during_bump)))=trial_starts(find(bdf.TT(:,bdf.TT_hdr.targets_during_bump)));
+                    
+                    %find successful movement times
+                    move_trials = bdf.TT(:,bdf.TT_hdr.go_cue)~=-1 & bdf.TT(:,bdf.TT_hdr.trial_result)==uint8('R');
+                    move_times = [go_cues(move_trials) trial_ends(move_trials)];
+                    
+                    %find bump times
+                    bump_times=[bdf.TT(:,bdf.TT_hdr.bump_time) trial_ends];
+                    bump_times(bump_times(:,1)==-1,:) = [];
+                    
+                    %clean up target onsets and go cues
+                    go_cues(go_cues==-1) = [];
+                    target_onsets(target_onsets==-1) = [];
+                    %assumes psychometric bump choice task, not boubker's
+                    %detection task
                 case 'CO_bump'
                     trial_times=[trial_starts,trial_ends];
                     target_onsets=bdf.TT(:,bdf.TT_hdr.start_time);

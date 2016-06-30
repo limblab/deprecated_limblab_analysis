@@ -29,13 +29,17 @@ data = data.(useArray);
 ciSig = params.units.ciSignificance;
 confLevel = params.classes.classConfidenceLevel;
 numIters = params.tuning.numberBootIterations;
-isiThresh = params.units.isiThreshold;
-isiPercent = params.units.isiPercent;
+isiPercent = params.units.isiThreshold;
 waveSNR = params.units.waveformSNR;
 classifierBlocks = params.classes.classifierBlocks;
 % a couple of parameters depend on the array
 r2Min = params.units.([lower(useArray) '_r2Min']);
 minFR = params.units.([lower(useArray) '_minFR']);
+if isfield(params.units,[lower(useArray) '_isiPercent'])
+    isiThresh = params.units.([lower(useArray) '_isiPercent']);
+else
+    isiThresh = params.units.isiPercent;
+end
 
 if isfield(tuning(1),'sg')
     all_sg = {tuning.sg};

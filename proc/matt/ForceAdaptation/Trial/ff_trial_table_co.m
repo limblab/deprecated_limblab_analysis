@@ -1,30 +1,28 @@
 function tt = ff_trial_table_co(bdf,rewardFlag)
-% FF_TRIAL_TABLE_CO  Returns a table containing the key timestamps for all of
-%                  the successful center-out trials in BDF
-%
-% task is 'CO' or 'RT' for center out or random target
+% FF_TRIAL_TABLE_CO  Returns a table containing the key timestamps for center-out trials in a BDF
 %
 % Each row of the table coresponds to a single trial.  Columns are as
-% follows:
+% follow
 %    1: Start time
 %    2: Target ID                 -- -1 for none
 %`   3: Target angle (rad)
-%    4-7: Target location (ULx ULy LRx LRy)
+%    4-7: Target location (ULx ULy LRx LRy) NOTE: THIS IS BROKEN AND JUST RETURNS [-1 -1 -1 -1] FOR NOW
 %    8: OT on time
 %    9: Go cue
 %    10: Movement start time
 %    11: Peak speed time
 %    12: Movement end time
 %    13: Trial End time
+%    14: Reward or not
 %
 %  ASSUMES A 0.5 SECOND HOLD TIME WHEN REQUIRED
 %
 %   rewardFlag specifies what trials to return:
 %       rewardFlag = 1; Only rewarded (success) trials
-%       rewardFlag = 2; Only non-rewarded (failed) trials
-%       rewardFlag = 3; All trials
-
-if nargin < 3
+%       rewardFlag = 0; All trials (failed trials will have -1 for most values)
+%
+% 82 is reward, 70 is fail
+if nargin < 2
     rewardFlag = 1;
 end
 
@@ -57,7 +55,7 @@ end_codes = words( bitand(hex2dec('f0'),words(:,2)) == word_end, 2);
 
 % dbtimes = vertcat(bdf.databursts{:,1});
 
-tt = zeros(num_trials-1, 13) - 1;
+tt = zeros(num_trials-1, 14) - 1;
 
 for trial = 1:num_trials-1
     start_time = start_words(trial);
@@ -83,22 +81,23 @@ for trial = 1:num_trials-1
         ot_dir = bitand(hex2dec('0f'), ot_on_codes(ot_idx));
     end
     
-%     % Target location NOT WORKING RIGHT NOW
-%     dbidx = find(dbtimes > start_time, 1, 'first');
-%     burst_size = bdf.databursts{1,2}(1);
-%     target = bdf.databursts{dbidx,2}(burst_size-15:end);
-%     target = bytes2float(target, 'little')';
+    %     % Target location NOT WORKING RIGHT NOW
+    %     dbidx = find(dbtimes > start_time, 1, 'first');
+    %     burst_size = bdf.databursts{1,2}(1);
+    %     target = bdf.databursts{dbidx,2}(burst_size-15:end);
+    %     target = bytes2float(target, 'little')';
     target = [-1 -1 -1 -1];
     
     % Target ID
-    if isempty(target)
-        warning('databurst(%d) is corrupted, no target info',dbidx);
-        target = [-1 -1 -1 -1];
-        target_id = -1;
-    else
-        target_id = get_tgt_id(target);
-    end
-    
+    % broken for now, so it just gets -1s all around
+    %     if isempty(target)
+    %         warning('databurst(%d) is corrupted, no target info',dbidx);
+    %         target = [-1 -1 -1 -1];
+    %         target_id = -1;
+    %     else
+    %         target_id = get_tgt_id(target);
+    %     end
+    %
     
     % Go cue
     go_cue_idx = find(go_cues > start_time & go_cues < stop_time, 1, 'first');
@@ -109,7 +108,7 @@ for trial = 1:num_trials-1
     end
     
     % Find movement onset
-    if trial_result == double('R')
+    if trial_result == double('R') || ~rewardFlag
         try
             sidx = find(bdf.vel(:,1) > start_time,1,'first'):find(bdf.vel(:,1) > stop_time,1,'first');
             
@@ -133,10 +132,10 @@ for trial = 1:num_trials-1
             [v_peak, i_peak] = max(s);
             peak = t(i_peak);
             
-            % find movement end time as when velocity 
+            % find movement end time as when velocity
             off_idx = find(d>thresh & t>t(mvt_peak),1,'last');
             offset = t(off_idx);
-
+            
         catch
             onset = NaN;
             offset = NaN;
@@ -151,17 +150,18 @@ for trial = 1:num_trials-1
     % Build table
     if ot_dir ~= -1 % ignore trials that don't make it to target presentation
         if ot_dir < length(targ_angs)
-        tt(trial,:) = [...
-            start_time, ... %1 Trial start
-            ot_dir, ...     %2 Outer target id (-1 for none)
-            targ_angs(ot_dir+1), ... %3 angle to target
-            target, ...     %4-7 target location by corners
-            ot_time, ...    %8 Timestamp of OT On event
-            go_cue, ...     %9 Timestamp of Go Cue
-            onset, ...      %10 Detected movement onset
-            peak, ...       %11 Time of peak movement speed
-            offset,...      %12 end of movement (back below threshold)
-            stop_time];  %13 End of trial
+            tt(trial,:) = [...
+                start_time, ... %1 Trial start
+                ot_dir, ...     %2 Outer target id (-1 for none)
+                targ_angs(ot_dir+1), ... %3 angle to target
+                target, ...     %4-7 target location by corners
+                ot_time, ...    %8 Timestamp of OT On event
+                go_cue, ...     %9 Timestamp of Go Cue
+                onset, ...      %10 Detected movement onset
+                peak, ...       %11 Time of peak movement speed
+                offset, ...      %12 end of movement (back below threshold)
+                stop_time, ...  %13 End of trial
+                trial_result]; %14 Trial result
         else
             % I ran into a problem once where one single target had an
             % ot_dir that was greater than it should be... i have no idea what

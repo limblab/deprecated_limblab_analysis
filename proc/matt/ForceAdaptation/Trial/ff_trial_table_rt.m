@@ -1,4 +1,4 @@
-function [tt, x_offset, y_offset, tgt_size] = ff_trial_table_rt(bdf)
+function [tt, x_offset, y_offset, tgt_size] = ff_trial_table_rt(bdf,rewardFlag)
 % FF_TRIAL_TABLE_RT - returns a table containing the key timestamps for all of
 %                  the random walk trials in BDF
 %
@@ -8,6 +8,13 @@ function [tt, x_offset, y_offset, tgt_size] = ff_trial_table_rt(bdf)
 %    [2->1+(3*num_tgts)]: [go cue, onset, peak xcenter ycenter] for each target
 %    (1+3*num_tgts)+1   : Trial End time
 %    (1+3*num_tgts)+2   : Trial result    -- R, A, F, I or N (N coresponds to no-result)
+%   rewardFlag specifies what trials to return:
+%       rewardFlag = 1; Only rewarded (success) trials
+%       rewardFlag = 0; All trials
+
+if nargin < 3
+    rewardFlag = 1;
+end
 
 words = bdf.words;
 
@@ -144,15 +151,16 @@ for trial = 1:num_trials-1
     % trials that have too many go codes
     
     if trial_result == double('R') && num_targets_attempted == num_targets
-        try
-            tt(trial,:) = [...
-                start_time, ...             % Trial start
-                cue_array,... % for each target, [go onset peak offset xcenter ycenter]
-                stop_time, ...  % End of trial
-                trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
-        catch
-            keyboard
-        end
+        tt(trial,:) = [...
+            start_time, ... % Trial start
+            cue_array,...   % for each target, [go onset peak offset xcenter ycenter]
+            stop_time, ...  % End of trial
+            trial_result];  % Result of trial ('R', 'A', 'I', or 'N')
+    elseif ~rewardFlag
+        tt(trial,1) = start_time;
+        tt(trial,2:length(cue_array)+1) = cue_array;
+        tt(trial,size(tt,2)-1) = stop_time;
+        tt(trial,size(tt,2)) = trial_result;
     end
 end
 

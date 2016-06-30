@@ -1,10 +1,10 @@
 function varargout = loadResults(root_dir,sessionInfo,type,subdata,varargin)
 % Centralizing the data loading so I can change filenames, etc, easily if
 % necessary
-% 
+%
 % root_dir is root directory up to where the monkey subfolders are
 %
-% file is 1x4 cell array with:
+% sessionInfo is 1x4 cell array with:
 %   { 'monkey', 'date', 'condition', 'task' }
 %
 % type is string with what to load:
@@ -87,18 +87,29 @@ switch lower(type)
 end
 
 % assign the outputs
-if isempty(subdata)
-    varargout{1} = load(dataFile);
-    i = 1;
-else
-    if nargout ~= length(subdata)
-        error('Number of requested outputs does not match subdata request...');
+if exist(dataFile,'file')
+    if isempty(subdata)
+        varargout{1} = load(dataFile);
+        i = 1;
     else
-        for i = 1:length(subdata)
-            load(dataFile,subdata{i});
-            eval(['varargout{i} = ' subdata{i} ';']);
+        if nargout == 1 && length(subdata)==1 % probably want everything returned as a struct
+            load(dataFile,subdata{1});
+            eval(['temp.(subdata{1}) = ' subdata{1} ';']);
+            varargout{1} = temp.(subdata{1});
+            i = 1;
+        elseif nargout == length(subdata) % return each requested item as its own variable
+            for i = 1:length(subdata)
+                load(dataFile,subdata{i});
+                eval(['varargout{i} = ' subdata{i} ';']);
+            end
+        else
+            error('Number of requested outputs does not match subdata request...');
         end
     end
+else
+    disp('LoadResults Warning: File does not exist.');
+    varargout{1} = NaN;
+    i = 1;
 end
 
 % output the file path if the person wants it
