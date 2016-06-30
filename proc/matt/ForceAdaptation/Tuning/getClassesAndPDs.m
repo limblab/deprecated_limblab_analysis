@@ -11,9 +11,9 @@ for iFile = 1:size(doFiles,1)
     % load tuning and classification data
     [t,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,paramSetName,tuningMethod,tuningWindow);
 
-    cellClasses{iFile} = c.classes(all(c.istuned,2),1);
+    cellClasses{iFile} = c.classes(all(c.istuned(:,[1,4,5,6]),2),1);
     
-    tunedCells = c.tuned_cells;
+    tunedCells = c.sg(all(c.istuned(:,[1,4,5,6]),2),:);
 
     disp([length(t(1).theta),length(t(2).theta),length(t(3).theta)])
     

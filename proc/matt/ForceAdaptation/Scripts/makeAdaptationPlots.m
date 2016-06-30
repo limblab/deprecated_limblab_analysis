@@ -1,12 +1,13 @@
 % Starting from scratch on the behavioral adaptation plotting code
 
+monkeyColors = {'r','b','g'};
 % Do two things:
 %   1) For each session, plot a trace of all trials (aligned as percentage) on top of each other
 %   2) Pool across sessions in blocks to match the neural data
 epochs = {'BL','AD','WO'};
 useMetrics = {'errors'};
 numTrials = 150;
-remOutliers = true;
+remOutliers = false;
 
 for iTask = 1:length(useTasks)
     switch lower(useMetrics{iTask})
@@ -16,8 +17,14 @@ for iTask = 1:length(useTasks)
             x_max = 0.2;
         case 'errors'
             valScale = (180/pi);
-            x_min = -40;
-            x_max = 40;
+            x_min = -50;
+            x_max = 50;
+    end
+    
+    h = figure('Position',[400 400 650 550]);
+    hold all;
+    for iMonkey = 1:length(useMonkeys)
+        plot(-1,0,'o','Color',monkeyColors{iMonkey},'LineWidth',3);
     end
     
     for iMonkey = 1:length(useMonkeys)
@@ -41,7 +48,12 @@ for iTask = 1:length(useTasks)
                 dataPath = fullfile(root_dir,useFiles{iFile,1},'Processed',useFiles{iFile,2});
                 expParamFile = fullfile(dataPath,[useFiles{iFile,2} '_experiment_parameters.dat']);
                 a.BL.params.exp = parseExpParams(expParamFile);
-                pertDir(iFile) = a.BL.params.exp.angle_dir;
+                switch lower(a.BL.params.exp.angle_dir)
+                    case 'ccw'
+                        pertDir(iFile) = 1;
+                    case 'cw'
+                        pertDir(iFile) = -1;
+                end
             else
                 pertDir(iFile) = 1;
             end
@@ -53,11 +65,12 @@ for iTask = 1:length(useTasks)
         end
         
         % find minimum length of trials for each epoch
-%         trialMins = numTrials.*ones(1,length(epochs));
-        trialMins = min(cellfun(@(x) length(x),results),[],1);
+        %         trialMins = numTrials.*ones(1,length(epochs));
+%         trialMins = min(cellfun(@(x) length(x),results),[],1);
+        trialMins = [100, 200, 100];
         
         if remOutliers
-            disp('Removing outliers at 5x std of baseline...');
+            disp('Removing outliers at 3x std of baseline...');
         end
         
         % get the baseline error for each unique target direction
@@ -94,30 +107,39 @@ for iTask = 1:length(useTasks)
                 
                 % remove outliers
                 if remOutliers
-                    badInds = abs(r) > 5*std(results{iFile,1});
+                    badInds = abs(r) > 3*std(results{iFile,1});
                     if ~isempty(badInds)
                         r(badInds) = [];
                         t(badInds) = [];
                     end
                 end
                 
-                r = r(1:trialMins(iEpoch));
-                t = t(1:trialMins(iEpoch));
+                try
+                    r = r(1:trialMins(iEpoch));
+                    t = t(1:trialMins(iEpoch));
+                catch
+                    r = [r; NaN(trialMins(iEpoch)-length(r),1)];
+                    t = [t; NaN(trialMins(iEpoch)-length(t),1)];
+                end
+                
                 for j = 1:length(r)
                     idx = utheta == t(j);
-                    r(j) = r(j) - blErr(iFile,idx);
+                    if ~isnan(r(j))
+                        r(j) = r(j) - blErr(iFile,idx);
+                    end
                 end
                 sResults{iFile} = r;
             end
             
             % plot all of the session traces in gray
-%                 plot(cell2mat(sResults),'Color',[0.7 0.7 0.7],'LineWidth',0.5);
+            %                 plot(cell2mat(sResults),'Color',[0.7 0.7 0.7],'LineWidth',0.5);
             
             % plot mean across sessions for each trial
-            plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2),'k','LineWidth',2);
+            plot(repmat(1:trialMins(iEpoch),size(sResults,1),1),cell2mat(sResults),'o','LineWidth',1,'Color',[0.7 0.7 0.7],'MarkerSize',4);
+            plot(1:trialMins(iEpoch),nanmean(cell2mat(sResults),2),'k','LineWidth',2);
             
-%             plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2) - std(cell2mat(sResults),[],2)./sqrt(size(results,1)),'k--');
-%             plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2) + std(cell2mat(sResults),[],2)./sqrt(size(results,1)),'k--');
+            %             plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2) - std(cell2mat(sResults),[],2)./sqrt(size(results,1)),'k--');
+            %             plot(1:trialMins(iEpoch),mean(cell2mat(sResults),2) + std(cell2mat(sResults),[],2)./sqrt(size(results,1)),'k--');
             
             axis('tight');
             set(gca,'YLim',[x_min,x_max]);
@@ -129,6 +151,10 @@ for iTask = 1:length(useTasks)
         % load something to get the parameters used for the main tuning
         c = loadResults(root_dir,useFiles(iFile,:),'tuning',{'classes'},useArray,paramSetName,tuneMethod,tuneWindow);
         blocks = c.params.tuning.blocks; clear c;
+        
+%         blocks = {[0,0.5;0.5,1], ...
+%             [0,0.1;0.1,0.2;0.2,0.3;0.3,0.4;0.4,0.5;0.5,0.6;0.6,0.7;0.7,0.8;0.8,0.9;0.9,1], ...
+%             [0,0.1;0.1,0.2;0.2,0.3;0.3,0.4;0.4,0.5;0.5,0.6;0.6,0.7;0.7,0.8;0.8,0.9;0.9,1]};
         
         % deduce how many total blocks
         sResults = cell(size(results,1),sum(cellfun(@(x) length(x)-1,blocks)));
@@ -155,16 +181,37 @@ for iTask = 1:length(useTasks)
             end
         end
         
-        figure('Position',[400 400 650 550]);
+%         figure('Position',[400 400 650 550]);
+%         figure(h);
+figure;
         hold all;
+        
+        m = zeros(1,size(sResults,2));
+        s = zeros(2,size(sResults,2));
         for iBlock = 1:size(sResults,2)
-            temp = cell2mat(sResults(:,iBlock));
-            plot(iBlock,mean(temp),'ko','LineWidth',2);
-            plot([iBlock,iBlock],[mean(temp)-std(temp)./sqrt(length(temp)),mean(temp)+std(temp)./sqrt(length(temp))],'k-','LineWidth',2);
+            %temp = cell2mat(sResults(:,iBlock));
+            temp = cellfun(@mean,sResults(:,iBlock));
+            
+            m(iBlock) = mean(temp);
+            s(:,iBlock) = [mean(temp)-std(temp)./sqrt(length(temp)),mean(temp)+std(temp)./sqrt(length(temp))];
+            
+            %             plot(iBlock,m,'o','Color',monkeyColors{iMonkey},'LineWidth',2);
+            %             plot([iBlock,iBlock],s,'-','Color',monkeyColors{iMonkey},'LineWidth',2);
+            
         end
-        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 size(sResults,2)+1]);
-        title(useMonkeys{iMonkey},'FontSize',16);
+        
+        all_x = 1:size(sResults,2);
+        
+        plot(all_x,m,'o','Color',monkeyColors{iMonkey},'LineWidth',2);
+        plot([all_x; all_x],s,'-','Color',monkeyColors{iMonkey},'LineWidth',2);
+        
+        %         patch([all_x, fliplr(all_x)],[s(1,:), fliplr(s(2,:))],monkeyColors{iMonkey},'FaceAlpha',0.3,'EdgeAlpha',0.5,'EdgeColor',monkeyColors{iMonkey});
+        %         h(i) = plot(all_x,m,'-','LineWidth',3,'Color',monkeyColors{iMonkey});
+        
+        set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[1 size(sResults,2)],'YLim',[-16,10]);
+        %         title(useMonkeys{iMonkey},'FontSize',16);
         xlabel('Blocks','FontSize',16);
         ylabel(useMetrics{iTask},'FontSize',16);
     end
+%     legend(useMonkeys,'FontSize',14);
 end

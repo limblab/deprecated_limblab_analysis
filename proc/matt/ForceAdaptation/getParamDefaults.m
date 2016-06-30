@@ -46,7 +46,6 @@ params.tuning.blocks = {[0 1], ...                  % for breaking up BL/AD/WO f
 
 params.tuning.m1_latency = 0.1;  % offset for M1 activity to movement
 params.tuning.pmd_latency = 0.1; % offset for PMd activity to movement
-params.tuning.timeDelay = 0;     % amount of time to wait after go cue
 
 params.tuning.tuningStatTest = 'bootstrap'; % what test to use for regression... 'bootstrap','regression','none'
 params.tuning.numberBootIterations = 1000;  % how many iterations for bootstrapping
@@ -55,6 +54,7 @@ params.tuning.doRandSubset = false;         % use a random subset of datapoints
 params.tuning.numResamples = 100;           % how many resamples for random subset
 params.tuning.numSamples = 32;              % how many data samples to use for each subset
 params.tuning.divideTime = [0.3 0.05];      % for sliding window over course of CO movements... first number is fraction of total movement time for each bin, second number is how much to slide window
+params.tuning.timeDelay = 0;     % amount of time to wait after go cue, or for sliding window analysis
 
 params.tuning.glmModel = 'posvel';     % what model (stitch together as string). Options: 'pos','vel','force'. See code for more.
 params.tuning.glmBinSize = 50;         % bin size in msec for GLM firing rates
@@ -79,8 +79,8 @@ params.tracking.criteria = {'wf','isi'}; % what to use for cell tracking. Will u
 params.units.isiThreshold = 1.7;      % threshold for excluding multi-unit activity based on ISI (in milliseconds)
 params.units.m1_isiPercent = 0.19;       % maximum percentage of ISI that is below threshold to be considered
 params.units.pmd_isiPercent = 0.8;       % maximum percentage of ISI that is below threshold to be considered
-params.units.waveformSNR = 4;         % minimum SNR for waveforms of well-tuned cells
-params.units.m1_minFR = 3;            % minimum average firing rate for well-tuned cells
+params.units.waveformSNR = 3;         % minimum SNR for waveforms of well-tuned cells
+params.units.m1_minFR = 1;            % minimum average firing rate for well-tuned cells
 params.units.pmd_minFR = 1;           % minimum average firing rate for well-tuned cells
 params.units.m1_r2Min = 0.5;          % the 95% confidence intervals for bootstrapped R2 must be above this number
 params.units.pmd_r2Min = 0.2;         % the 95% confidence intervals for bootstrapped R2 must be above this number

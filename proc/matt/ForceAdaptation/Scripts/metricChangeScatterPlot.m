@@ -13,7 +13,7 @@ classNames = {'Kinematic','Dynamic','Memory I','Memory II','Other'};
 %% Hardcode define axis information for plots
 metricInfo.PD.min = -180;
 metricInfo.PD.max = 180;
-metricInfo.PD.binSize = 10;
+metricInfo.PD.binSize = 5;
 metricInfo.PD.label = 'Preferred Direction (Deg) ';
 
 metricInfo.MD.min = 0;
@@ -126,8 +126,8 @@ for iAxis = 1:length(axisNames)
                 fileWidths(u) = idx(end) - idx(1);
             end
         else
-            wfTypes = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
-            fileWidths = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
+            wfTypes = ones(size(c(whichBlock).istuned,1),1);
+            fileWidths = ones(size(c(whichBlock).istuned,1),1);
         end
         tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & ~all(c(whichBlock).istuned,2) & wfTypes,:);
         
@@ -168,7 +168,12 @@ for iAxis = 1:length(axisNames)
             dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
-            pertDir(iFile) = t(1).params.exp.angle_dir;
+            switch lower(t(1).params.exp.angle_dir)
+                case 'ccw'
+                pertDir(iFile) = 1;
+                case 'cw'
+                pertDir(iFile) = -1;
+            end
         else
             pertDir(iFile) = 1;
         end
@@ -196,8 +201,8 @@ for iAxis = 1:length(axisNames)
                 fileWidths(u) = idx(end) - idx(1);
             end
         else
-            wfTypes = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
-            fileWidths = ones(size(c(whichBlock).istuned(:,whichTuned),1),1);
+            wfTypes = ones(size(c(whichBlock).istuned,1),1);
+            fileWidths = ones(size(c(whichBlock).istuned,1),1);
         end
         
         % first column is PD, second column is MD
@@ -430,8 +435,7 @@ m = mean(y_data);
 plot([m m],V(3:4),'k','LineWidth',2);
 
 set(gca,'XTick',[],'YTick',[],'XLim',[ymin,ymax]);
-set(gca,'CameraUpVector',[-1,0,0]);
-set(gca, 'Xdir', 'reverse')
+set(gca,'CameraUpVector',[1,0,0],'Xdir','reverse');
 
 box off;
 

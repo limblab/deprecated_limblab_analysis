@@ -38,7 +38,13 @@ tuneWindow = 'onpeak';
 
 classifierBlocks = [1 4 7];
 whichBlock = 1; % if multiple classification block sets
-whichTuned = 1:6; %which columns in istuned to use
+%   1) Waveform SNR
+%   2) ISI Percentage
+%   3) FR threshold
+%   4) Neuron Tracking
+%   5) PD CI
+%   6) Cosine R2
+whichTuned = [1,4,5,6]; %which columns in istuned to use
 
 % separate by waveform width (not all scripts support this)
 %   0: don't do
@@ -53,25 +59,27 @@ flipClockwisePerts = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % for scatter plots and over-session plots. Should have to entries for each category Note: can also do more than 2
 % titles/metrics etc for the over-session script
-sComp.titles  = {'CO', 'RT'};
-sComp.metrics = {'PD', 'PD'};
+which_parameter = 'PD';
+sComp.monkeys = useMonkeys;
+sComp.titles  = {'All','Chewie','Mihili'};%which_parameter, which_parameter};
+sComp.metrics = {which_parameter, which_parameter, which_parameter};
 sComp.epochs  = {'BL_AD', 'BL_WO'}; % only used for over-session
-sComp.params  = {paramSetName, paramSetName};
-sComp.methods = {tuneMethod, tuneMethod};
-sComp.windows = {tuneWindow, tuneWindow};
-sComp.arrays  = {useArray, useArray};
-sComp.reassignOthers = true; % reassign "Other" type cell classes as Dynamic/Memory (only for scatter)
+sComp.params  = {paramSetName, paramSetName, paramSetName};
+sComp.methods = {tuneMethod, tuneMethod, tuneMethod};
+sComp.windows = {tuneWindow, tuneWindow, tuneWindow};
+sComp.arrays  = {useArray, useArray, useArray};
+sComp.reassignOthers = false; % reassign "Other" type cell classes as Dynamic/Memory (only for scatter)
 sComp.doAbs = false; %take absolute value of differences for each cell
 sComp.doPercent = true; %whether to do MD/BO/FR as a percentage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % For sliding-window tuning in CO task and also slow/fast movements
-slidingParams.metric = 'MD';
-slidingParams.doAvg = true; % do average across sessions (mainly for group scatter plot)
+slidingParams.metric = 'PD';
+slidingParams.doAvg = false; % do average across sessions (mainly for group scatter plot)
 slidingParams.useVel = false; % use velocity instead of measured force
 slidingParams.useMasterTuned = true; % whether to use tuning from standard 'movement' tuning method to see which are "well-tuned"
 slidingParams.doAbs = true; % take absolute of difference between epochs
-slidingParams.doMD = true;
+slidingParams.doMD = false;
 slidingParams.doMDNorm = true;
 slidingParams.plotClasses = [1,2,3,4,5];
 
@@ -90,7 +98,7 @@ dataSummary;
 if whichScript ~= 7 % for behavioral adaptation, doesn't matter what array
     switch lower(useArray)
         case 'm1'
-            allFiles = sessionList(strcmpi(sessionList(:,1),'Mihili') | strcmpi(sessionList(:,1),'Chewie'),:);
+            allFiles = sessionList(strcmpi(sessionList(:,1),'Mihili') | strcmpi(sessionList(:,1),'Chewie') | strcmpi(sessionList(:,1),'Jaco') | strcmpi(sessionList(:,1),'MrT'),:);
         case 'pmd'
             allFiles = sessionList(strcmpi(sessionList(:,1),'Mihili') | strcmpi(sessionList(:,1),'MrT'),:);
     end
@@ -112,21 +120,21 @@ doFiles = allFiles(dateInds,:);
 % % % %     temp2 = [];
 % % % %     for iFile = 1:size(doFiles,1)
 % % % %         [tuning,c] = loadResults(root_dir,doFiles(iFile,:),'tuning',{'tuning','classes'},useArray,'movement','regression','onpeak');
-% % % %         
+% % % %
 % % % %         temp = [temp; tuning(i).bos(:,1)];
-% % % %         
+% % % %
 % % % %         r=sort(tuning(i).r_squared,2);
 % % % %         temp1 = [temp1; r(all(c.istuned(:,1:4),2),50)];
-% % % %         
+% % % %
 % % % %         theta = tuning(i).theta;
 % % % %         utheta = unique(theta);
 % % % %         fr = zeros(length(utheta),size(tuning(i).fr,2));
 % % % %         for iDir = 1:length(utheta)
 % % % %             fr(iDir,:) = mean(tuning(i).fr(theta==utheta(iDir),:),1);
 % % % %         end
-% % % %         
+% % % %
 % % % %         fr = fr(:,all(c.istuned(:,1:4),2));
-% % % %         
+% % % %
 % % % %         %
 % % % %         for unit = 1:size(fr,2)
 % % % %             [~,~,~,~,s] = regress(fr(:,unit),[ones(size(utheta)) cos(utheta) sin(utheta)]);
@@ -137,13 +145,13 @@ doFiles = allFiles(dateInds,:);
 % % % %     outR2 = [outR2 temp2];
 % % % %     outFR = [outFR temp];
 % % % % end
-% % % % 
+% % % %
 % % % % outT = [];
 % % % % for iFile = 1:size(doFiles,1)
 % % % %     c = loadResults(root_dir,doFiles(iFile,:),'tuning',{'classes'},useArray,'movement','regression','onpeak');
 % % % %     outT = [outT; c.istuned(all(c.istuned(:,1:4),2),5)];
 % % % % end
-% % % % 
+% % % %
 % % % % outR1 = outR1(all(outT,2),:);
 % % % % outR2 = outR2(all(outT,2),:);
 % % % % outFR = outFR(all(outT,2),:);
@@ -185,7 +193,7 @@ switch whichScript
         frANOVA;
         
     case 7 % show behavioral adaptation
-        makeAdaptationPlots3;%_firstlast;
+        makeAdaptationPlots;%_firstlast;
         
     case 8 % make plots summarizing cell classifications
         investigateMemoryCells;
@@ -198,7 +206,8 @@ switch whichScript
         dateInds = strcmpi(doFiles(:,4),'CO');
         doFiles = doFiles(dateInds,:);
         sfn_plot_pd_change_periods;
-            case 11 % looking at PD changes in specific bins
+        
+    case 11 % looking at PD changes in specific bins
         % only CO task
         dateInds = strcmpi(doFiles(:,4),'CO');
         doFiles = doFiles(dateInds,:);

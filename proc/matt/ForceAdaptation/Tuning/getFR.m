@@ -68,7 +68,7 @@ for iBlock = 1:numBlocks
         elseif strcmpi(tuningPeriod,'befpeak') % window ending at peak
             useWin(trial,:) = [mt(trial,5)-movementTime, mt(trial,5)];
         elseif strcmpi(tuningPeriod,'time') % sliding time windows over reaches
-            tstart = mt(trial,4)-timeDelay; % time that reach starts
+            tstart = mt(trial,4) - timeDelay; % time that reach starts
             tdur = ( mt(trial,6) - holdTime + timeDelay ) - tstart; % time duration of reach
             useWin(trial,:) = [tstart + (iBlock-1)*divideTime(2)*tdur, tstart + (divideTime(1)+(iBlock-1)*divideTime(2)) * tdur];
         elseif strcmpi(tuningPeriod,'baseline') % baseline activity movementTime msec before target presentation

@@ -1,6 +1,6 @@
 %% Get different values and statistics for the paper, make figures, etc
 % These are the sessions I will use
-clear all;
+clear;
 close all;
 clc;
 
@@ -8,6 +8,8 @@ root_dir = 'F:\';
 save_file = 'm1_cf_summary_results.mat';
 
 rewriteFiles = false;
+
+exclude_files = {'Mihili','2014-12-11','FF','CO'};
 
 %% process or load data
 if exist(fullfile(root_dir,save_file),'file') && ~rewriteFiles % load it up
@@ -21,7 +23,7 @@ else % gotta do the summary analysis
     useArray = 'M1';
     monkeys = {'Chewie','Mihili'};
     epochs = {'BL','AD','WO'};
-    tasks = {'CO','RT'};
+    tasks = {'CO'};
     perts = {'FF','CS'};
     
     cbs.FF = [1 4 7];
@@ -35,9 +37,9 @@ else % gotta do the summary analysis
     allFiles = sessionList(ismember(sessionList(:,1),monkeys) & ismember(sessionList(:,3),perts) & ismember(sessionList(:,4),tasks),:);
     
     % Check to ensure the matlab pool is open if parallel is desired
-    if matlabpool('size') == 0
+    if isempty(gcp('nocreate'))
         disp('Matlab pool not found. Opening pool...');
-        matlabpool;
+        parpool;
     end
     
     %%% Do a statistical comparison of beginning and end of adaptation
@@ -275,6 +277,9 @@ end
 %% Now process for some results
 clc;
 
+% filter out files to exclude
+allFiles( strcmpi(allFiles(:,1),exclude_files{:,1}) & strcmpi(allFiles(:,2),exclude_files{:,2}) & strcmpi(allFiles(:,3),exclude_files{:,3}) & strcmpi(allFiles(:,4),exclude_files{:,4}), :) = [];
+
 % The average number of movements in CO and RT including all monkeys
 for iPert = 1:length(perts)
     
@@ -377,7 +382,8 @@ for iPert = 1:length(perts)
         bins = 1:2:40;
         [f,x]=hist(data,bins);
         bar(x,f/sum(f));
-        set(gca,'YLim',[0,0.2],'TickDir','out','FontSize',14);
+        axis('tight')
+        set(gca,'XLim',[0,40],'TickDir','out','FontSize',14);
         xlabel('Peak Speed (cm/s)','FontSize',14);
         ylabel('Count','FontSize',14);
         box off;

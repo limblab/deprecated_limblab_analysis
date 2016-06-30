@@ -42,7 +42,7 @@ function fitTuningCurves(params,arrays)
 procDirName = 'Processed';
 doPlots = false;
 
-if nargin < 3
+if nargin < 2
     arrays = [];
 end
 

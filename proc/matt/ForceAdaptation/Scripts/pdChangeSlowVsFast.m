@@ -51,7 +51,12 @@ for iFile = 1:size(doFiles,1)
             dataPath = fullfile(root_dir,doFiles{iFile,1},'Processed',doFiles{iFile,2});
             expParamFile = fullfile(dataPath,[doFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
-            pertDir(iFile) = t(1).params.exp.angle_dir;
+            switch lower(t(1).params.exp.angle_dir)
+                case 'ccw'
+                pertDir(iFile) = 1;
+                case 'cw'
+                pertDir(iFile) = -1;
+            end
         else
             pertDir(iFile) = 1;
         end

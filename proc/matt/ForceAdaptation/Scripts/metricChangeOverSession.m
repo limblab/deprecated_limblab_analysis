@@ -13,8 +13,8 @@ errScale = 2; %scale the error by this value (2 is average of epochs)
 widthThreshMult = 0.5; % factor multiplied by STD
 
 %% Hardcode define axis information for plots
-metricInfo.PD.min = -120;
-metricInfo.PD.max = 120;
+metricInfo.PD.min = -60;
+metricInfo.PD.max = 60;
 metricInfo.PD.label = 'PD Change (Deg)';
 
 if sComp.doPercent
@@ -91,6 +91,7 @@ for iRes = 1:length(sComp.titles)
     tuneMethod = sComp.methods{iRes};
     tuneWindow = sComp.windows{iRes};
     
+    
     %     cellPDs = cell(size(doFiles,1),1);
     %     cellMDs = cell(size(doFiles,1),1);
     %     cellBOs = cell(size(doFiles,1),1);
@@ -99,7 +100,12 @@ for iRes = 1:length(sComp.titles)
     count = 0;
     
     % pick what files to do for this title
-    useFiles = doFiles(strcmpi(doFiles(:,4),sComp.titles{iRes}),:);
+    if iRes == 1
+        useFiles = doFiles;%(strcmpi(doFiles(:,1),monkey),:);
+    else
+        monkey = sComp.monkeys{iRes-1};
+        useFiles = doFiles(strcmpi(doFiles(:,1),monkey),:);
+    end
     
     pertDir = zeros(1,size(useFiles,1));
     allWidths = [];
@@ -114,7 +120,12 @@ for iRes = 1:length(sComp.titles)
             dataPath = fullfile(root_dir,useFiles{iFile,1},'Processed',useFiles{iFile,2});
             expParamFile = fullfile(dataPath,[useFiles{iFile,2} '_experiment_parameters.dat']);
             t(1).params.exp = parseExpParams(expParamFile);
-            pertDir(iFile) = t(1).params.exp.angle_dir;
+            switch lower(t(1).params.exp.angle_dir)
+                case 'ccw'
+                pertDir(iFile) = 1;
+                case 'cw'
+                pertDir(iFile) = -1;
+            end
         else
             pertDir(iFile) = 1;
         end
@@ -146,7 +157,7 @@ for iRes = 1:length(sComp.titles)
             fileWidths = ones(size(c(whichBlock).istuned,1),1);
         end
         
-        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned,2) & wfTypes,:);
+        tunedCells = c(whichBlock).sg(all(c(whichBlock).istuned(:,whichTuned),2) & wfTypes & (c(whichBlock).classes(:,1)==2),:);
         
         for iBlock = 1:length(t)
             sg = t(iBlock).sg;
@@ -259,6 +270,9 @@ for iRes = 1:length(sComp.titles)
     end
     plot((1:size(cellPDs,2))+0.1*(iRes-1),plotData,[plotColors{iRes} 'o'],'LineWidth',2);
     plot(repmat( (1:size(cellPDs,2))+0.1*(iRes-1),2,1),[plotData-plotErr; plotData+plotErr],plotColors{iRes},'LineWidth',2);
+    
+%     anovan(reshape(dPDs(:,2:4),size(dPDs,1)*3,1),[ones(size(dPDs,1),1); 2*ones(size(dPDs,1),1); 3*ones(size(dPDs,1),1)],'Display','off')
+%     [~,p] = ttest2(dPDs(:,2),dPDs(:,4))
 end
 
 %% Now add some extra stuff and configure the plot
@@ -268,7 +282,7 @@ plot([4.5 4.5],[plotMin plotMax],'k--','LineWidth',1);
 
 axis([0.3 size(cellPDs,2)+0.3 plotMin plotMax]);
 
-set(gca,'XTick',[1, 1+classifierBlocks(2)/2, classifierBlocks(2)+(1+classifierBlocks(3)-classifierBlocks(2))/2],'XTickLabel',{'Baseline','Adaptation','Washout'},'FontSize',14);
+set(gca,'XTick',[1, 1+classifierBlocks(2)/2, classifierBlocks(2)+(1+classifierBlocks(3)-classifierBlocks(2))/2],'XTickLabel',{'Baseline','Adaptation','Washout'},'FontSize',14,'YLim',[metricInfo.PD.min metricInfo.PD.max]);
 
 ylabel(metricInfo.(sComp.metrics{1}).label,'FontSize',16);
 

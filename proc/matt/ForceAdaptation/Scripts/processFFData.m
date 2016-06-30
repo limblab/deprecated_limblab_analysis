@@ -1,5 +1,7 @@
 % TO IMPLEMENT:
 %   - f-test for directional tuning?
+%   - build in crosstalk analysis
+%   - revamp neural inclusion criteria
 
 % PROCESSFFDATA  Script to run analysis on a day of data
 %   - make an experiment parameters file before running
@@ -14,17 +16,17 @@ clc;
 %   - could load monkey info
 dataRoot = 'F:\';
 procDirName = 'Processed';
-monkeys = {'Jaco'};
+monkeys = {'Mihili','Chewie'};
 paramSetNames = {'movement'};
 
 % exclude these analysis steps
 % processing options
-doDataStruct        = 1;
+doDataStruct        = 0;
 doAdaptation        = 0;
 doTracking          = 0;
 % tuning options
-doTuning            = 1;
-doClassification    = 0;
+doTuning            = 0;
+doClassification    = 1;
 doReport            = 0;
 % plotting options
 doPlotting          = 0; % 1 for all, 2 for only general, 3 for only tuning
@@ -46,7 +48,7 @@ for iMonkey = 1:length(monkeys)
     
     switch monkey
         case 'MrT'
-            arrays = {'PMd'};
+            arrays = {'M1','PMd'};
             
             mrt_data = sessionList(strcmpi(sessionList(:,1),'MrT'),:);
             params = setParamValues(params,'MonkeyID',1,'dataDir','F:\MrT');
@@ -59,7 +61,7 @@ for iMonkey = 1:length(monkeys)
             goodDates = chewie_data(:,2);
             
         case 'Mihili'
-            arrays = {'M1','PMd'};
+            arrays = {'M1'}; %{'M1','PMd'};
             
             mihili_data = sessionList(strcmpi(sessionList(:,1),'Mihili'),:);
             params = setParamValues(params,'MonkeyID',3,'dataDir','F:\Mihili');
@@ -95,8 +97,7 @@ for iMonkey = 1:length(monkeys)
         
         % load experiment parameters from text file
         params.exp = parseExpParams(expParamFile);
-        
-        params.useUnsorted = true;
+
         if doDataStruct
             disp('');
             disp('%%%%%%%%%%%%%%%%%%%%%%%%%%')
