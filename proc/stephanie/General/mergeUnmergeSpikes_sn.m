@@ -8,7 +8,7 @@
 % what you're doing.)
 
 % Merge files
-file_path = 'Z:\Jango_12a1\CerebusData\Generalizability\WithHandle\11-06-14\';
+file_path = 'Z:\Jango_12a1\CerebusData\Generalizability\WithHandle\08-21-14\';
 file_prefix = 'Jango';
 
 % Run processSpikesForSorting for the first time to combine spike data from
@@ -16,50 +16,37 @@ file_prefix = 'Jango';
 mergingStatus = processSpikesForSorting_sn(file_path,file_prefix,1);
 
 %-------------------------------------------------------------------------------------
-
+%%
 %-------------------------------------------------------------------------
-file_path = 'Z:\Jango_12a1\CerebusData\Generalizability\WithHandle\09-24-14\';
+file_path = 'Z:\Jango_12a1\CerebusData\Generalizability\WithHandle\08-21-14\';
 file_prefix = 'Jango';
 
 mergingStatus = 'merged spikes';
 mergingStatus = processSpikesForSorting_sn(file_path,file_prefix,0);
  
      
-file_prefix1 = 'Jango_20140924_IsoHandleHoriz_UtahEMGs_SN_001';
-file_prefix2 = 'Jango_20140924_WmHandleHoriz_UtahEMGs_SN_002';
-file_prefix3 = 'Jango_20140924_SprHandleHoriz_UtahEMGs_SN_003';
-file_prefix4 = 'Jango_20140924_IsoBoxCenterOut_UtahEMGs_SN_004';
-%file_prefix5 = 'Jango_20140511_WMCenterOut_Utah12ImpEMGs_SN_004-s';
+file_prefix1 = 'Jango_20140821_IsoHandleHoriz_Utah10ImpEMGs_SN_001';
+file_prefix2 = 'Jango_20140821_WmHandleHoriz_Utah10ImpEMGs_SN_002';
+file_prefix3 = 'Jango_20140821_SprHandleHoriz_Utah10ImpEMGs_SN_003';
+%file_prefix4 = 'Jango_20141004_IsoBoxCO_UtahEMGs_SN_004';
+%file_prefix5 = 'Jango_IsoBoxCO_UtahEMGs_051515_SN_005';
  
  if strcmp(mergingStatus,'processed')
      % If everything went well, create bdfs for your files (you might
      % want to split them up by task.)
      
-     bdf1 = get_nev_mat_data([file_path file_prefix1],1);
-     bdf2 = get_nev_mat_data([file_path file_prefix2],1);
-     bdf3 = get_nev_mat_data([file_path file_prefix3],1);
-     bdf4 = get_nev_mat_data([file_path file_prefix4],1);
+     bdf1 = get_nev_mat_data([file_path file_prefix1],'verbose','rothandle',0,1,'ignore_jumps');
+     bdf2 = get_nev_mat_data([file_path file_prefix2],'verbose','rothandle',0,1,'ignore_jumps');
+    bdf3 = get_nev_mat_data([file_path file_prefix3],'verbose','rothandle',0,1,'ignore_jumps');
+  % bdf4 = get_nev_mat_data([file_path file_prefix4],'verbose','rothandle',0,1,'ignore_jumps');
+ %  bdf5 = get_nev_mat_data([file_path file_prefix5],'verbose','rothandle',0,1,'ignore_jumps');
  end
 
 %------------------------------------------------------------------------
 
     
-    % Run processSpiesForSorting again to separate sorted spikes into their
-    % original files.
-    mergingStatus = processSpikesForSorting(file_path,file_prefix);
-    if strcmp(mergingStatus,'processed')
-        % If everything went well, create bdfs for your files (you might
-        % want to split them up by task.)
-
-        bdf1 = get_nev_mat_data([file_path file_prefix1],1);
-        bdf2 = get_nev_mat_data([file_path file_prefix2],1);
-        bdf3 = get_nev_mat_data([file_path file_prefix3],1);
-        bdf4 = get_nev_mat_data([file_path file_prefix4],1);
-    end
-%end
-
 save(strcat(file_prefix1,'-s'), 'bdf1')
 save(strcat(file_prefix2,'-s'), 'bdf2')
-save(strcat(file_prefix3,'-s'), 'bdf3')
-save(strcat(file_prefix4,'-s'), 'bdf4')
+ save(strcat(file_prefix3,'-s'), 'bdf3')
+%save(strcat(file_prefix4,'-s'), 'bdf4')
 %save(strcat(file_prefix5,'-s'), 'bdf5')

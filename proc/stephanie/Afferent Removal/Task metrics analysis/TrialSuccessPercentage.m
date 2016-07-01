@@ -2,7 +2,7 @@ function PerSuccessfulTrials = TrialSuccessPercentage(out_struct)
 
 trialtable = wf_trial_table(out_struct);
 NumSuccesses = 0;
-NumTrials = length(trialtable);
+NumTrials = length(trialtable(:,1));
 for N = 1:NumTrials
     if trialtable(N, 9) == 82;
         NumSuccesses = NumSuccesses + 1;

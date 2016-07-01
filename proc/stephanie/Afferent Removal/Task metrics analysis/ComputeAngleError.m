@@ -7,7 +7,7 @@ clearvars -except out_struct
 % Initialize Variables
 [out_struct Goodtrialtable xCenter yCenter GoCueIndex EndTrialIndex] = Initializations(out_struct);
 
-for N = 1:length(Goodtrialtable)
+for N = 1:length(Goodtrialtable(:,1))
 % Get the GoCuePositions for X and Y
 GoCuePositionX = out_struct.pos(GoCueIndex(N),2);
 GoCuePositionY = out_struct.pos(GoCueIndex(N),3);

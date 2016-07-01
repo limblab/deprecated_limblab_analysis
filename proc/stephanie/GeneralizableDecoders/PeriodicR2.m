@@ -8,7 +8,7 @@ function [R2, varargout] = PeriodicR2(filter,binnedData,foldlength,varargin)
 %       varargin            : [Adapt Smooth];
 %       varargout = {filter, vaf, mse, PredData, ActSignalsTrunk};
 
-numPredSigs = size(filter.outnames,1);
+numPredSigs = size(char(filter.outnames),1);
 binsize = filter.binsize;
 numlags = round(filter.fillen/binsize);
 numpts  = size(binnedData.timeframe,1);
@@ -104,24 +104,24 @@ mse= zeros(nfold,numPredSigs);
 
 ActSignalsTrunk = zeros(numpts-numlags+1,numPredSigs);
 
-for i=1:numPredSigs
+for i=1    %:numPredSigs  <- removed this. this doesnt need to be a for loop
     if isfield(binnedData,'emgdatabin')
-        if ~isempty(binnedData.emgdatabin)
-            if all(strcmp(nonzeros(binnedData.emgguide(1,:)),nonzeros(PredData.outnames(i,:))))
+        if ~isempty(binnedData.emgdatabin) 
+            if all(strcmp(nonzeros(char(binnedData.emgguide(:,1))),nonzeros(char(PredData.outnames(:,1))))) 
                 ActSignalsTrunk(:,i:i+size(binnedData.emgdatabin,2)-1) = binnedData.emgdatabin(numlags:end,:);
             end
         end
     end
     if isfield(binnedData,'forcedatabin')
         if ~isempty(binnedData.forcedatabin)
-            if all(strcmp(nonzeros(binnedData.forcelabels(1,:)),nonzeros(PredData.outnames(i,:))))
+            if all(strcmp(nonzeros(char(binnedData.forcelabels(:,1))),nonzeros(char(PredData.outnames(:,1)))))
                 ActSignalsTrunk(:,i:i+size(binnedData.forcedatabin,2)-1) = binnedData.forcedatabin(numlags:end,:);
             end
         end
     end
     if isfield(binnedData,'cursorposbin')
         if ~isempty(binnedData.cursorposbin)
-            if all(strcmp(nonzeros(binnedData.cursorposlabels(1,:)),nonzeros(PredData.outnames(i,:))))
+            if all(strcmp(nonzeros(char(binnedData.cursorposlabels(:,1))),nonzeros(char(PredData.outnames(:,1)))))
                 ActSignalsTrunk(:,i:i+size(binnedData.cursorposbin,2)-1) = binnedData.cursorposbin(numlags:end,:);
             end
         end
@@ -129,7 +129,7 @@ for i=1:numPredSigs
 
     if isfield(binnedData,'velocbin')
         if ~isempty(binnedData.velocbin)
-            if all(strcmp(nonzeros(binnedData.veloclabels(1,:)),nonzeros(PredData.outnames(i,:))))
+            if all(strcmp(nonzeros(char(binnedData.veloclabels(:,1))),nonzeros(char(PredData.outnames(:,1)))))
                 ActSignalsTrunk(:,i:i+size(binnedData.velocbin,2)-1) = binnedData.velocbin(numlags:end,:);
             end
         end

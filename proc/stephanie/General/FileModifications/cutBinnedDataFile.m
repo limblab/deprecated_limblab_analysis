@@ -52,6 +52,7 @@ binnedDataCut = binnedData;
 
 % Remove the selected indices from the data
 binnedDataCut.timeframe(cutVector) = [];
+binnedDataCut.timeframe = (0:.05:length(binnedDataCut.timeframe)*.05-.05)';
 binnedDataCut.emgdatabin(cutVector,:)=[];
 %binnedDataCut.forcedatabin(cutVector,:)=[];
 binnedDataCut.spikeratedata(cutVector,:)=[];
@@ -69,8 +70,8 @@ end
 % Remove the proper indices from the words variable
 binnedDataCut.words(cutVectorForWordsFull,:) = [];
 
+% Remove selected indices from trialtable
+cutTrialtableIndices = find(binnedDataCut.trialtable(:,1) >= startCutTime & binnedDataCut.trialtable(:,1) <= stopCutTime);
+binnedDataCut.trialtable(cutTrialtableIndices,:) = [];
 
- 
-
-% 
-
+end

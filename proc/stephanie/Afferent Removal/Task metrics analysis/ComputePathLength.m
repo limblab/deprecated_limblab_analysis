@@ -17,9 +17,9 @@ function PathLengthStruct = ComputePathLength(out_struct)
 
 % ===================== Calculate Path Length =============================
 % Initialize PathLength array
-PathLength = ones(length(Goodtrialtable),1);
+PathLength = ones(length(Goodtrialtable(:,1)),1);
 % Loop through the successful trials
-for N = 1:length(Goodtrialtable)
+for N = 1:length(Goodtrialtable(:,1))
     % Isolate X and Y positions for a single trial
     SingleTrialPositionsX = out_struct.pos(GoCueIndex(1,N):10:GoCueIndex(1,N)+LastTargetContact(1,N),2);
     SingleTrialPositionsY = out_struct.pos(GoCueIndex(1,N):10:GoCueIndex(1,N)+LastTargetContact(1,N),3);

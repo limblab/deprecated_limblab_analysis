@@ -1,4 +1,4 @@
-
+function trialtable = FixTrialTable_WF(trialtable);
 %Put inside trial table
 
 remove_index = [];

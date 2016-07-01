@@ -1,5 +1,5 @@
 % Code to make the hybrid file
-function [HybridFinal AlteredIsoFinal AlteredWMFinal IsoTrain IsoTest WmTrain WmTest] = makeHybridFileFixed(File1, File2)  %(iso , wm)
+function [HybridFinal AlteredIsoFinal AlteredWMFinal IsoTrain IsoTest WmTrain WmTest] = HybridFile3Task(File1, File2)  %(iso , wm)
 % [HybridFinal AlteredIsoFinal AlteredWMFinal IsoTrain IsoTest WmTrain WmTest] = makeHybridFileFixed(IsoBinned,WmBinned)
 % [HybridFinal AlteredSprFinal AlteredWMFinal SprTrain SprTest WmTrain WmTest] = makeHybridFileFixed(SprBinned,WmBinned)
 
@@ -19,10 +19,10 @@ function [HybridFinal AlteredIsoFinal AlteredWMFinal IsoTrain IsoTest WmTrain Wm
 % 2400 indices in 2 minutes
 
 %Cut files into ten minute chunks
-IsoTest = cutBinnedDataFile(File1, 1, 12001);
-WmTest = cutBinnedDataFile(File2, 1, 12001);
-File1 = cutBinnedDataFile(File1, 12001, length(File1.timeframe));
-File2 = cutBinnedDataFile(File2, 12001, length(File2.timeframe));
+ IsoTest = cutBinnedDataFile(File1, 1, 12000);
+ WmTest = cutBinnedDataFile(File2, 1, 12000);
+ File1 = cutBinnedDataFile(File1, 12001, length(File1.timeframe));
+ File2 = cutBinnedDataFile(File2, 12001, length(File2.timeframe));
 IsoTrain = File1;
 WmTrain = File2;
 
@@ -95,11 +95,12 @@ altStartIndex = altStartIndex + 1200;
 newIndexH = newIndexH+1200;
 newIndexA = newIndexA+600;
 altTimeIndex = altTimeIndex+600;
-
 end
 
+
 for i=1:length(File1.emgdatabin(1,:))
-    hybridData.scale(i,1) = std(File1.emgdatabin(:,i))/(std(File2.emgdatabin(:,i)));
+   % hybridData.scale(i,1) = std(File1.emgdatabin(:,i))/(std(File2.emgdatabin(:,i)));
+     hybridData.scale(i,1) = 1;
 end
 
 hybridData.meta.filename = 'Hybrid';

@@ -3,7 +3,7 @@ function [LastTargetContact] = CursorInTargetCheck(out_struct, Goodtrialtable, x
 
 % =============== Has the cursor entered the target? ======================
 
-NumOfLoops = length(Goodtrialtable);
+NumOfLoops = length(Goodtrialtable(:,1));
 
 for N = 1:NumOfLoops % Loop through the good trials
     
