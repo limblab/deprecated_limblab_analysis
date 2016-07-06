@@ -1,10 +1,10 @@
-function ret = load_plexon_emg(animal,date,directories)
+function ret = load_plexon_emg(animal,date,directories, channels)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 cd([directories.rawdata 'plexon'])
-filename = [animal '_' date '.plx'];
+filename = [animal '_' date '_GS.plx'];
 
 [~,~,frequency,~,~,~,~,~,~,~,~,recording_length_sec,~] = plx_information(filename);
 timedata.binwidth = 1;
@@ -13,16 +13,20 @@ timedata.timebincenters = 0.5*timedata.binwidth+timedata.timebinedges(1:end-1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%% Get vicon frame/trial data from ad channel
-[ad_freq,~,starttime_sec,~,vicon_duration] = plx_ad_v([animal '_' date '.plx'], 16);
-[~,~,~,~,vicon_frames]                     = plx_ad_v([animal '_' date '.plx'], 17);
+disp('Getting Vicon on/off times'); 
+[ad_freq,~,starttime_sec,~,vicon_duration] = plx_ad_v([animal '_' date '_GS.plx'], 16);
+[~,~,~,~,vicon_frames]                     = plx_ad_v([animal '_' date '_GS.plx'], 17);
 
 %%% Get EMG data %%%
+disp('Getting EMG data'); 
 emg_channel_data = struct(); 
-for channel=49:63 %64
-    [~,~,~,~,emg_channel_data(channel-48).v] = plx_ad_v([animal '_' date '.plx'], channel);
+for channel=channels %64
+    [~,~,~,~,emg_channel_data(channel-48).v] = plx_ad_v([animal '_' date '_GS.plx'], channel);
     
 end
 
+
+disp(['Saving file ' animal '_' date '_emg.mat']); 
 save([animal '_' date '_emg.mat'], 'emg_channel_data'); 
 
 ret = 0; 
