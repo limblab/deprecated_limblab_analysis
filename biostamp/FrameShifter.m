@@ -39,20 +39,8 @@ if ~isfield(TDF,'valTDF') || ~isstruct(TDF)
 end
 
 
-% Finding indices of locations where magnitude of acceleration is under a
-% certain threshold and ang vel is ~ 0
-AMinInd = uint16(find(abs(AccelMag-1) < athreshold));
-WMinInd = uint16(find((TDF.gyro(:,1).^2 + TDF.gyro(:,2).^2 ...
-    + TDF.gyro(:,3).^2)<wthreshold));
-AnotherIndVector = [];
-for i=1:length(AMinInd)
-    if any(WMinInd==AMinInd(i))
-        AnotherIndVector = [AnotherIndVector,AMinInd(i)];
-    end
-end
-StartInd = min(AnotherIndVector);
-
-Location = SpaceFrameConverter(TDF,StartInd,RollVelMean,PitchVelMean,YawVelMean);
+StatVector = StationaryFinder(TDF);
+Location = SpaceFrameConverter(TDF,StatVector);
 
 
 
@@ -174,4 +162,26 @@ S = fsolve(@mysys,[-1;-1;1;1]);
 
 
 disp('finally!');
+end
+
+function StatVector = StationaryFinder(TDF)
+% Finding indices of locations where magnitude of acceleration is under a
+% certain threshold and ang vel is ~ 0
+
+    if TDF.meta.AUnit == 'm/s' % acceleration units?
+        grav = 9.8;
+    else
+        grav = 1;
+    end
+    AMinInd = uint16(find(abs(AccelMag-grav) < athreshold));
+    WMinInd = uint16(find((TDF.gyro(:,1).^2 + TDF.gyro(:,2).^2 ...
+        + TDF.gyro(:,3).^2)<wthreshold));
+    AnotherIndVector = [];
+    for i=1:length(AMinInd)
+        if any(WMinInd==AMinInd(i))
+            AnotherIndVector = [AnotherIndVector,AMinInd(i)];
+        end
+    end
+
+
 end
