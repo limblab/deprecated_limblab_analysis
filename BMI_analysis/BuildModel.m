@@ -7,7 +7,7 @@ function [filter, varargout]=BuildModel(binnedData, options)
 %           fillen              : filter length in seconds (tipically 0.5)
 %           UseAllInputs        : 1 to use all inputs, 0 to specify a neuronID file, or a NeuronIDs array
 %           PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%           PredEMG, PredForce, PredCursPos, PredVeloc, numPCs :
+%           PredEMGs, PredForce, PredCursPos, PredVeloc, numPCs :
 %                               flags to include EMG, Force, Cursor Position
 %                               and Velocity in the prediction model
 %                               (0=no,1=yes), if numPCs is present, will
