@@ -32,14 +32,15 @@
 % 2016-06-25: Maria Jantz added saving capabilities for both video and
 % individual frames as png files. 
 
-function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
+function [footStrike, footOff] = saveGaitMovie( data, freq, overlay, filename, saving, annotate)
 
     nDim = size(data{1}); %get the dimensions of the array passed in
     
     extr = getDataExtreme (data); %find extreme values (to set limits later?)
+
     
     %divide into x, y, z coordinates
-    X = cell2mat(cellfun(@(x)x(:,1),data,'UniformOutput', false)); 
+    X = cell2mat(cellfun(@(x)x(:,1),data,'UniformOutput', false));
     Y = cell2mat(cellfun(@(x)x(:,2),data,'UniformOutput', false));
     if nDim>2
         Z = cell2mat(cellfun(@(x)x(:,3),data,'UniformOutput', false));
@@ -47,6 +48,8 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
     else
         h = line(X(1,:),Y(1,:),'Marker','o');
     end    
+    
+    %set(h, 'linewidth', 3); 
     
     %set axes
     axis equal; 
@@ -80,10 +83,12 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
     fig.UserData.saveframe   = false; 
     fig.KeyPressFcn          = @seg_figCallBack;    
     
+    if annotate
     htf = text(extr(1)+10, extr(3)+50, ['Frame:' num2str(k)]);
     htt = text(extr(1)+10, extr(3)+30, ['Time [s]:' num2str((k-1)/freq)]);
     hfs = text(extr(1)+100, extr(3)-180, '', 'Color','r');
     hfo = text(extr(1)+100, extr(3)-230, '', 'Color','r');
+    end
     
     frame = 0;
     
@@ -92,6 +97,16 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
     v = VideoWriter(filename); %for saving the movie; open video object
     open(v);
     end
+    
+    if overlay
+        %get colors (this is a bit sloppy right now)
+        %colors = [85 163 98; 11 62 25];
+        colors = [132 242 144; 11 62 25];%[255 99 91; 95 199 232]; %[217 24 21; 0,32,184]; 
+        ranges = [0 nPt]; 
+        map = interp1(ranges/nPt,colors,linspace(0,1,nPt))/255; 
+    end
+    
+    hold on; 
     while fig.UserData.i<=nPt %this loop is where the actual movie gets played     
         
         if fig.UserData.i<1
@@ -105,9 +120,20 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
         end
         
         if nDim>2 %set the data points for this frame for X, Y, Z coordinates
-            set(h,'XData',X(k,:),'YData',Y(k,:),'ZData',Z(k,:)); %this is where the animation moves
+            if overlay
+                line(X(k,:),Y(k,:),Z(k,:),'Marker','o', 'Color', map(k, :));
+                
+                %disp(map(k, :)*255); 
+            else
+                set(h,'XData',X(k,:),'YData',Y(k,:),'ZData',Z(k,:)); %this is where the animation moves
+            end
         else
-            set(h,'XData',X(k,:),'YData',Y(k,:));
+            if overlay
+                line(X(k,:),Y(k,:),'Marker','o', 'Color', map(k, :));
+                %line(X(k,:),Y(k,:),'Marker','o');
+            else
+                set(h,'XData',X(k,:),'YData',Y(k,:), 'LineWidth', .2);
+            end
         end                   
           
         lfs = length(fig.UserData.footStrike);
@@ -122,9 +148,11 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
                 %need to somehow make the figure active?? it's not picking
                 %up button press after saving. 
             end
+            if annotate
             if ~strcmp(hfs.String,'') || ~strcmp(hfo.String,'')
                 hfs.String = '';
                 hfo.String = '';
+            end
             end
         else %advance the frame
             fig.UserData.i = fig.UserData.i + 1;
@@ -133,9 +161,10 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
         
         %set up next frame: first advance the frame/time labels
         k = fig.UserData.i;
+        if annotate
         htf.String = num2str(['Frame:' num2str(k)]);
         htt.String = num2str(['Time [s]:' num2str((k-1)/freq)]);
-        
+       
         %check for foot strike/foot off
         if length(fig.UserData.footStrike)>lfs
             hfs.String = 'Foot Strike';
@@ -143,6 +172,7 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, filename, saving )
         
         if length(fig.UserData.footOff)>lfo
             hfo.String = 'Foot Off';
+        end
         end
     if saving
     writeVideo(v,getframe); %actually save the frame of video

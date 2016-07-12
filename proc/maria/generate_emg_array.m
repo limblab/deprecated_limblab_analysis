@@ -16,7 +16,8 @@ musc_names = {'GS', 'Gmed', 'LG', 'VL', 'BFa',...
         'BFpr', 'BFpc', 'TA', 'RF', 'VM', 'AM', ...
         'SM', 'GRr', 'GRc', 'ST'};
 %good and bad channels (1 is good, 0 is bad)
-goodChannelsWithBaselines =  [ 1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ;...
+goodChannelsWithBaselines = [  ...
+    1 ,  0 ,  0 , 0 , 1 , 1 ,  1 ,  0 , 1 , 1 , 0 , 0 , 1 , 1 , 1 ;...
     0 ,  1 ,  1 , 1 , 1 , 1 ,  1 ,  1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 ;...
     1 ,  0 ,  1 , 1 , 1 , 0 ,  1 ,  1 , 1 , 1 , 0 , 0 , 1 , 1 , 0 ;...
     1 ,  0 ,  1 , 0 , 1 , 1 ,  1 ,  1 , 0 , 0 , 0 , 0 , 0 , 1 , 1 ;...
@@ -32,7 +33,8 @@ Wn = 30/(5000/2); %butter parameters (30 Hz)
 colors = {[204 0 0], [255 125 37], [153 84 255],  [106 212 0], [0 102 51], [0 171 205], [0 0 153], [102 0 159], [64 64 64], [255 51 153], [253 203 0]};
 mus_mean = {};
 %rawCycleData{animal, step}(:, muscle)
-clear('emg_array'); 
+clear('emg_array');
+clear('std_array');
 clear('legendinfo');
 %get average of low pass filtered emgs
 for i=1:length(muscles)
@@ -43,6 +45,7 @@ for i=1:length(muscles)
             %plot(filtered);
             mus_mean{i, j} = mean(filtered);
             %plot(mean(filtered));
+            mus_std{i,j} = std(filtered); 
         end
     end
 end
@@ -55,6 +58,14 @@ for i=1:length(muscles) %make all the same length, then average.
     emg_array{i} = mean(ds_mat.');
     arr_lens(i) = length(emg_array{i}); 
     legendinfo{i} = musc_names{muscles(i)};
+    
+    %std
+%     b = mus_std(i, :); 
+%     b = b(~cellfun('isempty', b)); 
+%     ds_mat = norm_mat(dnsamp(b).'); 
+%     clear('b'); 
+%     std_array{i} = mean(ds_mat.');
+    std_array{i} = std(ds_mat.'); 
 end
 
 %NOTE: MUST RESIZE ALL ARRAYS TO BE THE SAME TODO
@@ -69,6 +80,7 @@ end
 
 %% make IP array
 emg_array{end+1} = mean([emg_array{1}; emg_array{6}; emg_array{10}]); 
+std_array{end+1} = 1.4*mean([std_array{1}; std_array{6}; std_array{10}]); 
 legendinfo{end+1} = 'IP';
 %plot(ip_arr, 'k', 'linewidth', 2); 
 %add legend
@@ -84,12 +96,12 @@ legendinfo{end+1} = 'IP';
 
 
 %% Add in a gaussian curve to one of the muscles
-%hmm. average? kind of a weighted average? (IN ALL REGIONS where the
-%y-value of the gaussian is greater than the y-value of the emg array)
-
-%calculate the curve itself
-c = 1.2; %1/c = height of peak
-mu = 1400; %mu is the x-location of the peak
+% %hmm. average? kind of a weighted average? (IN ALL REGIONS where the
+% %y-value of the gaussian is greater than the y-value of the emg array)
+% 
+% calculate the curve itself
+c = 2.7; %1/c = height of peak %2.7
+mu = 300; %mu is the x-location of the peak
 peakwidth = 150; %width from peak to intercept with emglow_limit (noise threshold)
 emglow_limit = .13; %to set omega so that the graph intercepts at the emg threshold
 omega = sqrt(-peakwidth^2/log(emglow_limit/c)); 
@@ -97,14 +109,14 @@ x = linspace(0, length(emg_array{2}), length(emg_array{2})).'; %values of x
 
 y = (1/c * exp(-((x-mu).^2)/omega^2)).';
 
-%plot(y);
+plot(y);
 
-%then I can either average the two plots together 
-%emg_array{2} = mean([emg_array{2}; y]); 
-
-%or I can only insert the gaussian where it's greater than the original
-indices = find(emg_array{10}<y); 
-emg_array{10}(indices) = y(indices); 
+% then I can either average the two plots together 
+emg_array{2} = mean([emg_array{2}; y])*1.6; 
+% 
+% %or I can only insert the gaussian where it's greater than the original
+% indices = find(emg_array{10}<y); 
+% emg_array{10}(indices) = y(indices); 
 
 %% Plot
 
@@ -118,6 +130,6 @@ legend(legendinfo);
 %plot(mus_mean{1,1}); hold on;
 
 %% Save array in format that is easily useable by call_emg_stim
-save('emg_array_stgauss', 'legendinfo', 'emg_array'); 
+%save('emg_array_stgauss', 'legendinfo', 'emg_array'); 
 
 

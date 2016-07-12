@@ -5,32 +5,36 @@ cd(folder);
 fig_folder = '../../../../figures/';
 %% Define files to load
 
-filedate = '160212';
-filename = '2-12-16'; 
-ratName = 'test3';
+filedate = '160621';
+ratName = 'rat';
 sample_freq = 100; %give this value in Hz
-pathName = ['../../../../data/kinematics/' filedate '_files/'];
-filenum = [31];
+%pathName = ['../../../../data/kinematics/' filedate '_files/'];
+%filename = '2-12-16'; 
+pathName = ['../../../../data/kinematics/'];
+filenum = [11];
 make_graphs = [9];
 saving = false;
 animate = true;
 recruit = false; 
 hist = false;
 hists = {}; 
+cris_file = 'bas_s10_d30_01'; 
 
 for fileind=1:length(filenum) %so I can do batches- all files for a given day
     %close all; 
     %path     = [pathName filedate num2str(filenum(fileind), '%02d') '.csv'];
-    path     = [pathName filename num2str(filenum(fileind), '%02d') '.csv'];
-    tdmName = '';
-    tdmMks  = {};
-    %ratMks = {'hip_top', 'hip_center' , 'hip_bottom', 'knee', 'heel', 'metatarsal', 'phalanx'}
-    ratMks = {'hip_center', 'hip_top', 'hip_bottom', 'knee', 'heel', 'toe'}
-%      ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
- %         'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};     
+%     tdmName = '';
+%     tdmMks  = {};
+    path     = [pathName cris_file '.csv'];
+    tdmName = 'treadmill'; 
+    tdmMks = {'treadmill1','treadmill2', 'treadmill3', 'treadmill4' }; 
+    ratMks = {'hip_top', 'hip_center' , 'hip_bottom', 'knee', 'heel', 'metatarsal', 'phalanx'}
+    %ratMks = {'hip_center', 'hip_top', 'hip_bottom', 'knee', 'heel', 'toe'}
+%     ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
+%         'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};
     
     
- 
+    
     [events,rat,treadmill] = ...
         importViconData(path,ratName,tdmName,ratMks,tdmMks);
     
@@ -38,17 +42,13 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         rat.(ratMks{i}) = rat.(ratMks{i})/4.7243; 
     end
     
-    if ratName == 'test3'
-    rat.hip_middle = rat.hip_center; 
-    rat.foot_mid = rat.toe; 
-    end
     
-    rat.angles.limb = computeAngle(rat.hip_top, rat.hip_middle, rat.foot_mid);
-    rat.angles.hip  = computeAngle(rat.hip_top, rat.hip_middle, rat.knee);
-    rat.angles.knee = computeAngle(rat.hip_middle, rat.knee, rat.heel);
-    rat.angles.ankle = computeAngle(rat.knee, rat.heel, rat.foot_mid);
+    rat.angles.limb = computeAngle(rat.hip_top, rat.hip_center, rat.metatarsal);
+    rat.angles.hip  = computeAngle(rat.hip_top, rat.hip_center, rat.knee);
+    rat.angles.knee = computeAngle(rat.hip_center, rat.knee, rat.heel);
+    rat.angles.ankle = computeAngle(rat.knee, rat.heel, rat.metatarsal);
     
-    track_marker = rat.toe; %which marker to plot (should generalize so I can plot multiple markers?)
+    track_marker = rat.phalanx; %which marker to plot (should generalize so I can plot multiple markers?)
     x_zero = mean(rat.hip_bottom(:, 1), 'omitnan'); 
     y_zero = mean(rat.hip_bottom(:, 2), 'omitnan'); 
     
@@ -175,7 +175,7 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         end
     end
     
-    %% 5. Average XY vs time
+    %% %. Average XY vs time
     if ismember(5, make_graphs)
         %split the array according to beginning of every swing phase
         lbls = {'Change in x - length', 'Change in y - height'};
@@ -309,95 +309,90 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
     
     if ismember(9, make_graphs)
         %split the array according to beginning of every swing phase
-        figure(9);% grid on;
+        figure(10);% grid on;
         %set(plot8, 'Position', [50 500 1000 400]);
 %         b_ind = swing_times{8}(1); 
 %         ind_end = swing_times{9}(1);
-        b_ind = swing_times{end-2}(1); 
-        e_ind = swing_times{end-1}(1); 
+        b_ind = 1528; 
+        ind_end = 1608; 
         xvals = track_marker(:, 1);
         yvals = track_marker(:, 2); 
 
-        x_step = xvals(b_ind:e_ind)-x_zero; 
-        y_step = yvals(b_ind:e_ind)-y_zero;
-        len_sw = swing_times{7}(2)-swing_times{7}(1);  
-        %init_loc = rat.hip_bottom(b_ind:e_ind); 
-        %x_step = xvals(b_ind:e_ind)-init_loc(:, 2); 
-        %y_step = yvals(b_ind:e_ind)-init_loc(:, 3); 
+%         x_step = xvals(b_ind:ind_end)-x_zero; 
+%         y_step = yvals(b_ind:ind_end)-y_zero;
+%         len_sw = swing_times{7}(2)-swing_times{7}(1);  
+        init_loc = rat.hip_bottom(b_ind:ind_end, :); 
+        x_step = xvals(b_ind:ind_end)-init_loc(:, 1); 
+        y_step = yvals(b_ind:ind_end) -init_loc(:, 2);
+        len_sw = 15;  
 
 
         hold on; 
-        color1 = [225 91 51]/255; %[11 131 25]/255;
+        color1 = [235 88 60]/255;
         h1 = plot(x_step(1:len_sw), y_step(1:len_sw), 'linewidth', 3.5, 'color', color1); %average together each step
         h2 = plot(x_step(len_sw:end), y_step(len_sw:end), 'linewidth', 3.5, 'color', color1); %average together each step
-    
-%         ylabel('Y (mm)');
-%         xlabel('X (mm)');
-%         %legend([h1 h2], {'swing', 'stance'});
-        ylim([-75 25])
-        NumTicks = 3;
+        
+        ylabel('X (mm)');
+        xlabel('Y (mm)');
+        %legend([h1 h2], {'swing', 'stance'});
+        NumTicks = 4;
         ax = gca; 
         L = get(ax,'XLim');
         set(ax,'XTick',linspace(L(1),L(2),NumTicks));
-        NumTicks = 5;
+        NumTicks = 6;
         L = get(ax,'YLim');
         set(ax,'YTick',linspace(L(1),L(2),NumTicks))
-%         set(ax, 'fontsize', 20); 
+        set(ax, 'fontsize', 20); 
+        
+        set(ax, 'YTickLabel', {'20', '0', '-20', '-40', '-60', '-80'}); 
     end
     
     %% Animation
     %
     if animate
-        figure(9); 
+        figure(10); 
         %figure(make_graphs(end)+1);
         %title('fast');
+%         rat_mat = {rat.hip_top    ...
+%             rat.hip_bottom ...
+%             rat.hip_middle ...
+%             rat.knee       ...
+%             rat.heel       ...
+%             rat.foot_mid ...
+%             rat.toe };
         rat_mat = {rat.hip_top    ...
             rat.hip_bottom ...
-            rat.hip_middle ...
+            rat.hip_center ...
             rat.knee       ...
             rat.heel       ...
-            rat.foot_mid   ...
-            rat.toe };
-
+            rat.metatarsal ...
+            rat.phalanx };
         %to select a smaller section:
-        b_ind = swing_times{end-2}(1); 
-        e_ind = swing_times{end-1}(1); 
-%         b_ind = 100;
-%         e_ind = 100;
-        %stepnum = 1;
-        rat_mat = cellfun(@(array) array(b_ind:2:e_ind, :), rat_mat, 'UniformOutput', false);
-        init_arr = cellfun(@(x) [x_zero*ones(size(x, 1), 1) y_zero*ones(size(x, 1), 1)], rat_mat, 'UniformOutput', false);
-        rat_mat = cellfun(@(x)x(:,1:2)-init_arr{1},rat_mat,'UniformOutput', false); 
-        %rat_mat = cellfun(@(x) x-rat_mat{2}(1, :), rat_mat, 'UniformOutput', false); 
-        
-%         rat_mat = cellfun(@(x)x(:,1:2)-init_arr(:, 1:2),rat_mat,'UniformOutput', false); 
+        stepnum = 1;
+        %rat_mat = cellfun(@(array) array(swing_times{7}(1):2:swing_times{8}(1), :), rat_mat, 'UniformOutput', false);
+        rat_mat = cellfun(@(array) array(1528:2:1608, :), rat_mat, 'UniformOutput', false);
+        %init_arr = cellfun(@(x) [x_zero*ones(length(x), 1) y_zero*ones(length(x), 1)], rat_mat, 'UniformOutput', false);
+        %rat_mat = cellfun(@(x)x(:,1:2)-init_arr{1},rat_mat,'UniformOutput', false); 
+        init_arr = rat.hip_bottom(1528:2:1608, :); 
+        rat_mat = cellfun(@(x)x(:,1:2)-init_arr(:, 1:2),rat_mat,'UniformOutput', false); 
         annotate = false;
         hold_prev_frames = true;
-        
-        set(gca, 'fontsize', 24); 
-        xlabel('X (mm)'); 
-        ylabel('Y (mm)'); 
-        
         [footstrike, footoff] = saveGaitMovie(rat_mat, rat.f, hold_prev_frames, 'step.avi', saving, annotate);
-        ylim([-80 20])
-        xlim([-50 50])
     end
     
     
     
     %% Recruitment Curves
     if recruit
-        color1 = [191 29 41]/255; 
-        color2 = [.4 .4 .4]; 
-        joint = rat.angles.ankle;
-        datainv = 1.01*max(joint)-joint;
-        %datainv = joint; 
+        joint = rat.angles.limb;
+        %datainv = 1.01*max(joint)-joint;
+        datainv = joint; 
         figure; hold on;
         baseline = datainv(1); 
         for i=1:length(datainv)-50
-            if abs(datainv(i)-datainv(i+20))<0.1 
-                if mean(datainv(i:i+20))-baseline>0.1 && mean(datainv(i:i+20))-baseline<1.5
-                baseline = mean(datainv(i:i+20)); 
+            if abs(datainv(i)-datainv(i+30))<0.1 
+                if mean(datainv(i:i+30))-baseline>0.1 && mean(datainv(i:i+30))-baseline<0.4
+                baseline = mean(datainv(i:i+30)); 
                 %disp(i); 
                 %plot(i, datainv(i)-baseline, 'o'); 
                 end
@@ -407,44 +402,28 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         end
         datainv = datainv(1:end-50); 
         %hold on;
-        plot(datainv, 'linewidth', 3, 'color', color1);  
+        plot(datainv);  
         set(gca, 'fontsize', 18); 
         set(gca, 'XTick', []); 
-        ylim([-1 35]); 
-        ylabel('\Delta ankle angle (deg)'); 
+        ylim([-1 10]); 
+        ylabel('\Delta hindlimb angle (deg)'); 
         set(gca, 'fontsize', 18); 
         
-        %make a trace of all locations of stimulation and corresponding
-        %amplitudes
-        xvals = .2:.2:1.0; 
-        [pks, locs] = findpeaks(datainv, 'MinPeakDistance',800); 
-%         xtrace = 1:length(datainv); 
-%         ytrace = zeros(length(datainv)); 
-%         for l=1:length(locs)
-%             stim_width = (locs(l)-100):locs(l);  
-%             ytrace(stim_width) = xvals(l); 
-%         end
-%         figure; 
-%         plot(xtrace, ytrace, 'color', color2, 'linewidth', 3);
-%         set(gca, 'XTickLabel', []); 
-%         ylabel('current (mA)'); 
-%         set(gca, 'fontsize', 20); 
-% %         
-%         figure;
-%         
-%         xvals = [0:.2:1.0]; 
-%         pks = [0; pks].'
-%         plot(xvals, pks, 'o', 'linewidth', 3, 'color', color1); 
-%         ax = gca; 
-%         ax.XLim(1) = 0; 
-%         
-%         hold on; 
-%         fit = polyfit(xvals, pks, 5);
-%         plot(xvals, polyval(fit, xvals), '--', 'linewidth', 3, 'color', color1); 
-%         xlabel('Current (mA)'); 
-%         ylabel('\Delta ankle angle (deg)');
-%         set(ax, 'fontsize', 18); 
-%         ylim([0 40]); 
+        figure;
+        [pks, locs] = findpeaks(datainv, 'MinPeakDistance',1200); 
+        xvals = [.2:.2:2.6]; 
+        pks = [0; pks].'
+        plot(xvals, pks, 'o', 'linewidth', 2); 
+        ax = gca; 
+        ax.XLim(1) = 0; 
+        
+        hold on; 
+        fit = polyfit(xvals, pks, 6);
+        plot(xvals, polyval(fit, xvals), 'linewidth', 3); 
+        xlabel('Current (mA)'); 
+        ylabel('\Delta hindlimb angle (deg)');
+        set(ax, 'fontsize', 18); 
+        ylim([0 10]); 
     end
        
     
