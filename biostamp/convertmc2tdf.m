@@ -109,7 +109,7 @@ if strcmp(options.TUnitIn,'ms') == 1
 end
 LPF = options.LPF*pi/sampfreq; % calculate the normalized LPF frequency
 TDF.meta.LPF = options.LPF;
-blp = fir1(15,LPF);
+blp = fir1(2,LPF);
 
 if strcmp(options.plotflag,'on')
     freqz(blp)
