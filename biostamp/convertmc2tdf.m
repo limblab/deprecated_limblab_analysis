@@ -12,16 +12,17 @@ function TDF = convertmc2tdf(accel,gyro,options)
 % 
 % 
 % options (options.xyz) [default]:
-%     LPF - low pass frequency 3db cutoff [30 Hz]
-%     GBias - on/off remove bias for gyroscope [on]
-%     AUnit - accelerometer output units [m/s]
-%     GUnit - gyroscope output units [rad/s]
-%     AUnitIn - accelerometer input units [g]
-%     GUnitIn - gyroscope input units [deg/s]
-%     TUnitIn - Time unit in [ms]
-%     sampleskip - number of samples to skip [10]
-%     plotflag - plots the bode and phase of the filter [on]
-%     filter - on/off LPF data [on] 
+%     LPF - low pass frequency 3db cutoff [30]
+%     GBias - on/off remove bias for gyroscope ['on']
+%     AUnit - accelerometer output units ['m/s2']
+%     GUnit - gyroscope output units ['rad/s']
+%     AUnitIn - accelerometer input units ['g']
+%     GUnitIn - gyroscope input units ['deg/s']
+%     TUnitIn - Time unit in ['ms']
+%     sampleskip - number of samples to skip at beginning of file [10]
+%     plotflag - plots the bode and phase of the filter ['off']
+%     filter - on/off LPF data ['on']
+%     upFreq 
 % 
 % 
 % output (TDF.xyz):
@@ -150,7 +151,7 @@ function [default_options,default_names] = convertMC2tdfDefaultNames()
 default_names = {'LPF','GBias','AUnit','GUnit','AUnitIn',...
     'GUnitIn','TUnitIn','sampleskip','plotflag','filter'};
 default_options = struct('LPF',20,'GBias','on','AUnit',...
-    'm/s','GUnit','rad/s','AUnitIn','g','GUnitIn','deg/s',...
-    'TUnitIn','ms','sampleskip',10,'plotflag','on','filter','on');
+    'm/s2','GUnit','rad/s','AUnitIn','g','GUnitIn','deg/s',...
+    'TUnitIn','ms','sampleskip',10,'plotflag','off','filter','on');
 
 end
