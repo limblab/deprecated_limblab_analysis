@@ -43,7 +43,7 @@ function NEVNSx = cerebus2NEVNSx(varargin)
         NS4list = dir([filepath filesep file_prefix '*.ns4']);
         NS5list = dir([filepath filesep file_prefix '*.ns5']);
     else
-        NS1list = []
+        NS1list = [];
         NS2list = [];
         NS3list = [];
         NS4list = [];
@@ -93,13 +93,13 @@ function NEVNSx = cerebus2NEVNSx(varargin)
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]) = openNSxLimblab('read', [filepath filesep eval(['NS' num2str(iNS) 'list(iFile).name'])],'precision','short');
             if ~isempty(NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec)
                 digital_file_length_sec = NEVNSxstruct(iFile).NEV.Data.SerialDigitalIO.TimeStampSec(end);
-                num_zeros = fix((digital_file_length_sec-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)/fs(iNS))*1000);
+                num_zeros = fix((digital_file_length_sec*fs(iNS)-size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,2)));
             else %no digital data was collected
                 num_zeros = 0; % no padding
             end
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data = [zeros(size(NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data,1),num_zeros) NEVNSxstruct(iFile).(['NS' num2str(iNS)]).Data];
             NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints + num_zeros;
-            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints/fs(iNS) + num_zeros/1000;
+            NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataDurationSec = NEVNSxstruct(iFile).(['NS' num2str(iNS)]).MetaTags.DataPoints/fs(iNS);
         end
     end    
 

@@ -1,74 +1,71 @@
-function FrameShifter(Biostamp,vargin)
+function FrameShifter(TDF,vargin)
 %---FRAMESHIFTER---
 % 
-% Reads in data from the biostamp reader, and puts it in the correct format
-% for FrameShifter, which takes care of doing all of the extrinsic frame
-% transformations etc.
+% Inputs:
+%   TDF - struct with biostamp data formatted from AccelRead; may be imput
+%         as a struct or a matlab file name 
 % 
-% ---Required Inputs---
-%   Biostamp = struct with biostamp data formatted from AccelRead
-% 
-% ---Optional Inputs---
-%   athreshold = Noise threshold of accelerometers
-%   wthreshold = Noise threshold of gyroscopes
-%   plotson = plotting of acceleration, gyros, and location on[1]/off[0]
-%   vidon = video of biostamp movement in extrinsic fram on[1]/off[0]
+% options (options.xyz) [default]:
+%   athreshold - Noise threshold of accelerometers 
+%   wthreshold - Noise threshold of gyroscopes 
+%   plotson - plotting of acceleration, gyros, and location [off]
+%   vidon - video of biostamp movement in extrinsic frame [off]
 
+% To Do:
+%   * Support for TDF
+%   * add integration, check errors on static files
+%   * find reasonable thresholds for static moments
+%   * Identify all "zero" points
 
-
-% profile on
-
+%%
 % setting the default variables if not everything is set. May change this
 % later to be just a vargin where you have to specify the variable name,
 % yaknow?
-athreshold = 4/2^15;
-wthreshold = 2000/2^15;
-plotson = 0;
 
-
-% Finding all doz arithmatic means
-AccelMean = sqrt(Biostamp.accel(11:end,1).^2 + ...
-    Biostamp.accel(11:end,2).^2 + Biostamp.accel(11:end,3).^2);
-RollVelMean = sum(Biostamp.gyro(11:end,1))/len_el
-PitchVelMean = sum(Biostamp.gyro(11:end,2))/len_el
-YawVelMean = sum(Biostamp.gyro(11:end,3))/len_el
-
-
-
-% Finding the roll, pitch, and yaw; without drift
-Biostamp.roll(1) = 0; Biostamp.pitch(1) = 0; Biostamp.yaw(1) = 0;
-for i=1:len_el-1
-    Biostamp.roll(i+1) = (Biostamp.gyro(i+10,1)-RollVelMean)*.004 + Biostamp.roll(i);
-    Biostamp.pitch(i+1) = (Biostamp.gyro(i+10,2)-PitchVelMean)*.004 + Biostamp.pitch(i);
-    Biostamp.yaw(i+1) = (Biostamp.gyro(i+10,3)-YawVelMean)*.004 + Biostamp.yaw(i);
-end
-
-% Finding indices of locations where magnitude of acceleration is under a
-% certain threshold and ang vel is ~ 0
-AMinInd = uint16(find(abs(AccelMean-1) < athreshold));
-WMinInd = find(((Biostamp.gyro(:,1)-RollVelMean).^2 + (Biostamp.gyro(:,2)-PitchVelMean).^2 ...
-    + (Biostamp.gyro(:,3)-YawVelMean).^2)<wthreshold);
-AnotherIndVector = [];
-for i=1:length(AMinInd)
-    if any(WMinInd==AMinInd(i))
-        AnotherIndVector = [AnotherIndVector,AMinInd(i)];
+if ischar(TDF)
+    try
+        TDF = importfile(TDF);
+    catch
+        error('TDF file could not be imported. Check file and try again')
     end
 end
-StartInd = min(AnotherIndVector);
 
-Location = SpaceFrameConverter(Biostamp,StartInd,RollVelMean,PitchVelMean,YawVelMean);
+if ~isfield(TDF,'valTDF') || ~isstruct(TDF) %is it a proper TDF?
+    error('Input is not a valid TDF struct')
+end
+
+% set current stationary threshold levels
+if strcmp(TDF.meta.AUnit,'m/s2')
+    AThresh = .05;
+elseif strcmp(TDF.meta.AUnit,'g')
+    AThresh = .001;
+else
+    error('AUnit is not a valid value')
+end
+
+if strcmp(TDF.meta.GUnit,'rad/s')
+    GThresh = .01;
+elseif strcmp(TDF.meta.GUnit,'deg/s')
+    GThresh = .1;
+else
+    error('GUnit is not a valid value')
+end
+
+%% creating a list of indices where the biostamp is stationary
+StatVector = StationaryFinder(TDF,AThresh,GThresh);
+Location = SpaceFrameConverter(TDF,StatVector);
 
 
 
 
 % Plotting the current roll, pitch and yaw from the body frame, and all of
 % the initial plots of accel and gyros
-if plotson == 1
-    PlotRollPitchYaw(Biostamp)
-    PlotInitData(Biostamp,labels)
+if strcmp(plotson,'on')
+    PlotRollPitchYaw(TDF)
+    PlotInitData(TDF,labels)
 end
 
-% profile viewer
+
 
 end
 
@@ -132,7 +129,7 @@ end
 
 
 
-
+%%
 function Location = SpaceFrameConverter(Biostamp,StartInd,RollVelMean,PitchVelMean,YawVelMean)
 % ---SpaceFrameConverter---
 % function to find the location of the biostamp in an extrinsic coordinate
@@ -180,9 +177,39 @@ S = fsolve(@mysys,[-1;-1;1;1]);
 disp('finally!');
 end
 
+%%
+function StatVector = StationaryFinder(TDF,AThresh,GThresh)
+% Finding indices of locations where magnitude of acceleration is under a
+% certain threshold from gravity and ang vel is ~ 0
+
+StatVector = [];
+InitInd = [];
+
+% magnitude of the gravity vector
+if TDF.meta.AUnit == 'm/s2' % acceleration units
+    grav = 10.2;
+else
+    grav = 1;
+end
+
+% create a vector of the magnitude of acceleration
+AccelMag = sqrt(TDF.accel(:,1).^2 + TDF.accel(:,2).^2 + TDF.accel(:,3).^2);
 
 
+AInd = uint32(find(abs(AccelMag-grav) < AThresh));
+GInd = uint32(find((abs(TDF.gyro(:,1))<GThresh)&(abs(TDF.gyro(:,2))<GThresh)&(abs(TDF.gyro(:,3))<GThresh)));
+% GInd(:,2) = uint32(find(abs(TDF.gyro(:,2))<GThresh));
+% GInd(:,3) = uint32(find(abs(TDF.gyro(:,3))<GThresh));
+for i = 1:length(AInd)
+    InitInd = [InitInd, find(AInd(i) == GInd)];
+end
+
+
+for i = 3:length(InitInd)
+    if (InitInd(i-1) == (InitInd(i)-1)) && (InitInd(i-2) == (InitInd(i)-2))
+        StatVector = [StatVector, InitInd(i)];
+    end
+end
 
 
 end
-
