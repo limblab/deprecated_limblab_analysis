@@ -1,25 +1,44 @@
 %
+% Fits a linear model that regresses neural activity onto muscle activity.
+% The model has the form M = W·N, where N is an n-by-t matrix of neural
+% dynamics comprising n "neural synergies" (typically obtained with PCA or
+% FA), M is an m-by-t matrix of muscle synergies (typically obtained with
+% NMF or PCA), and W is an m-by-n matrix; the model. The model uses a
+% single bin of neural and muscle activity, imposing an user-defined lag
+% between them. 
+% Data should be passed as averaged neural and muscle synergies per target
+% and/or concatenated for all targets.
 %
+%
+%   function lin_model = find_output_null_potent_dims( single_trial_data, ...
+%                           neural_dims, muscle_dims, neural_to_EMG_lag, varargin )
 %
 %
 % Inputs (opt)                  : [default]
 %   single_trial_data           : single_trial_data struct
-%   neural_dims                 : array with the projections onto neural
-%                                   PCs to use
-%   muscle_dims                 : array with the projections onto muscle
-%                                   PCs to use
+%   neural_dims                 : array with neural synergies; e.g. the
+%                                   projections onto neural PCs  
+%   muscle_dims                 : array with muscle synergies; e.g. the
+%                                   projections onto muscle PCs or NMFs 
 %   neural_to_EMG_lag           : lag of EMGs w.r.t. neural activity (s) 
 %                                   (> 0 => EMG follows] 
 %   (dim_red_emg)               : dim_red_FR struct. To compute metrics
 %                                   based on eigenvalues of PC
-%                                   decomposition of muscle activity
-%   (plot_yn)                   : [true] display plots
+%                                   decomposition of muscle activity. If
+%                                   not passed, it assumes muscle synergies
+%                                   were obtained with NMF and these
+%                                   normalized metrics are obtained based
+%                                   on the weight matrix
+%   (plot_yn)                   : [true] display all plots
+%   (label)                     : the type of trial, for plotting
 %
 %
 % Ouput:
 %   lin_model                   : struct with linear fits of the model M =
-%                                   W · N, goodness of fit metrics and
+%                                   W · N, goodness of fit metrics, and
 %                                   singular value decomposition of W
+%                                   including the task-relevant and null
+%                                   spaces
 %
 %
 
@@ -39,18 +58,20 @@ end
 if nargin == 7
     label                   = varargin{3};
 else
-    labels                  = '';
+    label                   = '';
 end
+
+
+% do you want to normalize the neural and EMG data so they vary between
+% -1:1? 
+% --> ToDo: see if it makes sense
+norm_data                   = false;
 
 
 nbr_targets                 = length(single_trial_data);
 nbr_neural_dims             = length(neural_dims);
 nbr_muscle_dims             = length(muscle_dims);
 
-
-% do you want to normalize the neural and EMG data so they vary between
-% -1:1?
-norm_data                   = false;
 
 % ------------------------------------------------------------------------
 % Multilinear regression of neural PCs into muscle PCs
@@ -67,6 +88,8 @@ for i = 1:nbr_targets+1 % do for all the targets, and the concatenated data
     % apply lag to EMGs
     indx_emg                = round(neural_to_EMG_lag/single_trial_data{1}.bin_size);
     
+    % get matrices emg_this_lag and neural_this_lag, which have the neural
+    % and EMG data with the imposed lag and cut to the same length
     if i <= nbr_targets
         if indx_emg > 0
             emg_this_lag    = single_trial_data{i}.emg_scores.mn(1+indx_emg:end,...
@@ -79,6 +102,8 @@ for i = 1:nbr_targets+1 % do for all the targets, and the concatenated data
             neural_this_lag = single_trial_data{i}.neural_scores.mn(1-indx_emg:end,...
                                 neural_dims);
         end
+    % for all concatenated trials: align and cut the data from each trial
+    % and concatenate them
     else
         emg_this_lag        = [];
         neural_this_lag     = [];
@@ -113,13 +138,15 @@ for i = 1:nbr_targets+1 % do for all the targets, and the concatenated data
     
     
     % ---------------------------------------------------------------------
-    % fir linear model to each EMG
-    % model matrix
+    % Linear model to regress neural "synergies" onto each muscle synergy
+    
     W                       = zeros(nbr_muscle_dims,nbr_neural_dims);
     % intercepts
     W_offsets               = zeros(nbr_muscle_dims,1);
     R2                      = zeros(nbr_muscle_dims,1);
     fit_w_interc            = zeros(nbr_muscle_dims,size(emg_this_lag,1));
+    
+    % fit a single MISO model for each muscle synergy
     for e = 1:nbr_muscle_dims
         aux_lm              = fitlm(neural_this_lag,emg_this_lag(:,e));
         % take the coefficients of the model and store them into matrix W
@@ -142,13 +169,27 @@ for i = 1:nbr_targets+1 % do for all the targets, and the concatenated data
     lin_model{i}.model_fit_w_interc = fit_w_interc;
     lin_model{i}.R2                 = R2;
     
-    % compute weighed R^2, as the sum of the R^2 of the fit of muscle
-    % component 'n' multiplied by its associated eigenvalue , and divided
-    % by the sum of the muscle_dims eigenvalues
+    % compute weighed R^2
+    % -- For PCA of the EMGs: it is the sum of the R^2 of the fit of muscle
+    % component 'n' multiplied by its associated eigenvalue, and divided by
+    % the sum of the 1:muscle_dims eigenvalues
+    % -- For NMF of the EMGs: it is obtained by multiplying by the sum of
+    % weights for that 'factor,' and divided by the sum of the weights for
+    % all 'factors'  
     if exist('dim_red_emg','var')
-        lin_model{i}.weighed_R2     = sum(R2.*dim_red_emg.eigen(muscle_dims)...
+        switch dim_red_emg.method
+            case 'pca'
+                lin_model{i}.weighed_R2     = sum(R2.*dim_red_emg.eigen(muscle_dims)...
                                         /sum(dim_red_emg.eigen(muscle_dims)));
+            case 'nnmf'
+                lin_model{i}.weighed_R2     = sum(R2'.*sum(dim_red_emg.w')...
+                                        /sum(sum(dim_red_emg.w)));
+            case 'none'
+                lin_model{i}.weighed_R2     = sum(R2'.*sum(dim_red_emg.w')...
+                                        /sum(sum(dim_red_emg.w)));
+        end
     end
+    
     % store raw data
     lin_model{i}.emg_data           = emg_this_lag';
     lin_model{i}.neural_data        = neural_this_lag';
@@ -161,14 +202,14 @@ end
 
 
 % ------------------------------------------------------------------------
-% Singular Value Decomposition of the Models, to find output null and
-% output potent spaces.
+% Singular Value Decomposition of the model matrices W, to find the output
+% null and task-related spaces 
 
 for i = 1:nbr_targets+1 
     % Do SVD
     [U, S, V]                       = svd(lin_model{i}.W);
     
-    % store matrices that project onto task-relevant and null spaces
+    % store matrices that define the task-relevant and null spaces
     lin_model{i}.svdec.V_task       = V(:,1:nbr_muscle_dims);
     lin_model{i}.svdec.V_null       = V(:,nbr_muscle_dims+1:end);
     
@@ -179,12 +220,32 @@ for i = 1:nbr_targets+1
     % and the null space
     lin_model{i}.svdec.null_space   = V(:,nbr_muscle_dims+1:end)'*...
                                         lin_model{i}.neural_data;
-                                             
+   
+    % compute weights of each neural synergy on each of the task-related
+    % dimensions and output null dimensions ...
+    lin_model{i}.svdec.task_relev_weights   = zeros(nbr_neural_dims,nbr_muscle_dims);
+    lin_model{i}.svdec.null_weights         = zeros(nbr_neural_dims,nbr_neural_dims-nbr_muscle_dims);
+    for d = 1:nbr_muscle_dims
+        lin_model{i}.svdec.task_relev_weights(:,d) = abs(V(:,d))...
+                                                        .*peak2peak(lin_model{i}.neural_data,2);
+    end
+    for d = nbr_muscle_dims+1:nbr_neural_dims
+        lin_model{i}.svdec.null_weights(:,d-nbr_muscle_dims) = ...
+                                                        abs(V(:,d)).*peak2peak(lin_model{i}.neural_data,2);
+    end
+    
+    % ...and the summed weight for all the task-related and null dimensions
+    % respectively
+    lin_model{i}.svdec.summed_task_relev_weights = sum(lin_model{i}.svdec.task_relev_weights,2);
+    lin_model{i}.svdec.summed_null_space_weights = sum(lin_model{i}.svdec.null_weights,2);
+    
+                                    
     % store SVD results
     lin_model{i}.svdec.U            = U;
     lin_model{i}.svdec.S            = S;
     lin_model{i}.svdec.V            = V;
 end
+
 
 % ------------------------------------------------------------------------
 % PLOTS
@@ -274,46 +335,50 @@ if plot_yn
         ylabel('weighed R^2 model fit'),ylim([0 1])
     end
 
-end
-
-
-% plots for testing -- plot fits for lag == 0
-if neural_to_EMG_lag == 0
+    
+    % plots for testing -- plot fits for lag == 0
     % task relevant and output null space
-    figure,
-    subplot(321),plot(lin_model{nbr_targets+1 }.emg_data(1:nbr_muscle_dims,:)','linewidth',2)
-    ylabel('muscle synergies')
-    set(gca,'TickDir','out'),set(gca,'FontSize',14)
-    title(label)
-    subplot(323),plot(-lin_model{nbr_targets+1 }.svdec.task_relev(1:nbr_muscle_dims,:)','linewidth',2)
-    ylabel('task-relevant space')
-    set(gca,'TickDir','out'),set(gca,'FontSize',14)
-    subplot(325),plot(lin_model{nbr_targets+1 }.svdec.null_space(1:nbr_muscle_dims,:)','linewidth',2)
-    ylabel('null space'), xlabel('sample nbr')
-    set(gca,'TickDir','out'),set(gca,'FontSize',14)
-    subplot(222),plot(lin_model{nbr_targets+1 }.svdec.task_relev(1:nbr_muscle_dims,:)',...
-        lin_model{nbr_targets+1}.emg_data(1:nbr_muscle_dims,:)','marker','.','linestyle','none')
-    ylabel('muscle synergies'),xlabel('task-relevant space')
-    set(gca,'TickDir','out'),set(gca,'FontSize',14)
-    subplot(224),plot(lin_model{nbr_targets+1 }.svdec.null_space(1:nbr_muscle_dims,:)',...
-        lin_model{nbr_targets+1}.emg_data(1:nbr_muscle_dims,:)','marker','.','linestyle','none')
-    ylabel('muscle synergies'),xlabel('null space')
-    set(gca,'TickDir','out'),set(gca,'FontSize',14)
-
+    if dim_red_emg.method ~= 'none'
+        figure,
+        subplot(321),plot(lin_model{nbr_targets+1 }.emg_data(1:nbr_muscle_dims,:)','linewidth',2)
+        ylabel('muscle synergies')
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+        title(label)
+        subplot(323),plot(-lin_model{nbr_targets+1 }.svdec.task_relev(1:nbr_muscle_dims,:)','linewidth',2)
+        ylabel('task-relevant space')
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+        subplot(325),plot(lin_model{nbr_targets+1 }.svdec.null_space(1:nbr_muscle_dims,:)','linewidth',2)
+        ylabel('null space'), xlabel('sample nbr')
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+        subplot(222),plot(lin_model{nbr_targets+1 }.svdec.task_relev(1:nbr_muscle_dims,:)',...
+            lin_model{nbr_targets+1}.emg_data(1:nbr_muscle_dims,:)','marker','.','linestyle','none')
+        ylabel('muscle synergies'),xlabel('task-relevant space')
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+        subplot(224),plot(lin_model{nbr_targets+1 }.svdec.null_space(1:nbr_muscle_dims,:)',...
+            lin_model{nbr_targets+1}.emg_data(1:nbr_muscle_dims,:)','marker','.','linestyle','none')
+        ylabel('muscle synergies'),xlabel('null space')
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+    end
+    
     % plot  weights for ouput null and potent spaces
-    figure,
-    subplot(121),imagesc(sum(abs(lin_model{nbr_targets+1 }.svdec.V(:,1:nbr_muscle_dims)'))'),colorbar
-    set(gca,'TickDir','out'),set(gca,'FontSize',14),set(gca,'XTick',[])
-    ylabel('neural synergy'),xlabel('weights task-related space'),title(label)
-    subplot(122),imagesc(sum(abs(lin_model{nbr_targets+1 }.svdec.V(:,nbr_muscle_dims+1:end)'))'),colorbar
-    set(gca,'TickDir','out'),set(gca,'FontSize',14),set(gca,'XTick',[])
-    xlabel('weights null space')
+    for i = 1:nbr_targets
+        cur_tgt = i;
+        figure,
+        subplot(221),imagesc(lin_model{cur_tgt}.svdec.task_relev_weights),colorbar
+        set(gca,'TickDir','out'),set(gca,'FontSize',14),set(gca,'XTick',[])
+        ylabel('neural synergy'),xlabel('weights task-related space'),title(label)
+        subplot(222),imagesc(lin_model{cur_tgt}.svdec.null_weights),colorbar
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+        set(gca,'XTick',1:(nbr_neural_dims-nbr_muscle_dims))
+        xlabel('weights null space')
 
-    figure,
-    subplot(121),imagesc(abs(lin_model{7}.svdec.V(:,1:nbr_muscle_dims))),colorbar
-    set(gca,'TickDir','out'),set(gca,'FontSize',14)
-    ylabel('neural synergy'),xlabel('muscle synergy weights'),title(label)
-    subplot(122),imagesc(abs(lin_model{7}.svdec.V(:,nbr_muscle_dims+1:end))),colorbar
-    set(gca,'TickDir','out'),set(gca,'FontSize',14),xlabel('output null weights')
-    set(gca,'XTick',1:(nbr_neural_dims-nbr_muscle_dims))
+        subplot(223),imagesc(lin_model{cur_tgt}.svdec.summed_task_relev_weights),colorbar
+        set(gca,'TickDir','out'),set(gca,'FontSize',14)
+        set(gca,'XTick',[]), ylabel('neural synergy'),xlabel('muscle synergy weights'),title(label)
+        subplot(224),imagesc(lin_model{cur_tgt}.svdec.summed_null_space_weights),colorbar
+        set(gca,'TickDir','out'),set(gca,'FontSize',14),xlabel('output null weights')
+        set(gca,'XTick',[])
+    end
 end
+
+
