@@ -76,7 +76,7 @@ switch word_f
     case 'R'
         indx_f              = 8; % code will then look at whether the monkey got a reward
     otherwise
-        error([word_i ' not supported for this task']);
+        error([word_f ' not supported for this task']);
 end
 
 
@@ -95,6 +95,12 @@ for i = 1:nbr_bdfs
         cropping_times(trial_table(:,9) ~= double('R'),:) = [];
         binned_data_array(i).trialtable( binned_data_array(i).trialtable(:,9) ...
             ~= double('R'), : ) = [];
+    end
+    
+    % there's an error in our behavior, which sometimes makes the
+    % trial_start time == -1
+    if ~isempty(find(cropping_times(:,1)==-1,1))
+       cropping_times(cropping_times(:,1)==-1,:) = [];
     end
 
     % call cropping function
