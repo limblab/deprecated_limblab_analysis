@@ -13,7 +13,7 @@
 %   dims_hyper_in_orig      : the dimensions in the original space you want
 %                               to match (scalar or matrix). Do 'all' for
 %                               all the eigenvectors
-%   (no_warn)               : [false] don't give warnings if the closest
+%   (no_warn)               : [true] don't give warnings if the closest
 %                               eigenvector for eigenvector P was also the
 %                               closest for dimension N with N < P
 %                               (dimensions ranked according to their
@@ -42,19 +42,21 @@ else
 end
 
 % set warning for repeated closest eigenvectors
-no_warn             = false;
+no_warn             = true;
 if nargin == 4
     no_warn         = varargin{1};
 end
 
 
-nbr_dims_orig       = size(eigenv_orig,1);
+% changed from size(eigenv_orig,1) to size(eigenv_orig,2) so it works with
+% hyperplanes in hyperspaces, not only with entire hyperspaces 
+nbr_dims_orig       = size(eigenv_orig,2);
 
 
 % preallocate matrices for storing intermediate and final results
-all_angles              = zeros(nbr_dims_orig,nbr_dims_hyper_in_orig);
-dim_min_angle           = zeros(1,nbr_dims_hyper_in_orig);
-angle                   = zeros(1,nbr_dims_hyper_in_orig);
+all_angles          = zeros(nbr_dims_orig,nbr_dims_hyper_in_orig);
+dim_min_angle       = zeros(1,nbr_dims_hyper_in_orig);
+angle               = zeros(1,nbr_dims_hyper_in_orig);
 
 
 % calculate the angles between eigenv to find the closest ones

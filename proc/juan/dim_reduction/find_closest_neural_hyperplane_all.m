@@ -8,24 +8,40 @@
 %   dims_hyper_in_orig  : the dimensions in the original space you want
 %                           to match (scalar or matrix). Do 'all' for
 %                           all the eigenvectors
-%   (labels)            : [] labels that define each task. If passed, it
+%   (labels)            : [''] labels that define each task. If passed, it
 %                           will plot the relative order of the pairs of
 %                           most similar eigenvectors for all pairs of
 %                           tasks
+%   (reverse_yn)    : [false] instead of looking for the invectors in task
+%                       i+p that are closest to the eigenvectors in task i
+%                       (i = 1:nbr. of tasks), look for the eigenvectors in
+%                       task i that are closest to the eigenvectors in task
+%                       i+p. The core of the idea is to do both and compare
+%
 %   
 % Outpus:
-%   angle               : cell array with dimension
-%                           nbr-of-taks-by-nbr-of-tasks (dim_red_FR)
-%   dim_min_angle       :
-%   diff_ranking        :
+%   angle               : cell array with the angle between hyperspaces. It
+%                           has dimension nbr-of-taks-by-nbr-of-tasks (dim_red_FR) 
+%   dim_min_angle       : cell array with the eigenvector in hyperspace #2
+%                           that minimize the angle with eigenvectors in
+%                           the original hyperspace 
+%   diff_ranking        : metric that quantifies the difference in
+%                           eigenvector across hyperspaces
 %   
 
-function [angle, dim_min_angle, diff_ranking] = find_closest_neural_hyperplane_all( dim_red_FR, dims_hyper_in_orig, varargin )
+function [angle, dim_min_angle, diff_ranking] = find_closest_neural_hyperplane_all( ...
+                    dim_red_FR, dims_hyper_in_orig, varargin )
 
 
 % read inputs
-if nargin == 3
+if nargin >= 3
     labels          = varargin{1};
+end
+
+if nargin == 4
+    reverse_yn      = varargin{2};
+else
+    reverse_yn      = false;
 end
 
 
@@ -33,6 +49,12 @@ nbr_bdfs            = length(dim_red_FR);
 
 % matrix with all possible pairs of tasks
 comb_bdfs           = nchoosek(1:nbr_bdfs,2);
+
+% reverse, if specified
+if reverse_yn
+    comb_bdfs       = fliplr(comb_bdfs);
+end
+
 nbr_comb_bdfs       = size(comb_bdfs,1);
 
 % define cells for storing the results
