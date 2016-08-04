@@ -99,14 +99,16 @@ for i = 1:nbr_bdfs
     clear indx*;
     
     % encoder data
-    indx_i               = find(bdf_array(i).raw.enc(:,1)<t_i);
-    if ~isempty(indx_i)
-        bdf_array(i).raw.enc(indx_i,:)      = [];
-        bdf_array(i).raw.enc(:,1)           = bdf_array(i).raw.enc(:,1) - t_i;
+    if isfield(bdf_array(i).raw,'enc')
+        indx_i               = find(bdf_array(i).raw.enc(:,1)<t_i);
+        if ~isempty(indx_i)
+            bdf_array(i).raw.enc(indx_i,:)  = [];
+            bdf_array(i).raw.enc(:,1)       = bdf_array(i).raw.enc(:,1) - t_i;
+        end
+        indx_f               = find(bdf_array(i).raw.enc(:,1)>(t_f-t_i),1,'first');
+        bdf_array(i).raw.enc(indx_f:end,:)  = [];
+        clear indx*;
     end
-    indx_f               = find(bdf_array(i).raw.enc(:,1)>(t_f-t_i),1,'first');
-    bdf_array(i).raw.enc(indx_f:end,:)      = [];
-    clear indx*;
     
     % EMG
     if isfield(bdf_array(i),'emg')
@@ -177,14 +179,16 @@ for i = 1:nbr_bdfs
     clear indx*;
     
     % POS
-    indx_i               = find(bdf_array(i).pos(:,1)<t_i);
-    if ~isempty(indx_i)
-        bdf_array(i).pos(indx_i,:)          = [];
-        bdf_array(i).pos(:,1)               = bdf_array(i).pos(:,1) - t_i;
+    if isfield(bdf_array(i),'pos')
+        indx_i               = find(bdf_array(i).pos(:,1)<t_i);
+        if ~isempty(indx_i)
+            bdf_array(i).pos(indx_i,:)          = [];
+            bdf_array(i).pos(:,1)               = bdf_array(i).pos(:,1) - t_i;
+        end
+        indx_f               = find(bdf_array(i).pos(:,1)>(t_f-t_i),1,'first');
+        bdf_array(i).pos(indx_f:end,:)          = [];
+        clear indx*;
     end
-    indx_f               = find(bdf_array(i).pos(:,1)>(t_f-t_i),1,'first');
-    bdf_array(i).pos(indx_f:end,:)          = [];
-    clear indx*;
     
     % TARGETS
     if bdf_array(i).meta.lab == 1
