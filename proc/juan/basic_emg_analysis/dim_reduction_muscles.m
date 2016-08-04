@@ -10,6 +10,7 @@
 %   (chosen_emgs)       : [all] EMGs to be used for the analysis. 'all'
 %                           will chose all
 %   (labels)            : name of the task in each binned_data struct
+%   (nbr_factors)       : nbr of factors we want to extract (only with NMF)
 %
 % Outputs
 %   dim_red_emg         : cell with fields:
@@ -37,7 +38,7 @@ if nargin >= 4
     labels              = varargin{3};
 end
 if nargin == 5
-    nbr_factors         = numel(varargin{4});
+    nbr_factors         = varargin{4};
 end
 
 
@@ -86,6 +87,20 @@ switch method
             dim_red_emg{i}.chs      = chosen_emgs;
             dim_red_emg{i}.method   = 'nnmf';
             clear w_emg scores_emg
+        end
+    case 'none'
+        for i = 1:nbr_bdfs
+            
+            % store results
+            % -- the weights are just 1s because it is the raw EMGs
+            dim_red_emg{i}.w        = ones(nbr_emgs);
+            if size(binned_data(i).emgdatabin,2) ~= nbr_emgs
+                dim_red_emg{i}.scores = binned_data(i).emgdatabin(:,chosen_emgs);
+            else
+                dim_red_emg{i}.scores = binned_data(i).emgdatabin;
+            end
+            dim_red_emg{i}.chs      = chosen_emgs;
+            dim_red_emg{i}.method   = 'none';
         end
 end
 
@@ -137,7 +152,7 @@ if exist('labels','var')
                     subplot(nbr_bdfs,nbr_factors,(i-1)*nbr_factors+ii)
                     bar(dim_red_emg{i}.w(ii,:),'FaceColor',colors_bars(ii,:))
                     set(gca,'TickDir','out'),set(gca,'FontSize',14)
-                    xlim([-1 nbr_emgs+1])
+                    xlim([0 nbr_emgs+1])
                     if ii == 1
                         ylabel(['weights --' labels{i}]);
                     end
