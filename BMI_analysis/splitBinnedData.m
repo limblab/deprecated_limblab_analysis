@@ -1,7 +1,7 @@
 function [trainData,testData] = splitBinnedData(binnedData,testStartTime,testEndTime)
 
-trainBins = binnedData.timeframe < testStartTime | binnedData.timeframe >  testEndTime;    
-testBins  = binnedData.timeframe >=testStartTime & binnedData.timeframe <= testEndTime;
+trainBins = binnedData.timeframe < testStartTime | binnedData.timeframe >= testEndTime;    
+testBins  = binnedData.timeframe >=testStartTime & binnedData.timeframe < testEndTime;
 
 %% Meta
 if isfield(binnedData,'meta')
@@ -91,14 +91,15 @@ end
 %% Trialtable
 if isfield(binnedData,'trialtable')
     if ~isempty(binnedData.trialtable)
+        trialEndTimeCol = min(8,size(binnedData.trialtable,2)); % because the BD task has 7 cols only
         trainData.trialtable = binnedData.trialtable( (binnedData.trialtable(:,1)<testStartTime ...
-                                                       & binnedData.trialtable(:,8)<testStartTime)...
+                                                       & binnedData.trialtable(:,trialEndTimeCol)<testStartTime)...
                                                      | (binnedData.trialtable(:,1)>testEndTime ...
-                                                       & binnedData.trialtable(:,8)>testEndTime),:);
+                                                       & binnedData.trialtable(:,trialEndTimeCol)>testEndTime),:);
         testData.trialtable  = binnedData.trialtable( (binnedData.trialtable(:,1)>=testStartTime ...
-                                                       & binnedData.trialtable(:,8)>=testStartTime)...
+                                                       & binnedData.trialtable(:,trialEndTimeCol)>=testStartTime)...
                                                      & (binnedData.trialtable(:,1)<=testEndTime ...
-                                                       & binnedData.trialtable(:,8)<=testEndTime),:);
+                                                       & binnedData.trialtable(:,trialEndTimeCol)<=testEndTime),:);
     end
 end
 if isfield(binnedData,'trialtablelabels')
