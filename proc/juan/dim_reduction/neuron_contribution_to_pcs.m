@@ -2,7 +2,7 @@
 % Elucidate contribution of each neural channel to each of the PCs
 %
 
-function pc_weights_across_tasks = neuron_contribution_to_pcs( dim_red_FR, varargin )
+function [pc_weights_across_tasks, participation_index] = neuron_contribution_to_pcs( dim_red_FR, varargin )
 
 
 % get all combinations of tasks, dimensionality of the space and nbr of
@@ -95,9 +95,9 @@ participation_index             = cell(1,length(dim_red_FR));
 particp_indx_array              = zeros(nbr_dims);
 for t = 1:nbr_tasks
    for n = 1:nbr_dims
-       sum_weights              = sum(abs(dim_red_FR{i}.w(:,n)));
+       sum_weights              = sum(abs(dim_red_FR{t}.w(:,n)));
        for c = 1:nbr_dims
-           particp_indx_array(c,n) = abs(dim_red_FR{i}.w(c,n))...
+           particp_indx_array(c,n) = abs(dim_red_FR{t}.w(c,n))...
                /sum_weights * dim_red_FR{t}.eigen(n);
        end
    end
