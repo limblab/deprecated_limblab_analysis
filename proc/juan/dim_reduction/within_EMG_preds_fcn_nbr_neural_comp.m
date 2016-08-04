@@ -37,9 +37,6 @@ bdf_nbr                         = 1:length(bdf);
 %crop_emg_noise                  = false;
 %min_perc                        = 5; % EMG values below this will be cut to zero
 
-% TODO: move this as param???
-emgs_plot                   = [emgs_to_predict(3) emgs_to_predict(end-2)]; % currently only 2
-
 
 % Options for the decoder
 opts_filt.PolynomialOrder       = 0; % polynomial order, if want to use static non-linearity
@@ -61,6 +58,15 @@ if bin_data_yn
                                     b2bparams.binsize;
         binned_data(i)          = convertBDF2binned(bdf(i),b2bparams);
     end
+end
+
+% get rid of the neural channels not used in the "neural synergies"
+for i = 1:length(bdf)
+    
+    chs_to_discard          = setdiff(1:size(binned_data(i).neuronIDs,1),...
+        dim_red_FR{i}.chs);
+    binned_data(i).neuronIDs(chs_to_discard,:) = [];
+    binned_data(i).spikeratedata(:,chs_to_discard) = [];
 end
 
 
@@ -230,10 +236,12 @@ end
 
 %% ------------------------------------------------------------------------
 
-% OTHER PLOTS
-
 % Plot an example of the predictions
 if plot_yn 
+    
+    % TODO: move this as param???
+    emgs_plot                       = [emgs_to_predict(3) emgs_to_predict(end-2)]; % currently only 2
+
     t_lim_emg_preds             = [1 21];
     y_lim_emg_preds             = [-.2 1.8];
 
@@ -263,12 +271,13 @@ if plot_yn
            xlabel('time (s)','FontSize',16) 
         end
     end
-    end
+end
 
-    % ------------------------------------------
-    % SUMMARY PLOTS
 
-    if plot_yn
+%% ------------------------------------------------------------------------
+% SUMMARY PLOTS
+
+if plot_yn
 
     % Bar plot VAFs of EMG predictions using PCs
     figure,hold on
@@ -358,7 +367,7 @@ if plot_yn
 
 end
 
-% ------------------------------------------
+%% ------------------------------------------------------------------------------------
 % PLOT DECODER WEIGHTS
 
 if plot_yn
