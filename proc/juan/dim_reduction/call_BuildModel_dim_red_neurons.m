@@ -4,8 +4,10 @@ function [filter, varargout] = call_BuildModel_dim_red_neurons( binned_data, dim
 
 
 % check bin width PC firing rates and EMGs is the same
-bin_size_red_FR             = mean(diff(dim_red_FR.t)); 
-bin_size_EMGs               = mean(diff(binned_data.timeframe));
+% --take the 99 percentile, because when doing mfxval there may be one or a
+% big jump 
+bin_size_red_FR             = mean(prctile(diff(dim_red_FR.t),99)); 
+bin_size_EMGs               = mean(prctile(diff(binned_data.timeframe),99));
 
 if abs( bin_size_red_FR - bin_size_EMGs ) > 1E-6
     error('bin size neurons and EMG data has to be the same');
