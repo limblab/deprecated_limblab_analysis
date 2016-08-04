@@ -19,7 +19,7 @@
 %
 %
 % Notes: 
-%   - The BDF data is cropped between the first and last encoder pos
+%   - The BDF data are cropped between the first and last encoder pos
 %   readings, to ensure compatibility with the convertBDF2binned.m
 %   - The smoothing code is based on smoother.m, implemented in Byron's
 %   Yu's GPFA library
@@ -51,8 +51,14 @@ end
 % if we also want the binned_data struct, bin the whole BDF
 if nargout == 2
     bin_pars.binsize    = bin_size;
-    bin_pars.starttime  = ceil(bdf.pos(1,1)/bin_size)*bin_size;
-    bin_pars.stoptime   = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    if isfield(bdf,'pos')
+        bin_pars.starttime  = ceil(bdf.pos(1,1)/bin_size)*bin_size;
+        bin_pars.stoptime   = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    elseif isfield(bdf,'emg')
+        bin_pars.starttime  = ceil(bdf.emg.data(1,1)/bin_size)*bin_size;
+        bin_pars.stoptime   = floor(bdf.emg.data(end,1)/bin_size)*bin_size;
+        warning('using EMG field for setting file start and end')
+    end
     bin_pars.NormData    = true; % normalize EMGs
     binned_data         = convertBDF2binned(bdf,bin_pars);
     % store the binned firing rates into a variable, which will be used for
@@ -61,9 +67,14 @@ if nargout == 2
     binned_spikes       = binned_data.spikeratedata*bin_size;
 % otherwise, just bin the spikes
 else
-    % get start and end times
-    t_start             = ceil(bdf.pos(1,1)/bin_size)*bin_size;
-    t_end               = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    if isfield(bdf,'pos')
+        % get start and end times
+        t_start         = ceil(bdf.pos(1,1)/bin_size)*bin_size;
+        t_end           = floor(bdf.pos(end,1)/bin_size)*bin_size;
+    elseif isfield(bdf,'emg')
+        t_start         = ceil(bdf.emg.data(1,1)/bin_size)*bin_size;
+        t_end           = floor(bdf.emg.data(end,1)/bin_size)*bin_size;
+    end
     % time vector for binning
     t_bins              = t_start:bin_size:t_end;
     % preallocate matrix
