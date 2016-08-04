@@ -4,12 +4,13 @@
 %   function [nbr_targets, target_coord] = plot_targets( binned_data )
 %
 % Inputs:
-%   binned_data         : binned_data struct
+%   binned_data         : binned_data struct. It has to contain field
+%                           'target' with 'corners' (time, ULx ULy LRx LRy) 
 %
 % Ouputs:
 %   nbr_targets         : number of targets
-%   target_coord        : target coordinates (ULx ULy LRx LRy) for each
-%                           target
+%   target_coord        : target coordinates (ULx ULy Width Height) for
+%                           each target
 %
 %
 
@@ -22,7 +23,22 @@ else
 end
 
 % find targets
-targets                 = unique(binned_data.trialtable(:,2:5),'rows');
+if strncmp(label,'iso',3) || strncmp(label,'spr',3) || strncmp(label,'wm',2)
+    targets             = unique(binned_data.trialtable(:,2:5),'rows');
+elseif strncmp(label,'ball',4)
+    targets             = [-1 1 1 -1]; % arbitrarily create a target centered in [0 0]
+elseif strncmp(label,'mg',2)
+    targets             = unique(binned_data.trialtable(:,7:10),'rows');
+    % datasets from Theo don't have target coordinates
+    if targets == [-1 -1 -1 -1]
+        warning('drawing targets anywhere')
+        nbr_targets     = length(find(unique(binned_data.trialtable(:,6))>=0));
+        for i = 1:nbr_targets
+            targets(i,:) = [-1 1+i*2 1 -1+i*2];
+        end
+    end
+end
+
 nbr_targets             = size(targets,1);
 
 
