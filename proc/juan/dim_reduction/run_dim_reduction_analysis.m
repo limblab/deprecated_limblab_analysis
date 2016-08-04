@@ -4,7 +4,7 @@
 
 % Short routine to run a bunch of analyses
 
-clear all;
+clear all; close all
 
 % start parallel computing
 parpool('local')
@@ -29,25 +29,32 @@ for i = 1:length(aux.this_dir)
     end
 end
 
+% Decide if we want to look at task-related activity or at the entire
+% dataset (including "idle periods"
+analysis.dataset        = 'task_related_only'; % 'all' 'task_related_only'
+
 % progress bar
 prog_bar                = waitbar(0,'progress');
 
 
 % run for all the files in the directory
-for f = 8:length(aux.file_idx)
+for f = 8:8%length(aux.file_idx)
 
 filename                = aux.this_dir(aux.file_idx(f)).name;
 load(filename);
 
 
 disp('~-~-~-~-~-~-~-~-~-~-~-~-~')
-disp(['loading file' filename])
+disp(['analysing file ' filename])
 disp('~-~-~-~-~-~-~-~-~-~-~-~-~')
 
 
 %% ------------------------------------------------------------------------
 % 1. Compute the angle between hyperplanes as fcn of the number of
 % dimensions, re-ordering the eigenvectors so the angle is minimized
+
+disp('Computing "neural synergies" and comparing neural spaces across tasks')
+disp('...')
 
 % will do the analysis for dimensions 1:last_dim
 aux.last_dim           = length(neural_chs);
@@ -56,19 +63,57 @@ aux.last_dim           = length(neural_chs);
 analysis.neural         = struct();
 analysis.emg            = struct();
 
-if exist('dim_red_FR','var')
+
+% -----------------------
+% A) compare the neural spaces for each dimensionality of the manifold (N =
+% 1:all dimendions)
+% -----------------------
+
+% if the dimensionally reduced FRs are already available...
+if exist('dim_red_FR','var') && exist('smoothed_FR','var')
     [analysis.neural.angles, dim_red_FR, smoothed_FR ] = comp_neural_spaces_fcn_dim_finding_closest( cbdf, ...
                                         neural_chs, aux.last_dim, labels, 'pca', smoothed_FR, dim_red_FR );
+                                    
+    % set flag to not store dim_red_FR and smoothed_FR
+    aux.store_dim_red_smoothed_yn   = false;
+
+% if not, obtain the low dimensional representation of the data
 else
+%     % smooth the firing rates and bin the data
+%     for i = 1:numel(cbdf)
+%         [smoothed_FR{i}, binned_data(i)] = gaussian_smoothing2( cbdf(i) );
+%     end
+    % smooth the firing rates and bin the data
+    for i = 1:numel(cbdf)
+        [smoothed_FR{i}, binned_data(i)] = gaussian_smoothing2( cbdf(i), 'sqrt', .02, .05 );
+    end    
+    
     [analysis.neural.angles, dim_red_FR, smoothed_FR ] = comp_neural_spaces_fcn_dim_finding_closest( cbdf, ...
-                                        neural_chs, aux.last_dim, labels, 'pca' );
+                                        neural_chs, aux.last_dim, labels, 'pca', smoothed_FR );
+    
+    % fix to make the time vector in dim_red_FR match the time vector in
+    % binned_data --the problem is that the time in dim_red_FR always start
+    % at t=0, while the time in binned_data doesn't need to
+    for i = 1:numel(cbdf)
+        dim_red_FR{i}.t = dim_red_FR{i}.t + binned_data(i).timeframe(1);
+    end 
+    
+    % set flag to not store dim_red_FR and smoothed_FR
+    aux.store_dim_red_smoothed_yn   = true;
 end
+
+if aux.store_dim_red_smoothed_yn
+    save(filename,'cbdf','neural_chs','chosen_emgs','binned_data','dim_red_FR','smoothed_FR');
+    disp(['saving variables to ' filename])
+    disp('...')
+end
+
 
 close all;
 
 % 1a) Create an array with the angles to do some basic stats, aux.angles_array,
 % which has size comb_of_tasks-by-nbr_dimensions
-analysis.comb_tasks         = nchoosek(1:length(cbdf),2);
+analysis.comb_tasks    = nchoosek(1:length(cbdf),2);
 aux.nbr_comb_tasks     = size(analysis.comb_tasks,1);
 analysis.neural.angles_array = zeros(aux.nbr_comb_tasks,aux.last_dim);
 for i = 1:aux.last_dim-1
@@ -82,7 +127,7 @@ analysis.neural.mean_angle_fcn_nbr_dims = rad2deg(mean(analysis.neural.angles_ar
 analysis.neural.std_angle_fcn_nbr_dims = rad2deg(std(analysis.neural.angles_array,0,1));
 
 % find closest eigenvector for all dimensions
-[~, analysis.neural.closest_eigenv]     = find_closest_hyperplane_all( dim_red_FR, 1:length(neural_chs), labels );
+[~, analysis.neural.closest_eigenv]     = find_closest_neural_hyperplane_all( dim_red_FR, 1:length(neural_chs), labels );
 
 % calculate difference in eigenvector ranking as function of the number of
 % dimensions
@@ -99,7 +144,7 @@ analysis.neural.std_cum_dist_eigenv     = std(analysis.neural.cum_dist_eigenv,0,
 %       Project neural data onto the first PC from another task and compare
 %       them
 
-disp('computing within and across projections onto PCs')
+disp('Computing within and across projections onto PCs')
 disp('...')
 
 analysis.neural.pc_proj_across_tasks = transform_and_compare_dim_red_data_all_tasks( dim_red_FR, ...
@@ -124,14 +169,17 @@ end
 analysis.neural.weighed_R2_pc_proj_across_tasks = aux.aux_weighed_R2_array;
 
 %% ------------------------------------------------------------------------
-% 2. Look at neuron contributions to the PCs
+% 3. Look at neuron contributions to the PCs
 
-analysis.neural.pc_weights_across_tasks = neuron_contribution_to_pcs( dim_red_FR );
+disp('Computing neurons'' contribution to the "neural synergies"')
+disp('...')
+
+[analysis.neural.pc_weights_across_tasks, analysis.neural.participation_index] = neuron_contribution_to_pcs( dim_red_FR );
 
 
 
 %% ------------------------------------------------------------------------
-% 3. Build PCprojected to EMG decoders
+% 4. Build PC projections to EMG decoders
 
 disp('Building EMG decoders')
 disp('...')
@@ -144,13 +192,17 @@ end
 aux.last_dim_emg = aux.last_dim;
 
 if ~exist('binned_data','var')
-    [analysis.emg.pred_data_within, analysis.emg.vaf_array, analysis.emg.vaf_array_norm, ...
+    [~, analysis.emg.vaf_array, analysis.emg.vaf_array_norm, ...
         analysis.emg.vaf_neurons, binned_data]      = within_EMG_preds_fcn_nbr_neural_comp( ...
         cbdf, dim_red_FR, labels, aux.last_dim_emg, chosen_emgs );
 else
-    [analysis.emg.pred_data_within, analysis.emg.vaf_array, analysis.emg.vaf_array_norm, ...
-        analysis.emg.vaf_neurons, binned_data]      = within_EMG_preds_fcn_nbr_neural_comp( ...
-        cbdf, dim_red_FR, labels, aux.last_dim_emg, chosen_emgs, binned_data );
+%     [analysis.emg.pred_data_within, analysis.emg.vaf_array, analysis.emg.vaf_array_norm, ...
+%         analysis.emg.vaf_neurons, binned_data]      = within_EMG_preds_fcn_nbr_neural_comp( ...
+%         cbdf, dim_red_FR, labels, aux.last_dim_emg, chosen_emgs, binned_data );
+    [~, analysis.emg.vaf_array, analysis.emg.vaf_array_norm, ...
+        analysis.emg.vaf_neurons, analysis.emg.R2_array, analysis.emg.R2_neurons, binned_data] = ...
+        within_EMG_preds_fcn_nbr_neural_comp_mfxval( cbdf, dim_red_FR, labels, aux.last_dim_emg, ...
+        chosen_emgs, binned_data, 'mfxval', 60, false );
 end
 
 % % 3a) paired Wilcoxon signed-rank test to compare VAF of predictions with n
@@ -184,7 +236,19 @@ end
 
 
 %% ------------------------------------------------------------------------
-% Summary stats:
+% 5. Find task-related and null spaces 
+% --so far only for the 1D and 2D tasks
+
+% [onp_dim_raw, onp_dim_summary, single_trial_data ] = call_find_output_null_potent_dims_wf( cbdf, neural_chs, chosen_emgs, labels, [], true);
+
+if isempty(find(strncmp(labels,'kluver',6),1)) && isempty(find(strncmp(labels,'ball',4),1))
+    
+    [analysis.onp.dim_raw, analysis.onp.dim_summary, analysis.onp.single_trial_data ] = call_find_output_null_potent_dims_wf( ...
+                                                    binned_data, neural_chs, chosen_emgs, labels, smoothed_FR, false);
+end
+
+%% ------------------------------------------------------------------------
+% 6. Summary stats:
 
 % *** Neurons
 
@@ -229,7 +293,7 @@ clear i;
 
 %% ------------------------------------------------------------------------
 %% ------------------------------------------------------------------------
-% Summary plots
+% 6. Summary plots
 
 plots_run_dim_reduction_analysis;
 drawnow;
@@ -241,7 +305,7 @@ drawnow;
 % clear the across and within projections onto PCs
 analysis.neural.pc_proj_across_tasks = rmfield(analysis.neural.pc_proj_across_tasks,{'scores_within','scores_across', ...
                                         'within_task','across_task'});
-analysis.emg = rmfield(analysis.emg,'pred_data_within');
+% analysis.emg = rmfield(analysis.emg,'pred_data_within');
 
 
 clear i*
@@ -263,18 +327,20 @@ disp('~-~-~-~-~-~-~-~-~-~-~-~-~')
 disp(['finished analysing file ' num2str(f) ' of ' num2str(length(aux.file_idx))])
 disp('~-~-~-~-~-~-~-~-~-~-~-~-~')
 
+disp(' ')
+disp(['elapsed time: ' num2str(toc(aux.tmr))]);
+disp(' ')
 
 % clear some vars
-clearvars -except f aux
+clearvars -except f aux prog_bar aux
 
 % update progress bar
 waitbar(f/length(aux.file_idx));
 end
 
 
-delete(waitbar);
+delete(prog_bar);
 
 % stop parallel computing
 delete(gcp);
-
-disp(['elapsed time: ' num2str(toc(aux.tmr))]);
+clear all;

@@ -268,6 +268,7 @@ if save_figs
     fig_handles             = fieldnames(figs);
     for i = 1:length(fig_handles)
         print(figs.(fig_handles{i}),[filename(1:end-4) '_fig_' num2str(i)],'-dpng')
+        savefig(figs.(fig_handles{i}),[filename(1:end-4) '_fig_' num2str(i)])
     end
     cd(curr_dir)
 end
