@@ -83,7 +83,13 @@ if isfield(binnedData,'acclabels')
     trainData.acclabels = binnedData.acclabels;
     testData.acclabels  = binnedData.acclabels;
 end
-
+%% Smoothed firing rates (spikes)
+if isfield(binnedData,'smoothedspikerate')
+    if ~isempty(binnedData.smoothedspikerate)
+        trainData.accelbin = binnedData.smoothedspikerate(trainBins,:);
+        testData.accelbin  = binnedData.smoothedspikerate(testBins,:);
+    end
+end
 %% States
 
 
