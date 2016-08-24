@@ -5,44 +5,43 @@ cd(folder);
 fig_folder = '../../../../figures/';
 %% Define files to load
 
-filedate = '160212';
-filename = '2-12-16'; 
-ratName = 'test3';
+filedate = '160811';
+%filename = '16-07-26'; 
+ratName = '16-08-11';
 sample_freq = 100; %give this value in Hz
 pathName = ['../../../../data/kinematics/' filedate '_files/'];
-filenum = [31];
-make_graphs = [9];
+filenum = [20];
+make_graphs = [2];
 saving = false;
-animate = true;
+animate = false;
 recruit = false; 
 hist = false;
 hists = {}; 
 
 for fileind=1:length(filenum) %so I can do batches- all files for a given day
     %close all; 
-    %path     = [pathName filedate num2str(filenum(fileind), '%02d') '.csv'];
-    path     = [pathName filename num2str(filenum(fileind), '%02d') '.csv'];
+    path     = [pathName filedate num2str(filenum(fileind), '%02d') '.csv'];
+    %path     = [pathName filename num2str(filenum(fileind), '%02d') '.csv'];
     tdmName = '';
     tdmMks  = {};
     %ratMks = {'hip_top', 'hip_center' , 'hip_bottom', 'knee', 'heel', 'metatarsal', 'phalanx'}
-    ratMks = {'hip_center', 'hip_top', 'hip_bottom', 'knee', 'heel', 'toe'}
-%      ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
- %         'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};     
-    
-    
+%    ratMks = {'hip_center', 'hip_top', 'hip_bottom', 'knee', 'heel', 'toe'}
+     ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
+          'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};       
+  
  
     [events,rat,treadmill] = ...
         importViconData(path,ratName,tdmName,ratMks,tdmMks);
     
+    %convert to mm
+    %cut section down, if desired
+    startMk = 1;
+    lastMk = length(rat.knee); %length(rat.knee); 
     for i=1:length(ratMks)
-        rat.(ratMks{i}) = rat.(ratMks{i})/4.7243; 
+        rat.(ratMks{i}) = rat.(ratMks{i})(startMk:lastMk, :); 
+        rat.(ratMks{i}) = rat.(ratMks{i})/4.7243;
     end
-    
-    if ratName == 'test3'
-    rat.hip_middle = rat.hip_center; 
-    rat.foot_mid = rat.toe; 
-    end
-    
+   
     rat.angles.limb = computeAngle(rat.hip_top, rat.hip_middle, rat.foot_mid);
     rat.angles.hip  = computeAngle(rat.hip_top, rat.hip_middle, rat.knee);
     rat.angles.knee = computeAngle(rat.hip_middle, rat.knee, rat.heel);
@@ -52,9 +51,9 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
     x_zero = mean(rat.hip_bottom(:, 1), 'omitnan'); 
     y_zero = mean(rat.hip_bottom(:, 2), 'omitnan'); 
     
-    cutoff = 4;
+    cutoff = 9;
     interval = 10;
-    swing_times = find_swing_times(cutoff, interval, rat.angles.ankle)
+    swing_times = find_swing_times(cutoff, interval, rat.angles.ankle);
     
     
     %% 1. XY positions vs time
@@ -79,7 +78,7 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
             subplot(4, 1, i);
             plot(rat.angles.(lbls{i}));
             ylabel([lbls(i) '(degrees)']);
-            set(gca, 'XTick', [])
+            %set(gca, 'XTick', [])
         end
         %xlabel('Time (s)');
     end
@@ -100,7 +99,7 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
                 ax = gca;
                 ax.XLim = [round(swing_times{1}(1)-100, -2) swing_times{end}(2)+400];
                 h = get(ax,'xtick');
-                set(ax,'xticklabel',(h-ax.XLim(1))/sample_freq); %convert Vicon (100 Hz sample rate) to seconds
+                %set(ax,'xticklabel',(h-ax.XLim(1))/sample_freq); %convert Vicon (100 Hz sample rate) to seconds
                 for i=1:length(swing_times)
                     x_rect = [swing_times{i}(1) swing_times{i}(2) swing_times{i}(2) swing_times{i}(1)];
                     y_rect = [ax.YLim(1) ax.YLim(1) ax.YLim(2) ax.YLim(2)];
@@ -117,8 +116,8 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         set(plot3, 'Position', [100 100 750 550]); hold on;
         if length(swing_times)>0
             clear('x_val', 'y_val');
-            x_val = rat.foot_mid(:, 1);
-            y_val = rat.foot_mid(:, 2);
+            x_val = track_marker(:, 1);
+            y_val = track_marker(:, 2);
             for i=1:length(swing_times)-1
                 h1 = plot(x_val(swing_times{i}(1):swing_times{i}(2)), y_val(swing_times{i}(1):swing_times{i}(2)), 'r');
                 h2 = plot(x_val(swing_times{i}(2):swing_times{i+1}(1)), y_val(swing_times{i}(2):swing_times{i+1}(1)), 'b');
@@ -294,10 +293,10 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         h1 = plot(xvals(1:mean_sw), yvals(1:mean_sw), 'linewidth', 4, 'color', color1); %average together each step
         h2 = plot(xvals(mean_sw:end), yvals(mean_sw:end), 'linewidth', 4, 'color', color1); %average together each step
         
-        axis equal
+        axis equal;
         ax = gca; 
-        ax.XLim = [-5 30];
-        ax.YLim = [-75 -55];
+        %ax.XLim = [-5 30];
+        %ax.YLim = [-75 -55];
         %TODO: set YLim
         ylabel('Y (mm)');
         xlabel('X (mm)');
@@ -379,8 +378,8 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         ylabel('Y (mm)'); 
         
         [footstrike, footoff] = saveGaitMovie(rat_mat, rat.f, hold_prev_frames, 'step.avi', saving, annotate);
-        ylim([-80 20])
-        xlim([-50 50])
+        ylim([-100 20])
+        xlim([-60 50])
     end
     
     
