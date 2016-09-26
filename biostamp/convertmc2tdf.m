@@ -12,16 +12,17 @@ function TDF = convertmc2tdf(accel,gyro,options)
 % 
 % 
 % options (options.xyz) [default]:
-%     LPF - low pass frequency 3db cutoff [30 Hz]
-%     GBias - on/off remove bias for gyroscope [on]
-%     AUnit - accelerometer output units [m/s]
-%     GUnit - gyroscope output units [rad/s]
-%     AUnitIn - accelerometer input units [g]
-%     GUnitIn - gyroscope input units [deg/s]
-%     TUnitIn - Time unit in [ms]
-%     sampleskip - number of samples to skip [10]
-%     plotflag - plots the bode and phase of the filter [on]
-%     filter - on/off LPF data [on] 
+%     LPF - low pass frequency 3db cutoff [30]
+%     GBias - on/off remove bias for gyroscope ['on']
+%     AUnit - accelerometer output units ['m/s2']
+%     GUnit - gyroscope output units ['rad/s']
+%     AUnitIn - accelerometer input units ['g']
+%     GUnitIn - gyroscope input units ['deg/s']
+%     TUnitIn - Time unit in ['ms']
+%     sampleskip - number of samples to skip at beginning of file [10]
+%     plotflag - plots the bode and phase of the filter ['off']
+%     filter - on/off LPF data ['on']
+%     upFreq 
 % 
 % 
 % output (TDF.xyz):
@@ -80,15 +81,26 @@ end
 
 %% TDF struct - defining fields etc
 
-TDF = struct('meta','','accel',[],'gyro',[],'time',[]);
+TDF = struct('meta','','accel',[],'gyro',[],'time',[],'Sync',[]);
 TDF.meta.date = date;
 TDF.meta.AUnit = options.AUnit;
 TDF.meta.GUnit = options.GUnit;
 
 
 %% Filtering and removing bias
+% Also time sync
 
-% Average roll - assume it's a bias error
+% % Find all time sync points
+% Amax = max(Accel(:,2:4),1);
+% for i = 2:length(Accel(:,2:4))
+%     deltaX = abs(Accel(i-1,2)-Accel(i,2));
+%     deltaY = abs(Accel(i-1,3)-Accel(i,3));
+%     deltaZ = abs(Aceel(i-1,4)-Accel(i,4));
+%     if (DeltaX
+
+
+
+% Average roll pitch yaw - assume it's a bias error
 TDF.bias.Roll = mean(gyro(options.sampleskip:end,2));
 TDF.bias.Pitch = mean(gyro(options.sampleskip:end,3));
 TDF.bias.Yaw = mean(gyro(options.sampleskip:end,4));
@@ -107,9 +119,9 @@ sampfreq = 1/(ceil(((TDF.time(11)-TDF.time(10))+(TDF.time(end)-TDF.time(end-1)))
 if strcmp(options.TUnitIn,'ms') == 1
     sampfreq = sampfreq * 10^3; % sampling frequency if timescale is ms
 end
-LPF = options.LPF*pi/sampfreq; % calculate the normalized LPF frequency
+LPF = options.LPF/sampfreq; % calculate the normalized LPF frequency
 TDF.meta.LPF = options.LPF;
-blp = fir1(15,LPF);
+blp = fir1(4,.002);
 
 if strcmp(options.plotflag,'on')
     freqz(blp)
@@ -138,8 +150,8 @@ function [default_options,default_names] = convertMC2tdfDefaultNames()
 
 default_names = {'LPF','GBias','AUnit','GUnit','AUnitIn',...
     'GUnitIn','TUnitIn','sampleskip','plotflag','filter'};
-default_options = struct('LPF',30,'GBias','on','AUnit',...
-    'm/s','GUnit','rad/s','AUnitIn','g','GUnitIn','deg/s',...
-    'TUnitIn','ms','sampleskip',10,'plotflag','on','filter','on');
+default_options = struct('LPF',20,'GBias','on','AUnit',...
+    'm/s2','GUnit','rad/s','AUnitIn','g','GUnitIn','deg/s',...
+    'TUnitIn','ms','sampleskip',10,'plotflag','off','filter','on');
 
 end

@@ -17,14 +17,10 @@ function FrameShifter(TDF,vargin)
 %   * find reasonable thresholds for static moments
 %   * Identify all "zero" points
 
-
+%%
 % setting the default variables if not everything is set. May change this
 % later to be just a vargin where you have to specify the variable name,
 % yaknow?
-athreshold = 4/2^15;
-wthreshold = 2000/2^15;
-plotson = 'off'
-
 
 if ischar(TDF)
     try
@@ -34,12 +30,29 @@ if ischar(TDF)
     end
 end
 
-if ~isfield(TDF,'valTDF') || ~isstruct(TDF)
+if ~isfield(TDF,'valTDF') || ~isstruct(TDF) %is it a proper TDF?
     error('Input is not a valid TDF struct')
 end
 
+% set current stationary threshold levels
+if strcmp(TDF.meta.AUnit,'m/s2')
+    AThresh = .05;
+elseif strcmp(TDF.meta.AUnit,'g')
+    AThresh = .001;
+else
+    error('AUnit is not a valid value')
+end
 
-StatVector = StationaryFinder(TDF);
+if strcmp(TDF.meta.GUnit,'rad/s')
+    GThresh = .01;
+elseif strcmp(TDF.meta.GUnit,'deg/s')
+    GThresh = .1;
+else
+    error('GUnit is not a valid value')
+end
+
+%% creating a list of indices where the biostamp is stationary
+StatVector = StationaryFinder(TDF,AThresh,GThresh);
 Location = SpaceFrameConverter(TDF,StatVector);
 
 
@@ -52,7 +65,7 @@ if strcmp(plotson,'on')
     PlotInitData(TDF,labels)
 end
 
-% profile viewer
+
 
 end
 
@@ -116,7 +129,7 @@ end
 
 
 
-
+%%
 function Location = SpaceFrameConverter(Biostamp,StartInd,RollVelMean,PitchVelMean,YawVelMean)
 % ---SpaceFrameConverter---
 % function to find the location of the biostamp in an extrinsic coordinate
@@ -164,24 +177,39 @@ S = fsolve(@mysys,[-1;-1;1;1]);
 disp('finally!');
 end
 
-function StatVector = StationaryFinder(TDF)
+%%
+function StatVector = StationaryFinder(TDF,AThresh,GThresh)
 % Finding indices of locations where magnitude of acceleration is under a
-% certain threshold and ang vel is ~ 0
+% certain threshold from gravity and ang vel is ~ 0
 
-    if TDF.meta.AUnit == 'm/s' % acceleration units?
-        grav = 9.8;
-    else
-        grav = 1;
+StatVector = [];
+InitInd = [];
+
+% magnitude of the gravity vector
+if TDF.meta.AUnit == 'm/s2' % acceleration units
+    grav = 10.2;
+else
+    grav = 1;
+end
+
+% create a vector of the magnitude of acceleration
+AccelMag = sqrt(TDF.accel(:,1).^2 + TDF.accel(:,2).^2 + TDF.accel(:,3).^2);
+
+
+AInd = uint32(find(abs(AccelMag-grav) < AThresh));
+GInd = uint32(find((abs(TDF.gyro(:,1))<GThresh)&(abs(TDF.gyro(:,2))<GThresh)&(abs(TDF.gyro(:,3))<GThresh)));
+% GInd(:,2) = uint32(find(abs(TDF.gyro(:,2))<GThresh));
+% GInd(:,3) = uint32(find(abs(TDF.gyro(:,3))<GThresh));
+for i = 1:length(AInd)
+    InitInd = [InitInd, find(AInd(i) == GInd)];
+end
+
+
+for i = 3:length(InitInd)
+    if (InitInd(i-1) == (InitInd(i)-1)) && (InitInd(i-2) == (InitInd(i)-2))
+        StatVector = [StatVector, InitInd(i)];
     end
-    AMinInd = uint16(find(abs(AccelMag-grav) < athreshold));
-    WMinInd = uint16(find((TDF.gyro(:,1).^2 + TDF.gyro(:,2).^2 ...
-        + TDF.gyro(:,3).^2)<wthreshold));
-    AnotherIndVector = [];
-    for i=1:length(AMinInd)
-        if any(WMinInd==AMinInd(i))
-            AnotherIndVector = [AnotherIndVector,AMinInd(i)];
-        end
-    end
+end
 
 
 end
