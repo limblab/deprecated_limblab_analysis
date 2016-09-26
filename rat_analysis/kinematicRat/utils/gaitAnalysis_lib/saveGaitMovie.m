@@ -32,7 +32,7 @@
 % 2016-06-25: Maria Jantz added saving capabilities for both video and
 % individual frames as png files. 
 
-function [footStrike, footOff] = saveGaitMovie( data, freq, overlay, filename, saving, annotate)
+function [fhandle, footStrike, footOff] = saveGaitMovie( data, freq, overlay, filename, saving, annotate)
 
     nDim = size(data{1}); %get the dimensions of the array passed in
     
@@ -189,6 +189,7 @@ function [footStrike, footOff] = saveGaitMovie( data, freq, overlay, filename, s
     %clf %clears the current frame
     %savefig mymovie %this seems strange.
 
+    fhandle = gcf; 
 end
 
 function seg_figCallBack(hObject,callbackdata)

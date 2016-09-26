@@ -5,18 +5,20 @@ cd(folder);
 fig_folder = '../../../../figures/';
 %% Define files to load
 
-filedate = '160811';
+filedate = '160902';
 %filename = '16-07-26'; 
-ratName = '16-08-11';
+%ratName = '16-09-02';
+ratName = [filedate(1:2) '-' filedate(3:4) '-' filedate(5:6)];
 sample_freq = 100; %give this value in Hz
 pathName = ['../../../../data/kinematics/' filedate '_files/'];
-filenum = [20];
+filenum = 12; %can input an array if desired
 make_graphs = [2];
 saving = false;
 animate = false;
 recruit = false; 
 hist = false;
-hists = {}; 
+hists = {};
+gapfill = false; 
 
 for fileind=1:length(filenum) %so I can do batches- all files for a given day
     %close all; 
@@ -26,17 +28,18 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
     tdmMks  = {};
     %ratMks = {'hip_top', 'hip_center' , 'hip_bottom', 'knee', 'heel', 'metatarsal', 'phalanx'}
 %    ratMks = {'hip_center', 'hip_top', 'hip_bottom', 'knee', 'heel', 'toe'}
-     ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
-          'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};       
-  
+    ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
+         'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};       
+%      ratMks  = {'spine_top','spine_bottom','hip_top', 'hip_middle', 'hip_bottom', ...
+%           'femur_mid', 'knee', 'tibia_mid', 'heel', 'foot_mid', 'toe'};   
  
     [events,rat,treadmill] = ...
         importViconData(path,ratName,tdmName,ratMks,tdmMks);
     
     %convert to mm
     %cut section down, if desired
-    startMk = 1;
-    lastMk = length(rat.knee); %length(rat.knee); 
+    startMk = 1; %round(length(rat.knee)/2);
+    lastMk = round(length(rat.knee)*1); %length(rat.knee); 
     for i=1:length(ratMks)
         rat.(ratMks{i}) = rat.(ratMks{i})(startMk:lastMk, :); 
         rat.(ratMks{i}) = rat.(ratMks{i})/4.7243;
@@ -55,6 +58,33 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
     interval = 10;
     swing_times = find_swing_times(cutoff, interval, rat.angles.ankle);
     
+    
+    %% Fill gaps in data: interpolate x, y, z positions
+    if gapfill
+        %WHAT IS HAPPENING WITH SPINE TOP and bottom MARKER?? (back and forth 135/48)
+        for i=5%length(ratMks)
+            marker = rat.(ratMks{i}); 
+            idx = ~isnan(marker); %finds indices of good values
+            ind = 1:length(marker); 
+            %TODO: check how many nans in a row: if >3, don't interp
+            
+            %check for doubled nans
+            dbls = find(diff(idx)==0); 
+            nval = find(diff(dbls)>1); 
+            for n=1:length(nval)
+                ran = (dbls(nval(n))+1):(dbls(nval(n)+1)-1); %get a range of mostly good values
+                %interpolate that range
+                %TODO: figure out what the issue is with 
+                temp = interp1(ind(idx(ran, 1)), marker(idx(ran, 1)), ind(ran), 'linear');
+            end
+            
+            temp = interp1(ind(idx(:, 1)), marker(idx(:, 1)), ind, 'linear'); %check if this does all the values! (x, y, z)
+            plot(marker(:, 1), '.'); 
+            hold on; 
+            plot(temp); 
+                
+            end
+    end
     
     %% 1. XY positions vs time
     
@@ -76,7 +106,7 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         figure(2);
         for i=1:length(lbls)
             subplot(4, 1, i);
-            plot(rat.angles.(lbls{i}));
+            plot(rat.angles.(lbls{i}), '.');
             ylabel([lbls(i) '(degrees)']);
             %set(gca, 'XTick', [])
         end
@@ -304,46 +334,6 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         %legend([h1 h2], {'swing', 'stance'});
     end
     
-    %% trajectory on top of animation
-    
-    if ismember(9, make_graphs)
-        %split the array according to beginning of every swing phase
-        figure(9);% grid on;
-        %set(plot8, 'Position', [50 500 1000 400]);
-%         b_ind = swing_times{8}(1); 
-%         ind_end = swing_times{9}(1);
-        b_ind = swing_times{end-2}(1); 
-        e_ind = swing_times{end-1}(1); 
-        xvals = track_marker(:, 1);
-        yvals = track_marker(:, 2); 
-
-        x_step = xvals(b_ind:e_ind)-x_zero; 
-        y_step = yvals(b_ind:e_ind)-y_zero;
-        len_sw = swing_times{7}(2)-swing_times{7}(1);  
-        %init_loc = rat.hip_bottom(b_ind:e_ind); 
-        %x_step = xvals(b_ind:e_ind)-init_loc(:, 2); 
-        %y_step = yvals(b_ind:e_ind)-init_loc(:, 3); 
-
-
-        hold on; 
-        color1 = [225 91 51]/255; %[11 131 25]/255;
-        h1 = plot(x_step(1:len_sw), y_step(1:len_sw), 'linewidth', 3.5, 'color', color1); %average together each step
-        h2 = plot(x_step(len_sw:end), y_step(len_sw:end), 'linewidth', 3.5, 'color', color1); %average together each step
-    
-%         ylabel('Y (mm)');
-%         xlabel('X (mm)');
-%         %legend([h1 h2], {'swing', 'stance'});
-        ylim([-75 25])
-        NumTicks = 3;
-        ax = gca; 
-        L = get(ax,'XLim');
-        set(ax,'XTick',linspace(L(1),L(2),NumTicks));
-        NumTicks = 5;
-        L = get(ax,'YLim');
-        set(ax,'YTick',linspace(L(1),L(2),NumTicks))
-%         set(ax, 'fontsize', 20); 
-    end
-    
     %% Animation
     %
     if animate
@@ -359,17 +349,19 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
             rat.toe };
 
         %to select a smaller section:
-        b_ind = swing_times{end-2}(1); 
-        e_ind = swing_times{end-1}(1); 
-%         b_ind = 100;
-%         e_ind = 100;
+        b_ind = swing_times{3}(1); 
+        e_ind = swing_times{4}(1);
+        t_interval = b_ind:2:e_ind; 
+         %b_ind = 10876;
+         %e_ind = b_ind; 
+         %e_ind = find(rat.angles.hip==max(rat.angles.hip));
         %stepnum = 1;
-        rat_mat = cellfun(@(array) array(b_ind:2:e_ind, :), rat_mat, 'UniformOutput', false);
-        init_arr = cellfun(@(x) [x_zero*ones(size(x, 1), 1) y_zero*ones(size(x, 1), 1)], rat_mat, 'UniformOutput', false);
-        rat_mat = cellfun(@(x)x(:,1:2)-init_arr{1},rat_mat,'UniformOutput', false); 
-        %rat_mat = cellfun(@(x) x-rat_mat{2}(1, :), rat_mat, 'UniformOutput', false); 
-        
-%         rat_mat = cellfun(@(x)x(:,1:2)-init_arr(:, 1:2),rat_mat,'UniformOutput', false); 
+        rat_mat = cellfun(@(array) array(t_interval, :), rat_mat, 'UniformOutput', false);
+        %init_arr = cellfun(@(x) [x_zero*ones(size(x, 1), 1)
+        %y_zero*ones(size(x, 1), 1)], rat_mat, 'UniformOutput', false); %make array to set origin to bottom of hip in first frame
+        %rat_mat = cellfun(@(x)x(:,1:2)-init_arr{1},rat_mat,'UniformOutput', false); %set origin to bottom of hip in first frame
+        rat_mat = cellfun(@(x) x-rat_mat{2}(:, :), rat_mat, 'UniformOutput', false); %set origin to bottom of hip in every frame
+
         annotate = false;
         hold_prev_frames = true;
         
@@ -377,12 +369,55 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
         xlabel('X (mm)'); 
         ylabel('Y (mm)'); 
         
-        [footstrike, footoff] = saveGaitMovie(rat_mat, rat.f, hold_prev_frames, 'step.avi', saving, annotate);
-        ylim([-100 20])
-        xlim([-60 50])
+        [an, footstrike, footoff] = saveGaitMovie(rat_mat, rat.f, hold_prev_frames, 'step.avi', saving, annotate);
+        ylim([-100 30])
+        xlim([-60 70])
     end
     
+    %% trajectory on top of animation
     
+    if ismember(9, make_graphs)
+        %split the array according to beginning of every swing phase
+        figure(9);% grid on;
+        %set(plot8, 'Position', [50 500 1000 400]);
+%         b_ind = swing_times{8}(1); 
+%         ind_end = swing_times{9}(1);
+        %b_ind = swing_times{end-2}(1); 
+        %e_ind = swing_times{end-1}(1); 
+        xvals = track_marker(:, 1);
+        yvals = track_marker(:, 2); 
+
+        x_step = rat_mat{end}(:, 1); 
+        y_step = rat_mat{end}(:, 2); 
+        len_sw = length(t_interval);  
+        %init_loc = rat.hip_bottom(b_ind:e_ind); 
+        %x_step = xvals(b_ind:e_ind)-init_loc(:, 2); 
+        %y_step = yvals(b_ind:e_ind)-init_loc(:, 3); 
+
+
+        hold on; 
+        color1 = [225 91 51]/255; %[11 131 25]/255;
+        h1 = plot(x_step, y_step, 'linewidth', 3.5, 'color', color1); %average together each step
+        %h2 = plot(x_step(len_sw:end), y_step(len_sw:end), 'linewidth', 3.5, 'color', color1); %average together each step
+        
+        uistack(h1, 'top'); %TODO: WHY DOESN'T THIS WORK DANG IT
+        
+        
+%         ylabel('Y (mm)');
+%         xlabel('X (mm)');
+%         %legend([h1 h2], {'swing', 'stance'});
+        %ylim([-75 25])
+%         NumTicks = 3;
+%         ax = gca; 
+%         L = get(ax,'XLim');
+%         set(ax,'XTick',linspace(L(1),L(2),NumTicks));
+%         NumTicks = 5;
+%         L = get(ax,'YLim');
+%         set(ax,'YTick',linspace(L(1),L(2),NumTicks))
+%         set(ax, 'fontsize', 20); 
+    end
+    
+
     
     %% Recruitment Curves
     if recruit
