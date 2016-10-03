@@ -1,5 +1,5 @@
 function [mle_cond,rcurve,file_name] = plot_rec_curves_StimDAQ(out_struct,calmat,emg_enable,time_window,is_mle,saveFilename,vecGood)
-
+% Inputs: ?, calibration matrix, 
 % User specified times for begin/end of "steady-state" force response
 platON = time_window(1);
 platOFF = time_window(2);
