@@ -12,7 +12,7 @@ sample_freq = 100; %give this value in Hz
 %filename = '2-12-16'; 
 pathName = ['../../../../data/kinematics/'];
 filenum = [11];
-make_graphs = [9];
+make_graphs = [2 9];
 saving = false;
 animate = true;
 recruit = false; 
@@ -54,7 +54,7 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
     
     cutoff = 4;
     interval = 10;
-    swing_times = find_swing_times(cutoff, interval, rat.angles.ankle)
+    swing_times = find_swing_times2(rat.phalanx, 0, 50)
     
     
     %% 1. XY positions vs time

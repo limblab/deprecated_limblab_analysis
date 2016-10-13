@@ -147,7 +147,11 @@ if ~isstruct(varargin{1}) % plots only
 else % do all analysis
     bdf = varargin{1};
     if ~isfield(bdf,'pos') % check that it's really a BDF
-        error('BDF does not seem correct...');
+        if isfield(bdf,'emg')
+            warning('BDF does not have a position field, will use EMG field instead');
+        else
+            error('BDF does not have a position or EMG field');
+        end
     end
     which_method = [];
     if length(varargin) > 1 % if second input is provided
@@ -193,9 +197,13 @@ if ~isempty(bdf)
         elec_ids = unique(cellfun(@(x) x(1),{bdf.units.id}));
         N = length(elec_ids);
     end
-    t_start = bdf.pos(1,1);
-    t_end = bdf.pos(end,1); % length of file
-    
+    if isfield(bdf,'pos')
+        t_start = bdf.pos(1,1);
+        t_end = bdf.pos(end,1); % length of file
+    elseif isfield(bdf,'emg') % if there's no pos field
+        t_start = bdf.emg.data(1,1);
+        t_end = bdf.emg.data(end,1); % length of file
+    end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Check to ensure the matlab pool is open if parallel is desired
     if do_parallel

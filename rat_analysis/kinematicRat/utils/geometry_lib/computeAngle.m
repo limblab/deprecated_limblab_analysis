@@ -55,7 +55,7 @@ function alfa = computeAngle( p1, p2, p3 )
         
         v1 = p1-p2; % vector 1
         v2 = p3-p2; % vector 2
-
+        
         cos12 = (v1'*v2)/(norm(v1)*norm(v2)); % cosine between v1 nad v2
         alfa  = acos(cos12);                  % angle btw v1 and v2 [rad]
         
