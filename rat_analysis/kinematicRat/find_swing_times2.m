@@ -17,19 +17,19 @@ end
 %check that there are the correct number of peaks - high and low
 if length(high_locs)~=length(low_locs)
     disp('you have the wrong number of high and low peaks')
-    figure(1);
+    figure(1); %swing peaks/low_peaks
     findpeaks(inverted, 'MinPeakDistance', peakdist_ms, 'MinPeakHeight', inverted(1, 1)+lowpeak_mm)
-    figure(2);
+    figure(2); %stance peaks/high_peaks
     findpeaks(endpoint_marker(:, 1), 'MinPeakDistance', peakdist_ms, 'MinPeakHeight', endpoint_marker(1, 1)+lowpeak_mm)
-    rm = char(input('Remove values from longer array? y/n', 's'));
+    rm = char(input('Remove values from fig1 array? y/n', 's'));
     if rm=='y'
         idx = input('Which indices to remove?');
-        %pick longer array
-        if length(high_locs)>length(low_locs)
-            high_locs(idx) = [];
-        else
-            low_locs(idx) = [];
-        end
+        low_locs(idx) = [];
+    end
+    rm = char(input('Remove values from fig2 array? y/n', 's'));
+    if rm=='y'
+        idx = input('Which indices to remove?');
+        high_locs(idx) = [];
     end
 end
 

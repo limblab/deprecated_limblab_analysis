@@ -1,7 +1,7 @@
 %to run: load a trial with the correct time interval to catch a set of
 %steps and check that the steps are separated correctly, then go.
-filedate = 'tdm'; 
-filenum = 1; 
+% filedate = 'tdm'; 
+% filenum = 1; 
 
 rat.toe = rat.phalanx
 

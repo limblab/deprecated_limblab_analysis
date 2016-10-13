@@ -9,6 +9,9 @@ function strOUT = fns_stim_prog(prefix,chList,mode,amp,pw,freq,pulses,time2run,s
 %       amp - stim amplitude in mA
 %       pw - stim pulsewidth in msec
 %       freq - stim freq in Hz
+%       pulses - no. pulses in a train
+%       time2run - time for train to run, in ms
+%       stim_tip - used to calculate interphase time
 
 chSTR = get_chSTR(chList);          % channels
 

@@ -5,17 +5,17 @@ cd(folder);
 fig_folder = '../../../../figures/';
 %% Define files to load
 
-filedate = '160811';
+filedate = '161006';
 %filename = '16-07-26'; 
 %ratName = '16-09-02';
 ratName = [filedate(1:2) '-' filedate(3:4) '-' filedate(5:6)];
 sample_freq = 100; %give this value in Hz
 pathName = ['../../../../data/kinematics/' filedate '_files/'];
-filenum = 8; %can input an array if desired
-make_graphs = [];
+filenum = 1; %can input an array if desired
+make_graphs = [2];
 saving = false;
-animate = false;
-recruit = true; 
+animate = true;
+recruit = false; 
 hist = false;
 hists = {};
 gapfill = false; 
@@ -28,13 +28,14 @@ for fileind=1:length(filenum) %so I can do batches- all files for a given day
     tdmMks  = {};
     %ratMks = {'hip_top', 'hip_center' , 'hip_bottom', 'knee', 'heel', 'metatarsal', 'phalanx'}
 %    ratMks = {'hip_center', 'hip_top', 'hip_bottom', 'knee', 'heel', 'toe'}
-     ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
-          'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};  
+%     ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
+%          'hip_middle', 'knee', 'heel', 'foot_mid', 'toe'};  
 %     ratMks  = {'spine_top','spine_bottom','hip_top','hip_bottom', ...
 %          'hip_middle', 'knee', 'heel', 'foot_mid', 'toe', 'wheel1', 'wheel2'};       
 %        ratMks  = {'spine_top','spine_bottom','hip_top', 'hip_middle', 'hip_bottom', ...
 %             'femur_mid', 'knee', 'tibia_mid', 'heel', 'foot_mid', 'toe', 'reference_a', 'reference_p', 'wheel1', 'wheel2'};   
- 
+        ratMks  = {'spine_top','spine_bottom','hip_top', 'hip_middle', 'hip_bottom', ...
+             'femur_mid', 'knee', 'tibia_mid', 'heel', 'foot_mid', 'toe', 'reference_a', 'reference_p'};
     [events,rat,treadmill] = ...
         importViconData(path,ratName,tdmName,ratMks,tdmMks);
     

@@ -696,7 +696,8 @@ function stimdaq
         amps = base_amps + (base_amps.*repmat(amp_modulation-1,1,16).*is_channel_modulated);
         pws  = base_pws  + (base_pws .*repmat(pw_modulation -1,1,16).*is_channel_modulated);
         try
-            stimrec(abort, amps, pws, freq, 1, rec_duration, mode, EMG_labels, EMG_enable, phony);
+            %to use fns, switch this back to "stimrec" code
+            stimrec_ripple(abort, amps, pws, freq, 1, rec_duration, mode, EMG_labels, EMG_enable, phony);
             %STIMREC(ABORT, PULSEAMPS, PULSEWIDTH, FREQ, PULSECOUNT, SAMPLE_DURATION, MODE, EMG_labels, EMG_enable, PHONY)
         catch exception
 %             err = lasterror;
