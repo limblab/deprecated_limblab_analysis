@@ -1,6 +1,8 @@
 function [data, sample_rate] = stimrec_ripple(varargin)
 %   STIMREC   Send a stim command, record the triggered input and return data
 %       [DATA, SAMPLE_RATE] = STIMREC(ABORT, PULSEAMPS, PULSEWIDTH, FREQ, PULSECOUNT, SAMPLE_DURATION, MODE, EMG_labels, EMG_enable , PHONY)
+%       [DATA, SAMPLE_RATE] = STIMREC(ABORT, PULSEAMPS, PULSEWIDTH, FREQ, PULSECOUNT, SAMPLE_DURATION, MODE, isactive, EMG_labels, 
+%       EMG_enable , nreps, stim_tip, freqdaq, stimdelay, handles, calMat, curr_action_text, active_channel_list, stim_offset, stimulator_object)
 %           ABORT:       a handle to a boolean abort switch (pointer)
 %           PULSEAMPS:   a vector of pulse amplitudes for each channel (uA)
 %           PULSEWIDTHS: a vector of pulse-widths for each channel (uSec)
@@ -33,7 +35,7 @@ function [data, sample_rate] = stimrec_ripple(varargin)
 
 %% Parse the arguments
 
-if nargin == 19
+if nargin == 19 %should add pass in ws object
     abort       = varargin{1};
     stim_amps   = varargin{2};
     stim_width  = varargin{3};
@@ -51,16 +53,18 @@ if nargin == 19
     handles     = varargin{15};
     calMat      = varargin{16};
     curr_action_text = varargin{17};
-    active_channel_list = varargin{18};
-    stim_offset = varargin{19};
+    stim_offset = varargin{18};
+    ws = varargin{19};
 else
     error 'Incorrect number of arguments'
 end
 
 % Ensure the args are the correct dimension
 if ( ... % TODO: Validate the abort pointer
-        ~all(size(stim_amps)  == [1,16]) || ...
-        ~all(size(stim_width) == [1,16]) || ...
+...%         ~all(size(stim_amps)  == [1,16]) || ...
+...%         ~all(size(stim_width) == [1,16]) || ...
+        ~all(size(stim_amps)  == [1,1]) || ...
+        ~all(size(stim_width) == [1,1]) || ...
         ~all(size(stim_freq)  == [1,1])  || ...
         ~all(size(stim_pulses)== [1,16]) )
     error 'Incorrect argument dimensions'
@@ -73,40 +77,41 @@ recording_channels = find(EMG_enable);
 num_recording_channels = length(recording_channels);
 num_recordings = nreps;
 data = zeros(samples_per_trigger, num_recording_channels, num_recordings);
+len_stim = stim_pulses(1)/stim_freq *1000; %length of time to spend stimulating (ms)
 
 %% Program the stimulator
-% Define COM port for FNS-16 stimulator
-s = serial('COM1','BaudRate',115200);  % this seems to depend on the computer as to which com port is assigned
-% Determine whether channel is active
-active_channel_count = sum(is_active);
-inactive_channel_list = find(is_active==0);
-% If not active, assign amplitude and pulse to be zero
-stim_amps(inactive_channel_list) = 0;
-stim_width(inactive_channel_list) = 0;
-% Output error if there are no active channels
-if (active_channel_count == 0)
-    error 'No non-zero channels';
-end
-
-tic
-% Define program for each channel (note: some channels receive 0
-% amplitude current and pulse width)
-%     fopen(s);
-for channel=1:16
-    % Define program string with appropriate parameters for stimulator
-    strOUT = fns_stim_prog('p',channel-1,mode,stim_amps(channel),stim_width(channel),stim_freq,stim_pulses(channel),sample_duration,stim_tip);
-    %         fprintf('\n%s',strOUT);
-    
-    % Send program to FNS-16 stimulator
-    fopen(s); fwrite(s,strOUT); fclose(s); pause(0.001);
-end
-toc
+% % Define COM port for FNS-16 stimulator
+% s = serial('COM1','BaudRate',115200);  % this seems to depend on the computer as to which com port is assigned
+% % Determine whether channel is active
+% active_channel_count = sum(is_active);
+% inactive_channel_list = find(is_active==0);
+% % If not active, assign amplitude and pulse to be zero
+% stim_amps(inactive_channel_list) = 0;
+% stim_width(inactive_channel_list) = 0;
+% % Output error if there are no active channels
+% if (active_channel_count == 0)
+%     error 'No non-zero channels';
+% end
+%
+% tic
+% % Define program for each channel (note: some channels receive 0
+% % amplitude current and pulse width)
+% %     fopen(s);
+% for channel=1:16
+%     % Define program string with appropriate parameters for stimulator
+%     strOUT = fns_stim_prog('p',channel-1,mode,stim_amps(channel),stim_width(channel),stim_freq,stim_pulses(channel),sample_duration,stim_tip);
+%     %         fprintf('\n%s',strOUT);
+%
+%     % Send program to FNS-16 stimulator
+%     fopen(s); fwrite(s,strOUT); fclose(s); pause(0.001);
+% end
+% toc
 
 %% Program Ripple stimulator
 
 %if the stimulator object doesn't exist yet, set it up:
 if ~exist('ws', 'var')
-    disp('Creating wireless stimulator object...'); 
+    disp('Creating wireless stimulator object...');
     %ws = wireless_stim(com_port, 1); %the number has to do with verbosity of running feedback
     %ws.init(1, ws.comm_timeout_disable);
     
@@ -123,42 +128,47 @@ if ~exist('ws', 'var')
 end
 
 disp('Defining active channels...')
-active_channel_count = sum(is_active);
-inactive_channel_list = find(is_active==0);
+%active_channel_count = sum(is_active);
+%inactive_channel_list = find(is_active==0);
 active_channels = find(~is_active==0); %TODO: check the output here! I need a list of channels like [1 3 4 9]
 
 % TODO: don't think this is actually necessary for ripple version
 % If not active, assign amplitude and pulse to be zero
-stim_amps(inactive_channel_list) = 0;
-stim_width(inactive_channel_list) = 0;
+% stim_amps(inactive_channel_list) = 0;
+% stim_width(inactive_channel_list) = 0;
 
-%TODO check stim_freq is the correct units
-ws.set_Freq(stim_freq, active_channels); 
-
-disp('Setting amp and pw...')
-%TODO check set train delay so I have staggered pulses, set pws
-for i=1:length(active_channels)
-    ws.set_TD(50+500*i, active_channels(i));
-    ws.set_CathDur(stim_width(active_channels(i))*1000, active_channels(i)); %set pw in us
-    ws.set_AnodDur(stim_width(active_channels(i))*1000, active_channels(i)); 
-end
-
-%TODO check variables here
-for i = 1:length(active_channels) %for every muscle
-    command{1} = struct('CathAmp', stim_amps(active_channels(i))*1000+32768,... %in uA
-        'AnodAmp', 32768-stim_amps(active_channels(i))*1000);
-    ws.set_stim(command, active_channels(i)); %send updated amplitude to stimulator
-end
-
-%run this stimulation train as long as specified, then stop
-%TODO check that time2run/sample_duration is actually what I get from the
-%gui, and it's in ms
-disp('Running stimulation.')
+disp('Setting amp, freq and pw...')
 tic
-ws.set_TL(sample_duration, active_channels); %check this!
-ws.set_Run(ws.run_once, active_channels); %drat this is annoying, freq/train is set up a lot different
+%TODO check stim_freq is the correct units
+ws.set_Freq(stim_freq, active_channels);
 
+%TODO check set train delay so I have staggered pulses, set pws
+    %ws.set_TD(50+500*i, active_channels);
+    ws.set_CathDur(stim_width*1000, active_channels); %set pw in us
+    ws.set_AnodDur(stim_width*1000, active_channels);
+    
+        command{1} = struct('CathAmp', stim_amps*1000+32768,... %in uA
+        'AnodAmp', 32768-stim_amps*1000);
+    ws.set_stim(command, active_channels); %send updated amplitude to stimulator
+    ws.set_Run(ws.run_cont, active_channels); %sets this to run the entire set of params 
+    
+%     TODO: below is for if I want to update all channels in this function
+%     rather than in the for loop it gets called by. Need to update data
+%     handling to do that
+% for i=1:length(active_channels)
+%     ws.set_TD(50+500*i, active_channels(i));
+%     ws.set_CathDur(stim_width(active_channels(i))*1000, active_channels(i)); %set pw in us
+%     ws.set_AnodDur(stim_width(active_channels(i))*1000, active_channels(i));
+% end
+% 
+% %TODO check variables here
+% for i = 1:length(active_channels) %for every muscle
+%     command{1} = struct('CathAmp', stim_amps(active_channels(i))*1000+32768,... %in uA
+%         'AnodAmp', 32768-stim_amps(active_channels(i))*1000);
+%     ws.set_stim(command, active_channels(i)); %send updated amplitude to stimulator
+% end
 toc
+
 
 %TODO check whether this runs the next level of stimulation by itself or if
 %I need to do that in this section
@@ -198,22 +208,33 @@ addchannel(ao,[0 1]);
 set(ao,'TriggerType','Manual');
 startdata = [zeros(1,1) 5*ones(1,50) zeros(1,1); zeros(1,52)]'; % data for turning VICON acquisiton on
 stopdata = [zeros(1,52); zeros(1,1) 5*ones(1,50) zeros(1,1); ]'; % data for turning VICON acquisiton off
-putdata(ao,startdata);  % set it up for starting VICON data
+
 
 %% Collect the data
 
 for trig = 1:num_recordings
+    putdata(ao,startdata);  % set it up for starting VICON data
     start([ai ao]); pause(0.001);
     % get the data from this trigger
     try
         set(curr_action_text,'String',sprintf('Stimulating muscle(s): %s at %s mA', mat2str(cell2mat(strcat(EMG_labels(stim_amps>0)))),num2str(stim_amps(stim_amps>0))));
         stim_offset = 500;
         if stim_offset>1e-2
-            trigger([ai ao]);fopen(s);
+            trigger([ai ao]); %fopen(s);
             disp('starting VICON')
-            strOUT2 = fns_stim_prog('r',active_channel_list-1);
+            %run this stimulation train as long as specified, then stop
+            %TODO check that time2run/sample_duration is actually what I get from the
+            %gui, and it's in ms
+            disp('Running stimulation.')
+            tic
+            %TODO ws.set_TL(sample_duration, active_channels); %check this!
+            %TODO ws.set_Run(ws.run_once, active_channels); %drat this is annoying, freq/train is set up a lot different
+            
+            ws.set_TL(len_stim, active_channels); %check this!
+            ws.set_Run(ws.run_once_go, active_channels);
+            %strOUT2 = fns_stim_prog('r',active_channel_list-1);
             pause(stim_offset/1e3);
-            fwrite(s,strOUT2);
+            %fwrite(s,strOUT2);
             %                 pause(stim_offset/1e3);
             %                 strOUT2 = fns_stim_prog('r',active_channel_list(5:13)-1);
             %                 fwrite(s,strOUT2);
@@ -225,16 +246,27 @@ for trig = 1:num_recordings
             %                     pause(stim_offset/1e3);
             %                     toc
             %                 end
-            fclose(s);
+            %fclose(s);
         else
-            trigger(ai); fopen(s);
-            strOUT2 = fns_stim_prog('r',active_channel_list-1);
-            fwrite(s,strOUT2);
-            fclose(s);
+            trigger(ai); %fopen(s);
+            %run this stimulation train as long as specified, then stop
+            %TODO check that time2run/sample_duration is actually what I get from the
+            %gui, and it's in ms
+            disp('Running stimulation.')
+            tic
+            %TODO ws.set_TL(sample_duration, active_channels); %check this!
+            ws.set_TL(sample_duration, active_channels); %check this!
+            ws.set_Run(ws.run_once_go, active_channels);
+            
+            toc
+            %strOUT2 = fns_stim_prog('r',active_channel_list-1);
+            %fwrite(s,strOUT2);
+            %fclose(s);
+            
         end
         
         wait(ai,(sample_duration*1.25)/1e3);
-        
+        toc
         putdata(ao,stopdata);  % stop the Vicon data acquisition
         start(ao);
         trigger(ao);
@@ -257,10 +289,10 @@ for trig = 1:num_recordings
         end
     catch lasterror
         %             fns('stop');
-        fopen(s); fwrite(s,'2'); fclose(s);
+        %fopen(s); fwrite(s,'2'); fclose(s);
         stop(ai);
-        priorPorts = instrfind; % finds any existing Serial Ports in MATLAB
-        delete(priorPorts);
+        %priorPorts = instrfind; % finds any existing Serial Ports in MATLAB
+        %delete(priorPorts);
         rethrow(lasterror);
     end
     % -----------------------------------------------------------------
@@ -320,10 +352,10 @@ end
 
 %% And shut back down
 %     fns('stop');
-fopen(s); fwrite(s,'2#'); fclose(s);
+%fopen(s); fwrite(s,'2#'); fclose(s);
 stop(ai);
-priorPorts = instrfind; % finds any existing Serial Ports in MATLAB
-delete(priorPorts);
+%priorPorts = instrfind; % finds any existing Serial Ports in MATLAB
+%delete(priorPorts);
 % Set current status as idle
 set(curr_action_text, 'String', 'idle');
 end %  function

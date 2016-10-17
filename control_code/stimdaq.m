@@ -19,6 +19,22 @@ function stimdaq
     priorPorts = instrfind; % finds any existing Serial Ports in MATLAB
     delete(priorPorts); % and deletes them 
     
+    if ~exist('ws_object', 'var')
+        disp('Creating wireless stimulator object...');
+        %ws = wireless_stim(com_port, 1); %the number has to do with verbosity of running feedback
+        %ws.init(1, ws.comm_timeout_disable);
+        
+        ws_struct = struct(...
+            'serial_string', 'COM5',...
+            'dbg_lvl', 1, ...
+            'comm_timeout_ms', 100, ... %-1 for no timeout
+            'blocking', false, ...
+            'zb_ch_page', 5 ...
+            );
+        
+        ws_object = wireless_stim(ws_struct);
+        ws_object.init();
+    end
 %     % Define serial port through proper COM port
 %     s = serial('COM4','BaudRate',115200);
 %     
@@ -94,12 +110,15 @@ function stimdaq
     set(curr_action_text, 'String', 'idle');
     
 %% Load Calibration Matrix for Force Transducer
-    calMat = load(strcat(cd,'\calibration matrices\newCal'));
+    parentFolder = strcat(fileparts(mfilename('fullpath')),'\calibration matrices\');
+    calMat = load(strcat(parentFolder, 'newCal'));
     calMat = calMat';
     % Make new folder to store calibration matrix (labeled with current date)
     folderName = strcat(date,' isometric data');
-    mkdir(folderName);
-    saveFilename_calmat = strcat(cd,'\',folderName,'\cal_mat_',date);
+    if ~exist(strcat(parentFolder, folderName), 'dir')
+        mkdir(parentFolder, folderName);
+    end
+    saveFilename_calmat = strcat(parentFolder,folderName,'\cal_mat_',date);
     % Save calibration matrix
     save(saveFilename_calmat,'calMat','-mat');
     
@@ -337,7 +356,7 @@ function stimdaq
                 
                 % Run stimulation
                 out_struct.time = clock;
-                [out_struct.data, out_struct.sample_rate, out_struct.act_ch_list] = run_stimplan(abort,allvars,EMG_labels,EMG_enable,handles,calMat,curr_action_text);
+                [out_struct.data, out_struct.sample_rate, out_struct.act_ch_list] = run_stimplan_ripple(abort,allvars,EMG_labels,EMG_enable,handles,calMat,curr_action_text, ws_object);
                 
                 % Store variables in output structure
                 out_struct.mode = allvars.mode;
@@ -672,7 +691,7 @@ function stimdaq
         is_channel_modulated = [is_channel_modulated_temp{:}];
         freq = get(stim_freq, 'Value');
         rec_duration = get(rec_duration_txbx, 'Value');        
-        phony = get(phony_cbx, 'Value');
+        %phony = get(phony_cbx, 'Value');
         
         % Set multiplier_box to the correct extremum
         if (strcmp(extremum,'min'))
@@ -695,10 +714,19 @@ function stimdaq
         
         amps = base_amps + (base_amps.*repmat(amp_modulation-1,1,16).*is_channel_modulated);
         pws  = base_pws  + (base_pws .*repmat(pw_modulation -1,1,16).*is_channel_modulated);
+        
         try
             %to use fns, switch this back to "stimrec" code
-            stimrec_ripple(abort, amps, pws, freq, 1, rec_duration, mode, EMG_labels, EMG_enable, phony);
-            %STIMREC(ABORT, PULSEAMPS, PULSEWIDTH, FREQ, PULSECOUNT, SAMPLE_DURATION, MODE, EMG_labels, EMG_enable, PHONY)
+            isactivetemp = get(stim_channel_active, 'Value');
+            is_active = [isactivetemp{:}];
+            nreps = get(stim_reps, 'Value'); 
+            stim_tip = get(stim_interphase,'Value');
+            freq_daq = get(daq_freq,'Value'); 
+            stagger_time = get(stagger_stim_time,'Value');
+            disp('Calling stimrec')
+            stimrec_ripple(abort, amps, pws, freq, 1, rec_duration, mode, is_active, EMG_labels, EMG_enable, ...
+                nreps, stim_tip, freq_daq, stim_delay, handles, calMat, curr_action_text, stagger_time, ws_object);
+           
         catch exception
 %             err = lasterror;
 %             errordlg(err.message,'Error');
