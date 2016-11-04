@@ -150,7 +150,9 @@ ws.set_Freq(stim_freq, active_channels);
         command{1} = struct('CathAmp', stim_amps*1000+32768,... %in uA
         'AnodAmp', 32768-stim_amps*1000);
     ws.set_stim(command, active_channels); %send updated amplitude to stimulator
-    ws.set_Run(ws.run_cont, active_channels); %sets this to run the entire set of params 
+ 
+%%% THIS COMMAND CAUSES A RESPONSE
+ %   ws.set_Run(ws.run_cont, active_channels); %sets this to run the entire set of params 
     
 %     TODO: below is for if I want to update all channels in this function
 %     rather than in the for loop it gets called by. Need to update data
@@ -221,15 +223,18 @@ for trig = 1:num_recordings
         stim_offset = 500;
         if stim_offset>1e-2
             trigger([ai ao]); %fopen(s);
+
             disp('starting VICON')
             %run this stimulation train as long as specified, then stop
             %TODO check that time2run/sample_duration is actually what I get from the
             %gui, and it's in ms
             disp('Running stimulation.')
+                        pause(.5); 
             tic
             %TODO ws.set_TL(sample_duration, active_channels); %check this!
             %TODO ws.set_Run(ws.run_once, active_channels); %drat this is annoying, freq/train is set up a lot different
-            
+            disp(['Sample duration1: ' num2str(sample_duration)]); 
+            disp(['Sample duration2: ' num2str(len_stim)]); 
             ws.set_TL(len_stim, active_channels); %check this!
             ws.set_Run(ws.run_once_go, active_channels);
             %strOUT2 = fns_stim_prog('r',active_channel_list-1);
@@ -253,8 +258,10 @@ for trig = 1:num_recordings
             %TODO check that time2run/sample_duration is actually what I get from the
             %gui, and it's in ms
             disp('Running stimulation.')
+                        pause(.5); 
             tic
             %TODO ws.set_TL(sample_duration, active_channels); %check this!
+            disp(['Sample duration: ' num2str(sample_duration)]); 
             ws.set_TL(sample_duration, active_channels); %check this!
             ws.set_Run(ws.run_once_go, active_channels);
             
