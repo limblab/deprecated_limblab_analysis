@@ -7,8 +7,8 @@
 
 //Declare global variables
 
-RTC_DS1307 RTC; //Initialize real time clock
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); //Motor shield with default I2C address
+DS1307                RTC; //Initialize real time clock
+Adafruit_MotorShield  AFMS = Adafruit_MotorShield(); //Motor shield with default I2C address
 Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2); //Stepper motor with 200 steps per revolution, to motor port 2 (M3 and M4)
 
 //timing variables (we need these to be global so we can keep track of time over several loops)
@@ -26,7 +26,7 @@ int actTime = 3000; //amount of time the monkey has to do the task to get a trea
 //Reward (motor and solenoid) control
 int mot_ctr = 0; //current motor step
 int giving_reward = 0; //whether we are currently giving a treat (0 = no, 1 = yes)
-int solenoid_pin = 9; //TODO update this to whatever I want it to be forever and ever.
+int solenoid_pin = 9; //TODO update this to whatever I want it to be forever and ever. //Nice comment Maria --KLB
 
 //LEDs and LED state
 int goLED1 = 0; //status of "you can do the task" LED for the first sensor (0=LOW, 1=HIGH)
@@ -42,8 +42,8 @@ int rand_threshold = 100; //% of times the monkey receives a treat
 //file management
 int reward_type = 0; //0 for water (solenoid), 1 for dry food (motor)
 int task_type1 = 0; //0 for force-sensitive resistor tasks, 1 for rotary potentiometer tasks, 2 for not using - sensor 1
-int task_type2 = 0; //sensor 2
-int sensor_1_act = 0; //0 for false, 1 for true (sensor active)
+int task_type2 = 2; //sensor 2
+int sensor_1_act = 1; //0 for false, 1 for true (sensor active)
 int sensor_2_act = 0; 
 int reward_amount = 1000; //only matters for water
 
@@ -116,6 +116,9 @@ void setup() {
         memset(&temp[0], 0, sizeof(temp)); //clear the string array
         i = 0;
       }
+    }
+    else {
+      Serial.println("SD Card not detected, using default values")
     }
   
     s_file.close();

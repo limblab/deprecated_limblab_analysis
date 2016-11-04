@@ -1,18 +1,20 @@
+
 #include <SPI.h>
 #include <Wire.h>
 #include <SD.h>
 #include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_PWMServoDriver.h"
+#include <Adafruit_PWMServoDriver.h>
 #include "RTClib.h"
-
+//#include <DS1307RTC.h>
 
 ////////////////////////////// Hi Scott
+// KLB Note: Who's Scott?
 
 // Global variables
 
-RTC_DS1307           RTC;                    // the Real Time Clock
+DS1307               RTC;                    // the Real Time Clock
 
-Adafruit_MotorShield AFMS = Adafruit_MotorShield();          // The motor shield object with the default I2C address
+Adafruit_MotorShield    AFMS = Adafruit_MotorShield();          // The motor shield object with the default I2C address
 Adafruit_StepperMotor   *myMotor = AFMS.getStepper(200, 2);  // Connect a stepper motor with 120 steps per revolution (3 degree) to motor port #2 (M3 and M4)
 
 const int            chipSelect       = 4;  //CS for the SD card (4 for ethernet shield)
@@ -103,6 +105,7 @@ void setup()
   Serial.println();
   Serial.print("Initializing SD card...");
   // make sure that the default chip select pin is set to output, even if you don't use it:
+  // KLB note: I believe the default pin for SD card is 4, not 10...
   pinMode(10, OUTPUT);
 
   
