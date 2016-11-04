@@ -1,9 +1,9 @@
 %to run: load a trial with the correct time interval to catch a set of
 %steps and check that the steps are separated correctly, then go.
-% filedate = 'tdm'; 
-% filenum = 1; 
+% filedate = 'tdm';
+% filenum = 1;
 
-rat.toe = rat.phalanx
+%rat.toe = rat.phalanx
 
 xvals = rat.toe(:, 1)-rat.hip_bottom(:, 1);
 yvals = rat.toe(:, 2)-rat.hip_bottom(:, 2);
@@ -62,61 +62,87 @@ end
 % disp(['Ankle range: ' num2str(mean(rankle))]);
 
 %make a structure of the data acquired
-s1 = struct('min_x', min(xvals), 'max_x', max(xvals), 'avg_xrange', mean(steprx), 'max_xrange', max(steprx),...
-    'min_y', min(yvals), 'max_y', max(yvals), 'avg_yrange', mean(stepry), 'max_yrange', max(stepry), ...
-    'hip_min', min(rat.angles.hip), 'hip_max', max(rat.angles.hip), 'hip_range', mean(rhip), ...
-    'knee_min', min(rat.angles.knee), 'knee_max', max(rat.angles.knee), 'knee_range', mean(rknee), ...
-    'ankle_min', min(rat.angles.ankle), 'ankle_max', max(rat.angles.ankle), 'ankle_range', mean(rankle));
-%save this struct
-%TODO: test that this saving protocol actually works to save multiple
-%variables to the same file.
-a = genvarname(['s' filedate num2str(filenum, '%02d')]);
-eval([a '= s1;']);
-%save('quickdata', genvarname(['s' filedate num2str(filenum, '%02d')]));
-
-disp(sprintf([num2str(min(xvals)) '\t' num2str(max(xvals)) '\t' num2str(mean(steprx)) '\t' num2str(max(steprx)) '\t' num2str(min(yvals)) '\t' num2str(max(yvals)) '\t' num2str(mean(stepry)) '\t' num2str(max(stepry)) '\t' num2str(min(rat.angles.hip)) '\t' num2str(max(rat.angles.hip))...
-    '\t' num2str(mean(rhip)) '\t' num2str(min(rat.angles.knee)) '\t' num2str(max(rat.angles.knee)) '\t' ...
-    num2str(mean(rknee)) '\t' num2str(min(rat.angles.ankle)) '\t' num2str(max(rat.angles.ankle)) '\t' num2str(mean(rankle))]));
+% s1 = struct('min_x', min(xvals), 'max_x', max(xvals), 'avg_xrange', mean(steprx), 'max_xrange', max(steprx),...
+%     'min_y', min(yvals), 'max_y', max(yvals), 'avg_yrange', mean(stepry), 'max_yrange', max(stepry), ...
+%     'hip_min', min(rat.angles.hip), 'hip_max', max(rat.angles.hip), 'hip_range', mean(rhip), ...
+%     'knee_min', min(rat.angles.knee), 'knee_max', max(rat.angles.knee), 'knee_range', mean(rknee), ...
+%     'ankle_min', min(rat.angles.ankle), 'ankle_max', max(rat.angles.ankle), 'ankle_range', mean(rankle));
+% %save this struct
+% %TODO: test that this saving protocol actually works to save multiple
+% %variables to the same file.
+% a = genvarname(['s' filedate num2str(filenum, '%02d')]);
+% eval([a '= s1;']);
+% %save('quickdata', genvarname(['s' filedate num2str(filenum, '%02d')]));
+%
+% disp(sprintf([num2str(min(xvals)) '\t' num2str(max(xvals)) '\t' num2str(mean(steprx)) '\t' num2str(max(steprx)) '\t' num2str(min(yvals)) '\t' num2str(max(yvals)) '\t' num2str(mean(stepry)) '\t' num2str(max(stepry)) '\t' num2str(min(rat.angles.hip)) '\t' num2str(max(rat.angles.hip))...
+%     '\t' num2str(mean(rhip)) '\t' num2str(min(rat.angles.knee)) '\t' num2str(max(rat.angles.knee)) '\t' ...
+%     num2str(mean(rknee)) '\t' num2str(min(rat.angles.ankle)) '\t' num2str(max(rat.angles.ankle)) '\t' num2str(mean(rankle))]));
 
 %save xvals, steprx, yvals, stepry, rat.angles.hip, rat.angles.knee,
 %rat.angles.ankle, rhip, rknee, rankle, and file date and trial num
 
 %save calculated statistics
-data_path = ['/Users/mariajantz/Documents/Work/data/kinematics/processed/']; 
-filename = 'collate_stats.mat'; 
+data_path = ['/Users/mariajantz/Documents/Work/data/kinematics/processed/'];
+filename = '161006_stats.mat';
 if exist([data_path filename], 'file')
-    load([data_path filename]); 
-    disp(['Adding to statistics file named ' filename]); 
-    %define vars as something appended to a cell
-    trialname{end+1} = [filedate '_' num2str(filenum(fileind), '%02d')]; 
-    endpoint_xvals{end+1} = xvals; 
-    endpoint_xval_stepranges{end+1} = steprx; 
-    endpoint_yvals{end+1} = yvals; 
-    endpoint_yval_stepranges{end+1} = stepry; 
-    hip_angle_ranges{end+1} = rhip; 
-    knee_angle_ranges{end+1} = rknee; 
-    ankle_angle_ranges{end+1} = rankle; 
-    swing_time_idx{end+1} = swing_times; 
+    load([data_path filename]);
+    tn = [filedate '_' num2str(filenum(fileind), '%02d')];
+    dbl = any(cellfun(@isempty, strfind(trialname, tn))==0); %check if the trial already exists in the file
+    if dbl
+        rpt = char(input('This trial already exists in the file. Add anyway? y/n', 's'));
+    end
+    if (dbl && rpt=='y') || ~dbl
+        disp(['Adding to statistics file named ' filename]);
+        %define vars as something appended to a cell
+        trialname{end+1} = tn;
+        endpoint_xvals{end+1} = xvals;
+        endpoint_xval_stepranges{end+1} = steprx;
+        endpoint_yvals{end+1} = yvals;
+        endpoint_yval_stepranges{end+1} = stepry;
+        hip_angle_ranges{end+1} = rhip;
+        knee_angle_ranges{end+1} = rknee;
+        ankle_angle_ranges{end+1} = rankle;
+        swing_time_idx{end+1} = swing_times;
+    end
 else
-    disp(['Making a new statistics file named ' filename]); 
-    %define vars 
-    trialname = {[filedate '_' num2str(filenum(fileind), '%02d')]}; 
-    endpoint_xvals = {xvals}; 
-    endpoint_xval_stepranges = {steprx}; 
-    endpoint_yvals = {yvals}; 
-    endpoint_yval_stepranges = {stepry}; 
-    hip_angle_ranges = {rhip}; 
-    knee_angle_ranges = {rknee}; 
-    ankle_angle_ranges = {rankle}; 
-    swing_time_idx = {swing_times}; 
+    disp(['Making a new statistics file named ' filename]);
+    %define vars
+    trialname = {[filedate '_' num2str(filenum(fileind), '%02d')]};
+    endpoint_xvals = {xvals};
+    endpoint_xval_stepranges = {steprx};
+    endpoint_yvals = {yvals};
+    endpoint_yval_stepranges = {stepry};
+    hip_angle_ranges = {rhip};
+    knee_angle_ranges = {rknee};
+    ankle_angle_ranges = {rankle};
+    swing_time_idx = {swing_times};
 end
+
+%delete a row? 
+delete = 0; 
+if delete
+        disp(['Deleting from statistics file named ' filename]);
+        %define vars as something appended to a cell
+        trialname(end) = [];
+        endpoint_xvals(end) = [];
+        endpoint_xval_stepranges(end) = [];
+        endpoint_yvals(end) = [];
+        endpoint_yval_stepranges(end) = [];
+        hip_angle_ranges(end) = [];
+        knee_angle_ranges(end) = [];
+        ankle_angle_ranges(end) = [];
+        swing_time_idx(end) = [];
+end
+
+
 %save the values defined above
 save([data_path filename], 'trialname', 'endpoint_xvals', 'endpoint_xval_stepranges', 'endpoint_yvals', 'endpoint_yval_stepranges', ...
-    'hip_angle_ranges', 'knee_angle_ranges', 'ankle_angle_ranges', 'swing_time_idx'); 
+    'hip_angle_ranges', 'knee_angle_ranges', 'ankle_angle_ranges', 'swing_time_idx');
+
 
 %save the location of the rat markers in its own file for further processing if
-%desired. 
-save([data_path filedate '_' num2str(filenum(fileind), '%02d') '_rat.mat'], 'rat'); 
+%desired.
+save([data_path filedate '_' num2str(filenum(fileind), '%02d') '_rat.mat'], 'rat');
 
 
 
