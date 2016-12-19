@@ -117,15 +117,15 @@ void setup() {
         i = 0;
       }
     }
-    else {
-      Serial.println("SD Card not detected, using default values")
-    }
-  
     s_file.close();
+
+  
+    
 
     for (int i=0; i<sizeof(setup_variables); i++){
       Serial.println(setup_variables[i]); 
     }
+    delay(500);
     
     //hard-coded: which variables are assigned to which location in the array
     th11 = setup_variables[0];
@@ -138,6 +138,9 @@ void setup() {
     task_type2 = setup_variables[7];
     reward_amount = setup_variables[8]; 
     betweenTreats = setup_variables[9]; 
+  }
+  else {
+      Serial.println("SD Card not detected, using default values");
   }
   Serial.println("exiting setup loop now"); 
   delay(500);
@@ -195,6 +198,11 @@ void loop() {
       //read the sensors
       int sensor1_1 = analogRead( 0 );     // Read device 1 sensor 1 (in pin 0)
       int sensor1_2 = analogRead( 1 );     // Read device 1 sensor 2 (in pin 1)
+      Serial.println("Water Task");
+      Serial.print("Sensor 1_1:");
+      Serial.println(sensor1_1);
+      Serial.print("Sensor 1_2:");
+      Serial.println(sensor1_1);
       
       //if both device 1 sensors are active, blink the LED for that device (monkey is doing the task correctly)
       if ( sensor1_1 > th11 && sensor1_2 > th12 ) {
