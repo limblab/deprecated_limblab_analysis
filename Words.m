@@ -1,12 +1,15 @@
 function w = Words(task)
 
+
 switch lower(task)
-    case wf
+    case 'wf'
         w.Start = hex2dec('17');
-    case mg_pt || mg_pg
+    case {'mg_pt','mg_pg'}
         w.Start = hex2dec('16');
-    case wm
+    case 'wm'
         w.Start = hex2dec('17');
+    otherwise
+        w.Start = hex2dec('16');
 end
 
     
