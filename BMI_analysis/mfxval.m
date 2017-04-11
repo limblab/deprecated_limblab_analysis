@@ -5,10 +5,10 @@ function [R2, varargout] = mfxval(binnedData, options)
 %       options             : structure with fields:
 %           dataPath            : string of the path of the data folder
 %           foldlength          : fold length in seconds (typically 60)
-%           fillen              : filter length in seconds (tipically 0.5)
+%           fillen              : filter length in seconds (typically 0.5)
 %           UseAllInputsOption  : 1 to use all inputs, 2 to specify a neuronID file
 %           PolynomialOrder     : order of the Weiner non-linearity (0=no Polynomial)
-%           PredEMG, PredForce, PredCursPos, PredVeloc, Use_SD,plotflag, EMGcascade:
+%           PredEMGs, PredForce, PredCursPos, PredVeloc, Use_SD,plotflag, EMGcascade:
 %                                 flags to include EMG, Force, CursPos, Velocity in the prediction model (0=no,1=yes)
 %                                 also options to use State-dependent or EMG cascade dec.
 %                                 Note on Use_SD      : The value of Use_SD should be set to correspond to the column index in binnedData.states

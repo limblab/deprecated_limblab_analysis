@@ -1,7 +1,19 @@
-function w = Words()
+function w = Words(task)
 
-w.Start = hex2dec('17');
 
+switch lower(task)
+    case 'wf'
+        w.Start = hex2dec('17');
+    case {'mg_pt','mg_pg'}
+        w.Start = hex2dec('16');
+    case 'wm'
+        w.Start = hex2dec('17');
+    otherwise
+        w.Start = hex2dec('16');
+end
+
+    
+    
 w.End_Code = hex2dec('20');
 w.Reward = hex2dec('20');
 w.Abort = hex2dec('21');
