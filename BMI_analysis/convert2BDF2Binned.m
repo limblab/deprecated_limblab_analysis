@@ -14,7 +14,7 @@ BDF_filename = [filename '_BDF.mat'];
 bin_filename = [filename '_bin.mat'];
 
 if nargin >1
-    use_default = varargin{1};
+    use_default = varargin{2};
 else
     use_default = false;
 end

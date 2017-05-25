@@ -21,7 +21,7 @@ int sol_time = 0; //amount of time we've been dispensing water
 int betweenTreats = 2000; //time in ms before monkey can start to earn another treat after receiving one
 bool cycle = false; //determine whether the cycle indicator (to read time per cycle) is high (true) or low (false)
 int active = 0; //amount of time the monkey has been doing the task correctly
-int actTime = 3000; //amount of time the monkey has to do the task to get a treat
+int actTime = 1000; //amount of time the monkey has to do the task to get a treat
 
 //Reward (motor and solenoid) control
 int mot_ctr = 0; //current motor step
@@ -33,10 +33,10 @@ int goLED1 = 0; //status of "you can do the task" LED for the first sensor (0=LO
 int goLED2 = 0; //status of "you can do the task" LED for the second sensor
 
 //thresholds
-int th11 = 100; //threshold for device 1, sensor 1 (how hard does the monkey have to squeeze)
-int th12 = 100; //threshold for device 1, sensor 2
-int th21 = 100; //threshold for device 2, sensor 1
-int th22 = 100; //threshold for device 2, sensor 2
+int th11 = 20; //threshold for device 1, sensor 1 (how hard does the monkey have to squeeze)
+int th12 = 20; //threshold for device 1, sensor 2
+int th21 = 30; //threshold for device 2, sensor 1
+int th22 = 30; //threshold for device 2, sensor 2
 int rand_threshold = 100; //% of times the monkey receives a treat 
 
 //file management
@@ -45,7 +45,7 @@ int task_type1 = 0; //0 for force-sensitive resistor tasks, 1 for rotary potenti
 int task_type2 = 2; //sensor 2
 int sensor_1_act = 1; //0 for false, 1 for true (sensor active)
 int sensor_2_act = 0; 
-int reward_amount = 1000; //only matters for water
+int reward_amount = 100; //only matters for water
 
 /* variable setup on the SD card:
  *  TXT document named "setup.txt"
@@ -69,8 +69,11 @@ int reward_amount = 1000; //only matters for water
  * 6 - device 1 LED
  * 7 - device 2 LED
  * 8 - indicator for cycle time
- * 9 - solenoid (if using) TODO - make all motor stuff in "if" cases, add solenoid
+ * 9 - solenoid 
  */
+
+// Sets up the chipSelect pin for the Uno. change for others
+const int chipSelect = 8;
 
 void setup() {
   //Initialize serial, communications, and real time clock
@@ -94,7 +97,7 @@ void setup() {
   pinMode(solenoid_pin, OUTPUT); //controls solenoid (if using)
   
   //read initial conditions from SD card: allows us to switch out conditions without reuploading code
-  if(SD.begin(4)){ //if the SD card is in there, do all of this - otherwise it will stay as default values
+  if(SD.begin(chipSelect)){ //if the SD card is in there, do all of this - otherwise it will stay as default values
     //open file named s_file
     File s_file = SD.open("setup.txt");
   
@@ -147,7 +150,7 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("loop"); 
+//  Serial.println("loop"); 
   
   //keep track of time per loop
   ms_incr = millis() - ms_prev; //get time since the last delay (not including delay)
@@ -198,17 +201,21 @@ void loop() {
       //read the sensors
       int sensor1_1 = analogRead( 0 );     // Read device 1 sensor 1 (in pin 0)
       int sensor1_2 = analogRead( 1 );     // Read device 1 sensor 2 (in pin 1)
-      Serial.println("Water Task");
-      Serial.print("Sensor 1_1:");
-      Serial.println(sensor1_1);
-      Serial.print("Sensor 1_2:");
-      Serial.println(sensor1_1);
+//      Serial.println("Water Task");
+//      Serial.print("Sensor 1_1:");
+//      Serial.println(sensor1_1);
+//      Serial.print("Sensor 1_2:");
+//      Serial.println(sensor1_1);
+//        Serial.println(th11);
+//        Serial.println(th12);
       
       //if both device 1 sensors are active, blink the LED for that device (monkey is doing the task correctly)
       if ( sensor1_1 > th11 && sensor1_2 > th12 ) {
         lastBlink1 += ms_incr; //add time to blinking variable
         blinkLED(6, goLED1, lastBlink1);
         active_devices[0] = true; //indicates that the first device is correctly activated
+        Serial.println(sensor1_1);
+        Serial.println(sensor1_2);
       }
       else if (goLED1 == 1) {
       //turn on the device's LED so the monkey knows it can start trying
@@ -267,6 +274,7 @@ void loop() {
     if ( active_devices[0] == true && active_devices[1] == true ) {
       //count
       active += ms_incr;
+      Serial.println("Threshold");
       if ( active >= actTime ) { //has held the gripper for as long as required
         if ( random(101) < rand_threshold ) { //the monkey receives a treat [rand_threshold] percent of the time
           //give treat
