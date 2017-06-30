@@ -8,7 +8,7 @@ function binnedData = convertBDF2binned(datastruct,varargin)
 %         params fields:            [default values]
 %             binsize             : [0.05] desired bin size in second
 %             starttime, stoptime : [0.0 end] time at which to start/stop extracting and binning data (use 0.0 for stoptime = end of data)
-%             HP, Lp              : [50 10] high pass and low pass cut off frequencies for EMG filtering
+%             EMG_hp, EMG_lp      : [50 10] high pass and low pass cut off frequencies for EMG filtering
 %             minFiringRate       : [0.0] minimum firing rate a units needs to be included in the data
 %             NormData            : [false] specify whether the output data is to be normalized to unity
 %             FindStates          : [false] Whether the data in classified in discret states
