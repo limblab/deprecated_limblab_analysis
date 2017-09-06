@@ -145,9 +145,9 @@ function BMIDataAnalyzer()
 %             out_struct = get_cerebus_data(CB_FullFileName,'verbose');
 %           Now uses get_nev_mat_data()--7/7/2014--CE
             if BDF_opts.ignore_jumps
-                out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum,'ignore_jumps');
+                out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum,'ignore_jumps','nokin');
             else
-                out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum);
+                out_struct = get_nev_mat_data(CB_FullFileName,'verbose','rothandle',BDF_opts.rothandle,BDF_opts.labnum,'nokin');
             end
             disp('Done.');
             BDF_FileName =  strrep(CB_FileName,'.nev','.mat');
